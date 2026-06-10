@@ -357,7 +357,7 @@ function DataSection() {
   );
 }
 
-const RENDERS: Record<SectionKey, () => JSX.Element> = {
+const RENDERS: Record<SectionKey, React.FC> = {
   profile: ProfileSection, account: AccountSection, notifications: NotificationsSection,
   appearance: AppearanceSection, language: LanguageSection, integrations: IntegrationsSection,
   team: TeamSection, security: SecuritySection, billing: BillingSection, data: DataSection,
