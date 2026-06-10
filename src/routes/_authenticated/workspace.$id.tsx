@@ -250,15 +250,15 @@ function WorkspaceDetailPage() {
         {/* Tabs */}
         <div className="sticky top-0 z-10 border-b border-border bg-background/95 px-3 backdrop-blur sm:px-6">
           <div className="flex gap-1 overflow-x-auto">
-            {TABS.map((t) => (
+            {TABS.map((tabItem) => (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+                key={tabItem.id}
+                onClick={() => setTab(tabItem.id)}
                 className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm transition-colors ${
-                  tab === t.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                  tab === tabItem.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t.label}
+                {tabItem.label}
               </button>
             ))}
           </div>
