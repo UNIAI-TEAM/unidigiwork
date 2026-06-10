@@ -833,28 +833,28 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
         </>
       ) : (
         <>
-          <div className="relative hidden sm:block" ref={newRef}>
+          <div className="relative" ref={newRef}>
             <button
               onClick={() => { setNewOpen((v) => !v); onNew?.(); }}
               aria-haspopup="dialog"
               aria-expanded={newOpen}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-3"
             >
-              <Plus className="h-4 w-4" /> {t("topbar.new")}
+              <Plus className="h-4 w-4" /> <span className="hidden sm:inline">{t("topbar.new")}</span>
             </button>
             {newOpen && <NewPanel onClose={() => setNewOpen(false)} />}
           </div>
-          <div className="relative hidden sm:block" ref={aiRef}>
+          <div className="relative" ref={aiRef}>
             <button
               onClick={() => setAiOpen((v) => !v)}
               aria-haspopup="dialog"
               aria-expanded={aiOpen}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70",
+                "flex items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-2 text-sm hover:bg-surface-2/70 sm:px-3",
                 aiOpen && "ring-1 ring-primary/40"
               )}
             >
-              <Sparkles className="h-4 w-4 text-primary" /> AI
+              <Sparkles className="h-4 w-4 text-primary" /> <span className="hidden sm:inline">AI</span>
             </button>
             {aiOpen && <AIPanel onClose={() => setAiOpen(false)} />}
           </div>
@@ -882,7 +882,7 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
           aria-haspopup="dialog"
           aria-expanded={calOpen}
           className={cn(
-            "hidden rounded-lg p-2 hover:bg-surface-2 lg:block",
+            "rounded-lg p-2 hover:bg-surface-2",
             calOpen && "bg-surface-2"
           )}
         >
@@ -914,7 +914,7 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
         {userOpen && (
           <div
             role="menu"
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[300px] origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40"
+            className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[300px]"
           >
             {/* Header */}
             <div className="flex items-start gap-3 border-b border-border bg-gradient-to-br from-primary/15 via-surface to-surface p-4">
