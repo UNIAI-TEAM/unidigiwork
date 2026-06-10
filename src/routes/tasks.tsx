@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Plus, Filter, Star, Settings2, MoreHorizontal, MessageSquare, Paperclip,
   CheckCircle2, AlertTriangle, Sparkles, ChevronDown, Calendar, BarChart3,
