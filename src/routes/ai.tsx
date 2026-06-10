@@ -469,7 +469,7 @@ function RichSummary({ t }: { t: (k: Key) => string }) {
   );
 }
 
-function Card({ icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
+function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-border bg-surface-2 p-3">
       <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
