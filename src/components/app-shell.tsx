@@ -6,6 +6,8 @@ import {
   ShieldCheck, ChevronDown, MoreHorizontal, MessageCircle, Circle, Cloud,
   Menu, X, HelpCircle, Sparkles,
 } from "lucide-react";
+import { ThemeToggle } from "@/lib/theme";
+import { LanguageToggle, useI18n } from "@/lib/i18n";
 
 export const avatar = (seed: string) =>
   `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear`;
@@ -38,6 +40,7 @@ function WorkspaceItem({ letter, name, color, active }: { letter: string; name: 
 }
 
 export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
+  const { t } = useI18n();
   return (
     <>
       {open && (
@@ -60,29 +63,29 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-          <NavItem icon={LayoutDashboard} label="Dashboard" chevron active={active === "dashboard"} />
-          <NavItem icon={MessageSquare} label="Chat" to="/" active={active === "chat"} />
+          <NavItem icon={LayoutDashboard} label={t("nav.dashboard")} chevron active={active === "dashboard"} />
+          <NavItem icon={MessageSquare} label={t("nav.chat")} to="/" active={active === "chat"} />
           <NavItem
             icon={Video}
-            label="Meetings"
+            label={t("nav.meetings")}
             active={active === "meetings"}
-            badge={<span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-medium text-success">Live</span>}
+            badge={<span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-medium text-success">{t("nav.live")}</span>}
           />
           <NavItem
             icon={ListChecks}
-            label="Tasks & Projects"
+            label={t("nav.tasks")}
             active={active === "tasks"}
             badge={<span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted-foreground">7</span>}
           />
-          <NavItem icon={FileText} label="Documents" to="/documents" active={active === "documents"} />
-          <NavItem icon={BookOpen} label="Knowledge Base" to="/knowledge" active={active === "knowledge"} />
-          <NavItem icon={Workflow} label="Workflows" active={active === "workflows"} />
-          <NavItem icon={Users} label="People" active={active === "people"} />
-          <NavItem icon={BarChart3} label="Reports" active={active === "reports"} />
-          <NavItem icon={Bot} label="AI Assistant" active={active === "ai"} />
+          <NavItem icon={FileText} label={t("nav.documents")} to="/documents" active={active === "documents"} />
+          <NavItem icon={BookOpen} label={t("nav.knowledge")} to="/knowledge" active={active === "knowledge"} />
+          <NavItem icon={Workflow} label={t("nav.workflows")} active={active === "workflows"} />
+          <NavItem icon={Users} label={t("nav.people")} active={active === "people"} />
+          <NavItem icon={BarChart3} label={t("nav.reports")} active={active === "reports"} />
+          <NavItem icon={Bot} label={t("nav.ai")} active={active === "ai"} />
 
           <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <span>Workspaces</span>
+            <span>{t("nav.workspaces")}</span>
             <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
           </div>
           <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active />
@@ -90,7 +93,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
           <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" />
           <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" />
           <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" />
-          <NavItem icon={MoreHorizontal} label="More" />
+          <NavItem icon={MoreHorizontal} label={t("nav.more")} />
         </nav>
 
         <div className="m-3 rounded-xl bg-surface-2 p-3">
@@ -120,6 +123,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
 }
 
 export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { variant?: "meeting" | "documents"; onOpenSidebar: () => void; onNew?: () => void }) {
+  const { t } = useI18n();
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
       <button aria-label="Open sidebar" className="rounded-lg p-2 hover:bg-surface-2 lg:hidden" onClick={onOpenSidebar}>
@@ -128,21 +132,21 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
       <div className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
-          placeholder={variant === "documents" ? "Search documents, knowledge, people… (Ctrl + K)" : "Search…"}
+          placeholder={variant === "documents" ? t("topbar.search.docs") : t("topbar.search")}
           className="w-full rounded-lg bg-surface-2 py-2.5 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       </div>
       {variant === "meeting" ? (
         <>
           <span className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-medium text-destructive">
-            <Circle className="h-2 w-2 fill-current" /> Live
+            <Circle className="h-2 w-2 fill-current" /> {t("nav.live")}
           </span>
           <span className="hidden font-mono text-sm tabular-nums sm:inline">00:28:45</span>
         </>
       ) : (
         <>
           <button onClick={onNew} className="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:flex">
-            <Plus className="h-4 w-4" /> New
+            <Plus className="h-4 w-4" /> {t("topbar.new")}
           </button>
           <button className="hidden items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm sm:flex">
             <Sparkles className="h-4 w-4 text-primary" /> AI
@@ -150,6 +154,8 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
           <button className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"><HelpCircle className="h-5 w-5 text-muted-foreground" /></button>
         </>
       )}
+      <LanguageToggle />
+      <ThemeToggle />
       <button className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"><ShieldCheck className="h-5 w-5 text-muted-foreground" /></button>
       <button className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"><Settings className="h-5 w-5 text-muted-foreground" /></button>
       {variant === "meeting" && (
