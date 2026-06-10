@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { Key } from "@/lib/i18n";
+import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -257,7 +259,7 @@ function TasksPage() {
                     onClick={() => setTab(id)}
                     className={`-mb-px border-b-2 py-1.5 transition-colors ${tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                   >
-                    {t(`tasks.tab.${id}` as any)}
+                    {t(`tasks.tab.${id}` as Key)}
                   </button>
                 ))}
               </nav>
@@ -408,7 +410,7 @@ function BoardColumn({
     <div className="flex flex-col gap-3 rounded-xl bg-surface/40 p-3">
       <div className="flex items-center gap-2 px-1">
         <span className={`h-2 w-2 rounded-full ${col.barColor}`} />
-        <span className="text-sm font-semibold">{t(col.key as any)}</span>
+        <span className="text-sm font-semibold">{t(col.key as Key)}</span>
         <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-muted-foreground">
           {col.count}
         </span>
@@ -874,7 +876,7 @@ function Activity({
   );
 }
 
-function QuickAction({ icon: Icon, label }: { icon: any; label: string }) {
+function QuickAction({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <button className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
       <Icon className="h-4 w-4" />

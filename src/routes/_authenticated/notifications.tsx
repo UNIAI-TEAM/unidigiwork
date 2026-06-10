@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bell,
@@ -47,7 +48,7 @@ type Notif = {
   important?: boolean;
 };
 
-const CATS: { key: Cat; label: string; icon: any; tint: string }[] = [
+const CATS: { key: Cat; label: string; icon: LucideIcon; tint: string }[] = [
   { key: "all", label: "Tất cả", icon: Bell, tint: "text-foreground" },
   { key: "mention", label: "Nhắc tên", icon: AtSign, tint: "text-violet-300" },
   { key: "task", label: "Nhiệm vụ", icon: CheckCircle2, tint: "text-emerald-300" },
@@ -280,18 +281,15 @@ function NotificationsPage() {
   const toggle = (id: string) => {
     setSelected((s) => {
       const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
   };
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <AppSidebar
-        active={"dashboard" as any}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 

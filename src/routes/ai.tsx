@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
+import type { Key } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   Plus,
@@ -177,7 +179,7 @@ function AIPage() {
                     tab === k ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t(`ai.tab.${k}` as any)}
+                  {t(`ai.tab.${k}` as Key)}
                   {tab === k && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />}
                 </button>
               ))}
@@ -202,7 +204,7 @@ function AIPage() {
                     {suggestions.map((s) => (
                       <button
                         key={s.k}
-                        onClick={() => send(t(`ai.sg.${s.k}.d` as any))}
+                        onClick={() => send(t(`ai.sg.${s.k}.d` as Key))}
                         className="rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40"
                       >
                         <div
@@ -210,9 +212,9 @@ function AIPage() {
                         >
                           <s.icon className="h-4 w-4" />
                         </div>
-                        <div className="text-sm font-semibold">{t(`ai.sg.${s.k}.t` as any)}</div>
+                        <div className="text-sm font-semibold">{t(`ai.sg.${s.k}.t` as Key)}</div>
                         <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {t(`ai.sg.${s.k}.d` as any)}
+                          {t(`ai.sg.${s.k}.d` as Key)}
                         </div>
                       </button>
                     ))}
@@ -297,10 +299,10 @@ function AIPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
-                        {t(`ai.bot.${a.k}.t` as any)}
+                        {t(`ai.bot.${a.k}.t` as Key)}
                       </div>
                       <div className="truncate text-[11px] text-muted-foreground">
-                        {t(`ai.bot.${a.k}.d` as any)}
+                        {t(`ai.bot.${a.k}.d` as Key)}
                       </div>
                     </div>
                   </button>
@@ -323,10 +325,10 @@ function AIPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
-                        {t(`ai.pr.${p.k}.t` as any)}
+                        {t(`ai.pr.${p.k}.t` as Key)}
                       </div>
                       <div className="truncate text-[11px] text-muted-foreground">
-                        {t(`ai.pr.${p.k}.d` as any)}
+                        {t(`ai.pr.${p.k}.d` as Key)}
                       </div>
                     </div>
                   </button>
@@ -357,7 +359,7 @@ function AIPage() {
   );
 }
 
-function Empty({ t, onPick }: { t: (k: any) => string; onPick: (s: string) => void }) {
+function Empty({ t, onPick }: { t: (k: Key) => string; onPick: (s: string) => void }) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-center">
       <Sparkles className="h-10 w-10 text-primary" />
@@ -379,7 +381,7 @@ function Empty({ t, onPick }: { t: (k: any) => string; onPick: (s: string) => vo
   );
 }
 
-function UserBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
+function UserBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
@@ -392,7 +394,7 @@ function UserBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
   );
 }
 
-function AssistantBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
+function AssistantBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
@@ -416,7 +418,7 @@ function AssistantBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
   );
 }
 
-function RichSummary({ t }: { t: (k: any) => string }) {
+function RichSummary({ t }: { t: (k: Key) => string }) {
   return (
     <div className="space-y-3 text-sm">
       <p>{t("ai.reply.intro")}</p>
@@ -467,7 +469,15 @@ function RichSummary({ t }: { t: (k: any) => string }) {
   );
 }
 
-function Card({ icon, title, children }: { icon: any; title: string; children: any }) {
+function Card({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-lg border border-border bg-surface-2 p-3">
       <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -479,7 +489,15 @@ function Card({ icon, title, children }: { icon: any; title: string; children: a
   );
 }
 
-function Section({ title, action, children }: { title: string; action?: string; children: any }) {
+function Section({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="border-b border-border px-4 py-4 last:border-0">
       <div className="mb-3 flex items-center justify-between">
@@ -965,7 +983,7 @@ function PanelHeader({
 }: {
   title: string;
   subtitle: string;
-  action?: { icon: any; label: string };
+  action?: { icon: LucideIcon; label: string };
   search?: { value: string; onChange: (v: string) => void; placeholder: string };
 }) {
   return (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -79,7 +80,7 @@ function NavItem({
   badge,
   collapsed,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   active?: boolean;
   chevron?: boolean;
@@ -727,7 +728,7 @@ function CreateWorkspaceDialog({
 function NewPanel({ onClose }: { onClose: () => void }) {
   const groups: {
     label: string;
-    items: { icon: any; title: string; desc: string; kbd?: string; color: string }[];
+    items: { icon: LucideIcon; title: string; desc: string; kbd?: string; color: string }[];
   }[] = [
     {
       label: "Công việc",
@@ -1499,11 +1500,11 @@ function MenuItem({
   search,
   onClick,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   desc?: string;
   to?: string;
-  search?: Record<string, any>;
+  search?: Record<string, unknown>;
   onClick?: () => void;
 }) {
   const inner = (

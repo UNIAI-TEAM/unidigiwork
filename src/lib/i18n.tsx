@@ -838,7 +838,7 @@ const dict = {
   },
 } as const;
 
-type Key = keyof (typeof dict)["vi"];
+export type Key = keyof (typeof dict)["vi"];
 const LangCtx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: Key) => string }>({
   lang: "vi",
   setLang: () => {},
@@ -858,7 +858,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLangState(l);
     try {
       localStorage.setItem("uniwork-lang", l);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
     if (typeof document !== "undefined") document.documentElement.lang = l;
   };
 

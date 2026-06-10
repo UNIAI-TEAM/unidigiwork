@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -77,7 +78,7 @@ type SectionKey =
   | "billing"
   | "data";
 
-const SECTIONS: { key: SectionKey; label: string; desc: string; icon: any }[] = [
+const SECTIONS: { key: SectionKey; label: string; desc: string; icon: LucideIcon }[] = [
   { key: "profile", label: "Hồ sơ cá nhân", desc: "Tên, ảnh đại diện, chức danh", icon: User },
   { key: "account", label: "Tài khoản", desc: "Email, tên đăng nhập", icon: KeyRound },
   { key: "password", label: "Đổi mật khẩu", desc: "Mật khẩu, xác thực 2 lớp", icon: Lock },
@@ -671,11 +672,7 @@ function SettingsPage() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <AppSidebar
-        active={"dashboard" as any}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
         <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">

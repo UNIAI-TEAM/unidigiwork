@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
+import type { Key } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -41,7 +43,7 @@ type WF = {
   subtitle: string;
   category: string;
   catColor: string;
-  icon: any;
+  icon: LucideIcon;
   iconBg: string;
   status: WFStatus;
   instances: number;
@@ -308,7 +310,7 @@ function WorkflowsPage() {
                     tab === k ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t(`wf.tab.${k}` as any)}
+                  {t(`wf.tab.${k}` as Key)}
                   {tab === k && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />}
                 </button>
               ))}
@@ -400,10 +402,10 @@ function WorkflowsPage() {
               </div>
               <Select
                 value={status}
-                onChange={(v) => setStatus(v as any)}
+                onChange={(v) => setStatus(v as "All" | WFStatus)}
                 label={t("wf.filter.status")}
                 options={["All", "active", "paused", "draft"]}
-                renderOption={(v) => (v === "All" ? "All" : t(`wf.status.${v}` as any))}
+                renderOption={(v) => (v === "All" ? "All" : t(`wf.status.${v}` as Key))}
               />
               <Select
                 value={cat}
@@ -539,9 +541,9 @@ function KpiCard({
   suffix?: string;
   delta: string;
   up: boolean;
-  icon: any;
+  icon: LucideIcon;
   accent: string;
-  t: (k: any) => string;
+  t: (k: Key) => string;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
@@ -568,7 +570,7 @@ function KpiCard({
   );
 }
 
-function StatusBadge({ status, t }: { status: WFStatus; t: (k: any) => string }) {
+function StatusBadge({ status, t }: { status: WFStatus; t: (k: Key) => string }) {
   const cls =
     status === "active"
       ? "bg-success/15 text-success border border-success/30"
@@ -613,7 +615,7 @@ function Select({
   );
 }
 
-function PageBtn({ children, active }: { children: any; active?: boolean }) {
+function PageBtn({ children, active }: { children: React.ReactNode; active?: boolean }) {
   return (
     <button
       className={`min-w-[28px] rounded px-2 py-1 text-xs ${active ? "bg-primary text-primary-foreground" : "hover:bg-surface-2"}`}
@@ -625,7 +627,7 @@ function PageBtn({ children, active }: { children: any; active?: boolean }) {
 
 const PANEL_TABS = ["overview", "designer", "instances", "activity"] as const;
 
-function WorkflowPanel({ wf, onClose, t }: { wf: WF; onClose: () => void; t: (k: any) => string }) {
+function WorkflowPanel({ wf, onClose, t }: { wf: WF; onClose: () => void; t: (k: Key) => string }) {
   const [tab, setTab] = useState<(typeof PANEL_TABS)[number]>("overview");
   return (
     <aside className="hidden w-[360px] shrink-0 flex-col border-l border-border bg-surface xl:flex">
@@ -765,7 +767,7 @@ function WorkflowPanel({ wf, onClose, t }: { wf: WF; onClose: () => void; t: (k:
   );
 }
 
-function Row({ label, children }: { label: string; children: any }) {
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -787,7 +789,7 @@ function InstanceRow({
   seed: string;
   status: "inprogress" | "review" | "completed";
   date: string;
-  t: (k: any) => string;
+  t: (k: Key) => string;
 }) {
   const cls =
     status === "completed"

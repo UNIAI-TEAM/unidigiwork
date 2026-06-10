@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   LifeBuoy,
@@ -60,7 +61,7 @@ type Cat =
   | "admin"
   | "security";
 
-const CATS: { key: Cat; label: string; icon: any; tint: string }[] = [
+const CATS: { key: Cat; label: string; icon: LucideIcon; tint: string }[] = [
   { key: "all", label: "Tất cả chủ đề", icon: BookOpen, tint: "text-foreground" },
   { key: "start", label: "Bắt đầu nhanh", icon: Rocket, tint: "text-primary" },
   { key: "chat", label: "Chat & Cộng tác", icon: MessageCircle, tint: "text-violet-300" },
@@ -260,11 +261,7 @@ function HelpPage() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <AppSidebar
-        active={"dashboard" as any}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 

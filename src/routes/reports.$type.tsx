@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { Key } from "@/lib/i18n";
+import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -54,7 +56,7 @@ export const Route = createFileRoute("/reports/$type")({
 
 const TYPE_META: Record<
   RType,
-  { icon: any; metric: string; unit: string; total: number; delta: number }
+  { icon: LucideIcon; metric: string; unit: string; total: number; delta: number }
 > = {
   overview: { icon: BarChart3, metric: "Active sessions", unit: "", total: 12480, delta: 12.5 },
   projects: { icon: Folder, metric: "Projects", unit: "", total: 72, delta: 9.7 },
@@ -169,7 +171,7 @@ function ReportDetailPage() {
                 {t("rp.det.crumb")}
               </Link>
               <span>/</span>
-              <span className="text-foreground">{t(`rp.tab.${rtype}` as any)}</span>
+              <span className="text-foreground">{t(`rp.tab.${rtype}` as Key)}</span>
             </div>
 
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -178,7 +180,7 @@ function ReportDetailPage() {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">{t(`rp.tab.${rtype}` as any)}</h1>
+                  <h1 className="text-2xl font-bold">{t(`rp.tab.${rtype}` as Key)}</h1>
                   <p className="mt-1 text-sm text-muted-foreground">{t("rp.det.sub")}</p>
                 </div>
               </div>
@@ -206,7 +208,7 @@ function ReportDetailPage() {
                 </button>
                 <Select
                   value={gran}
-                  onChange={(v) => setGran(v as any)}
+                  onChange={(v) => setGran(v as "d" | "w" | "m")}
                   options={[
                     { value: "d", label: t("rp.det.gran.d") },
                     { value: "w", label: t("rp.det.gran.w") },
@@ -288,7 +290,7 @@ function ReportDetailPage() {
                   title={t("rp.det.trend")}
                   right={
                     <span className="text-xs text-muted-foreground">
-                      {t(`rp.det.gran.${gran}` as any)}
+                      {t(`rp.det.gran.${gran}` as Key)}
                     </span>
                   }
                 />
@@ -333,7 +335,7 @@ function ReportDetailPage() {
                   right={
                     <Select
                       value={dim}
-                      onChange={(v) => setDim(v as any)}
+                      onChange={(v) => setDim(v as "dept" | "team" | "user")}
                       options={[
                         { value: "dept", label: "Department" },
                         { value: "team", label: "Team" },
@@ -537,7 +539,7 @@ function Select({
     </div>
   );
 }
-function ExportBtn({ icon: Icon, label }: { icon: any; label: string }) {
+function ExportBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <button className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70">
       <span className="flex items-center gap-2">

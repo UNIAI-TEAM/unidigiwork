@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
+import type { Key } from "@/lib/i18n";
 import { useState } from "react";
 import {
   Plus,
@@ -99,7 +101,7 @@ function ReportsPage() {
                     tab === k ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t(`rp.tab.${k}` as any)}
+                  {t(`rp.tab.${k}` as Key)}
                   {tab === k && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />}
                 </button>
               ))}
@@ -328,7 +330,7 @@ function ReportsPage() {
                           <span
                             className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${p.status === "ontrack" ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/15 text-amber-300 border border-amber-500/30"}`}
                           >
-                            {t(`rp.status.${p.status}` as any)}
+                            {t(`rp.status.${p.status}` as Key)}
                           </span>
                         </td>
                       </tr>
@@ -626,12 +628,12 @@ function Kpi({
   tone,
   t,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   value: string;
   delta: string;
   tone: string;
-  t: (k: any) => string;
+  t: (k: Key) => string;
 }) {
   const up = !delta.startsWith("-");
   return (
@@ -654,13 +656,13 @@ function Kpi({
   );
 }
 
-function Card({ children, className = "" }: { children: any; className?: string }) {
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-xl border border-border bg-surface p-4 ${className}`}>{children}</div>
   );
 }
 
-function CardHeader({ title, right }: { title: string; right?: any }) {
+function CardHeader({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
       <h3 className="text-sm font-semibold">{title}</h3>
@@ -798,7 +800,7 @@ function CollabRow({
   value,
   delta,
 }: {
-  icon: any;
+  icon: LucideIcon;
   color: string;
   label: string;
   value: string;
@@ -842,7 +844,7 @@ function SysCard({
   pct,
   delta,
 }: {
-  icon: any;
+  icon: LucideIcon;
   color: string;
   label: string;
   value: string;
@@ -918,7 +920,7 @@ function ShortcutRow({
   title,
   sub,
 }: {
-  icon: any;
+  icon: LucideIcon;
   color: string;
   title: string;
   sub: string;
@@ -943,11 +945,11 @@ function Insight({
   sub,
   t,
 }: {
-  icon: any;
+  icon: LucideIcon;
   color: string;
   title: string;
   sub: string;
-  t: (k: any) => string;
+  t: (k: Key) => string;
 }) {
   return (
     <button className="block w-full rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
@@ -975,7 +977,15 @@ function FilterField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ExportBtn({ icon: Icon, label, color }: { icon: any; label: string; color: string }) {
+function ExportBtn({
+  icon: Icon,
+  label,
+  color,
+}: {
+  icon: LucideIcon;
+  label: string;
+  color: string;
+}) {
   return (
     <button className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
       <Icon className={`h-3.5 w-3.5 ${color}`} /> {label}

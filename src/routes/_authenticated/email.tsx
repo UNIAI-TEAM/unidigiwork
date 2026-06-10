@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import { useState, useMemo } from "react";
 import {
   Mail,
@@ -84,13 +85,14 @@ const MAILBOXES = [
   { key: "bin", label: "Thùng rác", icon: Trash2, count: 2 },
 ];
 
-const INITIAL_LABELS: LabelDef[] = [
+type LabelWithCount = LabelDef & { count: number };
+const INITIAL_LABELS: LabelWithCount[] = [
   { name: "Dự án STOS", color: "bg-emerald-500", count: 24 },
   { name: "Khách hàng", color: "bg-amber-500", count: 18 },
   { name: "Hợp đồng", color: "bg-violet-500", count: 15 },
   { name: "Nhân sự", color: "bg-sky-500", count: 6 },
   { name: "Hóa đơn", color: "bg-rose-500", count: 9 },
-] as any;
+];
 
 const ACCOUNTS = [
   { provider: "M365", label: "M", color: "bg-sky-600", email: "nguyenvana@ubos.vn", count: 128 },
@@ -495,7 +497,7 @@ function EmailHubPage() {
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
-  const [labels, setLabels] = useState<any[]>(INITIAL_LABELS);
+  const [labels, setLabels] = useState<LabelWithCount[]>(INITIAL_LABELS);
   const [rules, setRules] = useState<RuleDef[]>([
     {
       id: "r1",
@@ -705,7 +707,7 @@ function EmailHubPage() {
                 </button>
               </div>
               <ul className="space-y-0.5">
-                {labels.map((l: any) => {
+                {labels.map((l) => {
                   const active = filterLabel === l.name;
                   return (
                     <li key={l.name}>
@@ -1320,7 +1322,7 @@ function EmailHubPage() {
         onOpenChange={setAdvancedOpen}
         value={advanced}
         onChange={setAdvanced}
-        availableLabels={labels.map((l: any) => l.name)}
+        availableLabels={labels.map((l) => l.name)}
       />
       <AiAssistantDialog
         open={aiOpen}
@@ -1330,10 +1332,10 @@ function EmailHubPage() {
       <LabelsRulesDialog
         open={labelsOpen}
         onOpenChange={setLabelsOpen}
-        labels={labels.map((l: any) => ({ name: l.name, color: l.color }))}
+        labels={labels.map((l) => ({ name: l.name, color: l.color }))}
         onChangeLabels={(v) =>
           setLabels(
-            v.map((x) => ({ ...x, count: labels.find((l: any) => l.name === x.name)?.count ?? 0 })),
+            v.map((x) => ({ ...x, count: labels.find((l) => l.name === x.name)?.count ?? 0 })),
           )
         }
         rules={rules}
@@ -1343,7 +1345,7 @@ function EmailHubPage() {
   );
 }
 
-function ToolBtn({ icon: Icon, label }: { icon: any; label: string }) {
+function ToolBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <button className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />
@@ -1357,7 +1359,7 @@ function BulkBtn({
   label,
   onClick,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   onClick?: () => void;
 }) {
@@ -1373,7 +1375,7 @@ function BulkBtn({
   );
 }
 
-function ActionBtn({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
+function ActionBtn({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
     <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
       <Icon className="h-4 w-4" /> {children}
@@ -1387,7 +1389,7 @@ function AttachmentCard({
   name,
   size,
 }: {
-  icon: any;
+  icon: LucideIcon;
   color: string;
   name: string;
   size: string;
@@ -1408,7 +1410,15 @@ function AttachmentCard({
   );
 }
 
-function SuggestBtn({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
+function SuggestBtn({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+}) {
   return (
     <button className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 text-left hover:border-primary/40">
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
