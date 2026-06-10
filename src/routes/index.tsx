@@ -113,7 +113,7 @@ function Index() {
       )}
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-border bg-surface transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-border bg-surface transition-transform lg:static lg:w-56 lg:translate-x-0 xl:w-64 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -255,7 +255,7 @@ function Index() {
             </div>
 
             {/* Video grid */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3">
               <VideoTile name={participants[0].name} seed={participants[0].seed} highlight />
               <VideoTile name={participants[1].name} seed={participants[1].seed} />
               <VideoTile name={participants[2].name} seed={participants[2].seed} />
@@ -265,7 +265,7 @@ function Index() {
             </div>
 
             {/* Small row */}
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-3 2xl:grid-cols-5">
               {participants.slice(6, 10).map((p) => (
                 <div key={p.seed} className="relative aspect-video overflow-hidden rounded-xl bg-surface-2">
                   <img src={avatar(p.seed)} alt={p.name} className="h-full w-full object-cover" />
@@ -340,7 +340,7 @@ function Index() {
           </section>
 
           {/* Right panel */}
-          <aside className="flex w-full shrink-0 flex-col border-t border-border bg-surface xl:w-96 xl:border-l xl:border-t-0">
+          <aside className="flex w-full shrink-0 flex-col border-t border-border bg-surface xl:w-80 xl:border-l xl:border-t-0 2xl:w-96">
             <div className="flex gap-5 overflow-x-auto border-b border-border px-5 pt-4 text-sm">
               <button className="border-b-2 border-primary pb-3 font-medium">AI Copilot</button>
               <button className="pb-3 text-muted-foreground">Chat</button>
