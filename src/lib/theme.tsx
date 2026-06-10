@@ -22,7 +22,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.toggle("dark", theme === "dark");
     try {
       localStorage.setItem("uniwork-theme", theme);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, [theme]);
 
   return (
