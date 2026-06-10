@@ -208,7 +208,7 @@ function ReportDetailPage() {
                 </button>
                 <Select
                   value={gran}
-                  onChange={(v) => setGran(v as any)}
+                  onChange={(v) => setGran(v as "d" | "w" | "m")}
                   options={[
                     { value: "d", label: t("rp.det.gran.d") },
                     { value: "w", label: t("rp.det.gran.w") },
@@ -335,7 +335,7 @@ function ReportDetailPage() {
                   right={
                     <Select
                       value={dim}
-                      onChange={(v) => setDim(v as any)}
+                      onChange={(v) => setDim(v as "dept" | "team" | "user")}
                       options={[
                         { value: "dept", label: "Department" },
                         { value: "team", label: "Team" },
