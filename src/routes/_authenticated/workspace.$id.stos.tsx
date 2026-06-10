@@ -1340,6 +1340,7 @@ function AuditDialog({
   const [keyword, setKeyword] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   const actors = useMemo(
     () => Array.from(new Set(entries.map((e) => e.actor))).sort(),
@@ -1350,7 +1351,7 @@ function AuditDialog({
     const kw = keyword.trim().toLowerCase();
     const fromTs = fromDate ? new Date(fromDate + "T00:00:00").getTime() : null;
     const toTs = toDate ? new Date(toDate + "T23:59:59").getTime() : null;
-    return entries.filter((e) => {
+    const filtered = entries.filter((e) => {
       if (filter !== "all" && e.target !== filter) return false;
       if (actor !== "all" && e.actor !== actor) return false;
       if (kw && !e.name.toLowerCase().includes(kw)) return false;
@@ -1359,7 +1360,11 @@ function AuditDialog({
       if (toTs !== null && ts > toTs) return false;
       return true;
     });
-  }, [entries, filter, actor, keyword, fromDate, toDate]);
+    return [...filtered].sort((a, b) => {
+      const diff = new Date(b.at).getTime() - new Date(a.at).getTime();
+      return sortOrder === "newest" ? diff : -diff;
+    });
+  }, [entries, filter, actor, keyword, fromDate, toDate, sortOrder]);
 
   const hasFilter =
     filter !== "all" || actor !== "all" || keyword !== "" || fromDate !== "" || toDate !== "";
@@ -1466,7 +1471,19 @@ function AuditDialog({
             </div>
           </div>
           <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-slate-500">{list.length} mục</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">{list.length} mục</span>
+              <span className="text-slate-300">·</span>
+              <label className="text-xs text-slate-500">Sắp xếp:</label>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as "newest" | "oldest")}
+                className="text-xs border border-slate-200 rounded-md px-1.5 py-0.5 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                <option value="newest">Mới nhất trước</option>
+                <option value="oldest">Cũ nhất trước</option>
+              </select>
+            </div>
             {hasFilter && (
               <button
                 onClick={resetFilters}
