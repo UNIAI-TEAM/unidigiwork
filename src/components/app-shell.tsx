@@ -64,7 +64,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3">
           <NavItem icon={LayoutDashboard} label={t("nav.dashboard")} chevron active={active === "dashboard"} />
-          <NavItem icon={MessageSquare} label={t("nav.chat")} to="/" active={active === "chat"} />
+          <NavItem icon={MessageSquare} label={t("nav.chat")} to="/chat" active={active === "chat"} />
           <NavItem
             icon={Video}
             label={t("nav.meetings")}
