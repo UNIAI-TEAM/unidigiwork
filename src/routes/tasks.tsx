@@ -75,6 +75,24 @@ function TasksPage() {
   const [open, setOpen] = useSidebarState();
   const { t } = useI18n();
   const [tab, setTab] = useState<"overview" | "board" | "list" | "timeline" | "calendar" | "reports" | "files">("board");
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [counter, setCounter] = useState(200);
+
+  const addTask = (status: Status, payload: { title: string; tag: string; assigneeSeed: string; assigneeName: string }) => {
+    const id = `STOS-${counter}`;
+    setCounter((c) => c + 1);
+    setTasks((prev) => [
+      {
+        id,
+        title: payload.title,
+        status,
+        assignee: { name: payload.assigneeName, seed: payload.assigneeSeed },
+        tag: { label: payload.tag, color: tagColors[payload.tag] ?? tagColors.Backend },
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      },
+      ...prev,
+    ]);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
