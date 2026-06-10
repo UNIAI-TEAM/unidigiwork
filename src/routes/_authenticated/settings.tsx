@@ -1,11 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
+import { toast } from "sonner";
 import {
   User, Lock, Bell, Palette, Globe, Plug, Users as UsersIcon, ShieldCheck,
   CreditCard, Database, ChevronRight, Camera, Check, Trash2, Plus,
   Smartphone, Monitor, LogOut, KeyRound, Mail, Languages,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
 const searchSchema = z.object({
