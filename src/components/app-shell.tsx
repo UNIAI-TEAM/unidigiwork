@@ -83,7 +83,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
           <NavItem icon={Workflow} label={t("nav.workflows")} to="/workflows" active={active === "workflows"} />
           <NavItem icon={Users} label={t("nav.people")} to="/people" active={active === "people"} />
           <NavItem icon={BarChart3} label={t("nav.reports")} active={active === "reports"} />
-          <NavItem icon={Bot} label={t("nav.ai")} active={active === "ai"} />
+          <NavItem icon={Bot} label={t("nav.ai")} to="/ai" active={active === "ai"} />
 
           <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <span>{t("nav.workspaces")}</span>
