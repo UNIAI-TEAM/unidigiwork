@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   LayoutDashboard, MessageSquare, Video, ListChecks, FileText, BookOpen,
@@ -76,8 +76,7 @@ function WorkspaceItem({ letter, name, color, active, collapsed }: { letter: str
   return btn;
 }
 
-export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
-  const { t } = useI18n();
+function useSidebarCollapsed() {
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("sidebarCollapsed") === "true";
@@ -85,13 +84,29 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
     return false;
   });
 
-  const toggleCollapsed = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("sidebarCollapsed", String(next));
-    }
-  };
+  useEffect(() => {
+    const handler = (e: Event) => setCollapsed((e as CustomEvent<boolean>).detail);
+    window.addEventListener("uniwork:sidebar-toggle", handler);
+    return () => window.removeEventListener("uniwork:sidebar-toggle", handler);
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sidebarCollapsed", String(next));
+      }
+      window.dispatchEvent(new CustomEvent("uniwork:sidebar-toggle", { detail: next }));
+      return next;
+    });
+  }, []);
+
+  return { collapsed, toggleCollapsed };
+}
+
+export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
+  const { t } = useI18n();
+  const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
@@ -246,10 +261,19 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
     };
   }, [userOpen]);
 
+  const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
       <button aria-label="Open sidebar" className="rounded-lg p-2 hover:bg-surface-2 lg:hidden" onClick={onOpenSidebar}>
         <Menu className="h-5 w-5" />
+      </button>
+      <button
+        aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+        className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"
+        onClick={toggleCollapsed}
+      >
+        {collapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
       </button>
       <div className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
