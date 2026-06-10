@@ -361,7 +361,9 @@ function EmailHubPage() {
                     <X className="h-3 w-3" /> Xóa lọc
                   </button>
                 )}
-                <button className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
+                <button onClick={() => setAdvancedOpen(true)} className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2">
+                  <Filter className="h-3 w-3" /> Lọc nâng cao
+                </button>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {searchQuery && (
