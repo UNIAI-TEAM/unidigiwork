@@ -5,20 +5,27 @@ import {
   Workflow, Users, BarChart3, Bot, Plus, Search, Bell, Settings, Calendar,
   ShieldCheck, ChevronDown, MoreHorizontal, MessageCircle, Circle, Cloud,
   Menu, X, HelpCircle, Sparkles, UserCircle2, KeyRound, LogOut, Mail, Phone, Moon,
+  PanelLeft, PanelLeftClose,
 } from "lucide-react";
 import { ThemeToggle } from "@/lib/theme";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export const avatar = (seed: string) =>
   `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear`;
 
 type NavKey = "dashboard" | "chat" | "meetings" | "tasks" | "documents" | "knowledge" | "workflows" | "people" | "email" | "reports" | "ai";
 
-function NavItem({ icon: Icon, label, active, chevron, to, badge }: { icon: any; label: string; active?: boolean; chevron?: boolean; to?: string; badge?: ReactNode }) {
-  const cls = `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+function NavItem({ icon: Icon, label, active, chevron, to, badge, collapsed }: { icon: any; label: string; active?: boolean; chevron?: boolean; to?: string; badge?: ReactNode; collapsed?: boolean }) {
+  const cls = cn(
+    "flex items-center rounded-lg transition-colors",
+    collapsed ? "w-full justify-center px-2 py-2.5" : "w-full gap-3 px-3 py-2 text-sm",
     active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-  }`;
-  const inner = (
+  );
+  const inner = collapsed ? (
+    <Icon className="h-[18px] w-[18px]" />
+  ) : (
     <>
       <Icon className="h-[18px] w-[18px]" />
       <span className="flex-1 text-left">{label}</span>
@@ -26,102 +33,197 @@ function NavItem({ icon: Icon, label, active, chevron, to, badge }: { icon: any;
       {chevron && <ChevronDown className="h-4 w-4 opacity-60" />}
     </>
   );
-  if (to) return <Link to={to} className={cls}>{inner}</Link>;
-  return <button className={cls}>{inner}</button>;
+  const el = to ? (
+    <Link to={to} className={cls} title={collapsed ? label : undefined}>{inner}</Link>
+  ) : (
+    <button className={cls} title={collapsed ? label : undefined}>{inner}</button>
+  );
+  if (collapsed) {
+    return (
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>{el}</TooltipTrigger>
+        <TooltipContent side="right">{label}</TooltipContent>
+      </Tooltip>
+    );
+  }
+  return el;
 }
 
-function WorkspaceItem({ letter, name, color, active }: { letter: string; name: string; color: string; active?: boolean }) {
-  return (
-    <button className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}>
-      <span className={`flex h-5 w-5 items-center justify-center rounded text-[11px] font-semibold text-white ${color}`}>{letter}</span>
-      <span>{name}</span>
+function WorkspaceItem({ letter, name, color, active, collapsed }: { letter: string; name: string; color: string; active?: boolean; collapsed?: boolean }) {
+  const btn = (
+    <button
+      className={cn(
+        "flex w-full items-center rounded-lg transition-colors",
+        collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1.5 text-sm",
+        active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+      )}
+      title={collapsed ? name : undefined}
+    >
+      <span className={cn("flex items-center justify-center rounded text-[11px] font-semibold text-white", collapsed ? "h-7 w-7 text-[10px]" : "h-5 w-5", color)}>
+        {letter}
+      </span>
+      {!collapsed && <span>{name}</span>}
     </button>
   );
+  if (collapsed) {
+    return (
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>{btn}</TooltipTrigger>
+        <TooltipContent side="right">{name}</TooltipContent>
+      </Tooltip>
+    );
+  }
+  return btn;
 }
 
 export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
   const { t } = useI18n();
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebarCollapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebarCollapsed", String(next));
+    }
+  };
+
+  const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
+
   return (
-    <>
+    <TooltipProvider>
       {open && (
         <button aria-label="Close sidebar" className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={onClose} />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-border bg-surface transition-transform lg:static lg:w-56 lg:translate-x-0 xl:w-64 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col border-r border-border bg-surface transition-all duration-200 lg:static lg:translate-x-0",
+          desktopWidth,
+          open ? "translate-x-0 w-64" : "-translate-x-full w-64",
+          collapsed && "lg:items-center lg:px-2 lg:py-4"
+        )}
       >
-        <div className="flex items-center gap-2 px-5 py-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">U</div>
-          <div className="flex-1 leading-tight">
-            <div className="text-base font-bold tracking-wide">UNIWORK</div>
-            <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
-          </div>
+        {/* Header */}
+        <div className={cn("flex items-center gap-2 py-5", collapsed ? "px-2 lg:justify-center" : "px-5")}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">U</div>
+          {!collapsed && (
+            <div className="flex-1 leading-tight">
+              <div className="text-base font-bold tracking-wide">UNIWORK</div>
+              <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
+            </div>
+          )}
           <button aria-label="Close sidebar" className="rounded p-1 text-muted-foreground hover:bg-surface-2 lg:hidden" onClick={onClose}>
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-          <NavItem icon={LayoutDashboard} label={t("nav.dashboard")} to="/dashboard" active={active === "dashboard"} />
-          <NavItem icon={MessageSquare} label={t("nav.chat")} to="/chat" active={active === "chat"} />
+        {/* Navigation */}
+        <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-1" : "px-3")}>
+          <NavItem icon={LayoutDashboard} label={t("nav.dashboard")} to="/dashboard" active={active === "dashboard"} collapsed={collapsed} />
+          <NavItem icon={MessageSquare} label={t("nav.chat")} to="/chat" active={active === "chat"} collapsed={collapsed} />
           <NavItem
             icon={Video}
             label={t("nav.meetings")}
             to="/meeting"
             active={active === "meetings"}
-            badge={<span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-medium text-success">{t("nav.live")}</span>}
+            badge={!collapsed ? <span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-medium text-success">{t("nav.live")}</span> : undefined}
+            collapsed={collapsed}
           />
           <NavItem
             icon={ListChecks}
             label={t("nav.tasks")}
             to="/tasks"
             active={active === "tasks"}
-            badge={<span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted-foreground">7</span>}
+            badge={!collapsed ? <span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted-foreground">7</span> : undefined}
+            collapsed={collapsed}
           />
-          <NavItem icon={FileText} label={t("nav.documents")} to="/documents" active={active === "documents"} />
-          <NavItem icon={BookOpen} label={t("nav.knowledge")} to="/knowledge" active={active === "knowledge"} />
-          <NavItem icon={Workflow} label={t("nav.workflows")} to="/workflows" active={active === "workflows"} />
-          <NavItem icon={Users} label={t("nav.people")} to="/people" active={active === "people"} />
-          <NavItem icon={Mail} label={t("nav.email")} to="/email" active={active === "email"} />
-          <NavItem icon={BarChart3} label={t("nav.reports")} to="/reports" active={active === "reports"} />
-          <NavItem icon={Bot} label={t("nav.ai")} to="/ai" active={active === "ai"} />
+          <NavItem icon={FileText} label={t("nav.documents")} to="/documents" active={active === "documents"} collapsed={collapsed} />
+          <NavItem icon={BookOpen} label={t("nav.knowledge")} to="/knowledge" active={active === "knowledge"} collapsed={collapsed} />
+          <NavItem icon={Workflow} label={t("nav.workflows")} to="/workflows" active={active === "workflows"} collapsed={collapsed} />
+          <NavItem icon={Users} label={t("nav.people")} to="/people" active={active === "people"} collapsed={collapsed} />
+          <NavItem icon={Mail} label={t("nav.email")} to="/email" active={active === "email"} collapsed={collapsed} />
+          <NavItem icon={BarChart3} label={t("nav.reports")} to="/reports" active={active === "reports"} collapsed={collapsed} />
+          <NavItem icon={Bot} label={t("nav.ai")} to="/ai" active={active === "ai"} collapsed={collapsed} />
 
-          <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <span>{t("nav.workspaces")}</span>
-            <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
-          </div>
-          <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active />
-          <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" />
-          <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" />
-          <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" />
-          <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" />
-          <NavItem icon={MoreHorizontal} label={t("nav.more")} />
+          {!collapsed && (
+            <>
+              <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span>{t("nav.workspaces")}</span>
+                <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
+              </div>
+              <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active />
+              <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" />
+              <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" />
+              <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" />
+              <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" />
+              <NavItem icon={MoreHorizontal} label={t("nav.more")} />
+            </>
+          )}
+          {collapsed && (
+            <>
+              <div className="my-2 h-px bg-border" />
+              <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active collapsed />
+              <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" collapsed />
+              <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" collapsed />
+              <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" collapsed />
+              <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" collapsed />
+            </>
+          )}
         </nav>
 
-        <div className="m-3 rounded-xl bg-surface-2 p-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
-              <MessageCircle className="h-4 w-4" />
-            </div>
-            <div className="text-sm">
-              <div className="font-medium">Mattermost</div>
-              <div className="flex items-center gap-1 text-[11px] text-success">
-                <Circle className="h-1.5 w-1.5 fill-current" /> Connected
+        {/* Bottom section */}
+        {!collapsed && (
+          <>
+            <div className="m-3 rounded-xl bg-surface-2 p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                  <MessageCircle className="h-4 w-4" />
+                </div>
+                <div className="text-sm">
+                  <div className="font-medium">Mattermost</div>
+                  <div className="flex items-center gap-1 text-[11px] text-success">
+                    <Circle className="h-1.5 w-1.5 fill-current" /> Connected
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-sm">
-          <Cloud className="h-5 w-5 text-sky-400" />
-          <div>
-            <div className="font-medium">Nguyễn Văn A</div>
-            <div className="text-[11px] text-muted-foreground">28°C · Hà Nội</div>
-          </div>
+            <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-sm">
+              <Cloud className="h-5 w-5 text-sky-400" />
+              <div>
+                <div className="font-medium">Nguyễn Văn A</div>
+                <div className="text-[11px] text-muted-foreground">28°C · Hà Nội</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Collapse toggle */}
+        <div className={cn("border-t border-border", collapsed ? "px-1 py-2" : "px-3 py-2")}>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={toggleCollapsed}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground",
+                  collapsed ? "w-full justify-center px-2 py-2" : "w-full px-3 py-2"
+                )}
+                aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+              >
+                {collapsed ? <PanelLeft className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
+                {!collapsed && <span className="text-left">Thu gọn menu</span>}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{collapsed ? "Mở rộng menu" : "Thu gọn menu"}</TooltipContent>
+          </Tooltip>
         </div>
       </aside>
-    </>
+    </TooltipProvider>
   );
 }
 
@@ -194,7 +296,10 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
           onClick={() => setUserOpen((v) => !v)}
           aria-haspopup="menu"
           aria-expanded={userOpen}
-          className={`flex items-center gap-2.5 rounded-xl border bg-surface-2/80 px-2 py-1.5 transition-colors hover:bg-surface-2 ${userOpen ? "border-primary/60" : "border-border/60 hover:border-primary/40"}`}
+          className={cn(
+            "flex items-center gap-2.5 rounded-xl border bg-surface-2/80 px-2 py-1.5 transition-colors hover:bg-surface-2",
+            userOpen ? "border-primary/60" : "border-border/60 hover:border-primary/40"
+          )}
         >
           <span className="relative">
             <img src={avatar("nguyen-van-a-1")} className="h-9 w-9 rounded-lg bg-surface object-cover ring-1 ring-border/60" alt="Nguyễn Văn A" />
@@ -204,7 +309,7 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
             <div className="whitespace-nowrap text-sm font-semibold">Nguyễn Văn A</div>
             <div className="whitespace-nowrap text-[11px] text-muted-foreground">Giám đốc Điều hành</div>
           </div>
-          <ChevronDown className={`hidden h-4 w-4 text-muted-foreground transition-transform sm:block ${userOpen ? "rotate-180 text-primary" : ""}`} />
+          <ChevronDown className={cn("hidden h-4 w-4 text-muted-foreground transition-transform sm:block", userOpen ? "rotate-180 text-primary" : "")} />
         </button>
 
         {userOpen && (
