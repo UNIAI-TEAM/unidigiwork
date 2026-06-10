@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PeopleRouteImport } from './routes/people'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -17,6 +18,11 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 
+const PeopleRoute = PeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MeetingRoute = MeetingRouteImport.update({
   id: '/meeting',
   path: '/meeting',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
+  '/people': typeof PeopleRoute
   '/documents': typeof AuthenticatedDocumentsRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
+  '/people': typeof PeopleRoute
   '/documents': typeof AuthenticatedDocumentsRoute
 }
 export interface FileRoutesById {
@@ -76,13 +84,28 @@ export interface FileRoutesById {
   '/chat': typeof ChatRoute
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
+  '/people': typeof PeopleRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/chat' | '/knowledge' | '/meeting' | '/documents'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/chat'
+    | '/knowledge'
+    | '/meeting'
+    | '/people'
+    | '/documents'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/chat' | '/knowledge' | '/meeting' | '/documents'
+  to:
+    | '/'
+    | '/auth'
+    | '/chat'
+    | '/knowledge'
+    | '/meeting'
+    | '/people'
+    | '/documents'
   id:
     | '__root__'
     | '/'
@@ -91,6 +114,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/knowledge'
     | '/meeting'
+    | '/people'
     | '/_authenticated/documents'
   fileRoutesById: FileRoutesById
 }
@@ -101,10 +125,18 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
   KnowledgeRoute: typeof KnowledgeRoute
   MeetingRoute: typeof MeetingRoute
+  PeopleRoute: typeof PeopleRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/people': {
+      id: '/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof PeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/meeting': {
       id: '/meeting'
       path: '/meeting'
@@ -175,17 +207,8 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   KnowledgeRoute: KnowledgeRoute,
   MeetingRoute: MeetingRoute,
+  PeopleRoute: PeopleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

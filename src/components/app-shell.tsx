@@ -80,7 +80,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
           <NavItem icon={FileText} label={t("nav.documents")} to="/documents" active={active === "documents"} />
           <NavItem icon={BookOpen} label={t("nav.knowledge")} to="/knowledge" active={active === "knowledge"} />
           <NavItem icon={Workflow} label={t("nav.workflows")} active={active === "workflows"} />
-          <NavItem icon={Users} label={t("nav.people")} active={active === "people"} />
+          <NavItem icon={Users} label={t("nav.people")} to="/people" active={active === "people"} />
           <NavItem icon={BarChart3} label={t("nav.reports")} active={active === "reports"} />
           <NavItem icon={Bot} label={t("nav.ai")} active={active === "ai"} />
 
