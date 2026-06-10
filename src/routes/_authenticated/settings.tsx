@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import {
   User, Lock, Bell, Palette, Globe, Plug, Users as UsersIcon, ShieldCheck,
   CreditCard, Database, ChevronRight, Camera, Check, Trash2, Plus,
@@ -7,7 +8,12 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
+const searchSchema = z.object({
+  tab: z.enum(["profile", "account", "notifications", "appearance", "language", "integrations", "team", "security", "billing", "data"]).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/settings")({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "Cài đặt — UNIWORK" },

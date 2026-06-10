@@ -243,10 +243,10 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
 
             {/* Menu items */}
             <div className="p-1.5">
-              <MenuItem icon={UserCircle2} label="Hồ sơ cá nhân" desc="Xem & chỉnh sửa thông tin" onClick={() => setUserOpen(false)} to="/settings" />
-              <MenuItem icon={Settings} label="Cài đặt tài khoản" desc="Tài khoản, giao diện, ngôn ngữ" onClick={() => setUserOpen(false)} to="/settings" />
-              <MenuItem icon={KeyRound} label="Đổi mật khẩu" desc="Cập nhật & bật 2FA" onClick={() => setUserOpen(false)} to="/settings" />
-              <MenuItem icon={ShieldCheck} label="Quyền riêng tư & bảo mật" desc="Phiên đăng nhập, thiết bị" onClick={() => setUserOpen(false)} to="/settings" />
+              <MenuItem icon={UserCircle2} label="Hồ sơ cá nhân" desc="Xem & chỉnh sửa thông tin" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'profile' }} />
+              <MenuItem icon={Settings} label="Cài đặt tài khoản" desc="Tài khoản, giao diện, ngôn ngữ" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'account' }} />
+              <MenuItem icon={KeyRound} label="Đổi mật khẩu" desc="Cập nhật & bật 2FA" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'account' }} />
+              <MenuItem icon={ShieldCheck} label="Quyền riêng tư & bảo mật" desc="Phiên đăng nhập, thiết bị" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'security' }} />
               <MenuItem icon={HelpCircle} label="Trợ giúp & hỗ trợ" desc="Tài liệu, hotline 1900 6996" onClick={() => setUserOpen(false)} to="/help" />
             </div>
 
