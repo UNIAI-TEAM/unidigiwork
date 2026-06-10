@@ -226,13 +226,14 @@ const TASKS = [
   },
 ];
 
-const MEMBERS = [
-  { seed: "nguyen-van-a-1", name: "Nguyễn Văn A", role: "Project Owner" },
-  { seed: "tran-minh", name: "Trần Minh", role: "Tech Lead" },
-  { seed: "le-hong", name: "Lê Hồng", role: "Designer" },
-  { seed: "pham-quynh", name: "Phạm Quỳnh", role: "PM" },
-  { seed: "hoang-linh", name: "Hoàng Linh", role: "DevOps" },
-  { seed: "vo-thanh", name: "Võ Thành", role: "QA" },
+type MemberRow = { seed: string; name: string; title: string; role: MemberRole; email: string };
+const INITIAL_MEMBERS: MemberRow[] = [
+  { seed: "nguyen-van-a-1", name: "Nguyễn Văn A", title: "Project Owner", role: "owner", email: "an.nv@uniwork.vn" },
+  { seed: "tran-minh", name: "Trần Minh", title: "Tech Lead", role: "admin", email: "minh.tt@uniwork.vn" },
+  { seed: "le-hong", name: "Lê Hồng", title: "Designer", role: "member", email: "hong.lt@uniwork.vn" },
+  { seed: "pham-quynh", name: "Phạm Quỳnh", title: "PM", role: "admin", email: "quynh.pt@uniwork.vn" },
+  { seed: "hoang-linh", name: "Hoàng Linh", title: "DevOps", role: "member", email: "linh.hh@uniwork.vn" },
+  { seed: "vo-thanh", name: "Võ Thành", title: "QA", role: "viewer", email: "thanh.vv@uniwork.vn" },
 ];
 
 const ACTIVITY = [
