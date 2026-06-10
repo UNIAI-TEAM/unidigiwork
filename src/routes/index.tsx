@@ -202,8 +202,8 @@ function Index() {
             <Circle className="h-2 w-2 fill-current" /> Live
           </span>
           <span className="hidden font-mono text-sm tabular-nums sm:inline">00:28:45</span>
-          <button className="hidden rounded-lg p-2 hover:bg-surface-2 xl:block"><ShieldCheck className="h-5 w-5 text-muted-foreground" /></button>
-          <button className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"><Settings className="h-5 w-5 text-muted-foreground" /></button>
+          <button className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"><ShieldCheck className="h-5 w-5 text-muted-foreground" /></button>
+          <button className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"><Settings className="h-5 w-5 text-muted-foreground" /></button>
           <button className="hidden items-center gap-1 rounded-lg p-2 hover:bg-surface-2 md:flex">
             <Users className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm">16</span>
@@ -216,8 +216,8 @@ function Index() {
           <div className="flex items-center gap-2 rounded-lg bg-surface-2 px-2 py-1.5">
             <img src={avatar("nguyen-van-a-1")} className="h-8 w-8 rounded-full object-cover" alt="" />
             <div className="hidden text-sm leading-tight sm:block">
-              <div className="font-medium">Nguyễn Văn A</div>
-              <div className="text-[11px] text-muted-foreground">Giám đốc Điều hành</div>
+              <div className="whitespace-nowrap font-medium">Nguyễn Văn A</div>
+              <div className="whitespace-nowrap text-[11px] text-muted-foreground">Giám đốc Điều hành</div>
             </div>
             <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
           </div>
