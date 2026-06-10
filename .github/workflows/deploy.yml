@@ -14,12 +14,17 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: \${{ secrets.REMOTE_HOST }}
+          username: \${{ secrets.REMOTE_USER }}
+          key: \${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            if [ ! -d /opt/uniwork ]; then
+              sudo mkdir -p /opt/uniwork && sudo chown devops:devops /opt/uniwork
+              git clone https://github.com/phanducquanguet/unidigiwork.git /opt/uniwork
+            fi
             cd /opt/uniwork
             git pull origin main
-            npm ci --omit=dev 2>/dev/null || npm install --omit=dev
-            pm2 restart uniwork || pm2 start npm --name "uniwork" -- start
+            npm install
+            npm run build
+            pm2 restart uniwork || pm2 start npm --name "uniwork" -- run preview -- --port 3000 --host 0.0.0.0
             pm2 save
