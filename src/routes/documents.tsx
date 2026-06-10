@@ -417,6 +417,35 @@ function DocumentsPage() {
           </aside>
         </div>
       </main>
+      {showNew && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !saving && setShowNew(false)}>
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-1 text-lg font-semibold">Tạo tài liệu mới</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Tài liệu sẽ được lưu vào workspace.</p>
+            <label className="mb-1 block text-xs font-medium">Tiêu đề</label>
+            <input
+              autoFocus
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              placeholder="VD: Kế hoạch Sprint 7"
+              className="mb-3 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <label className="mb-1 block text-xs font-medium">Thư mục</label>
+            <input
+              value={newFolder}
+              onChange={(e) => setNewFolder(e.target.value)}
+              className="mb-4 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowNew(false)} disabled={saving} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">Huỷ</button>
+              <button onClick={handleCreate} disabled={saving} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                {saving ? "Đang lưu…" : "Tạo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
