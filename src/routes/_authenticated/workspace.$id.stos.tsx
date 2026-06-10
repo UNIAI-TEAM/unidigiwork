@@ -785,10 +785,22 @@ function StosDetailPage() {
         state={docDialog}
         onOpenChange={(o) => setDocDialog((s) => ({ ...s, open: o }))}
         onSave={(d) => {
+          const wasEdit = !!docDialog.doc;
+          const prevName = docDialog.doc?.name;
           setDocs((prev) => {
             const exists = prev.find((x) => x.id === d.id);
             return exists ? prev.map((x) => (x.id === d.id ? d : x)) : [d, ...prev];
           });
+          if (wasEdit) {
+            logAudit(
+              "update",
+              "document",
+              d.name,
+              prevName && prevName !== d.name ? `Đổi tên từ "${prevName}"` : undefined,
+            );
+          } else {
+            logAudit("create", "document", d.name);
+          }
           toast.success(docDialog.doc ? "Đã đổi tên" : "Đã thêm tài liệu");
         }}
       />
@@ -796,13 +808,26 @@ function StosDetailPage() {
         state={milestoneDialog}
         onOpenChange={(o) => setMilestoneDialog((s) => ({ ...s, open: o }))}
         onSave={(m) => {
+          const wasEdit = !!milestoneDialog.milestone;
+          const prevM = milestoneDialog.milestone;
           setMilestones((prev) => {
             const exists = prev.find((x) => x.id === m.id);
             return exists ? prev.map((x) => (x.id === m.id ? m : x)) : [...prev, m];
           });
+          if (wasEdit && prevM) {
+            const parts: string[] = [];
+            if (prevM.progress !== m.progress)
+              parts.push(`Tiến độ ${prevM.progress}% → ${m.progress}%`);
+            if (prevM.due !== m.due) parts.push(`Deadline → ${m.due}`);
+            if (prevM.tasks !== m.tasks) parts.push(`Tasks ${prevM.tasks} → ${m.tasks}`);
+            logAudit("update", "milestone", m.name, parts.join(" · ") || undefined);
+          } else {
+            logAudit("create", "milestone", m.name);
+          }
           toast.success(milestoneDialog.milestone ? "Đã cập nhật milestone" : "Đã thêm milestone");
         }}
       />
+      <AuditDialog open={auditOpen} onOpenChange={setAuditOpen} entries={audit} />
     </div>
   );
 }
