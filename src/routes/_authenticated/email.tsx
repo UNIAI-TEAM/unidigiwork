@@ -530,20 +530,18 @@ function EmailHubPage() {
                             }`}
                           >
                             <div
-                              className="flex h-9 w-9 shrink-0 items-center justify-center"
+                              className="relative flex h-9 w-9 shrink-0 items-center justify-center"
                               onClick={(ev) => ev.stopPropagation()}
                             >
-                              <div className={`${isChecked ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`}>
+                              <img
+                                src={avatar(e.from)}
+                                alt=""
+                                className={`h-9 w-9 rounded-full object-cover ${isChecked ? "hidden" : "group-hover:hidden"}`}
+                                onClick={() => setSelected(e.id)}
+                              />
+                              <div className={`${isChecked ? "flex" : "hidden group-hover:flex"} h-9 w-9 items-center justify-center`}>
                                 <Checkbox checked={isChecked} onCheckedChange={() => toggleOne(e.id)} />
                               </div>
-                              {!isChecked && (
-                                <img
-                                  src={avatar(e.from)}
-                                  alt=""
-                                  className="absolute h-9 w-9 rounded-full object-cover group-hover:opacity-0"
-                                  onClick={() => setSelected(e.id)}
-                                />
-                              )}
                             </div>
                             <button onClick={() => setSelected(e.id)} className="min-w-0 flex-1 text-left">
                               <div className="flex items-center justify-between gap-2">
