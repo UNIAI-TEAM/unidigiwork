@@ -543,12 +543,6 @@ function ChatPage() {
                     ))}
                   </select>
 
-                  <button
-                    onClick={() => setSearchTime((v) => v === "all" ? "all" : "all")}
-                    onClickCapture={() => { /* handled by individual pills below */ }}
-                    className="hidden" /* dummy to satisfy linter, real pills below */
-                  />
-
                   {timeRanges.map((tr) => {
                     const active = searchTime === tr.key;
                     return (
