@@ -123,6 +123,7 @@ function EmailHubPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
+  const [sortBy, setSortBy] = useState<"time" | "priority">("time");
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
   const filteredEmails = useMemo(() => {
