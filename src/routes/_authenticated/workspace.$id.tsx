@@ -387,12 +387,17 @@ const MEETINGS = [
 ];
 
 function WorkspaceDetailPage() {
-  const { ws } = Route.useLoaderData() as { ws: Workspace };
+  const { ws: initialWs } = Route.useLoaderData() as { ws: Workspace };
+  const [ws, setWs] = useState<Workspace>(initialWs);
+  useEffect(() => setWs(initialWs), [initialWs]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const [starred, setStarred] = useState(true);
   const [docSearch, setDocSearch] = useState("");
   const [docFilter, setDocFilter] = useState<string>("all");
+  const [members, setMembers] = useState<MemberRow[]>(INITIAL_MEMBERS);
+  const [showInvite, setShowInvite] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const healthCls =
     ws.health === "Tốt"
@@ -452,13 +457,17 @@ function WorkspaceDetailPage() {
                 <Star className={`h-4 w-4 ${starred ? "fill-current" : ""}`} />{" "}
                 {starred ? "Đã ghim" : "Ghim"}
               </button>
-              <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70">
+              <button
+                onClick={() => setShowInvite(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70"
+              >
                 <Users className="h-4 w-4" /> Mời
               </button>
               <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                 <Plus className="h-4 w-4" /> Nhiệm vụ
               </button>
               <button
+                onClick={() => setShowEdit(true)}
                 className="rounded-lg bg-surface-2 p-2 hover:bg-surface-2/70"
                 aria-label="Cài đặt"
               >
