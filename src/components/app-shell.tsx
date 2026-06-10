@@ -11,6 +11,8 @@ import { ThemeToggle } from "@/lib/theme";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export const avatar = (seed: string) =>
   `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear`;
@@ -107,6 +109,7 @@ function useSidebarCollapsed() {
 export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+  const [wsOpen, setWsOpen] = useState(false);
 
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
@@ -169,7 +172,13 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
             <>
               <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>{t("nav.workspaces")}</span>
-                <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
+                <button
+                  className="rounded p-0.5 hover:bg-surface-2"
+                  aria-label="Tạo workspace mới"
+                  onClick={() => setWsOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
               </div>
               <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active />
               <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" />
@@ -238,7 +247,197 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
           </Tooltip>
         </div>
       </aside>
+      <CreateWorkspaceDialog open={wsOpen} onOpenChange={setWsOpen} />
     </TooltipProvider>
+  );
+}
+
+function CreateWorkspaceDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const colors = [
+    { id: "emerald", cls: "bg-emerald-500" },
+    { id: "sky", cls: "bg-sky-500" },
+    { id: "rose", cls: "bg-rose-500" },
+    { id: "violet", cls: "bg-violet-500" },
+    { id: "orange", cls: "bg-orange-500" },
+    { id: "amber", cls: "bg-amber-500" },
+    { id: "teal", cls: "bg-teal-500" },
+    { id: "indigo", cls: "bg-indigo-500" },
+  ];
+  const templates = [
+    { id: "blank", icon: Plus, name: "Trống", desc: "Bắt đầu từ đầu" },
+    { id: "project", icon: Workflow, name: "Dự án", desc: "Quản lý task & timeline" },
+    { id: "team", icon: Users, name: "Phòng ban", desc: "Cộng tác theo nhóm" },
+    { id: "client", icon: BookOpen, name: "Khách hàng", desc: "Không gian chia sẻ" },
+  ];
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [colorId, setColorId] = useState("emerald");
+  const [templateId, setTemplateId] = useState("blank");
+  const [privacy, setPrivacy] = useState<"private" | "team">("team");
+  const [members, setMembers] = useState("");
+
+  const letter = (name.trim()[0] || "W").toUpperCase();
+  const colorCls = colors.find((c) => c.id === colorId)?.cls ?? "bg-emerald-500";
+
+  const reset = () => {
+    setName(""); setDesc(""); setColorId("emerald"); setTemplateId("blank"); setPrivacy("team"); setMembers("");
+  };
+
+  const handleCreate = () => {
+    if (!name.trim()) {
+      toast.error("Vui lòng nhập tên workspace");
+      return;
+    }
+    toast.success(`Đã tạo workspace "${name.trim()}"`);
+    reset();
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Tạo workspace mới</DialogTitle>
+          <DialogDescription>
+            Workspace giúp nhóm của bạn tổ chức dự án, tài liệu và cuộc họp riêng biệt.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-1">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/40 p-3">
+            <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white", colorCls)}>
+              {letter}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold">{name.trim() || "Workspace của bạn"}</div>
+              <div className="truncate text-xs text-muted-foreground">{desc.trim() || "Mô tả ngắn xuất hiện tại đây"}</div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Tên workspace</label>
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="VD: Phòng Marketing"
+              className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Mô tả (tuỳ chọn)</label>
+            <input
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder="Mục đích sử dụng của workspace"
+              className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Màu sắc</label>
+            <div className="flex flex-wrap gap-2">
+              {colors.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setColorId(c.id)}
+                  aria-label={c.id}
+                  className={cn(
+                    "h-7 w-7 rounded-full ring-offset-2 ring-offset-surface transition",
+                    c.cls,
+                    colorId === c.id ? "ring-2 ring-primary" : "opacity-80 hover:opacity-100"
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Mẫu khởi tạo</label>
+            <div className="grid grid-cols-2 gap-2">
+              {templates.map((tp) => (
+                <button
+                  key={tp.id}
+                  onClick={() => setTemplateId(tp.id)}
+                  className={cn(
+                    "flex items-start gap-2 rounded-lg border p-2.5 text-left transition",
+                    templateId === tp.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-surface-2/40 hover:bg-surface-2"
+                  )}
+                >
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
+                    <tp.icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{tp.name}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">{tp.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Quyền truy cập</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setPrivacy("team")}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border p-2.5 text-left",
+                  privacy === "team" ? "border-primary bg-primary/10" : "border-border bg-surface-2/40 hover:bg-surface-2"
+                )}
+              >
+                <Users className="h-4 w-4 text-primary" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">Nhóm</div>
+                  <div className="text-[11px] text-muted-foreground">Thành viên được mời có thể tham gia</div>
+                </div>
+              </button>
+              <button
+                onClick={() => setPrivacy("private")}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border p-2.5 text-left",
+                  privacy === "private" ? "border-primary bg-primary/10" : "border-border bg-surface-2/40 hover:bg-surface-2"
+                )}
+              >
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">Riêng tư</div>
+                  <div className="text-[11px] text-muted-foreground">Chỉ mình bạn truy cập</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Mời thành viên (tuỳ chọn)</label>
+            <input
+              value={members}
+              onChange={(e) => setMembers(e.target.value)}
+              placeholder="email1@uniwork.vn, email2@uniwork.vn"
+              className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          >
+            Huỷ
+          </button>
+          <button
+            onClick={handleCreate}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Tạo workspace
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
