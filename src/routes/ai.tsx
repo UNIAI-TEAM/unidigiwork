@@ -129,7 +129,9 @@ function AIPage() {
 
             {/* Chat scroll area */}
             <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-              {msgs.length === 0 ? (
+              {tab !== "chat" ? (
+                <TabPanel tab={tab} />
+              ) : msgs.length === 0 ? (
                 <Empty t={t} onPick={(text) => send(text)} />
               ) : (
                 <>
