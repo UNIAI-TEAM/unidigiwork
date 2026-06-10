@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, Filter, Star, Hash, Users, Paperclip, Search as SearchIcon,
   MoreHorizontal, Pin, X, Smile, AtSign, Type, Image as ImageIcon, Code2,
@@ -24,11 +24,14 @@ type DM = { name: string; seed: string; online?: "online" | "away" | "offline" }
 type Reaction = { emoji: string; count: number };
 type Msg = {
   id: string;
+  channel: string;
   author: string;
   seed: string;
   role?: string;
   roleColor?: string;
   time: string;
+  timestamp: number;
+  text?: string;
   body?: React.ReactNode;
   reactions?: Reaction[];
 };
@@ -47,6 +50,8 @@ const channels: Channel[] = [
   { name: "hr-policies" },
 ];
 
+const allChannelNames = ["sprint-6", "devops-alerts", "announcements", "design-system", "general", "random", "sales-updates", "hr-policies"];
+
 const dms: DM[] = [
   { name: "Trần Thị B", seed: "tran-thi-b", online: "online" },
   { name: "Phạm Minh C", seed: "pham-minh-c", online: "online" },
@@ -54,77 +59,185 @@ const dms: DM[] = [
   { name: "Hoàng Nam", seed: "hoang-nam", online: "offline" },
 ];
 
-const initialMessages: Msg[] = [
-  {
-    id: "m1",
-    author: "Nguyễn Văn A",
-    seed: "nguyen-van-a-1",
-    role: "CEO",
-    roleColor: "bg-primary/20 text-primary",
-    time: "9:02 AM",
-    body: (
-      <>
-        <p>Chào team! Hôm nay chúng ta tập trung hoàn thành các task của Sprint 6.</p>
-        <p>Mọi người cập nhật tiến độ nhé!</p>
-      </>
-    ),
-    reactions: [{ emoji: "👍", count: 8 }, { emoji: "🎉", count: 4 }],
-  },
-  {
-    id: "m2",
-    author: "Trần Thị B",
-    seed: "tran-thi-b",
-    role: "PM",
-    roleColor: "bg-amber-500/20 text-amber-400",
-    time: "9:05 AM",
-    body: (
-      <>
-        <p>API Gateway đã hoàn thành 90%.</p>
-        <p>Đang review và chuẩn bị deploy staging.</p>
-      </>
-    ),
-    reactions: [{ emoji: "🚀", count: 6 }],
-  },
-  {
-    id: "m3",
-    author: "Phạm Minh C",
-    seed: "pham-minh-c",
-    role: "Dev",
-    roleColor: "bg-success/20 text-success",
-    time: "9:08 AM",
-    body: (
-      <>
-        <p>UI Dashboard còn 2 task quan trọng:</p>
-        <ul className="list-disc pl-5">
-          <li>Chart component</li>
-          <li>Data table optimization</li>
-        </ul>
-        <p>Dự kiến xong trong hôm nay.</p>
-      </>
-    ),
-    reactions: [{ emoji: "👍", count: 5 }],
-  },
-  {
-    id: "m4",
-    author: "Lê Hoàng D",
-    seed: "le-hoang-d",
-    role: "QA",
-    roleColor: "bg-rose-500/20 text-rose-400",
-    time: "9:10 AM",
-    body: (
-      <>
-        <p>Đã test xong Mobile App version 2.1. Có 3 bug minor.</p>
-        <p>
-          Đã tạo ticket trên Jira:{" "}
-          <a className="text-primary hover:underline" href="#">STOS-128</a>,{" "}
-          <a className="text-primary hover:underline" href="#">STOS-129</a>,{" "}
-          <a className="text-primary hover:underline" href="#">STOS-130</a>
-        </p>
-      </>
-    ),
-    reactions: [{ emoji: "✅", count: 4 }],
-  },
-];
+function ts(h: number, m: number, offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  d.setHours(h, m, 0, 0);
+  d.setSeconds(0, 0);
+  return d.getTime();
+}
+
+const channelMessages: Record<string, Msg[]> = {
+  "sprint-6": [
+    {
+      id: "m1",
+      channel: "sprint-6",
+      author: "Nguyễn Văn A",
+      seed: "nguyen-van-a-1",
+      role: "CEO",
+      roleColor: "bg-primary/20 text-primary",
+      time: "9:02 AM",
+      timestamp: ts(9, 2),
+      text: "Chào team! Hôm nay chúng ta tập trung hoàn thành các task của Sprint 6. Mọi người cập nhật tiến độ nhé!",
+      body: (
+        <>
+          <p>Chào team! Hôm nay chúng ta tập trung hoàn thành các task của Sprint 6.</p>
+          <p>Mọi người cập nhật tiến độ nhé!</p>
+        </>
+      ),
+      reactions: [{ emoji: "👍", count: 8 }, { emoji: "🎉", count: 4 }],
+    },
+    {
+      id: "m2",
+      channel: "sprint-6",
+      author: "Trần Thị B",
+      seed: "tran-thi-b",
+      role: "PM",
+      roleColor: "bg-amber-500/20 text-amber-400",
+      time: "9:05 AM",
+      timestamp: ts(9, 5),
+      text: "API Gateway đã hoàn thành 90%. Đang review và chuẩn bị deploy staging.",
+      body: (
+        <>
+          <p>API Gateway đã hoàn thành 90%.</p>
+          <p>Đang review và chuẩn bị deploy staging.</p>
+        </>
+      ),
+      reactions: [{ emoji: "🚀", count: 6 }],
+    },
+    {
+      id: "m3",
+      channel: "sprint-6",
+      author: "Phạm Minh C",
+      seed: "pham-minh-c",
+      role: "Dev",
+      roleColor: "bg-success/20 text-success",
+      time: "9:08 AM",
+      timestamp: ts(9, 8),
+      text: "UI Dashboard còn 2 task quan trọng: Chart component, Data table optimization. Dự kiến xong trong hôm nay.",
+      body: (
+        <>
+          <p>UI Dashboard còn 2 task quan trọng:</p>
+          <ul className="list-disc pl-5">
+            <li>Chart component</li>
+            <li>Data table optimization</li>
+          </ul>
+          <p>Dự kiến xong trong hôm nay.</p>
+        </>
+      ),
+      reactions: [{ emoji: "👍", count: 5 }],
+    },
+    {
+      id: "m4",
+      channel: "sprint-6",
+      author: "Lê Hoàng D",
+      seed: "le-hoang-d",
+      role: "QA",
+      roleColor: "bg-rose-500/20 text-rose-400",
+      time: "9:10 AM",
+      timestamp: ts(9, 10),
+      text: "Đã test xong Mobile App version 2.1. Có 3 bug minor. Đã tạo ticket trên Jira: STOS-128, STOS-129, STOS-130",
+      body: (
+        <>
+          <p>Đã test xong Mobile App version 2.1. Có 3 bug minor.</p>
+          <p>
+            Đã tạo ticket trên Jira:{" "}
+            <a className="text-primary hover:underline" href="#">STOS-128</a>,{" "}
+            <a className="text-primary hover:underline" href="#">STOS-129</a>,{" "}
+            <a className="text-primary hover:underline" href="#">STOS-130</a>
+          </p>
+        </>
+      ),
+      reactions: [{ emoji: "✅", count: 4 }],
+    },
+  ],
+  general: [
+    {
+      id: "g1",
+      channel: "general",
+      author: "Nguyễn Văn A",
+      seed: "nguyen-van-a-1",
+      role: "CEO",
+      roleColor: "bg-primary/20 text-primary",
+      time: "8:30 AM",
+      timestamp: ts(8, 30),
+      text: "Chào buổi sáng cả nhà! Hôm nay có ai cần support gì không?",
+      body: <p>Chào buổi sáng cả nhà! Hôm nay có ai cần support gì không?</p>,
+    },
+    {
+      id: "g2",
+      channel: "general",
+      author: "Trần Thị B",
+      seed: "tran-thi-b",
+      role: "PM",
+      roleColor: "bg-amber-500/20 text-amber-400",
+      time: "8:35 AM",
+      timestamp: ts(8, 35),
+      text: "HR vừa gửi thông báo về chính sách nghỉ phép mới, mọi người check email nhé.",
+      body: <p>HR vừa gửi thông báo về chính sách nghỉ phép mới, mọi người check email nhé.</p>,
+    },
+    {
+      id: "g3",
+      channel: "general",
+      author: "Phạm Minh C",
+      seed: "pham-minh-c",
+      time: "8:40 AM",
+      timestamp: ts(8, 40, -1),
+      text: "Hôm qua server staging có downtime 15 phút. Đã restart và monitor.",
+      body: <p>Hôm qua server staging có downtime 15 phút. Đã restart và monitor.</p>,
+    },
+  ],
+  random: [
+    {
+      id: "r1",
+      channel: "random",
+      author: "Phạm Minh C",
+      seed: "pham-minh-c",
+      time: "10:15 AM",
+      timestamp: ts(10, 15),
+      text: "Cuối tuần này team có plan đi picnic không? 🌲",
+      body: <p>Cuối tuần này team có plan đi picnic không? 🌲</p>,
+    },
+    {
+      id: "r2",
+      channel: "random",
+      author: "Lê Hoàng D",
+      seed: "le-hoang-d",
+      role: "QA",
+      roleColor: "bg-rose-500/20 text-rose-400",
+      time: "10:20 AM",
+      timestamp: ts(10, 20, -2),
+      text: "Mọi người đã xem video chia sẻ về automation testing chưa? Rất hay!",
+      body: <p>Mọi người đã xem video chia sẻ về automation testing chưa? Rất hay!</p>,
+    },
+  ],
+  "devops-alerts": [
+    {
+      id: "d1",
+      channel: "devops-alerts",
+      author: "Bot",
+      seed: "bot-1",
+      time: "7:00 AM",
+      timestamp: ts(7, 0),
+      text: "[ALERT] CPU usage on prod-db-01 exceeded 85% for 5 minutes.",
+      body: <p><span className="text-rose-400 font-semibold">[ALERT]</span> CPU usage on prod-db-01 exceeded 85% for 5 minutes.</p>,
+    },
+  ],
+  announcements: [
+    {
+      id: "a1",
+      channel: "announcements",
+      author: "Nguyễn Văn A",
+      seed: "nguyen-van-a-1",
+      role: "CEO",
+      roleColor: "bg-primary/20 text-primary",
+      time: "7:30 AM",
+      timestamp: ts(7, 30, -1),
+      text: "Thông báo: Công ty sẽ tổ chức team building vào cuối tháng này. Đăng ký trước 15/06.",
+      body: <p>Thông báo: Công ty sẽ tổ chức team building vào cuối tháng này. Đăng ký trước 15/06.</p>,
+    },
+  ],
+};
 
 const suggestedActions = [
   { who: "Phạm Minh C", task: "Hoàn thiện UI Dashboard", when: "Today", color: "bg-success" },
@@ -176,7 +289,7 @@ function DMRow({ dm }: { dm: DM }) {
   );
 }
 
-function Message({ m }: { m: Msg }) {
+function MessageItem({ m }: { m: Msg }) {
   return (
     <div className="group flex gap-3 rounded-lg px-3 py-2 hover:bg-surface-2/40">
       <img src={avatar(m.seed)} className="h-9 w-9 shrink-0 rounded-full object-cover" alt="" />
@@ -210,37 +323,84 @@ function Message({ m }: { m: Msg }) {
   );
 }
 
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function timeFilterFn(timestamp: number, range: string): boolean {
+  const d = new Date(timestamp);
+  const now = new Date();
+  if (range === "today") return isSameDay(d, now);
+  if (range === "yesterday") {
+    const y = new Date(now.getTime() - 86400000);
+    return isSameDay(d, y);
+  }
+  if (range === "7d") return now.getTime() - timestamp <= 7 * 86400000;
+  return true;
+}
+
 function ChatPage() {
   const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const [activeChannel, setActiveChannel] = useState("sprint-6");
-  const [messages, setMessages] = useState<Msg[]>(initialMessages);
+  const [messages, setMessages] = useState<Msg[]>(channelMessages["sprint-6"] || []);
   const [input, setInput] = useState("");
   const [aiInput, setAiInput] = useState("");
   const [showCopilot, setShowCopilot] = useState(true);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchChannel, setSearchChannel] = useState("all");
+  const [searchTime, setSearchTime] = useState("all");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMessages(channelMessages[activeChannel] || []);
+  }, [activeChannel]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
+  const filteredMessages = useMemo(() => {
+    let pool = messages;
+    if (searchChannel !== "all" && searchChannel !== activeChannel) {
+      pool = channelMessages[searchChannel] || [];
+    }
+    const q = searchQuery.trim().toLowerCase();
+    return pool.filter((m) => {
+      const matchQ = !q || (m.text && m.text.toLowerCase().includes(q)) || m.author.toLowerCase().includes(q);
+      const matchTime = timeFilterFn(m.timestamp, searchTime);
+      return matchQ && matchTime;
+    });
+  }, [messages, searchQuery, searchChannel, searchTime, activeChannel]);
+
   const send = () => {
     const text = input.trim();
     if (!text) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `m${prev.length + 1}`,
-        author: "Nguyễn Văn A",
-        seed: "nguyen-van-a-1",
-        role: "CEO",
-        roleColor: "bg-primary/20 text-primary",
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        body: <p>{text}</p>,
-      },
-    ]);
+    const now = Date.now();
+    const newMsg: Msg = {
+      id: `m${now}`,
+      channel: activeChannel,
+      author: "Nguyễn Văn A",
+      seed: "nguyen-van-a-1",
+      role: "CEO",
+      roleColor: "bg-primary/20 text-primary",
+      time: new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: now,
+      text,
+      body: <p>{text}</p>,
+    };
+    setMessages((prev) => [...prev, newMsg]);
     setInput("");
   };
+
+  const isSearchActive = searchQuery.trim().length > 0 || searchChannel !== "all" || searchTime !== "all";
+
+  const timeRanges = [
+    { key: "today", label: t("chat.search.time.today"), color: "border-success/40 text-success bg-success/10" },
+    { key: "yesterday", label: t("chat.search.time.yesterday"), color: "border-amber-500/40 text-amber-500 bg-amber-500/10" },
+    { key: "7d", label: t("chat.search.time.7d"), color: "border-primary/40 text-primary bg-primary/10" },
+  ];
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -340,10 +500,66 @@ function ChatPage() {
               <div className="flex items-center gap-1">
                 <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><Users className="h-4 w-4" /></button>
                 <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><Paperclip className="h-4 w-4" /></button>
-                <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><SearchIcon className="h-4 w-4" /></button>
+                <button
+                  onClick={() => setShowSearch((v) => !v)}
+                  className={`rounded-lg p-2 hover:bg-surface-2 hover:text-foreground ${showSearch ? "text-primary bg-primary/10" : "text-muted-foreground"}`}
+                >
+                  <SearchIcon className="h-4 w-4" />
+                </button>
                 <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
               </div>
             </header>
+
+            {/* Search panel */}
+            {showSearch && (
+              <div className="mx-5 mt-3 space-y-2 rounded-xl border border-border bg-surface-2/60 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t("chat.search.placeholder")}
+                    className="min-w-0 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+                  />
+                  {isSearchActive && (
+                    <button
+                      onClick={() => { setSearchQuery(""); setSearchChannel("all"); setSearchTime("all"); }}
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                      title="Clear"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={searchChannel}
+                    onChange={(e) => setSearchChannel(e.target.value)}
+                    className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  >
+                    <option value="all">{t("chat.search.channel.all")}</option>
+                    {allChannelNames.map((c) => (
+                      <option key={c} value={c}>#{c}</option>
+                    ))}
+                  </select>
+
+                  {timeRanges.map((tr) => {
+                    const active = searchTime === tr.key;
+                    return (
+                      <button
+                        key={tr.key}
+                        onClick={() => setSearchTime((prev) => (prev === tr.key ? "all" : tr.key))}
+                        className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                          active ? `${tr.color}` : "border-border bg-surface text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {tr.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="mx-5 mt-3 flex items-start gap-3 rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-sm">
               <Pin className="mt-0.5 h-4 w-4 text-amber-400" />
@@ -361,7 +577,14 @@ function ChatPage() {
               <div className="my-3 flex items-center justify-center">
                 <div className="rounded-full bg-surface-2 px-3 py-0.5 text-xs text-muted-foreground">Today</div>
               </div>
-              {messages.map((m) => <Message key={m.id} m={m} />)}
+              {filteredMessages.length === 0 && isSearchActive ? (
+                <div className="flex flex-col items-center justify-center py-10 text-sm text-muted-foreground">
+                  <SearchIcon className="mb-2 h-8 w-8 opacity-40" />
+                  <p>{t("chat.search.no.result")}</p>
+                </div>
+              ) : (
+                filteredMessages.map((m) => <MessageItem key={m.id} m={m} />)
+              )}
             </div>
 
             {/* Composer */}

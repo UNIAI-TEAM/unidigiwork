@@ -72,6 +72,13 @@ const dict = {
     "land.cta2.h": "Sẵn sàng cho doanh nghiệp của bạn",
     "land.cta2.p": "Hạ tầng bảo mật, phân quyền theo workspace, dữ liệu lưu tại Việt Nam.",
     "land.cta2.btn": "Đăng nhập & dùng thử",
+    "chat.search.placeholder": "Tìm kiếm tin nhắn…",
+    "chat.search.channel.all": "Tất cả kênh",
+    "chat.search.time.all": "Mọi lúc",
+    "chat.search.time.today": "Hôm nay",
+    "chat.search.time.yesterday": "Hôm qua",
+    "chat.search.time.7d": "7 ngày qua",
+    "chat.search.no.result": "Không tìm thấy tin nhắn phù hợp",
   },
   en: {
     "nav.dashboard": "Dashboard",
@@ -139,6 +146,13 @@ const dict = {
     "land.cta2.h": "Ready for your enterprise",
     "land.cta2.p": "Secure infrastructure, workspace-scoped permissions, data hosted in Vietnam.",
     "land.cta2.btn": "Sign in & try it",
+    "chat.search.placeholder": "Search messages…",
+    "chat.search.channel.all": "All channels",
+    "chat.search.time.all": "Any time",
+    "chat.search.time.today": "Today",
+    "chat.search.time.yesterday": "Yesterday",
+    "chat.search.time.7d": "Last 7 days",
+    "chat.search.no.result": "No matching messages found",
   },
 } as const;
 
