@@ -236,9 +236,8 @@ function DocumentsPage() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                   <span>STOS Project</span><span>/</span>
-                  <span>Business</span><span>/</span>
-                  <span>BRD</span><span>/</span>
-                  <span className="font-medium text-foreground">STOS Platform BRD v2.0</span>
+                  <span>{selected?.folder ?? "Business"}</span><span>/</span>
+                  <span className="font-medium text-foreground">{selected?.title ?? "STOS Platform BRD v2.0"}</span>
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -250,9 +249,18 @@ function DocumentsPage() {
 
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold sm:text-3xl">STOS Platform – Business Requirements Document</h1>
+                  {selected ? (
+                    <input
+                      value={selected.title}
+                      onChange={(e) => setSelected({ ...selected, title: e.target.value })}
+                      onBlur={(e) => updateSelected({ title: e.target.value })}
+                      className="w-full bg-transparent text-2xl font-bold focus:outline-none sm:text-3xl"
+                    />
+                  ) : (
+                    <h1 className="text-2xl font-bold sm:text-3xl">STOS Platform – Business Requirements Document</h1>
+                  )}
                   <div className="mt-2 flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Version 2.0</span>
+                    <span className="text-muted-foreground">{selected ? `Updated ${new Date(selected.updated_at).toLocaleString()}` : "Version 2.0"}</span>
                     <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">Current</span>
                   </div>
                 </div>
@@ -295,6 +303,16 @@ function DocumentsPage() {
             </div>
 
             <article className="flex-1 space-y-6 px-4 py-6 sm:px-8">
+              {selected ? (
+                <textarea
+                  value={selected.content}
+                  onChange={(e) => setSelected({ ...selected, content: e.target.value })}
+                  onBlur={(e) => updateSelected({ content: e.target.value })}
+                  placeholder="Bắt đầu viết tài liệu của bạn…"
+                  className="min-h-[400px] w-full resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+              ) : (
+              <>
               <section>
                 <h2 className="mb-3 text-xl font-bold">1. Executive Summary</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -325,6 +343,8 @@ function DocumentsPage() {
                   <li>Hệ thống kế toán (triển khai giai đoạn sau)</li>
                 </ul>
               </section>
+              </>
+              )}
             </article>
 
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2 text-xs text-muted-foreground sm:px-8">
