@@ -4,7 +4,7 @@ import {
   Plus, Filter, Star, Hash, Users, Paperclip, Search as SearchIcon,
   MoreHorizontal, Pin, X, Smile, AtSign, Type, Image as ImageIcon, Code2,
   Smile as SmileIcon, Mic, Send, Sparkles, FileText, FileSpreadsheet,
-  ChevronDown, Circle, MessageCircle, Bot, Calendar,
+  ChevronDown, Circle, MessageCircle, Bot,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
