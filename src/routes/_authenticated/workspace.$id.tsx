@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Calendar,
@@ -29,8 +29,37 @@ import {
   Download,
   Filter,
   X,
+  UserPlus,
+  Mail,
+  Copy,
+  Trash2,
+  Shield,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+type MemberRole = "owner" | "admin" | "member" | "viewer";
+const ROLE_LABEL: Record<MemberRole, string> = {
+  owner: "Chủ sở hữu",
+  admin: "Quản trị",
+  member: "Thành viên",
+  viewer: "Chỉ xem",
+};
+const ROLE_TINT: Record<MemberRole, string> = {
+  owner: "bg-amber-500/15 text-amber-300",
+  admin: "bg-violet-500/15 text-violet-300",
+  member: "bg-sky-500/15 text-sky-300",
+  viewer: "bg-surface-2 text-muted-foreground",
+};
 
 type Workspace = {
   slug: string;
