@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 import {
   Upload, Download, Plus, Search as SearchIcon, ChevronDown, MessageCircle,
   Mail, Phone, Calendar, MoreHorizontal, X, MapPin, Building2, Grid3x3, List,
-  Users as UsersIcon,
+  Users as UsersIcon, FileText, FileSpreadsheet, FileImage, Presentation,
+  CheckCircle2, Circle as CircleIcon, Clock, Hash, Video, Edit3, Briefcase,
+  Award, GraduationCap, Globe, ExternalLink,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -369,58 +371,308 @@ function PersonPanel({ person }: { person: Person; onClose: () => void }) {
       </div>
 
       <div className="flex-1 space-y-6 px-5 py-5 text-sm">
-        <section>
-          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("people.panel.about")}</h3>
-          <p className="leading-relaxed text-muted-foreground">{person.about}</p>
-        </section>
-
-        <section>
-          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("people.panel.skills")}</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {person.skills.map((s) => (
-              <span key={s} className="rounded-md bg-primary/15 px-2 py-1 text-xs text-primary">{s}</span>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("people.panel.reports")}</h3>
-          <div className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-4 w-4" /> {person.reportsTo}</div>
-        </section>
-
-        <section>
-          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("people.panel.direct")} (8)</h3>
-          <div className="flex -space-x-2">
-            {people.slice(1, 6).map((p) => (
-              <img key={p.id} src={avatar(p.seed)} alt={p.name} title={p.name} className="h-8 w-8 rounded-full border-2 border-surface object-cover" />
-            ))}
-            <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-[10px] text-muted-foreground">+3</span>
-          </div>
-        </section>
-
-        <section>
-          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("people.panel.teams")}</h3>
-          <div className="space-y-1">
-            {person.teams.map((tm) => (
-              <div key={tm} className="text-muted-foreground">{tm}</div>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("people.panel.work")}</h3>
-          <div className="space-y-2">
-            <Row label={t("people.panel.emp")} value={person.empId} />
-            <Row label={t("people.panel.join")} value={person.joinDate} />
-            <Row
-              label={t("people.panel.status")}
-              value={<span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-medium text-success">{t("people.panel.active")}</span>}
-            />
-            <Row label={t("people.panel.worktype")} value={t("people.panel.fulltime")} />
-          </div>
-        </section>
+        {tab === "overview" && <OverviewTab person={person} />}
+        {tab === "profile" && <ProfileTab person={person} />}
+        {tab === "activity" && <ActivityTab />}
+        {tab === "files" && <FilesTab />}
+        {tab === "tasks" && <TasksTab />}
       </div>
     </aside>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{children}</h3>
+  );
+}
+
+function OverviewTab({ person }: { person: Person }) {
+  const { t } = useI18n();
+  return (
+    <>
+      <section>
+        <SectionTitle>{t("people.panel.about")}</SectionTitle>
+        <p className="leading-relaxed text-muted-foreground">{person.about}</p>
+      </section>
+      <section>
+        <SectionTitle>{t("people.panel.skills")}</SectionTitle>
+        <div className="flex flex-wrap gap-1.5">
+          {person.skills.map((s) => (
+            <span key={s} className="rounded-md bg-primary/15 px-2 py-1 text-xs text-primary">{s}</span>
+          ))}
+        </div>
+      </section>
+      <section>
+        <SectionTitle>{t("people.panel.reports")}</SectionTitle>
+        <div className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-4 w-4" /> {person.reportsTo}</div>
+      </section>
+      <section>
+        <SectionTitle>{t("people.panel.direct")} (8)</SectionTitle>
+        <div className="flex -space-x-2">
+          {people.slice(1, 6).map((p) => (
+            <img key={p.id} src={avatar(p.seed)} alt={p.name} title={p.name} className="h-8 w-8 rounded-full border-2 border-surface object-cover" />
+          ))}
+          <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-[10px] text-muted-foreground">+3</span>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function ProfileTab({ person }: { person: Person }) {
+  const experiences = [
+    { role: person.title, company: "UNIWORK", time: `${person.joinDate} - Hiện tại`, desc: "Phụ trách chiến lược sản phẩm & đội ngũ điều hành." },
+    { role: "Product Director", company: "TechVN JSC", time: "06/2018 - 12/2021", desc: "Dẫn dắt 3 dòng sản phẩm SaaS B2B." },
+    { role: "Senior PM", company: "FPT Software", time: "01/2014 - 05/2018", desc: "Quản lý các dự án triển khai cho khách hàng EU." },
+  ];
+  const educations = [
+    { school: "Đại học Bách Khoa Hà Nội", degree: "Thạc sĩ Công nghệ Thông tin", time: "2012 - 2014" },
+    { school: "Đại học Bách Khoa Hà Nội", degree: "Cử nhân CNTT", time: "2008 - 2012" },
+  ];
+  const certs = ["PMP®", "Scrum Master (PSM I)", "AWS Solutions Architect"];
+  const languages = [
+    { name: "Tiếng Việt", level: "Bản ngữ" },
+    { name: "English", level: "Thành thạo (C1)" },
+    { name: "日本語", level: "Sơ cấp (N4)" },
+  ];
+  return (
+    <>
+      <section>
+        <SectionTitle>Thông tin cá nhân</SectionTitle>
+        <div className="space-y-2">
+          <Row label="Họ tên đầy đủ" value={person.name} />
+          <Row label="Mã nhân viên" value={person.empId} />
+          <Row label="Phòng ban" value={person.department} />
+          <Row label="Ngày vào" value={person.joinDate} />
+          <Row label="Sinh nhật" value="14/03/1988" />
+          <Row label="Giới tính" value="Nam" />
+        </div>
+      </section>
+      <section>
+        <SectionTitle><Briefcase className="mr-1 inline h-3 w-3" /> Kinh nghiệm</SectionTitle>
+        <ul className="space-y-3">
+          {experiences.map((e, i) => (
+            <li key={i} className="border-l-2 border-border pl-3">
+              <div className="text-sm font-medium text-foreground">{e.role}</div>
+              <div className="text-xs text-muted-foreground">{e.company} · {e.time}</div>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{e.desc}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section>
+        <SectionTitle><GraduationCap className="mr-1 inline h-3 w-3" /> Học vấn</SectionTitle>
+        <ul className="space-y-2">
+          {educations.map((e, i) => (
+            <li key={i}>
+              <div className="text-sm font-medium text-foreground">{e.school}</div>
+              <div className="text-xs text-muted-foreground">{e.degree} · {e.time}</div>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section>
+        <SectionTitle><Award className="mr-1 inline h-3 w-3" /> Chứng chỉ</SectionTitle>
+        <div className="flex flex-wrap gap-1.5">
+          {certs.map((c) => (
+            <span key={c} className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-1 text-xs text-amber-400">
+              <Award className="h-3 w-3" /> {c}
+            </span>
+          ))}
+        </div>
+      </section>
+      <section>
+        <SectionTitle><Globe className="mr-1 inline h-3 w-3" /> Ngôn ngữ</SectionTitle>
+        <div className="space-y-1.5">
+          {languages.map((l) => (
+            <Row key={l.name} label={l.name} value={<span className="text-xs text-muted-foreground">{l.level}</span>} />
+          ))}
+        </div>
+      </section>
+      <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs hover:bg-surface-3">
+        <Edit3 className="h-3.5 w-3.5" /> Chỉnh sửa hồ sơ
+      </button>
+    </>
+  );
+}
+
+function ActivityTab() {
+  const activities = [
+    { icon: MessageCircle, color: "text-sky-400 bg-sky-500/10", title: "Đã bình luận trong #sprint-6", desc: '"Tốt, nhớ ghi lại metrics để báo cáo Steering Committee chiều nay."', time: "2 phút trước" },
+    { icon: CheckCircle2, color: "text-emerald-400 bg-emerald-500/10", title: "Hoàn thành task", desc: "Phê duyệt ngân sách Q3 cho STOS Project", time: "1 giờ trước" },
+    { icon: Video, color: "text-rose-400 bg-rose-500/10", title: "Tham gia cuộc họp", desc: "Steering Committee - Tuần 24", time: "3 giờ trước" },
+    { icon: FileText, color: "text-violet-400 bg-violet-500/10", title: "Tải lên tài liệu", desc: "Báo cáo chiến lược Q3-2026.pdf", time: "Hôm qua" },
+    { icon: Edit3, color: "text-amber-400 bg-amber-500/10", title: "Chỉnh sửa Wiki", desc: 'Cập nhật trang "Quy trình ra quyết định"', time: "2 ngày trước" },
+    { icon: UsersIcon, color: "text-primary bg-primary/10", title: "Thêm thành viên", desc: "Mời 3 người vào workspace Smart University", time: "3 ngày trước" },
+  ];
+  return (
+    <>
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <SectionTitle>Hoạt động gần đây</SectionTitle>
+          <select className="rounded-md border border-border bg-surface-2 px-2 py-1 text-[11px] focus:outline-none">
+            <option>7 ngày qua</option>
+            <option>30 ngày qua</option>
+            <option>Tất cả</option>
+          </select>
+        </div>
+        <ol className="relative space-y-4 border-l border-border pl-4">
+          {activities.map((a, i) => (
+            <li key={i} className="relative">
+              <span className={`absolute -left-[26px] flex h-5 w-5 items-center justify-center rounded-full ring-2 ring-surface ${a.color}`}>
+                <a.icon className="h-3 w-3" />
+              </span>
+              <div className="text-sm font-medium text-foreground">{a.title}</div>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{a.desc}</p>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">{a.time}</div>
+            </li>
+          ))}
+        </ol>
+        <button className="mt-4 w-full rounded-lg border border-border bg-surface-2 py-2 text-xs text-muted-foreground hover:text-foreground">
+          Xem thêm hoạt động
+        </button>
+      </section>
+    </>
+  );
+}
+
+function FilesTab() {
+  const files = [
+    { name: "Báo cáo chiến lược Q3-2026.pdf", type: "pdf", size: "4.2 MB", time: "Hôm qua", shared: "STOS Project" },
+    { name: "Kế hoạch OKR Q3.xlsx", type: "xlsx", size: "1.1 MB", time: "2 ngày trước", shared: "Executive Office" },
+    { name: "Slide Town Hall T6.pptx", type: "ppt", size: "8.7 MB", time: "4 ngày trước", shared: "All Hands" },
+    { name: "Sơ đồ tổ chức 2026.png", type: "image", size: "2.4 MB", time: "1 tuần trước", shared: "HR Department" },
+    { name: "Quy chế làm việc.docx", type: "doc", size: "320 KB", time: "2 tuần trước", shared: "HR Department" },
+  ];
+  const icon = (t: string) => {
+    switch (t) {
+      case "pdf": return <FileText className="h-5 w-5 text-rose-400" />;
+      case "xlsx": return <FileSpreadsheet className="h-5 w-5 text-emerald-400" />;
+      case "ppt": return <Presentation className="h-5 w-5 text-orange-400" />;
+      case "image": return <FileImage className="h-5 w-5 text-violet-400" />;
+      default: return <FileText className="h-5 w-5 text-sky-400" />;
+    }
+  };
+  return (
+    <>
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <SectionTitle>Tệp đã chia sẻ ({files.length})</SectionTitle>
+          <button className="text-[11px] text-primary hover:underline">Xem tất cả</button>
+        </div>
+        <ul className="space-y-1.5">
+          {files.map((f) => (
+            <li key={f.name} className="group flex items-center gap-3 rounded-lg p-2 hover:bg-surface-2">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-2 group-hover:bg-surface-3">
+                {icon(f.type)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{f.name}</div>
+                <div className="truncate text-[11px] text-muted-foreground">{f.size} · {f.time} · {f.shared}</div>
+              </div>
+              <button className="rounded p-1 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100">
+                <Download className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section>
+        <SectionTitle>Theo loại</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { l: "PDF", c: 8, cls: "text-rose-400 bg-rose-500/10" },
+            { l: "Excel", c: 5, cls: "text-emerald-400 bg-emerald-500/10" },
+            { l: "Word", c: 4, cls: "text-sky-400 bg-sky-500/10" },
+            { l: "PowerPoint", c: 3, cls: "text-orange-400 bg-orange-500/10" },
+          ].map((g) => (
+            <div key={g.l} className={`rounded-lg p-2 ${g.cls}`}>
+              <div className="text-lg font-bold">{g.c}</div>
+              <div className="text-[10px] uppercase tracking-wide opacity-80">{g.l}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function TasksTab() {
+  const tasks = [
+    { title: "Phê duyệt kế hoạch ngân sách Q3", project: "Executive Office", status: "active", priority: "Cao", due: "Hôm nay" },
+    { title: "Review tài liệu chiến lược STOS", project: "STOS Project", status: "active", priority: "Cao", due: "Ngày mai" },
+    { title: "Chuẩn bị slide Town Hall tháng 7", project: "All Hands", status: "todo", priority: "Trung bình", due: "30/06" },
+    { title: "Họp 1-1 với Tech Lead", project: "DevOps Team", status: "done", priority: "Thấp", due: "Đã xong" },
+    { title: "Ký hợp đồng đối tác CloudVN", project: "Partnerships", status: "done", priority: "Cao", due: "Đã xong" },
+  ];
+  const statusIcon = (s: string) =>
+    s === "done" ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> :
+    s === "active" ? <Clock className="h-4 w-4 text-sky-400" /> :
+    <CircleIcon className="h-4 w-4 text-muted-foreground" />;
+  const prioCls = (p: string) =>
+    p === "Cao" ? "bg-rose-500/15 text-rose-300" :
+    p === "Trung bình" ? "bg-amber-500/15 text-amber-300" :
+    "bg-surface-2 text-muted-foreground";
+
+  const done = tasks.filter((t) => t.status === "done").length;
+  const total = tasks.length;
+
+  return (
+    <>
+      <section>
+        <SectionTitle>Tổng quan công việc</SectionTitle>
+        <div className="grid grid-cols-3 gap-2">
+          <Stat l="Đang làm" v={tasks.filter((t) => t.status === "active").length} cls="text-sky-400 bg-sky-500/10" />
+          <Stat l="Hoàn thành" v={done} cls="text-emerald-400 bg-emerald-500/10" />
+          <Stat l="Tồn đọng" v={tasks.filter((t) => t.status === "todo").length} cls="text-amber-400 bg-amber-500/10" />
+        </div>
+        <div className="mt-3">
+          <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>Tỷ lệ hoàn thành</span>
+            <span className="text-foreground">{Math.round((done / total) * 100)}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+            <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-sky-500" style={{ width: `${(done / total) * 100}%` }} />
+          </div>
+        </div>
+      </section>
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <SectionTitle>Công việc được giao</SectionTitle>
+          <button className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+            <ExternalLink className="h-3 w-3" /> Mở Tasks
+          </button>
+        </div>
+        <ul className="space-y-2">
+          {tasks.map((t, i) => (
+            <li key={i} className="rounded-lg border border-border bg-surface-2/40 p-2.5 hover:border-primary/40">
+              <div className="flex items-start gap-2">
+                {statusIcon(t.status)}
+                <div className="min-w-0 flex-1">
+                  <div className={`text-sm font-medium ${t.status === "done" ? "text-muted-foreground line-through" : "text-foreground"}`}>{t.title}</div>
+                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-0.5"><Hash className="h-3 w-3" />{t.project}</span>
+                    <span>·</span>
+                    <span>{t.due}</span>
+                  </div>
+                </div>
+                <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${prioCls(t.priority)}`}>{t.priority}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
+  );
+}
+
+function Stat({ l, v, cls }: { l: string; v: number; cls: string }) {
+  return (
+    <div className={`rounded-lg p-2 text-center ${cls}`}>
+      <div className="text-lg font-bold">{v}</div>
+      <div className="text-[10px] uppercase tracking-wide opacity-80">{l}</div>
+    </div>
   );
 }
 
