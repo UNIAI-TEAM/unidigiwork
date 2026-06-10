@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Users,
   Calendar,
@@ -24,6 +24,10 @@ import {
   FileImage,
   Presentation,
   ArrowLeft,
+  Pencil,
+  Trash2,
+  Lock,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
@@ -36,13 +40,32 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/workspace/$id/stos")({
   component: StosDetailPage,
 });
 
-const PROJECT = {
+type Role = "owner" | "admin" | "member" | "viewer";
+
+type Project = {
+  name: string;
+  code: string;
+  tagline: string;
+  description: string;
+  owner: string;
+  ownerRole: string;
+  members: number;
+  deadline: string;
+  startDate: string;
+  budget: string;
+  health: string;
+  progress: number;
+  tags: string[];
+};
+
+const INITIAL_PROJECT: Project = {
   name: "STOS Project",
   code: "STOS-2026",
   tagline: "Smart Office Transformation System",
@@ -59,7 +82,16 @@ const PROJECT = {
   tags: ["Chiến lược", "Q3/2026", "Cross-team"],
 };
 
-const DOCUMENTS = [
+type Doc = {
+  id: string;
+  name: string;
+  type: "pdf" | "xlsx" | "ppt" | "image" | "doc";
+  size: string;
+  updatedBy: string;
+  updatedAt: string;
+};
+
+const INITIAL_DOCUMENTS: Doc[] = [
   {
     id: "1",
     name: "Bản đặc tả kỹ thuật STOS v2.1.pdf",
@@ -102,7 +134,17 @@ const DOCUMENTS = [
   },
 ];
 
-const MILESTONES = [
+type Milestone = {
+  id: string;
+  name: string;
+  progress: number;
+  status: "done" | "active" | "todo";
+  due: string;
+  tasks: number;
+  completed: number;
+};
+
+const INITIAL_MILESTONES: Milestone[] = [
   {
     id: "m1",
     name: "Khảo sát & Phân tích",
@@ -177,6 +219,52 @@ function StosDetailPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
+  // Mock current user role — demo switcher in header
+  const [currentRole, setCurrentRole] = useState<Role>("owner");
+  const can = useMemo(
+    () => ({
+      editProject: currentRole === "owner" || currentRole === "admin",
+      manageMilestones: currentRole === "owner" || currentRole === "admin",
+      addDocs: currentRole !== "viewer",
+      deleteDocs: currentRole === "owner" || currentRole === "admin",
+      invite: currentRole === "owner" || currentRole === "admin",
+    }),
+    [currentRole],
+  );
+
+  const [project, setProject] = useState<Project>(INITIAL_PROJECT);
+  const [docs, setDocs] = useState<Doc[]>(INITIAL_DOCUMENTS);
+  const [milestones, setMilestones] = useState<Milestone[]>(INITIAL_MILESTONES);
+
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [docDialog, setDocDialog] = useState<{ open: boolean; doc: Doc | null }>({
+    open: false,
+    doc: null,
+  });
+  const [milestoneDialog, setMilestoneDialog] = useState<{
+    open: boolean;
+    milestone: Milestone | null;
+  }>({ open: false, milestone: null });
+
+  const stats = useMemo(() => {
+    const total = milestones.reduce((s, m) => s + m.tasks, 0);
+    const done = milestones.reduce((s, m) => s + m.completed, 0);
+    const active = milestones.filter((m) => m.status === "active").reduce(
+      (s, m) => s + (m.tasks - m.completed),
+      0,
+    );
+    const backlog = Math.max(total - done - active, 0);
+    const progress = total ? Math.round((done / total) * 100) : 0;
+    return { total, done, active, backlog, progress };
+  }, [milestones]);
+
+  const guard = (allowed: boolean, msg = "Bạn không có quyền thực hiện thao tác này") => {
+    if (!allowed) {
+      toast.error(msg);
+      return false;
+    }
+    return true;
+  };
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -203,25 +291,39 @@ function StosDetailPage() {
               >
                 <ArrowLeft className="size-4" /> Quay lại tổng quan
               </Link>
+              <div className="absolute top-4 right-4 sm:right-6 lg:right-8 flex items-center gap-1.5 text-[11px]">
+                <ShieldCheck className="size-3.5 text-white/80" />
+                <span className="text-white/80">Vai trò demo:</span>
+                <select
+                  value={currentRole}
+                  onChange={(e) => setCurrentRole(e.target.value as Role)}
+                  className="bg-white/15 backdrop-blur text-white rounded px-1.5 py-0.5 border border-white/20 text-[11px] focus:outline-none"
+                >
+                  <option className="text-slate-900" value="owner">Owner</option>
+                  <option className="text-slate-900" value="admin">Admin</option>
+                  <option className="text-slate-900" value="member">Member</option>
+                  <option className="text-slate-900" value="viewer">Viewer</option>
+                </select>
+              </div>
               <div className="flex flex-col sm:flex-row sm:items-end gap-4 w-full">
                 <div className="size-16 sm:size-20 shrink-0 rounded-2xl bg-white shadow-xl flex items-center justify-center text-2xl sm:text-3xl font-bold text-emerald-600 ring-4 ring-white/40">
                   S
                 </div>
                 <div className="flex-1 min-w-0 text-white">
                   <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wider opacity-90 mb-1">
-                    <span>{PROJECT.code}</span>
+                    <span>{project.code}</span>
                     <span className="hidden sm:inline">•</span>
-                    <span>{PROJECT.tagline}</span>
+                    <span>{project.tagline}</span>
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-bold">{PROJECT.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold">{project.name}</h1>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm opacity-95">
                     <span className="inline-flex items-center gap-1.5">
                       <span className="size-2 rounded-full bg-emerald-300" /> Đang hoạt động
                     </span>
                     <span className="hidden sm:inline">·</span>
-                    <span>{PROJECT.members} thành viên</span>
+                    <span>{project.members} thành viên</span>
                     <span className="hidden sm:inline">·</span>
-                    <span>Deadline {PROJECT.deadline}</span>
+                    <span>Deadline {project.deadline}</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +345,7 @@ function StosDetailPage() {
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => setInviteOpen(true)}
+                    onClick={() => guard(can.invite) && setInviteOpen(true)}
                     className="bg-white text-emerald-700 hover:bg-white/90"
                   >
                     <UserPlus className="size-4" /> Mời thành viên
@@ -262,11 +364,17 @@ function StosDetailPage() {
                   <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                     <FolderKanban className="size-4 text-slate-500" /> Giới thiệu dự án
                   </h2>
-                  <button className="text-xs text-slate-500 hover:text-slate-700">Chỉnh sửa</button>
+                  <button
+                    onClick={() => guard(can.editProject) && setEditProjectOpen(true)}
+                    className="text-xs text-slate-500 hover:text-slate-700 inline-flex items-center gap-1"
+                  >
+                    {can.editProject ? <Pencil className="size-3" /> : <Lock className="size-3" />}
+                    Chỉnh sửa
+                  </button>
                 </div>
-                <p className="text-sm text-slate-600 leading-relaxed">{PROJECT.description}</p>
+                <p className="text-sm text-slate-600 leading-relaxed">{project.description}</p>
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {PROJECT.tags.map((t) => (
+                  {project.tags.map((t) => (
                     <Badge
                       key={t}
                       variant="secondary"
@@ -277,10 +385,10 @@ function StosDetailPage() {
                   ))}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100">
-                  <Info label="Chủ sở hữu" value={PROJECT.owner} />
-                  <Info label="Bắt đầu" value={PROJECT.startDate} />
-                  <Info label="Hạn chót" value={PROJECT.deadline} />
-                  <Info label="Ngân sách" value={PROJECT.budget} />
+                  <Info label="Chủ sở hữu" value={project.owner} />
+                  <Info label="Bắt đầu" value={project.startDate} />
+                  <Info label="Hạn chót" value={project.deadline} />
+                  <Info label="Ngân sách" value={project.budget} />
                 </div>
               </section>
 
@@ -290,16 +398,33 @@ function StosDetailPage() {
                   <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                     <TrendingUp className="size-4 text-slate-500" /> Tiến độ theo milestone
                   </h2>
-                  <div className="text-sm text-slate-500">
-                    Tổng tiến độ:{" "}
-                    <span className="font-semibold text-emerald-600">{PROJECT.progress}%</span>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-slate-500">
+                      Tổng tiến độ:{" "}
+                      <span className="font-semibold text-emerald-600">{stats.progress}%</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        guard(can.manageMilestones) &&
+                        setMilestoneDialog({ open: true, milestone: null })
+                      }
+                    >
+                      <Plus className="size-4" /> Milestone
+                    </Button>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {MILESTONES.map((m, i) => (
+                  {milestones.length === 0 && (
+                    <div className="text-center py-8 text-sm text-slate-500">
+                      Chưa có milestone nào.
+                    </div>
+                  )}
+                  {milestones.map((m, i) => (
                     <div
                       key={m.id}
-                      className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-slate-50"
+                      className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-slate-50 group"
                     >
                       <div
                         className={`size-9 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -343,6 +468,27 @@ function StosDetailPage() {
                       <div className="w-10 shrink-0 text-right text-xs font-semibold text-slate-700">
                         {m.progress}%
                       </div>
+                      {can.manageMilestones && (
+                        <div className="flex shrink-0 items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+                          <button
+                            onClick={() => setMilestoneDialog({ open: true, milestone: m })}
+                            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600"
+                            title="Sửa"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setMilestones((prev) => prev.filter((x) => x.id !== m.id));
+                              toast.success("Đã xoá milestone");
+                            }}
+                            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-rose-50 text-rose-600"
+                            title="Xoá"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -352,14 +498,26 @@ function StosDetailPage() {
               <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                   <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-                    <FileText className="size-4 text-slate-500" /> Tài liệu ({DOCUMENTS.length})
+                    <FileText className="size-4 text-slate-500" /> Tài liệu ({docs.length})
                   </h2>
-                  <Button size="sm" variant="outline">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      guard(can.addDocs, "Viewer không thể thêm tài liệu") &&
+                      setDocDialog({ open: true, doc: null })
+                    }
+                  >
                     <Plus className="size-4" /> Thêm tài liệu
                   </Button>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {DOCUMENTS.map((d) => (
+                  {docs.length === 0 && (
+                    <div className="text-center py-8 text-sm text-slate-500">
+                      Chưa có tài liệu nào.
+                    </div>
+                  )}
+                  {docs.map((d) => (
                     <div
                       key={d.id}
                       className="flex items-center gap-3 py-3 hover:bg-slate-50 -mx-2 px-2 rounded-md group"
@@ -374,19 +532,47 @@ function StosDetailPage() {
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
-                        <button className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600">
+                        <button
+                          onClick={() => toast.success(`Đang tải xuống ${d.name}`)}
+                          className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600"
+                          title="Tải xuống"
+                        >
                           <Download className="size-4" />
                         </button>
-                        <button className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600">
-                          <MoreHorizontal className="size-4" />
-                        </button>
+                        {can.addDocs && (
+                          <button
+                            onClick={() => setDocDialog({ open: true, doc: d })}
+                            className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600"
+                            title="Đổi tên"
+                          >
+                            <Pencil className="size-4" />
+                          </button>
+                        )}
+                        {can.deleteDocs ? (
+                          <button
+                            onClick={() => {
+                              setDocs((prev) => prev.filter((x) => x.id !== d.id));
+                              toast.success("Đã xoá tài liệu");
+                            }}
+                            className="size-8 inline-flex items-center justify-center rounded-md hover:bg-rose-50 text-rose-600"
+                            title="Xoá"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        ) : (
+                          <button className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600">
+                            <MoreHorizontal className="size-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
-                <button className="w-full mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center justify-center gap-1">
-                  Xem tất cả tài liệu <ChevronRight className="size-4" />
-                </button>
+                {docs.length > 5 && (
+                  <button className="w-full mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center justify-center gap-1">
+                    Xem tất cả tài liệu <ChevronRight className="size-4" />
+                  </button>
+                )}
               </section>
             </div>
 
@@ -396,7 +582,7 @@ function StosDetailPage() {
               <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-slate-900 mb-3">Tiến độ tổng thể</h3>
                 <div className="flex items-end gap-2 mb-2">
-                  <div className="text-4xl font-bold text-slate-900">{PROJECT.progress}%</div>
+                  <div className="text-4xl font-bold text-slate-900">{stats.progress}%</div>
                   <div className="text-xs text-emerald-600 mb-1.5 flex items-center gap-0.5">
                     <TrendingUp className="size-3" /> +12% tuần này
                   </div>
@@ -404,13 +590,13 @@ function StosDetailPage() {
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
                   <div
                     className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"
-                    style={{ width: `${PROJECT.progress}%` }}
+                    style={{ width: `${stats.progress}%` }}
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  <Stat label="Hoàn thành" value="49" tone="emerald" />
-                  <Stat label="Đang làm" value="31" tone="sky" />
-                  <Stat label="Tồn đọng" value="34" tone="slate" />
+                  <Stat label="Hoàn thành" value={String(stats.done)} tone="emerald" />
+                  <Stat label="Đang làm" value={String(stats.active)} tone="sky" />
+                  <Stat label="Tồn đọng" value={String(stats.backlog)} tone="slate" />
                 </div>
               </section>
 
@@ -418,10 +604,10 @@ function StosDetailPage() {
               <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-slate-900">
-                    Thành viên ({PROJECT.members})
+                    Thành viên ({project.members})
                   </h3>
                   <button
-                    onClick={() => setInviteOpen(true)}
+                    onClick={() => guard(can.invite) && setInviteOpen(true)}
                     className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
                   >
                     Mời
@@ -467,6 +653,37 @@ function StosDetailPage() {
       </div>
 
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <EditProjectDialog
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        project={project}
+        onSave={(p) => {
+          setProject(p);
+          toast.success("Đã cập nhật dự án");
+        }}
+      />
+      <DocDialog
+        state={docDialog}
+        onOpenChange={(o) => setDocDialog((s) => ({ ...s, open: o }))}
+        onSave={(d) => {
+          setDocs((prev) => {
+            const exists = prev.find((x) => x.id === d.id);
+            return exists ? prev.map((x) => (x.id === d.id ? d : x)) : [d, ...prev];
+          });
+          toast.success(docDialog.doc ? "Đã đổi tên" : "Đã thêm tài liệu");
+        }}
+      />
+      <MilestoneDialog
+        state={milestoneDialog}
+        onOpenChange={(o) => setMilestoneDialog((s) => ({ ...s, open: o }))}
+        onSave={(m) => {
+          setMilestones((prev) => {
+            const exists = prev.find((x) => x.id === m.id);
+            return exists ? prev.map((x) => (x.id === m.id ? m : x)) : [...prev, m];
+          });
+          toast.success(milestoneDialog.milestone ? "Đã cập nhật milestone" : "Đã thêm milestone");
+        }}
+      />
     </div>
   );
 }
@@ -596,5 +813,306 @@ function InviteDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function EditProjectDialog({
+  open,
+  onOpenChange,
+  project,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  project: Project;
+  onSave: (p: Project) => void;
+}) {
+  const [form, setForm] = useState<Project>(project);
+  const [tagsRaw, setTagsRaw] = useState(project.tags.join(", "));
+
+  // sync when opening for a different project
+  const reset = () => {
+    setForm(project);
+    setTagsRaw(project.tags.join(", "));
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (o) reset();
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="size-5 text-emerald-600" /> Chỉnh sửa dự án
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Tên dự án">
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </Field>
+          <Field label="Tagline">
+            <Input
+              value={form.tagline}
+              onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+            />
+          </Field>
+          <Field label="Mô tả">
+            <Textarea
+              rows={4}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Bắt đầu">
+              <Input
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+              />
+            </Field>
+            <Field label="Deadline">
+              <Input
+                value={form.deadline}
+                onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+              />
+            </Field>
+            <Field label="Ngân sách">
+              <Input
+                value={form.budget}
+                onChange={(e) => setForm({ ...form, budget: e.target.value })}
+              />
+            </Field>
+            <Field label="Tình trạng">
+              <Input
+                value={form.health}
+                onChange={(e) => setForm({ ...form, health: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label="Thẻ (cách nhau bằng dấu phẩy)">
+            <Input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} />
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => {
+              if (!form.name.trim()) {
+                toast.error("Tên dự án không được để trống");
+                return;
+              }
+              onSave({
+                ...form,
+                tags: tagsRaw
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean),
+              });
+              onOpenChange(false);
+            }}
+          >
+            Lưu thay đổi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DocDialog({
+  state,
+  onOpenChange,
+  onSave,
+}: {
+  state: { open: boolean; doc: Doc | null };
+  onOpenChange: (v: boolean) => void;
+  onSave: (d: Doc) => void;
+}) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<Doc["type"]>("doc");
+
+  return (
+    <Dialog
+      open={state.open}
+      onOpenChange={(o) => {
+        if (o) {
+          setName(state.doc?.name ?? "");
+          setType(state.doc?.type ?? "doc");
+        }
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="size-5 text-emerald-600" />
+            {state.doc ? "Đổi tên tài liệu" : "Thêm tài liệu"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Tên tài liệu">
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          {!state.doc && (
+            <Field label="Loại">
+              <div className="grid grid-cols-5 gap-2">
+                {(["doc", "pdf", "xlsx", "ppt", "image"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setType(t)}
+                    className={`text-xs py-2 rounded-md border uppercase ${
+                      type === t
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => {
+              if (!name.trim()) {
+                toast.error("Nhập tên tài liệu");
+                return;
+              }
+              onSave({
+                id: state.doc?.id ?? `d-${Date.now()}`,
+                name: name.trim(),
+                type: state.doc?.type ?? type,
+                size: state.doc?.size ?? "—",
+                updatedBy: "Bạn",
+                updatedAt: "vừa xong",
+              });
+              onOpenChange(false);
+            }}
+          >
+            {state.doc ? "Lưu" : "Thêm"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MilestoneDialog({
+  state,
+  onOpenChange,
+  onSave,
+}: {
+  state: { open: boolean; milestone: Milestone | null };
+  onOpenChange: (v: boolean) => void;
+  onSave: (m: Milestone) => void;
+}) {
+  const [name, setName] = useState("");
+  const [due, setDue] = useState("");
+  const [tasks, setTasks] = useState(0);
+  const [completed, setCompleted] = useState(0);
+
+  return (
+    <Dialog
+      open={state.open}
+      onOpenChange={(o) => {
+        if (o) {
+          setName(state.milestone?.name ?? "");
+          setDue(state.milestone?.due ?? "");
+          setTasks(state.milestone?.tasks ?? 0);
+          setCompleted(state.milestone?.completed ?? 0);
+        }
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <TrendingUp className="size-5 text-emerald-600" />
+            {state.milestone ? "Chỉnh sửa milestone" : "Thêm milestone"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Tên milestone">
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="Deadline (vd: 30/09/2026)">
+            <Input value={due} onChange={(e) => setDue(e.target.value)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Tổng tasks">
+              <Input
+                type="number"
+                min={0}
+                value={tasks}
+                onChange={(e) => setTasks(Math.max(0, Number(e.target.value) || 0))}
+              />
+            </Field>
+            <Field label="Đã hoàn thành">
+              <Input
+                type="number"
+                min={0}
+                value={completed}
+                onChange={(e) => setCompleted(Math.max(0, Number(e.target.value) || 0))}
+              />
+            </Field>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => {
+              if (!name.trim()) {
+                toast.error("Nhập tên milestone");
+                return;
+              }
+              const done = Math.min(completed, tasks);
+              const progress = tasks ? Math.round((done / tasks) * 100) : 0;
+              const status: Milestone["status"] =
+                progress >= 100 ? "done" : progress > 0 ? "active" : "todo";
+              onSave({
+                id: state.milestone?.id ?? `m-${Date.now()}`,
+                name: name.trim(),
+                due: due.trim() || "—",
+                tasks,
+                completed: done,
+                progress,
+                status,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {state.milestone ? "Lưu" : "Thêm"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-slate-700 mb-1.5 block">{label}</label>
+      {children}
+    </div>
   );
 }
