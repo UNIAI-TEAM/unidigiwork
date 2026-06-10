@@ -82,36 +82,36 @@ function StosDetailPage() {
         <AppTopbar onOpenSidebar={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           {/* Banner */}
-          <div className="relative h-48 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 overflow-hidden">
+          <div className="relative min-h-48 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 overflow-hidden">
             <div className="absolute inset-0 opacity-20"
               style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="relative h-full max-w-7xl mx-auto px-8 flex items-end pb-6">
-              <Link to="/workspace/$id" params={{ id: "stos" }} className="absolute top-4 left-8 inline-flex items-center gap-1.5 text-white/90 hover:text-white text-sm">
+            <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end pt-12 pb-6">
+              <Link to="/workspace/$id" params={{ id: "stos" }} className="absolute top-4 left-4 sm:left-6 lg:left-8 inline-flex items-center gap-1.5 text-white/90 hover:text-white text-sm">
                 <ArrowLeft className="size-4" /> Quay lại tổng quan
               </Link>
-              <div className="flex items-end gap-4 w-full">
-                <div className="size-20 rounded-2xl bg-white shadow-xl flex items-center justify-center text-3xl font-bold text-emerald-600 ring-4 ring-white/40">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-4 w-full">
+                <div className="size-16 sm:size-20 shrink-0 rounded-2xl bg-white shadow-xl flex items-center justify-center text-2xl sm:text-3xl font-bold text-emerald-600 ring-4 ring-white/40">
                   S
                 </div>
-                <div className="flex-1 text-white">
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-wider opacity-90 mb-1">
+                <div className="flex-1 min-w-0 text-white">
+                  <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wider opacity-90 mb-1">
                     <span>{PROJECT.code}</span>
-                    <span>•</span>
+                    <span className="hidden sm:inline">•</span>
                     <span>{PROJECT.tagline}</span>
                   </div>
-                  <h1 className="text-3xl font-bold">{PROJECT.name}</h1>
-                  <div className="flex items-center gap-3 mt-2 text-sm opacity-95">
+                  <h1 className="text-2xl sm:text-3xl font-bold">{PROJECT.name}</h1>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm opacity-95">
                     <span className="inline-flex items-center gap-1.5">
                       <span className="size-2 rounded-full bg-emerald-300" /> Đang hoạt động
                     </span>
-                    <span>·</span>
+                    <span className="hidden sm:inline">·</span>
                     <span>{PROJECT.members} thành viên</span>
-                    <span>·</span>
+                    <span className="hidden sm:inline">·</span>
                     <span>Deadline {PROJECT.deadline}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setPinned(!pinned)} className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border-0">
                     <Pin className={`size-4 ${pinned ? "fill-current" : ""}`} /> {pinned ? "Đã ghim" : "Ghim"}
                   </Button>
@@ -126,11 +126,11 @@ function StosDetailPage() {
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto px-8 py-6 grid grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: 2/3 */}
-            <div className="col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 min-w-0">
               {/* About */}
-              <section className="bg-white rounded-xl border border-slate-200 p-6">
+              <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                     <FolderKanban className="size-4 text-slate-500" /> Giới thiệu dự án
@@ -143,7 +143,7 @@ function StosDetailPage() {
                     <Badge key={t} variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200">{t}</Badge>
                   ))}
                 </div>
-                <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100">
                   <Info label="Chủ sở hữu" value={PROJECT.owner} />
                   <Info label="Bắt đầu" value={PROJECT.startDate} />
                   <Info label="Hạn chót" value={PROJECT.deadline} />
@@ -152,8 +152,8 @@ function StosDetailPage() {
               </section>
 
               {/* Milestones */}
-              <section className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex items-center justify-between mb-4">
+              <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                   <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                     <TrendingUp className="size-4 text-slate-500" /> Tiến độ theo milestone
                   </h2>
@@ -163,8 +163,8 @@ function StosDetailPage() {
                 </div>
                 <div className="space-y-3">
                   {MILESTONES.map((m, i) => (
-                    <div key={m.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50">
-                      <div className={`size-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                    <div key={m.id} className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-slate-50">
+                      <div className={`size-9 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
                         m.status === "done" ? "bg-emerald-100 text-emerald-700" :
                         m.status === "active" ? "bg-sky-100 text-sky-700" :
                         "bg-slate-100 text-slate-500"
@@ -174,9 +174,9 @@ function StosDetailPage() {
                          i + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-x-2 mb-1.5">
                           <div className="font-medium text-sm text-slate-900 truncate">{m.name}</div>
-                          <div className="text-xs text-slate-500 ml-2">{m.completed}/{m.tasks} tasks · {m.due}</div>
+                          <div className="text-xs text-slate-500">{m.completed}/{m.tasks} · {m.due}</div>
                         </div>
                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div
@@ -188,15 +188,15 @@ function StosDetailPage() {
                           />
                         </div>
                       </div>
-                      <div className="w-10 text-right text-xs font-semibold text-slate-700">{m.progress}%</div>
+                      <div className="w-10 shrink-0 text-right text-xs font-semibold text-slate-700">{m.progress}%</div>
                     </div>
                   ))}
                 </div>
               </section>
 
               {/* Documents */}
-              <section className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex items-center justify-between mb-4">
+              <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                   <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                     <FileText className="size-4 text-slate-500" /> Tài liệu ({DOCUMENTS.length})
                   </h2>
@@ -207,14 +207,14 @@ function StosDetailPage() {
                 <div className="divide-y divide-slate-100">
                   {DOCUMENTS.map((d) => (
                     <div key={d.id} className="flex items-center gap-3 py-3 hover:bg-slate-50 -mx-2 px-2 rounded-md group">
-                      <div className="size-9 rounded-md bg-slate-50 flex items-center justify-center">
+                      <div className="size-9 shrink-0 rounded-md bg-slate-50 flex items-center justify-center">
                         {docIcon(d.type)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-slate-900 truncate">{d.name}</div>
-                        <div className="text-xs text-slate-500">{d.size} · {d.updatedBy} · {d.updatedAt}</div>
+                        <div className="text-xs text-slate-500 truncate">{d.size} · {d.updatedBy} · {d.updatedAt}</div>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                         <button className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600">
                           <Download className="size-4" />
                         </button>
@@ -232,9 +232,9 @@ function StosDetailPage() {
             </div>
 
             {/* Right: 1/3 */}
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0">
               {/* Progress card */}
-              <section className="bg-white rounded-xl border border-slate-200 p-6">
+              <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-slate-900 mb-3">Tiến độ tổng thể</h3>
                 <div className="flex items-end gap-2 mb-2">
                   <div className="text-4xl font-bold text-slate-900">{PROJECT.progress}%</div>
@@ -253,7 +253,7 @@ function StosDetailPage() {
               </section>
 
               {/* Team */}
-              <section className="bg-white rounded-xl border border-slate-200 p-6">
+              <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-slate-900">Thành viên ({PROJECT.members})</h3>
                   <button onClick={() => setInviteOpen(true)} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Mời</button>
@@ -261,7 +261,7 @@ function StosDetailPage() {
                 <div className="space-y-2.5">
                   {TEAM.map((m) => (
                     <div key={m.name} className="flex items-center gap-3">
-                      <div className={`size-8 rounded-full ${avatar(m.name)} flex items-center justify-center text-xs font-semibold text-white`}>
+                      <div className={`size-8 shrink-0 rounded-full ${avatar(m.name)} flex items-center justify-center text-xs font-semibold text-white`}>
                         {m.name.split(" ").pop()?.[0]}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -277,7 +277,7 @@ function StosDetailPage() {
               </section>
 
               {/* AI insight */}
-              <section className="bg-gradient-to-br from-violet-50 to-pink-50 rounded-xl border border-violet-200/60 p-6">
+              <section className="bg-gradient-to-br from-violet-50 to-pink-50 rounded-xl border border-violet-200/60 p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="size-4 text-violet-600" />
                   <h3 className="text-sm font-semibold text-violet-900">AI Insight</h3>
