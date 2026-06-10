@@ -9,7 +9,7 @@ import {
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
 const searchSchema = z.object({
-  tab: z.enum(["profile", "account", "notifications", "appearance", "language", "integrations", "team", "security", "billing", "data"]).optional(),
+  tab: z.enum(["profile", "account", "password", "notifications", "appearance", "language", "integrations", "team", "security", "billing", "data"]).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type SectionKey = "profile" | "account" | "notifications" | "appearance" | "language" | "integrations" | "team" | "security" | "billing" | "data";
+type SectionKey = "profile" | "account" | "password" | "notifications" | "appearance" | "language" | "integrations" | "team" | "security" | "billing" | "data";
 
 const SECTIONS: { key: SectionKey; label: string; desc: string; icon: any }[] = [
   { key: "profile", label: "Hồ sơ cá nhân", desc: "Tên, ảnh đại diện, chức danh", icon: User },
