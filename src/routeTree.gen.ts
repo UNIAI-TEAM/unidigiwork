@@ -23,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
@@ -93,6 +94,11 @@ const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/': typeof ReportsIndexRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/people': typeof PeopleRoute
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports': typeof ReportsIndexRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/': typeof ReportsIndexRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/workflows'
+    | '/dashboard'
     | '/documents'
     | '/reports/$type'
     | '/reports/'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/tasks'
     | '/workflows'
+    | '/dashboard'
     | '/documents'
     | '/reports/$type'
     | '/reports'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/workflows'
+    | '/_authenticated/dashboard'
     | '/_authenticated/documents'
     | '/reports/$type'
     | '/reports/'
@@ -302,14 +314,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
 }
 
