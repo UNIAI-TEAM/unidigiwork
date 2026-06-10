@@ -60,6 +60,10 @@ const dict = {
     "land.preview.tasks.h": "Quản lý dự án theo Kanban với AI Copilot",
     "land.preview.tasks.p":
       "Theo dõi sprint, burndown, rủi ro và đề xuất hành động — tất cả trên một bảng duy nhất, đồng bộ với tài liệu và cuộc họp.",
+    "land.preview.email.tag": "Email Hub",
+    "land.preview.email.h": "Hợp nhất email công việc với AI Assistant",
+    "land.preview.email.p":
+      "Kết nối Microsoft 365 & Gmail vào một hộp thư duy nhất. AI tóm tắt, đề xuất trả lời, tạo task và workflow trực tiếp từ email.",
     "land.feat.title": "Mọi thứ team cần, trong một app",
     "land.feat.sub": "Thay thế cho 5-7 công cụ rời rạc bằng một nền tảng duy nhất.",
     "land.feat.meet.t": "Họp + AI Copilot",
@@ -74,6 +78,8 @@ const dict = {
     "land.feat.flow.d": "Tự động hoá quy trình lặp đi lặp lại trong doanh nghiệp.",
     "land.feat.ai.t": "Trợ lý AI",
     "land.feat.ai.d": "Trợ lý AI bảo mật, đặt nền trên dữ liệu doanh nghiệp.",
+    "land.feat.email.t": "Email Hub",
+    "land.feat.email.d": "Tất cả email Microsoft 365 & Gmail tại một nơi, kèm AI tóm tắt và đề xuất hành động.",
     "land.cta2.h": "Sẵn sàng cho doanh nghiệp của bạn",
     "land.cta2.p": "Hạ tầng bảo mật, phân quyền theo workspace, dữ liệu lưu tại Việt Nam.",
     "land.cta2.btn": "Đăng nhập & dùng thử",
@@ -476,6 +482,10 @@ const dict = {
     "land.preview.tasks.h": "Kanban project management with AI Copilot",
     "land.preview.tasks.p":
       "Track sprints, burndown, risks and suggested actions — all on a single board, in sync with docs and meetings.",
+    "land.preview.email.tag": "Email Hub",
+    "land.preview.email.h": "Unified work email with AI Assistant",
+    "land.preview.email.p":
+      "Connect Microsoft 365 & Gmail into one inbox. AI summarises, suggests replies, and turns emails into tasks and workflows.",
     "land.feat.title": "Everything your team needs, in one app",
     "land.feat.sub": "Replace 5–7 disconnected tools with a single platform.",
     "land.feat.meet.t": "Meetings + AI Copilot",
@@ -490,6 +500,8 @@ const dict = {
     "land.feat.flow.d": "Automate repeatable business processes.",
     "land.feat.ai.t": "AI Assistant",
     "land.feat.ai.d": "Secure AI assistant grounded on your company data.",
+    "land.feat.email.t": "Email Hub",
+    "land.feat.email.d": "All Microsoft 365 & Gmail mail in one place with AI summaries and action suggestions.",
     "land.cta2.h": "Ready for your enterprise",
     "land.cta2.p": "Secure infrastructure, workspace-scoped permissions, data hosted in Vietnam.",
     "land.cta2.btn": "Sign in & try it",
