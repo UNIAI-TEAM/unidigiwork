@@ -1,0 +1,25 @@
+name: Deploy to Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/uniwork
+            git pull origin main
+            npm ci --omit=dev 2>/dev/null || npm install --omit=dev
+            pm2 restart uniwork || pm2 start npm --name "uniwork" -- start
+            pm2 save
