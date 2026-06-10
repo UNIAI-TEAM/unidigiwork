@@ -343,6 +343,7 @@ function ChatPage() {
   const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const [activeChannel, setActiveChannel] = useState("sprint-6");
+  const [view, setView] = useState<"channel" | "threads" | "mentions" | "drafts">("channel");
   const [messages, setMessages] = useState<Msg[]>(channelMessages["sprint-6"] || []);
   const [input, setInput] = useState("");
   const [aiInput, setAiInput] = useState("");
@@ -402,6 +403,11 @@ function ChatPage() {
     { key: "7d", label: t("chat.search.time.7d"), color: "border-primary/40 text-primary bg-primary/10" },
   ];
 
+  const selectChannel = (name: string) => {
+    setActiveChannel(name);
+    setView("channel");
+  };
+
   return (
     <div className="flex h-screen bg-background text-foreground">
       <AppSidebar active="chat" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -426,15 +432,23 @@ function ChatPage() {
 
             <div className="flex-1 space-y-4 overflow-y-auto px-2 pb-3">
               <div>
-                <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                  <MessageCircle className="h-4 w-4" /> Threads
-                </button>
-                <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                  <AtSign className="h-4 w-4" /> Mentions
-                </button>
-                <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                  <FileText className="h-4 w-4" /> Drafts
-                </button>
+                {([
+                  { k: "threads", label: "Threads", icon: MessageCircle },
+                  { k: "mentions", label: "Mentions", icon: AtSign },
+                  { k: "drafts", label: "Drafts", icon: FileText },
+                ] as const).map((it) => (
+                  <button
+                    key={it.k}
+                    onClick={() => setView(it.k)}
+                    className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+                      view === it.k
+                        ? "bg-primary/15 text-foreground"
+                        : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                    }`}
+                  >
+                    <it.icon className="h-4 w-4" /> {it.label}
+                  </button>
+                ))}
               </div>
 
               <div>
@@ -442,7 +456,7 @@ function ChatPage() {
                   Favorites
                 </div>
                 {favorites.map((c) => (
-                  <ChannelRow key={c.name} ch={c} active={activeChannel === c.name} onClick={() => setActiveChannel(c.name)} />
+                  <ChannelRow key={c.name} ch={c} active={view === "channel" && activeChannel === c.name} onClick={() => selectChannel(c.name)} />
                 ))}
               </div>
 
@@ -452,7 +466,7 @@ function ChatPage() {
                   <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3 w-3" /></button>
                 </div>
                 {channels.map((c) => (
-                  <ChannelRow key={c.name} ch={c} active={activeChannel === c.name} onClick={() => setActiveChannel(c.name)} />
+                  <ChannelRow key={c.name} ch={c} active={view === "channel" && activeChannel === c.name} onClick={() => selectChannel(c.name)} />
                 ))}
               </div>
 
@@ -484,6 +498,10 @@ function ChatPage() {
 
           {/* Main conversation */}
           <section className="flex min-w-0 flex-1 flex-col">
+            {view !== "channel" ? (
+              <SpecialView view={view} onOpenChannel={selectChannel} />
+            ) : (
+            <>
             <header className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -624,6 +642,9 @@ function ChatPage() {
                 </div>
               </div>
             </div>
+          </section>
+            </>
+            )}
           </section>
 
           {/* AI Copilot */}
