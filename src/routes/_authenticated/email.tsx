@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Mail, Search, Plus, ChevronDown, MoreHorizontal, Inbox, Star, Send, FileEdit,
   Trash2, Archive, AlertOctagon, Paperclip, RefreshCw, Filter, ArrowUpDown,
   Reply, ReplyAll, Forward, Tag, Sparkles, Bot, FileText, FileSpreadsheet,
-  Download, ArrowLeft, MailOpen,
+  Download, ArrowLeft, MailOpen, X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
