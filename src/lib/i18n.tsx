@@ -14,6 +14,7 @@ const dict = {
     "nav.knowledge": "Kho tri thức",
     "nav.workflows": "Quy trình",
     "nav.people": "Nhân sự",
+    "nav.email": "Email Hub",
     "nav.reports": "Báo cáo",
     "nav.ai": "Trợ lý AI",
     "nav.workspaces": "Không gian làm việc",
