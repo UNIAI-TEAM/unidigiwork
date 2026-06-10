@@ -51,21 +51,24 @@ function NavItem({ icon: Icon, label, active, chevron, to, badge, collapsed }: {
   return el;
 }
 
-function WorkspaceItem({ letter, name, color, active, collapsed }: { letter: string; name: string; color: string; active?: boolean; collapsed?: boolean }) {
-  const btn = (
-    <button
-      className={cn(
-        "flex w-full items-center rounded-lg transition-colors",
-        collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1.5 text-sm",
-        active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-      )}
-      title={collapsed ? name : undefined}
-    >
+function WorkspaceItem({ letter, name, color, active, collapsed, slug }: { letter: string; name: string; color: string; active?: boolean; collapsed?: boolean; slug?: string }) {
+  const cls = cn(
+    "flex w-full items-center rounded-lg transition-colors",
+    collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1.5 text-sm",
+    active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+  );
+  const inner = (
+    <>
       <span className={cn("flex items-center justify-center rounded text-[11px] font-semibold text-white", collapsed ? "h-7 w-7 text-[10px]" : "h-5 w-5", color)}>
         {letter}
       </span>
       {!collapsed && <span>{name}</span>}
-    </button>
+    </>
+  );
+  const btn = slug ? (
+    <Link to="/workspace/$id" params={{ id: slug }} className={cls} title={collapsed ? name : undefined}>{inner}</Link>
+  ) : (
+    <button className={cls} title={collapsed ? name : undefined}>{inner}</button>
   );
   if (collapsed) {
     return (
@@ -180,22 +183,22 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
                   <Plus className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active />
-              <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" />
-              <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" />
-              <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" />
-              <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" />
+              <WorkspaceItem slug="stos" letter="S" name="STOS Project" color="bg-emerald-500" active />
+              <WorkspaceItem slug="smart-university" letter="U" name="Smart University" color="bg-sky-500" />
+              <WorkspaceItem slug="uni-hrm" letter="M" name="UNI-HRM" color="bg-rose-500" />
+              <WorkspaceItem slug="marketing-pm" letter="H" name="Marketing & PM" color="bg-violet-500" />
+              <WorkspaceItem slug="devops" letter="D" name="DevOps Team" color="bg-orange-500" />
               <NavItem icon={MoreHorizontal} label={t("nav.more")} />
             </>
           )}
           {collapsed && (
             <>
               <div className="my-2 h-px bg-border" />
-              <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active collapsed />
-              <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" collapsed />
-              <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" collapsed />
-              <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" collapsed />
-              <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" collapsed />
+              <WorkspaceItem slug="stos" letter="S" name="STOS Project" color="bg-emerald-500" active collapsed />
+              <WorkspaceItem slug="smart-university" letter="U" name="Smart University" color="bg-sky-500" collapsed />
+              <WorkspaceItem slug="uni-hrm" letter="M" name="UNI-HRM" color="bg-rose-500" collapsed />
+              <WorkspaceItem slug="marketing-pm" letter="H" name="Marketing & PM" color="bg-violet-500" collapsed />
+              <WorkspaceItem slug="devops" letter="D" name="DevOps Team" color="bg-orange-500" collapsed />
             </>
           )}
         </nav>
