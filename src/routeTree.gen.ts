@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowsRouteImport } from './routes/workflows'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
@@ -29,6 +30,11 @@ const WorkflowsRoute = WorkflowsRouteImport.update({
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PeopleRoute = PeopleRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
+  '/reports': typeof ReportsRoute
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
+  '/reports': typeof ReportsRoute
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
+  '/reports': typeof ReportsRoute
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/people'
+    | '/reports'
     | '/tasks'
     | '/workflows'
     | '/documents'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/people'
+    | '/reports'
     | '/tasks'
     | '/workflows'
     | '/documents'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/people'
+    | '/reports'
     | '/tasks'
     | '/workflows'
     | '/_authenticated/documents'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   KnowledgeRoute: typeof KnowledgeRoute
   MeetingRoute: typeof MeetingRoute
   PeopleRoute: typeof PeopleRoute
+  ReportsRoute: typeof ReportsRoute
   TasksRoute: typeof TasksRoute
   WorkflowsRoute: typeof WorkflowsRoute
 }
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/people': {
@@ -269,9 +289,20 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeRoute: KnowledgeRoute,
   MeetingRoute: MeetingRoute,
   PeopleRoute: PeopleRoute,
+  ReportsRoute: ReportsRoute,
   TasksRoute: TasksRoute,
   WorkflowsRoute: WorkflowsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
