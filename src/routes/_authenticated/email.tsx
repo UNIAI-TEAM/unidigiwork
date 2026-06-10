@@ -134,6 +134,16 @@ function EmailHubPage() {
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
+  const [labels, setLabels] = useState<any[]>(INITIAL_LABELS);
+  const [rules, setRules] = useState<RuleDef[]>([
+    { id: "r1", name: "Email từ STOS → gắn nhãn Dự án STOS", whenField: "from", whenContains: "@stos.vn", thenAction: "label", thenValue: "Dự án STOS", active: true },
+    { id: "r2", name: "Email hóa đơn → lưu trữ", whenField: "subject", whenContains: "hóa đơn", thenAction: "archive", thenValue: "", active: false },
+  ]);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
+  const [advanced, setAdvanced] = useState<AdvancedFilters>(EMPTY_FILTERS);
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
   function timeSortValue(e: Email): number {
@@ -168,7 +178,15 @@ function EmailHubPage() {
         e.preview.toLowerCase().includes(q);
       const matchLabel = !filterLabel || (e.labels?.includes(filterLabel) ?? false);
       const matchUnread = !filterUnread || e.unread;
-      return matchQuery && matchLabel && matchUnread;
+      const a = advanced;
+      const matchAdvKeyword = !a.keyword || (
+        e.subject.toLowerCase().includes(a.keyword.toLowerCase()) ||
+        e.preview.toLowerCase().includes(a.keyword.toLowerCase())
+      );
+      const matchAdvFrom = !a.from || e.from.toLowerCase().includes(a.from.toLowerCase());
+      const matchAdvAttach = !a.hasAttachment || !!e.hasAttachment;
+      const matchAdvLabels = a.labels.length === 0 || a.labels.every((l) => e.labels?.includes(l));
+      return matchQuery && matchLabel && matchUnread && matchAdvKeyword && matchAdvFrom && matchAdvAttach && matchAdvLabels;
     });
     return list.slice().sort((a, b) => {
       if (sortBy === "priority") {
