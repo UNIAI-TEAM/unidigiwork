@@ -4,7 +4,7 @@ import {
   Mail, Search, Plus, ChevronDown, MoreHorizontal, Inbox, Star, Send, FileEdit,
   Trash2, Archive, AlertOctagon, Paperclip, RefreshCw, Filter, ArrowUpDown,
   Reply, ReplyAll, Forward, Tag, Sparkles, Bot, FileText, FileSpreadsheet,
-  Download, ArrowLeft, MailOpen, X, Clock, AlertCircle, Check,
+  Download, ArrowLeft, MailOpen, X, Clock, AlertCircle, Check, Settings2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ComposeEmailDialog,
+  AdvancedFilterDialog,
+  AiAssistantDialog,
+  LabelsRulesDialog,
+  EMPTY_FILTERS,
+  type AdvancedFilters,
+  type LabelDef,
+  type RuleDef,
+} from "@/components/email-features";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
@@ -36,13 +46,13 @@ const MAILBOXES = [
   { key: "bin", label: "Thùng rác", icon: Trash2, count: 2 },
 ];
 
-const LABELS = [
+const INITIAL_LABELS: LabelDef[] = [
   { name: "Dự án STOS", color: "bg-emerald-500", count: 24 },
   { name: "Khách hàng", color: "bg-amber-500", count: 18 },
   { name: "Hợp đồng", color: "bg-violet-500", count: 15 },
   { name: "Nhân sự", color: "bg-sky-500", count: 6 },
   { name: "Hóa đơn", color: "bg-rose-500", count: 9 },
-];
+] as any;
 
 const ACCOUNTS = [
   { provider: "M365", label: "M", color: "bg-sky-600", email: "nguyenvana@ubos.vn", count: 128 },
