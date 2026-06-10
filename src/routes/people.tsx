@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 import {
   Upload, Download, Plus, Search as SearchIcon, ChevronDown, MessageCircle,
   Mail, Phone, Calendar, MoreHorizontal, X, MapPin, Building2, Grid3x3, List,
-  Users as UsersIcon,
+  Users as UsersIcon, FileText, FileSpreadsheet, FileImage, Presentation,
+  CheckCircle2, Circle as CircleIcon, Clock, Hash, Video, Edit3, Briefcase,
+  Award, GraduationCap, Globe, ExternalLink,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
