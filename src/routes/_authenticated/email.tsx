@@ -793,6 +793,19 @@ function ToolBtn({ icon: Icon, label }: { icon: any; label: string }) {
   );
 }
 
+function BulkBtn({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+    >
+      <Icon className="h-3.5 w-3.5" />
+      <span className="hidden xl:inline">{label}</span>
+    </button>
+  );
+}
+
 function ActionBtn({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
   return (
     <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
