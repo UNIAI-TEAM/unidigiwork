@@ -7,7 +7,7 @@ import {
   Hand, MessageCircle, Sparkles, PhoneOff, Maximize2, Hash, Circle, Cloud,
 } from "lucide-react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/meeting")({
   head: () => ({
     meta: [
       { title: "UNIWORK — Digital Workplace Platform" },
