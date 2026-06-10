@@ -1,0 +1,12 @@
+services:
+  app:
+    image: registry-harbor.ubos.vn/github-demo/uniwork:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uniwork
+    restart: unless-stopped
+    ports:
+      - "3017:3000"
+    env_file:
+      - .env

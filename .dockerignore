@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.github
+.cursor
+npm-debug.log
+yarn-error.log
+*.local
+*.md
