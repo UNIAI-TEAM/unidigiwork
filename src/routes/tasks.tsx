@@ -207,22 +207,112 @@ function KpiCard({ label, value, footer, valueClass = "" }: { label: string; val
   );
 }
 
-function BoardColumn({ col, tasks }: { col: typeof columns[number]; tasks: Task[] }) {
+type QuickAddPayload = { title: string; tag: string; assigneeSeed: string; assigneeName: string };
+
+function BoardColumn({ col, tasks, onAdd }: { col: typeof columns[number]; tasks: Task[]; onAdd: (p: QuickAddPayload) => void }) {
   const { t } = useI18n();
+  const [adding, setAdding] = useState(false);
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-surface/40 p-3">
       <div className="flex items-center gap-2 px-1">
         <span className={`h-2 w-2 rounded-full ${col.barColor}`} />
         <span className="text-sm font-semibold">{t(col.key as any)}</span>
         <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-muted-foreground">{col.count}</span>
-        <button className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
+        <button onClick={() => setAdding(true)} className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
       </div>
       {tasks.map((tk) => (
         <TaskCard key={tk.id} task={tk} />
       ))}
-      <button className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2">
-        <Plus className="h-3.5 w-3.5" /> {t("tasks.add")}
-      </button>
+      {adding ? (
+        <QuickAddForm
+          onCancel={() => setAdding(false)}
+          onSubmit={(p) => {
+            onAdd(p);
+            setAdding(false);
+          }}
+        />
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2"
+        >
+          <Plus className="h-3.5 w-3.5" /> {t("tasks.add")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+const assigneeOptions = [
+  { name: "Tuấn Nam", seed: "tuan-nam-ba" },
+  { name: "Minh Anh", seed: "minh-anh" },
+  { name: "Hương Trần", seed: "huong-tran" },
+  { name: "Phương Linh", seed: "phuong-linh" },
+  { name: "Duy Anh", seed: "duy-anh" },
+  { name: "Bảo Ngọc", seed: "bao-ngoc" },
+  { name: "Quang Minh", seed: "quang-minh" },
+  { name: "Hoàng Long", seed: "hoang-long" },
+];
+
+const tagOptions = Object.keys(tagColors);
+
+function QuickAddForm({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (p: QuickAddPayload) => void }) {
+  const { t } = useI18n();
+  const [title, setTitle] = useState("");
+  const [tag, setTag] = useState(tagOptions[0]);
+  const [assigneeSeed, setAssigneeSeed] = useState(assigneeOptions[0].seed);
+
+  const submit = () => {
+    const v = title.trim();
+    if (!v) return;
+    const a = assigneeOptions.find((x) => x.seed === assigneeSeed) ?? assigneeOptions[0];
+    onSubmit({ title: v, tag, assigneeSeed: a.seed, assigneeName: a.name });
+    setTitle("");
+  };
+
+  return (
+    <div className="space-y-2 rounded-lg border border-primary/40 bg-surface p-3 shadow-sm">
+      <input
+        autoFocus
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+          if (e.key === "Escape") onCancel();
+        }}
+        placeholder={t("tasks.quick.title")}
+        className="w-full rounded-md bg-surface-2 px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+      />
+      <div className="flex items-center gap-2">
+        <select
+          value={tag}
+          onChange={(e) => setTag(e.target.value)}
+          className="rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+          aria-label={t("tasks.quick.tag")}
+        >
+          {tagOptions.map((tg) => <option key={tg} value={tg}>{tg}</option>)}
+        </select>
+        <select
+          value={assigneeSeed}
+          onChange={(e) => setAssigneeSeed(e.target.value)}
+          className="flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+          aria-label={t("tasks.quick.assignee")}
+        >
+          {assigneeOptions.map((a) => <option key={a.seed} value={a.seed}>{a.name}</option>)}
+        </select>
+      </div>
+      <div className="flex items-center justify-end gap-2">
+        <button onClick={onCancel} className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2">
+          {t("tasks.quick.cancel")}
+        </button>
+        <button
+          onClick={submit}
+          disabled={!title.trim()}
+          className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {t("tasks.quick.save")}
+        </button>
+      </div>
     </div>
   );
 }
