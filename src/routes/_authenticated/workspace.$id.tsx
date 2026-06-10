@@ -208,8 +208,8 @@ function WorkspaceDetailPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl font-bold sm:text-2xl">{ws.name}</h1>
                   <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${healthCls}`}>{ws.health}</span>
-                  {ws.tags.map((t) => (
-                    <span key={t} className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground">{t}</span>
+                  {ws.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground">{tag}</span>
                   ))}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">{ws.tagline}</p>
