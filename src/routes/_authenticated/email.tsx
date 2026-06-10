@@ -114,10 +114,27 @@ function EmailHubPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeMailbox, setActiveMailbox] = useState("inbox");
   const [selected, setSelected] = useState("1");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterLabel, setFilterLabel] = useState<string | null>(null);
+  const [filterUnread, setFilterUnread] = useState(false);
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
+  const filteredEmails = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return EMAILS.filter((e) => {
+      const matchQuery =
+        !q ||
+        e.from.toLowerCase().includes(q) ||
+        e.subject.toLowerCase().includes(q) ||
+        e.preview.toLowerCase().includes(q);
+      const matchLabel = !filterLabel || (e.labels?.includes(filterLabel) ?? false);
+      const matchUnread = !filterUnread || e.unread;
+      return matchQuery && matchLabel && matchUnread;
+    });
+  }, [searchQuery, filterLabel, filterUnread]);
+
   const groups: Record<string, Email[]> = {};
-  EMAILS.forEach((e) => {
+  filteredEmails.forEach((e) => {
     groups[e.group] = groups[e.group] || [];
     groups[e.group].push(e);
   });
