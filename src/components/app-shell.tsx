@@ -75,7 +75,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
             badge={<span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted-foreground">7</span>}
           />
           <NavItem icon={FileText} label="Documents" to="/documents" active={active === "documents"} />
-          <NavItem icon={BookOpen} label="Knowledge Base" active={active === "knowledge"} />
+          <NavItem icon={BookOpen} label="Knowledge Base" to="/knowledge" active={active === "knowledge"} />
           <NavItem icon={Workflow} label="Workflows" active={active === "workflows"} />
           <NavItem icon={Users} label="People" active={active === "people"} />
           <NavItem icon={BarChart3} label="Reports" active={active === "reports"} />
