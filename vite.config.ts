@@ -12,7 +12,12 @@ export default defineConfig({
   },
   vite: {
     server: {
-      allowedHosts: true,
+      host: true,
+      allowedHosts: ["uniwork.demo.ubos.vn"],
+    },
+    preview: {
+      host: true,
+      allowedHosts: ["uniwork.demo.ubos.vn"],
     },
   },
 });
