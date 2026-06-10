@@ -28,6 +28,7 @@ import {
   Trash2,
   Lock,
   ShieldCheck,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
@@ -199,6 +200,98 @@ const TEAM = [
   { name: "Phạm Nam", role: "UI/UX" },
   { name: "Đỗ Linh", role: "QA Lead" },
 ];
+
+type AuditAction = "create" | "update" | "delete";
+type AuditTarget = "milestone" | "document";
+type AuditEntry = {
+  id: string;
+  at: Date;
+  actor: string;
+  actorRole: Role;
+  action: AuditAction;
+  target: AuditTarget;
+  name: string;
+  detail?: string;
+};
+
+const ACTOR_NAME: Record<Role, string> = {
+  owner: "Nguyễn Văn A",
+  admin: "Trần Minh",
+  member: "Lê Hoa",
+  viewer: "Phạm Nam",
+};
+
+const INITIAL_AUDIT: AuditEntry[] = [
+  {
+    id: "a1",
+    at: new Date(Date.now() - 1000 * 60 * 35),
+    actor: "Trần Minh",
+    actorRole: "admin",
+    action: "update",
+    target: "milestone",
+    name: "Phát triển MVP",
+    detail: "Tiến độ 60% → 75%",
+  },
+  {
+    id: "a2",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 2),
+    actor: "Lê Hoa",
+    actorRole: "member",
+    action: "create",
+    target: "document",
+    name: "Kế hoạch triển khai Q3.xlsx",
+  },
+  {
+    id: "a3",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    actor: "Nguyễn Văn A",
+    actorRole: "owner",
+    action: "update",
+    target: "milestone",
+    name: "Kiểm thử & UAT",
+    detail: "Đổi deadline → 31/08/2026",
+  },
+  {
+    id: "a4",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 26),
+    actor: "Đỗ Linh",
+    actorRole: "member",
+    action: "delete",
+    target: "document",
+    name: "Draft đặc tả v1.0.pdf",
+  },
+  {
+    id: "a5",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 72),
+    actor: "Trần Minh",
+    actorRole: "admin",
+    action: "create",
+    target: "milestone",
+    name: "Triển khai & Go-live",
+  },
+];
+
+function relTime(d: Date) {
+  const diff = Date.now() - d.getTime();
+  const m = Math.round(diff / 60000);
+  if (m < 1) return "vừa xong";
+  if (m < 60) return `${m} phút trước`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} giờ trước`;
+  const day = Math.round(h / 24);
+  if (day < 30) return `${day} ngày trước`;
+  return d.toLocaleDateString("vi-VN");
+}
+
+function fullTime(d: Date) {
+  return d.toLocaleString("vi-VN", { hour12: false });
+}
+
+const ACTION_META: Record<AuditAction, { label: string; cls: string }> = {
+  create: { label: "Tạo", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  update: { label: "Sửa", cls: "bg-sky-50 text-sky-700 ring-sky-200" },
+  delete: { label: "Xoá", cls: "bg-rose-50 text-rose-700 ring-rose-200" },
+};
 
 const docIcon = (type: string) => {
   switch (type) {
