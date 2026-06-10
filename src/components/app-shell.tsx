@@ -246,6 +246,8 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
   const { t } = useI18n();
   const [userOpen, setUserOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [calOpen, setCalOpen] = useState(false);
+  const calRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!userOpen) return;
@@ -260,6 +262,20 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
       document.removeEventListener("keydown", onKey);
     };
   }, [userOpen]);
+
+  useEffect(() => {
+    if (!calOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (calRef.current && !calRef.current.contains(e.target as Node)) setCalOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setCalOpen(false); };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [calOpen]);
 
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
@@ -314,7 +330,21 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
         <Bell className="h-5 w-5 text-muted-foreground" />
         <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">12</span>
       </Link>
-      <button className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"><Calendar className="h-5 w-5 text-muted-foreground" /></button>
+      <div className="relative" ref={calRef}>
+        <button
+          onClick={() => setCalOpen((v) => !v)}
+          aria-label="Lịch"
+          aria-haspopup="dialog"
+          aria-expanded={calOpen}
+          className={cn(
+            "hidden rounded-lg p-2 hover:bg-surface-2 lg:block",
+            calOpen && "bg-surface-2"
+          )}
+        >
+          <Calendar className="h-5 w-5 text-muted-foreground" />
+        </button>
+        {calOpen && <CalendarPanel onClose={() => setCalOpen(false)} />}
+      </div>
       <div className="relative" ref={menuRef}>
         <button
           onClick={() => setUserOpen((v) => !v)}
