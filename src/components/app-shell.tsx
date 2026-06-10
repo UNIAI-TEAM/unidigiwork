@@ -171,14 +171,17 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
         <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">12</span>
       </button>
       <button className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"><Calendar className="h-5 w-5 text-muted-foreground" /></button>
-      <div className="flex items-center gap-2 rounded-lg bg-surface-2 px-2 py-1.5">
-        <img src={avatar("nguyen-van-a-1")} className="h-8 w-8 rounded-full object-cover" alt="" />
-        <div className="hidden text-sm leading-tight sm:block">
-          <div className="whitespace-nowrap font-medium">Nguyễn Văn A</div>
+      <button className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-surface-2/80 px-2 py-1.5 transition-colors hover:border-primary/40 hover:bg-surface-2">
+        <span className="relative">
+          <img src={avatar("nguyen-van-a-1")} className="h-9 w-9 rounded-lg bg-surface object-cover ring-1 ring-border/60" alt="Nguyễn Văn A" />
+          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-2 bg-emerald-400" />
+        </span>
+        <div className="hidden text-left leading-tight sm:block">
+          <div className="whitespace-nowrap text-sm font-semibold">Nguyễn Văn A</div>
           <div className="whitespace-nowrap text-[11px] text-muted-foreground">Giám đốc Điều hành</div>
         </div>
         <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
-      </div>
+      </button>
     </header>
   );
 }
