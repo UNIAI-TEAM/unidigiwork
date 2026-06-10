@@ -427,6 +427,7 @@ const dict = {
     "nav.knowledge": "Knowledge Base",
     "nav.workflows": "Workflows",
     "nav.people": "People",
+    "nav.email": "Email Hub",
     "nav.reports": "Reports",
     "nav.ai": "AI Assistant",
     "nav.workspaces": "Workspaces",
