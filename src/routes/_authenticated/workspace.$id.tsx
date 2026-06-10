@@ -179,6 +179,8 @@ function WorkspaceDetailPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const [starred, setStarred] = useState(true);
+  const [docSearch, setDocSearch] = useState("");
+  const [docFilter, setDocFilter] = useState<string>("all");
 
   const healthCls =
     ws.health === "Tốt"
