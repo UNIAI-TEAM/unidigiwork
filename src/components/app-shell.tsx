@@ -273,7 +273,7 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
   );
 }
 
-function MenuItem({ icon: Icon, label, desc, to, onClick }: { icon: any; label: string; desc?: string; to?: string; onClick?: () => void }) {
+function MenuItem({ icon: Icon, label, desc, to, search, onClick }: { icon: any; label: string; desc?: string; to?: string; search?: Record<string, any>; onClick?: () => void }) {
   const inner = (
     <>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted-foreground group-hover:bg-primary/15 group-hover:text-primary">
@@ -286,7 +286,7 @@ function MenuItem({ icon: Icon, label, desc, to, onClick }: { icon: any; label: 
     </>
   );
   const cls = "group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-surface-2";
-  if (to) return <Link to={to} onClick={onClick} className={cls}>{inner}</Link>;
+  if (to) return <Link to={to} search={search} onClick={onClick} className={cls}>{inner}</Link>;
   return <button onClick={onClick} className={cls}>{inner}</button>;
 }
 
