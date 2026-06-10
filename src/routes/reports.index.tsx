@@ -9,7 +9,7 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 
-export const Route = createFileRoute("/reports")({
+export const Route = createFileRoute("/reports/")({
   head: () => ({
     meta: [
       { title: "Reports · UNIWORK" },
