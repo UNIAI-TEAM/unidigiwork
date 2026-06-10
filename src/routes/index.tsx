@@ -61,9 +61,7 @@ function WorkspaceItem({ letter, name, color }: { letter: string; name: string; 
 function VideoTile({ name, seed, highlight }: { name: string; seed: string; highlight?: boolean }) {
   return (
     <div
-      className={`relative aspect-video overflow-hidden rounded-xl bg-surface-2 xl:aspect-[4/3] 2xl:aspect-video ${
-        highlight ? "ring-2 ring-primary/70" : ""
-      }`}
+      className={`video-tile ${highlight ? "ring-2 ring-primary/70" : ""}`}
     >
       <img src={avatar(seed)} alt={name} className="h-full w-full object-cover" />
       <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/80 to-transparent p-2 text-xs text-white">
@@ -255,7 +253,7 @@ function Index() {
             </div>
 
             {/* Video grid */}
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+            <div className="video-grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3">
               <VideoTile name={participants[0].name} seed={participants[0].seed} highlight />
               <VideoTile name={participants[1].name} seed={participants[1].seed} />
               <VideoTile name={participants[2].name} seed={participants[2].seed} />
@@ -265,16 +263,16 @@ function Index() {
             </div>
 
             {/* Small row */}
-            <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 lg:gap-4 xl:grid-cols-3 2xl:grid-cols-5">
+            <div className="video-grid mt-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-3 2xl:grid-cols-5">
               {participants.slice(6, 10).map((p) => (
-                <div key={p.seed} className="relative aspect-video overflow-hidden rounded-xl bg-surface-2 xl:aspect-[4/3] 2xl:aspect-video">
+                <div key={p.seed} className="video-tile">
                   <img src={avatar(p.seed)} alt={p.name} className="h-full w-full object-cover" />
                   <div className="absolute inset-x-0 bottom-0 flex items-center gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] text-white">
                     <Mic className="h-2.5 w-2.5" /> {p.name}
                   </div>
                 </div>
               ))}
-              <div className="flex aspect-video flex-col items-center justify-center rounded-xl bg-surface-2 text-muted-foreground xl:aspect-[4/3] 2xl:aspect-video">
+              <div className="video-tile flex flex-col items-center justify-center text-muted-foreground">
                 <div className="text-2xl font-bold text-foreground">+8</div>
                 <div className="text-xs">participants</div>
               </div>

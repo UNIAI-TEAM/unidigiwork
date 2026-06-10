@@ -148,3 +148,35 @@
     color: var(--color-foreground);
   }
 }
+
+/* Video grid tokens — synced gutter / row height / aspect across breakpoints */
+:root {
+  --grid-gutter: 0.625rem;     /* 10px */
+  --tile-aspect: 16 / 9;
+  --tile-min-h: 9rem;
+}
+@media (min-width: 640px) {
+  :root { --grid-gutter: 0.75rem; --tile-min-h: 10rem; }
+}
+@media (min-width: 1024px) {
+  :root { --grid-gutter: 1rem; --tile-min-h: 11rem; }
+}
+@media (min-width: 1280px) {
+  :root { --grid-gutter: 0.875rem; --tile-aspect: 4 / 3; --tile-min-h: 10rem; }
+}
+@media (min-width: 1536px) {
+  :root { --grid-gutter: 1rem; --tile-aspect: 16 / 9; --tile-min-h: 11rem; }
+}
+
+@utility video-grid {
+  display: grid;
+  gap: var(--grid-gutter);
+}
+@utility video-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background-color: var(--color-surface-2);
+  aspect-ratio: var(--tile-aspect);
+  min-height: var(--tile-min-h);
+}
