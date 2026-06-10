@@ -673,7 +673,7 @@ function SettingsPage() {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar
-        active={"dashboard" as any}
+        active="dashboard"
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
