@@ -632,7 +632,7 @@ function WorkspaceDetailPage() {
                     </button>
                   </div>
                   <ul className="space-y-2">
-                    {MEMBERS.slice(0, 5).map((m) => (
+                    {members.slice(0, 5).map((m) => (
                       <li key={m.seed} className="flex items-center gap-3">
                         <img
                           src={avatar(m.seed)}
@@ -641,7 +641,9 @@ function WorkspaceDetailPage() {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm">{m.name}</div>
-                          <div className="truncate text-[11px] text-muted-foreground">{m.role}</div>
+                          <div className="truncate text-[11px] text-muted-foreground">
+                            {m.title} · {ROLE_LABEL[m.role]}
+                          </div>
                         </div>
                         <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
                           <MoreHorizontal className="h-4 w-4" />
