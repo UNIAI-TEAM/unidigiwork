@@ -43,7 +43,7 @@ const tagColors: Record<string, string> = {
   Docs: "bg-teal-500/20 text-teal-300 border border-teal-500/30",
 };
 
-const tasks: Task[] = [
+const initialTasks: Task[] = [
   { id: "STOS-128", title: "Thiết kế giao diện Dashboard", status: "todo", assignee: { name: "Minh Anh", seed: "minh-anh" }, tag: { label: "Design", color: tagColors.Design }, comments: 3, attachments: 2, date: "May 30" },
   { id: "STOS-142", title: "Tích hợp API Payment Gateway", status: "todo", assignee: { name: "Quang Minh", seed: "quang-minh" }, tag: { label: "Backend", color: tagColors.Backend }, comments: 2, date: "May 31", subtasks: { done: 2, total: 3 } },
   { id: "STOS-143", title: "Viết tài liệu hướng dẫn sử dụng", status: "todo", assignee: { name: "Bảo Ngọc", seed: "bao-ngoc" }, tag: { label: "Docs", color: tagColors.Docs }, comments: 1, date: "" },
