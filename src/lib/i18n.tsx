@@ -172,6 +172,11 @@ const dict = {
     "tasks.integrations": "Tích hợp",
     "tasks.minago": "phút trước",
     "tasks.hago": "giờ trước",
+    "tasks.quick.title": "Tiêu đề công việc…",
+    "tasks.quick.save": "Thêm",
+    "tasks.quick.cancel": "Huỷ",
+    "tasks.quick.tag": "Nhãn",
+    "tasks.quick.assignee": "Phụ trách",
   },
   en: {
     "nav.dashboard": "Dashboard",
