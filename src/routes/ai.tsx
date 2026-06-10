@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
+import type { Key } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   Plus,

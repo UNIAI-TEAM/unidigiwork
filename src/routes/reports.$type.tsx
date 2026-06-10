@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
