@@ -281,7 +281,8 @@ function NotificationsPage() {
   const toggle = (id: string) => {
     setSelected((s) => {
       const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
   };
@@ -289,7 +290,7 @@ function NotificationsPage() {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar
-        active={"dashboard" as any}
+        active="dashboard"
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
