@@ -161,11 +161,46 @@ const ACTIVITY = [
 ];
 
 const DOCS = [
-  { name: "STOS - Tổng quan kiến trúc", updated: "Hôm qua", owner: "Trần Minh" },
-  { name: "Roadmap Q3 2026", updated: "2 ngày trước", owner: "Nguyễn Văn A" },
-  { name: "User Research Report", updated: "Tuần này", owner: "Lê Hồng" },
-  { name: "API Specification v1.2", updated: "Tuần này", owner: "Trần Minh" },
+  { name: "STOS - Tổng quan kiến trúc hệ thống.pdf", type: "pdf", size: "4.8 MB", updated: "Hôm nay", owner: "Trần Minh" },
+  { name: "Kế hoạch triển khai Q3 2026.xlsx", type: "xlsx", size: "1.2 MB", updated: "Hôm qua", owner: "Nguyễn Văn A" },
+  { name: "Báo cáo nghiên cứu người dùng.docx", type: "doc", size: "3.5 MB", updated: "2 ngày trước", owner: "Lê Hồng" },
+  { name: "API Specification v1.2.pdf", type: "pdf", size: "2.1 MB", updated: "Tuần này", owner: "Trần Minh" },
+  { name: "Mockup UI Dashboard v3.fig", type: "image", size: "18.4 MB", updated: "Tuần này", owner: "Lê Hồng" },
+  { name: "Slide họp Steering Committee.pptx", type: "ppt", size: "8.6 MB", updated: "3 ngày trước", owner: "Phạm Quỳnh" },
+  { name: "Báo cáo tiến độ tháng 5.pdf", type: "pdf", size: "2.9 MB", updated: "1 tuần trước", owner: "Đỗ Linh" },
+  { name: "Dataset khảo sát nội bộ.xlsx", type: "xlsx", size: "856 KB", updated: "1 tuần trước", owner: "Trần Minh" },
+  { name: "Tài liệu hướng dẫn vận hành.docx", type: "doc", size: "1.8 MB", updated: "2 tuần trước", owner: "Nguyễn Văn A" },
+  { name: "Infographic quy trình mới.png", type: "image", size: "4.2 MB", updated: "2 tuần trước", owner: "Lê Hồng" },
 ];
+
+const DOC_TYPES: { id: string; label: string }[] = [
+  { id: "all", label: "Tất cả" },
+  { id: "pdf", label: "PDF" },
+  { id: "xlsx", label: "Excel" },
+  { id: "doc", label: "Word" },
+  { id: "ppt", label: "PowerPoint" },
+  { id: "image", label: "Hình ảnh" },
+];
+
+function docTypeIcon(type: string) {
+  switch (type) {
+    case "pdf": return <FileText className="h-5 w-5 text-rose-500" />;
+    case "xlsx": return <FileSpreadsheet className="h-5 w-5 text-emerald-500" />;
+    case "ppt": return <Presentation className="h-5 w-5 text-amber-500" />;
+    case "image": return <FileImage className="h-5 w-5 text-violet-500" />;
+    default: return <FileText className="h-5 w-5 text-sky-500" />;
+  }
+}
+
+function docTypeBg(type: string) {
+  switch (type) {
+    case "pdf": return "bg-rose-500/15 text-rose-600";
+    case "xlsx": return "bg-emerald-500/15 text-emerald-600";
+    case "ppt": return "bg-amber-500/15 text-amber-600";
+    case "image": return "bg-violet-500/15 text-violet-600";
+    default: return "bg-sky-500/15 text-sky-600";
+  }
+}
 
 const MEETINGS = [
   { title: "Standup hàng ngày", time: "09:00 - 09:15", today: true, attendees: 8 },
