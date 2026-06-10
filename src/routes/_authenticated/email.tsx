@@ -85,13 +85,14 @@ const MAILBOXES = [
   { key: "bin", label: "Thùng rác", icon: Trash2, count: 2 },
 ];
 
-const INITIAL_LABELS: LabelDef[] = [
+type LabelWithCount = LabelDef & { count: number };
+const INITIAL_LABELS: LabelWithCount[] = [
   { name: "Dự án STOS", color: "bg-emerald-500", count: 24 },
   { name: "Khách hàng", color: "bg-amber-500", count: 18 },
   { name: "Hợp đồng", color: "bg-violet-500", count: 15 },
   { name: "Nhân sự", color: "bg-sky-500", count: 6 },
   { name: "Hóa đơn", color: "bg-rose-500", count: 9 },
-] as Array<{ name: string; color: string; count: number }>;
+];
 
 const ACCOUNTS = [
   { provider: "M365", label: "M", color: "bg-sky-600", email: "nguyenvana@ubos.vn", count: 128 },
@@ -496,8 +497,7 @@ function EmailHubPage() {
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
-  const [labels, setLabels] =
-    useState<Array<{ name: string; color: string; count: number }>>(INITIAL_LABELS);
+  const [labels, setLabels] = useState<LabelWithCount[]>(INITIAL_LABELS);
   const [rules, setRules] = useState<RuleDef[]>([
     {
       id: "r1",
