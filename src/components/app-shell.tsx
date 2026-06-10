@@ -1504,7 +1504,7 @@ function MenuItem({
   label: string;
   desc?: string;
   to?: string;
-  search?: Record<string, any>;
+  search?: Record<string, unknown>;
   onClick?: () => void;
 }) {
   const inner = (
