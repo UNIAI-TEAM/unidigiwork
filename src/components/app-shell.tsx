@@ -153,7 +153,7 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
           <button className="hidden items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm sm:flex">
             <Sparkles className="h-4 w-4 text-primary" /> AI
           </button>
-          <button className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"><HelpCircle className="h-5 w-5 text-muted-foreground" /></button>
+          <Link to="/help" aria-label="Trợ giúp" className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"><HelpCircle className="h-5 w-5 text-muted-foreground" /></Link>
         </>
       )}
       <LanguageToggle />
