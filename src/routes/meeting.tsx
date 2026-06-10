@@ -6,6 +6,7 @@ import {
   ShieldCheck, ChevronDown, MoreHorizontal, Mic, MicOff, VideoIcon, Monitor, Menu, X,
   Hand, MessageCircle, Sparkles, PhoneOff, Maximize2, Hash, Circle, Cloud,
 } from "lucide-react";
+import { AppSidebar } from "@/components/app-shell";
 
 export const Route = createFileRoute("/meeting")({
   head: () => ({
@@ -101,82 +102,7 @@ function Index() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <button
-          aria-label="Close sidebar"
-          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-border bg-surface transition-transform lg:static lg:w-56 lg:translate-x-0 xl:w-64 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex items-center gap-2 px-5 py-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">U</div>
-          <div className="flex-1 leading-tight">
-            <div className="text-base font-bold tracking-wide">UNIWORK</div>
-            <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
-          </div>
-          <button
-            aria-label="Close sidebar"
-            className="rounded p-1 text-muted-foreground hover:bg-surface-2 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-          <NavItem icon={LayoutDashboard} label="Dashboard" chevron />
-          <NavItem icon={MessageSquare} label="Chat" active />
-          <NavItem icon={Video} label="Meetings" chevron />
-          <NavItem icon={ListChecks} label="Tasks & Projects" />
-          <NavItem icon={FileText} label="Documents" />
-          <NavItem icon={BookOpen} label="Knowledge Base" />
-          <NavItem icon={Workflow} label="Workflows" />
-          <NavItem icon={Users} label="People" />
-          <NavItem icon={BarChart3} label="Reports" />
-          <NavItem icon={Bot} label="AI Assistant" />
-
-          <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <span>Workspaces</span>
-            <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
-          </div>
-          <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" />
-          <WorkspaceItem letter="Y" name="Y tế xã" color="bg-amber-500" />
-          <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" />
-          <WorkspaceItem letter="M" name="Marketing & PM" color="bg-rose-500" />
-          <WorkspaceItem letter="H" name="HR Department" color="bg-violet-500" />
-          <WorkspaceItem letter="D" name="DevOps" color="bg-orange-500" />
-          <NavItem icon={MoreHorizontal} label="More" />
-        </nav>
-
-        <div className="m-3 rounded-xl bg-surface-2 p-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
-              <MessageCircle className="h-4 w-4" />
-            </div>
-            <div className="text-sm">
-              <div className="font-medium">Mattermost</div>
-              <div className="flex items-center gap-1 text-[11px] text-success">
-                <Circle className="h-1.5 w-1.5 fill-current" /> Connected
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-sm">
-          <Cloud className="h-5 w-5 text-sky-400" />
-          <div>
-            <div className="font-medium">Nguyễn Văn A</div>
-            <div className="text-[11px] text-muted-foreground">28°C · Hà Nội</div>
-          </div>
-        </div>
-      </aside>
+      <AppSidebar active="meetings" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main */}
       <main className="flex min-w-0 flex-1 flex-col">
