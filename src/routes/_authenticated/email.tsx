@@ -4,10 +4,16 @@ import {
   Mail, Search, Plus, ChevronDown, MoreHorizontal, Inbox, Star, Send, FileEdit,
   Trash2, Archive, AlertOctagon, Paperclip, RefreshCw, Filter, ArrowUpDown,
   Reply, ReplyAll, Forward, Tag, Sparkles, Bot, FileText, FileSpreadsheet,
-  Download, ArrowLeft, MailOpen, X,
+  Download, ArrowLeft, MailOpen, X, Clock, AlertCircle, Check,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
@@ -117,11 +123,34 @@ function EmailHubPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
+  const [sortBy, setSortBy] = useState<"time" | "priority">("time");
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
+
+  function timeSortValue(e: Email): number {
+    const groupWeight = e.group === "Hôm nay" ? 3 : e.group === "Hôm qua" ? 2 : 1;
+    if (e.time.includes("AM") || e.time.includes("PM")) {
+      const m = e.time.match(/(\d+):(\d+)/);
+      if (m) {
+        let hour = parseInt(m[1]);
+        const minute = parseInt(m[2]);
+        if (e.time.includes("PM") && hour !== 12) hour += 12;
+        if (e.time.includes("AM") && hour === 12) hour = 0;
+        return groupWeight * 10000 + hour * 60 + minute;
+      }
+    }
+    return groupWeight * 10000;
+  }
+
+  function prioritySortValue(e: Email): number {
+    if (e.unread && e.starred) return 3;
+    if (e.unread) return 2;
+    if (e.starred) return 1;
+    return 0;
+  }
 
   const filteredEmails = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return EMAILS.filter((e) => {
+    const list = EMAILS.filter((e) => {
       const matchQuery =
         !q ||
         e.from.toLowerCase().includes(q) ||
@@ -131,13 +160,23 @@ function EmailHubPage() {
       const matchUnread = !filterUnread || e.unread;
       return matchQuery && matchLabel && matchUnread;
     });
-  }, [searchQuery, filterLabel, filterUnread]);
+    return list.slice().sort((a, b) => {
+      if (sortBy === "priority") {
+        return prioritySortValue(b) - prioritySortValue(a);
+      }
+      return timeSortValue(b) - timeSortValue(a);
+    });
+  }, [searchQuery, filterLabel, filterUnread, sortBy]);
 
   const groups: Record<string, Email[]> = {};
-  filteredEmails.forEach((e) => {
-    groups[e.group] = groups[e.group] || [];
-    groups[e.group].push(e);
-  });
+  if (sortBy === "priority") {
+    groups["Theo mức độ ưu tiên"] = filteredEmails;
+  } else {
+    filteredEmails.forEach((e) => {
+      groups[e.group] = groups[e.group] || [];
+      groups[e.group].push(e);
+    });
+  }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -264,9 +303,25 @@ function EmailHubPage() {
                 >
                   <MailOpen className="h-3.5 w-3.5" /> Chưa đọc
                 </button>
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
-                  <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp <ChevronDown className="h-3 w-3" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${sortBy !== "time" ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}>
+                      <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[14rem]">
+                    <DropdownMenuItem onClick={() => setSortBy("time")} className="cursor-pointer">
+                      <Clock className="h-4 w-4" />
+                      <span className="flex-1">Thời gian (mới nhất)</span>
+                      {sortBy === "time" && <Check className="h-4 w-4 text-primary" />}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy("priority")} className="cursor-pointer">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="flex-1">Mức độ ưu tiên</span>
+                      {sortBy === "priority" && <Check className="h-4 w-4 text-primary" />}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 {(searchQuery || filterLabel || filterUnread) && (
                   <button
                     onClick={() => { setSearchQuery(""); setFilterLabel(null); setFilterUnread(false); }}
