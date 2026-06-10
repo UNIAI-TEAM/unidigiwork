@@ -14,12 +14,14 @@ import {
   LogIn,
   Loader2,
   KanbanSquare,
+  Mail,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import shotMeeting from "@/assets/shot-meeting.png.asset.json";
 import shotKnowledge from "@/assets/shot-knowledge.png.asset.json";
 import shotTasks from "@/assets/shot-tasks.png.asset.json";
+import shotEmail from "@/assets/shot-email.png.asset.json";
 import { useI18n, LanguageToggle } from "@/lib/i18n";
 import { ThemeToggle } from "@/lib/theme";
 
@@ -53,6 +55,7 @@ function Landing() {
     { icon: MessageSquare, title: t("land.feat.chat.t"), desc: t("land.feat.chat.d") },
     { icon: Workflow, title: t("land.feat.flow.t"), desc: t("land.feat.flow.d") },
     { icon: Bot, title: t("land.feat.ai.t"), desc: t("land.feat.ai.d") },
+    { icon: Mail, title: t("land.feat.email.t"), desc: t("land.feat.email.d") },
   ];
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -289,6 +292,24 @@ function Landing() {
                   className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                   loading="lazy"
                 />
+              </div>
+            </div>
+
+            <div className="grid items-center gap-8 lg:grid-cols-2">
+              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 lg:order-first">
+                <img
+                  src={shotEmail.url}
+                  alt={t("land.preview.email.tag")}
+                  className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+              <div className="lg:order-last">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-300">
+                  <Mail className="h-3.5 w-3.5" /> {t("land.preview.email.tag")}
+                </span>
+                <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.email.h")}</h3>
+                <p className="mt-2 text-muted-foreground">{t("land.preview.email.p")}</p>
               </div>
             </div>
           </div>
