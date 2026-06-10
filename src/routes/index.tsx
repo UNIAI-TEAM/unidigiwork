@@ -171,8 +171,8 @@ function Landing() {
             </div>
 
             <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 lg:order-first">
-                <img src={shotKnowledge.url} alt="UNIWORK Knowledge Base" className="w-full" loading="lazy" />
+              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 lg:order-first">
+                <img src={shotKnowledge.url} alt="UNIWORK Knowledge Base" className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" loading="lazy" />
               </div>
               <div className="lg:order-last">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-300">
