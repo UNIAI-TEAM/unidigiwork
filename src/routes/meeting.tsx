@@ -5,7 +5,9 @@ import {
   Mic, MicOff, VideoIcon, Monitor, Hand, MessageCircle, Sparkles,
   PhoneOff, Maximize2, Hash, Circle, Video, Search, Filter, ChevronLeft,
   ChevronRight, Clock, Link2, PlayCircle, FileText, Download, Star,
-  ArrowUpRight, CheckCircle2, AlertCircle,
+  ArrowUpRight, CheckCircle2, AlertCircle, Send, Paperclip, Smile,
+  Image as ImageIcon, FileSpreadsheet, FileArchive, UserPlus, Crown,
+  MicOff as MicOffIcon, Pin, MoreVertical, ShieldCheck, Eye,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 
