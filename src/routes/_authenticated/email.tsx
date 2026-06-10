@@ -5,7 +5,7 @@ import {
   Trash2, Archive, AlertOctagon, Paperclip, RefreshCw, Filter, ArrowUpDown,
   Reply, ReplyAll, Forward, Tag, Sparkles, Bot, FileText, FileSpreadsheet,
   Download, ArrowLeft, MailOpen, X, Clock, AlertCircle, Check, Settings2,
-  ChevronLeft, ChevronRight, CheckSquare, Square,
+  ChevronLeft, ChevronRight, CheckSquare, Square, Image,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -64,8 +64,12 @@ const ACCOUNTS = [
 type Email = {
   id: string;
   from: string;
+  fromEmail?: string;
+  to?: string;
+  cc?: string;
   subject: string;
   preview: string;
+  body?: string;
   time: string;
   group: "Hôm nay" | "Hôm qua" | "Tuần này";
   unread?: boolean;
@@ -74,12 +78,13 @@ type Email = {
   selected?: boolean;
   labels?: string[];
   mailbox?: "inbox" | "sent" | "drafts" | "spam" | "trash" | "archive" | "bin";
+  attachments?: { name: string; size: string; type: "pdf" | "excel" | "doc" | "image" }[];
 };
 
 const EMAILS: Email[] = [
-  { id: "1", mailbox: "inbox", from: "Lê Minh Đức", subject: "RFQ - Hệ thống máy chủ cho dự án STOS", preview: "Kính gửi anh/chị, Chúng tôi xin gửi yêu cầu báo giá...", time: "10:24 AM", group: "Hôm nay", unread: true, starred: true, hasAttachment: true, selected: true, labels: ["Dự án STOS"] },
-  { id: "2", mailbox: "inbox", from: "Trần Thùy Linh", subject: "Review hợp đồng triển khai Smart University", preview: "Anh vui lòng xem xét và phản hồi các nội dung...", time: "09:15 AM", group: "Hôm nay", unread: true, starred: true, labels: ["Hợp đồng", "Khách hàng"] },
-  { id: "3", mailbox: "inbox", from: "Vũ Hoàng Nam", subject: "Yêu cầu phê duyệt ngân sách Q2/2025", preview: "Theo kế hoạch, chúng tôi đề xuất ngân sách...", time: "08:47 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"] },
+  { id: "1", mailbox: "inbox", from: "Lê Minh Đức", fromEmail: "leminhduc@techcorp.vn", to: "nguyenvana@ubos.vn", subject: "RFQ - Hệ thống máy chủ cho dự án STOS", preview: "Kính gửi anh/chị, Chúng tôi xin gửi yêu cầu báo giá...", body: "Kính gửi anh/chị,\n\nChúng tôi xin gửi yêu cầu báo giá cho hệ thống máy chủ phục vụ dự án STOS Platform với các yêu cầu kỹ thuật như file đính kèm.\n\nRất mong nhận được báo giá và thời gian dự kiến.\n\nTrân trọng cảm ơn!\n\nLê Minh Đức\nGiám đốc Công nghệ\nTechCorp Solutions", time: "10:24 AM", group: "Hôm nay", unread: true, starred: true, hasAttachment: true, selected: true, labels: ["Dự án STOS"], attachments: [{ name: "Yeu_cau_ky_thuat_STOS.pdf", size: "1.2 MB", type: "pdf" }, { name: "Bang_du_toan_may_chu.xlsx", size: "320 KB", type: "excel" }] },
+  { id: "2", mailbox: "inbox", from: "Trần Thùy Linh", fromEmail: "tranthuylinh@ubos.vn", to: "nguyenvana@ubos.vn", subject: "Review hợp đồng triển khai Smart University", preview: "Anh vui lòng xem xét và phản hồi các nội dung...", body: "Anh vui lòng xem xét và phản hồi các nội dung trong hợp đồng triển khai Smart University. Chúng tôi đã cập nhật một số điều khoản theo thỏa thuận trong buổi họp tuần trước.\n\nĐặc biệt cần lưu ý phần bảo hành và hỗ trợ kỹ thuật.\n\nTrân trọng,\nTrần Thùy Linh", time: "09:15 AM", group: "Hôm nay", unread: true, starred: true, labels: ["Hợp đồng", "Khách hàng"] },
+  { id: "3", mailbox: "inbox", from: "Vũ Hoàng Nam", fromEmail: "vuhoangnam@finance.vn", to: "nguyenvana@ubos.vn", subject: "Yêu cầu phê duyệt ngân sách Q2/2025", preview: "Theo kế hoạch, chúng tôi đề xuất ngân sách...", body: "Theo kế hoạch, chúng tôi đề xuất ngân sách Q2/2025 với tổng số tiền 2.5 tỷ VNĐ cho các hạng mục: nhân sự, cơ sở hạ tầng, và marketing.\n\nĐính kèm là bảng chi tiết dự toán để anh/chị tham khảo và phê duyệt.\n\nTrân trọng,\nVũ Hoàng Nam\nPhòng Tài chính", time: "08:47 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"], attachments: [{ name: "Du_toan_Q2_2025.xlsx", size: "450 KB", type: "excel" }] },
   { id: "4", mailbox: "inbox", from: "Nguyễn Lan Anh", subject: "Kế hoạch đào tạo nhân sự tháng 6", preview: "Danh sách học viên và nội dung đào tạo chi tiết...", time: "Yesterday", group: "Hôm qua", starred: true, labels: ["Nhân sự"] },
   { id: "5", mailbox: "inbox", from: "Phạm Quốc Huy", subject: "Re: Hợp đồng bảo trì hệ thống", preview: "Cảm ơn anh. Chúng tôi sẽ xử lý trong hôm nay...", time: "Yesterday", group: "Hôm qua", labels: ["Hợp đồng"] },
   { id: "6", mailbox: "inbox", from: "Đỗ Thành Công", subject: "Hóa đơn VAT số 2025-06-001", preview: "Đính kèm hóa đơn VAT và bảng kê chi tiết.", time: "12/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Hóa đơn", "Khách hàng"] },
@@ -92,12 +97,12 @@ const EMAILS: Email[] = [
   { id: "i12", mailbox: "inbox", from: "Ngô Tuấn", subject: "Mời tham dự hội thảo CNTT 2025", preview: "Hội thảo CNTT thường niên sẽ tổ chức...", time: "08/05/2025", group: "Tuần này" },
 
   // Sent
-  { id: "s1", mailbox: "sent", from: "Bạn", subject: "Re: RFQ - Báo giá hệ thống máy chủ", preview: "Gửi anh Đức, đính kèm báo giá chi tiết cho RFQ...", time: "11:30 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"] },
-  { id: "s2", mailbox: "sent", from: "Bạn", subject: "Báo cáo tuần — Dự án STOS", preview: "Kính gửi BGĐ, em xin gửi báo cáo tiến độ tuần...", time: "Yesterday", group: "Hôm qua", labels: ["Dự án STOS"] },
-  { id: "s3", mailbox: "sent", from: "Bạn", subject: "Mời họp review hợp đồng", preview: "Kính mời anh chị tham dự buổi họp...", time: "Yesterday", group: "Hôm qua", labels: ["Hợp đồng"] },
-  { id: "s4", mailbox: "sent", from: "Bạn", subject: "Xác nhận thanh toán hóa đơn 2025-06-001", preview: "Đã xác nhận chuyển khoản. Cảm ơn anh chị...", time: "12/05/2025", group: "Tuần này", labels: ["Hóa đơn"] },
-  { id: "s5", mailbox: "sent", from: "Bạn", subject: "Tài liệu onboarding nhân sự mới", preview: "Gửi anh chị bộ tài liệu onboarding...", time: "11/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Nhân sự"] },
-  { id: "s6", mailbox: "sent", from: "Bạn", subject: "Re: Yêu cầu phê duyệt ngân sách Q2", preview: "Em đã xem và đồng ý với đề xuất...", time: "10/05/2025", group: "Tuần này" },
+  { id: "s1", mailbox: "sent", from: "Bạn", to: "leminhduc@techcorp.vn", subject: "Re: RFQ - Báo giá hệ thống máy chủ", preview: "Gửi anh Đức, đính kèm báo giá chi tiết cho RFQ...", time: "11:30 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"] },
+  { id: "s2", mailbox: "sent", from: "Bạn", to: "bgd@ubos.vn", subject: "Báo cáo tuần — Dự án STOS", preview: "Kính gửi BGĐ, em xin gửi báo cáo tiến độ tuần...", time: "Yesterday", group: "Hôm qua", labels: ["Dự án STOS"] },
+  { id: "s3", mailbox: "sent", from: "Bạn", to: "tranthuylinh@ubos.vn", subject: "Mời họp review hợp đồng", preview: "Kính mời anh chị tham dự buổi họp...", time: "Yesterday", group: "Hôm qua", labels: ["Hợp đồng"] },
+  { id: "s4", mailbox: "sent", from: "Bạn", to: "dothanhcong@ubos.vn", subject: "Xác nhận thanh toán hóa đơn 2025-06-001", preview: "Đã xác nhận chuyển khoản. Cảm ơn anh chị...", time: "12/05/2025", group: "Tuần này", labels: ["Hóa đơn"] },
+  { id: "s5", mailbox: "sent", from: "Bạn", to: "hr@ubos.vn", subject: "Tài liệu onboarding nhân sự mới", preview: "Gửi anh chị bộ tài liệu onboarding...", time: "11/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Nhân sự"] },
+  { id: "s6", mailbox: "sent", from: "Bạn", to: "vuhoangnam@finance.vn", subject: "Re: Yêu cầu phê duyệt ngân sách Q2", preview: "Em đã xem và đồng ý với đề xuất...", time: "10/05/2025", group: "Tuần này" },
 
   // Spam
   { id: "sp1", mailbox: "spam", from: "promo@bigsale.com", subject: "🎁 Khuyến mại 90% — chỉ hôm nay!", preview: "Cơ hội cuối cùng nhận voucher 5 triệu...", time: "08:00 AM", group: "Hôm nay" },
@@ -179,6 +184,7 @@ function EmailHubPage() {
   const [advanced, setAdvanced] = useState<AdvancedFilters>(EMPTY_FILTERS);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
+  const [detailOpen, setDetailOpen] = useState(false);
   const PAGE_SIZE = 6;
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
@@ -382,7 +388,7 @@ function EmailHubPage() {
           </aside>
 
           {/* Email list column */}
-          <section className="hidden w-[360px] shrink-0 flex-col border-r border-border bg-background lg:flex">
+          <section className={`flex-col border-r border-border bg-background ${detailOpen ? 'hidden' : 'flex w-full'} lg:flex lg:w-[360px] lg:shrink-0`}>
             <div className="border-b border-border px-4 py-3">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -537,13 +543,13 @@ function EmailHubPage() {
                                 src={avatar(e.from)}
                                 alt=""
                                 className={`h-9 w-9 rounded-full object-cover ${isChecked ? "hidden" : "group-hover:hidden"}`}
-                                onClick={() => setSelected(e.id)}
+                                onClick={() => { setSelected(e.id); setDetailOpen(true); }}
                               />
                               <div className={`${isChecked ? "flex" : "hidden group-hover:flex"} h-9 w-9 items-center justify-center`}>
                                 <Checkbox checked={isChecked} onCheckedChange={() => toggleOne(e.id)} />
                               </div>
                             </div>
-                            <button onClick={() => setSelected(e.id)} className="min-w-0 flex-1 text-left">
+                            <button onClick={() => { setSelected(e.id); setDetailOpen(true); }} className="min-w-0 flex-1 text-left">
                               <div className="flex items-center justify-between gap-2">
                                 <span className={`truncate text-sm ${e.unread ? "font-semibold" : "font-medium text-muted-foreground"}`}>{e.from}</span>
                                 <span className="shrink-0 text-[11px] text-muted-foreground">{e.time}</span>
@@ -590,9 +596,11 @@ function EmailHubPage() {
           </section>
 
           {/* Reading pane */}
-          <section className="min-w-0 flex-1 overflow-y-auto bg-background">
+          <section className={`min-w-0 flex-1 overflow-y-auto bg-background ${detailOpen ? 'flex' : 'hidden'} lg:flex`}>
             <div className="flex items-center gap-1 border-b border-border px-4 py-2">
-              <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /></button>
+              <button onClick={() => setDetailOpen(false)} className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 lg:hidden">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
               <ToolBtn icon={Reply} label="Trả lời" />
               <ToolBtn icon={ReplyAll} label="Trả lời tất cả" />
               <ToolBtn icon={Forward} label="Chuyển tiếp" />
@@ -606,7 +614,9 @@ function EmailHubPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h1 className="text-xl font-semibold tracking-tight">
                   {selectedEmail.subject}
-                  <span className="ml-2 align-middle rounded bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">Dự án STOS</span>
+                  {selectedEmail.labels && selectedEmail.labels.length > 0 && (
+                    <span className="ml-2 align-middle rounded bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">{selectedEmail.labels[0]}</span>
+                  )}
                 </h1>
               </div>
 
@@ -615,30 +625,45 @@ function EmailHubPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-medium">{selectedEmail.from}</span>
-                    <span className="text-muted-foreground">&lt;leminhduc@techcorp.vn&gt;</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{selectedEmail.time} (2 giờ trước)</span>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><Star className="h-4 w-4" /></button>
+                    <span className="text-muted-foreground">&lt;{selectedEmail.fromEmail || `${selectedEmail.from.toLowerCase().replace(/\s+/g, '.')}@company.vn`}&gt;</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{selectedEmail.time}</span>
+                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><Star className={`h-4 w-4 ${selectedEmail.starred ? 'fill-amber-400 text-amber-400' : ''}`} /></button>
                     <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
                   </div>
-                  <div className="text-xs text-muted-foreground">đến tôi <ChevronDown className="inline h-3 w-3" /></div>
+                  <div className="text-xs text-muted-foreground">
+                    đến {selectedEmail.to || 'tôi'}
+                    {selectedEmail.cc && <span> · Cc: {selectedEmail.cc}</span>}
+                    <ChevronDown className="inline h-3 w-3" />
+                  </div>
                 </div>
               </div>
 
               <div className="mt-5 space-y-3 text-sm leading-relaxed">
-                <p>Kính gửi anh/chị,</p>
-                <p>Chúng tôi xin gửi yêu cầu báo giá cho hệ thống máy chủ phục vụ dự án STOS Platform với các yêu cầu kỹ thuật như file đính kèm.</p>
-                <p>Rất mong nhận được báo giá và thời gian dự kiến.</p>
-                <p>Trân trọng cảm ơn!</p>
-                <p className="pt-2">Lê Minh Đức<br /><span className="text-muted-foreground">Giám đốc Công nghệ</span><br /><span className="text-muted-foreground">TechCorp Solutions</span></p>
+                {selectedEmail.body ? (
+                  selectedEmail.body.split('\n\n').map((para, i) => (
+                    <p key={i}>{para}</p>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">Không có nội dung chi tiết cho email này.</p>
+                )}
               </div>
 
-              <div className="mt-6">
-                <div className="text-sm font-medium">2 tệp đính kèm</div>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  <AttachmentCard icon={FileText} color="bg-rose-500/15 text-rose-300" name="Yeu_cau_ky_thuat_STOS.pdf" size="1.2 MB" />
-                  <AttachmentCard icon={FileSpreadsheet} color="bg-emerald-500/15 text-emerald-300" name="Bang_du_toan_may_chu.xlsx" size="320 KB" />
+              {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
+                <div className="mt-6">
+                  <div className="text-sm font-medium">{selectedEmail.attachments.length} tệp đính kèm</div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {selectedEmail.attachments.map((att, i) => (
+                      <AttachmentCard
+                        key={i}
+                        icon={att.type === 'excel' ? FileSpreadsheet : att.type === 'image' ? Image : FileText}
+                        color={att.type === 'pdf' ? 'bg-rose-500/15 text-rose-300' : att.type === 'excel' ? 'bg-emerald-500/15 text-emerald-300' : att.type === 'image' ? 'bg-sky-500/15 text-sky-300' : 'bg-violet-500/15 text-violet-300'}
+                        name={att.name}
+                        size={att.size}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="mt-6 flex flex-wrap gap-2">
                 <ActionBtn icon={Reply}>Trả lời</ActionBtn>
@@ -656,13 +681,15 @@ function EmailHubPage() {
                 </div>
                 <div className="mt-3 text-sm font-medium">Tóm tắt nội dung email</div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Email này là yêu cầu báo giá hệ thống máy chủ cho dự án STOS Platform, bao gồm tài liệu mô tả yêu cầu kỹ thuật và bảng dự toán.
+                  {selectedEmail.body
+                    ? selectedEmail.body.substring(0, 180).replace(/\n/g, ' ') + (selectedEmail.body.length > 180 ? '...' : '')
+                    : 'Không có nội dung để tóm tắt.'}
                 </p>
                 <div className="mt-4 text-sm font-medium">Đề xuất hành động</div>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  <SuggestBtn icon={FileText} title="Tạo task" desc="Yêu cầu báo giá STOS" />
-                  <SuggestBtn icon={Bot} title="Tạo workflow" desc="Quy trình mua sắm" />
-                  <SuggestBtn icon={Tag} title="Liên kết dự án" desc="STOS Platform" />
+                  <SuggestBtn icon={FileText} title="Tạo task" desc={selectedEmail.subject.substring(0, 30)} />
+                  <SuggestBtn icon={Bot} title="Tạo workflow" desc="Quy trình xử lý email" />
+                  <SuggestBtn icon={Tag} title="Liên kết dự án" desc={selectedEmail.labels?.[0] || 'Dự án'} />
                   <SuggestBtn icon={Reply} title="Trả lời email" desc="Soạn thư trả lời" />
                 </div>
               </div>
