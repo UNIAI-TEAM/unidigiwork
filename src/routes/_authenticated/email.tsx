@@ -91,7 +91,7 @@ const INITIAL_LABELS: LabelDef[] = [
   { name: "Hợp đồng", color: "bg-violet-500", count: 15 },
   { name: "Nhân sự", color: "bg-sky-500", count: 6 },
   { name: "Hóa đơn", color: "bg-rose-500", count: 9 },
-] as any;
+] as Array<{ name: string; color: string; count: number }>;
 
 const ACCOUNTS = [
   { provider: "M365", label: "M", color: "bg-sky-600", email: "nguyenvana@ubos.vn", count: 128 },
@@ -496,7 +496,8 @@ function EmailHubPage() {
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
-  const [labels, setLabels] = useState<any[]>(INITIAL_LABELS);
+  const [labels, setLabels] =
+    useState<Array<{ name: string; color: string; count: number }>>(INITIAL_LABELS);
   const [rules, setRules] = useState<RuleDef[]>([
     {
       id: "r1",
@@ -706,7 +707,7 @@ function EmailHubPage() {
                 </button>
               </div>
               <ul className="space-y-0.5">
-                {labels.map((l: any) => {
+                {labels.map((l) => {
                   const active = filterLabel === l.name;
                   return (
                     <li key={l.name}>
@@ -1321,7 +1322,7 @@ function EmailHubPage() {
         onOpenChange={setAdvancedOpen}
         value={advanced}
         onChange={setAdvanced}
-        availableLabels={labels.map((l: any) => l.name)}
+        availableLabels={labels.map((l) => l.name)}
       />
       <AiAssistantDialog
         open={aiOpen}
@@ -1331,10 +1332,10 @@ function EmailHubPage() {
       <LabelsRulesDialog
         open={labelsOpen}
         onOpenChange={setLabelsOpen}
-        labels={labels.map((l: any) => ({ name: l.name, color: l.color }))}
+        labels={labels.map((l) => ({ name: l.name, color: l.color }))}
         onChangeLabels={(v) =>
           setLabels(
-            v.map((x) => ({ ...x, count: labels.find((l: any) => l.name === x.name)?.count ?? 0 })),
+            v.map((x) => ({ ...x, count: labels.find((l) => l.name === x.name)?.count ?? 0 })),
           )
         }
         rules={rules}
