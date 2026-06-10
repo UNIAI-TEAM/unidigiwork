@@ -22,6 +22,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
@@ -89,6 +91,17 @@ const ReportsTypeRoute = ReportsTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => ReportsRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -113,6 +126,8 @@ export interface FileRoutesByFullPath {
   '/workflows': typeof WorkflowsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/': typeof ReportsIndexRoute
 }
@@ -128,6 +143,8 @@ export interface FileRoutesByTo {
   '/workflows': typeof WorkflowsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports': typeof ReportsIndexRoute
 }
@@ -146,6 +163,8 @@ export interface FileRoutesById {
   '/workflows': typeof WorkflowsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/': typeof ReportsIndexRoute
 }
@@ -164,6 +183,8 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/dashboard'
     | '/documents'
+    | '/notifications'
+    | '/settings'
     | '/reports/$type'
     | '/reports/'
   fileRoutesByTo: FileRoutesByTo
@@ -179,6 +200,8 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/dashboard'
     | '/documents'
+    | '/notifications'
+    | '/settings'
     | '/reports/$type'
     | '/reports'
   id:
@@ -196,6 +219,8 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
+    | '/_authenticated/notifications'
+    | '/_authenticated/settings'
     | '/reports/$type'
     | '/reports/'
   fileRoutesById: FileRoutesById
@@ -307,6 +332,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsTypeRouteImport
       parentRoute: typeof ReportsRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
@@ -327,11 +366,15 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -366,3 +409,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
