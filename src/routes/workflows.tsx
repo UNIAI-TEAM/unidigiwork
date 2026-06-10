@@ -310,7 +310,7 @@ function WorkflowsPage() {
                     tab === k ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t(`wf.tab.${k}` as any)}
+                  {t(`wf.tab.${k}` as Key)}
                   {tab === k && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />}
                 </button>
               ))}
@@ -405,7 +405,7 @@ function WorkflowsPage() {
                 onChange={(v) => setStatus(v as any)}
                 label={t("wf.filter.status")}
                 options={["All", "active", "paused", "draft"]}
-                renderOption={(v) => (v === "All" ? "All" : t(`wf.status.${v}` as any))}
+                renderOption={(v) => (v === "All" ? "All" : t(`wf.status.${v}` as Key))}
               />
               <Select
                 value={cat}

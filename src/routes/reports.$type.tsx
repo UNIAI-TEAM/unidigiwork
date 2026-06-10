@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -170,7 +171,7 @@ function ReportDetailPage() {
                 {t("rp.det.crumb")}
               </Link>
               <span>/</span>
-              <span className="text-foreground">{t(`rp.tab.${rtype}` as any)}</span>
+              <span className="text-foreground">{t(`rp.tab.${rtype}` as Key)}</span>
             </div>
 
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -179,7 +180,7 @@ function ReportDetailPage() {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">{t(`rp.tab.${rtype}` as any)}</h1>
+                  <h1 className="text-2xl font-bold">{t(`rp.tab.${rtype}` as Key)}</h1>
                   <p className="mt-1 text-sm text-muted-foreground">{t("rp.det.sub")}</p>
                 </div>
               </div>
@@ -289,7 +290,7 @@ function ReportDetailPage() {
                   title={t("rp.det.trend")}
                   right={
                     <span className="text-xs text-muted-foreground">
-                      {t(`rp.det.gran.${gran}` as any)}
+                      {t(`rp.det.gran.${gran}` as Key)}
                     </span>
                   }
                 />

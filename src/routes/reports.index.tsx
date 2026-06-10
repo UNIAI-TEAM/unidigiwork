@@ -101,7 +101,7 @@ function ReportsPage() {
                     tab === k ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t(`rp.tab.${k}` as any)}
+                  {t(`rp.tab.${k}` as Key)}
                   {tab === k && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />}
                 </button>
               ))}
@@ -330,7 +330,7 @@ function ReportsPage() {
                           <span
                             className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${p.status === "ontrack" ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/15 text-amber-300 border border-amber-500/30"}`}
                           >
-                            {t(`rp.status.${p.status}` as any)}
+                            {t(`rp.status.${p.status}` as Key)}
                           </span>
                         </td>
                       </tr>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -258,7 +259,7 @@ function TasksPage() {
                     onClick={() => setTab(id)}
                     className={`-mb-px border-b-2 py-1.5 transition-colors ${tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                   >
-                    {t(`tasks.tab.${id}` as any)}
+                    {t(`tasks.tab.${id}` as Key)}
                   </button>
                 ))}
               </nav>

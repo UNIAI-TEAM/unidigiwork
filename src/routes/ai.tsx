@@ -179,7 +179,7 @@ function AIPage() {
                     tab === k ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t(`ai.tab.${k}` as any)}
+                  {t(`ai.tab.${k}` as Key)}
                   {tab === k && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />}
                 </button>
               ))}
@@ -204,7 +204,7 @@ function AIPage() {
                     {suggestions.map((s) => (
                       <button
                         key={s.k}
-                        onClick={() => send(t(`ai.sg.${s.k}.d` as any))}
+                        onClick={() => send(t(`ai.sg.${s.k}.d` as Key))}
                         className="rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary/40"
                       >
                         <div
@@ -212,9 +212,9 @@ function AIPage() {
                         >
                           <s.icon className="h-4 w-4" />
                         </div>
-                        <div className="text-sm font-semibold">{t(`ai.sg.${s.k}.t` as any)}</div>
+                        <div className="text-sm font-semibold">{t(`ai.sg.${s.k}.t` as Key)}</div>
                         <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {t(`ai.sg.${s.k}.d` as any)}
+                          {t(`ai.sg.${s.k}.d` as Key)}
                         </div>
                       </button>
                     ))}
@@ -299,10 +299,10 @@ function AIPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
-                        {t(`ai.bot.${a.k}.t` as any)}
+                        {t(`ai.bot.${a.k}.t` as Key)}
                       </div>
                       <div className="truncate text-[11px] text-muted-foreground">
-                        {t(`ai.bot.${a.k}.d` as any)}
+                        {t(`ai.bot.${a.k}.d` as Key)}
                       </div>
                     </div>
                   </button>
@@ -325,10 +325,10 @@ function AIPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
-                        {t(`ai.pr.${p.k}.t` as any)}
+                        {t(`ai.pr.${p.k}.t` as Key)}
                       </div>
                       <div className="truncate text-[11px] text-muted-foreground">
-                        {t(`ai.pr.${p.k}.d` as any)}
+                        {t(`ai.pr.${p.k}.d` as Key)}
                       </div>
                     </div>
                   </button>
