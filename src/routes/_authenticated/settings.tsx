@@ -27,7 +27,8 @@ type SectionKey = "profile" | "account" | "password" | "notifications" | "appear
 
 const SECTIONS: { key: SectionKey; label: string; desc: string; icon: any }[] = [
   { key: "profile", label: "Hồ sơ cá nhân", desc: "Tên, ảnh đại diện, chức danh", icon: User },
-  { key: "account", label: "Tài khoản", desc: "Email, mật khẩu, đăng nhập", icon: KeyRound },
+  { key: "account", label: "Tài khoản", desc: "Email, tên đăng nhập", icon: KeyRound },
+  { key: "password", label: "Đổi mật khẩu", desc: "Mật khẩu, xác thực 2 lớp", icon: Lock },
   { key: "notifications", label: "Thông báo", desc: "Email, in-app, push", icon: Bell },
   { key: "appearance", label: "Giao diện", desc: "Chủ đề sáng/tối, mật độ", icon: Palette },
   { key: "language", label: "Ngôn ngữ & múi giờ", desc: "Tiếng Việt, GMT+7", icon: Languages },
