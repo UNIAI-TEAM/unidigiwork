@@ -193,7 +193,7 @@ function Landing() {
                 <p className="mt-2 text-muted-foreground">{t("land.preview.tasks.p")}</p>
               </div>
               <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20">
-                <img src={shotTasks.url} alt="UNIWORK Tasks & Projects" className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" loading="lazy" />
+                <img src={shotTasks.url} alt={t("land.preview.tasks.tag")} className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" loading="lazy" />
               </div>
             </div>
           </div>
