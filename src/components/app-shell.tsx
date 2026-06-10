@@ -109,6 +109,7 @@ function useSidebarCollapsed() {
 export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+  const [wsOpen, setWsOpen] = useState(false);
 
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
@@ -171,7 +172,13 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
             <>
               <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>{t("nav.workspaces")}</span>
-                <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3.5 w-3.5" /></button>
+                <button
+                  className="rounded p-0.5 hover:bg-surface-2"
+                  aria-label="Tạo workspace mới"
+                  onClick={() => setWsOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
               </div>
               <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active />
               <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" />
@@ -240,6 +247,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
           </Tooltip>
         </div>
       </aside>
+      <CreateWorkspaceDialog open={wsOpen} onOpenChange={setWsOpen} />
     </TooltipProvider>
   );
 }
