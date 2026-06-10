@@ -1,10 +1,34 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  Users, Calendar, FileText, CheckCircle2, Clock, MoreHorizontal, Plus,
-  Star, Settings2, Activity, FolderKanban, Sparkles, MessageCircle, Video,
-  TrendingUp, AlertCircle, ChevronRight, GitBranch, Pin, BookOpen, Bell,
-  Search, FileSpreadsheet, FileImage, Presentation, Download, Filter, X,
+  Users,
+  Calendar,
+  FileText,
+  CheckCircle2,
+  Clock,
+  MoreHorizontal,
+  Plus,
+  Star,
+  Settings2,
+  Activity,
+  FolderKanban,
+  Sparkles,
+  MessageCircle,
+  Video,
+  TrendingUp,
+  AlertCircle,
+  ChevronRight,
+  GitBranch,
+  Pin,
+  BookOpen,
+  Bell,
+  Search,
+  FileSpreadsheet,
+  FileImage,
+  Presentation,
+  Download,
+  Filter,
+  X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -114,7 +138,12 @@ export const Route = createFileRoute("/_authenticated/workspace/$id")({
 
 const KPIS = [
   { label: "Thành viên", value: "24", icon: Users, tint: "bg-violet-500/15 text-violet-300" },
-  { label: "Nhiệm vụ mở", value: "37", icon: CheckCircle2, tint: "bg-emerald-500/15 text-emerald-300" },
+  {
+    label: "Nhiệm vụ mở",
+    value: "37",
+    icon: CheckCircle2,
+    tint: "bg-emerald-500/15 text-emerald-300",
+  },
   { label: "Tài liệu", value: "128", icon: FileText, tint: "bg-sky-500/15 text-sky-300" },
   { label: "Cuộc họp tuần", value: "9", icon: Video, tint: "bg-rose-500/15 text-rose-300" },
   { label: "Quy trình", value: "12", icon: GitBranch, tint: "bg-amber-500/15 text-amber-300" },
@@ -138,10 +167,34 @@ const MILESTONES = [
 ];
 
 const TASKS = [
-  { title: "Hoàn thiện thiết kế dashboard điều hành", assignee: "nguyen-van-a-1", due: "Hôm nay", priority: "Cao", status: "Đang làm" },
-  { title: "Review API tích hợp HRM", assignee: "tran-minh", due: "Ngày mai", priority: "Trung bình", status: "Cần review" },
-  { title: "Soạn tài liệu hướng dẫn người dùng", assignee: "le-hong", due: "T6", priority: "Thấp", status: "Mới" },
-  { title: "Demo cho ban điều hành STOS", assignee: "pham-quynh", due: "Tuần sau", priority: "Cao", status: "Lên kế hoạch" },
+  {
+    title: "Hoàn thiện thiết kế dashboard điều hành",
+    assignee: "nguyen-van-a-1",
+    due: "Hôm nay",
+    priority: "Cao",
+    status: "Đang làm",
+  },
+  {
+    title: "Review API tích hợp HRM",
+    assignee: "tran-minh",
+    due: "Ngày mai",
+    priority: "Trung bình",
+    status: "Cần review",
+  },
+  {
+    title: "Soạn tài liệu hướng dẫn người dùng",
+    assignee: "le-hong",
+    due: "T6",
+    priority: "Thấp",
+    status: "Mới",
+  },
+  {
+    title: "Demo cho ban điều hành STOS",
+    assignee: "pham-quynh",
+    due: "Tuần sau",
+    priority: "Cao",
+    status: "Lên kế hoạch",
+  },
 ];
 
 const MEMBERS = [
@@ -154,23 +207,107 @@ const MEMBERS = [
 ];
 
 const ACTIVITY = [
-  { who: "Trần Minh", what: "đã cập nhật trạng thái nhiệm vụ", target: "API tích hợp HRM", time: "5 phút trước", icon: CheckCircle2 },
-  { who: "Lê Hồng", what: "tải lên tài liệu", target: "STOS - User Guide v0.3.pdf", time: "1 giờ trước", icon: FileText },
-  { who: "Nguyễn Văn A", what: "đã tạo cuộc họp", target: "Review tiến độ sprint 9", time: "3 giờ trước", icon: Video },
-  { who: "Phạm Quỳnh", what: "thêm thành viên mới", target: "Võ Thành (QA)", time: "Hôm qua", icon: Users },
+  {
+    who: "Trần Minh",
+    what: "đã cập nhật trạng thái nhiệm vụ",
+    target: "API tích hợp HRM",
+    time: "5 phút trước",
+    icon: CheckCircle2,
+  },
+  {
+    who: "Lê Hồng",
+    what: "tải lên tài liệu",
+    target: "STOS - User Guide v0.3.pdf",
+    time: "1 giờ trước",
+    icon: FileText,
+  },
+  {
+    who: "Nguyễn Văn A",
+    what: "đã tạo cuộc họp",
+    target: "Review tiến độ sprint 9",
+    time: "3 giờ trước",
+    icon: Video,
+  },
+  {
+    who: "Phạm Quỳnh",
+    what: "thêm thành viên mới",
+    target: "Võ Thành (QA)",
+    time: "Hôm qua",
+    icon: Users,
+  },
 ];
 
 const DOCS = [
-  { name: "STOS - Tổng quan kiến trúc hệ thống.pdf", type: "pdf", size: "4.8 MB", updated: "Hôm nay", owner: "Trần Minh" },
-  { name: "Kế hoạch triển khai Q3 2026.xlsx", type: "xlsx", size: "1.2 MB", updated: "Hôm qua", owner: "Nguyễn Văn A" },
-  { name: "Báo cáo nghiên cứu người dùng.docx", type: "doc", size: "3.5 MB", updated: "2 ngày trước", owner: "Lê Hồng" },
-  { name: "API Specification v1.2.pdf", type: "pdf", size: "2.1 MB", updated: "Tuần này", owner: "Trần Minh" },
-  { name: "Mockup UI Dashboard v3.fig", type: "image", size: "18.4 MB", updated: "Tuần này", owner: "Lê Hồng" },
-  { name: "Slide họp Steering Committee.pptx", type: "ppt", size: "8.6 MB", updated: "3 ngày trước", owner: "Phạm Quỳnh" },
-  { name: "Báo cáo tiến độ tháng 5.pdf", type: "pdf", size: "2.9 MB", updated: "1 tuần trước", owner: "Đỗ Linh" },
-  { name: "Dataset khảo sát nội bộ.xlsx", type: "xlsx", size: "856 KB", updated: "1 tuần trước", owner: "Trần Minh" },
-  { name: "Tài liệu hướng dẫn vận hành.docx", type: "doc", size: "1.8 MB", updated: "2 tuần trước", owner: "Nguyễn Văn A" },
-  { name: "Infographic quy trình mới.png", type: "image", size: "4.2 MB", updated: "2 tuần trước", owner: "Lê Hồng" },
+  {
+    name: "STOS - Tổng quan kiến trúc hệ thống.pdf",
+    type: "pdf",
+    size: "4.8 MB",
+    updated: "Hôm nay",
+    owner: "Trần Minh",
+  },
+  {
+    name: "Kế hoạch triển khai Q3 2026.xlsx",
+    type: "xlsx",
+    size: "1.2 MB",
+    updated: "Hôm qua",
+    owner: "Nguyễn Văn A",
+  },
+  {
+    name: "Báo cáo nghiên cứu người dùng.docx",
+    type: "doc",
+    size: "3.5 MB",
+    updated: "2 ngày trước",
+    owner: "Lê Hồng",
+  },
+  {
+    name: "API Specification v1.2.pdf",
+    type: "pdf",
+    size: "2.1 MB",
+    updated: "Tuần này",
+    owner: "Trần Minh",
+  },
+  {
+    name: "Mockup UI Dashboard v3.fig",
+    type: "image",
+    size: "18.4 MB",
+    updated: "Tuần này",
+    owner: "Lê Hồng",
+  },
+  {
+    name: "Slide họp Steering Committee.pptx",
+    type: "ppt",
+    size: "8.6 MB",
+    updated: "3 ngày trước",
+    owner: "Phạm Quỳnh",
+  },
+  {
+    name: "Báo cáo tiến độ tháng 5.pdf",
+    type: "pdf",
+    size: "2.9 MB",
+    updated: "1 tuần trước",
+    owner: "Đỗ Linh",
+  },
+  {
+    name: "Dataset khảo sát nội bộ.xlsx",
+    type: "xlsx",
+    size: "856 KB",
+    updated: "1 tuần trước",
+    owner: "Trần Minh",
+  },
+  {
+    name: "Tài liệu hướng dẫn vận hành.docx",
+    type: "doc",
+    size: "1.8 MB",
+    updated: "2 tuần trước",
+    owner: "Nguyễn Văn A",
+  },
+  {
+    name: "Infographic quy trình mới.png",
+    type: "image",
+    size: "4.2 MB",
+    updated: "2 tuần trước",
+    owner: "Lê Hồng",
+  },
 ];
 
 const DOC_TYPES: { id: string; label: string }[] = [
@@ -184,21 +321,31 @@ const DOC_TYPES: { id: string; label: string }[] = [
 
 function docTypeIcon(type: string) {
   switch (type) {
-    case "pdf": return <FileText className="h-5 w-5 text-rose-500" />;
-    case "xlsx": return <FileSpreadsheet className="h-5 w-5 text-emerald-500" />;
-    case "ppt": return <Presentation className="h-5 w-5 text-amber-500" />;
-    case "image": return <FileImage className="h-5 w-5 text-violet-500" />;
-    default: return <FileText className="h-5 w-5 text-sky-500" />;
+    case "pdf":
+      return <FileText className="h-5 w-5 text-rose-500" />;
+    case "xlsx":
+      return <FileSpreadsheet className="h-5 w-5 text-emerald-500" />;
+    case "ppt":
+      return <Presentation className="h-5 w-5 text-amber-500" />;
+    case "image":
+      return <FileImage className="h-5 w-5 text-violet-500" />;
+    default:
+      return <FileText className="h-5 w-5 text-sky-500" />;
   }
 }
 
 function docTypeBg(type: string) {
   switch (type) {
-    case "pdf": return "bg-rose-500/15 text-rose-600";
-    case "xlsx": return "bg-emerald-500/15 text-emerald-600";
-    case "ppt": return "bg-amber-500/15 text-amber-600";
-    case "image": return "bg-violet-500/15 text-violet-600";
-    default: return "bg-sky-500/15 text-sky-600";
+    case "pdf":
+      return "bg-rose-500/15 text-rose-600";
+    case "xlsx":
+      return "bg-emerald-500/15 text-emerald-600";
+    case "ppt":
+      return "bg-amber-500/15 text-amber-600";
+    case "image":
+      return "bg-violet-500/15 text-violet-600";
+    default:
+      return "bg-sky-500/15 text-sky-600";
   }
 }
 
@@ -233,25 +380,38 @@ function WorkspaceDetailPage() {
         {/* Header */}
         <div className="border-b border-border px-4 py-5 sm:px-6">
           <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Link to="/dashboard" className="hover:text-foreground">Workspaces</Link>
+            <Link to="/dashboard" className="hover:text-foreground">
+              Workspaces
+            </Link>
             <ChevronRight className="h-3.5 w-3.5" />
             <span className="text-foreground">{ws.name}</span>
           </div>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 items-start gap-4">
-              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white ${ws.color}`}>
+              <div
+                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white ${ws.color}`}
+              >
                 {ws.letter}
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl font-bold sm:text-2xl">{ws.name}</h1>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${healthCls}`}>{ws.health}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${healthCls}`}>
+                    {ws.health}
+                  </span>
                   {ws.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground">{tag}</span>
+                    <span
+                      key={tag}
+                      className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground"
+                    >
+                      {tag}
+                    </span>
                   ))}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">{ws.tagline}</p>
-                <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground/90">{ws.description}</p>
+                <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground/90">
+                  {ws.description}
+                </p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -259,7 +419,8 @@ function WorkspaceDetailPage() {
                 onClick={() => setStarred((v) => !v)}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm ${starred ? "bg-amber-500/15 text-amber-300" : "bg-surface-2 text-muted-foreground hover:text-foreground"}`}
               >
-                <Star className={`h-4 w-4 ${starred ? "fill-current" : ""}`} /> {starred ? "Đã ghim" : "Ghim"}
+                <Star className={`h-4 w-4 ${starred ? "fill-current" : ""}`} />{" "}
+                {starred ? "Đã ghim" : "Ghim"}
               </button>
               <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70">
                 <Users className="h-4 w-4" /> Mời
@@ -267,7 +428,10 @@ function WorkspaceDetailPage() {
               <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                 <Plus className="h-4 w-4" /> Nhiệm vụ
               </button>
-              <button className="rounded-lg bg-surface-2 p-2 hover:bg-surface-2/70" aria-label="Cài đặt">
+              <button
+                className="rounded-lg bg-surface-2 p-2 hover:bg-surface-2/70"
+                aria-label="Cài đặt"
+              >
                 <Settings2 className="h-4 w-4" />
               </button>
             </div>
@@ -279,9 +443,15 @@ function WorkspaceDetailPage() {
               <img src={avatar(ws.owner)} alt="" className="h-5 w-5 rounded-full" />
               Quản lý: <span className="text-foreground">{ws.owner}</span>
             </span>
-            <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {ws.members} thành viên</span>
-            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Hạn: {ws.deadline}</span>
-            <span className="flex items-center gap-1.5"><Activity className="h-3.5 w-3.5" /> Cập nhật 5 phút trước</span>
+            <span className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" /> {ws.members} thành viên
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" /> Hạn: {ws.deadline}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5" /> Cập nhật 5 phút trước
+            </span>
           </div>
         </div>
 
@@ -293,7 +463,9 @@ function WorkspaceDetailPage() {
                 key={tabItem.id}
                 onClick={() => setTab(tabItem.id)}
                 className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm transition-colors ${
-                  tab === tabItem.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                  tab === tabItem.id
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {tabItem.label}
@@ -332,7 +504,10 @@ function WorkspaceDetailPage() {
                     <span className="text-2xl font-bold text-primary">{ws.progress}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-surface-2">
-                    <div className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400" style={{ width: `${ws.progress}%` }} />
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400"
+                      style={{ width: `${ws.progress}%` }}
+                    />
                   </div>
                   <ol className="mt-4 space-y-2.5">
                     {MILESTONES.map((m) => (
@@ -359,16 +534,26 @@ function WorkspaceDetailPage() {
                 <div className="rounded-xl border border-border bg-surface">
                   <div className="flex items-center justify-between border-b border-border p-4">
                     <h2 className="text-sm font-semibold">Nhiệm vụ ưu tiên</h2>
-                    <button onClick={() => setTab("tasks")} className="text-xs text-primary hover:underline">Xem tất cả</button>
+                    <button
+                      onClick={() => setTab("tasks")}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Xem tất cả
+                    </button>
                   </div>
                   <ul className="divide-y divide-border">
                     {TASKS.map((task) => (
-                      <li key={task.title} className="flex items-center gap-3 p-3 hover:bg-surface-2/40">
+                      <li
+                        key={task.title}
+                        className="flex items-center gap-3 p-3 hover:bg-surface-2/40"
+                      >
                         <input type="checkbox" className="h-4 w-4 rounded border-border" />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm">{task.title}</div>
                           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {task.due}</span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> {task.due}
+                            </span>
                             <span>·</span>
                             <span>{task.status}</span>
                           </div>
@@ -384,7 +569,11 @@ function WorkspaceDetailPage() {
                         >
                           {task.priority}
                         </span>
-                        <img src={avatar(task.assignee)} alt="" className="h-6 w-6 rounded-full bg-surface-2" />
+                        <img
+                          src={avatar(task.assignee)}
+                          alt=""
+                          className="h-6 w-6 rounded-full bg-surface-2"
+                        />
                       </li>
                     ))}
                   </ul>
@@ -396,17 +585,28 @@ function WorkspaceDetailPage() {
                 <div className="rounded-xl border border-border bg-surface p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <h2 className="text-sm font-semibold">Thành viên</h2>
-                    <button className="text-xs text-primary hover:underline" onClick={() => setTab("members")}>Quản lý</button>
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => setTab("members")}
+                    >
+                      Quản lý
+                    </button>
                   </div>
                   <ul className="space-y-2">
                     {MEMBERS.slice(0, 5).map((m) => (
                       <li key={m.seed} className="flex items-center gap-3">
-                        <img src={avatar(m.seed)} alt="" className="h-8 w-8 rounded-lg bg-surface-2" />
+                        <img
+                          src={avatar(m.seed)}
+                          alt=""
+                          className="h-8 w-8 rounded-lg bg-surface-2"
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm">{m.name}</div>
                           <div className="truncate text-[11px] text-muted-foreground">{m.role}</div>
                         </div>
-                        <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
+                        <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -419,15 +619,24 @@ function WorkspaceDetailPage() {
                   </div>
                   <ul className="space-y-2">
                     {MEETINGS.map((m) => (
-                      <li key={m.title} className="rounded-lg border border-border p-2.5 hover:bg-surface-2/40">
+                      <li
+                        key={m.title}
+                        className="rounded-lg border border-border p-2.5 hover:bg-surface-2/40"
+                      >
                         <div className="flex items-center gap-2">
                           <Video className="h-3.5 w-3.5 text-primary" />
                           <div className="truncate text-sm">{m.title}</div>
-                          {m.today && <span className="rounded bg-emerald-500/15 px-1.5 text-[10px] text-emerald-300">Hôm nay</span>}
+                          {m.today && (
+                            <span className="rounded bg-emerald-500/15 px-1.5 text-[10px] text-emerald-300">
+                              Hôm nay
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
                           <span>{m.time}</span>
-                          <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {m.attendees}</span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" /> {m.attendees}
+                          </span>
                         </div>
                       </li>
                     ))}
@@ -440,9 +649,12 @@ function WorkspaceDetailPage() {
                     <h2 className="text-sm font-semibold">AI Insight</h2>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    3 nhiệm vụ trong Sprint 9 có nguy cơ trễ hạn. Đề xuất phân bổ lại cho Trần Minh và Phạm Quỳnh để đảm bảo milestone MVP.
+                    3 nhiệm vụ trong Sprint 9 có nguy cơ trễ hạn. Đề xuất phân bổ lại cho Trần Minh
+                    và Phạm Quỳnh để đảm bảo milestone MVP.
                   </p>
-                  <button className="mt-2 text-xs font-medium text-primary hover:underline">Xem chi tiết →</button>
+                  <button className="mt-2 text-xs font-medium text-primary hover:underline">
+                    Xem chi tiết →
+                  </button>
                 </div>
               </div>
             </div>
@@ -458,11 +670,16 @@ function WorkspaceDetailPage() {
               </div>
               <ul className="divide-y divide-border">
                 {TASKS.map((task) => (
-                  <li key={task.title} className="flex items-center gap-3 p-3 hover:bg-surface-2/40">
+                  <li
+                    key={task.title}
+                    className="flex items-center gap-3 p-3 hover:bg-surface-2/40"
+                  >
                     <input type="checkbox" className="h-4 w-4 rounded border-border" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm">{task.title}</div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">{task.status} · {task.due}</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        {task.status} · {task.due}
+                      </div>
                     </div>
                     <span className="text-[10px] text-muted-foreground">{task.priority}</span>
                     <img src={avatar(task.assignee)} alt="" className="h-6 w-6 rounded-full" />
@@ -479,7 +696,9 @@ function WorkspaceDetailPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-sm font-semibold">Tài liệu dự án</h2>
                   <div className="flex items-center gap-2">
-                    <Link to="/documents" className="text-xs text-primary hover:underline">Mở Documents</Link>
+                    <Link to="/documents" className="text-xs text-primary hover:underline">
+                      Mở Documents
+                    </Link>
                     <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                       <Plus className="h-3.5 w-3.5" /> Thêm tài liệu
                     </button>
@@ -496,7 +715,10 @@ function WorkspaceDetailPage() {
                     className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-9 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   {docSearch && (
-                    <button onClick={() => setDocSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-surface-2">
+                    <button
+                      onClick={() => setDocSearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-surface-2"
+                    >
                       <X className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -536,16 +758,26 @@ function WorkspaceDetailPage() {
                       );
                     }
                     return filtered.map((d) => (
-                      <li key={d.name} className="flex items-center gap-3 p-3 hover:bg-surface-2/40 group">
-                        <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
+                      <li
+                        key={d.name}
+                        className="flex items-center gap-3 p-3 hover:bg-surface-2/40 group"
+                      >
+                        <span
+                          className={`flex h-9 w-9 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}
+                        >
                           {docTypeIcon(d.type)}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium">{d.name}</div>
-                          <div className="text-[11px] text-muted-foreground">{d.size} · {d.owner} · cập nhật {d.updated}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {d.size} · {d.owner} · cập nhật {d.updated}
+                          </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2" title="Tải xuống">
+                          <button
+                            className="rounded p-1.5 text-muted-foreground hover:bg-surface-2"
+                            title="Tải xuống"
+                          >
                             <Download className="h-4 w-4" />
                           </button>
                           <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
@@ -567,12 +799,21 @@ function WorkspaceDetailPage() {
                   <div className="flex items-center gap-2">
                     <Video className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold">{m.title}</h3>
-                    {m.today && <span className="rounded bg-emerald-500/15 px-1.5 text-[10px] text-emerald-300">Hôm nay</span>}
+                    {m.today && (
+                      <span className="rounded bg-emerald-500/15 px-1.5 text-[10px] text-emerald-300">
+                        Hôm nay
+                      </span>
+                    )}
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground">{m.time}</div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground"><Users className="mr-1 inline h-3 w-3" />{m.attendees} tham gia</span>
-                    <button className="rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/25">Tham gia</button>
+                    <span className="text-xs text-muted-foreground">
+                      <Users className="mr-1 inline h-3 w-3" />
+                      {m.attendees} tham gia
+                    </span>
+                    <button className="rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/25">
+                      Tham gia
+                    </button>
                   </div>
                 </div>
               ))}
@@ -595,8 +836,12 @@ function WorkspaceDetailPage() {
                       <div className="truncate text-sm font-medium">{m.name}</div>
                       <div className="text-[11px] text-muted-foreground">{m.role}</div>
                     </div>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><MessageCircle className="h-4 w-4" /></button>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
+                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                      <MessageCircle className="h-4 w-4" />
+                    </button>
+                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
                   </li>
                 ))}
               </ul>

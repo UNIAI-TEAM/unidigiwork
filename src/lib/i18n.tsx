@@ -27,7 +27,8 @@ const dict = {
     "land.tagline": "Nền tảng làm việc số cho doanh nghiệp Việt",
     "land.h1.a": "Một nơi làm việc số.",
     "land.h1.b": "Cộng tác trọn vẹn.",
-    "land.sub": "UNIWORK kết hợp meeting, tài liệu, kho tri thức, quy trình và AI copilot — giúp đội ngũ của bạn vận hành nhanh hơn, minh bạch hơn.",
+    "land.sub":
+      "UNIWORK kết hợp meeting, tài liệu, kho tri thức, quy trình và AI copilot — giúp đội ngũ của bạn vận hành nhanh hơn, minh bạch hơn.",
     "land.cta.start": "Bắt đầu ngay",
     "land.cta.demo": "Xem demo Meeting",
     "land.bullet.security": "Bảo mật doanh nghiệp",
@@ -49,13 +50,16 @@ const dict = {
     "land.preview.sub": "Ảnh chụp giao diện thật từ sản phẩm UNIWORK.",
     "land.preview.meet.tag": "Họp",
     "land.preview.meet.h": "Meeting cùng AI Copilot",
-    "land.preview.meet.p": "Sprint review, daily standup hay 1-on-1 — AI ghi chú, tóm tắt và sinh action items theo thời gian thực.",
+    "land.preview.meet.p":
+      "Sprint review, daily standup hay 1-on-1 — AI ghi chú, tóm tắt và sinh action items theo thời gian thực.",
     "land.preview.kb.tag": "Kho tri thức",
     "land.preview.kb.h": "Tri thức tập trung, AI trả lời ngay",
-    "land.preview.kb.p": "Hỏi bất kỳ điều gì về dự án — UNIWORK tổng hợp từ tài liệu, cuộc họp, chat và con người trong tổ chức.",
+    "land.preview.kb.p":
+      "Hỏi bất kỳ điều gì về dự án — UNIWORK tổng hợp từ tài liệu, cuộc họp, chat và con người trong tổ chức.",
     "land.preview.tasks.tag": "Công việc & Dự án",
     "land.preview.tasks.h": "Quản lý dự án theo Kanban với AI Copilot",
-    "land.preview.tasks.p": "Theo dõi sprint, burndown, rủi ro và đề xuất hành động — tất cả trên một bảng duy nhất, đồng bộ với tài liệu và cuộc họp.",
+    "land.preview.tasks.p":
+      "Theo dõi sprint, burndown, rủi ro và đề xuất hành động — tất cả trên một bảng duy nhất, đồng bộ với tài liệu và cuộc họp.",
     "land.feat.title": "Mọi thứ team cần, trong một app",
     "land.feat.sub": "Thay thế cho 5-7 công cụ rời rạc bằng một nền tảng duy nhất.",
     "land.feat.meet.t": "Họp + AI Copilot",
@@ -439,7 +443,8 @@ const dict = {
     "land.tagline": "Digital workplace platform for modern teams",
     "land.h1.a": "One digital workplace.",
     "land.h1.b": "Complete collaboration.",
-    "land.sub": "UNIWORK unifies meetings, documents, knowledge base, workflows and an AI copilot — so your team ships faster, with full transparency.",
+    "land.sub":
+      "UNIWORK unifies meetings, documents, knowledge base, workflows and an AI copilot — so your team ships faster, with full transparency.",
     "land.cta.start": "Get started",
     "land.cta.demo": "See Meeting demo",
     "land.bullet.security": "Enterprise security",
@@ -461,13 +466,16 @@ const dict = {
     "land.preview.sub": "Real screenshots from the UNIWORK product.",
     "land.preview.meet.tag": "Meetings",
     "land.preview.meet.h": "Meetings with AI Copilot",
-    "land.preview.meet.p": "Sprint review, daily standup or 1-on-1 — AI takes notes, summarizes and generates action items in real time.",
+    "land.preview.meet.p":
+      "Sprint review, daily standup or 1-on-1 — AI takes notes, summarizes and generates action items in real time.",
     "land.preview.kb.tag": "Knowledge Base",
     "land.preview.kb.h": "Central knowledge, instant AI answers",
-    "land.preview.kb.p": "Ask anything about your project — UNIWORK synthesises from docs, meetings, chats and people in your org.",
+    "land.preview.kb.p":
+      "Ask anything about your project — UNIWORK synthesises from docs, meetings, chats and people in your org.",
     "land.preview.tasks.tag": "Tasks & Projects",
     "land.preview.tasks.h": "Kanban project management with AI Copilot",
-    "land.preview.tasks.p": "Track sprints, burndown, risks and suggested actions — all on a single board, in sync with docs and meetings.",
+    "land.preview.tasks.p":
+      "Track sprints, burndown, risks and suggested actions — all on a single board, in sync with docs and meetings.",
     "land.feat.title": "Everything your team needs, in one app",
     "land.feat.sub": "Replace 5–7 disconnected tools with a single platform.",
     "land.feat.meet.t": "Meetings + AI Copilot",
@@ -841,17 +849,21 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("vi");
 
   useEffect(() => {
-    const saved = (typeof localStorage !== "undefined" && localStorage.getItem("uniwork-lang")) as Lang | null;
+    const saved = (typeof localStorage !== "undefined" &&
+      localStorage.getItem("uniwork-lang")) as Lang | null;
     if (saved === "vi" || saved === "en") setLangState(saved);
   }, []);
 
   const setLang = (l: Lang) => {
     setLangState(l);
-    try { localStorage.setItem("uniwork-lang", l); } catch {}
+    try {
+      localStorage.setItem("uniwork-lang", l);
+    } catch {}
     if (typeof document !== "undefined") document.documentElement.lang = l;
   };
 
-  const t = (k: Key) => (dict[lang] as Record<string, string>)[k] ?? (dict.vi as Record<string, string>)[k] ?? k;
+  const t = (k: Key) =>
+    (dict[lang] as Record<string, string>)[k] ?? (dict.vi as Record<string, string>)[k] ?? k;
 
   return <LangCtx.Provider value={{ lang, setLang, t }}>{children}</LangCtx.Provider>;
 }

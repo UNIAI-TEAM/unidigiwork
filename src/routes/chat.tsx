@@ -1,10 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Plus, Filter, Star, Hash, Users, Paperclip, Search as SearchIcon,
-  MoreHorizontal, Pin, X, Smile, AtSign, Type, Image as ImageIcon, Code2,
-  Smile as SmileIcon, Mic, Send, Sparkles, FileText, FileSpreadsheet,
-  ChevronDown, Circle, MessageCircle, Bot,
+  Plus,
+  Filter,
+  Star,
+  Hash,
+  Users,
+  Paperclip,
+  Search as SearchIcon,
+  MoreHorizontal,
+  Pin,
+  X,
+  Smile,
+  AtSign,
+  Type,
+  Image as ImageIcon,
+  Code2,
+  Smile as SmileIcon,
+  Mic,
+  Send,
+  Sparkles,
+  FileText,
+  FileSpreadsheet,
+  ChevronDown,
+  Circle,
+  MessageCircle,
+  Bot,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -13,7 +34,10 @@ export const Route = createFileRoute("/chat")({
   head: () => ({
     meta: [
       { title: "Chat · UNIWORK" },
-      { name: "description", content: "Kênh chat nhóm và tin nhắn trực tiếp tích hợp AI Copilot trên UNIWORK." },
+      {
+        name: "description",
+        content: "Kênh chat nhóm và tin nhắn trực tiếp tích hợp AI Copilot trên UNIWORK.",
+      },
     ],
   }),
   component: ChatPage,
@@ -50,7 +74,16 @@ const channels: Channel[] = [
   { name: "hr-policies" },
 ];
 
-const allChannelNames = ["sprint-6", "devops-alerts", "announcements", "design-system", "general", "random", "sales-updates", "hr-policies"];
+const allChannelNames = [
+  "sprint-6",
+  "devops-alerts",
+  "announcements",
+  "design-system",
+  "general",
+  "random",
+  "sales-updates",
+  "hr-policies",
+];
 
 const dms: DM[] = [
   { name: "Trần Thị B", seed: "tran-thi-b", online: "online" },
@@ -85,7 +118,10 @@ const channelMessages: Record<string, Msg[]> = {
           <p>Mọi người cập nhật tiến độ nhé!</p>
         </>
       ),
-      reactions: [{ emoji: "👍", count: 8 }, { emoji: "🎉", count: 4 }],
+      reactions: [
+        { emoji: "👍", count: 8 },
+        { emoji: "🎉", count: 4 },
+      ],
     },
     {
       id: "m2",
@@ -142,9 +178,17 @@ const channelMessages: Record<string, Msg[]> = {
           <p>Đã test xong Mobile App version 2.1. Có 3 bug minor.</p>
           <p>
             Đã tạo ticket trên Jira:{" "}
-            <a className="text-primary hover:underline" href="#">STOS-128</a>,{" "}
-            <a className="text-primary hover:underline" href="#">STOS-129</a>,{" "}
-            <a className="text-primary hover:underline" href="#">STOS-130</a>
+            <a className="text-primary hover:underline" href="#">
+              STOS-128
+            </a>
+            ,{" "}
+            <a className="text-primary hover:underline" href="#">
+              STOS-129
+            </a>
+            ,{" "}
+            <a className="text-primary hover:underline" href="#">
+              STOS-130
+            </a>
           </p>
         </>
       ),
@@ -220,7 +264,12 @@ const channelMessages: Record<string, Msg[]> = {
       time: "7:00 AM",
       timestamp: ts(7, 0),
       text: "[ALERT] CPU usage on prod-db-01 exceeded 85% for 5 minutes.",
-      body: <p><span className="text-rose-400 font-semibold">[ALERT]</span> CPU usage on prod-db-01 exceeded 85% for 5 minutes.</p>,
+      body: (
+        <p>
+          <span className="text-rose-400 font-semibold">[ALERT]</span> CPU usage on prod-db-01
+          exceeded 85% for 5 minutes.
+        </p>
+      ),
     },
   ],
   announcements: [
@@ -234,7 +283,9 @@ const channelMessages: Record<string, Msg[]> = {
       time: "7:30 AM",
       timestamp: ts(7, 30, -1),
       text: "Thông báo: Công ty sẽ tổ chức team building vào cuối tháng này. Đăng ký trước 15/06.",
-      body: <p>Thông báo: Công ty sẽ tổ chức team building vào cuối tháng này. Đăng ký trước 15/06.</p>,
+      body: (
+        <p>Thông báo: Công ty sẽ tổ chức team building vào cuối tháng này. Đăng ký trước 15/06.</p>
+      ),
     },
   ],
 };
@@ -246,30 +297,75 @@ const suggestedActions = [
 ];
 
 const importantThreads = [
-  { id: "STOS-123", title: "API Gateway Performance Issue", replies: 2, when: "1h ago", color: "bg-amber-500/20 text-amber-400" },
-  { id: "UI", title: "UI/UX Design System Update", replies: 5, when: "3h ago", color: "bg-violet-500/20 text-violet-400" },
-  { id: "MOB", title: "Mobile App Offline Sync Discussion", replies: 7, when: "1d ago", color: "bg-sky-500/20 text-sky-400" },
+  {
+    id: "STOS-123",
+    title: "API Gateway Performance Issue",
+    replies: 2,
+    when: "1h ago",
+    color: "bg-amber-500/20 text-amber-400",
+  },
+  {
+    id: "UI",
+    title: "UI/UX Design System Update",
+    replies: 5,
+    when: "3h ago",
+    color: "bg-violet-500/20 text-violet-400",
+  },
+  {
+    id: "MOB",
+    title: "Mobile App Offline Sync Discussion",
+    replies: 7,
+    when: "1d ago",
+    color: "bg-sky-500/20 text-sky-400",
+  },
 ];
 
 const sharedFiles = [
-  { icon: FileText, name: "Sprint 6 Plan.pdf", meta: "PDF · 2.4 MB · Nguyễn Văn A", color: "text-rose-400" },
-  { icon: FileText, name: "API_Gateway_Spec_v2.1.docx", meta: "DOCX · 1.1 MB · Trần Thị B", color: "text-sky-400" },
-  { icon: FileSpreadsheet, name: "Dashboard_Design.fig", meta: "FIG · 8.7 MB · Phạm Minh C", color: "text-emerald-400" },
+  {
+    icon: FileText,
+    name: "Sprint 6 Plan.pdf",
+    meta: "PDF · 2.4 MB · Nguyễn Văn A",
+    color: "text-rose-400",
+  },
+  {
+    icon: FileText,
+    name: "API_Gateway_Spec_v2.1.docx",
+    meta: "DOCX · 1.1 MB · Trần Thị B",
+    color: "text-sky-400",
+  },
+  {
+    icon: FileSpreadsheet,
+    name: "Dashboard_Design.fig",
+    meta: "FIG · 8.7 MB · Phạm Minh C",
+    color: "text-emerald-400",
+  },
 ];
 
-function ChannelRow({ ch, active, onClick }: { ch: Channel; active?: boolean; onClick: () => void }) {
+function ChannelRow({
+  ch,
+  active,
+  onClick,
+}: {
+  ch: Channel;
+  active?: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
       className={`group flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors ${
-        active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        active
+          ? "bg-primary/15 text-foreground"
+          : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
       }`}
     >
       <Hash className="h-4 w-4 opacity-70" />
       <span className="flex-1 truncate text-left">{ch.name}</span>
       {ch.favorite && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />}
       {ch.unread ? (
-        <span className="rounded-full bg-destructive px-1.5 py-0 text-[10px] font-medium text-white">{ch.unread}</span>
+        <span className="rounded-full bg-destructive px-1.5 py-0 text-[10px] font-medium text-white">
+          {ch.unread}
+        </span>
       ) : null}
     </button>
   );
@@ -277,12 +373,18 @@ function ChannelRow({ ch, active, onClick }: { ch: Channel; active?: boolean; on
 
 function DMRow({ dm }: { dm: DM }) {
   const dot =
-    dm.online === "online" ? "bg-success" : dm.online === "away" ? "bg-amber-500" : "bg-muted-foreground/50";
+    dm.online === "online"
+      ? "bg-success"
+      : dm.online === "away"
+        ? "bg-amber-500"
+        : "bg-muted-foreground/50";
   return (
     <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <span className="relative">
         <img src={avatar(dm.seed)} alt="" className="h-6 w-6 rounded-full object-cover" />
-        <span className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-surface ${dot}`} />
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-surface ${dot}`}
+        />
       </span>
       <span className="flex-1 truncate text-left">{dm.name}</span>
     </button>
@@ -297,7 +399,9 @@ function MessageItem({ m }: { m: Msg }) {
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{m.author}</span>
           {m.role && (
-            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${m.roleColor}`}>{m.role}</span>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${m.roleColor}`}>
+              {m.role}
+            </span>
           )}
           <span className="text-[11px] text-muted-foreground">{m.time}</span>
         </div>
@@ -324,7 +428,11 @@ function MessageItem({ m }: { m: Msg }) {
 }
 
 function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function timeFilterFn(timestamp: number, range: string): boolean {
@@ -369,7 +477,8 @@ function ChatPage() {
     }
     const q = searchQuery.trim().toLowerCase();
     return pool.filter((m) => {
-      const matchQ = !q || (m.text && m.text.toLowerCase().includes(q)) || m.author.toLowerCase().includes(q);
+      const matchQ =
+        !q || (m.text && m.text.toLowerCase().includes(q)) || m.author.toLowerCase().includes(q);
       const matchTime = timeFilterFn(m.timestamp, searchTime);
       return matchQ && matchTime;
     });
@@ -395,12 +504,25 @@ function ChatPage() {
     setInput("");
   };
 
-  const isSearchActive = searchQuery.trim().length > 0 || searchChannel !== "all" || searchTime !== "all";
+  const isSearchActive =
+    searchQuery.trim().length > 0 || searchChannel !== "all" || searchTime !== "all";
 
   const timeRanges = [
-    { key: "today", label: t("chat.search.time.today"), color: "border-success/40 text-success bg-success/10" },
-    { key: "yesterday", label: t("chat.search.time.yesterday"), color: "border-amber-500/40 text-amber-500 bg-amber-500/10" },
-    { key: "7d", label: t("chat.search.time.7d"), color: "border-primary/40 text-primary bg-primary/10" },
+    {
+      key: "today",
+      label: t("chat.search.time.today"),
+      color: "border-success/40 text-success bg-success/10",
+    },
+    {
+      key: "yesterday",
+      label: t("chat.search.time.yesterday"),
+      color: "border-amber-500/40 text-amber-500 bg-amber-500/10",
+    },
+    {
+      key: "7d",
+      label: t("chat.search.time.7d"),
+      color: "border-primary/40 text-primary bg-primary/10",
+    },
   ];
 
   const selectChannel = (name: string) => {
@@ -432,11 +554,13 @@ function ChatPage() {
 
             <div className="flex-1 space-y-4 overflow-y-auto px-2 pb-3">
               <div>
-                {([
-                  { k: "threads", label: "Threads", icon: MessageCircle },
-                  { k: "mentions", label: "Mentions", icon: AtSign },
-                  { k: "drafts", label: "Drafts", icon: FileText },
-                ] as const).map((it) => (
+                {(
+                  [
+                    { k: "threads", label: "Threads", icon: MessageCircle },
+                    { k: "mentions", label: "Mentions", icon: AtSign },
+                    { k: "drafts", label: "Drafts", icon: FileText },
+                  ] as const
+                ).map((it) => (
                   <button
                     key={it.k}
                     onClick={() => setView(it.k)}
@@ -456,26 +580,42 @@ function ChatPage() {
                   Favorites
                 </div>
                 {favorites.map((c) => (
-                  <ChannelRow key={c.name} ch={c} active={view === "channel" && activeChannel === c.name} onClick={() => selectChannel(c.name)} />
+                  <ChannelRow
+                    key={c.name}
+                    ch={c}
+                    active={view === "channel" && activeChannel === c.name}
+                    onClick={() => selectChannel(c.name)}
+                  />
                 ))}
               </div>
 
               <div>
                 <div className="flex items-center justify-between px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <span>Channels</span>
-                  <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3 w-3" /></button>
+                  <button className="rounded p-0.5 hover:bg-surface-2">
+                    <Plus className="h-3 w-3" />
+                  </button>
                 </div>
                 {channels.map((c) => (
-                  <ChannelRow key={c.name} ch={c} active={view === "channel" && activeChannel === c.name} onClick={() => selectChannel(c.name)} />
+                  <ChannelRow
+                    key={c.name}
+                    ch={c}
+                    active={view === "channel" && activeChannel === c.name}
+                    onClick={() => selectChannel(c.name)}
+                  />
                 ))}
               </div>
 
               <div>
                 <div className="flex items-center justify-between px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <span>Direct Messages</span>
-                  <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3 w-3" /></button>
+                  <button className="rounded p-0.5 hover:bg-surface-2">
+                    <Plus className="h-3 w-3" />
+                  </button>
                 </div>
-                {dms.map((d) => <DMRow key={d.seed} dm={d} />)}
+                {dms.map((d) => (
+                  <DMRow key={d.seed} dm={d} />
+                ))}
                 <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                   <MoreHorizontal className="h-4 w-4" /> More
                 </button>
@@ -501,148 +641,191 @@ function ChatPage() {
             {view !== "channel" ? (
               <SpecialView view={view} onOpenChannel={selectChannel} />
             ) : (
-            <>
-            <header className="flex items-center justify-between border-b border-border px-5 py-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <Hash className="h-5 w-5 text-muted-foreground" />
-                  <h1 className="truncate text-lg font-semibold">{activeChannel}</h1>
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                  <span>Sprint 6 - Development</span>
-                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> 15 members</span>
-                  <button className="hover:text-foreground">+ Add a channel description</button>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><Users className="h-4 w-4" /></button>
-                <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><Paperclip className="h-4 w-4" /></button>
-                <button
-                  onClick={() => setShowSearch((v) => !v)}
-                  className={`rounded-lg p-2 hover:bg-surface-2 hover:text-foreground ${showSearch ? "text-primary bg-primary/10" : "text-muted-foreground"}`}
-                >
-                  <SearchIcon className="h-4 w-4" />
-                </button>
-                <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
-              </div>
-            </header>
-
-            {/* Search panel */}
-            {showSearch && (
-              <div className="mx-5 mt-3 space-y-2 rounded-xl border border-border bg-surface-2/60 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t("chat.search.placeholder")}
-                    className="min-w-0 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
-                  />
-                  {isSearchActive && (
-                    <button
-                      onClick={() => { setSearchQuery(""); setSearchChannel("all"); setSearchTime("all"); }}
-                      className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                      title="Clear"
-                    >
-                      <X className="h-3.5 w-3.5" />
+              <>
+                <header className="flex items-center justify-between border-b border-border px-5 py-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-5 w-5 text-muted-foreground" />
+                      <h1 className="truncate text-lg font-semibold">{activeChannel}</h1>
+                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span>Sprint 6 - Development</span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" /> 15 members
+                      </span>
+                      <button className="hover:text-foreground">+ Add a channel description</button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                      <Users className="h-4 w-4" />
                     </button>
+                    <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                      <Paperclip className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setShowSearch((v) => !v)}
+                      className={`rounded-lg p-2 hover:bg-surface-2 hover:text-foreground ${showSearch ? "text-primary bg-primary/10" : "text-muted-foreground"}`}
+                    >
+                      <SearchIcon className="h-4 w-4" />
+                    </button>
+                    <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </div>
+                </header>
+
+                {/* Search panel */}
+                {showSearch && (
+                  <div className="mx-5 mt-3 space-y-2 rounded-xl border border-border bg-surface-2/60 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={t("chat.search.placeholder")}
+                        className="min-w-0 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+                      />
+                      {isSearchActive && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery("");
+                            setSearchChannel("all");
+                            setSearchTime("all");
+                          }}
+                          className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                          title="Clear"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={searchChannel}
+                        onChange={(e) => setSearchChannel(e.target.value)}
+                        className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      >
+                        <option value="all">{t("chat.search.channel.all")}</option>
+                        {allChannelNames.map((c) => (
+                          <option key={c} value={c}>
+                            #{c}
+                          </option>
+                        ))}
+                      </select>
+
+                      {timeRanges.map((tr) => {
+                        const active = searchTime === tr.key;
+                        return (
+                          <button
+                            key={tr.key}
+                            onClick={() =>
+                              setSearchTime((prev) => (prev === tr.key ? "all" : tr.key))
+                            }
+                            className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                              active
+                                ? `${tr.color}`
+                                : "border-border bg-surface text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {tr.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mx-5 mt-3 flex items-start gap-3 rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-sm">
+                  <Pin className="mt-0.5 h-4 w-4 text-amber-400" />
+                  <div className="flex-1">
+                    <div className="text-xs text-muted-foreground">Pinned by Trần Thị B</div>
+                    <div>
+                      <span className="font-medium">Daily Standup at 09:30 AM in LiveKit</span>{" "}
+                      <Link to="/meeting" className="text-primary hover:underline">
+                        Join meeting
+                      </Link>
+                    </div>
+                  </div>
+                  <button className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div ref={scrollRef} className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
+                  <div className="my-3 flex items-center justify-center">
+                    <div className="rounded-full bg-surface-2 px-3 py-0.5 text-xs text-muted-foreground">
+                      Today
+                    </div>
+                  </div>
+                  {filteredMessages.length === 0 && isSearchActive ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-sm text-muted-foreground">
+                      <SearchIcon className="mb-2 h-8 w-8 opacity-40" />
+                      <p>{t("chat.search.no.result")}</p>
+                    </div>
+                  ) : (
+                    filteredMessages.map((m) => <MessageItem key={m.id} m={m} />)
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <select
-                    value={searchChannel}
-                    onChange={(e) => setSearchChannel(e.target.value)}
-                    className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                  >
-                    <option value="all">{t("chat.search.channel.all")}</option>
-                    {allChannelNames.map((c) => (
-                      <option key={c} value={c}>#{c}</option>
-                    ))}
-                  </select>
 
-                  {timeRanges.map((tr) => {
-                    const active = searchTime === tr.key;
-                    return (
-                      <button
-                        key={tr.key}
-                        onClick={() => setSearchTime((prev) => (prev === tr.key ? "all" : tr.key))}
-                        className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                          active ? `${tr.color}` : "border-border bg-surface text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {tr.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="mx-5 mt-3 flex items-start gap-3 rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-sm">
-              <Pin className="mt-0.5 h-4 w-4 text-amber-400" />
-              <div className="flex-1">
-                <div className="text-xs text-muted-foreground">Pinned by Trần Thị B</div>
-                <div>
-                  <span className="font-medium">Daily Standup at 09:30 AM in LiveKit</span>{" "}
-                  <Link to="/meeting" className="text-primary hover:underline">Join meeting</Link>
-                </div>
-              </div>
-              <button className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"><X className="h-4 w-4" /></button>
-            </div>
-
-            <div ref={scrollRef} className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
-              <div className="my-3 flex items-center justify-center">
-                <div className="rounded-full bg-surface-2 px-3 py-0.5 text-xs text-muted-foreground">Today</div>
-              </div>
-              {filteredMessages.length === 0 && isSearchActive ? (
-                <div className="flex flex-col items-center justify-center py-10 text-sm text-muted-foreground">
-                  <SearchIcon className="mb-2 h-8 w-8 opacity-40" />
-                  <p>{t("chat.search.no.result")}</p>
-                </div>
-              ) : (
-                filteredMessages.map((m) => <MessageItem key={m.id} m={m} />)
-              )}
-            </div>
-
-            {/* Composer */}
-            <div className="px-5 pb-5">
-              <div className="rounded-xl border border-border bg-surface-2/60 focus-within:border-primary/50">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  placeholder={`Message #${activeChannel}`}
-                  className="w-full bg-transparent px-4 pt-3 text-sm placeholder:text-muted-foreground focus:outline-none"
-                />
-                <div className="flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground"><Paperclip className="h-4 w-4" /></button>
-                    <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground"><SmileIcon className="h-4 w-4" /></button>
-                    <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground"><AtSign className="h-4 w-4" /></button>
-                    <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground"><Type className="h-4 w-4" /></button>
-                    <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground"><ImageIcon className="h-4 w-4" /></button>
-                    <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground"><Code2 className="h-4 w-4" /></button>
-                    <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground"><Mic className="h-4 w-4" /></button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowCopilot((v) => !v)}
-                      className="hidden items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground md:flex"
-                    >
-                      <Sparkles className="h-3.5 w-3.5 text-primary" /> AI
-                    </button>
-                    <button
-                      onClick={send}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-                    >
-                      <Send className="h-4 w-4" />
-                    </button>
+                {/* Composer */}
+                <div className="px-5 pb-5">
+                  <div className="rounded-xl border border-border bg-surface-2/60 focus-within:border-primary/50">
+                    <input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          send();
+                        }
+                      }}
+                      placeholder={`Message #${activeChannel}`}
+                      className="w-full bg-transparent px-4 pt-3 text-sm placeholder:text-muted-foreground focus:outline-none"
+                    />
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+                          <Paperclip className="h-4 w-4" />
+                        </button>
+                        <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+                          <SmileIcon className="h-4 w-4" />
+                        </button>
+                        <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+                          <AtSign className="h-4 w-4" />
+                        </button>
+                        <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+                          <Type className="h-4 w-4" />
+                        </button>
+                        <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+                          <ImageIcon className="h-4 w-4" />
+                        </button>
+                        <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+                          <Code2 className="h-4 w-4" />
+                        </button>
+                        <button className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+                          <Mic className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowCopilot((v) => !v)}
+                          className="hidden items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground md:flex"
+                        >
+                          <Sparkles className="h-3.5 w-3.5 text-primary" /> AI
+                        </button>
+                        <button
+                          onClick={send}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            </>
+              </>
             )}
           </section>
 
@@ -655,9 +838,14 @@ function ChatPage() {
                     <Bot className="h-4 w-4" />
                   </div>
                   <div className="font-semibold">AI Copilot</div>
-                  <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-primary">BETA</span>
+                  <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                    BETA
+                  </span>
                 </div>
-                <button onClick={() => setShowCopilot(false)} className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                <button
+                  onClick={() => setShowCopilot(false)}
+                  className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </header>
@@ -669,7 +857,9 @@ function ChatPage() {
                     className={`relative px-3 py-2 ${i === 0 ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {tab}
-                    {i === 0 && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />}
+                    {i === 0 && (
+                      <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -680,8 +870,8 @@ function ChatPage() {
                     <Sparkles className="h-4 w-4 text-primary" /> Channel Summary
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                    Sprint 6 đang tập trung hoàn thành API Gateway, UI Dashboard và Mobile App.
-                    API Gateway 90% hoàn thành, UI còn 2 task, Mobile App đã test xong.
+                    Sprint 6 đang tập trung hoàn thành API Gateway, UI Dashboard và Mobile App. API
+                    Gateway 90% hoàn thành, UI còn 2 task, Mobile App đã test xong.
                   </p>
                   <button className="mt-3 w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20">
                     Generate detailed summary
@@ -697,7 +887,10 @@ function ChatPage() {
                       <li key={a.task} className="flex items-start gap-2 text-xs">
                         <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-sm ${a.color}`} />
                         <div className="flex-1">
-                          <div><span className="font-semibold">{a.who}</span> <span className="text-muted-foreground">- {a.task}</span></div>
+                          <div>
+                            <span className="font-semibold">{a.who}</span>{" "}
+                            <span className="text-muted-foreground">- {a.task}</span>
+                          </div>
                         </div>
                         <span className="text-[10px] text-muted-foreground">{a.when}</span>
                       </li>
@@ -710,18 +903,26 @@ function ChatPage() {
 
                 <section className="rounded-xl border border-border bg-surface-2/60 p-3">
                   <div className="mb-2 flex items-center justify-between text-sm font-medium">
-                    <span className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-sky-400" /> Important Threads</span>
+                    <span className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4 text-sky-400" /> Important Threads
+                    </span>
                     <button className="text-xs text-primary hover:underline">View all</button>
                   </div>
                   <ul className="space-y-2">
                     {importantThreads.map((th) => (
                       <li key={th.id} className="flex items-start gap-2 text-xs">
-                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded ${th.color}`}>
+                        <span
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded ${th.color}`}
+                        >
                           <Hash className="h-3 w-3" />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium">{th.id}: {th.title}</div>
-                          <div className="text-[10px] text-muted-foreground">{th.replies} replies · Updated {th.when}</div>
+                          <div className="truncate font-medium">
+                            {th.id}: {th.title}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {th.replies} replies · Updated {th.when}
+                          </div>
                         </div>
                       </li>
                     ))}
@@ -730,7 +931,9 @@ function ChatPage() {
 
                 <section className="rounded-xl border border-border bg-surface-2/60 p-3">
                   <div className="mb-2 flex items-center justify-between text-sm font-medium">
-                    <span className="flex items-center gap-2"><Paperclip className="h-4 w-4 text-emerald-400" /> Shared Files</span>
+                    <span className="flex items-center gap-2">
+                      <Paperclip className="h-4 w-4 text-emerald-400" /> Shared Files
+                    </span>
                     <button className="text-xs text-primary hover:underline">View all</button>
                   </div>
                   <ul className="space-y-2">
@@ -775,50 +978,150 @@ const threadData = [
   {
     id: "t1",
     channel: "sprint-6",
-    parent: { author: "Trần Thị B", seed: "tran-thi-b", time: "Hôm nay · 9:05", text: "API Gateway đã hoàn thành 90%. Đang review và chuẩn bị deploy staging." },
+    parent: {
+      author: "Trần Thị B",
+      seed: "tran-thi-b",
+      time: "Hôm nay · 9:05",
+      text: "API Gateway đã hoàn thành 90%. Đang review và chuẩn bị deploy staging.",
+    },
     replies: [
-      { author: "Phạm Minh C", seed: "pham-minh-c", time: "9:15", text: "Mình sẽ hỗ trợ load test sau khi deploy lên staging." },
-      { author: "Nguyễn Văn A", seed: "nguyen-van-a-1", time: "9:22", text: "Tốt, nhớ ghi lại metrics để báo cáo Steering Committee chiều nay." },
+      {
+        author: "Phạm Minh C",
+        seed: "pham-minh-c",
+        time: "9:15",
+        text: "Mình sẽ hỗ trợ load test sau khi deploy lên staging.",
+      },
+      {
+        author: "Nguyễn Văn A",
+        seed: "nguyen-van-a-1",
+        time: "9:22",
+        text: "Tốt, nhớ ghi lại metrics để báo cáo Steering Committee chiều nay.",
+      },
     ],
     unread: 2,
   },
   {
     id: "t2",
     channel: "design-system",
-    parent: { author: "Phạm Nam", seed: "pham-nam", time: "Hôm qua · 16:40", text: "Mình vừa update bộ token màu mới cho dark mode, mọi người review giúp nhé." },
+    parent: {
+      author: "Phạm Nam",
+      seed: "pham-nam",
+      time: "Hôm qua · 16:40",
+      text: "Mình vừa update bộ token màu mới cho dark mode, mọi người review giúp nhé.",
+    },
     replies: [
-      { author: "Đỗ Linh", seed: "do-linh", time: "17:05", text: "Contrast của text-muted hơi thấp trên nền surface, mình đề xuất tăng lên 4.5:1." },
+      {
+        author: "Đỗ Linh",
+        seed: "do-linh",
+        time: "17:05",
+        text: "Contrast của text-muted hơi thấp trên nền surface, mình đề xuất tăng lên 4.5:1.",
+      },
     ],
     unread: 1,
   },
   {
     id: "t3",
     channel: "announcements",
-    parent: { author: "Nguyễn Văn A", seed: "nguyen-van-a-1", time: "2 ngày trước", text: "Thông báo: Công ty sẽ tổ chức team building vào cuối tháng. Đăng ký trước 15/06." },
+    parent: {
+      author: "Nguyễn Văn A",
+      seed: "nguyen-van-a-1",
+      time: "2 ngày trước",
+      text: "Thông báo: Công ty sẽ tổ chức team building vào cuối tháng. Đăng ký trước 15/06.",
+    },
     replies: [
-      { author: "Trần Thị B", seed: "tran-thi-b", time: "1 ngày trước", text: "Em đã tổng hợp 28 đăng ký, sẽ chốt vào sáng mai." },
+      {
+        author: "Trần Thị B",
+        seed: "tran-thi-b",
+        time: "1 ngày trước",
+        text: "Em đã tổng hợp 28 đăng ký, sẽ chốt vào sáng mai.",
+      },
     ],
   },
 ];
 
 const mentionsData = [
-  { id: "n1", channel: "sprint-6", author: "Trần Thị B", seed: "tran-thi-b", time: "9:42", text: "@Nguyễn Văn A có thể xem giúp em PR #128 không ạ? Cần merge trước trưa nay." },
-  { id: "n2", channel: "devops-alerts", author: "Bot", seed: "bot-1", time: "8:10", text: "@channel CPU prod-db-01 đang ở 86%, cần kiểm tra ngay." },
-  { id: "n3", channel: "general", author: "Lê Hoa", seed: "le-hoa", time: "Hôm qua", text: "@Nguyễn Văn A buổi họp 1-1 chiều nay dời sang 15:30 nhé anh." },
-  { id: "n4", channel: "hr-policies", author: "HR Bot", seed: "hr-bot", time: "2 ngày trước", text: "@here Chính sách nghỉ phép mới đã có hiệu lực, xin mọi người đọc và xác nhận." },
+  {
+    id: "n1",
+    channel: "sprint-6",
+    author: "Trần Thị B",
+    seed: "tran-thi-b",
+    time: "9:42",
+    text: "@Nguyễn Văn A có thể xem giúp em PR #128 không ạ? Cần merge trước trưa nay.",
+  },
+  {
+    id: "n2",
+    channel: "devops-alerts",
+    author: "Bot",
+    seed: "bot-1",
+    time: "8:10",
+    text: "@channel CPU prod-db-01 đang ở 86%, cần kiểm tra ngay.",
+  },
+  {
+    id: "n3",
+    channel: "general",
+    author: "Lê Hoa",
+    seed: "le-hoa",
+    time: "Hôm qua",
+    text: "@Nguyễn Văn A buổi họp 1-1 chiều nay dời sang 15:30 nhé anh.",
+  },
+  {
+    id: "n4",
+    channel: "hr-policies",
+    author: "HR Bot",
+    seed: "hr-bot",
+    time: "2 ngày trước",
+    text: "@here Chính sách nghỉ phép mới đã có hiệu lực, xin mọi người đọc và xác nhận.",
+  },
 ];
 
 const draftsData = [
-  { id: "d1", channel: "sprint-6", time: "5 phút trước", text: "Update tiến độ MVP: hiện đang ở 75%, dự kiến hoàn thành trước 15/07. Cần thêm hỗ trợ từ team QA cho..." },
-  { id: "d2", channel: "Trần Thị B", dm: true, time: "Hôm nay · 10:12", text: "Chị ơi em gửi lại bản phân tích risk cho dự án STOS, nhờ chị review giúp em trước cuộc họp..." },
-  { id: "d3", channel: "announcements", time: "Hôm qua", text: "Kính gửi cả nhà, ngày 30/06 phòng IT sẽ bảo trì hệ thống mạng từ 22:00 đến 02:00..." },
+  {
+    id: "d1",
+    channel: "sprint-6",
+    time: "5 phút trước",
+    text: "Update tiến độ MVP: hiện đang ở 75%, dự kiến hoàn thành trước 15/07. Cần thêm hỗ trợ từ team QA cho...",
+  },
+  {
+    id: "d2",
+    channel: "Trần Thị B",
+    dm: true,
+    time: "Hôm nay · 10:12",
+    text: "Chị ơi em gửi lại bản phân tích risk cho dự án STOS, nhờ chị review giúp em trước cuộc họp...",
+  },
+  {
+    id: "d3",
+    channel: "announcements",
+    time: "Hôm qua",
+    text: "Kính gửi cả nhà, ngày 30/06 phòng IT sẽ bảo trì hệ thống mạng từ 22:00 đến 02:00...",
+  },
 ];
 
-function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChannel: (name: string) => void }) {
+function SpecialView({
+  view,
+  onOpenChannel,
+}: {
+  view: SpecialViewKey;
+  onOpenChannel: (name: string) => void;
+}) {
   const meta = {
-    threads: { icon: MessageCircle, title: "Threads", desc: "Các cuộc trao đổi bạn đang theo dõi", color: "text-sky-400" },
-    mentions: { icon: AtSign, title: "Mentions", desc: "Tin nhắn nhắc đến bạn (@you, @channel, @here)", color: "text-amber-400" },
-    drafts: { icon: FileText, title: "Drafts", desc: "Tin nhắn đã soạn nhưng chưa gửi", color: "text-violet-400" },
+    threads: {
+      icon: MessageCircle,
+      title: "Threads",
+      desc: "Các cuộc trao đổi bạn đang theo dõi",
+      color: "text-sky-400",
+    },
+    mentions: {
+      icon: AtSign,
+      title: "Mentions",
+      desc: "Tin nhắn nhắc đến bạn (@you, @channel, @here)",
+      color: "text-amber-400",
+    },
+    drafts: {
+      icon: FileText,
+      title: "Drafts",
+      desc: "Tin nhắn đã soạn nhưng chưa gửi",
+      color: "text-violet-400",
+    },
   }[view];
   const Icon = meta.icon;
 
@@ -826,7 +1129,9 @@ function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChan
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-border px-5 py-3">
         <div className="flex items-center gap-3">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 ${meta.color}`}>
+          <div
+            className={`flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 ${meta.color}`}
+          >
             <Icon className="h-5 w-5" />
           </div>
           <div>
@@ -844,12 +1149,23 @@ function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChan
           <div className="mx-auto max-w-3xl space-y-3">
             {threadData.map((th) => (
               <article key={th.id} className="rounded-xl border border-border bg-surface-2/50 p-4">
-                <button onClick={() => onOpenChannel(th.channel)} className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
+                <button
+                  onClick={() => onOpenChannel(th.channel)}
+                  className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
                   <Hash className="h-3 w-3" /> {th.channel}
-                  {th.unread ? <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] font-medium text-white">{th.unread} mới</span> : null}
+                  {th.unread ? (
+                    <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] font-medium text-white">
+                      {th.unread} mới
+                    </span>
+                  ) : null}
                 </button>
                 <div className="flex gap-3">
-                  <img src={avatar(th.parent.seed)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                  <img
+                    src={avatar(th.parent.seed)}
+                    alt=""
+                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm font-semibold">{th.parent.author}</span>
@@ -861,7 +1177,11 @@ function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChan
                 <div className="mt-3 space-y-3 border-l-2 border-border pl-4">
                   {th.replies.map((r, i) => (
                     <div key={i} className="flex gap-3">
-                      <img src={avatar(r.seed)} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
+                      <img
+                        src={avatar(r.seed)}
+                        alt=""
+                        className="h-7 w-7 shrink-0 rounded-full object-cover"
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2">
                           <span className="text-xs font-semibold">{r.author}</span>
@@ -889,12 +1209,22 @@ function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChan
         {view === "mentions" && (
           <div className="mx-auto max-w-3xl space-y-2">
             {mentionsData.map((m) => (
-              <article key={m.id} className="flex gap-3 rounded-xl border border-border bg-surface-2/40 p-3 hover:border-primary/40">
-                <img src={avatar(m.seed)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+              <article
+                key={m.id}
+                className="flex gap-3 rounded-xl border border-border bg-surface-2/40 p-3 hover:border-primary/40"
+              >
+                <img
+                  src={avatar(m.seed)}
+                  alt=""
+                  className="h-9 w-9 shrink-0 rounded-full object-cover"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2">
                     <span className="text-sm font-semibold">{m.author}</span>
-                    <button onClick={() => onOpenChannel(m.channel)} className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline">
+                    <button
+                      onClick={() => onOpenChannel(m.channel)}
+                      className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
+                    >
                       <Hash className="h-3 w-3" /> {m.channel}
                     </button>
                     <span className="text-[11px] text-muted-foreground">{m.time}</span>
@@ -902,18 +1232,29 @@ function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChan
                   <p className="mt-1 text-sm text-foreground/90">
                     {m.text.split(/(@\S+)/g).map((part, i) =>
                       part.startsWith("@") ? (
-                        <span key={i} className="rounded bg-primary/15 px-1 font-medium text-primary">{part}</span>
+                        <span
+                          key={i}
+                          className="rounded bg-primary/15 px-1 font-medium text-primary"
+                        >
+                          {part}
+                        </span>
                       ) : (
                         <span key={i}>{part}</span>
-                      )
+                      ),
                     )}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
-                  <button className="rounded p-1.5 hover:bg-surface hover:text-foreground" title="Trả lời">
+                  <button
+                    className="rounded p-1.5 hover:bg-surface hover:text-foreground"
+                    title="Trả lời"
+                  >
                     <MessageCircle className="h-4 w-4" />
                   </button>
-                  <button className="rounded p-1.5 hover:bg-surface hover:text-foreground" title="Đánh dấu đã đọc">
+                  <button
+                    className="rounded p-1.5 hover:bg-surface hover:text-foreground"
+                    title="Đánh dấu đã đọc"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -925,17 +1266,33 @@ function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChan
         {view === "drafts" && (
           <div className="mx-auto max-w-3xl space-y-2">
             {draftsData.map((d) => (
-              <article key={d.id} className="rounded-xl border border-dashed border-border bg-surface-2/40 p-3 hover:border-primary/40">
+              <article
+                key={d.id}
+                className="rounded-xl border border-dashed border-border bg-surface-2/40 p-3 hover:border-primary/40"
+              >
                 <div className="mb-1.5 flex items-center justify-between">
-                  <button onClick={() => !d.dm && onOpenChannel(d.channel)} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                    {d.dm ? <span>@ {d.channel}</span> : (<><Hash className="h-3 w-3" /> {d.channel}</>)}
+                  <button
+                    onClick={() => !d.dm && onOpenChannel(d.channel)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    {d.dm ? (
+                      <span>@ {d.channel}</span>
+                    ) : (
+                      <>
+                        <Hash className="h-3 w-3" /> {d.channel}
+                      </>
+                    )}
                   </button>
                   <span className="text-[11px] text-muted-foreground">{d.time}</span>
                 </div>
                 <p className="line-clamp-2 text-sm text-foreground/85">{d.text}</p>
                 <div className="mt-2 flex items-center justify-end gap-2">
-                  <button className="rounded-lg px-2.5 py-1 text-xs text-muted-foreground hover:bg-surface hover:text-foreground">Xoá</button>
-                  <button className="rounded-lg border border-border px-2.5 py-1 text-xs hover:bg-surface">Chỉnh sửa</button>
+                  <button className="rounded-lg px-2.5 py-1 text-xs text-muted-foreground hover:bg-surface hover:text-foreground">
+                    Xoá
+                  </button>
+                  <button className="rounded-lg border border-border px-2.5 py-1 text-xs hover:bg-surface">
+                    Chỉnh sửa
+                  </button>
                   <button className="rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                     <Send className="mr-1 inline h-3 w-3" /> Gửi ngay
                   </button>
