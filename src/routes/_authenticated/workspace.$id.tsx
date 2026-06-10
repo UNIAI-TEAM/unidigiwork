@@ -4,6 +4,7 @@ import {
   Users, Calendar, FileText, CheckCircle2, Clock, MoreHorizontal, Plus,
   Star, Settings2, Activity, FolderKanban, Sparkles, MessageCircle, Video,
   TrendingUp, AlertCircle, ChevronRight, GitBranch, Pin, BookOpen, Bell,
+  Search, FileSpreadsheet, FileImage, Presentation, Download, Filter, X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -160,11 +161,46 @@ const ACTIVITY = [
 ];
 
 const DOCS = [
-  { name: "STOS - Tổng quan kiến trúc", updated: "Hôm qua", owner: "Trần Minh" },
-  { name: "Roadmap Q3 2026", updated: "2 ngày trước", owner: "Nguyễn Văn A" },
-  { name: "User Research Report", updated: "Tuần này", owner: "Lê Hồng" },
-  { name: "API Specification v1.2", updated: "Tuần này", owner: "Trần Minh" },
+  { name: "STOS - Tổng quan kiến trúc hệ thống.pdf", type: "pdf", size: "4.8 MB", updated: "Hôm nay", owner: "Trần Minh" },
+  { name: "Kế hoạch triển khai Q3 2026.xlsx", type: "xlsx", size: "1.2 MB", updated: "Hôm qua", owner: "Nguyễn Văn A" },
+  { name: "Báo cáo nghiên cứu người dùng.docx", type: "doc", size: "3.5 MB", updated: "2 ngày trước", owner: "Lê Hồng" },
+  { name: "API Specification v1.2.pdf", type: "pdf", size: "2.1 MB", updated: "Tuần này", owner: "Trần Minh" },
+  { name: "Mockup UI Dashboard v3.fig", type: "image", size: "18.4 MB", updated: "Tuần này", owner: "Lê Hồng" },
+  { name: "Slide họp Steering Committee.pptx", type: "ppt", size: "8.6 MB", updated: "3 ngày trước", owner: "Phạm Quỳnh" },
+  { name: "Báo cáo tiến độ tháng 5.pdf", type: "pdf", size: "2.9 MB", updated: "1 tuần trước", owner: "Đỗ Linh" },
+  { name: "Dataset khảo sát nội bộ.xlsx", type: "xlsx", size: "856 KB", updated: "1 tuần trước", owner: "Trần Minh" },
+  { name: "Tài liệu hướng dẫn vận hành.docx", type: "doc", size: "1.8 MB", updated: "2 tuần trước", owner: "Nguyễn Văn A" },
+  { name: "Infographic quy trình mới.png", type: "image", size: "4.2 MB", updated: "2 tuần trước", owner: "Lê Hồng" },
 ];
+
+const DOC_TYPES: { id: string; label: string }[] = [
+  { id: "all", label: "Tất cả" },
+  { id: "pdf", label: "PDF" },
+  { id: "xlsx", label: "Excel" },
+  { id: "doc", label: "Word" },
+  { id: "ppt", label: "PowerPoint" },
+  { id: "image", label: "Hình ảnh" },
+];
+
+function docTypeIcon(type: string) {
+  switch (type) {
+    case "pdf": return <FileText className="h-5 w-5 text-rose-500" />;
+    case "xlsx": return <FileSpreadsheet className="h-5 w-5 text-emerald-500" />;
+    case "ppt": return <Presentation className="h-5 w-5 text-amber-500" />;
+    case "image": return <FileImage className="h-5 w-5 text-violet-500" />;
+    default: return <FileText className="h-5 w-5 text-sky-500" />;
+  }
+}
+
+function docTypeBg(type: string) {
+  switch (type) {
+    case "pdf": return "bg-rose-500/15 text-rose-600";
+    case "xlsx": return "bg-emerald-500/15 text-emerald-600";
+    case "ppt": return "bg-amber-500/15 text-amber-600";
+    case "image": return "bg-violet-500/15 text-violet-600";
+    default: return "bg-sky-500/15 text-sky-600";
+  }
+}
 
 const MEETINGS = [
   { title: "Standup hàng ngày", time: "09:00 - 09:15", today: true, attendees: 8 },
@@ -178,6 +214,8 @@ function WorkspaceDetailPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const [starred, setStarred] = useState(true);
+  const [docSearch, setDocSearch] = useState("");
+  const [docFilter, setDocFilter] = useState<string>("all");
 
   const healthCls =
     ws.health === "Tốt"
@@ -435,23 +473,90 @@ function WorkspaceDetailPage() {
           )}
 
           {tab === "documents" && (
-            <div className="rounded-xl border border-border bg-surface">
-              <div className="flex items-center justify-between border-b border-border p-4">
-                <h2 className="text-sm font-semibold">Tài liệu dự án</h2>
-                <Link to="/documents" className="text-xs text-primary hover:underline">Mở Documents</Link>
+            <div className="space-y-4">
+              {/* Toolbar: search + type filters */}
+              <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-sm font-semibold">Tài liệu dự án</h2>
+                  <div className="flex items-center gap-2">
+                    <Link to="/documents" className="text-xs text-primary hover:underline">Mở Documents</Link>
+                    <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                      <Plus className="h-3.5 w-3.5" /> Thêm tài liệu
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm tài liệu..."
+                    value={docSearch}
+                    onChange={(e) => setDocSearch(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-9 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  {docSearch && (
+                    <button onClick={() => setDocSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-surface-2">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {DOC_TYPES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setDocFilter(t.id)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        docFilter === t.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-surface-2 text-muted-foreground hover:bg-surface-2/70 hover:text-foreground"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <ul className="divide-y divide-border">
-                {DOCS.map((d) => (
-                  <li key={d.name} className="flex items-center gap-3 p-3 hover:bg-surface-2/40">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300"><FileText className="h-4 w-4" /></span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm">{d.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{d.owner} · cập nhật {d.updated}</div>
-                    </div>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
-                  </li>
-                ))}
-              </ul>
+
+              {/* Document list */}
+              <div className="rounded-xl border border-border bg-surface">
+                <ul className="divide-y divide-border">
+                  {(() => {
+                    const filtered = DOCS.filter((d) => {
+                      const matchesSearch = d.name.toLowerCase().includes(docSearch.toLowerCase());
+                      const matchesType = docFilter === "all" || d.type === docFilter;
+                      return matchesSearch && matchesType;
+                    });
+                    if (filtered.length === 0) {
+                      return (
+                        <li className="p-8 text-center text-sm text-muted-foreground">
+                          Không tìm thấy tài liệu phù hợp
+                        </li>
+                      );
+                    }
+                    return filtered.map((d) => (
+                      <li key={d.name} className="flex items-center gap-3 p-3 hover:bg-surface-2/40 group">
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
+                          {docTypeIcon(d.type)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{d.name}</div>
+                          <div className="text-[11px] text-muted-foreground">{d.size} · {d.owner} · cập nhật {d.updated}</div>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2" title="Tải xuống">
+                            <Download className="h-4 w-4" />
+                          </button>
+                          <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </li>
+                    ));
+                  })()}
+                </ul>
+              </div>
             </div>
           )}
 
