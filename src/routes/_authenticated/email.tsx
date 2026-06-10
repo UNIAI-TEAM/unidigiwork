@@ -492,6 +492,9 @@ function EmailHubPage() {
               <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="h-4 w-4 text-primary" /> AI Email Assistant
+                  <button onClick={() => setAiOpen(true)} className="ml-auto inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/25">
+                    <Sparkles className="h-3 w-3" /> Mở AI Assistant
+                  </button>
                 </div>
                 <div className="mt-3 text-sm font-medium">Tóm tắt nội dung email</div>
                 <p className="mt-1 text-sm text-muted-foreground">
