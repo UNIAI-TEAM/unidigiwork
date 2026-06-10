@@ -5,6 +5,8 @@ import {
   FileSpreadsheet, ListChecks, TrendingUp, Lightbulb, Mail, Calendar,
   Languages, PenLine, Grid3x3, Paperclip, Send, Copy, ThumbsUp, ThumbsDown,
   RotateCw, Clock, CheckCircle2, AlertTriangle, Info,
+  Search, BookOpen, Folder, Globe, Link as LinkIcon, Upload, Star,
+  Wrench, Image as ImageIcon, Code2, Table2, Zap, Settings, ChevronRight,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
