@@ -4,7 +4,7 @@ import {
   Mail, Search, Plus, ChevronDown, MoreHorizontal, Inbox, Star, Send, FileEdit,
   Trash2, Archive, AlertOctagon, Paperclip, RefreshCw, Filter, ArrowUpDown,
   Reply, ReplyAll, Forward, Tag, Sparkles, Bot, FileText, FileSpreadsheet,
-  Download, ArrowLeft, MailOpen, X, Clock, AlertCircle, Check,
+  Download, ArrowLeft, MailOpen, X, Clock, AlertCircle, Check, Settings2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ComposeEmailDialog,
+  AdvancedFilterDialog,
+  AiAssistantDialog,
+  LabelsRulesDialog,
+  EMPTY_FILTERS,
+  type AdvancedFilters,
+  type LabelDef,
+  type RuleDef,
+} from "@/components/email-features";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
@@ -36,13 +46,13 @@ const MAILBOXES = [
   { key: "bin", label: "Thùng rác", icon: Trash2, count: 2 },
 ];
 
-const LABELS = [
+const INITIAL_LABELS: LabelDef[] = [
   { name: "Dự án STOS", color: "bg-emerald-500", count: 24 },
   { name: "Khách hàng", color: "bg-amber-500", count: 18 },
   { name: "Hợp đồng", color: "bg-violet-500", count: 15 },
   { name: "Nhân sự", color: "bg-sky-500", count: 6 },
   { name: "Hóa đơn", color: "bg-rose-500", count: 9 },
-];
+] as any;
 
 const ACCOUNTS = [
   { provider: "M365", label: "M", color: "bg-sky-600", email: "nguyenvana@ubos.vn", count: 128 },
@@ -124,6 +134,16 @@ function EmailHubPage() {
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
+  const [labels, setLabels] = useState<any[]>(INITIAL_LABELS);
+  const [rules, setRules] = useState<RuleDef[]>([
+    { id: "r1", name: "Email từ STOS → gắn nhãn Dự án STOS", whenField: "from", whenContains: "@stos.vn", thenAction: "label", thenValue: "Dự án STOS", active: true },
+    { id: "r2", name: "Email hóa đơn → lưu trữ", whenField: "subject", whenContains: "hóa đơn", thenAction: "archive", thenValue: "", active: false },
+  ]);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
+  const [advanced, setAdvanced] = useState<AdvancedFilters>(EMPTY_FILTERS);
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
   function timeSortValue(e: Email): number {
@@ -158,7 +178,15 @@ function EmailHubPage() {
         e.preview.toLowerCase().includes(q);
       const matchLabel = !filterLabel || (e.labels?.includes(filterLabel) ?? false);
       const matchUnread = !filterUnread || e.unread;
-      return matchQuery && matchLabel && matchUnread;
+      const a = advanced;
+      const matchAdvKeyword = !a.keyword || (
+        e.subject.toLowerCase().includes(a.keyword.toLowerCase()) ||
+        e.preview.toLowerCase().includes(a.keyword.toLowerCase())
+      );
+      const matchAdvFrom = !a.from || e.from.toLowerCase().includes(a.from.toLowerCase());
+      const matchAdvAttach = !a.hasAttachment || !!e.hasAttachment;
+      const matchAdvLabels = a.labels.length === 0 || a.labels.every((l) => e.labels?.includes(l));
+      return matchQuery && matchLabel && matchUnread && matchAdvKeyword && matchAdvFrom && matchAdvAttach && matchAdvLabels;
     });
     return list.slice().sort((a, b) => {
       if (sortBy === "priority") {
@@ -202,13 +230,16 @@ function EmailHubPage() {
 
             <div className="px-3 py-3">
               <div className="flex items-center gap-1">
-                <button className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                <button onClick={() => setComposeOpen(true)} className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                   <FileEdit className="h-4 w-4" /> Soạn email
                 </button>
                 <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90">
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </div>
+              <button onClick={() => setLabelsOpen(true)} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                <Settings2 className="h-3.5 w-3.5" /> Nhãn & Quy tắc tự động
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 pb-4">
@@ -234,7 +265,7 @@ function EmailHubPage() {
                 <button className="rounded p-0.5 hover:bg-surface-2"><ChevronDown className="h-3 w-3" /></button>
               </div>
               <ul className="space-y-0.5">
-                {LABELS.map((l) => {
+                {labels.map((l: any) => {
                   const active = filterLabel === l.name;
                   return (
                     <li key={l.name}>
@@ -252,7 +283,7 @@ function EmailHubPage() {
                 <li>
                   <button className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                     <Plus className="h-3.5 w-3.5" />
-                    <span>More</span>
+                    <span onClick={(e) => { e.stopPropagation(); setLabelsOpen(true); }}>More</span>
                   </button>
                 </li>
               </ul>
@@ -330,7 +361,9 @@ function EmailHubPage() {
                     <X className="h-3 w-3" /> Xóa lọc
                   </button>
                 )}
-                <button className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
+                <button onClick={() => setAdvancedOpen(true)} className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2">
+                  <Filter className="h-3 w-3" /> Lọc nâng cao
+                </button>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {searchQuery && (
@@ -459,6 +492,9 @@ function EmailHubPage() {
               <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="h-4 w-4 text-primary" /> AI Email Assistant
+                  <button onClick={() => setAiOpen(true)} className="ml-auto inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/25">
+                    <Sparkles className="h-3 w-3" /> Mở AI Assistant
+                  </button>
                 </div>
                 <div className="mt-3 text-sm font-medium">Tóm tắt nội dung email</div>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -568,6 +604,24 @@ function EmailHubPage() {
           </aside>
         </div>
       </main>
+
+      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} />
+      <AdvancedFilterDialog
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+        value={advanced}
+        onChange={setAdvanced}
+        availableLabels={labels.map((l: any) => l.name)}
+      />
+      <AiAssistantDialog open={aiOpen} onOpenChange={setAiOpen} emailSubject={selectedEmail.subject} />
+      <LabelsRulesDialog
+        open={labelsOpen}
+        onOpenChange={setLabelsOpen}
+        labels={labels.map((l: any) => ({ name: l.name, color: l.color }))}
+        onChangeLabels={(v) => setLabels(v.map((x) => ({ ...x, count: labels.find((l: any) => l.name === x.name)?.count ?? 0 })))}
+        rules={rules}
+        onChangeRules={setRules}
+      />
     </div>
   );
 }
