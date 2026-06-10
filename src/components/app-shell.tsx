@@ -242,6 +242,125 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
   );
 }
 
+function CalendarPanel({ onClose }: { onClose: () => void }) {
+  const today = new Date();
+  const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selected, setSelected] = useState(today.getDate());
+
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+
+  const cells: { d: number; cur: boolean }[] = [];
+  for (let i = firstDow - 1; i >= 0; i--) cells.push({ d: prevDays - i, cur: false });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ d, cur: true });
+  while (cells.length % 7 !== 0) cells.push({ d: cells.length - daysInMonth - firstDow + 1, cur: false });
+
+  const monthName = cursor.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
+  const dows = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+  const eventDays = new Set([3, 8, 10, 15, 18, 22, 27]);
+
+  const events = [
+    { time: "09:00", title: "Họp giao ban tuần", room: "Phòng Alpha", color: "bg-primary" },
+    { time: "11:30", title: "Review thiết kế Email Hub", room: "Google Meet", color: "bg-emerald-500" },
+    { time: "14:00", title: "1-1 với Trần Minh", room: "Phòng Beta", color: "bg-amber-500" },
+    { time: "16:30", title: "Demo khách hàng STOS", room: "Zoom", color: "bg-rose-500" },
+  ];
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Lịch"
+      className="absolute right-0 top-[calc(100%+8px)] z-50 w-[340px] origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40"
+    >
+      <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 via-surface to-surface p-3">
+        <div>
+          <div className="text-sm font-semibold capitalize">{monthName}</div>
+          <div className="text-[11px] text-muted-foreground">Hôm nay · {today.toLocaleDateString("vi-VN")}</div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            className="rounded-md p-1.5 hover:bg-surface-2"
+            onClick={() => setCursor(new Date(year, month - 1, 1))}
+            aria-label="Tháng trước"
+          >
+            <ChevronDown className="h-4 w-4 rotate-90" />
+          </button>
+          <button
+            className="rounded-md px-2 py-1 text-[11px] font-medium hover:bg-surface-2"
+            onClick={() => { setCursor(new Date(today.getFullYear(), today.getMonth(), 1)); setSelected(today.getDate()); }}
+          >
+            Hôm nay
+          </button>
+          <button
+            className="rounded-md p-1.5 hover:bg-surface-2"
+            onClick={() => setCursor(new Date(year, month + 1, 1))}
+            aria-label="Tháng sau"
+          >
+            <ChevronDown className="h-4 w-4 -rotate-90" />
+          </button>
+        </div>
+      </div>
+
+      <div className="px-3 pt-3">
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium uppercase text-muted-foreground">
+          {dows.map((d) => <div key={d} className="py-1">{d}</div>)}
+        </div>
+        <div className="grid grid-cols-7 gap-1 pb-2 text-center text-xs">
+          {cells.map((c, i) => {
+            const isToday = c.cur && c.d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+            const isSel = c.cur && c.d === selected;
+            const hasEvent = c.cur && eventDays.has(c.d);
+            return (
+              <button
+                key={i}
+                onClick={() => c.cur && setSelected(c.d)}
+                className={cn(
+                  "relative aspect-square rounded-md text-xs transition-colors",
+                  !c.cur && "text-muted-foreground/40",
+                  c.cur && !isSel && !isToday && "hover:bg-surface-2",
+                  isToday && !isSel && "bg-primary/15 text-foreground font-semibold",
+                  isSel && "bg-primary text-primary-foreground font-semibold"
+                )}
+              >
+                {c.d}
+                {hasEvent && !isSel && <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-border px-3 py-2.5">
+        <div className="mb-1.5 flex items-center justify-between">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Sự kiện hôm nay</div>
+          <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">{events.length}</span>
+        </div>
+        <ul className="space-y-1.5">
+          {events.map((e) => (
+            <li key={e.title} className="flex items-start gap-2 rounded-lg p-1.5 hover:bg-surface-2">
+              <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", e.color)} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-medium">{e.title}</div>
+                <div className="truncate text-[11px] text-muted-foreground">{e.time} · {e.room}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2">
+        <button className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+          <Plus className="h-3.5 w-3.5" /> Tạo sự kiện
+        </button>
+        <button onClick={onClose} className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">Đóng</button>
+      </div>
+    </div>
+  );
+}
+
 export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { variant?: "meeting" | "documents"; onOpenSidebar: () => void; onNew?: () => void }) {
   const { t } = useI18n();
   const [userOpen, setUserOpen] = useState(false);
