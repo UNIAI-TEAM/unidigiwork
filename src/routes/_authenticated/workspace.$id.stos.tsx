@@ -1525,8 +1525,8 @@ function AuditDialog({
           </div>
         </div>
         <div className="max-h-[60vh] overflow-y-auto pr-1">
-          <div className="sticky top-0 z-10 bg-white pb-2 -mt-1">
-            <div className="relative">
+          <div className="sticky top-0 z-10 bg-white pb-2 -mt-1 flex items-center gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
               <Input
                 value={keyword}
@@ -1544,6 +1544,16 @@ function AuditDialog({
                 </button>
               )}
             </div>
+            {keyword && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setKeyword("")}
+                className="h-8 px-2 text-xs text-slate-500 hover:text-rose-600 hover:bg-rose-50 shrink-0"
+              >
+                <X className="size-3.5 mr-1" /> Xoá
+              </Button>
+            )}
           </div>
           {list.length === 0 ? (
             <div className="text-sm text-slate-500 text-center py-8">Không có hoạt động.</div>
