@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkflowsRouteImport } from './routes/workflows'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as MeetingRouteImport } from './routes/meeting'
@@ -19,6 +20,11 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 
+const WorkflowsRoute = WorkflowsRouteImport.update({
+  id: '/workflows',
+  path: '/workflows',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
   '/tasks': typeof TasksRoute
+  '/workflows': typeof WorkflowsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
 }
 export interface FileRoutesByTo {
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
   '/tasks': typeof TasksRoute
+  '/workflows': typeof WorkflowsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
 }
 export interface FileRoutesById {
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
   '/tasks': typeof TasksRoute
+  '/workflows': typeof WorkflowsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
 }
 export interface FileRouteTypes {
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/people'
     | '/tasks'
+    | '/workflows'
     | '/documents'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/people'
     | '/tasks'
+    | '/workflows'
     | '/documents'
   id:
     | '__root__'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/people'
     | '/tasks'
+    | '/workflows'
     | '/_authenticated/documents'
   fileRoutesById: FileRoutesById
 }
@@ -139,10 +151,18 @@ export interface RootRouteChildren {
   MeetingRoute: typeof MeetingRoute
   PeopleRoute: typeof PeopleRoute
   TasksRoute: typeof TasksRoute
+  WorkflowsRoute: typeof WorkflowsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workflows': {
+      id: '/workflows'
+      path: '/workflows'
+      fullPath: '/workflows'
+      preLoaderRoute: typeof WorkflowsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tasks': {
       id: '/tasks'
       path: '/tasks'
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingRoute: MeetingRoute,
   PeopleRoute: PeopleRoute,
   TasksRoute: TasksRoute,
+  WorkflowsRoute: WorkflowsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
