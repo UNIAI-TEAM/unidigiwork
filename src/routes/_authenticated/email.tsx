@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Mail, Search, Plus, ChevronDown, MoreHorizontal, Inbox, Star, Send, FileEdit,
   Trash2, Archive, AlertOctagon, Paperclip, RefreshCw, Filter, ArrowUpDown,
   Reply, ReplyAll, Forward, Tag, Sparkles, Bot, FileText, FileSpreadsheet,
-  Download, ArrowLeft, MailOpen,
+  Download, ArrowLeft, MailOpen, X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
@@ -53,16 +54,17 @@ type Email = {
   starred?: boolean;
   hasAttachment?: boolean;
   selected?: boolean;
+  labels?: string[];
 };
 
 const EMAILS: Email[] = [
-  { id: "1", from: "Lê Minh Đức", subject: "RFQ - Hệ thống máy chủ cho dự án STOS", preview: "Kính gửi anh/chị, Chúng tôi xin gửi yêu cầu báo giá...", time: "10:24 AM", group: "Hôm nay", unread: true, starred: true, hasAttachment: true, selected: true },
-  { id: "2", from: "Trần Thùy Linh", subject: "Review hợp đồng triển khai Smart University", preview: "Anh vui lòng xem xét và phản hồi các nội dung...", time: "09:15 AM", group: "Hôm nay", unread: true, starred: true },
-  { id: "3", from: "Vũ Hoàng Nam", subject: "Yêu cầu phê duyệt ngân sách Q2/2025", preview: "Theo kế hoạch, chúng tôi đề xuất ngân sách...", time: "08:47 AM", group: "Hôm nay", hasAttachment: true },
-  { id: "4", from: "Nguyễn Lan Anh", subject: "Kế hoạch đào tạo nhân sự tháng 6", preview: "Danh sách học viên và nội dung đào tạo chi tiết...", time: "Yesterday", group: "Hôm qua", starred: true },
-  { id: "5", from: "Phạm Quốc Huy", subject: "Re: Hợp đồng bảo trì hệ thống", preview: "Cảm ơn anh. Chúng tôi sẽ xử lý trong hôm nay...", time: "Yesterday", group: "Hôm qua" },
-  { id: "6", from: "Đỗ Thành Công", subject: "Hóa đơn VAT số 2025-06-001", preview: "Đính kèm hóa đơn VAT và bảng kê chi tiết.", time: "12/05/2025", group: "Tuần này", hasAttachment: true },
-  { id: "7", from: "support@cloudvendor.com", subject: "Thông báo nâng cấp dịch vụ", preview: "Kính gửi Quý khách hàng, Chúng tôi xin thông...", time: "12/05/2025", group: "Tuần này" },
+  { id: "1", from: "Lê Minh Đức", subject: "RFQ - Hệ thống máy chủ cho dự án STOS", preview: "Kính gửi anh/chị, Chúng tôi xin gửi yêu cầu báo giá...", time: "10:24 AM", group: "Hôm nay", unread: true, starred: true, hasAttachment: true, selected: true, labels: ["Dự án STOS"] },
+  { id: "2", from: "Trần Thùy Linh", subject: "Review hợp đồng triển khai Smart University", preview: "Anh vui lòng xem xét và phản hồi các nội dung...", time: "09:15 AM", group: "Hôm nay", unread: true, starred: true, labels: ["Hợp đồng", "Khách hàng"] },
+  { id: "3", from: "Vũ Hoàng Nam", subject: "Yêu cầu phê duyệt ngân sách Q2/2025", preview: "Theo kế hoạch, chúng tôi đề xuất ngân sách...", time: "08:47 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"] },
+  { id: "4", from: "Nguyễn Lan Anh", subject: "Kế hoạch đào tạo nhân sự tháng 6", preview: "Danh sách học viên và nội dung đào tạo chi tiết...", time: "Yesterday", group: "Hôm qua", starred: true, labels: ["Nhân sự"] },
+  { id: "5", from: "Phạm Quốc Huy", subject: "Re: Hợp đồng bảo trì hệ thống", preview: "Cảm ơn anh. Chúng tôi sẽ xử lý trong hôm nay...", time: "Yesterday", group: "Hôm qua", labels: ["Hợp đồng"] },
+  { id: "6", from: "Đỗ Thành Công", subject: "Hóa đơn VAT số 2025-06-001", preview: "Đính kèm hóa đơn VAT và bảng kê chi tiết.", time: "12/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Hóa đơn", "Khách hàng"] },
+  { id: "7", from: "support@cloudvendor.com", subject: "Thông báo nâng cấp dịch vụ", preview: "Kính gửi Quý khách hàng, Chúng tôi xin thông...", time: "12/05/2025", group: "Tuần này", labels: ["Khách hàng"] },
 ];
 
 const QUICK_SUMMARY = [
@@ -112,10 +114,27 @@ function EmailHubPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeMailbox, setActiveMailbox] = useState("inbox");
   const [selected, setSelected] = useState("1");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterLabel, setFilterLabel] = useState<string | null>(null);
+  const [filterUnread, setFilterUnread] = useState(false);
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
+  const filteredEmails = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return EMAILS.filter((e) => {
+      const matchQuery =
+        !q ||
+        e.from.toLowerCase().includes(q) ||
+        e.subject.toLowerCase().includes(q) ||
+        e.preview.toLowerCase().includes(q);
+      const matchLabel = !filterLabel || (e.labels?.includes(filterLabel) ?? false);
+      const matchUnread = !filterUnread || e.unread;
+      return matchQuery && matchLabel && matchUnread;
+    });
+  }, [searchQuery, filterLabel, filterUnread]);
+
   const groups: Record<string, Email[]> = {};
-  EMAILS.forEach((e) => {
+  filteredEmails.forEach((e) => {
     groups[e.group] = groups[e.group] || [];
     groups[e.group].push(e);
   });
@@ -176,15 +195,21 @@ function EmailHubPage() {
                 <button className="rounded p-0.5 hover:bg-surface-2"><ChevronDown className="h-3 w-3" /></button>
               </div>
               <ul className="space-y-0.5">
-                {LABELS.map((l) => (
-                  <li key={l.name}>
-                    <button className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                      <span className={`h-2.5 w-2.5 rounded-sm ${l.color}`} />
-                      <span className="flex-1 text-left">{l.name}</span>
-                      <span className="text-[11px] tabular-nums">{l.count}</span>
-                    </button>
-                  </li>
-                ))}
+                {LABELS.map((l) => {
+                  const active = filterLabel === l.name;
+                  return (
+                    <li key={l.name}>
+                      <button
+                        onClick={() => setFilterLabel(active ? null : l.name)}
+                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
+                      >
+                        <span className={`h-2.5 w-2.5 rounded-sm ${l.color}`} />
+                        <span className="flex-1 text-left">{l.name}</span>
+                        <span className="text-[11px] tabular-nums">{l.count}</span>
+                      </button>
+                    </li>
+                  );
+                })}
                 <li>
                   <button className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                     <Plus className="h-3.5 w-3.5" />
@@ -226,25 +251,57 @@ function EmailHubPage() {
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  placeholder="Search in Hộp đến"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm theo người gửi, tiêu đề, nội dung..."
                   className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
               <div className="mt-3 flex items-center gap-1.5">
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
-                  <MailOpen className="h-3.5 w-3.5" /> Chưa đọc <ChevronDown className="h-3 w-3" />
-                </button>
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
-                  <Filter className="h-3.5 w-3.5" /> Lọc <ChevronDown className="h-3 w-3" />
+                <button
+                  onClick={() => setFilterUnread((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${filterUnread ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}
+                >
+                  <MailOpen className="h-3.5 w-3.5" /> Chưa đọc
                 </button>
                 <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
                   <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp <ChevronDown className="h-3 w-3" />
                 </button>
+                {(searchQuery || filterLabel || filterUnread) && (
+                  <button
+                    onClick={() => { setSearchQuery(""); setFilterLabel(null); setFilterUnread(false); }}
+                    className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
+                  >
+                    <X className="h-3 w-3" /> Xóa lọc
+                  </button>
+                )}
                 <button className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
               </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>128 thư</span>
-                <span>Chưa đọc</span>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {searchQuery && (
+                  <Badge variant="secondary" className="text-[11px]">
+                    <Search className="mr-1 h-3 w-3" />
+                    {searchQuery}
+                    <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                  </Badge>
+                )}
+                {filterLabel && (
+                  <Badge variant="secondary" className="text-[11px]">
+                    <Tag className="mr-1 h-3 w-3" />
+                    {filterLabel}
+                    <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setFilterLabel(null)} />
+                  </Badge>
+                )}
+                {filterUnread && (
+                  <Badge variant="secondary" className="text-[11px]">
+                    <MailOpen className="mr-1 h-3 w-3" />
+                    Chưa đọc
+                    <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setFilterUnread(false)} />
+                  </Badge>
+                )}
+                <span className="ml-auto text-[11px] text-muted-foreground">
+                  {filteredEmails.length} thư
+                </span>
               </div>
             </div>
 
