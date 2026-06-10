@@ -342,6 +342,11 @@ const dict = {
     "tasks.integrations": "Integrations",
     "tasks.minago": "min ago",
     "tasks.hago": "h ago",
+    "tasks.quick.title": "Task title…",
+    "tasks.quick.save": "Add",
+    "tasks.quick.cancel": "Cancel",
+    "tasks.quick.tag": "Tag",
+    "tasks.quick.assignee": "Assignee",
   },
 } as const;
 
