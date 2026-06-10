@@ -54,6 +54,7 @@ type Email = {
   starred?: boolean;
   hasAttachment?: boolean;
   selected?: boolean;
+  labels?: string[];
 };
 
 const EMAILS: Email[] = [
