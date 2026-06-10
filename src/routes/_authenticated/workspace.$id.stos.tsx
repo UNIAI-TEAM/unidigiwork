@@ -29,6 +29,8 @@ import {
   Lock,
   ShieldCheck,
   History,
+  Search,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
@@ -1523,6 +1525,26 @@ function AuditDialog({
           </div>
         </div>
         <div className="max-h-[60vh] overflow-y-auto pr-1">
+          <div className="sticky top-0 z-10 bg-white pb-2 -mt-1">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
+              <Input
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Tìm nhanh theo tên milestone / tài liệu…"
+                className="h-8 text-sm pl-8 pr-8"
+              />
+              {keyword && (
+                <button
+                  onClick={() => setKeyword("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  aria-label="Xoá tìm kiếm"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
           {list.length === 0 ? (
             <div className="text-sm text-slate-500 text-center py-8">Không có hoạt động.</div>
           ) : (
