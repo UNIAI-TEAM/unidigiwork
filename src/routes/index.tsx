@@ -310,6 +310,12 @@ function Landing() {
                 </span>
                 <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.email.h")}</h3>
                 <p className="mt-2 text-muted-foreground">{t("land.preview.email.p")}</p>
+                <Link
+                  to="/auth"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  {t("land.preview.email.cta")} <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
             </div>
           </div>

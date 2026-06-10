@@ -64,6 +64,7 @@ const dict = {
     "land.preview.email.h": "Hợp nhất email công việc với AI Assistant",
     "land.preview.email.p":
       "Kết nối Microsoft 365 & Gmail vào một hộp thư duy nhất. AI tóm tắt, đề xuất trả lời, tạo task và workflow trực tiếp từ email.",
+    "land.preview.email.cta": "Dùng Email Hub ngay",
     "land.feat.title": "Mọi thứ team cần, trong một app",
     "land.feat.sub": "Thay thế cho 5-7 công cụ rời rạc bằng một nền tảng duy nhất.",
     "land.feat.meet.t": "Họp + AI Copilot",
@@ -486,6 +487,7 @@ const dict = {
     "land.preview.email.h": "Unified work email with AI Assistant",
     "land.preview.email.p":
       "Connect Microsoft 365 & Gmail into one inbox. AI summarises, suggests replies, and turns emails into tasks and workflows.",
+    "land.preview.email.cta": "Use Email Hub Now",
     "land.feat.title": "Everything your team needs, in one app",
     "land.feat.sub": "Replace 5–7 disconnected tools with a single platform.",
     "land.feat.meet.t": "Meetings + AI Copilot",
