@@ -540,6 +540,10 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [calOpen, setCalOpen] = useState(false);
   const calRef = useRef<HTMLDivElement | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const newRef = useRef<HTMLDivElement | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const aiRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!userOpen) return;
@@ -568,6 +572,34 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
       document.removeEventListener("keydown", onKey);
     };
   }, [calOpen]);
+
+  useEffect(() => {
+    if (!newOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (newRef.current && !newRef.current.contains(e.target as Node)) setNewOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNewOpen(false); };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [newOpen]);
+
+  useEffect(() => {
+    if (!aiOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (aiRef.current && !aiRef.current.contains(e.target as Node)) setAiOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setAiOpen(false); };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [aiOpen]);
 
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
@@ -599,12 +631,31 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
         </>
       ) : (
         <>
-          <button onClick={onNew} className="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:flex">
-            <Plus className="h-4 w-4" /> {t("topbar.new")}
-          </button>
-          <button className="hidden items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm sm:flex">
-            <Sparkles className="h-4 w-4 text-primary" /> AI
-          </button>
+          <div className="relative hidden sm:block" ref={newRef}>
+            <button
+              onClick={() => { setNewOpen((v) => !v); onNew?.(); }}
+              aria-haspopup="dialog"
+              aria-expanded={newOpen}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" /> {t("topbar.new")}
+            </button>
+            {newOpen && <NewPanel onClose={() => setNewOpen(false)} />}
+          </div>
+          <div className="relative hidden sm:block" ref={aiRef}>
+            <button
+              onClick={() => setAiOpen((v) => !v)}
+              aria-haspopup="dialog"
+              aria-expanded={aiOpen}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70",
+                aiOpen && "ring-1 ring-primary/40"
+              )}
+            >
+              <Sparkles className="h-4 w-4 text-primary" /> AI
+            </button>
+            {aiOpen && <AIPanel onClose={() => setAiOpen(false)} />}
+          </div>
           <Link to="/help" aria-label="Trợ giúp" className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"><HelpCircle className="h-5 w-5 text-muted-foreground" /></Link>
         </>
       )}
