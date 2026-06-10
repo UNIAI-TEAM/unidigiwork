@@ -392,7 +392,7 @@ function SettingsPage() {
               {SECTIONS.map((s) => {
                 const active = s.key === section;
                 return (
-                  <button key={s.key} onClick={() => navigate({ search: (prev) => ({ ...prev, tab: s.key }) })}
+                  <button key={s.key} onClick={() => navigate({ search: { tab: s.key } })}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}>
                     <s.icon className="h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
