@@ -28,6 +28,7 @@ import {
   Trash2,
   Lock,
   ShieldCheck,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
@@ -200,6 +201,98 @@ const TEAM = [
   { name: "Đỗ Linh", role: "QA Lead" },
 ];
 
+type AuditAction = "create" | "update" | "delete";
+type AuditTarget = "milestone" | "document";
+type AuditEntry = {
+  id: string;
+  at: Date;
+  actor: string;
+  actorRole: Role;
+  action: AuditAction;
+  target: AuditTarget;
+  name: string;
+  detail?: string;
+};
+
+const ACTOR_NAME: Record<Role, string> = {
+  owner: "Nguyễn Văn A",
+  admin: "Trần Minh",
+  member: "Lê Hoa",
+  viewer: "Phạm Nam",
+};
+
+const INITIAL_AUDIT: AuditEntry[] = [
+  {
+    id: "a1",
+    at: new Date(Date.now() - 1000 * 60 * 35),
+    actor: "Trần Minh",
+    actorRole: "admin",
+    action: "update",
+    target: "milestone",
+    name: "Phát triển MVP",
+    detail: "Tiến độ 60% → 75%",
+  },
+  {
+    id: "a2",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 2),
+    actor: "Lê Hoa",
+    actorRole: "member",
+    action: "create",
+    target: "document",
+    name: "Kế hoạch triển khai Q3.xlsx",
+  },
+  {
+    id: "a3",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    actor: "Nguyễn Văn A",
+    actorRole: "owner",
+    action: "update",
+    target: "milestone",
+    name: "Kiểm thử & UAT",
+    detail: "Đổi deadline → 31/08/2026",
+  },
+  {
+    id: "a4",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 26),
+    actor: "Đỗ Linh",
+    actorRole: "member",
+    action: "delete",
+    target: "document",
+    name: "Draft đặc tả v1.0.pdf",
+  },
+  {
+    id: "a5",
+    at: new Date(Date.now() - 1000 * 60 * 60 * 72),
+    actor: "Trần Minh",
+    actorRole: "admin",
+    action: "create",
+    target: "milestone",
+    name: "Triển khai & Go-live",
+  },
+];
+
+function relTime(d: Date) {
+  const diff = Date.now() - d.getTime();
+  const m = Math.round(diff / 60000);
+  if (m < 1) return "vừa xong";
+  if (m < 60) return `${m} phút trước`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} giờ trước`;
+  const day = Math.round(h / 24);
+  if (day < 30) return `${day} ngày trước`;
+  return d.toLocaleDateString("vi-VN");
+}
+
+function fullTime(d: Date) {
+  return d.toLocaleString("vi-VN", { hour12: false });
+}
+
+const ACTION_META: Record<AuditAction, { label: string; cls: string }> = {
+  create: { label: "Tạo", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  update: { label: "Sửa", cls: "bg-sky-50 text-sky-700 ring-sky-200" },
+  delete: { label: "Xoá", cls: "bg-rose-50 text-rose-700 ring-rose-200" },
+};
+
 const docIcon = (type: string) => {
   switch (type) {
     case "pdf":
@@ -235,6 +328,30 @@ function StosDetailPage() {
   const [project, setProject] = useState<Project>(INITIAL_PROJECT);
   const [docs, setDocs] = useState<Doc[]>(INITIAL_DOCUMENTS);
   const [milestones, setMilestones] = useState<Milestone[]>(INITIAL_MILESTONES);
+  const [audit, setAudit] = useState<AuditEntry[]>(INITIAL_AUDIT);
+  const [auditOpen, setAuditOpen] = useState(false);
+
+  const logAudit = (
+    action: AuditAction,
+    target: AuditTarget,
+    name: string,
+    detail?: string,
+  ) => {
+    setAudit((prev) => [
+      {
+        id: `a${Date.now()}`,
+        at: new Date(),
+        actor: ACTOR_NAME[currentRole],
+        actorRole: currentRole,
+        action,
+        target,
+        name,
+        detail,
+      },
+      ...prev,
+    ]);
+  };
+  const canViewAudit = currentRole === "owner" || currentRole === "admin";
 
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [docDialog, setDocDialog] = useState<{ open: boolean; doc: Doc | null }>({
@@ -479,6 +596,7 @@ function StosDetailPage() {
                           </button>
                           <button
                             onClick={() => {
+                              logAudit("delete", "milestone", m.name);
                               setMilestones((prev) => prev.filter((x) => x.id !== m.id));
                               toast.success("Đã xoá milestone");
                             }}
@@ -551,6 +669,7 @@ function StosDetailPage() {
                         {can.deleteDocs ? (
                           <button
                             onClick={() => {
+                              logAudit("delete", "document", d.name);
                               setDocs((prev) => prev.filter((x) => x.id !== d.id));
                               toast.success("Đã xoá tài liệu");
                             }}
@@ -647,6 +766,37 @@ function StosDetailPage() {
                   Xem khuyến nghị <ChevronRight className="size-3.5" />
                 </button>
               </section>
+
+              {/* Audit log — admin/owner only */}
+              {canViewAudit && (
+                <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <History className="size-4 text-slate-500" /> Lịch sử thay đổi
+                    </h3>
+                    <button
+                      onClick={() => setAuditOpen(true)}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                    >
+                      Xem tất cả
+                    </button>
+                  </div>
+                  {audit.length === 0 ? (
+                    <div className="text-xs text-slate-500 py-4 text-center">
+                      Chưa có hoạt động nào.
+                    </div>
+                  ) : (
+                    <ul className="space-y-3">
+                      {audit.slice(0, 5).map((e) => (
+                        <AuditItem key={e.id} entry={e} compact />
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-3 text-[11px] text-slate-400 flex items-center gap-1">
+                    <ShieldCheck className="size-3" /> Chỉ Owner/Admin xem được nhật ký này
+                  </p>
+                </section>
+              )}
             </div>
           </div>
         </main>
@@ -666,10 +816,22 @@ function StosDetailPage() {
         state={docDialog}
         onOpenChange={(o) => setDocDialog((s) => ({ ...s, open: o }))}
         onSave={(d) => {
+          const wasEdit = !!docDialog.doc;
+          const prevName = docDialog.doc?.name;
           setDocs((prev) => {
             const exists = prev.find((x) => x.id === d.id);
             return exists ? prev.map((x) => (x.id === d.id ? d : x)) : [d, ...prev];
           });
+          if (wasEdit) {
+            logAudit(
+              "update",
+              "document",
+              d.name,
+              prevName && prevName !== d.name ? `Đổi tên từ "${prevName}"` : undefined,
+            );
+          } else {
+            logAudit("create", "document", d.name);
+          }
           toast.success(docDialog.doc ? "Đã đổi tên" : "Đã thêm tài liệu");
         }}
       />
@@ -677,13 +839,26 @@ function StosDetailPage() {
         state={milestoneDialog}
         onOpenChange={(o) => setMilestoneDialog((s) => ({ ...s, open: o }))}
         onSave={(m) => {
+          const wasEdit = !!milestoneDialog.milestone;
+          const prevM = milestoneDialog.milestone;
           setMilestones((prev) => {
             const exists = prev.find((x) => x.id === m.id);
             return exists ? prev.map((x) => (x.id === m.id ? m : x)) : [...prev, m];
           });
+          if (wasEdit && prevM) {
+            const parts: string[] = [];
+            if (prevM.progress !== m.progress)
+              parts.push(`Tiến độ ${prevM.progress}% → ${m.progress}%`);
+            if (prevM.due !== m.due) parts.push(`Deadline → ${m.due}`);
+            if (prevM.tasks !== m.tasks) parts.push(`Tasks ${prevM.tasks} → ${m.tasks}`);
+            logAudit("update", "milestone", m.name, parts.join(" · ") || undefined);
+          } else {
+            logAudit("create", "milestone", m.name);
+          }
           toast.success(milestoneDialog.milestone ? "Đã cập nhật milestone" : "Đã thêm milestone");
         }}
       />
+      <AuditDialog open={auditOpen} onOpenChange={setAuditOpen} entries={audit} />
     </div>
   );
 }
@@ -1114,5 +1289,95 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <label className="text-xs font-medium text-slate-700 mb-1.5 block">{label}</label>
       {children}
     </div>
+  );
+}
+
+function AuditItem({ entry, compact }: { entry: AuditEntry; compact?: boolean }) {
+  const meta = ACTION_META[entry.action];
+  return (
+    <li className="flex items-start gap-3">
+      <div
+        className={`size-7 shrink-0 rounded-full ${avatar(entry.actor)} flex items-center justify-center text-[10px] font-semibold text-white`}
+      >
+        {entry.actor.split(" ").pop()?.[0]}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm">
+          <span className="font-medium text-slate-900 truncate">{entry.actor}</span>
+          <span
+            className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ring-1 ${meta.cls}`}
+          >
+            {meta.label}
+          </span>
+          <span className="text-slate-500 text-xs">
+            {entry.target === "milestone" ? "milestone" : "tài liệu"}
+          </span>
+        </div>
+        <div className="text-sm text-slate-700 truncate">{entry.name}</div>
+        {entry.detail && !compact && (
+          <div className="text-xs text-slate-500 mt-0.5">{entry.detail}</div>
+        )}
+        <div className="text-[11px] text-slate-400 mt-0.5" title={fullTime(entry.at)}>
+          {relTime(entry.at)}
+          {compact && entry.detail ? ` · ${entry.detail}` : ""}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function AuditDialog({
+  open,
+  onOpenChange,
+  entries,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  entries: AuditEntry[];
+}) {
+  const [filter, setFilter] = useState<"all" | AuditTarget>("all");
+  const list = entries.filter((e) => filter === "all" || e.target === filter);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="size-5 text-emerald-600" /> Lịch sử thay đổi
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex items-center gap-2 mb-2">
+          {(["all", "milestone", "document"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`text-xs px-2.5 py-1 rounded-md border transition ${
+                filter === f
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {f === "all" ? "Tất cả" : f === "milestone" ? "Milestone" : "Tài liệu"}
+            </button>
+          ))}
+          <span className="ml-auto text-xs text-slate-500">{list.length} mục</span>
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto pr-1">
+          {list.length === 0 ? (
+            <div className="text-sm text-slate-500 text-center py-8">Không có hoạt động.</div>
+          ) : (
+            <ul className="space-y-3">
+              {list.map((e) => (
+                <AuditItem key={e.id} entry={e} />
+              ))}
+            </ul>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Đóng
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
