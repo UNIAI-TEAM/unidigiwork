@@ -1343,7 +1343,7 @@ function EmailHubPage() {
   );
 }
 
-function ToolBtn({ icon: Icon, label }: { icon: any; label: string }) {
+function ToolBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <button className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />
@@ -1357,7 +1357,7 @@ function BulkBtn({
   label,
   onClick,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   onClick?: () => void;
 }) {
@@ -1373,7 +1373,7 @@ function BulkBtn({
   );
 }
 
-function ActionBtn({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
+function ActionBtn({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
     <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
       <Icon className="h-4 w-4" /> {children}
@@ -1387,7 +1387,7 @@ function AttachmentCard({
   name,
   size,
 }: {
-  icon: any;
+  icon: LucideIcon;
   color: string;
   name: string;
   size: string;
@@ -1408,7 +1408,7 @@ function AttachmentCard({
   );
 }
 
-function SuggestBtn({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
+function SuggestBtn({ icon: Icon, title, desc }: { icon: LucideIcon; title: string; desc: string }) {
   return (
     <button className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 text-left hover:border-primary/40">
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">

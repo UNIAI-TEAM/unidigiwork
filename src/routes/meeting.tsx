@@ -445,7 +445,7 @@ function StatCard({
   label: string;
   value: string;
   sub: string;
-  icon: any;
+  icon: LucideIcon;
   color: string;
 }) {
   return (
@@ -674,7 +674,7 @@ function ControlButton({
   danger,
   onClick,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   badge?: number;
   danger?: boolean;

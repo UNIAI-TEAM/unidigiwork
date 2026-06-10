@@ -62,7 +62,7 @@ export const Route = createFileRoute("/_authenticated/documents")({
   component: DocumentsPage,
 });
 
-function ToolbarBtn({ icon: Icon }: { icon: any }) {
+function ToolbarBtn({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />

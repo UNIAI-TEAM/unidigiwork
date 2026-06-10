@@ -47,7 +47,7 @@ type Notif = {
   important?: boolean;
 };
 
-const CATS: { key: Cat; label: string; icon: any; tint: string }[] = [
+const CATS: { key: Cat; label: string; icon: LucideIcon; tint: string }[] = [
   { key: "all", label: "Tất cả", icon: Bell, tint: "text-foreground" },
   { key: "mention", label: "Nhắc tên", icon: AtSign, tint: "text-violet-300" },
   { key: "task", label: "Nhiệm vụ", icon: CheckCircle2, tint: "text-emerald-300" },

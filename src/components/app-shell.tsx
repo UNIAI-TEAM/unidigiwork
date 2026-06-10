@@ -79,7 +79,7 @@ function NavItem({
   badge,
   collapsed,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   active?: boolean;
   chevron?: boolean;
@@ -727,7 +727,7 @@ function CreateWorkspaceDialog({
 function NewPanel({ onClose }: { onClose: () => void }) {
   const groups: {
     label: string;
-    items: { icon: any; title: string; desc: string; kbd?: string; color: string }[];
+    items: { icon: LucideIcon; title: string; desc: string; kbd?: string; color: string }[];
   }[] = [
     {
       label: "Công việc",
@@ -1499,7 +1499,7 @@ function MenuItem({
   search,
   onClick,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   desc?: string;
   to?: string;

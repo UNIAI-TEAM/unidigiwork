@@ -54,7 +54,7 @@ export const Route = createFileRoute("/reports/$type")({
 
 const TYPE_META: Record<
   RType,
-  { icon: any; metric: string; unit: string; total: number; delta: number }
+  { icon: LucideIcon; metric: string; unit: string; total: number; delta: number }
 > = {
   overview: { icon: BarChart3, metric: "Active sessions", unit: "", total: 12480, delta: 12.5 },
   projects: { icon: Folder, metric: "Projects", unit: "", total: 72, delta: 9.7 },
@@ -537,7 +537,7 @@ function Select({
     </div>
   );
 }
-function ExportBtn({ icon: Icon, label }: { icon: any; label: string }) {
+function ExportBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <button className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70">
       <span className="flex items-center gap-2">

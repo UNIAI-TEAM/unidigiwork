@@ -380,7 +380,7 @@ function Field({
   label,
   children,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   children: React.ReactNode;
 }) {
@@ -533,7 +533,7 @@ function ModeBtn({
   onClick,
   children,
 }: {
-  icon: any;
+  icon: LucideIcon;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;

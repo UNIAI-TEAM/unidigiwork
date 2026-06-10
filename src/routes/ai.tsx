@@ -357,7 +357,7 @@ function AIPage() {
   );
 }
 
-function Empty({ t, onPick }: { t: (k: any) => string; onPick: (s: string) => void }) {
+function Empty({ t, onPick }: { t: (k: Key) => string; onPick: (s: string) => void }) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-center">
       <Sparkles className="h-10 w-10 text-primary" />
@@ -379,7 +379,7 @@ function Empty({ t, onPick }: { t: (k: any) => string; onPick: (s: string) => vo
   );
 }
 
-function UserBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
+function UserBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
@@ -392,7 +392,7 @@ function UserBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
   );
 }
 
-function AssistantBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
+function AssistantBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
@@ -416,7 +416,7 @@ function AssistantBubble({ m, t }: { m: Msg; t: (k: any) => string }) {
   );
 }
 
-function RichSummary({ t }: { t: (k: any) => string }) {
+function RichSummary({ t }: { t: (k: Key) => string }) {
   return (
     <div className="space-y-3 text-sm">
       <p>{t("ai.reply.intro")}</p>
@@ -467,7 +467,7 @@ function RichSummary({ t }: { t: (k: any) => string }) {
   );
 }
 
-function Card({ icon, title, children }: { icon: any; title: string; children: any }) {
+function Card({ icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-border bg-surface-2 p-3">
       <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -479,7 +479,7 @@ function Card({ icon, title, children }: { icon: any; title: string; children: a
   );
 }
 
-function Section({ title, action, children }: { title: string; action?: string; children: any }) {
+function Section({ title, action, children }: { title: string; action?: string; children: React.ReactNode }) {
   return (
     <div className="border-b border-border px-4 py-4 last:border-0">
       <div className="mb-3 flex items-center justify-between">
@@ -965,7 +965,7 @@ function PanelHeader({
 }: {
   title: string;
   subtitle: string;
-  action?: { icon: any; label: string };
+  action?: { icon: LucideIcon; label: string };
   search?: { value: string; onChange: (v: string) => void; placeholder: string };
 }) {
   return (

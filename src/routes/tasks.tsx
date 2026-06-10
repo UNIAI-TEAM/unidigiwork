@@ -874,7 +874,7 @@ function Activity({
   );
 }
 
-function QuickAction({ icon: Icon, label }: { icon: any; label: string }) {
+function QuickAction({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <button className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
       <Icon className="h-4 w-4" />
