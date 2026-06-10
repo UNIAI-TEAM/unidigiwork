@@ -653,7 +653,7 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                       <div className="text-[11px] text-muted-foreground">{p.role}</div>
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                      {p.mic ? <Mic className="h-3.5 w-3.5 text-emerald-400" /> : <MicOffIcon className="h-3.5 w-3.5 text-rose-400" />}
+                      {p.mic ? <Mic className="h-3.5 w-3.5 text-emerald-400" /> : <MicOff className="h-3.5 w-3.5 text-rose-400" />}
                       <VideoIcon className={`h-3.5 w-3.5 ${p.cam ? "text-emerald-400" : "text-muted-foreground/50"}`} />
                       <button className="opacity-0 group-hover:opacity-100 rounded p-0.5 hover:bg-surface" title="Thêm">
                         <MoreVertical className="h-3.5 w-3.5" />
