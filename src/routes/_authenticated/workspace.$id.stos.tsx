@@ -815,3 +815,304 @@ function InviteDialog({
     </Dialog>
   );
 }
+
+function EditProjectDialog({
+  open,
+  onOpenChange,
+  project,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  project: Project;
+  onSave: (p: Project) => void;
+}) {
+  const [form, setForm] = useState<Project>(project);
+  const [tagsRaw, setTagsRaw] = useState(project.tags.join(", "));
+
+  // sync when opening for a different project
+  const reset = () => {
+    setForm(project);
+    setTagsRaw(project.tags.join(", "));
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (o) reset();
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="size-5 text-emerald-600" /> Chỉnh sửa dự án
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Tên dự án">
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </Field>
+          <Field label="Tagline">
+            <Input
+              value={form.tagline}
+              onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+            />
+          </Field>
+          <Field label="Mô tả">
+            <Textarea
+              rows={4}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Bắt đầu">
+              <Input
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+              />
+            </Field>
+            <Field label="Deadline">
+              <Input
+                value={form.deadline}
+                onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+              />
+            </Field>
+            <Field label="Ngân sách">
+              <Input
+                value={form.budget}
+                onChange={(e) => setForm({ ...form, budget: e.target.value })}
+              />
+            </Field>
+            <Field label="Tình trạng">
+              <Input
+                value={form.health}
+                onChange={(e) => setForm({ ...form, health: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label="Thẻ (cách nhau bằng dấu phẩy)">
+            <Input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} />
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => {
+              if (!form.name.trim()) {
+                toast.error("Tên dự án không được để trống");
+                return;
+              }
+              onSave({
+                ...form,
+                tags: tagsRaw
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean),
+              });
+              onOpenChange(false);
+            }}
+          >
+            Lưu thay đổi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DocDialog({
+  state,
+  onOpenChange,
+  onSave,
+}: {
+  state: { open: boolean; doc: Doc | null };
+  onOpenChange: (v: boolean) => void;
+  onSave: (d: Doc) => void;
+}) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<Doc["type"]>("doc");
+
+  return (
+    <Dialog
+      open={state.open}
+      onOpenChange={(o) => {
+        if (o) {
+          setName(state.doc?.name ?? "");
+          setType(state.doc?.type ?? "doc");
+        }
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="size-5 text-emerald-600" />
+            {state.doc ? "Đổi tên tài liệu" : "Thêm tài liệu"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Tên tài liệu">
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          {!state.doc && (
+            <Field label="Loại">
+              <div className="grid grid-cols-5 gap-2">
+                {(["doc", "pdf", "xlsx", "ppt", "image"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setType(t)}
+                    className={`text-xs py-2 rounded-md border uppercase ${
+                      type === t
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => {
+              if (!name.trim()) {
+                toast.error("Nhập tên tài liệu");
+                return;
+              }
+              onSave({
+                id: state.doc?.id ?? `d-${Date.now()}`,
+                name: name.trim(),
+                type: state.doc?.type ?? type,
+                size: state.doc?.size ?? "—",
+                updatedBy: "Bạn",
+                updatedAt: "vừa xong",
+              });
+              onOpenChange(false);
+            }}
+          >
+            {state.doc ? "Lưu" : "Thêm"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MilestoneDialog({
+  state,
+  onOpenChange,
+  onSave,
+}: {
+  state: { open: boolean; milestone: Milestone | null };
+  onOpenChange: (v: boolean) => void;
+  onSave: (m: Milestone) => void;
+}) {
+  const [name, setName] = useState("");
+  const [due, setDue] = useState("");
+  const [tasks, setTasks] = useState(0);
+  const [completed, setCompleted] = useState(0);
+
+  return (
+    <Dialog
+      open={state.open}
+      onOpenChange={(o) => {
+        if (o) {
+          setName(state.milestone?.name ?? "");
+          setDue(state.milestone?.due ?? "");
+          setTasks(state.milestone?.tasks ?? 0);
+          setCompleted(state.milestone?.completed ?? 0);
+        }
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <TrendingUp className="size-5 text-emerald-600" />
+            {state.milestone ? "Chỉnh sửa milestone" : "Thêm milestone"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Tên milestone">
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="Deadline (vd: 30/09/2026)">
+            <Input value={due} onChange={(e) => setDue(e.target.value)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Tổng tasks">
+              <Input
+                type="number"
+                min={0}
+                value={tasks}
+                onChange={(e) => setTasks(Math.max(0, Number(e.target.value) || 0))}
+              />
+            </Field>
+            <Field label="Đã hoàn thành">
+              <Input
+                type="number"
+                min={0}
+                value={completed}
+                onChange={(e) => setCompleted(Math.max(0, Number(e.target.value) || 0))}
+              />
+            </Field>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => {
+              if (!name.trim()) {
+                toast.error("Nhập tên milestone");
+                return;
+              }
+              const done = Math.min(completed, tasks);
+              const progress = tasks ? Math.round((done / tasks) * 100) : 0;
+              const status: Milestone["status"] =
+                progress >= 100 ? "done" : progress > 0 ? "active" : "todo";
+              onSave({
+                id: state.milestone?.id ?? `m-${Date.now()}`,
+                name: name.trim(),
+                due: due.trim() || "—",
+                tasks,
+                completed: done,
+                progress,
+                status,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {state.milestone ? "Lưu" : "Thêm"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-slate-700 mb-1.5 block">{label}</label>
+      {children}
+    </div>
+  );
+}
