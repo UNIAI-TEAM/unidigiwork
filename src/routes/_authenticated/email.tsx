@@ -262,7 +262,7 @@ function EmailHubPage() {
                 <button className="rounded p-0.5 hover:bg-surface-2"><ChevronDown className="h-3 w-3" /></button>
               </div>
               <ul className="space-y-0.5">
-                {LABELS.map((l) => {
+                {labels.map((l: any) => {
                   const active = filterLabel === l.name;
                   return (
                     <li key={l.name}>
@@ -280,7 +280,7 @@ function EmailHubPage() {
                 <li>
                   <button className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                     <Plus className="h-3.5 w-3.5" />
-                    <span>More</span>
+                    <span onClick={(e) => { e.stopPropagation(); setLabelsOpen(true); }}>More</span>
                   </button>
                 </li>
               </ul>
