@@ -766,6 +766,37 @@ function StosDetailPage() {
                   Xem khuyến nghị <ChevronRight className="size-3.5" />
                 </button>
               </section>
+
+              {/* Audit log — admin/owner only */}
+              {canViewAudit && (
+                <section className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <History className="size-4 text-slate-500" /> Lịch sử thay đổi
+                    </h3>
+                    <button
+                      onClick={() => setAuditOpen(true)}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                    >
+                      Xem tất cả
+                    </button>
+                  </div>
+                  {audit.length === 0 ? (
+                    <div className="text-xs text-slate-500 py-4 text-center">
+                      Chưa có hoạt động nào.
+                    </div>
+                  ) : (
+                    <ul className="space-y-3">
+                      {audit.slice(0, 5).map((e) => (
+                        <AuditItem key={e.id} entry={e} compact />
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-3 text-[11px] text-slate-400 flex items-center gap-1">
+                    <ShieldCheck className="size-3" /> Chỉ Owner/Admin xem được nhật ký này
+                  </p>
+                </section>
+              )}
             </div>
           </div>
         </main>
