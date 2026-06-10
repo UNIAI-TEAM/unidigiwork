@@ -29,6 +29,7 @@ import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
@@ -131,6 +132,12 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkspaceIdStosRoute =
+  AuthenticatedWorkspaceIdStosRouteImport.update({
+    id: '/stos',
+    path: '/stos',
+    getParentRoute: () => AuthenticatedWorkspaceIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -151,7 +158,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/': typeof ReportsIndexRoute
-  '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
+  '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -171,7 +179,8 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports': typeof ReportsIndexRoute
-  '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
+  '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -194,7 +203,8 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/': typeof ReportsIndexRoute
-  '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
+  '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/reports/$type'
     | '/reports/'
     | '/workspace/$id'
+    | '/workspace/$id/stos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/reports/$type'
     | '/reports'
     | '/workspace/$id'
+    | '/workspace/$id/stos'
   id:
     | '__root__'
     | '/'
@@ -260,6 +272,7 @@ export interface FileRouteTypes {
     | '/reports/$type'
     | '/reports/'
     | '/_authenticated/workspace/$id'
+    | '/_authenticated/workspace/$id/stos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -418,8 +431,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workspace/$id/stos': {
+      id: '/_authenticated/workspace/$id/stos'
+      path: '/stos'
+      fullPath: '/workspace/$id/stos'
+      preLoaderRoute: typeof AuthenticatedWorkspaceIdStosRouteImport
+      parentRoute: typeof AuthenticatedWorkspaceIdRoute
+    }
   }
 }
+
+interface AuthenticatedWorkspaceIdRouteChildren {
+  AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
+}
+
+const AuthenticatedWorkspaceIdRouteChildren: AuthenticatedWorkspaceIdRouteChildren =
+  {
+    AuthenticatedWorkspaceIdStosRoute: AuthenticatedWorkspaceIdStosRoute,
+  }
+
+const AuthenticatedWorkspaceIdRouteWithChildren =
+  AuthenticatedWorkspaceIdRoute._addFileChildren(
+    AuthenticatedWorkspaceIdRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -428,7 +462,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRoute
+  AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -438,7 +472,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRoute,
+  AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
