@@ -1340,7 +1340,9 @@ function AuditDialog({
   const [keyword, setKeyword] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [sortOrder, setSortOrder] = useState<
+    "newest" | "oldest" | "actor" | "action"
+  >("newest");
 
   const actors = useMemo(
     () => Array.from(new Set(entries.map((e) => e.actor))).sort(),
@@ -1361,8 +1363,18 @@ function AuditDialog({
       return true;
     });
     return [...filtered].sort((a, b) => {
-      const diff = new Date(b.at).getTime() - new Date(a.at).getTime();
-      return sortOrder === "newest" ? diff : -diff;
+      const tDiff = new Date(b.at).getTime() - new Date(a.at).getTime();
+      if (sortOrder === "newest") return tDiff;
+      if (sortOrder === "oldest") return -tDiff;
+      if (sortOrder === "actor") {
+        const c = a.actor.localeCompare(b.actor, "vi");
+        return c !== 0 ? c : tDiff;
+      }
+      // action: group by target then action, fallback newest
+      const t = a.target.localeCompare(b.target);
+      if (t !== 0) return t;
+      const ac = a.action.localeCompare(b.action);
+      return ac !== 0 ? ac : tDiff;
     });
   }, [entries, filter, actor, keyword, fromDate, toDate, sortOrder]);
 
@@ -1477,11 +1489,15 @@ function AuditDialog({
               <label className="text-xs text-slate-500">Sắp xếp:</label>
               <select
                 value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as "newest" | "oldest")}
+                onChange={(e) =>
+                  setSortOrder(e.target.value as "newest" | "oldest" | "actor" | "action")
+                }
                 className="text-xs border border-slate-200 rounded-md px-1.5 py-0.5 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
                 <option value="newest">Mới nhất trước</option>
                 <option value="oldest">Cũ nhất trước</option>
+                <option value="actor">Theo người cập nhật</option>
+                <option value="action">Theo loại thay đổi</option>
               </select>
             </div>
             {hasFilter && (
