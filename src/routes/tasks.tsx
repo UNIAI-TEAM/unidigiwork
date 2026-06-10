@@ -434,7 +434,7 @@ function BurndownChart() {
   );
 }
 
-function MyTasks() {
+function MyTasks({ tasks }: { tasks: Task[] }) {
   const { t } = useI18n();
   const list = tasks.slice(0, 5);
   return (
