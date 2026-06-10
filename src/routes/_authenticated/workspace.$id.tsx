@@ -473,23 +473,90 @@ function WorkspaceDetailPage() {
           )}
 
           {tab === "documents" && (
-            <div className="rounded-xl border border-border bg-surface">
-              <div className="flex items-center justify-between border-b border-border p-4">
-                <h2 className="text-sm font-semibold">Tài liệu dự án</h2>
-                <Link to="/documents" className="text-xs text-primary hover:underline">Mở Documents</Link>
+            <div className="space-y-4">
+              {/* Toolbar: search + type filters */}
+              <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-sm font-semibold">Tài liệu dự án</h2>
+                  <div className="flex items-center gap-2">
+                    <Link to="/documents" className="text-xs text-primary hover:underline">Mở Documents</Link>
+                    <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                      <Plus className="h-3.5 w-3.5" /> Thêm tài liệu
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm tài liệu..."
+                    value={docSearch}
+                    onChange={(e) => setDocSearch(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-9 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  {docSearch && (
+                    <button onClick={() => setDocSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-surface-2">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {DOC_TYPES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setDocFilter(t.id)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        docFilter === t.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-surface-2 text-muted-foreground hover:bg-surface-2/70 hover:text-foreground"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <ul className="divide-y divide-border">
-                {DOCS.map((d) => (
-                  <li key={d.name} className="flex items-center gap-3 p-3 hover:bg-surface-2/40">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300"><FileText className="h-4 w-4" /></span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm">{d.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{d.owner} · cập nhật {d.updated}</div>
-                    </div>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
-                  </li>
-                ))}
-              </ul>
+
+              {/* Document list */}
+              <div className="rounded-xl border border-border bg-surface">
+                <ul className="divide-y divide-border">
+                  {(() => {
+                    const filtered = DOCS.filter((d) => {
+                      const matchesSearch = d.name.toLowerCase().includes(docSearch.toLowerCase());
+                      const matchesType = docFilter === "all" || d.type === docFilter;
+                      return matchesSearch && matchesType;
+                    });
+                    if (filtered.length === 0) {
+                      return (
+                        <li className="p-8 text-center text-sm text-muted-foreground">
+                          Không tìm thấy tài liệu phù hợp
+                        </li>
+                      );
+                    }
+                    return filtered.map((d) => (
+                      <li key={d.name} className="flex items-center gap-3 p-3 hover:bg-surface-2/40 group">
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
+                          {docTypeIcon(d.type)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{d.name}</div>
+                          <div className="text-[11px] text-muted-foreground">{d.size} · {d.owner} · cập nhật {d.updated}</div>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2" title="Tải xuống">
+                            <Download className="h-4 w-4" />
+                          </button>
+                          <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </li>
+                    ));
+                  })()}
+                </ul>
+              </div>
             </div>
           )}
 
