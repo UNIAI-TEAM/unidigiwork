@@ -713,7 +713,7 @@ export function LabelsRulesDialog({
                 <span className="text-muted-foreground">Khi</span>
                 <select
                   value={rField}
-                  onChange={(e) => setRField(e.target.value as any)}
+                  onChange={(e) => setRField(e.target.value as RuleDef["whenField"])}
                   className="rounded-md border border-border bg-background px-2 py-1 text-xs"
                 >
                   <option value="from">Người gửi</option>
@@ -731,7 +731,7 @@ export function LabelsRulesDialog({
                 <span className="text-muted-foreground">thì</span>
                 <select
                   value={rAction}
-                  onChange={(e) => setRAction(e.target.value as any)}
+                  onChange={(e) => setRAction(e.target.value as RuleDef["thenAction"])}
                   className="rounded-md border border-border bg-background px-2 py-1 text-xs"
                 >
                   <option value="label">Gắn nhãn</option>
