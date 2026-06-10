@@ -159,7 +159,12 @@ function TasksPage() {
             {/* Board */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
               {columns.map((col) => (
-                <BoardColumn key={col.status} col={col} tasks={tasks.filter((tk) => tk.status === col.status)} />
+                <BoardColumn
+                  key={col.status}
+                  col={col}
+                  tasks={tasks.filter((tk) => tk.status === col.status)}
+                  onAdd={(payload) => addTask(col.status, payload)}
+                />
               ))}
             </div>
 
