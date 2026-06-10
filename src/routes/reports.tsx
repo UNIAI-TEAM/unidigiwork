@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  Plus, Calendar, Settings, MoreHorizontal, Users as UsersIcon, Activity,
+  Plus, Calendar, Settings, MoreHorizontal, ArrowUpRight, Users as UsersIcon, Activity,
   Folder, CheckCircle2, Video, TrendingUp, AlertTriangle, Info,
   Sparkles, FileText, BarChart3, Database, Globe, Cpu, ChevronDown,
   FileImage, FileSpreadsheet, TrendingDown,
