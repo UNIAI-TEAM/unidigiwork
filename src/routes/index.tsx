@@ -2,12 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Sparkles, MessageSquare, Video, FileText, BookOpen, Workflow, Bot,
-  ShieldCheck, ArrowRight, Check, LogIn, Loader2,
+  ShieldCheck, ArrowRight, Check, LogIn, Loader2, KanbanSquare,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import shotMeeting from "@/assets/shot-meeting.png.asset.json";
 import shotKnowledge from "@/assets/shot-knowledge.png.asset.json";
+import shotTasks from "@/assets/shot-tasks.png.asset.json";
 import { useI18n, LanguageToggle } from "@/lib/i18n";
 import { ThemeToggle } from "@/lib/theme";
 
@@ -180,6 +181,19 @@ function Landing() {
                 </span>
                 <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.kb.h")}</h3>
                 <p className="mt-2 text-muted-foreground">{t("land.preview.kb.p")}</p>
+              </div>
+            </div>
+
+            <div className="grid items-center gap-8 lg:grid-cols-2">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300">
+                  <KanbanSquare className="h-3.5 w-3.5" /> {t("land.preview.tasks.tag")}
+                </span>
+                <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.tasks.h")}</h3>
+                <p className="mt-2 text-muted-foreground">{t("land.preview.tasks.p")}</p>
+              </div>
+              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20">
+                <img src={shotTasks.url} alt="UNIWORK Tasks & Projects" className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" loading="lazy" />
               </div>
             </div>
           </div>
