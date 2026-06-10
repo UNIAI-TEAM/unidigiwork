@@ -158,18 +158,18 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
       )}
       <LanguageToggle />
       <ThemeToggle />
-      <button className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"><ShieldCheck className="h-5 w-5 text-muted-foreground" /></button>
-      <button className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"><Settings className="h-5 w-5 text-muted-foreground" /></button>
+      <Link to="/settings" className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block" aria-label="Bảo mật"><ShieldCheck className="h-5 w-5 text-muted-foreground" /></Link>
+      <Link to="/settings" className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block" aria-label="Cài đặt"><Settings className="h-5 w-5 text-muted-foreground" /></Link>
       {variant === "meeting" && (
         <button className="hidden items-center gap-1 rounded-lg p-2 hover:bg-surface-2 md:flex">
           <Users className="h-5 w-5 text-muted-foreground" />
           <span className="text-sm">16</span>
         </button>
       )}
-      <button className="relative rounded-lg p-2 hover:bg-surface-2">
+      <Link to="/notifications" className="relative rounded-lg p-2 hover:bg-surface-2" aria-label="Thông báo">
         <Bell className="h-5 w-5 text-muted-foreground" />
         <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">12</span>
-      </button>
+      </Link>
       <button className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"><Calendar className="h-5 w-5 text-muted-foreground" /></button>
       <button className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-surface-2/80 px-2 py-1.5 transition-colors hover:border-primary/40 hover:bg-surface-2">
         <span className="relative">
