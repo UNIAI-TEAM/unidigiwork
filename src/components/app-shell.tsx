@@ -74,6 +74,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
           <NavItem
             icon={ListChecks}
             label={t("nav.tasks")}
+            to="/tasks"
             active={active === "tasks"}
             badge={<span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted-foreground">7</span>}
           />
