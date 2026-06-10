@@ -39,8 +39,8 @@ function AuthPage() {
         if (error) throw error;
       }
       navigate({ to: "/documents" });
-    } catch (err: any) {
-      toast.error(err.message ?? "Có lỗi xảy ra");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
       setBusy(false);
     }
