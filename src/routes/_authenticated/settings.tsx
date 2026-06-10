@@ -136,21 +136,84 @@ function AccountSection() {
 }
 
 function PasswordSection() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+
+  const openConfirm = () => {
+    if (!currentPwd || !newPwd || !confirmPwd) {
+      toast.error("Vui lòng điền đầy đủ các trường mật khẩu.");
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      toast.error("Mật khẩu mới và xác nhận không khớp.");
+      return;
+    }
+    setDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    setDialogOpen(false);
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 1200));
+    const ok = Math.random() > 0.2;
+    setLoading(false);
+    if (ok) {
+      toast.success("Cập nhật mật khẩu thành công!");
+      setCurrentPwd("");
+      setNewPwd("");
+      setConfirmPwd("");
+    } else {
+      toast.error("Cập nhật mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.");
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-border/60 bg-surface-2/40 p-4">
         <div className="text-sm font-semibold">Đổi mật khẩu</div>
         <p className="text-xs text-muted-foreground">Khuyến nghị đổi mật khẩu 90 ngày một lần.</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <Input type="password" placeholder="Mật khẩu hiện tại" />
-          <Input type="password" placeholder="Mật khẩu mới" />
-          <Input type="password" placeholder="Xác nhận mật khẩu" />
+          <Input type="password" placeholder="Mật khẩu hiện tại" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} />
+          <Input type="password" placeholder="Mật khẩu mới" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} />
+          <Input type="password" placeholder="Xác nhận mật khẩu" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} />
         </div>
-        <button className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-          <Lock className="h-3.5 w-3.5" /> Cập nhật mật khẩu
+        <button
+          onClick={openConfirm}
+          disabled={loading}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          <Lock className="h-3.5 w-3.5" /> {loading ? "Đang cập nhật…" : "Cập nhật mật khẩu"}
         </button>
       </div>
       <Toggle title="Xác thực 2 lớp (2FA)" desc="Bắt buộc nhập mã từ ứng dụng Authenticator khi đăng nhập" defaultOn />
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Xác nhận đổi mật khẩu</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn cập nhật mật khẩu? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-row justify-end gap-2">
+            <button
+              onClick={() => setDialogOpen(false)}
+              className="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-medium text-foreground hover:bg-surface-2"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleUpdate}
+              className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Xác nhận
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
