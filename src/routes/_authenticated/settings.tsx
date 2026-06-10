@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import {
   User, Lock, Bell, Palette, Globe, Plug, Users as UsersIcon, ShieldCheck,
   CreditCard, Database, ChevronRight, Camera, Check, Trash2, Plus,
@@ -7,7 +8,12 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
+const searchSchema = z.object({
+  tab: z.enum(["profile", "account", "notifications", "appearance", "language", "integrations", "team", "security", "billing", "data"]).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/settings")({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "Cài đặt — UNIWORK" },
@@ -365,7 +371,9 @@ const RENDERS: Record<SectionKey, React.FC> = {
 
 function SettingsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [section, setSection] = useState<SectionKey>("profile");
+  const navigate = useNavigate({ from: Route.fullPath });
+  const search = Route.useSearch();
+  const section: SectionKey = search.tab ?? "profile";
   const current = SECTIONS.find((s) => s.key === section)!;
   const Body = RENDERS[section];
 
@@ -384,7 +392,7 @@ function SettingsPage() {
               {SECTIONS.map((s) => {
                 const active = s.key === section;
                 return (
-                  <button key={s.key} onClick={() => setSection(s.key)}
+                  <button key={s.key} onClick={() => navigate({ search: { tab: s.key } })}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}>
                     <s.icon className="h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">

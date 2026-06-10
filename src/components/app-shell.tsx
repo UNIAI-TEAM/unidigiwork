@@ -243,10 +243,10 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
 
             {/* Menu items */}
             <div className="p-1.5">
-              <MenuItem icon={UserCircle2} label="Hồ sơ cá nhân" desc="Xem & chỉnh sửa thông tin" onClick={() => setUserOpen(false)} to="/settings" />
-              <MenuItem icon={Settings} label="Cài đặt tài khoản" desc="Tài khoản, giao diện, ngôn ngữ" onClick={() => setUserOpen(false)} to="/settings" />
-              <MenuItem icon={KeyRound} label="Đổi mật khẩu" desc="Cập nhật & bật 2FA" onClick={() => setUserOpen(false)} to="/settings" />
-              <MenuItem icon={ShieldCheck} label="Quyền riêng tư & bảo mật" desc="Phiên đăng nhập, thiết bị" onClick={() => setUserOpen(false)} to="/settings" />
+              <MenuItem icon={UserCircle2} label="Hồ sơ cá nhân" desc="Xem & chỉnh sửa thông tin" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'profile' }} />
+              <MenuItem icon={Settings} label="Cài đặt tài khoản" desc="Tài khoản, giao diện, ngôn ngữ" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'account' }} />
+              <MenuItem icon={KeyRound} label="Đổi mật khẩu" desc="Cập nhật & bật 2FA" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'account' }} />
+              <MenuItem icon={ShieldCheck} label="Quyền riêng tư & bảo mật" desc="Phiên đăng nhập, thiết bị" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'security' }} />
               <MenuItem icon={HelpCircle} label="Trợ giúp & hỗ trợ" desc="Tài liệu, hotline 1900 6996" onClick={() => setUserOpen(false)} to="/help" />
             </div>
 
@@ -273,7 +273,7 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
   );
 }
 
-function MenuItem({ icon: Icon, label, desc, to, onClick }: { icon: any; label: string; desc?: string; to?: string; onClick?: () => void }) {
+function MenuItem({ icon: Icon, label, desc, to, search, onClick }: { icon: any; label: string; desc?: string; to?: string; search?: Record<string, any>; onClick?: () => void }) {
   const inner = (
     <>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted-foreground group-hover:bg-primary/15 group-hover:text-primary">
@@ -286,7 +286,7 @@ function MenuItem({ icon: Icon, label, desc, to, onClick }: { icon: any; label: 
     </>
   );
   const cls = "group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-surface-2";
-  if (to) return <Link to={to} onClick={onClick} className={cls}>{inner}</Link>;
+  if (to) return <Link to={to} search={search} onClick={onClick} className={cls}>{inner}</Link>;
   return <button onClick={onClick} className={cls}>{inner}</button>;
 }
 
