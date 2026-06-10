@@ -340,8 +340,8 @@ function Index() {
           </section>
 
           {/* Right panel */}
-          <aside className="flex w-96 shrink-0 flex-col border-l border-border bg-surface">
-            <div className="flex gap-5 border-b border-border px-5 pt-4 text-sm">
+          <aside className="flex w-full shrink-0 flex-col border-t border-border bg-surface xl:w-96 xl:border-l xl:border-t-0">
+            <div className="flex gap-5 overflow-x-auto border-b border-border px-5 pt-4 text-sm">
               <button className="border-b-2 border-primary pb-3 font-medium">AI Copilot</button>
               <button className="pb-3 text-muted-foreground">Chat</button>
               <button className="pb-3 text-muted-foreground">Participants (16)</button>
