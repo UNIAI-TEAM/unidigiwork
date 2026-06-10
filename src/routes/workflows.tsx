@@ -402,7 +402,7 @@ function WorkflowsPage() {
               </div>
               <Select
                 value={status}
-                onChange={(v) => setStatus(v as any)}
+                onChange={(v) => setStatus(v as "All" | WFStatus)}
                 label={t("wf.filter.status")}
                 options={["All", "active", "paused", "draft"]}
                 renderOption={(v) => (v === "All" ? "All" : t(`wf.status.${v}` as Key))}
