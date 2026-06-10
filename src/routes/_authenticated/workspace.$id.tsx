@@ -174,7 +174,7 @@ const MEETINGS = [
 ];
 
 function WorkspaceDetailPage() {
-  const { ws } = Route.useLoaderData();
+  const { ws } = Route.useLoaderData() as { ws: Workspace };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const [starred, setStarred] = useState(true);
