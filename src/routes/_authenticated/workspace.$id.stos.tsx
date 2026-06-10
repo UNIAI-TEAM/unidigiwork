@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Calendar,
@@ -1343,6 +1343,8 @@ function AuditDialog({
   const [sortOrder, setSortOrder] = useState<
     "newest" | "oldest" | "actor" | "action"
   >("newest");
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [page, setPage] = useState<number>(1);
 
   const actors = useMemo(
     () => Array.from(new Set(entries.map((e) => e.actor))).sort(),
@@ -1377,6 +1379,16 @@ function AuditDialog({
       return ac !== 0 ? ac : tDiff;
     });
   }, [entries, filter, actor, keyword, fromDate, toDate, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageItems = list.slice(pageStart, pageStart + pageSize);
+
+  // Reset page về 1 khi bộ lọc/sắp xếp/kích thước trang thay đổi
+  useEffect(() => {
+    setPage(1);
+  }, [filter, actor, keyword, fromDate, toDate, sortOrder, pageSize]);
 
   const hasFilter =
     filter !== "all" || actor !== "all" || keyword !== "" || fromDate !== "" || toDate !== "";
@@ -1515,12 +1527,66 @@ function AuditDialog({
             <div className="text-sm text-slate-500 text-center py-8">Không có hoạt động.</div>
           ) : (
             <ul className="space-y-3">
-              {list.map((e) => (
+              {pageItems.map((e) => (
                 <AuditItem key={e.id} entry={e} />
               ))}
             </ul>
           )}
         </div>
+        {list.length > 0 && (
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-slate-500">Mỗi trang:</label>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="text-xs border border-slate-200 rounded-md px-1.5 py-0.5 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                {[5, 10, 20, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-slate-400">
+                {pageStart + 1}–{Math.min(pageStart + pageSize, list.length)} / {list.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(1)}
+                disabled={currentPage === 1}
+                className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                «
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                ‹
+              </button>
+              <span className="text-xs text-slate-600 px-2">
+                Trang {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                ›
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                »
+              </button>
+            </div>
+          </div>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Đóng
