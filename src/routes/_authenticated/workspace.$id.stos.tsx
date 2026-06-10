@@ -328,6 +328,30 @@ function StosDetailPage() {
   const [project, setProject] = useState<Project>(INITIAL_PROJECT);
   const [docs, setDocs] = useState<Doc[]>(INITIAL_DOCUMENTS);
   const [milestones, setMilestones] = useState<Milestone[]>(INITIAL_MILESTONES);
+  const [audit, setAudit] = useState<AuditEntry[]>(INITIAL_AUDIT);
+  const [auditOpen, setAuditOpen] = useState(false);
+
+  const logAudit = (
+    action: AuditAction,
+    target: AuditTarget,
+    name: string,
+    detail?: string,
+  ) => {
+    setAudit((prev) => [
+      {
+        id: `a${Date.now()}`,
+        at: new Date(),
+        actor: ACTOR_NAME[currentRole],
+        actorRole: currentRole,
+        action,
+        target,
+        name,
+        detail,
+      },
+      ...prev,
+    ]);
+  };
+  const canViewAudit = currentRole === "owner" || currentRole === "admin";
 
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [docDialog, setDocDialog] = useState<{ open: boolean; doc: Doc | null }>({
@@ -572,6 +596,7 @@ function StosDetailPage() {
                           </button>
                           <button
                             onClick={() => {
+                              logAudit("delete", "milestone", m.name);
                               setMilestones((prev) => prev.filter((x) => x.id !== m.id));
                               toast.success("Đã xoá milestone");
                             }}
@@ -644,6 +669,7 @@ function StosDetailPage() {
                         {can.deleteDocs ? (
                           <button
                             onClick={() => {
+                              logAudit("delete", "document", d.name);
                               setDocs((prev) => prev.filter((x) => x.id !== d.id));
                               toast.success("Đã xoá tài liệu");
                             }}
