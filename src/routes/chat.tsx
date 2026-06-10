@@ -343,6 +343,7 @@ function ChatPage() {
   const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const [activeChannel, setActiveChannel] = useState("sprint-6");
+  const [view, setView] = useState<"channel" | "threads" | "mentions" | "drafts">("channel");
   const [messages, setMessages] = useState<Msg[]>(channelMessages["sprint-6"] || []);
   const [input, setInput] = useState("");
   const [aiInput, setAiInput] = useState("");
@@ -402,6 +403,11 @@ function ChatPage() {
     { key: "7d", label: t("chat.search.time.7d"), color: "border-primary/40 text-primary bg-primary/10" },
   ];
 
+  const selectChannel = (name: string) => {
+    setActiveChannel(name);
+    setView("channel");
+  };
+
   return (
     <div className="flex h-screen bg-background text-foreground">
       <AppSidebar active="chat" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -426,15 +432,23 @@ function ChatPage() {
 
             <div className="flex-1 space-y-4 overflow-y-auto px-2 pb-3">
               <div>
-                <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                  <MessageCircle className="h-4 w-4" /> Threads
-                </button>
-                <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                  <AtSign className="h-4 w-4" /> Mentions
-                </button>
-                <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                  <FileText className="h-4 w-4" /> Drafts
-                </button>
+                {([
+                  { k: "threads", label: "Threads", icon: MessageCircle },
+                  { k: "mentions", label: "Mentions", icon: AtSign },
+                  { k: "drafts", label: "Drafts", icon: FileText },
+                ] as const).map((it) => (
+                  <button
+                    key={it.k}
+                    onClick={() => setView(it.k)}
+                    className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+                      view === it.k
+                        ? "bg-primary/15 text-foreground"
+                        : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                    }`}
+                  >
+                    <it.icon className="h-4 w-4" /> {it.label}
+                  </button>
+                ))}
               </div>
 
               <div>
@@ -442,7 +456,7 @@ function ChatPage() {
                   Favorites
                 </div>
                 {favorites.map((c) => (
-                  <ChannelRow key={c.name} ch={c} active={activeChannel === c.name} onClick={() => setActiveChannel(c.name)} />
+                  <ChannelRow key={c.name} ch={c} active={view === "channel" && activeChannel === c.name} onClick={() => selectChannel(c.name)} />
                 ))}
               </div>
 
@@ -452,7 +466,7 @@ function ChatPage() {
                   <button className="rounded p-0.5 hover:bg-surface-2"><Plus className="h-3 w-3" /></button>
                 </div>
                 {channels.map((c) => (
-                  <ChannelRow key={c.name} ch={c} active={activeChannel === c.name} onClick={() => setActiveChannel(c.name)} />
+                  <ChannelRow key={c.name} ch={c} active={view === "channel" && activeChannel === c.name} onClick={() => selectChannel(c.name)} />
                 ))}
               </div>
 
@@ -484,6 +498,10 @@ function ChatPage() {
 
           {/* Main conversation */}
           <section className="flex min-w-0 flex-1 flex-col">
+            {view !== "channel" ? (
+              <SpecialView view={view} onOpenChannel={selectChannel} />
+            ) : (
+            <>
             <header className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -624,6 +642,8 @@ function ChatPage() {
                 </div>
               </div>
             </div>
+            </>
+            )}
           </section>
 
           {/* AI Copilot */}
@@ -744,6 +764,189 @@ function ChatPage() {
             </aside>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+type SpecialViewKey = "threads" | "mentions" | "drafts";
+
+const threadData = [
+  {
+    id: "t1",
+    channel: "sprint-6",
+    parent: { author: "Trần Thị B", seed: "tran-thi-b", time: "Hôm nay · 9:05", text: "API Gateway đã hoàn thành 90%. Đang review và chuẩn bị deploy staging." },
+    replies: [
+      { author: "Phạm Minh C", seed: "pham-minh-c", time: "9:15", text: "Mình sẽ hỗ trợ load test sau khi deploy lên staging." },
+      { author: "Nguyễn Văn A", seed: "nguyen-van-a-1", time: "9:22", text: "Tốt, nhớ ghi lại metrics để báo cáo Steering Committee chiều nay." },
+    ],
+    unread: 2,
+  },
+  {
+    id: "t2",
+    channel: "design-system",
+    parent: { author: "Phạm Nam", seed: "pham-nam", time: "Hôm qua · 16:40", text: "Mình vừa update bộ token màu mới cho dark mode, mọi người review giúp nhé." },
+    replies: [
+      { author: "Đỗ Linh", seed: "do-linh", time: "17:05", text: "Contrast của text-muted hơi thấp trên nền surface, mình đề xuất tăng lên 4.5:1." },
+    ],
+    unread: 1,
+  },
+  {
+    id: "t3",
+    channel: "announcements",
+    parent: { author: "Nguyễn Văn A", seed: "nguyen-van-a-1", time: "2 ngày trước", text: "Thông báo: Công ty sẽ tổ chức team building vào cuối tháng. Đăng ký trước 15/06." },
+    replies: [
+      { author: "Trần Thị B", seed: "tran-thi-b", time: "1 ngày trước", text: "Em đã tổng hợp 28 đăng ký, sẽ chốt vào sáng mai." },
+    ],
+  },
+];
+
+const mentionsData = [
+  { id: "n1", channel: "sprint-6", author: "Trần Thị B", seed: "tran-thi-b", time: "9:42", text: "@Nguyễn Văn A có thể xem giúp em PR #128 không ạ? Cần merge trước trưa nay." },
+  { id: "n2", channel: "devops-alerts", author: "Bot", seed: "bot-1", time: "8:10", text: "@channel CPU prod-db-01 đang ở 86%, cần kiểm tra ngay." },
+  { id: "n3", channel: "general", author: "Lê Hoa", seed: "le-hoa", time: "Hôm qua", text: "@Nguyễn Văn A buổi họp 1-1 chiều nay dời sang 15:30 nhé anh." },
+  { id: "n4", channel: "hr-policies", author: "HR Bot", seed: "hr-bot", time: "2 ngày trước", text: "@here Chính sách nghỉ phép mới đã có hiệu lực, xin mọi người đọc và xác nhận." },
+];
+
+const draftsData = [
+  { id: "d1", channel: "sprint-6", time: "5 phút trước", text: "Update tiến độ MVP: hiện đang ở 75%, dự kiến hoàn thành trước 15/07. Cần thêm hỗ trợ từ team QA cho..." },
+  { id: "d2", channel: "Trần Thị B", dm: true, time: "Hôm nay · 10:12", text: "Chị ơi em gửi lại bản phân tích risk cho dự án STOS, nhờ chị review giúp em trước cuộc họp..." },
+  { id: "d3", channel: "announcements", time: "Hôm qua", text: "Kính gửi cả nhà, ngày 30/06 phòng IT sẽ bảo trì hệ thống mạng từ 22:00 đến 02:00..." },
+];
+
+function SpecialView({ view, onOpenChannel }: { view: SpecialViewKey; onOpenChannel: (name: string) => void }) {
+  const meta = {
+    threads: { icon: MessageCircle, title: "Threads", desc: "Các cuộc trao đổi bạn đang theo dõi", color: "text-sky-400" },
+    mentions: { icon: AtSign, title: "Mentions", desc: "Tin nhắn nhắc đến bạn (@you, @channel, @here)", color: "text-amber-400" },
+    drafts: { icon: FileText, title: "Drafts", desc: "Tin nhắn đã soạn nhưng chưa gửi", color: "text-violet-400" },
+  }[view];
+  const Icon = meta.icon;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <header className="flex items-center justify-between border-b border-border px-5 py-3">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 ${meta.color}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold leading-tight">{meta.title}</h1>
+            <div className="text-xs text-muted-foreground">{meta.desc}</div>
+          </div>
+        </div>
+        <button className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+          <Filter className="h-4 w-4" />
+        </button>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {view === "threads" && (
+          <div className="mx-auto max-w-3xl space-y-3">
+            {threadData.map((th) => (
+              <article key={th.id} className="rounded-xl border border-border bg-surface-2/50 p-4">
+                <button onClick={() => onOpenChannel(th.channel)} className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
+                  <Hash className="h-3 w-3" /> {th.channel}
+                  {th.unread ? <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] font-medium text-white">{th.unread} mới</span> : null}
+                </button>
+                <div className="flex gap-3">
+                  <img src={avatar(th.parent.seed)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm font-semibold">{th.parent.author}</span>
+                      <span className="text-[11px] text-muted-foreground">{th.parent.time}</span>
+                    </div>
+                    <p className="mt-1 text-sm text-foreground/90">{th.parent.text}</p>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-3 border-l-2 border-border pl-4">
+                  {th.replies.map((r, i) => (
+                    <div key={i} className="flex gap-3">
+                      <img src={avatar(r.seed)} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs font-semibold">{r.author}</span>
+                          <span className="text-[10px] text-muted-foreground">{r.time}</span>
+                        </div>
+                        <p className="mt-0.5 text-sm text-foreground/85">{r.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    placeholder="Trả lời thread..."
+                    className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                    Gửi
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {view === "mentions" && (
+          <div className="mx-auto max-w-3xl space-y-2">
+            {mentionsData.map((m) => (
+              <article key={m.id} className="flex gap-3 rounded-xl border border-border bg-surface-2/40 p-3 hover:border-primary/40">
+                <img src={avatar(m.seed)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-sm font-semibold">{m.author}</span>
+                    <button onClick={() => onOpenChannel(m.channel)} className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline">
+                      <Hash className="h-3 w-3" /> {m.channel}
+                    </button>
+                    <span className="text-[11px] text-muted-foreground">{m.time}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-foreground/90">
+                    {m.text.split(/(@\S+)/g).map((part, i) =>
+                      part.startsWith("@") ? (
+                        <span key={i} className="rounded bg-primary/15 px-1 font-medium text-primary">{part}</span>
+                      ) : (
+                        <span key={i}>{part}</span>
+                      )
+                    )}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
+                  <button className="rounded p-1.5 hover:bg-surface hover:text-foreground" title="Trả lời">
+                    <MessageCircle className="h-4 w-4" />
+                  </button>
+                  <button className="rounded p-1.5 hover:bg-surface hover:text-foreground" title="Đánh dấu đã đọc">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {view === "drafts" && (
+          <div className="mx-auto max-w-3xl space-y-2">
+            {draftsData.map((d) => (
+              <article key={d.id} className="rounded-xl border border-dashed border-border bg-surface-2/40 p-3 hover:border-primary/40">
+                <div className="mb-1.5 flex items-center justify-between">
+                  <button onClick={() => !d.dm && onOpenChannel(d.channel)} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                    {d.dm ? <span>@ {d.channel}</span> : (<><Hash className="h-3 w-3" /> {d.channel}</>)}
+                  </button>
+                  <span className="text-[11px] text-muted-foreground">{d.time}</span>
+                </div>
+                <p className="line-clamp-2 text-sm text-foreground/85">{d.text}</p>
+                <div className="mt-2 flex items-center justify-end gap-2">
+                  <button className="rounded-lg px-2.5 py-1 text-xs text-muted-foreground hover:bg-surface hover:text-foreground">Xoá</button>
+                  <button className="rounded-lg border border-border px-2.5 py-1 text-xs hover:bg-surface">Chỉnh sửa</button>
+                  <button className="rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                    <Send className="mr-1 inline h-3 w-3" /> Gửi ngay
+                  </button>
+                </div>
+              </article>
+            ))}
+            <button className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-3 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground">
+              <Plus className="h-3.5 w-3.5" /> Tạo bản nháp mới
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
