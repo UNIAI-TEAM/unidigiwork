@@ -185,3 +185,20 @@
   aspect-ratio: var(--tile-aspect);
   min-height: var(--tile-min-h);
 }
+
+/* Subtle, thin scrollbars that blend with the background */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-foreground) 14%, transparent) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-foreground) 12%, transparent);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--color-foreground) 22%, transparent);
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
