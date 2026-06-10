@@ -487,6 +487,7 @@ const dict = {
     "land.preview.email.h": "Unified work email with AI Assistant",
     "land.preview.email.p":
       "Connect Microsoft 365 & Gmail into one inbox. AI summarises, suggests replies, and turns emails into tasks and workflows.",
+    "land.preview.email.cta": "Use Email Hub Now",
     "land.feat.title": "Everything your team needs, in one app",
     "land.feat.sub": "Replace 5–7 disconnected tools with a single platform.",
     "land.feat.meet.t": "Meetings + AI Copilot",
