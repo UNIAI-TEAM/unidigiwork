@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Calendar,
@@ -29,8 +29,37 @@ import {
   Download,
   Filter,
   X,
+  UserPlus,
+  Mail,
+  Copy,
+  Trash2,
+  Shield,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+type MemberRole = "owner" | "admin" | "member" | "viewer";
+const ROLE_LABEL: Record<MemberRole, string> = {
+  owner: "Chủ sở hữu",
+  admin: "Quản trị",
+  member: "Thành viên",
+  viewer: "Chỉ xem",
+};
+const ROLE_TINT: Record<MemberRole, string> = {
+  owner: "bg-amber-500/15 text-amber-300",
+  admin: "bg-violet-500/15 text-violet-300",
+  member: "bg-sky-500/15 text-sky-300",
+  viewer: "bg-surface-2 text-muted-foreground",
+};
 
 type Workspace = {
   slug: string;
@@ -197,13 +226,14 @@ const TASKS = [
   },
 ];
 
-const MEMBERS = [
-  { seed: "nguyen-van-a-1", name: "Nguyễn Văn A", role: "Project Owner" },
-  { seed: "tran-minh", name: "Trần Minh", role: "Tech Lead" },
-  { seed: "le-hong", name: "Lê Hồng", role: "Designer" },
-  { seed: "pham-quynh", name: "Phạm Quỳnh", role: "PM" },
-  { seed: "hoang-linh", name: "Hoàng Linh", role: "DevOps" },
-  { seed: "vo-thanh", name: "Võ Thành", role: "QA" },
+type MemberRow = { seed: string; name: string; title: string; role: MemberRole; email: string };
+const INITIAL_MEMBERS: MemberRow[] = [
+  { seed: "nguyen-van-a-1", name: "Nguyễn Văn A", title: "Project Owner", role: "owner", email: "an.nv@uniwork.vn" },
+  { seed: "tran-minh", name: "Trần Minh", title: "Tech Lead", role: "admin", email: "minh.tt@uniwork.vn" },
+  { seed: "le-hong", name: "Lê Hồng", title: "Designer", role: "member", email: "hong.lt@uniwork.vn" },
+  { seed: "pham-quynh", name: "Phạm Quỳnh", title: "PM", role: "admin", email: "quynh.pt@uniwork.vn" },
+  { seed: "hoang-linh", name: "Hoàng Linh", title: "DevOps", role: "member", email: "linh.hh@uniwork.vn" },
+  { seed: "vo-thanh", name: "Võ Thành", title: "QA", role: "viewer", email: "thanh.vv@uniwork.vn" },
 ];
 
 const ACTIVITY = [
@@ -357,12 +387,17 @@ const MEETINGS = [
 ];
 
 function WorkspaceDetailPage() {
-  const { ws } = Route.useLoaderData() as { ws: Workspace };
+  const { ws: initialWs } = Route.useLoaderData() as { ws: Workspace };
+  const [ws, setWs] = useState<Workspace>(initialWs);
+  useEffect(() => setWs(initialWs), [initialWs]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const [starred, setStarred] = useState(true);
   const [docSearch, setDocSearch] = useState("");
   const [docFilter, setDocFilter] = useState<string>("all");
+  const [members, setMembers] = useState<MemberRow[]>(INITIAL_MEMBERS);
+  const [showInvite, setShowInvite] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const healthCls =
     ws.health === "Tốt"
@@ -422,13 +457,17 @@ function WorkspaceDetailPage() {
                 <Star className={`h-4 w-4 ${starred ? "fill-current" : ""}`} />{" "}
                 {starred ? "Đã ghim" : "Ghim"}
               </button>
-              <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70">
+              <button
+                onClick={() => setShowInvite(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70"
+              >
                 <Users className="h-4 w-4" /> Mời
               </button>
               <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                 <Plus className="h-4 w-4" /> Nhiệm vụ
               </button>
               <button
+                onClick={() => setShowEdit(true)}
                 className="rounded-lg bg-surface-2 p-2 hover:bg-surface-2/70"
                 aria-label="Cài đặt"
               >
@@ -593,7 +632,7 @@ function WorkspaceDetailPage() {
                     </button>
                   </div>
                   <ul className="space-y-2">
-                    {MEMBERS.slice(0, 5).map((m) => (
+                    {members.slice(0, 5).map((m) => (
                       <li key={m.seed} className="flex items-center gap-3">
                         <img
                           src={avatar(m.seed)}
@@ -602,7 +641,9 @@ function WorkspaceDetailPage() {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm">{m.name}</div>
-                          <div className="truncate text-[11px] text-muted-foreground">{m.role}</div>
+                          <div className="truncate text-[11px] text-muted-foreground">
+                            {m.title} · {ROLE_LABEL[m.role]}
+                          </div>
                         </div>
                         <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
                           <MoreHorizontal className="h-4 w-4" />
@@ -823,24 +864,64 @@ function WorkspaceDetailPage() {
           {tab === "members" && (
             <div className="rounded-xl border border-border bg-surface">
               <div className="flex items-center justify-between border-b border-border p-4">
-                <h2 className="text-sm font-semibold">Thành viên ({ws.members})</h2>
-                <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                  <Plus className="h-3.5 w-3.5" /> Mời
+                <h2 className="text-sm font-semibold">Thành viên ({members.length})</h2>
+                <button
+                  onClick={() => setShowInvite(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> Mời
                 </button>
               </div>
               <ul className="divide-y divide-border">
-                {MEMBERS.map((m) => (
-                  <li key={m.seed} className="flex items-center gap-3 p-3">
+                {members.map((m) => (
+                  <li key={m.seed} className="flex flex-wrap items-center gap-3 p-3">
                     <img src={avatar(m.seed)} alt="" className="h-9 w-9 rounded-lg bg-surface-2" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{m.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{m.role}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">{m.name}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${ROLE_TINT[m.role]}`}>
+                          {ROLE_LABEL[m.role]}
+                        </span>
+                      </div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {m.title} · {m.email}
+                      </div>
                     </div>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                    <select
+                      value={m.role}
+                      disabled={m.role === "owner"}
+                      onChange={(e) => {
+                        const next = e.target.value as MemberRole;
+                        setMembers((prev) =>
+                          prev.map((x) => (x.seed === m.seed ? { ...x, role: next } : x)),
+                        );
+                        toast.success(`Đã đổi quyền ${m.name} → ${ROLE_LABEL[next]}`);
+                      }}
+                      className="rounded-md border border-border bg-surface-2 px-2 py-1 text-xs disabled:opacity-50"
+                    >
+                      {(["admin", "member", "viewer"] as MemberRole[]).map((r) => (
+                        <option key={r} value={r}>
+                          {ROLE_LABEL[r]}
+                        </option>
+                      ))}
+                      {m.role === "owner" && <option value="owner">{ROLE_LABEL.owner}</option>}
+                    </select>
+                    <button
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                      aria-label="Nhắn tin"
+                    >
                       <MessageCircle className="h-4 w-4" />
                     </button>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <button
+                      disabled={m.role === "owner"}
+                      onClick={() => {
+                        setMembers((prev) => prev.filter((x) => x.seed !== m.seed));
+                        toast.success(`Đã xoá ${m.name} khỏi workspace`);
+                      }}
+                      className="rounded p-1 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                      aria-label="Xoá thành viên"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </li>
                 ))}
@@ -872,6 +953,246 @@ function WorkspaceDetailPage() {
           )}
         </div>
       </div>
+      <InviteDialog
+        open={showInvite}
+        onOpenChange={setShowInvite}
+        wsName={ws.name}
+        wsSlug={ws.slug}
+        onInvite={(rows) => {
+          setMembers((prev) => [...prev, ...rows]);
+        }}
+      />
+      <EditWorkspaceDialog
+        open={showEdit}
+        onOpenChange={setShowEdit}
+        ws={ws}
+        onSave={(patch) => {
+          setWs((prev) => ({ ...prev, ...patch }));
+          toast.success("Đã cập nhật workspace");
+        }}
+      />
     </div>
+  );
+}
+
+function InviteDialog({
+  open,
+  onOpenChange,
+  wsName,
+  wsSlug,
+  onInvite,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  wsName: string;
+  wsSlug: string;
+  onInvite: (rows: MemberRow[]) => void;
+}) {
+  const [emails, setEmails] = useState("");
+  const [role, setRole] = useState<MemberRole>("member");
+  const link = useMemo(
+    () => `https://uniwork.app/invite/${wsSlug}-${Math.random().toString(36).slice(2, 7)}`,
+    [wsSlug, open],
+  );
+
+  const submit = () => {
+    const list = emails
+      .split(/[,\n;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (list.length === 0) {
+      toast.error("Nhập ít nhất một email");
+      return;
+    }
+    const invalid = list.filter((e) => !/^\S+@\S+\.\S+$/.test(e));
+    if (invalid.length) {
+      toast.error(`Email không hợp lệ: ${invalid.join(", ")}`);
+      return;
+    }
+    const rows: MemberRow[] = list.map((email) => {
+      const name = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      return { seed: email, name, title: "Mới mời", role, email };
+    });
+    onInvite(rows);
+    toast.success(`Đã gửi ${list.length} lời mời với quyền ${ROLE_LABEL[role]}`);
+    setEmails("");
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="size-5 text-primary" /> Mời thành viên vào {wsName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium">
+              Email (cách nhau bằng dấu phẩy)
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                value={emails}
+                onChange={(e) => setEmails(e.target.value)}
+                placeholder="vd: nam@uniwork.vn, linh@uniwork.vn"
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium">Vai trò</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["viewer", "member", "admin"] as MemberRole[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRole(r)}
+                  className={`rounded-md border py-2 text-xs transition ${
+                    role === r
+                      ? "border-primary bg-primary/10 font-semibold text-primary"
+                      : "border-border text-muted-foreground hover:bg-surface-2"
+                  }`}
+                >
+                  {ROLE_LABEL[r]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="border-t border-border pt-3">
+            <label className="mb-1.5 block text-xs font-medium">Hoặc chia sẻ liên kết mời</label>
+            <div className="flex gap-2">
+              <Input value={link} readOnly className="bg-surface-2 text-xs" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard?.writeText(link);
+                  toast.success("Đã sao chép liên kết");
+                }}
+              >
+                <Copy className="size-4" /> Sao chép
+              </Button>
+            </div>
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+              <AlertCircle className="size-3" /> Liên kết hết hạn sau 7 ngày
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button onClick={submit}>
+            <Mail className="size-4" /> Gửi lời mời
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditWorkspaceDialog({
+  open,
+  onOpenChange,
+  ws,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  ws: Workspace;
+  onSave: (patch: Partial<Workspace>) => void;
+}) {
+  const [name, setName] = useState(ws.name);
+  const [tagline, setTagline] = useState(ws.tagline);
+  const [description, setDescription] = useState(ws.description);
+  const [deadline, setDeadline] = useState(ws.deadline);
+  const [tagsStr, setTagsStr] = useState(ws.tags.join(", "));
+  const [health, setHealth] = useState<Workspace["health"]>(ws.health);
+
+  useEffect(() => {
+    if (!open) return;
+    setName(ws.name);
+    setTagline(ws.tagline);
+    setDescription(ws.description);
+    setDeadline(ws.deadline);
+    setTagsStr(ws.tags.join(", "));
+    setHealth(ws.health);
+  }, [open, ws]);
+
+  const submit = () => {
+    if (!name.trim()) {
+      toast.error("Tên workspace không được trống");
+      return;
+    }
+    onSave({
+      name: name.trim(),
+      tagline: tagline.trim(),
+      description: description.trim(),
+      deadline: deadline.trim(),
+      health,
+      tags: tagsStr.split(",").map((s) => s.trim()).filter(Boolean),
+    });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="size-5 text-primary" /> Cài đặt workspace
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium">Tên</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Tagline</label>
+            <Input value={tagline} onChange={(e) => setTagline(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Mô tả</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium">Hạn</label>
+              <Input value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">Tình trạng</label>
+              <select
+                value={health}
+                onChange={(e) => setHealth(e.target.value as Workspace["health"])}
+                className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
+              >
+                <option value="Tốt">Tốt</option>
+                <option value="Cần chú ý">Cần chú ý</option>
+                <option value="Rủi ro">Rủi ro</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Tags (cách nhau bằng dấu phẩy)</label>
+            <Input value={tagsStr} onChange={(e) => setTagsStr(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button onClick={submit}>Lưu thay đổi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
