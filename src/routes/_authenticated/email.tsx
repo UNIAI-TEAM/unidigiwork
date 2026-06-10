@@ -230,13 +230,16 @@ function EmailHubPage() {
 
             <div className="px-3 py-3">
               <div className="flex items-center gap-1">
-                <button className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                <button onClick={() => setComposeOpen(true)} className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                   <FileEdit className="h-4 w-4" /> Soạn email
                 </button>
                 <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90">
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </div>
+              <button onClick={() => setLabelsOpen(true)} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                <Settings2 className="h-3.5 w-3.5" /> Nhãn & Quy tắc tự động
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 pb-4">
