@@ -251,25 +251,57 @@ function EmailHubPage() {
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  placeholder="Search in Hộp đến"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm theo người gửi, tiêu đề, nội dung..."
                   className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
               <div className="mt-3 flex items-center gap-1.5">
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
-                  <MailOpen className="h-3.5 w-3.5" /> Chưa đọc <ChevronDown className="h-3 w-3" />
-                </button>
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
-                  <Filter className="h-3.5 w-3.5" /> Lọc <ChevronDown className="h-3 w-3" />
+                <button
+                  onClick={() => setFilterUnread((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${filterUnread ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}
+                >
+                  <MailOpen className="h-3.5 w-3.5" /> Chưa đọc
                 </button>
                 <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
                   <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp <ChevronDown className="h-3 w-3" />
                 </button>
+                {(searchQuery || filterLabel || filterUnread) && (
+                  <button
+                    onClick={() => { setSearchQuery(""); setFilterLabel(null); setFilterUnread(false); }}
+                    className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
+                  >
+                    <X className="h-3 w-3" /> Xóa lọc
+                  </button>
+                )}
                 <button className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"><MoreHorizontal className="h-4 w-4" /></button>
               </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>128 thư</span>
-                <span>Chưa đọc</span>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {searchQuery && (
+                  <Badge variant="secondary" className="text-[11px]">
+                    <Search className="mr-1 h-3 w-3" />
+                    {searchQuery}
+                    <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                  </Badge>
+                )}
+                {filterLabel && (
+                  <Badge variant="secondary" className="text-[11px]">
+                    <Tag className="mr-1 h-3 w-3" />
+                    {filterLabel}
+                    <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setFilterLabel(null)} />
+                  </Badge>
+                )}
+                {filterUnread && (
+                  <Badge variant="secondary" className="text-[11px]">
+                    <MailOpen className="mr-1 h-3 w-3" />
+                    Chưa đọc
+                    <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setFilterUnread(false)} />
+                  </Badge>
+                )}
+                <span className="ml-auto text-[11px] text-muted-foreground">
+                  {filteredEmails.length} thư
+                </span>
               </div>
             </div>
 
