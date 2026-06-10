@@ -864,24 +864,64 @@ function WorkspaceDetailPage() {
           {tab === "members" && (
             <div className="rounded-xl border border-border bg-surface">
               <div className="flex items-center justify-between border-b border-border p-4">
-                <h2 className="text-sm font-semibold">Thành viên ({ws.members})</h2>
-                <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                  <Plus className="h-3.5 w-3.5" /> Mời
+                <h2 className="text-sm font-semibold">Thành viên ({members.length})</h2>
+                <button
+                  onClick={() => setShowInvite(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> Mời
                 </button>
               </div>
               <ul className="divide-y divide-border">
-                {MEMBERS.map((m) => (
-                  <li key={m.seed} className="flex items-center gap-3 p-3">
+                {members.map((m) => (
+                  <li key={m.seed} className="flex flex-wrap items-center gap-3 p-3">
                     <img src={avatar(m.seed)} alt="" className="h-9 w-9 rounded-lg bg-surface-2" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{m.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{m.role}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">{m.name}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${ROLE_TINT[m.role]}`}>
+                          {ROLE_LABEL[m.role]}
+                        </span>
+                      </div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {m.title} · {m.email}
+                      </div>
                     </div>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                    <select
+                      value={m.role}
+                      disabled={m.role === "owner"}
+                      onChange={(e) => {
+                        const next = e.target.value as MemberRole;
+                        setMembers((prev) =>
+                          prev.map((x) => (x.seed === m.seed ? { ...x, role: next } : x)),
+                        );
+                        toast.success(`Đã đổi quyền ${m.name} → ${ROLE_LABEL[next]}`);
+                      }}
+                      className="rounded-md border border-border bg-surface-2 px-2 py-1 text-xs disabled:opacity-50"
+                    >
+                      {(["admin", "member", "viewer"] as MemberRole[]).map((r) => (
+                        <option key={r} value={r}>
+                          {ROLE_LABEL[r]}
+                        </option>
+                      ))}
+                      {m.role === "owner" && <option value="owner">{ROLE_LABEL.owner}</option>}
+                    </select>
+                    <button
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                      aria-label="Nhắn tin"
+                    >
                       <MessageCircle className="h-4 w-4" />
                     </button>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <button
+                      disabled={m.role === "owner"}
+                      onClick={() => {
+                        setMembers((prev) => prev.filter((x) => x.seed !== m.seed));
+                        toast.success(`Đã xoá ${m.name} khỏi workspace`);
+                      }}
+                      className="rounded p-1 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                      aria-label="Xoá thành viên"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </li>
                 ))}
