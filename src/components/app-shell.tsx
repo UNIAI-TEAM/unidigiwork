@@ -261,10 +261,19 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
     };
   }, [userOpen]);
 
+  const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
       <button aria-label="Open sidebar" className="rounded-lg p-2 hover:bg-surface-2 lg:hidden" onClick={onOpenSidebar}>
         <Menu className="h-5 w-5" />
+      </button>
+      <button
+        aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+        className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"
+        onClick={toggleCollapsed}
+      >
+        {collapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
       </button>
       <div className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
