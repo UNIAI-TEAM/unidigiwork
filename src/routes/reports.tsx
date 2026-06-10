@@ -48,6 +48,13 @@ function ReportsPage() {
                 <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
                 </button>
+                <Link
+                  to="/reports/$type"
+                  params={{ type: tab }}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+                >
+                  <ArrowUpRight className="h-4 w-4" /> {t("rp.drill")}
+                </Link>
                 <button className="rounded-lg bg-surface p-2 text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
               </div>
             </div>
