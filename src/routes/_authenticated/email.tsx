@@ -604,6 +604,24 @@ function EmailHubPage() {
           </aside>
         </div>
       </main>
+
+      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} />
+      <AdvancedFilterDialog
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+        value={advanced}
+        onChange={setAdvanced}
+        availableLabels={labels.map((l: any) => l.name)}
+      />
+      <AiAssistantDialog open={aiOpen} onOpenChange={setAiOpen} emailSubject={selectedEmail.subject} />
+      <LabelsRulesDialog
+        open={labelsOpen}
+        onOpenChange={setLabelsOpen}
+        labels={labels.map((l: any) => ({ name: l.name, color: l.color }))}
+        onChangeLabels={(v) => setLabels(v.map((x) => ({ ...x, count: labels.find((l: any) => l.name === x.name)?.count ?? 0 })))}
+        rules={rules}
+        onChangeRules={setRules}
+      />
     </div>
   );
 }
