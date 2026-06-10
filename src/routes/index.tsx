@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   LayoutDashboard, MessageSquare, Video, ListChecks, FileText, BookOpen,
   Workflow, Users, BarChart3, Bot, Plus, Search, Bell, Settings, Calendar,
-  ShieldCheck, ChevronDown, MoreHorizontal, Mic, MicOff, VideoIcon, Monitor,
+  ShieldCheck, ChevronDown, MoreHorizontal, Mic, MicOff, VideoIcon, Monitor, Menu, X,
   Hand, MessageCircle, Sparkles, PhoneOff, Maximize2, Hash, Circle, Cloud,
 } from "lucide-react";
 
@@ -99,19 +100,39 @@ function ControlButton({ icon: Icon, label, badge, danger }: { icon: any; label:
 }
 
 function Index() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="flex min-h-screen bg-background text-foreground">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <button
+          aria-label="Close sidebar"
+          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-border bg-surface transition-transform lg:static lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex items-center gap-2 px-5 py-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">U</div>
-          <div className="leading-tight">
+          <div className="flex-1 leading-tight">
             <div className="text-base font-bold tracking-wide">UNIWORK</div>
             <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
           </div>
+          <button
+            aria-label="Close sidebar"
+            className="rounded p-1 text-muted-foreground hover:bg-surface-2 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3">
           <NavItem icon={LayoutDashboard} label="Dashboard" chevron />
           <NavItem icon={MessageSquare} label="Chat" active />
           <NavItem icon={Video} label="Meetings" chevron />
@@ -160,23 +181,30 @@ function Index() {
       </aside>
 
       {/* Main */}
-      <main className="flex flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="flex items-center gap-4 border-b border-border px-6 py-3">
-          <div className="relative flex-1 max-w-2xl">
+        <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
+          <button
+            aria-label="Open sidebar"
+            className="rounded-lg p-2 hover:bg-surface-2 lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              placeholder="Search in UNIWORK (Ctrl + K)"
+              placeholder="Search…"
               className="w-full rounded-lg bg-surface-2 py-2.5 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
           <span className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-medium text-destructive">
             <Circle className="h-2 w-2 fill-current" /> Live
           </span>
-          <span className="font-mono text-sm tabular-nums">00:28:45</span>
-          <button className="rounded-lg p-2 hover:bg-surface-2"><ShieldCheck className="h-5 w-5 text-muted-foreground" /></button>
-          <button className="rounded-lg p-2 hover:bg-surface-2"><Settings className="h-5 w-5 text-muted-foreground" /></button>
-          <button className="flex items-center gap-1 rounded-lg p-2 hover:bg-surface-2">
+          <span className="hidden font-mono text-sm tabular-nums sm:inline">00:28:45</span>
+          <button className="hidden rounded-lg p-2 hover:bg-surface-2 xl:block"><ShieldCheck className="h-5 w-5 text-muted-foreground" /></button>
+          <button className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"><Settings className="h-5 w-5 text-muted-foreground" /></button>
+          <button className="hidden items-center gap-1 rounded-lg p-2 hover:bg-surface-2 md:flex">
             <Users className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm">16</span>
           </button>
@@ -184,50 +212,50 @@ function Index() {
             <Bell className="h-5 w-5 text-muted-foreground" />
             <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">12</span>
           </button>
-          <button className="rounded-lg p-2 hover:bg-surface-2"><Calendar className="h-5 w-5 text-muted-foreground" /></button>
+          <button className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"><Calendar className="h-5 w-5 text-muted-foreground" /></button>
           <div className="flex items-center gap-2 rounded-lg bg-surface-2 px-2 py-1.5">
             <img src={avatar("nguyen-van-a-1")} className="h-8 w-8 rounded-full object-cover" alt="" />
-            <div className="text-sm leading-tight">
+            <div className="hidden text-sm leading-tight sm:block">
               <div className="font-medium">Nguyễn Văn A</div>
               <div className="text-[11px] text-muted-foreground">Giám đốc Điều hành</div>
             </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
           </div>
         </header>
 
         {/* Body: meeting + right panel */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden xl:flex-row">
           {/* Meeting area */}
-          <section className="flex flex-1 flex-col overflow-y-auto p-6">
-            <div className="mb-4 flex items-start justify-between">
-              <div>
+          <section className="flex min-w-0 flex-1 flex-col overflow-y-auto p-3 sm:p-6">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
                 <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
                   <Hash className="h-4 w-4 text-primary" />
                   <span className="font-medium text-primary">Sprint-6</span>
                   <span>/</span>
                   <span>Meetings</span>
                 </div>
-                <h1 className="text-2xl font-bold">Sprint 6 – Daily Standup</h1>
-                <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                <h1 className="text-xl font-bold sm:text-2xl">Sprint 6 – Daily Standup</h1>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> LiveKit Meeting</span>
                   <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> 16 participants</span>
                   <span className="flex items-center gap-1.5"><Circle className="h-2 w-2 fill-destructive text-destructive" /> Recording</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-2">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden -space-x-2 sm:flex">
                   {participants.slice(0, 5).map((p) => (
                     <img key={p.seed} src={avatar(p.seed)} alt={p.name} className="h-8 w-8 rounded-full border-2 border-surface object-cover" />
                   ))}
                   <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-xs">+8</span>
                 </div>
-                <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Invite</button>
+                <button className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-4">Invite</button>
                 <button className="rounded-lg bg-surface-2 p-2"><MoreHorizontal className="h-5 w-5" /></button>
               </div>
             </div>
 
             {/* Video grid */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <VideoTile name={participants[0].name} seed={participants[0].seed} highlight />
               <VideoTile name={participants[1].name} seed={participants[1].seed} />
               <VideoTile name={participants[2].name} seed={participants[2].seed} />
@@ -237,7 +265,7 @@ function Index() {
             </div>
 
             {/* Small row */}
-            <div className="mt-3 grid grid-cols-5 gap-3">
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {participants.slice(6, 10).map((p) => (
                 <div key={p.seed} className="relative aspect-video overflow-hidden rounded-xl bg-surface-2">
                   <img src={avatar(p.seed)} alt={p.name} className="h-full w-full object-cover" />
@@ -253,7 +281,7 @@ function Index() {
             </div>
 
             {/* Controls */}
-            <div className="mt-6 flex items-center justify-center gap-5">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-5">
               <ControlButton icon={MicOff} label="Unmute" />
               <ControlButton icon={VideoIcon} label="Start video" />
               <ControlButton icon={Monitor} label="Share screen" />
@@ -277,7 +305,7 @@ function Index() {
                   <button className="rounded p-1.5 hover:bg-surface-2"><Maximize2 className="h-4 w-4" /></button>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-lg bg-surface-2 p-3 text-xs">
                   <div className="mb-2 font-semibold">STOS Dashboard</div>
                   <ul className="space-y-1 text-muted-foreground">
@@ -312,8 +340,8 @@ function Index() {
           </section>
 
           {/* Right panel */}
-          <aside className="flex w-96 shrink-0 flex-col border-l border-border bg-surface">
-            <div className="flex gap-5 border-b border-border px-5 pt-4 text-sm">
+          <aside className="flex w-full shrink-0 flex-col border-t border-border bg-surface xl:w-96 xl:border-l xl:border-t-0">
+            <div className="flex gap-5 overflow-x-auto border-b border-border px-5 pt-4 text-sm">
               <button className="border-b-2 border-primary pb-3 font-medium">AI Copilot</button>
               <button className="pb-3 text-muted-foreground">Chat</button>
               <button className="pb-3 text-muted-foreground">Participants (16)</button>
