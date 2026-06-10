@@ -126,9 +126,31 @@ function EmailHubPage() {
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
+  function timeSortValue(e: Email): number {
+    const groupWeight = e.group === "Hôm nay" ? 3 : e.group === "Hôm qua" ? 2 : 1;
+    if (e.time.includes("AM") || e.time.includes("PM")) {
+      const m = e.time.match(/(\d+):(\d+)/);
+      if (m) {
+        let hour = parseInt(m[1]);
+        const minute = parseInt(m[2]);
+        if (e.time.includes("PM") && hour !== 12) hour += 12;
+        if (e.time.includes("AM") && hour === 12) hour = 0;
+        return groupWeight * 10000 + hour * 60 + minute;
+      }
+    }
+    return groupWeight * 10000;
+  }
+
+  function prioritySortValue(e: Email): number {
+    if (e.unread && e.starred) return 3;
+    if (e.unread) return 2;
+    if (e.starred) return 1;
+    return 0;
+  }
+
   const filteredEmails = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return EMAILS.filter((e) => {
+    const list = EMAILS.filter((e) => {
       const matchQuery =
         !q ||
         e.from.toLowerCase().includes(q) ||
@@ -138,13 +160,23 @@ function EmailHubPage() {
       const matchUnread = !filterUnread || e.unread;
       return matchQuery && matchLabel && matchUnread;
     });
-  }, [searchQuery, filterLabel, filterUnread]);
+    return list.slice().sort((a, b) => {
+      if (sortBy === "priority") {
+        return prioritySortValue(b) - prioritySortValue(a);
+      }
+      return timeSortValue(b) - timeSortValue(a);
+    });
+  }, [searchQuery, filterLabel, filterUnread, sortBy]);
 
   const groups: Record<string, Email[]> = {};
-  filteredEmails.forEach((e) => {
-    groups[e.group] = groups[e.group] || [];
-    groups[e.group].push(e);
-  });
+  if (sortBy === "priority") {
+    groups["Theo mức độ ưu tiên"] = filteredEmails;
+  } else {
+    filteredEmails.forEach((e) => {
+      groups[e.group] = groups[e.group] || [];
+      groups[e.group].push(e);
+    });
+  }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
