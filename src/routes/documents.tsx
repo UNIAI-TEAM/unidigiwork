@@ -119,11 +119,59 @@ function Suggestion({ icon, label }: { icon: string; label: string }) {
 
 function DocumentsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [selected, setSelected] = useState<Doc | null>(null);
+  const [showNew, setShowNew] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newFolder, setNewFolder] = useState("My Documents");
+  const [saving, setSaving] = useState(false);
+
+  const loadDocs = async () => {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error) { toast.error("Không tải được tài liệu"); return; }
+    setDocs(data as Doc[]);
+  };
+
+  useEffect(() => { loadDocs(); }, []);
+
+  const handleCreate = async () => {
+    if (!newTitle.trim()) { toast.error("Vui lòng nhập tiêu đề"); return; }
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("documents")
+      .insert({ title: newTitle.trim(), folder: newFolder.trim() || "My Documents", content: "" })
+      .select()
+      .single();
+    setSaving(false);
+    if (error) { toast.error("Lưu thất bại: " + error.message); return; }
+    toast.success("Đã tạo tài liệu");
+    setDocs((d) => [data as Doc, ...d]);
+    setSelected(data as Doc);
+    setShowNew(false);
+    setNewTitle("");
+    setNewFolder("My Documents");
+  };
+
+  const updateSelected = async (patch: Partial<Pick<Doc, "title" | "content">>) => {
+    if (!selected) return;
+    const next = { ...selected, ...patch };
+    setSelected(next);
+    setDocs((d) => d.map((x) => (x.id === next.id ? next : x)));
+    const { error } = await supabase.from("documents").update(patch).eq("id", selected.id);
+    if (error) toast.error("Lưu thất bại");
+  };
+
+  // group user docs by folder
+  const userFolders = Array.from(new Set(docs.map((d) => d.folder)));
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="documents" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
-        <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
+        <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} onNew={() => setShowNew(true)} />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
           {/* Document tree */}
@@ -141,9 +189,32 @@ function DocumentsPage() {
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input placeholder="Quick find" className="w-full rounded-md bg-surface-2 py-1.5 pl-8 pr-2 text-xs placeholder:text-muted-foreground focus:outline-none" />
               </div>
-              <button className="rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70"><Plus className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setShowNew(true)} title="New document" className="rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70"><Plus className="h-3.5 w-3.5" /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-2 pb-3">
+              {userFolders.length > 0 && (
+                <div className="mb-2 border-b border-border pb-2">
+                  {userFolders.map((f) => (
+                    <div key={f}>
+                      <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <Folder className="h-3.5 w-3.5 text-primary" /> {f}
+                      </div>
+                      {docs.filter((d) => d.folder === f).map((d) => (
+                        <button
+                          key={d.id}
+                          onClick={() => setSelected(d)}
+                          className={`flex w-full items-center gap-1.5 rounded px-2 py-1.5 pl-7 text-sm ${
+                            selected?.id === d.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                          }`}
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span className="truncate">{d.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
               {tree.map((n) => <TreeRow key={n.name} node={n} />)}
             </div>
             <div className="border-t border-border p-3 text-xs">
