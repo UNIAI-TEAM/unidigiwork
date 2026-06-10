@@ -475,7 +475,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Tạo mới"
-      className="absolute right-0 top-[calc(100%+8px)] z-50 w-[340px] origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40"
+      className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]"
     >
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/15 via-surface to-surface px-4 py-3">
         <div>
@@ -531,7 +531,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Trợ lý AI"
-      className="absolute right-0 top-[calc(100%+8px)] z-50 w-[380px] origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40"
+      className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[380px]"
     >
       <div className="flex items-center gap-3 border-b border-border bg-gradient-to-br from-primary/20 via-surface to-surface px-4 py-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 text-primary">
@@ -648,7 +648,7 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Lịch"
-      className="absolute right-0 top-[calc(100%+8px)] z-50 w-[340px] origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40"
+      className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]"
     >
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 via-surface to-surface p-3">
         <div>
