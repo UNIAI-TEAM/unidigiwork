@@ -303,9 +303,25 @@ function EmailHubPage() {
                 >
                   <MailOpen className="h-3.5 w-3.5" /> Chưa đọc
                 </button>
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs hover:bg-surface-2">
-                  <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp <ChevronDown className="h-3 w-3" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${sortBy !== "time" ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}>
+                      <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[14rem]">
+                    <DropdownMenuItem onClick={() => setSortBy("time")} className="cursor-pointer">
+                      <Clock className="h-4 w-4" />
+                      <span className="flex-1">Thời gian (mới nhất)</span>
+                      {sortBy === "time" && <Check className="h-4 w-4 text-primary" />}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortBy("priority")} className="cursor-pointer">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="flex-1">Mức độ ưu tiên</span>
+                      {sortBy === "priority" && <Check className="h-4 w-4 text-primary" />}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 {(searchQuery || filterLabel || filterUnread) && (
                   <button
                     onClick={() => { setSearchQuery(""); setFilterLabel(null); setFilterUnread(false); }}
