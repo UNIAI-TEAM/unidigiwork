@@ -9,7 +9,7 @@ import {
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
 const searchSchema = z.object({
-  tab: z.enum(["profile", "account", "notifications", "appearance", "language", "integrations", "team", "security", "billing", "data"]).optional(),
+  tab: z.enum(["profile", "account", "password", "notifications", "appearance", "language", "integrations", "team", "security", "billing", "data"]).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -23,11 +23,12 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type SectionKey = "profile" | "account" | "notifications" | "appearance" | "language" | "integrations" | "team" | "security" | "billing" | "data";
+type SectionKey = "profile" | "account" | "password" | "notifications" | "appearance" | "language" | "integrations" | "team" | "security" | "billing" | "data";
 
 const SECTIONS: { key: SectionKey; label: string; desc: string; icon: any }[] = [
   { key: "profile", label: "Hồ sơ cá nhân", desc: "Tên, ảnh đại diện, chức danh", icon: User },
-  { key: "account", label: "Tài khoản", desc: "Email, mật khẩu, đăng nhập", icon: KeyRound },
+  { key: "account", label: "Tài khoản", desc: "Email, tên đăng nhập", icon: KeyRound },
+  { key: "password", label: "Đổi mật khẩu", desc: "Mật khẩu, xác thực 2 lớp", icon: Lock },
   { key: "notifications", label: "Thông báo", desc: "Email, in-app, push", icon: Bell },
   { key: "appearance", label: "Giao diện", desc: "Chủ đề sáng/tối, mật độ", icon: Palette },
   { key: "language", label: "Ngôn ngữ & múi giờ", desc: "Tiếng Việt, GMT+7", icon: Languages },
@@ -119,6 +120,20 @@ function AccountSection() {
         </Field>
         <Field label="Tên đăng nhập"><Input defaultValue="nguyenvana" /></Field>
       </div>
+      <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+        <div className="text-sm font-semibold text-destructive">Vùng nguy hiểm</div>
+        <p className="text-xs text-muted-foreground">Xóa tài khoản sẽ gỡ toàn bộ dữ liệu cá nhân khỏi workspace.</p>
+        <button className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-destructive/60 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10">
+          <Trash2 className="h-3.5 w-3.5" /> Xóa tài khoản
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PasswordSection() {
+  return (
+    <div className="space-y-5">
       <div className="rounded-xl border border-border/60 bg-surface-2/40 p-4">
         <div className="text-sm font-semibold">Đổi mật khẩu</div>
         <p className="text-xs text-muted-foreground">Khuyến nghị đổi mật khẩu 90 ngày một lần.</p>
@@ -131,13 +146,7 @@ function AccountSection() {
           <Lock className="h-3.5 w-3.5" /> Cập nhật mật khẩu
         </button>
       </div>
-      <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
-        <div className="text-sm font-semibold text-destructive">Vùng nguy hiểm</div>
-        <p className="text-xs text-muted-foreground">Xóa tài khoản sẽ gỡ toàn bộ dữ liệu cá nhân khỏi workspace.</p>
-        <button className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-destructive/60 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10">
-          <Trash2 className="h-3.5 w-3.5" /> Xóa tài khoản
-        </button>
-      </div>
+      <Toggle title="Xác thực 2 lớp (2FA)" desc="Bắt buộc nhập mã từ ứng dụng Authenticator khi đăng nhập" defaultOn />
     </div>
   );
 }
@@ -364,7 +373,7 @@ function DataSection() {
 }
 
 const RENDERS: Record<SectionKey, React.FC> = {
-  profile: ProfileSection, account: AccountSection, notifications: NotificationsSection,
+  profile: ProfileSection, account: AccountSection, password: PasswordSection, notifications: NotificationsSection,
   appearance: AppearanceSection, language: LanguageSection, integrations: IntegrationsSection,
   team: TeamSection, security: SecuritySection, billing: BillingSection, data: DataSection,
 };
