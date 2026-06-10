@@ -5,9 +5,11 @@ import {
   Trash2, Archive, AlertOctagon, Paperclip, RefreshCw, Filter, ArrowUpDown,
   Reply, ReplyAll, Forward, Tag, Sparkles, Bot, FileText, FileSpreadsheet,
   Download, ArrowLeft, MailOpen, X, Clock, AlertCircle, Check, Settings2,
+  ChevronLeft, ChevronRight, CheckSquare, Square,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,16 +73,47 @@ type Email = {
   hasAttachment?: boolean;
   selected?: boolean;
   labels?: string[];
+  mailbox?: "inbox" | "sent" | "drafts" | "spam" | "trash" | "archive" | "bin";
 };
 
 const EMAILS: Email[] = [
-  { id: "1", from: "Lê Minh Đức", subject: "RFQ - Hệ thống máy chủ cho dự án STOS", preview: "Kính gửi anh/chị, Chúng tôi xin gửi yêu cầu báo giá...", time: "10:24 AM", group: "Hôm nay", unread: true, starred: true, hasAttachment: true, selected: true, labels: ["Dự án STOS"] },
-  { id: "2", from: "Trần Thùy Linh", subject: "Review hợp đồng triển khai Smart University", preview: "Anh vui lòng xem xét và phản hồi các nội dung...", time: "09:15 AM", group: "Hôm nay", unread: true, starred: true, labels: ["Hợp đồng", "Khách hàng"] },
-  { id: "3", from: "Vũ Hoàng Nam", subject: "Yêu cầu phê duyệt ngân sách Q2/2025", preview: "Theo kế hoạch, chúng tôi đề xuất ngân sách...", time: "08:47 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"] },
-  { id: "4", from: "Nguyễn Lan Anh", subject: "Kế hoạch đào tạo nhân sự tháng 6", preview: "Danh sách học viên và nội dung đào tạo chi tiết...", time: "Yesterday", group: "Hôm qua", starred: true, labels: ["Nhân sự"] },
-  { id: "5", from: "Phạm Quốc Huy", subject: "Re: Hợp đồng bảo trì hệ thống", preview: "Cảm ơn anh. Chúng tôi sẽ xử lý trong hôm nay...", time: "Yesterday", group: "Hôm qua", labels: ["Hợp đồng"] },
-  { id: "6", from: "Đỗ Thành Công", subject: "Hóa đơn VAT số 2025-06-001", preview: "Đính kèm hóa đơn VAT và bảng kê chi tiết.", time: "12/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Hóa đơn", "Khách hàng"] },
-  { id: "7", from: "support@cloudvendor.com", subject: "Thông báo nâng cấp dịch vụ", preview: "Kính gửi Quý khách hàng, Chúng tôi xin thông...", time: "12/05/2025", group: "Tuần này", labels: ["Khách hàng"] },
+  { id: "1", mailbox: "inbox", from: "Lê Minh Đức", subject: "RFQ - Hệ thống máy chủ cho dự án STOS", preview: "Kính gửi anh/chị, Chúng tôi xin gửi yêu cầu báo giá...", time: "10:24 AM", group: "Hôm nay", unread: true, starred: true, hasAttachment: true, selected: true, labels: ["Dự án STOS"] },
+  { id: "2", mailbox: "inbox", from: "Trần Thùy Linh", subject: "Review hợp đồng triển khai Smart University", preview: "Anh vui lòng xem xét và phản hồi các nội dung...", time: "09:15 AM", group: "Hôm nay", unread: true, starred: true, labels: ["Hợp đồng", "Khách hàng"] },
+  { id: "3", mailbox: "inbox", from: "Vũ Hoàng Nam", subject: "Yêu cầu phê duyệt ngân sách Q2/2025", preview: "Theo kế hoạch, chúng tôi đề xuất ngân sách...", time: "08:47 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"] },
+  { id: "4", mailbox: "inbox", from: "Nguyễn Lan Anh", subject: "Kế hoạch đào tạo nhân sự tháng 6", preview: "Danh sách học viên và nội dung đào tạo chi tiết...", time: "Yesterday", group: "Hôm qua", starred: true, labels: ["Nhân sự"] },
+  { id: "5", mailbox: "inbox", from: "Phạm Quốc Huy", subject: "Re: Hợp đồng bảo trì hệ thống", preview: "Cảm ơn anh. Chúng tôi sẽ xử lý trong hôm nay...", time: "Yesterday", group: "Hôm qua", labels: ["Hợp đồng"] },
+  { id: "6", mailbox: "inbox", from: "Đỗ Thành Công", subject: "Hóa đơn VAT số 2025-06-001", preview: "Đính kèm hóa đơn VAT và bảng kê chi tiết.", time: "12/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Hóa đơn", "Khách hàng"] },
+  { id: "7", mailbox: "inbox", from: "support@cloudvendor.com", subject: "Thông báo nâng cấp dịch vụ", preview: "Kính gửi Quý khách hàng, Chúng tôi xin thông...", time: "12/05/2025", group: "Tuần này", labels: ["Khách hàng"] },
+  // Inbox extras (for pagination demo)
+  { id: "i8", mailbox: "inbox", from: "Hoàng Mai", subject: "Cập nhật tiến độ sprint 6", preview: "Sprint 6 đã hoàn thành 78% công việc...", time: "11/05/2025", group: "Tuần này", labels: ["Dự án STOS"] },
+  { id: "i9", mailbox: "inbox", from: "Bùi Quang", subject: "Lịch họp khách hàng tuần tới", preview: "Đề xuất lịch họp với khách hàng UBOS...", time: "10/05/2025", group: "Tuần này", labels: ["Khách hàng"] },
+  { id: "i10", mailbox: "inbox", from: "Lê Hà", subject: "Tài liệu kiến trúc giải pháp v2", preview: "Phiên bản 2 của tài liệu kiến trúc...", time: "10/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Dự án STOS"] },
+  { id: "i11", mailbox: "inbox", from: "Trịnh Hoa", subject: "Phản hồi đề xuất ngân sách", preview: "Tôi đã xem xét đề xuất và có vài ý kiến...", time: "09/05/2025", group: "Tuần này" },
+  { id: "i12", mailbox: "inbox", from: "Ngô Tuấn", subject: "Mời tham dự hội thảo CNTT 2025", preview: "Hội thảo CNTT thường niên sẽ tổ chức...", time: "08/05/2025", group: "Tuần này" },
+
+  // Sent
+  { id: "s1", mailbox: "sent", from: "Bạn", subject: "Re: RFQ - Báo giá hệ thống máy chủ", preview: "Gửi anh Đức, đính kèm báo giá chi tiết cho RFQ...", time: "11:30 AM", group: "Hôm nay", hasAttachment: true, labels: ["Dự án STOS"] },
+  { id: "s2", mailbox: "sent", from: "Bạn", subject: "Báo cáo tuần — Dự án STOS", preview: "Kính gửi BGĐ, em xin gửi báo cáo tiến độ tuần...", time: "Yesterday", group: "Hôm qua", labels: ["Dự án STOS"] },
+  { id: "s3", mailbox: "sent", from: "Bạn", subject: "Mời họp review hợp đồng", preview: "Kính mời anh chị tham dự buổi họp...", time: "Yesterday", group: "Hôm qua", labels: ["Hợp đồng"] },
+  { id: "s4", mailbox: "sent", from: "Bạn", subject: "Xác nhận thanh toán hóa đơn 2025-06-001", preview: "Đã xác nhận chuyển khoản. Cảm ơn anh chị...", time: "12/05/2025", group: "Tuần này", labels: ["Hóa đơn"] },
+  { id: "s5", mailbox: "sent", from: "Bạn", subject: "Tài liệu onboarding nhân sự mới", preview: "Gửi anh chị bộ tài liệu onboarding...", time: "11/05/2025", group: "Tuần này", hasAttachment: true, labels: ["Nhân sự"] },
+  { id: "s6", mailbox: "sent", from: "Bạn", subject: "Re: Yêu cầu phê duyệt ngân sách Q2", preview: "Em đã xem và đồng ý với đề xuất...", time: "10/05/2025", group: "Tuần này" },
+
+  // Spam
+  { id: "sp1", mailbox: "spam", from: "promo@bigsale.com", subject: "🎁 Khuyến mại 90% — chỉ hôm nay!", preview: "Cơ hội cuối cùng nhận voucher 5 triệu...", time: "08:00 AM", group: "Hôm nay" },
+  { id: "sp2", mailbox: "spam", from: "winner@lucky-draw.net", subject: "Bạn đã trúng iPhone 16 Pro Max!", preview: "Nhấn vào link để nhận giải thưởng...", time: "Yesterday", group: "Hôm qua" },
+  { id: "sp3", mailbox: "spam", from: "ceo@unknown-corp.biz", subject: "Cơ hội đầu tư sinh lời 300%/tháng", preview: "Quỹ đầu tư mới mở, lợi nhuận khủng...", time: "12/05/2025", group: "Tuần này" },
+  { id: "sp4", mailbox: "spam", from: "no-reply@phishing-bank.xyz", subject: "Cảnh báo: tài khoản bị khóa", preview: "Vui lòng xác minh thông tin ngay...", time: "11/05/2025", group: "Tuần này" },
+
+  // Drafts
+  { id: "d1", mailbox: "drafts", from: "Bạn", subject: "(Bản nháp) Đề xuất hợp tác với UBOS", preview: "Kính gửi anh/chị, em xin gửi đề xuất...", time: "09:00 AM", group: "Hôm nay" },
+  { id: "d2", mailbox: "drafts", from: "Bạn", subject: "(Bản nháp) Báo cáo cuối tháng", preview: "Báo cáo tổng kết các chỉ số...", time: "Yesterday", group: "Hôm qua" },
+
+  // Archive
+  { id: "a1", mailbox: "archive", from: "Lê Quốc", subject: "Tài liệu lưu trữ Q1/2025", preview: "Đính kèm các tài liệu lưu trữ quý 1...", time: "01/04/2025", group: "Tuần này", hasAttachment: true },
+
+  // Trash
+  { id: "t1", mailbox: "trash", from: "Phạm Hùng", subject: "Email cũ — đã xoá", preview: "Nội dung không còn dùng tới...", time: "01/05/2025", group: "Tuần này" },
 ];
 
 const QUICK_SUMMARY = [
@@ -144,6 +177,9 @@ function EmailHubPage() {
   const [aiOpen, setAiOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [advanced, setAdvanced] = useState<AdvancedFilters>(EMPTY_FILTERS);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
   const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
 
   function timeSortValue(e: Email): number {
@@ -171,6 +207,7 @@ function EmailHubPage() {
   const filteredEmails = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const list = EMAILS.filter((e) => {
+      const matchMailbox = (e.mailbox ?? "inbox") === activeMailbox;
       const matchQuery =
         !q ||
         e.from.toLowerCase().includes(q) ||
@@ -186,7 +223,7 @@ function EmailHubPage() {
       const matchAdvFrom = !a.from || e.from.toLowerCase().includes(a.from.toLowerCase());
       const matchAdvAttach = !a.hasAttachment || !!e.hasAttachment;
       const matchAdvLabels = a.labels.length === 0 || a.labels.every((l) => e.labels?.includes(l));
-      return matchQuery && matchLabel && matchUnread && matchAdvKeyword && matchAdvFrom && matchAdvAttach && matchAdvLabels;
+      return matchMailbox && matchQuery && matchLabel && matchUnread && matchAdvKeyword && matchAdvFrom && matchAdvAttach && matchAdvLabels;
     });
     return list.slice().sort((a, b) => {
       if (sortBy === "priority") {
@@ -194,13 +231,42 @@ function EmailHubPage() {
       }
       return timeSortValue(b) - timeSortValue(a);
     });
-  }, [searchQuery, filterLabel, filterUnread, sortBy]);
+  }, [searchQuery, filterLabel, filterUnread, sortBy, activeMailbox, advanced]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmails.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedEmails = useMemo(
+    () => filteredEmails.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredEmails, currentPage]
+  );
+
+  // Reset paging + selection when mailbox/filters change
+  function changeMailbox(key: string) {
+    setActiveMailbox(key);
+    setPage(1);
+    setCheckedIds(new Set());
+  }
+
+  const allOnPageChecked = pagedEmails.length > 0 && pagedEmails.every((e) => checkedIds.has(e.id));
+  const someOnPageChecked = pagedEmails.some((e) => checkedIds.has(e.id));
+  function toggleAllOnPage() {
+    const next = new Set(checkedIds);
+    if (allOnPageChecked) pagedEmails.forEach((e) => next.delete(e.id));
+    else pagedEmails.forEach((e) => next.add(e.id));
+    setCheckedIds(next);
+  }
+  function toggleOne(id: string) {
+    const next = new Set(checkedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setCheckedIds(next);
+  }
+  function clearChecked() { setCheckedIds(new Set()); }
 
   const groups: Record<string, Email[]> = {};
   if (sortBy === "priority") {
-    groups["Theo mức độ ưu tiên"] = filteredEmails;
+    groups["Theo mức độ ưu tiên"] = pagedEmails;
   } else {
-    filteredEmails.forEach((e) => {
+    pagedEmails.forEach((e) => {
       groups[e.group] = groups[e.group] || [];
       groups[e.group].push(e);
     });
@@ -250,7 +316,7 @@ function EmailHubPage() {
                   const active = activeMailbox === m.key;
                   return (
                     <li key={m.key}>
-                      <button onClick={() => setActiveMailbox(m.key)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}>
+                      <button onClick={() => changeMailbox(m.key)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}>
                         <Icon className="h-[18px] w-[18px]" />
                         <span className="flex-1 text-left">{m.label}</span>
                         <span className="text-[11px] tabular-nums text-muted-foreground">{m.count}</span>
@@ -393,23 +459,93 @@ function EmailHubPage() {
               </div>
             </div>
 
+            {/* Bulk select bar */}
+            <div className="flex items-center gap-2 border-b border-border bg-surface/40 px-4 py-2">
+              <button
+                onClick={toggleAllOnPage}
+                className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                title={allOnPageChecked ? "Bỏ chọn trang này" : "Chọn tất cả trang này"}
+              >
+                {allOnPageChecked ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className={`h-4 w-4 ${someOnPageChecked ? "text-primary" : ""}`} />}
+                <span>{checkedIds.size > 0 ? `Đã chọn ${checkedIds.size}` : "Chọn"}</span>
+              </button>
+              {checkedIds.size > 0 ? (
+                <div className="ml-1 flex items-center gap-0.5">
+                  <BulkBtn icon={Archive} label="Lưu trữ" onClick={clearChecked} />
+                  <BulkBtn icon={Trash2} label="Xóa" onClick={clearChecked} />
+                  <BulkBtn icon={MailOpen} label="Đánh dấu đã đọc" onClick={clearChecked} />
+                  <BulkBtn icon={Tag} label="Gắn nhãn" onClick={clearChecked} />
+                  <BulkBtn icon={AlertOctagon} label="Spam" onClick={clearChecked} />
+                  <button onClick={clearChecked} className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2" title="Bỏ chọn">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2" title="Làm mới">
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                {filteredEmails.length === 0
+                  ? "0"
+                  : `${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, filteredEmails.length)} / ${filteredEmails.length}`}
+              </span>
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className="rounded p-1 text-muted-foreground hover:bg-surface-2 disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="rounded p-1 text-muted-foreground hover:bg-surface-2 disabled:opacity-40"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto">
+              {filteredEmails.length === 0 && (
+                <div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center text-sm text-muted-foreground">
+                  <Inbox className="mb-2 h-8 w-8 opacity-50" />
+                  Không có email phù hợp trong hộp thư này.
+                </div>
+              )}
               {Object.entries(groups).map(([group, items]) => (
                 <div key={group}>
                   <div className="sticky top-0 z-10 bg-background/95 px-4 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">{group}</div>
                   <ul>
                     {items.map((e) => {
                       const isActive = e.id === selected;
+                      const isChecked = checkedIds.has(e.id);
                       return (
                         <li key={e.id}>
-                          <button
-                            onClick={() => setSelected(e.id)}
-                            className={`flex w-full gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
+                          <div
+                            className={`group flex w-full gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
                               isActive ? "border-primary bg-primary/10" : "border-transparent hover:bg-surface-2/60"
                             }`}
                           >
-                            <img src={avatar(e.from)} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
-                            <div className="min-w-0 flex-1">
+                            <div
+                              className="flex h-9 w-9 shrink-0 items-center justify-center"
+                              onClick={(ev) => ev.stopPropagation()}
+                            >
+                              <div className={`${isChecked ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`}>
+                                <Checkbox checked={isChecked} onCheckedChange={() => toggleOne(e.id)} />
+                              </div>
+                              {!isChecked && (
+                                <img
+                                  src={avatar(e.from)}
+                                  alt=""
+                                  className="absolute h-9 w-9 rounded-full object-cover group-hover:opacity-0"
+                                  onClick={() => setSelected(e.id)}
+                                />
+                              )}
+                            </div>
+                            <button onClick={() => setSelected(e.id)} className="min-w-0 flex-1 text-left">
                               <div className="flex items-center justify-between gap-2">
                                 <span className={`truncate text-sm ${e.unread ? "font-semibold" : "font-medium text-muted-foreground"}`}>{e.from}</span>
                                 <span className="shrink-0 text-[11px] text-muted-foreground">{e.time}</span>
@@ -420,14 +556,38 @@ function EmailHubPage() {
                                 {e.hasAttachment && <Paperclip className="h-3 w-3 text-muted-foreground" />}
                                 {e.starred && <Star className="h-3 w-3 fill-amber-400 text-amber-400" />}
                               </div>
-                            </div>
-                          </button>
+                            </button>
+                          </div>
                         </li>
                       );
                     })}
                   </ul>
                 </div>
               ))}
+
+              {/* Pagination footer */}
+              {filteredEmails.length > 0 && (
+                <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+                  <span>Trang {currentPage} / {totalPages}</span>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }).map((_, i) => {
+                      const p = i + 1;
+                      const isCur = p === currentPage;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`h-6 min-w-6 rounded px-1.5 text-[11px] tabular-nums ${
+                            isCur ? "bg-primary text-primary-foreground" : "bg-surface-2 hover:bg-surface"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
