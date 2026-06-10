@@ -195,15 +195,21 @@ function EmailHubPage() {
                 <button className="rounded p-0.5 hover:bg-surface-2"><ChevronDown className="h-3 w-3" /></button>
               </div>
               <ul className="space-y-0.5">
-                {LABELS.map((l) => (
-                  <li key={l.name}>
-                    <button className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                      <span className={`h-2.5 w-2.5 rounded-sm ${l.color}`} />
-                      <span className="flex-1 text-left">{l.name}</span>
-                      <span className="text-[11px] tabular-nums">{l.count}</span>
-                    </button>
-                  </li>
-                ))}
+                {LABELS.map((l) => {
+                  const active = filterLabel === l.name;
+                  return (
+                    <li key={l.name}>
+                      <button
+                        onClick={() => setFilterLabel(active ? null : l.name)}
+                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
+                      >
+                        <span className={`h-2.5 w-2.5 rounded-sm ${l.color}`} />
+                        <span className="flex-1 text-left">{l.name}</span>
+                        <span className="text-[11px] tabular-nums">{l.count}</span>
+                      </button>
+                    </li>
+                  );
+                })}
                 <li>
                   <button className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                     <Plus className="h-3.5 w-3.5" />
