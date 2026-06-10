@@ -1336,7 +1336,41 @@ function AuditDialog({
   entries: AuditEntry[];
 }) {
   const [filter, setFilter] = useState<"all" | AuditTarget>("all");
-  const list = entries.filter((e) => filter === "all" || e.target === filter);
+  const [actor, setActor] = useState<string>("all");
+  const [keyword, setKeyword] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const actors = useMemo(
+    () => Array.from(new Set(entries.map((e) => e.actor))).sort(),
+    [entries],
+  );
+
+  const list = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    const fromTs = fromDate ? new Date(fromDate + "T00:00:00").getTime() : null;
+    const toTs = toDate ? new Date(toDate + "T23:59:59").getTime() : null;
+    return entries.filter((e) => {
+      if (filter !== "all" && e.target !== filter) return false;
+      if (actor !== "all" && e.actor !== actor) return false;
+      if (kw && !e.name.toLowerCase().includes(kw)) return false;
+      const ts = new Date(e.at).getTime();
+      if (fromTs !== null && ts < fromTs) return false;
+      if (toTs !== null && ts > toTs) return false;
+      return true;
+    });
+  }, [entries, filter, actor, keyword, fromDate, toDate]);
+
+  const hasFilter =
+    filter !== "all" || actor !== "all" || keyword !== "" || fromDate !== "" || toDate !== "";
+  const resetFilters = () => {
+    setFilter("all");
+    setActor("all");
+    setKeyword("");
+    setFromDate("");
+    setToDate("");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -1345,21 +1379,103 @@ function AuditDialog({
             <History className="size-5 text-emerald-600" /> Lịch sử thay đổi
           </DialogTitle>
         </DialogHeader>
-        <div className="flex items-center gap-2 mb-2">
-          {(["all", "milestone", "document"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`text-xs px-2.5 py-1 rounded-md border transition ${
-                filter === f
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {f === "all" ? "Tất cả" : f === "milestone" ? "Milestone" : "Tài liệu"}
-            </button>
-          ))}
-          <span className="ml-auto text-xs text-slate-500">{list.length} mục</span>
+        <div className="space-y-2.5 mb-2">
+          <div>
+            <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-1">
+              Loại
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(["all", "milestone", "document"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`text-xs px-2.5 py-1 rounded-md border transition ${
+                    filter === f
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {f === "all" ? "Tất cả" : f === "milestone" ? "Milestone" : "Tài liệu"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-1">
+              Người cập nhật
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => setActor("all")}
+                className={`text-xs px-2.5 py-1 rounded-md border transition ${
+                  actor === "all"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Tất cả
+              </button>
+              {actors.map((a) => (
+                <button
+                  key={a}
+                  onClick={() => setActor(a)}
+                  className={`text-xs px-2.5 py-1 rounded-md border transition ${
+                    actor === a
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="sm:col-span-1">
+              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-1">
+                Từ khoá
+              </div>
+              <Input
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Tên milestone / tài liệu"
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-1">
+                Từ ngày
+              </div>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-1">
+                Đến ngày
+              </div>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs text-slate-500">{list.length} mục</span>
+            {hasFilter && (
+              <button
+                onClick={resetFilters}
+                className="text-xs text-emerald-700 hover:underline font-medium"
+              >
+                Xoá bộ lọc
+              </button>
+            )}
+          </div>
         </div>
         <div className="max-h-[60vh] overflow-y-auto pr-1">
           {list.length === 0 ? (
