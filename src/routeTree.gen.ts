@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowsRouteImport } from './routes/workflows'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
@@ -31,6 +32,11 @@ const WorkflowsRoute = WorkflowsRouteImport.update({
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PeopleRoute = PeopleRouteImport.update({
@@ -73,9 +79,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsIndexRoute = ReportsIndexRouteImport.update({
-  id: '/reports/',
-  path: '/reports/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => ReportsRoute,
 } as any)
 const ReportsTypeRoute = ReportsTypeRouteImport.update({
   id: '/$type',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
+  '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -126,6 +133,7 @@ export interface FileRoutesById {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
+  '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -142,6 +150,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/people'
+    | '/reports'
     | '/tasks'
     | '/workflows'
     | '/documents'
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/people'
+    | '/reports'
     | '/tasks'
     | '/workflows'
     | '/_authenticated/documents'
@@ -187,9 +197,9 @@ export interface RootRouteChildren {
   KnowledgeRoute: typeof KnowledgeRoute
   MeetingRoute: typeof MeetingRoute
   PeopleRoute: typeof PeopleRoute
+  ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRoute
   WorkflowsRoute: typeof WorkflowsRoute
-  ReportsIndexRoute: typeof ReportsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -206,6 +216,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/people': {
@@ -266,10 +283,10 @@ declare module '@tanstack/react-router' {
     }
     '/reports/': {
       id: '/reports/'
-      path: '/reports'
+      path: '/'
       fullPath: '/reports/'
       preLoaderRoute: typeof ReportsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ReportsRoute
     }
     '/reports/$type': {
       id: '/reports/$type'
@@ -299,6 +316,19 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ReportsRouteChildren {
+  ReportsTypeRoute: typeof ReportsTypeRoute
+  ReportsIndexRoute: typeof ReportsIndexRoute
+}
+
+const ReportsRouteChildren: ReportsRouteChildren = {
+  ReportsTypeRoute: ReportsTypeRoute,
+  ReportsIndexRoute: ReportsIndexRoute,
+}
+
+const ReportsRouteWithChildren =
+  ReportsRoute._addFileChildren(ReportsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -308,9 +338,9 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeRoute: KnowledgeRoute,
   MeetingRoute: MeetingRoute,
   PeopleRoute: PeopleRoute,
+  ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRoute,
   WorkflowsRoute: WorkflowsRoute,
-  ReportsIndexRoute: ReportsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
