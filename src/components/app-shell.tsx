@@ -241,6 +241,18 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { varia
               </button>
             </div>
 
+            {/* Quick actions */}
+            <div className="flex gap-2 border-b border-border px-3 py-2.5">
+              <Link
+                to="/settings"
+                search={{ tab: 'account' }}
+                onClick={() => setUserOpen(false)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary/15 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/25"
+              >
+                <KeyRound className="h-3.5 w-3.5" /> Đổi mật khẩu
+              </Link>
+            </div>
+
             {/* Menu items */}
             <div className="p-1.5">
               <MenuItem icon={UserCircle2} label="Hồ sơ cá nhân" desc="Xem & chỉnh sửa thông tin" onClick={() => setUserOpen(false)} to="/settings" search={{ tab: 'profile' }} />
