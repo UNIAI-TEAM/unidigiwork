@@ -119,7 +119,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
   );
 }
 
-export function AppTopbar({ variant = "meeting", onOpenSidebar }: { variant?: "meeting" | "documents"; onOpenSidebar: () => void }) {
+export function AppTopbar({ variant = "meeting", onOpenSidebar, onNew }: { variant?: "meeting" | "documents"; onOpenSidebar: () => void; onNew?: () => void }) {
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
       <button aria-label="Open sidebar" className="rounded-lg p-2 hover:bg-surface-2 lg:hidden" onClick={onOpenSidebar}>
@@ -141,7 +141,7 @@ export function AppTopbar({ variant = "meeting", onOpenSidebar }: { variant?: "m
         </>
       ) : (
         <>
-          <button className="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:flex">
+          <button onClick={onNew} className="hidden items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:flex">
             <Plus className="h-4 w-4" /> New
           </button>
           <button className="hidden items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm sm:flex">

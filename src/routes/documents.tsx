@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronDown, ChevronRight, Folder, FileText, Plus, Search, Star, Share2,
   MessageSquare, Clock, MoreHorizontal, Bold, Italic, Underline, Strikethrough,
@@ -7,6 +7,10 @@ import {
   Table as TableIcon, Eye, Sparkles, Globe, History, Send,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+type Doc = { id: string; title: string; folder: string; content: string; updated_at: string };
 
 export const Route = createFileRoute("/documents")({
   head: () => ({
@@ -115,11 +119,59 @@ function Suggestion({ icon, label }: { icon: string; label: string }) {
 
 function DocumentsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [selected, setSelected] = useState<Doc | null>(null);
+  const [showNew, setShowNew] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newFolder, setNewFolder] = useState("My Documents");
+  const [saving, setSaving] = useState(false);
+
+  const loadDocs = async () => {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error) { toast.error("Không tải được tài liệu"); return; }
+    setDocs(data as Doc[]);
+  };
+
+  useEffect(() => { loadDocs(); }, []);
+
+  const handleCreate = async () => {
+    if (!newTitle.trim()) { toast.error("Vui lòng nhập tiêu đề"); return; }
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("documents")
+      .insert({ title: newTitle.trim(), folder: newFolder.trim() || "My Documents", content: "" })
+      .select()
+      .single();
+    setSaving(false);
+    if (error) { toast.error("Lưu thất bại: " + error.message); return; }
+    toast.success("Đã tạo tài liệu");
+    setDocs((d) => [data as Doc, ...d]);
+    setSelected(data as Doc);
+    setShowNew(false);
+    setNewTitle("");
+    setNewFolder("My Documents");
+  };
+
+  const updateSelected = async (patch: Partial<Pick<Doc, "title" | "content">>) => {
+    if (!selected) return;
+    const next = { ...selected, ...patch };
+    setSelected(next);
+    setDocs((d) => d.map((x) => (x.id === next.id ? next : x)));
+    const { error } = await supabase.from("documents").update(patch).eq("id", selected.id);
+    if (error) toast.error("Lưu thất bại");
+  };
+
+  // group user docs by folder
+  const userFolders = Array.from(new Set(docs.map((d) => d.folder)));
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="documents" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
-        <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
+        <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} onNew={() => setShowNew(true)} />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
           {/* Document tree */}
@@ -137,9 +189,32 @@ function DocumentsPage() {
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input placeholder="Quick find" className="w-full rounded-md bg-surface-2 py-1.5 pl-8 pr-2 text-xs placeholder:text-muted-foreground focus:outline-none" />
               </div>
-              <button className="rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70"><Plus className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setShowNew(true)} title="New document" className="rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70"><Plus className="h-3.5 w-3.5" /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-2 pb-3">
+              {userFolders.length > 0 && (
+                <div className="mb-2 border-b border-border pb-2">
+                  {userFolders.map((f) => (
+                    <div key={f}>
+                      <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <Folder className="h-3.5 w-3.5 text-primary" /> {f}
+                      </div>
+                      {docs.filter((d) => d.folder === f).map((d) => (
+                        <button
+                          key={d.id}
+                          onClick={() => setSelected(d)}
+                          className={`flex w-full items-center gap-1.5 rounded px-2 py-1.5 pl-7 text-sm ${
+                            selected?.id === d.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                          }`}
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span className="truncate">{d.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
               {tree.map((n) => <TreeRow key={n.name} node={n} />)}
             </div>
             <div className="border-t border-border p-3 text-xs">
@@ -161,9 +236,8 @@ function DocumentsPage() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                   <span>STOS Project</span><span>/</span>
-                  <span>Business</span><span>/</span>
-                  <span>BRD</span><span>/</span>
-                  <span className="font-medium text-foreground">STOS Platform BRD v2.0</span>
+                  <span>{selected?.folder ?? "Business"}</span><span>/</span>
+                  <span className="font-medium text-foreground">{selected?.title ?? "STOS Platform BRD v2.0"}</span>
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -175,9 +249,18 @@ function DocumentsPage() {
 
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold sm:text-3xl">STOS Platform – Business Requirements Document</h1>
+                  {selected ? (
+                    <input
+                      value={selected.title}
+                      onChange={(e) => setSelected({ ...selected, title: e.target.value })}
+                      onBlur={(e) => updateSelected({ title: e.target.value })}
+                      className="w-full bg-transparent text-2xl font-bold focus:outline-none sm:text-3xl"
+                    />
+                  ) : (
+                    <h1 className="text-2xl font-bold sm:text-3xl">STOS Platform – Business Requirements Document</h1>
+                  )}
                   <div className="mt-2 flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Version 2.0</span>
+                    <span className="text-muted-foreground">{selected ? `Updated ${new Date(selected.updated_at).toLocaleString()}` : "Version 2.0"}</span>
                     <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">Current</span>
                   </div>
                 </div>
@@ -220,6 +303,16 @@ function DocumentsPage() {
             </div>
 
             <article className="flex-1 space-y-6 px-4 py-6 sm:px-8">
+              {selected ? (
+                <textarea
+                  value={selected.content}
+                  onChange={(e) => setSelected({ ...selected, content: e.target.value })}
+                  onBlur={(e) => updateSelected({ content: e.target.value })}
+                  placeholder="Bắt đầu viết tài liệu của bạn…"
+                  className="min-h-[400px] w-full resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+              ) : (
+              <>
               <section>
                 <h2 className="mb-3 text-xl font-bold">1. Executive Summary</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -250,6 +343,8 @@ function DocumentsPage() {
                   <li>Hệ thống kế toán (triển khai giai đoạn sau)</li>
                 </ul>
               </section>
+              </>
+              )}
             </article>
 
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2 text-xs text-muted-foreground sm:px-8">
@@ -322,6 +417,35 @@ function DocumentsPage() {
           </aside>
         </div>
       </main>
+      {showNew && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !saving && setShowNew(false)}>
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-1 text-lg font-semibold">Tạo tài liệu mới</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Tài liệu sẽ được lưu vào workspace.</p>
+            <label className="mb-1 block text-xs font-medium">Tiêu đề</label>
+            <input
+              autoFocus
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              placeholder="VD: Kế hoạch Sprint 7"
+              className="mb-3 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <label className="mb-1 block text-xs font-medium">Thư mục</label>
+            <input
+              value={newFolder}
+              onChange={(e) => setNewFolder(e.target.value)}
+              className="mb-4 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowNew(false)} disabled={saving} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">Huỷ</button>
+              <button onClick={handleCreate} disabled={saving} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                {saving ? "Đang lưu…" : "Tạo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
