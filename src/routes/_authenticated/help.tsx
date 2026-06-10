@@ -261,11 +261,7 @@ function HelpPage() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <AppSidebar
-        active="dashboard"
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 

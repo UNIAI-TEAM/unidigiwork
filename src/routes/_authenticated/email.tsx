@@ -1410,7 +1410,15 @@ function AttachmentCard({
   );
 }
 
-function SuggestBtn({ icon: Icon, title, desc }: { icon: LucideIcon; title: string; desc: string }) {
+function SuggestBtn({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+}) {
   return (
     <button className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 text-left hover:border-primary/40">
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">

@@ -977,7 +977,15 @@ function FilterField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ExportBtn({ icon: Icon, label, color }: { icon: LucideIcon; label: string; color: string }) {
+function ExportBtn({
+  icon: Icon,
+  label,
+  color,
+}: {
+  icon: LucideIcon;
+  label: string;
+  color: string;
+}) {
   return (
     <button className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
       <Icon className={`h-3.5 w-3.5 ${color}`} /> {label}
