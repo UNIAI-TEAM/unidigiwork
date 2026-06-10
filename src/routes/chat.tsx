@@ -642,7 +642,6 @@ function ChatPage() {
                 </div>
               </div>
             </div>
-          </section>
             </>
             )}
           </section>
