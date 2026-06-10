@@ -51,21 +51,24 @@ function NavItem({ icon: Icon, label, active, chevron, to, badge, collapsed }: {
   return el;
 }
 
-function WorkspaceItem({ letter, name, color, active, collapsed }: { letter: string; name: string; color: string; active?: boolean; collapsed?: boolean }) {
-  const btn = (
-    <button
-      className={cn(
-        "flex w-full items-center rounded-lg transition-colors",
-        collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1.5 text-sm",
-        active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-      )}
-      title={collapsed ? name : undefined}
-    >
+function WorkspaceItem({ letter, name, color, active, collapsed, slug }: { letter: string; name: string; color: string; active?: boolean; collapsed?: boolean; slug?: string }) {
+  const cls = cn(
+    "flex w-full items-center rounded-lg transition-colors",
+    collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-1.5 text-sm",
+    active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+  );
+  const inner = (
+    <>
       <span className={cn("flex items-center justify-center rounded text-[11px] font-semibold text-white", collapsed ? "h-7 w-7 text-[10px]" : "h-5 w-5", color)}>
         {letter}
       </span>
       {!collapsed && <span>{name}</span>}
-    </button>
+    </>
+  );
+  const btn = slug ? (
+    <Link to="/workspace/$id" params={{ id: slug }} className={cls} title={collapsed ? name : undefined}>{inner}</Link>
+  ) : (
+    <button className={cls} title={collapsed ? name : undefined}>{inner}</button>
   );
   if (collapsed) {
     return (
