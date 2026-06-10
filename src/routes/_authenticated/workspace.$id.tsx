@@ -953,6 +953,246 @@ function WorkspaceDetailPage() {
           )}
         </div>
       </div>
+      <InviteDialog
+        open={showInvite}
+        onOpenChange={setShowInvite}
+        wsName={ws.name}
+        wsSlug={ws.slug}
+        onInvite={(rows) => {
+          setMembers((prev) => [...prev, ...rows]);
+        }}
+      />
+      <EditWorkspaceDialog
+        open={showEdit}
+        onOpenChange={setShowEdit}
+        ws={ws}
+        onSave={(patch) => {
+          setWs((prev) => ({ ...prev, ...patch }));
+          toast.success("Đã cập nhật workspace");
+        }}
+      />
     </div>
+  );
+}
+
+function InviteDialog({
+  open,
+  onOpenChange,
+  wsName,
+  wsSlug,
+  onInvite,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  wsName: string;
+  wsSlug: string;
+  onInvite: (rows: MemberRow[]) => void;
+}) {
+  const [emails, setEmails] = useState("");
+  const [role, setRole] = useState<MemberRole>("member");
+  const link = useMemo(
+    () => `https://uniwork.app/invite/${wsSlug}-${Math.random().toString(36).slice(2, 7)}`,
+    [wsSlug, open],
+  );
+
+  const submit = () => {
+    const list = emails
+      .split(/[,\n;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (list.length === 0) {
+      toast.error("Nhập ít nhất một email");
+      return;
+    }
+    const invalid = list.filter((e) => !/^\S+@\S+\.\S+$/.test(e));
+    if (invalid.length) {
+      toast.error(`Email không hợp lệ: ${invalid.join(", ")}`);
+      return;
+    }
+    const rows: MemberRow[] = list.map((email) => {
+      const name = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      return { seed: email, name, title: "Mới mời", role, email };
+    });
+    onInvite(rows);
+    toast.success(`Đã gửi ${list.length} lời mời với quyền ${ROLE_LABEL[role]}`);
+    setEmails("");
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="size-5 text-primary" /> Mời thành viên vào {wsName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium">
+              Email (cách nhau bằng dấu phẩy)
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                value={emails}
+                onChange={(e) => setEmails(e.target.value)}
+                placeholder="vd: nam@uniwork.vn, linh@uniwork.vn"
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium">Vai trò</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["viewer", "member", "admin"] as MemberRole[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRole(r)}
+                  className={`rounded-md border py-2 text-xs transition ${
+                    role === r
+                      ? "border-primary bg-primary/10 font-semibold text-primary"
+                      : "border-border text-muted-foreground hover:bg-surface-2"
+                  }`}
+                >
+                  {ROLE_LABEL[r]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="border-t border-border pt-3">
+            <label className="mb-1.5 block text-xs font-medium">Hoặc chia sẻ liên kết mời</label>
+            <div className="flex gap-2">
+              <Input value={link} readOnly className="bg-surface-2 text-xs" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard?.writeText(link);
+                  toast.success("Đã sao chép liên kết");
+                }}
+              >
+                <Copy className="size-4" /> Sao chép
+              </Button>
+            </div>
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+              <AlertCircle className="size-3" /> Liên kết hết hạn sau 7 ngày
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button onClick={submit}>
+            <Mail className="size-4" /> Gửi lời mời
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditWorkspaceDialog({
+  open,
+  onOpenChange,
+  ws,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  ws: Workspace;
+  onSave: (patch: Partial<Workspace>) => void;
+}) {
+  const [name, setName] = useState(ws.name);
+  const [tagline, setTagline] = useState(ws.tagline);
+  const [description, setDescription] = useState(ws.description);
+  const [deadline, setDeadline] = useState(ws.deadline);
+  const [tagsStr, setTagsStr] = useState(ws.tags.join(", "));
+  const [health, setHealth] = useState<Workspace["health"]>(ws.health);
+
+  useEffect(() => {
+    if (!open) return;
+    setName(ws.name);
+    setTagline(ws.tagline);
+    setDescription(ws.description);
+    setDeadline(ws.deadline);
+    setTagsStr(ws.tags.join(", "));
+    setHealth(ws.health);
+  }, [open, ws]);
+
+  const submit = () => {
+    if (!name.trim()) {
+      toast.error("Tên workspace không được trống");
+      return;
+    }
+    onSave({
+      name: name.trim(),
+      tagline: tagline.trim(),
+      description: description.trim(),
+      deadline: deadline.trim(),
+      health,
+      tags: tagsStr.split(",").map((s) => s.trim()).filter(Boolean),
+    });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="size-5 text-primary" /> Cài đặt workspace
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium">Tên</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Tagline</label>
+            <Input value={tagline} onChange={(e) => setTagline(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Mô tả</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium">Hạn</label>
+              <Input value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">Tình trạng</label>
+              <select
+                value={health}
+                onChange={(e) => setHealth(e.target.value as Workspace["health"])}
+                className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
+              >
+                <option value="Tốt">Tốt</option>
+                <option value="Cần chú ý">Cần chú ý</option>
+                <option value="Rủi ro">Rủi ro</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Tags (cách nhau bằng dấu phẩy)</label>
+            <Input value={tagsStr} onChange={(e) => setTagsStr(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button onClick={submit}>Lưu thay đổi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
