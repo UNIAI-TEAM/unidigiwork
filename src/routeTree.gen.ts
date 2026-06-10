@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -76,6 +77,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsTypeRoute = ReportsTypeRouteImport.update({
+  id: '/$type',
+  path: '/$type',
+  getParentRoute: () => ReportsRoute,
+} as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -90,10 +96,11 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
-  '/reports': typeof ReportsRoute
+  '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/reports/$type': typeof ReportsTypeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,10 +110,11 @@ export interface FileRoutesByTo {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
-  '/reports': typeof ReportsRoute
+  '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/reports/$type': typeof ReportsTypeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,10 +126,11 @@ export interface FileRoutesById {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
-  '/reports': typeof ReportsRoute
+  '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/workflows': typeof WorkflowsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/reports/$type': typeof ReportsTypeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/workflows'
     | '/documents'
+    | '/reports/$type'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/workflows'
     | '/documents'
+    | '/reports/$type'
   id:
     | '__root__'
     | '/'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/workflows'
     | '/_authenticated/documents'
+    | '/reports/$type'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -175,7 +187,7 @@ export interface RootRouteChildren {
   KnowledgeRoute: typeof KnowledgeRoute
   MeetingRoute: typeof MeetingRoute
   PeopleRoute: typeof PeopleRoute
-  ReportsRoute: typeof ReportsRoute
+  ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRoute
   WorkflowsRoute: typeof WorkflowsRoute
 }
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports/$type': {
+      id: '/reports/$type'
+      path: '/$type'
+      fullPath: '/reports/$type'
+      preLoaderRoute: typeof ReportsTypeRouteImport
+      parentRoute: typeof ReportsRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
@@ -280,6 +299,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ReportsRouteChildren {
+  ReportsTypeRoute: typeof ReportsTypeRoute
+}
+
+const ReportsRouteChildren: ReportsRouteChildren = {
+  ReportsTypeRoute: ReportsTypeRoute,
+}
+
+const ReportsRouteWithChildren =
+  ReportsRoute._addFileChildren(ReportsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -289,10 +319,20 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeRoute: KnowledgeRoute,
   MeetingRoute: MeetingRoute,
   PeopleRoute: PeopleRoute,
-  ReportsRoute: ReportsRoute,
+  ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRoute,
   WorkflowsRoute: WorkflowsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
