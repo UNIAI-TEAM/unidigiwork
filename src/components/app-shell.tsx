@@ -183,22 +183,22 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
                   <Plus className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active />
-              <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" />
-              <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" />
-              <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" />
-              <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" />
+              <WorkspaceItem slug="stos" letter="S" name="STOS Project" color="bg-emerald-500" active />
+              <WorkspaceItem slug="smart-university" letter="U" name="Smart University" color="bg-sky-500" />
+              <WorkspaceItem slug="uni-hrm" letter="M" name="UNI-HRM" color="bg-rose-500" />
+              <WorkspaceItem slug="marketing-pm" letter="H" name="Marketing & PM" color="bg-violet-500" />
+              <WorkspaceItem slug="devops" letter="D" name="DevOps Team" color="bg-orange-500" />
               <NavItem icon={MoreHorizontal} label={t("nav.more")} />
             </>
           )}
           {collapsed && (
             <>
               <div className="my-2 h-px bg-border" />
-              <WorkspaceItem letter="S" name="STOS Project" color="bg-emerald-500" active collapsed />
-              <WorkspaceItem letter="U" name="Smart University" color="bg-sky-500" collapsed />
-              <WorkspaceItem letter="M" name="UNI-HRM" color="bg-rose-500" collapsed />
-              <WorkspaceItem letter="H" name="Marketing & PM" color="bg-violet-500" collapsed />
-              <WorkspaceItem letter="D" name="DevOps Team" color="bg-orange-500" collapsed />
+              <WorkspaceItem slug="stos" letter="S" name="STOS Project" color="bg-emerald-500" active collapsed />
+              <WorkspaceItem slug="smart-university" letter="U" name="Smart University" color="bg-sky-500" collapsed />
+              <WorkspaceItem slug="uni-hrm" letter="M" name="UNI-HRM" color="bg-rose-500" collapsed />
+              <WorkspaceItem slug="marketing-pm" letter="H" name="Marketing & PM" color="bg-violet-500" collapsed />
+              <WorkspaceItem slug="devops" letter="D" name="DevOps Team" color="bg-orange-500" collapsed />
             </>
           )}
         </nav>
