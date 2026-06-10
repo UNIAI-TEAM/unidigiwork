@@ -12,7 +12,7 @@ import { LanguageToggle, useI18n } from "@/lib/i18n";
 export const avatar = (seed: string) =>
   `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear`;
 
-type NavKey = "dashboard" | "chat" | "meetings" | "tasks" | "documents" | "knowledge" | "workflows" | "people" | "reports" | "ai";
+type NavKey = "dashboard" | "chat" | "meetings" | "tasks" | "documents" | "knowledge" | "workflows" | "people" | "email" | "reports" | "ai";
 
 function NavItem({ icon: Icon, label, active, chevron, to, badge }: { icon: any; label: string; active?: boolean; chevron?: boolean; to?: string; badge?: ReactNode }) {
   const cls = `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
@@ -83,6 +83,7 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
           <NavItem icon={BookOpen} label={t("nav.knowledge")} to="/knowledge" active={active === "knowledge"} />
           <NavItem icon={Workflow} label={t("nav.workflows")} to="/workflows" active={active === "workflows"} />
           <NavItem icon={Users} label={t("nav.people")} to="/people" active={active === "people"} />
+          <NavItem icon={Mail} label={t("nav.email")} to="/email" active={active === "email"} />
           <NavItem icon={BarChart3} label={t("nav.reports")} to="/reports" active={active === "reports"} />
           <NavItem icon={Bot} label={t("nav.ai")} to="/ai" active={active === "ai"} />
 
