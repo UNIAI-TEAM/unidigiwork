@@ -71,15 +71,15 @@ const docIcon = (type: string) => {
 };
 
 function StosDetailPage() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
 
   return (
     <div className="flex h-screen bg-slate-50">
-      <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AppTopbar onToggleSidebar={() => setCollapsed(!collapsed)} />
+        <AppTopbar onOpenSidebar={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           {/* Banner */}
           <div className="relative h-48 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 overflow-hidden">
