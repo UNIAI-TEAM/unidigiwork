@@ -5,7 +5,7 @@ import {
   Workflow, Users, BarChart3, Bot, Plus, Search, Bell, Settings, Calendar,
   ShieldCheck, ChevronDown, MoreHorizontal, MessageCircle, Circle, Cloud,
   Menu, X, HelpCircle, Sparkles, UserCircle2, KeyRound, LogOut, Mail, Phone, Moon,
-  PanelLeft, PanelLeftClose,
+  PanelLeft, PanelLeftClose, ArrowUp, Wand2, Languages, FileSearch, Lightbulb,
 } from "lucide-react";
 import { ThemeToggle } from "@/lib/theme";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
