@@ -172,7 +172,7 @@ function TasksPage() {
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
               <ProjectOverview />
               <BurndownChart />
-              <MyTasks />
+              <MyTasks tasks={tasks} />
             </div>
           </main>
 
