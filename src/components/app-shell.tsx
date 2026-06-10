@@ -242,6 +242,179 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
   );
 }
 
+function NewPanel({ onClose }: { onClose: () => void }) {
+  const groups: { label: string; items: { icon: any; title: string; desc: string; kbd?: string; color: string }[] }[] = [
+    {
+      label: "Công việc",
+      items: [
+        { icon: ListChecks, title: "Nhiệm vụ mới", desc: "Tạo task, gán người, đặt deadline", kbd: "T", color: "bg-primary/15 text-primary" },
+        { icon: Workflow, title: "Quy trình", desc: "Khởi tạo workflow tự động", kbd: "W", color: "bg-violet-500/15 text-violet-300" },
+      ],
+    },
+    {
+      label: "Giao tiếp",
+      items: [
+        { icon: Video, title: "Cuộc họp", desc: "Bắt đầu hoặc lên lịch họp", kbd: "M", color: "bg-rose-500/15 text-rose-300" },
+        { icon: MessageSquare, title: "Tin nhắn", desc: "Mở hội thoại nhóm mới", kbd: "C", color: "bg-emerald-500/15 text-emerald-300" },
+        { icon: Mail, title: "Soạn email", desc: "Gửi email từ Email Hub", kbd: "E", color: "bg-sky-500/15 text-sky-300" },
+      ],
+    },
+    {
+      label: "Nội dung",
+      items: [
+        { icon: FileText, title: "Tài liệu", desc: "Tạo tài liệu cộng tác", kbd: "D", color: "bg-amber-500/15 text-amber-300" },
+        { icon: BookOpen, title: "Trang Wiki", desc: "Ghi chú kiến thức nội bộ", color: "bg-teal-500/15 text-teal-300" },
+        { icon: Calendar, title: "Sự kiện lịch", desc: "Thêm vào lịch cá nhân", color: "bg-indigo-500/15 text-indigo-300" },
+      ],
+    },
+  ];
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Tạo mới"
+      className="absolute right-0 top-[calc(100%+8px)] z-50 w-[340px] origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40"
+    >
+      <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/15 via-surface to-surface px-4 py-3">
+        <div>
+          <div className="text-sm font-semibold">Tạo nhanh</div>
+          <div className="text-[11px] text-muted-foreground">Chọn một loại để bắt đầu</div>
+        </div>
+        <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">N</span>
+      </div>
+      <div className="max-h-[420px] overflow-y-auto p-2">
+        {groups.map((g) => (
+          <div key={g.label} className="mb-2 last:mb-0">
+            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{g.label}</div>
+            <ul className="space-y-0.5">
+              {g.items.map((it) => (
+                <li key={it.title}>
+                  <button onClick={onClose} className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-2">
+                    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", it.color)}>
+                      <it.icon className="h-[18px] w-[18px]" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{it.title}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">{it.desc}</div>
+                    </div>
+                    {it.kbd && (
+                      <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                        {it.kbd}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-border bg-surface-2/40 px-3 py-2 text-[11px] text-muted-foreground">
+        Gõ <span className="rounded border border-border bg-surface px-1 font-mono text-[10px]">/</span> trong bất kỳ ô nào để mở lệnh nhanh.
+      </div>
+    </div>
+  );
+}
+
+function AIPanel({ onClose }: { onClose: () => void }) {
+  const suggestions = [
+    { icon: FileSearch, title: "Tóm tắt cuộc họp hôm nay", desc: "Lấy điểm chính từ 3 cuộc họp gần nhất" },
+    { icon: Wand2, title: "Soạn email cảm ơn khách hàng", desc: "Gửi đến STOS sau buổi demo" },
+    { icon: ListChecks, title: "Lập kế hoạch tuần", desc: "Dựa trên task đang mở và lịch" },
+    { icon: Languages, title: "Dịch tài liệu sang tiếng Anh", desc: "Văn bản đang xem trong Documents" },
+  ];
+  const recent = ["Phân tích tiến độ Dự án Alpha", "Tạo OKR Q3 cho phòng Marketing"];
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Trợ lý AI"
+      className="absolute right-0 top-[calc(100%+8px)] z-50 w-[380px] origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40"
+    >
+      <div className="flex items-center gap-3 border-b border-border bg-gradient-to-br from-primary/20 via-surface to-surface px-4 py-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 text-primary">
+          <Sparkles className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold">Trợ lý Uniwork AI</div>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Sẵn sàng · Gemini 3 Flash
+          </div>
+        </div>
+        <button onClick={onClose} aria-label="Đóng" className="rounded-md p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="px-3 pt-3">
+        <div className="relative">
+          <textarea
+            rows={3}
+            placeholder="Hỏi AI bất kỳ điều gì về công việc, tài liệu, cuộc họp..."
+            className="w-full resize-none rounded-xl border border-border bg-surface-2 p-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <button
+            aria-label="Gửi"
+            className="absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[
+            { icon: FileText, label: "Tài liệu hiện tại" },
+            { icon: Calendar, label: "Lịch tuần" },
+            { icon: ListChecks, label: "Task của tôi" },
+          ].map((c) => (
+            <button key={c.label} className="flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground">
+              <c.icon className="h-3 w-3" /> {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-3 pt-3">
+        <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <Lightbulb className="h-3.5 w-3.5" /> Gợi ý cho bạn
+        </div>
+        <ul className="space-y-1">
+          {suggestions.map((s) => (
+            <li key={s.title}>
+              <button className="flex w-full items-start gap-2.5 rounded-lg p-2 text-left hover:bg-surface-2">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <s.icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm">{s.title}</div>
+                  <div className="truncate text-[11px] text-muted-foreground">{s.desc}</div>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-2 border-t border-border px-3 py-2">
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Lịch sử gần đây</div>
+        <ul className="space-y-0.5">
+          {recent.map((r) => (
+            <li key={r}>
+              <button className="flex w-full items-center gap-2 truncate rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                <MessageCircle className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{r}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2 text-[11px] text-muted-foreground">
+        <span>AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng.</span>
+        <button className="rounded-md px-1.5 py-0.5 hover:bg-surface-2 hover:text-foreground">Mở rộng</button>
+      </div>
+    </div>
+  );
+}
+
 function CalendarPanel({ onClose }: { onClose: () => void }) {
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
