@@ -76,8 +76,7 @@ function WorkspaceItem({ letter, name, color, active, collapsed }: { letter: str
   return btn;
 }
 
-export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
-  const { t } = useI18n();
+function useSidebarCollapsed() {
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("sidebarCollapsed") === "true";
@@ -85,13 +84,29 @@ export function AppSidebar({ active, open, onClose }: { active: NavKey; open: bo
     return false;
   });
 
-  const toggleCollapsed = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("sidebarCollapsed", String(next));
-    }
-  };
+  useEffect(() => {
+    const handler = (e: Event) => setCollapsed((e as CustomEvent<boolean>).detail);
+    window.addEventListener("uniwork:sidebar-toggle", handler);
+    return () => window.removeEventListener("uniwork:sidebar-toggle", handler);
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sidebarCollapsed", String(next));
+      }
+      window.dispatchEvent(new CustomEvent("uniwork:sidebar-toggle", { detail: next }));
+      return next;
+    });
+  }, []);
+
+  return { collapsed, toggleCollapsed };
+}
+
+export function AppSidebar({ active, open, onClose }: { active: NavKey; open: boolean; onClose: () => void }) {
+  const { t } = useI18n();
+  const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
