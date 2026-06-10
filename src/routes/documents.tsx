@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronDown, ChevronRight, Folder, FileText, Plus, Search, Star, Share2,
   MessageSquare, Clock, MoreHorizontal, Bold, Italic, Underline, Strikethrough,
@@ -7,6 +7,10 @@ import {
   Table as TableIcon, Eye, Sparkles, Globe, History, Send,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+type Doc = { id: string; title: string; folder: string; content: string; updated_at: string };
 
 export const Route = createFileRoute("/documents")({
   head: () => ({
