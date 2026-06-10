@@ -4,6 +4,7 @@ import {
   Users, Calendar, FileText, CheckCircle2, Clock, MoreHorizontal, Plus,
   Star, Settings2, Activity, FolderKanban, Sparkles, MessageCircle, Video,
   TrendingUp, AlertCircle, ChevronRight, GitBranch, Pin, BookOpen, Bell,
+  Search, FileSpreadsheet, FileImage, Presentation, Download, Filter, X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
