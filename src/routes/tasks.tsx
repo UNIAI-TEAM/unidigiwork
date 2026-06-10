@@ -410,7 +410,7 @@ function BoardColumn({
     <div className="flex flex-col gap-3 rounded-xl bg-surface/40 p-3">
       <div className="flex items-center gap-2 px-1">
         <span className={`h-2 w-2 rounded-full ${col.barColor}`} />
-        <span className="text-sm font-semibold">{t(col.key as any)}</span>
+        <span className="text-sm font-semibold">{t(col.key as Key)}</span>
         <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-muted-foreground">
           {col.count}
         </span>
