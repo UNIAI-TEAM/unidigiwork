@@ -847,9 +847,28 @@ function WorkspaceDetailPage() {
                             {d.tags.length > 0 && ` · Tags: ${d.tags.join(", ")}`}
                           </div>
                         </div>
-                        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">
-                          Đã xong
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              const url = URL.createObjectURL(d.file);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = d.file.name;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                              toast.success(`Đã tải xuống ${d.file.name}`);
+                            }}
+                            className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                            title="Tải xuống"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">
+                            Đã xong
+                          </span>
+                        </div>
                       </li>
                     ))}
                   </ul>
