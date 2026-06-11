@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowsRouteImport } from './routes/workflows'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -48,6 +49,11 @@ import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_auth
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
   path: '/workflows',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TasksRoute = TasksRouteImport.update({
@@ -240,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
+  '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/tasks': typeof TasksRouteWithChildren
+  '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
+  '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -351,6 +360,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reports'
     | '/tasks'
+    | '/terms'
     | '/workflows'
     | '/dashboard'
     | '/documents'
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/tasks'
+    | '/terms'
     | '/workflows'
     | '/dashboard'
     | '/documents'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reports'
     | '/tasks'
+    | '/terms'
     | '/workflows'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
@@ -461,6 +473,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRouteWithChildren
+  TermsRoute: typeof TermsRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
 }
 
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows'
       fullPath: '/workflows'
       preLoaderRoute: typeof WorkflowsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tasks': {
@@ -873,6 +893,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRouteWithChildren,
+  TermsRoute: TermsRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
