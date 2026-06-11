@@ -34,6 +34,11 @@ import {
   Copy,
   Trash2,
   Shield,
+  Upload,
+  FolderOpen,
+  Tag as TagIcon,
+  Eye,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
@@ -1377,106 +1382,382 @@ function UploadDocumentDialog({
   onOpenChange: (v: boolean) => void;
   wsName: string;
 }) {
-  const [files, setFiles] = useState<File[]>([]);
+  type UploadItem = {
+    id: string;
+    file: File;
+    relPath: string;
+    progress: number;
+    status: "pending" | "uploading" | "done" | "error";
+    error?: string;
+  };
+
+  const MAX_SIZE = 50 * 1024 * 1024;
+  const [items, setItems] = useState<UploadItem[]>([]);
   const [folder, setFolder] = useState("Tài liệu dự án");
-  const [note, setNote] = useState("");
+  const [tagsStr, setTagsStr] = useState("");
+  const [visibility, setVisibility] = useState<"workspace" | "private">("workspace");
+  const [description, setDescription] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setFiles([]);
-      setNote("");
+      setItems([]);
+      setTagsStr("");
+      setDescription("");
+      setVisibility("workspace");
+      setUploading(false);
+      setDragOver(false);
     }
   }, [open]);
 
+  const guessType = (name: string): string => {
+    const ext = name.toLowerCase().split(".").pop() ?? "";
+    if (ext === "pdf") return "pdf";
+    if (["xls", "xlsx", "csv"].includes(ext)) return "xlsx";
+    if (["doc", "docx"].includes(ext)) return "doc";
+    if (["ppt", "pptx", "key"].includes(ext)) return "ppt";
+    if (["png", "jpg", "jpeg", "gif", "webp", "svg", "fig"].includes(ext)) return "image";
+    return "other";
+  };
+
+  const formatSize = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const addFiles = (incoming: File[], opts?: { keepPath?: boolean }) => {
+    const accepted: UploadItem[] = [];
+    const rejected: string[] = [];
+    for (const f of incoming) {
+      if (f.size > MAX_SIZE) {
+        rejected.push(`${f.name} (>50MB)`);
+        continue;
+      }
+      const anyF = f as File & { webkitRelativePath?: string };
+      const relPath = opts?.keepPath && anyF.webkitRelativePath ? anyF.webkitRelativePath : f.name;
+      accepted.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${f.name}`,
+        file: f,
+        relPath,
+        progress: 0,
+        status: "pending",
+      });
+    }
+    if (rejected.length) toast.error(`Bỏ qua: ${rejected.join(", ")}`);
+    if (accepted.length) setItems((prev) => [...prev, ...accepted]);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (uploading) return;
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    addFiles(Array.from(dt.files));
+  };
+
+  const totalSize = items.reduce((s, i) => s + i.file.size, 0);
+  const overallProgress = items.length
+    ? Math.round(items.reduce((s, i) => s + i.progress, 0) / items.length)
+    : 0;
+  const folders = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((it) => {
+      const parts = it.relPath.split("/");
+      if (parts.length > 1) set.add(parts[0]);
+    });
+    return Array.from(set);
+  }, [items]);
+
   const submit = () => {
-    if (files.length === 0) {
+    if (items.length === 0) {
       toast.error("Chọn ít nhất một tệp để tải lên");
       return;
     }
-    toast.success(`Đã tải lên ${files.length} tệp vào ${wsName}`);
-    onOpenChange(false);
+    setUploading(true);
+    setItems((prev) => prev.map((i) => ({ ...i, status: "uploading" as const, progress: 0 })));
+    const tags = tagsStr.split(",").map((s) => s.trim()).filter(Boolean);
+    const startedAt = Date.now();
+
+    items.forEach((it) => {
+      // Simulate per-file progress; larger files take longer
+      const duration = Math.min(2800, 600 + it.file.size / 50_000);
+      const steps = 14;
+      let step = 0;
+      const interval = setInterval(() => {
+        step += 1;
+        const pct = Math.min(100, Math.round((step / steps) * 100));
+        setItems((prev) =>
+          prev.map((x) =>
+            x.id === it.id
+              ? { ...x, progress: pct, status: pct >= 100 ? "done" : "uploading" }
+              : x,
+          ),
+        );
+        if (pct >= 100) clearInterval(interval);
+      }, duration / steps);
+    });
+
+    // Wait until all done
+    const checker = setInterval(() => {
+      setItems((curr) => {
+        if (curr.every((c) => c.status === "done")) {
+          clearInterval(checker);
+          const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+          toast.success(
+            `Đã tải lên ${curr.length} tệp vào ${wsName} · ${folder} (${elapsed}s)`,
+            {
+              description:
+                tags.length > 0
+                  ? `Tags: ${tags.join(", ")}`
+                  : description
+                    ? description
+                    : undefined,
+            },
+          );
+          setUploading(false);
+          onOpenChange(false);
+        }
+        return curr;
+      });
+    }, 250);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={uploading ? undefined : onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="size-5 text-primary" /> Thêm tài liệu
+            <Upload className="size-5 text-primary" /> Thêm tài liệu vào {wsName}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <label
-            htmlFor="ws-upload"
-            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-surface-2/40 px-4 py-8 text-center hover:bg-surface-2/70"
+
+        <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+          {/* Dropzone */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!uploading) setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            className={`relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
+              dragOver
+                ? "border-primary bg-primary/5"
+                : "border-border bg-surface-2/40"
+            } ${uploading ? "opacity-60 pointer-events-none" : ""}`}
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Plus className="size-5" />
+              <Upload className="size-5" />
             </span>
-            <div className="text-sm font-medium">Kéo thả hoặc bấm để chọn tệp</div>
-            <div className="text-[11px] text-muted-foreground">
-              PDF, Word, Excel, PowerPoint, hình ảnh (tối đa 50MB)
+            <div className="text-sm font-medium">
+              Kéo thả tệp/thư mục vào đây hoặc bấm để chọn
             </div>
-            <input
-              id="ws-upload"
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            />
-          </label>
+            <div className="text-[11px] text-muted-foreground">
+              PDF, Word, Excel, PowerPoint, hình ảnh · tối đa 50MB / tệp
+            </div>
+            <div className="mt-2 flex gap-2">
+              <label className="cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-2">
+                <FileText className="mr-1 inline size-3.5" /> Chọn tệp
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    addFiles(Array.from(e.target.files ?? []));
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              <label className="cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-2">
+                <FolderOpen className="mr-1 inline size-3.5" /> Chọn thư mục
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  // @ts-expect-error non-standard but widely supported
+                  webkitdirectory=""
+                  directory=""
+                  onChange={(e) => {
+                    addFiles(Array.from(e.target.files ?? []), { keepPath: true });
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+          </div>
 
-          {files.length > 0 && (
-            <ul className="space-y-1.5 rounded-md border border-border p-2">
-              {files.map((f, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-2 rounded px-2 py-1 text-xs hover:bg-surface-2"
-                >
-                  <FileText className="size-3.5 text-muted-foreground" />
-                  <span className="flex-1 truncate">{f.name}</span>
-                  <span className="text-muted-foreground">
-                    {(f.size / 1024).toFixed(0)} KB
-                  </span>
+          {/* Empty / list */}
+          {items.length === 0 ? (
+            <div className="rounded-md border border-dashed border-border bg-surface-2/30 px-4 py-6 text-center">
+              <FileText className="mx-auto size-6 text-muted-foreground" />
+              <p className="mt-2 text-sm font-medium">Chưa có tệp nào</p>
+              <p className="text-[11px] text-muted-foreground">
+                Thêm tệp hoặc cả thư mục để bắt đầu. Metadata sẽ áp dụng cho mọi tệp trong lần
+                tải lên này.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border border-border">
+              <div className="flex items-center justify-between border-b border-border px-3 py-2 text-[11px] text-muted-foreground">
+                <span>
+                  {items.length} tệp · {formatSize(totalSize)}
+                  {folders.length > 0 && ` · ${folders.length} thư mục`}
+                </span>
+                {!uploading && (
                   <button
-                    onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
-                    className="rounded p-0.5 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400"
+                    onClick={() => setItems([])}
+                    className="text-rose-400 hover:underline"
                   >
-                    <X className="size-3.5" />
+                    Xoá tất cả
                   </button>
-                </li>
-              ))}
-            </ul>
+                )}
+              </div>
+              <ul className="max-h-56 divide-y divide-border overflow-y-auto">
+                {items.map((it) => {
+                  const t = guessType(it.file.name);
+                  return (
+                    <li key={it.id} className="px-3 py-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={`flex h-7 w-7 items-center justify-center rounded ${docTypeBg(t)}`}>
+                          {docTypeIcon(t)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium">{it.relPath}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {formatSize(it.file.size)}
+                            {it.file.type && ` · ${it.file.type}`}
+                          </div>
+                        </div>
+                        {it.status === "done" ? (
+                          <CheckCircle2 className="size-4 text-emerald-400" />
+                        ) : it.status === "uploading" ? (
+                          <span className="text-[10px] text-muted-foreground">
+                            {it.progress}%
+                          </span>
+                        ) : (
+                          !uploading && (
+                            <button
+                              onClick={() =>
+                                setItems((prev) => prev.filter((x) => x.id !== it.id))
+                              }
+                              className="rounded p-0.5 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          )
+                        )}
+                      </div>
+                      {(it.status === "uploading" || it.status === "done") && (
+                        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2">
+                          <div
+                            className={`h-full rounded-full transition-all ${it.status === "done" ? "bg-emerald-400" : "bg-primary"}`}
+                            style={{ width: `${it.progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {uploading && (
+                <div className="border-t border-border px-3 py-2">
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>Đang tải lên…</span>
+                    <span>{overallProgress}%</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all"
+                      style={{ width: `${overallProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
-          <div>
-            <label className="mb-1 block text-xs font-medium">Thư mục</label>
-            <select
-              value={folder}
-              onChange={(e) => setFolder(e.target.value)}
-              className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
-            >
-              <option>Tài liệu dự án</option>
-              <option>Kế hoạch</option>
-              <option>Báo cáo</option>
-              <option>Thiết kế</option>
-              <option>Khác</option>
-            </select>
+          {/* Metadata */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 flex items-center gap-1 text-xs font-medium">
+                <FolderOpen className="size-3.5" /> Thư mục
+              </label>
+              <select
+                disabled={uploading}
+                value={folder}
+                onChange={(e) => setFolder(e.target.value)}
+                className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm disabled:opacity-60"
+              >
+                <option>Tài liệu dự án</option>
+                <option>Kế hoạch</option>
+                <option>Báo cáo</option>
+                <option>Thiết kế</option>
+                <option>Hợp đồng</option>
+                <option>Khác</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 flex items-center gap-1 text-xs font-medium">
+                {visibility === "workspace" ? (
+                  <Eye className="size-3.5" />
+                ) : (
+                  <Lock className="size-3.5" />
+                )}
+                Quyền truy cập
+              </label>
+              <select
+                disabled={uploading}
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value as "workspace" | "private")}
+                className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm disabled:opacity-60"
+              >
+                <option value="workspace">Cả workspace có thể xem</option>
+                <option value="private">Chỉ tôi</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium">Ghi chú (tuỳ chọn)</label>
+            <label className="mb-1 flex items-center gap-1 text-xs font-medium">
+              <TagIcon className="size-3.5" /> Tags (cách nhau bằng dấu phẩy)
+            </label>
             <Input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Mô tả tệp tải lên..."
+              disabled={uploading}
+              value={tagsStr}
+              onChange={(e) => setTagsStr(e.target.value)}
+              placeholder="vd: q3-2026, kpi, nội bộ"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Mô tả (tuỳ chọn)</label>
+            <textarea
+              disabled={uploading}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              placeholder="Mô tả ngắn về nội dung tệp đính kèm..."
+              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm disabled:opacity-60"
             />
           </div>
         </div>
+
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" disabled={uploading} onClick={() => onOpenChange(false)}>
             Huỷ
           </Button>
-          <Button onClick={submit}>Tải lên</Button>
+          <Button onClick={submit} disabled={uploading || items.length === 0}>
+            {uploading ? (
+              <>
+                <Upload className="size-4 animate-pulse" /> Đang tải {overallProgress}%
+              </>
+            ) : (
+              <>
+                <Upload className="size-4" /> Tải lên {items.length > 0 ? `(${items.length})` : ""}
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
