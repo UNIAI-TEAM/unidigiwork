@@ -18,6 +18,7 @@ import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AboutRouteImport } from './routes/about'
@@ -86,6 +87,11 @@ const ContactRoute = ContactRouteImport.update({
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
+  '/blog': typeof BlogRoute
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
+  '/blog': typeof BlogRoute
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
+  '/blog': typeof BlogRoute
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
@@ -323,6 +332,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/ai'
     | '/auth'
+    | '/blog'
     | '/chat'
     | '/contact'
     | '/knowledge'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/ai'
     | '/auth'
+    | '/blog'
     | '/chat'
     | '/contact'
     | '/knowledge'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/ai'
     | '/auth'
+    | '/blog'
     | '/chat'
     | '/contact'
     | '/knowledge'
@@ -427,6 +439,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRoute
+  BlogRoute: typeof BlogRoute
   ChatRoute: typeof ChatRouteWithChildren
   ContactRoute: typeof ContactRoute
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
@@ -501,6 +514,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -823,6 +843,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AiRoute: AiRoute,
   AuthRoute: AuthRoute,
+  BlogRoute: BlogRoute,
   ChatRoute: ChatRouteWithChildren,
   ContactRoute: ContactRoute,
   KnowledgeRoute: KnowledgeRouteWithChildren,
