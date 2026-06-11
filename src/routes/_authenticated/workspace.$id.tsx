@@ -1000,6 +1000,17 @@ function WorkspaceDetailPage() {
           toast.success("Đã cập nhật workspace");
         }}
       />
+      <CreateTaskDialog
+        open={showCreateTask}
+        onOpenChange={setShowCreateTask}
+        wsName={ws.name}
+        members={members}
+      />
+      <UploadDocumentDialog
+        open={showUploadDoc}
+        onOpenChange={setShowUploadDoc}
+        wsName={ws.name}
+      />
     </div>
   );
 }
