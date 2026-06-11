@@ -14,7 +14,7 @@ export const Route = createFileRoute("/knowledge/$slug")({
 
 function KnowledgeDetailPage() {
   const { slug } = Route.useParams();
-  const [open, setOpen] = useSidebarStateHook();
+  const [open, setOpen] = useSidebarState();
   const title = humanize(slug);
 
   return (
@@ -121,8 +121,6 @@ function KnowledgeDetailPage() {
     </div>
   );
 }
-
-import { useSidebarState as useSidebarStateHook } from "@/components/app-shell";
 
 function ActBtn({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label?: string }) {
   return (
