@@ -413,7 +413,10 @@ function PeoplePage() {
                 <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                   <Download className="h-4 w-4" /> {t("people.export")}
                 </button>
-                <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                <button
+                  onClick={() => setAddOpen(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
                   <Plus className="h-4 w-4" /> {t("people.add")}
                 </button>
               </div>
