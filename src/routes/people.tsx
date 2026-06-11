@@ -637,7 +637,19 @@ function Select({
   );
 }
 
-function PersonCard({ p, active, onClick }: { p: Person; active?: boolean; onClick: () => void }) {
+function PersonCard({
+  p,
+  active,
+  onClick,
+  onEdit,
+  onDelete,
+}: {
+  p: Person;
+  active?: boolean;
+  onClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -683,9 +695,21 @@ function PersonCard({ p, active, onClick }: { p: Person; active?: boolean; onCli
         <IconBtn>
           <Phone className="h-3.5 w-3.5" />
         </IconBtn>
-        <IconBtn className="ml-auto">
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </IconBtn>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconBtn className="ml-auto">
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </IconBtn>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-surface border-border">
+            <DropdownMenuItem onClick={onEdit} className="cursor-pointer focus:bg-surface-2">
+              <Edit3 className="h-4 w-4 mr-2" /> Sửa
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
+              <Trash2 className="h-4 w-4 mr-2" /> Xóa
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </button>
   );
