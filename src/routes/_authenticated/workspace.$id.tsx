@@ -81,6 +81,16 @@ type Workspace = {
   tags: string[];
 };
 
+type RecentDoc = {
+  name: string;
+  type: string;
+  size: string;
+  folder: string;
+  tags: string[];
+  visibility: "workspace" | "private";
+  description: string;
+};
+
 const WORKSPACES: Record<string, Workspace> = {
   stos: {
     slug: "stos",
@@ -405,6 +415,7 @@ function WorkspaceDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showUploadDoc, setShowUploadDoc] = useState(false);
+  const [recentUploads, setRecentUploads] = useState<RecentDoc[]>([]);
   const navigate = useNavigate();
 
   const healthCls =
@@ -1015,6 +1026,10 @@ function WorkspaceDetailPage() {
         open={showUploadDoc}
         onOpenChange={setShowUploadDoc}
         wsName={ws.name}
+        onUploadComplete={(docs) => {
+          setRecentUploads(docs);
+          setTab("documents");
+        }}
       />
     </div>
   );
