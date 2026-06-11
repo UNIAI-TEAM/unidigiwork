@@ -185,7 +185,7 @@ function BlogPage() {
             >
               <div className="aspect-[16/10] bg-gradient-to-br from-primary/30 via-violet-500/20 to-sky-500/10" />
               <div className="flex flex-1 flex-col p-5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{p.cat}</span>
+                <Link to="/blog/category/$category" params={{ category: categorySlug(p.cat) }} className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline">{p.cat}</Link>
                 <h3 className="mt-2 text-base font-semibold leading-snug group-hover:text-primary">{p.title}</h3>
                 <p className="mt-2 line-clamp-2 flex-1 text-sm text-muted-foreground">{p.excerpt}</p>
                 <div className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
