@@ -699,7 +699,10 @@ function WorkspaceDetailPage() {
                     3 nhiệm vụ trong Sprint 9 có nguy cơ trễ hạn. Đề xuất phân bổ lại cho Trần Minh
                     và Phạm Quỳnh để đảm bảo milestone MVP.
                   </p>
-                  <button className="mt-2 text-xs font-medium text-primary hover:underline">
+                  <button
+                    onClick={() => navigate({ to: "/ai" })}
+                    className="mt-2 text-xs font-medium text-primary hover:underline"
+                  >
                     Xem chi tiết →
                   </button>
                 </div>
