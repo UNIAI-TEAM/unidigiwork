@@ -17,7 +17,11 @@ export const Route = createFileRoute("/blog")({
   component: BlogPage,
 });
 
-const categories = ["Tất cả", "Sản phẩm", "Hướng dẫn", "Case study", "Văn hoá"];
+export const categories = ["Tất cả", "Sản phẩm", "Hướng dẫn", "Case study", "Văn hoá"];
+
+export function categorySlug(cat: string) {
+  return cat.toLowerCase().replace(/\s+/g, "-");
+}
 
 const featured = {
   slug: "ra-mat-uniwork-meeting-copilot",
