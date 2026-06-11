@@ -1619,6 +1619,7 @@ function UploadDocumentDialog({
               visibility,
               description,
               file: c.file,
+              uploadedAt: Date.now(),
             })),
           );
           setUploading(false);
