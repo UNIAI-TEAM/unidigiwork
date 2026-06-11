@@ -582,6 +582,42 @@ function PeoplePage() {
         </div>
       </div>
       <AddPersonDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <EditPersonDialog
+        open={editOpen}
+        person={editingPerson}
+        onClose={() => {
+          setEditOpen(false);
+          setEditingPerson(null);
+        }}
+        onSave={(updated) => {
+          setPeopleList((prev) =>
+            prev.map((p) => (p.id === updated.id ? updated : p)),
+          );
+          setEditOpen(false);
+          setEditingPerson(null);
+        }}
+      />
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="bg-surface border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc muốn xóa nhân sự này? Thao tác này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-surface-2 border-border hover:bg-surface-3">
+              Huỷ
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-rose-600 text-white hover:bg-rose-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
