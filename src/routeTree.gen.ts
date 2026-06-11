@@ -26,6 +26,7 @@ import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as PeopleIdRouteImport } from './routes/people.$id'
 import { Route as MeetingIdRouteImport } from './routes/meeting.$id'
+import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -120,6 +121,11 @@ const MeetingIdRoute = MeetingIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MeetingRoute,
 } as any)
+const KnowledgeSlugRoute = KnowledgeSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => KnowledgeRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -175,7 +181,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
-  '/knowledge': typeof KnowledgeRoute
+  '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
@@ -202,7 +209,7 @@ export interface FileRoutesByTo {
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
-  '/knowledge': typeof KnowledgeRoute
+  '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
@@ -230,7 +238,7 @@ export interface FileRoutesById {
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
-  '/knowledge': typeof KnowledgeRoute
+  '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
     | '/reports/$type'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
     | '/reports/$type'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
+    | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
     | '/reports/$type'
@@ -342,7 +354,7 @@ export interface RootRouteChildren {
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
-  KnowledgeRoute: typeof KnowledgeRoute
+  KnowledgeRoute: typeof KnowledgeRouteWithChildren
   MeetingRoute: typeof MeetingRouteWithChildren
   PeopleRoute: typeof PeopleRouteWithChildren
   ReportsRoute: typeof ReportsRouteWithChildren
@@ -471,6 +483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeetingIdRouteImport
       parentRoute: typeof MeetingRoute
     }
+    '/knowledge/$slug': {
+      id: '/knowledge/$slug'
+      path: '/$slug'
+      fullPath: '/knowledge/$slug'
+      preLoaderRoute: typeof KnowledgeSlugRouteImport
+      parentRoute: typeof KnowledgeRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -588,6 +607,18 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface KnowledgeRouteChildren {
+  KnowledgeSlugRoute: typeof KnowledgeSlugRoute
+}
+
+const KnowledgeRouteChildren: KnowledgeRouteChildren = {
+  KnowledgeSlugRoute: KnowledgeSlugRoute,
+}
+
+const KnowledgeRouteWithChildren = KnowledgeRoute._addFileChildren(
+  KnowledgeRouteChildren,
+)
+
 interface MeetingRouteChildren {
   MeetingIdRoute: typeof MeetingIdRoute
 }
@@ -651,7 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   AiRoute: AiRoute,
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
-  KnowledgeRoute: KnowledgeRoute,
+  KnowledgeRoute: KnowledgeRouteWithChildren,
   MeetingRoute: MeetingRouteWithChildren,
   PeopleRoute: PeopleRouteWithChildren,
   ReportsRoute: ReportsRouteWithChildren,
