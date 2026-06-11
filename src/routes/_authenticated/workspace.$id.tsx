@@ -816,6 +816,45 @@ function WorkspaceDetailPage() {
                 </div>
               </div>
 
+              {/* Recent uploads */}
+              {recentUploads.length > 0 && (
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <h3 className="text-sm font-semibold text-emerald-200">
+                        Vừa tải lên ({recentUploads.length})
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => setRecentUploads([])}
+                      className="text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      Ẩn
+                    </button>
+                  </div>
+                  <ul className="divide-y divide-emerald-500/10">
+                    {recentUploads.map((d) => (
+                      <li key={d.name} className="flex items-center gap-3 py-2">
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
+                          {docTypeIcon(d.type)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{d.name}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {d.size} · {d.folder}
+                            {d.tags.length > 0 && ` · Tags: ${d.tags.join(", ")}`}
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">
+                          Đã xong
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Document list */}
               <div className="rounded-xl border border-border bg-surface">
                 <ul className="divide-y divide-border">
@@ -1533,6 +1572,17 @@ function UploadDocumentDialog({
                     ? description
                     : undefined,
             },
+          );
+          onUploadComplete?.(
+            curr.map((c) => ({
+              name: c.relPath,
+              type: guessType(c.file.name),
+              size: formatSize(c.file.size),
+              folder,
+              tags,
+              visibility,
+              description,
+            })),
           );
           setUploading(false);
           onOpenChange(false);
