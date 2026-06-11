@@ -368,6 +368,7 @@ function PeoplePage() {
   const [location, setLocation] = useState("All");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selectedId, setSelectedId] = useState<string>("p1");
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
