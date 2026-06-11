@@ -534,6 +534,7 @@ function PeoplePage() {
           <PersonPanel person={selected} onClose={() => {}} />
         </div>
       </div>
+      <AddPersonDialog open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   );
 }
