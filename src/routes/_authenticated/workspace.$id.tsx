@@ -935,6 +935,7 @@ function WorkspaceDetailPage() {
                       {m.role === "owner" && <option value="owner">{ROLE_LABEL.owner}</option>}
                     </select>
                     <button
+                      onClick={() => navigate({ to: "/chat" })}
                       className="rounded p-1 text-muted-foreground hover:bg-surface-2"
                       aria-label="Nhắn tin"
                     >
