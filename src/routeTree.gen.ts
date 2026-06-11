@@ -21,6 +21,7 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as PeopleIdRouteImport } from './routes/people.$id'
@@ -93,6 +94,11 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ReportsRoute,
+} as any)
+const WorkflowsIdRoute = WorkflowsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => WorkflowsRoute,
 } as any)
 const TasksIdRoute = TasksIdRouteImport.update({
   id: '/$id',
@@ -174,7 +180,7 @@ export interface FileRoutesByFullPath {
   '/people': typeof PeopleRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
-  '/workflows': typeof WorkflowsRoute
+  '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRoute
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
+  '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -199,7 +206,7 @@ export interface FileRoutesByTo {
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
-  '/workflows': typeof WorkflowsRoute
+  '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
+  '/workflows/$id': typeof WorkflowsIdRoute
   '/reports': typeof ReportsIndexRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -227,7 +235,7 @@ export interface FileRoutesById {
   '/people': typeof PeopleRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
-  '/workflows': typeof WorkflowsRoute
+  '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/_authenticated/email': typeof AuthenticatedEmailRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
+  '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/people/$id'
     | '/reports/$type'
     | '/tasks/$id'
+    | '/workflows/$id'
     | '/reports/'
     | '/documents/$id'
     | '/workspace/$id'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/people/$id'
     | '/reports/$type'
     | '/tasks/$id'
+    | '/workflows/$id'
     | '/reports'
     | '/documents/$id'
     | '/workspace/$id'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/people/$id'
     | '/reports/$type'
     | '/tasks/$id'
+    | '/workflows/$id'
     | '/reports/'
     | '/_authenticated/documents/$id'
     | '/_authenticated/workspace/$id'
@@ -335,7 +347,7 @@ export interface RootRouteChildren {
   PeopleRoute: typeof PeopleRouteWithChildren
   ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRouteWithChildren
-  WorkflowsRoute: typeof WorkflowsRoute
+  WorkflowsRoute: typeof WorkflowsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -423,6 +435,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/'
       preLoaderRoute: typeof ReportsIndexRouteImport
       parentRoute: typeof ReportsRoute
+    }
+    '/workflows/$id': {
+      id: '/workflows/$id'
+      path: '/$id'
+      fullPath: '/workflows/$id'
+      preLoaderRoute: typeof WorkflowsIdRouteImport
+      parentRoute: typeof WorkflowsRoute
     }
     '/tasks/$id': {
       id: '/tasks/$id'
@@ -614,6 +633,18 @@ const TasksRouteChildren: TasksRouteChildren = {
 
 const TasksRouteWithChildren = TasksRoute._addFileChildren(TasksRouteChildren)
 
+interface WorkflowsRouteChildren {
+  WorkflowsIdRoute: typeof WorkflowsIdRoute
+}
+
+const WorkflowsRouteChildren: WorkflowsRouteChildren = {
+  WorkflowsIdRoute: WorkflowsIdRoute,
+}
+
+const WorkflowsRouteWithChildren = WorkflowsRoute._addFileChildren(
+  WorkflowsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -625,7 +656,7 @@ const rootRouteChildren: RootRouteChildren = {
   PeopleRoute: PeopleRouteWithChildren,
   ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRouteWithChildren,
-  WorkflowsRoute: WorkflowsRoute,
+  WorkflowsRoute: WorkflowsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
