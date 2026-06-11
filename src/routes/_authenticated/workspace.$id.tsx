@@ -1392,10 +1392,12 @@ function UploadDocumentDialog({
   open,
   onOpenChange,
   wsName,
+  onUploadComplete,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   wsName: string;
+  onUploadComplete?: (docs: RecentDoc[]) => void;
 }) {
   type UploadItem = {
     id: string;
