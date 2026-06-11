@@ -419,6 +419,7 @@ function WorkspaceDetailPage() {
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showUploadDoc, setShowUploadDoc] = useState(false);
   const [recentUploads, setRecentUploads] = useState<RecentDoc[]>([]);
+  const [recentSort, setRecentSort] = useState<"newest" | "oldest">("newest");
   const navigate = useNavigate();
 
   const healthCls =
