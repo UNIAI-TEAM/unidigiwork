@@ -21,7 +21,9 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
+import { Route as DocumentsIdRouteImport } from './routes/documents.$id'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -90,10 +92,20 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ReportsRoute,
 } as any)
+const TasksIdRoute = TasksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => TasksRoute,
+} as any)
 const ReportsTypeRoute = ReportsTypeRouteImport.update({
   id: '/$type',
   path: '/$type',
   getParentRoute: () => ReportsRoute,
+} as any)
+const DocumentsIdRoute = DocumentsIdRouteImport.update({
+  id: '/documents/$id',
+  path: '/documents/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -148,7 +160,7 @@ export interface FileRoutesByFullPath {
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
   '/reports': typeof ReportsRouteWithChildren
-  '/tasks': typeof TasksRoute
+  '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -156,7 +168,9 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/documents/$id': typeof DocumentsIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/tasks/$id': typeof TasksIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -169,7 +183,7 @@ export interface FileRoutesByTo {
   '/knowledge': typeof KnowledgeRoute
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
-  '/tasks': typeof TasksRoute
+  '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -177,7 +191,9 @@ export interface FileRoutesByTo {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/documents/$id': typeof DocumentsIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/tasks/$id': typeof TasksIdRoute
   '/reports': typeof ReportsIndexRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -193,7 +209,7 @@ export interface FileRoutesById {
   '/meeting': typeof MeetingRoute
   '/people': typeof PeopleRoute
   '/reports': typeof ReportsRouteWithChildren
-  '/tasks': typeof TasksRoute
+  '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -201,7 +217,9 @@ export interface FileRoutesById {
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/documents/$id': typeof DocumentsIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/tasks/$id': typeof TasksIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -225,7 +243,9 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/documents/$id'
     | '/reports/$type'
+    | '/tasks/$id'
     | '/reports/'
     | '/workspace/$id'
     | '/workspace/$id/stos'
@@ -246,7 +266,9 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/documents/$id'
     | '/reports/$type'
+    | '/tasks/$id'
     | '/reports'
     | '/workspace/$id'
     | '/workspace/$id/stos'
@@ -269,7 +291,9 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
+    | '/documents/$id'
     | '/reports/$type'
+    | '/tasks/$id'
     | '/reports/'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/$id/stos'
@@ -285,8 +309,9 @@ export interface RootRouteChildren {
   MeetingRoute: typeof MeetingRoute
   PeopleRoute: typeof PeopleRoute
   ReportsRoute: typeof ReportsRouteWithChildren
-  TasksRoute: typeof TasksRoute
+  TasksRoute: typeof TasksRouteWithChildren
   WorkflowsRoute: typeof WorkflowsRoute
+  DocumentsIdRoute: typeof DocumentsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -375,12 +400,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsIndexRouteImport
       parentRoute: typeof ReportsRoute
     }
+    '/tasks/$id': {
+      id: '/tasks/$id'
+      path: '/$id'
+      fullPath: '/tasks/$id'
+      preLoaderRoute: typeof TasksIdRouteImport
+      parentRoute: typeof TasksRoute
+    }
     '/reports/$type': {
       id: '/reports/$type'
       path: '/$type'
       fullPath: '/reports/$type'
       preLoaderRoute: typeof ReportsTypeRouteImport
       parentRoute: typeof ReportsRoute
+    }
+    '/documents/$id': {
+      id: '/documents/$id'
+      path: '/documents/$id'
+      fullPath: '/documents/$id'
+      preLoaderRoute: typeof DocumentsIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -491,6 +530,16 @@ const ReportsRouteChildren: ReportsRouteChildren = {
 const ReportsRouteWithChildren =
   ReportsRoute._addFileChildren(ReportsRouteChildren)
 
+interface TasksRouteChildren {
+  TasksIdRoute: typeof TasksIdRoute
+}
+
+const TasksRouteChildren: TasksRouteChildren = {
+  TasksIdRoute: TasksIdRoute,
+}
+
+const TasksRouteWithChildren = TasksRoute._addFileChildren(TasksRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -501,8 +550,9 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingRoute: MeetingRoute,
   PeopleRoute: PeopleRoute,
   ReportsRoute: ReportsRouteWithChildren,
-  TasksRoute: TasksRoute,
+  TasksRoute: TasksRouteWithChildren,
   WorkflowsRoute: WorkflowsRoute,
+  DocumentsIdRoute: DocumentsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
