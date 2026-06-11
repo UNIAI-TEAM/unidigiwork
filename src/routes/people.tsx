@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Upload,
   Download,
@@ -35,6 +35,7 @@ import {
   User,
   Briefcase as BriefcaseIcon,
   MapPin as MapPinIcon,
+  Trash2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -44,6 +45,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -82,7 +99,7 @@ type Person = {
   about: string;
 };
 
-const people: Person[] = [
+const DEFAULT_PEOPLE: Person[] = [
   {
     id: "p1",
     name: "Nguyễn Văn A",
@@ -369,10 +386,15 @@ function PeoplePage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selectedId, setSelectedId] = useState<string>("p1");
   const [addOpen, setAddOpen] = useState(false);
+  const [peopleList, setPeopleList] = useState<Person[]>(DEFAULT_PEOPLE);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    return people.filter((p) => {
+    return peopleList.filter((p) => {
       if (department !== "All" && p.department !== department) return false;
       if (role !== "All" && p.role !== role) return false;
       if (location !== "All" && p.location !== location) return false;
@@ -385,12 +407,33 @@ function PeoplePage() {
         p.skills.some((s) => s.toLowerCase().includes(q))
       );
     });
-  }, [query, department, role, location]);
+  }, [query, department, role, location, peopleList]);
 
   const selected = useMemo(
-    () => people.find((p) => p.id === selectedId) ?? people[0],
-    [selectedId],
+    () => peopleList.find((p) => p.id === selectedId) ?? peopleList[0],
+    [selectedId, peopleList],
   );
+
+  const handleEdit = (person: Person) => {
+    setEditingPerson(person);
+    setEditOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!deletingId) return;
+    setPeopleList((prev) => prev.filter((p) => p.id !== deletingId));
+    if (selectedId === deletingId) {
+      const remaining = peopleList.filter((p) => p.id !== deletingId);
+      setSelectedId(remaining[0]?.id ?? "");
+    }
+    setDeletingId(null);
+    setDeleteOpen(false);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -472,7 +515,7 @@ function PeoplePage() {
 
             {/* Tabs */}
             <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border">
-              <Tab label={t("people.tab.all")} count={people.length} active />
+              <Tab label={t("people.tab.all")} count={peopleList.length} active />
               <Tab label={t("people.tab.teams")} count={16} />
               <Tab label={t("people.tab.departments")} count={8} />
               <Tab label={t("people.tab.positions")} count={24} />
@@ -494,6 +537,8 @@ function PeoplePage() {
                     p={p}
                     active={p.id === selectedId}
                     onClick={() => setSelectedId(p.id)}
+                    onEdit={() => handleEdit(p)}
+                    onDelete={() => handleDelete(p.id)}
                   />
                 ))}
               </div>
@@ -506,6 +551,8 @@ function PeoplePage() {
                     active={p.id === selectedId}
                     divider={i > 0}
                     onClick={() => setSelectedId(p.id)}
+                    onEdit={() => handleEdit(p)}
+                    onDelete={() => handleDelete(p.id)}
                   />
                 ))}
               </div>
@@ -514,7 +561,7 @@ function PeoplePage() {
             {/* Pagination */}
             <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
               <div>
-                {t("people.showing")} 1 - {filtered.length} {t("people.of")} {people.length}{" "}
+                {t("people.showing")} 1 - {filtered.length} {t("people.of")} {peopleList.length}{" "}
                 {t("people.people")}
               </div>
               <div className="flex items-center gap-1">
@@ -535,6 +582,42 @@ function PeoplePage() {
         </div>
       </div>
       <AddPersonDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <EditPersonDialog
+        open={editOpen}
+        person={editingPerson}
+        onClose={() => {
+          setEditOpen(false);
+          setEditingPerson(null);
+        }}
+        onSave={(updated) => {
+          setPeopleList((prev) =>
+            prev.map((p) => (p.id === updated.id ? updated : p)),
+          );
+          setEditOpen(false);
+          setEditingPerson(null);
+        }}
+      />
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="bg-surface border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc muốn xóa nhân sự này? Thao tác này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-surface-2 border-border hover:bg-surface-3">
+              Huỷ
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-rose-600 text-white hover:bg-rose-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -592,43 +675,53 @@ function Select({
   );
 }
 
-function PersonCard({ p, active, onClick }: { p: Person; active?: boolean; onClick: () => void }) {
+function PersonCard({
+  p,
+  active,
+  onClick,
+  onEdit,
+  onDelete,
+}: {
+  p: Person;
+  active?: boolean;
+  onClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
-    <button
-      onClick={onClick}
-      className={`group flex flex-col gap-3 rounded-xl border bg-surface p-4 text-left transition-colors hover:border-primary/50 ${
+    <div
+      className={`group flex flex-col gap-3 rounded-xl border bg-surface text-left transition-colors hover:border-primary/50 ${
         active ? "border-primary/70 ring-1 ring-primary/40" : "border-border"
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div className="relative shrink-0">
-          <img src={avatar(p.seed)} alt={p.name} className="h-14 w-14 rounded-full object-cover" />
-          <span
-            className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
-          />
+      <button onClick={onClick} className="flex flex-col gap-3 p-4 text-left">
+        <div className="flex items-start gap-3">
+          <div className="relative shrink-0">
+            <img src={avatar(p.seed)} alt={p.name} className="h-14 w-14 rounded-full object-cover" />
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-semibold">{p.name}</div>
+            <span
+              className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}
+            >
+              {p.role}
+            </span>
+            <div className="mt-1 truncate text-xs text-muted-foreground">{p.title}</div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-semibold">{p.name}</div>
-          <span
-            className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}
-          >
-            {p.role}
-          </span>
-          <div className="mt-1 truncate text-xs text-muted-foreground">{p.title}</div>
+        <div className="space-y-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5" /> {p.team}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5" /> <span className="truncate">{p.email}</span>
+          </div>
         </div>
-      </div>
-      <div className="space-y-1.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <Building2 className="h-3.5 w-3.5" /> {p.team}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Mail className="h-3.5 w-3.5" /> <span className="truncate">{p.email}</span>
-        </div>
-      </div>
-      <div
-        className="mt-1 flex items-center gap-1 border-t border-border pt-3"
-        onClick={(e) => e.stopPropagation()}
-      >
+      </button>
+      <div className="flex items-center gap-1 border-t border-border px-4 pb-4 pt-3">
         <IconBtn>
           <MessageCircle className="h-3.5 w-3.5" />
         </IconBtn>
@@ -638,11 +731,23 @@ function PersonCard({ p, active, onClick }: { p: Person; active?: boolean; onCli
         <IconBtn>
           <Phone className="h-3.5 w-3.5" />
         </IconBtn>
-        <IconBtn className="ml-auto">
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </IconBtn>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconBtn className="ml-auto">
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </IconBtn>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-surface border-border">
+            <DropdownMenuItem onClick={onEdit} className="cursor-pointer focus:bg-surface-2">
+              <Edit3 className="h-4 w-4 mr-2" /> Sửa
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
+              <Trash2 className="h-4 w-4 mr-2" /> Xóa
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -651,39 +756,65 @@ function PersonRow({
   active,
   divider,
   onClick,
+  onEdit,
+  onDelete,
 }: {
   p: Person;
   active?: boolean;
   divider?: boolean;
   onClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-surface-2 ${
+    <div
+      className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-2 ${
         active ? "bg-surface-2" : ""
       } ${divider ? "border-t border-border" : ""}`}
     >
-      <div className="relative shrink-0">
-        <img src={avatar(p.seed)} alt={p.name} className="h-9 w-9 rounded-full object-cover" />
-        <span
-          className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
-        />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-medium">{p.name}</span>
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}>
-            {p.role}
-          </span>
+      <button
+        onClick={onClick}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <div className="relative shrink-0">
+          <img src={avatar(p.seed)} alt={p.name} className="h-9 w-9 rounded-full object-cover" />
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
+          />
         </div>
-        <div className="truncate text-xs text-muted-foreground">
-          {p.title} · {p.team}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-medium">{p.name}</span>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}>
+              {p.role}
+            </span>
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            {p.title} · {p.team}
+          </div>
         </div>
-      </div>
+      </button>
       <div className="hidden text-xs text-muted-foreground sm:block">{p.email}</div>
       <div className="hidden text-xs text-muted-foreground md:block">{p.location}</div>
-    </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="bg-surface border-border">
+          <DropdownMenuItem onClick={onEdit} className="cursor-pointer focus:bg-surface-2">
+            <Edit3 className="h-4 w-4 mr-2" /> Sửa
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
+            <Trash2 className="h-4 w-4 mr-2" /> Xóa
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
@@ -830,7 +961,7 @@ function OverviewTab({ person }: { person: Person }) {
       <section>
         <SectionTitle>{t("people.panel.direct")} (8)</SectionTitle>
         <div className="flex -space-x-2">
-          {people.slice(1, 6).map((p) => (
+          {DEFAULT_PEOPLE.slice(1, 6).map((p) => (
             <img
               key={p.id}
               src={avatar(p.seed)}
@@ -1437,6 +1568,189 @@ function AddPersonDialog({ open, onClose }: { open: boolean; onClose: () => void
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Thêm nhân sự
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditPersonDialog({
+  open,
+  person,
+  onClose,
+  onSave,
+}: {
+  open: boolean;
+  person: Person | null;
+  onClose: () => void;
+  onSave: (updated: Person) => void;
+}) {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    title: "",
+    department: "",
+    role: "",
+    location: "",
+    empId: "",
+    joinDate: "",
+    about: "",
+  });
+
+  useEffect(() => {
+    if (person) {
+      setForm({
+        name: person.name,
+        email: person.email,
+        phone: person.phone,
+        title: person.title,
+        department: person.department,
+        role: person.role,
+        location: person.location,
+        empId: person.empId,
+        joinDate: person.joinDate,
+        about: person.about,
+      });
+    }
+  }, [person]);
+
+  const handleChange = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!person) return;
+    onSave({ ...person, ...form });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto bg-surface">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold">Chỉnh sửa nhân sự</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Họ và tên</label>
+              <Input
+                placeholder="Nguyễn Văn A"
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                placeholder="a.nguyen@uniwork.vn"
+                value={form.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Số điện thoại</label>
+              <Input
+                type="tel"
+                placeholder="(+84) 912 345 678"
+                value={form.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Chức danh</label>
+              <Input
+                placeholder="Senior Developer"
+                value={form.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Phòng ban</label>
+              <select
+                value={form.department}
+                onChange={(e) => handleChange("department", e.target.value)}
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Chọn phòng ban</option>
+                {departments.filter((d) => d !== "All").map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Vai trò</label>
+              <select
+                value={form.role}
+                onChange={(e) => handleChange("role", e.target.value)}
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Chọn vai trò</option>
+                {roles.filter((r) => r !== "All").map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Địa điểm</label>
+              <select
+                value={form.location}
+                onChange={(e) => handleChange("location", e.target.value)}
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Chọn địa điểm</option>
+                {locations.filter((l) => l !== "All").map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Mã nhân viên</label>
+              <Input
+                placeholder="UNI-0000"
+                value={form.empId}
+                onChange={(e) => handleChange("empId", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Ngày vào làm</label>
+              <Input
+                type="date"
+                value={form.joinDate}
+                onChange={(e) => handleChange("joinDate", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Giới thiệu</label>
+            <Textarea
+              placeholder="Mô tả ngắn về nhân sự…"
+              value={form.about}
+              onChange={(e) => handleChange("about", e.target.value)}
+              className="min-h-[80px] bg-surface-2"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
+            >
+              Huỷ
+            </button>
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Lưu thay đổi
             </button>
           </div>
         </form>
