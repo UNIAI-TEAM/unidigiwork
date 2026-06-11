@@ -39,6 +39,7 @@ import {
   Tag as TagIcon,
   Eye,
   Lock,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
@@ -90,6 +91,7 @@ type RecentDoc = {
   visibility: "workspace" | "private";
   description: string;
   file: File;
+  uploadedAt: number;
 };
 
 const WORKSPACES: Record<string, Workspace> = {
@@ -417,6 +419,7 @@ function WorkspaceDetailPage() {
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showUploadDoc, setShowUploadDoc] = useState(false);
   const [recentUploads, setRecentUploads] = useState<RecentDoc[]>([]);
+  const [recentSort, setRecentSort] = useState<"newest" | "oldest">("newest");
   const navigate = useNavigate();
 
   const healthCls =
@@ -827,15 +830,31 @@ function WorkspaceDetailPage() {
                         Vừa tải lên ({recentUploads.length})
                       </h3>
                     </div>
-                    <button
-                      onClick={() => setRecentUploads([])}
-                      className="text-[11px] text-muted-foreground hover:text-foreground"
-                    >
-                      Ẩn
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setRecentSort((s) => (s === "newest" ? "oldest" : "newest"))}
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                        title={recentSort === "newest" ? "Mới nhất trước" : "Cũ nhất trước"}
+                      >
+                        <ArrowUpDown className="h-3 w-3" />
+                        {recentSort === "newest" ? "Mới nhất" : "Cũ nhất"}
+                      </button>
+                      <button
+                        onClick={() => setRecentUploads([])}
+                        className="text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        Ẩn
+                      </button>
+                    </div>
                   </div>
                   <ul className="divide-y divide-emerald-500/10">
-                    {recentUploads.map((d) => (
+                    {[...recentUploads]
+                      .sort((a, b) =>
+                        recentSort === "newest"
+                          ? b.uploadedAt - a.uploadedAt
+                          : a.uploadedAt - b.uploadedAt,
+                      )
+                      .map((d) => (
                       <li key={d.name} className="flex items-center gap-3 py-2.5">
                         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
                           {docTypeIcon(d.type)}
@@ -1618,6 +1637,7 @@ function UploadDocumentDialog({
               visibility,
               description,
               file: c.file,
+              uploadedAt: Date.now(),
             })),
           );
           setUploading(false);
