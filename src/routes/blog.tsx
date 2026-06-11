@@ -17,9 +17,13 @@ export const Route = createFileRoute("/blog")({
   component: BlogPage,
 });
 
-const categories = ["Tất cả", "Sản phẩm", "Hướng dẫn", "Case study", "Văn hoá"];
+export const categories = ["Tất cả", "Sản phẩm", "Hướng dẫn", "Case study", "Văn hoá"];
 
-const featured = {
+export function categorySlug(cat: string) {
+  return cat.toLowerCase().replace(/\s+/g, "-");
+}
+
+export const featured = {
   slug: "ra-mat-uniwork-meeting-copilot",
   cat: "Sản phẩm",
   title: "Ra mắt UNIWORK Meeting Copilot — biên bản tự động bằng tiếng Việt",
@@ -31,7 +35,7 @@ const featured = {
   date: "08/06/2026",
 };
 
-const posts = [
+export const posts = [
   {
     slug: "huong-dan-su-dung-ai-copilot",
     cat: "Hướng dẫn",
@@ -114,14 +118,27 @@ function BlogPage() {
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
-            {categories.map((c, i) => (
-              <button
-                key={c}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium ${i === 0 ? "bg-primary text-primary-foreground" : "border border-border bg-surface text-muted-foreground hover:text-foreground"}`}
-              >
-                {c}
-              </button>
-            ))}
+            {categories.map((c, i) => {
+              const isAll = i === 0;
+              const cls = `rounded-full px-3 py-1.5 text-xs font-medium ${isAll ? "bg-primary text-primary-foreground" : "border border-border bg-surface text-muted-foreground hover:text-foreground"}`;
+              if (isAll) {
+                return (
+                  <Link key={c} to="/blog" className={cls}>
+                    {c}
+                  </Link>
+                );
+              }
+              return (
+                <Link
+                  key={c}
+                  to="/blog/category/$category"
+                  params={{ category: categorySlug(c) }}
+                  className={cls}
+                >
+                  {c}
+                </Link>
+              );
+            })}
           </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -140,7 +157,7 @@ function BlogPage() {
         >
           <div className="aspect-[16/10] rounded-xl bg-gradient-to-br from-primary/40 via-violet-500/30 to-sky-500/20" />
           <div className="flex flex-col justify-center">
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">{featured.cat}</span>
+            <Link to="/blog/category/$category" params={{ category: categorySlug(featured.cat) }} className="text-xs font-semibold uppercase tracking-wider text-primary hover:underline">{featured.cat}</Link>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{featured.title}</h2>
             <p className="mt-3 text-muted-foreground">{featured.excerpt}</p>
             <div className="mt-5 flex items-center gap-3 text-xs text-muted-foreground">
@@ -168,7 +185,7 @@ function BlogPage() {
             >
               <div className="aspect-[16/10] bg-gradient-to-br from-primary/30 via-violet-500/20 to-sky-500/10" />
               <div className="flex flex-1 flex-col p-5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">{p.cat}</span>
+                <Link to="/blog/category/$category" params={{ category: categorySlug(p.cat) }} className="text-[10px] font-semibold uppercase tracking-wider text-primary hover:underline">{p.cat}</Link>
                 <h3 className="mt-2 text-base font-semibold leading-snug group-hover:text-primary">{p.title}</h3>
                 <p className="mt-2 line-clamp-2 flex-1 text-sm text-muted-foreground">{p.excerpt}</p>
                 <div className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">

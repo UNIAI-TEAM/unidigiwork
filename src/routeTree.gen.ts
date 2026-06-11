@@ -41,6 +41,7 @@ import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/email'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
@@ -207,6 +208,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
+  id: '/category/$category',
+  path: '/category/$category',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AuthenticatedWorkspaceIdRoute =
   AuthenticatedWorkspaceIdRouteImport.update({
     id: '/workspace/$id',
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesByTo {
@@ -310,6 +317,7 @@ export interface FileRoutesByTo {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesById {
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRouteTypes {
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/workspace/$id'
+    | '/blog/category/$category'
     | '/workspace/$id/stos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/workspace/$id'
+    | '/blog/category/$category'
     | '/workspace/$id/stos'
   id:
     | '__root__'
@@ -466,6 +477,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
     | '/_authenticated/workspace/$id'
+    | '/blog/category/$category'
     | '/_authenticated/workspace/$id/stos'
   fileRoutesById: FileRoutesById
 }
@@ -715,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/blog/category/$category': {
+      id: '/blog/category/$category'
+      path: '/category/$category'
+      fullPath: '/blog/category/$category'
+      preLoaderRoute: typeof BlogCategoryCategoryRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/_authenticated/workspace/$id': {
       id: '/_authenticated/workspace/$id'
       path: '/workspace/$id'
@@ -819,10 +838,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface BlogRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
+  BlogCategoryCategoryRoute: typeof BlogCategoryCategoryRoute
 }
 
 const BlogRouteChildren: BlogRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
+  BlogCategoryCategoryRoute: BlogCategoryCategoryRoute,
 }
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
