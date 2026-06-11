@@ -551,6 +551,8 @@ function PeoplePage() {
                     active={p.id === selectedId}
                     divider={i > 0}
                     onClick={() => setSelectedId(p.id)}
+                    onEdit={() => handleEdit(p)}
+                    onDelete={() => handleDelete(p.id)}
                   />
                 ))}
               </div>
