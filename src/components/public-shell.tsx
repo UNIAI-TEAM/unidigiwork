@@ -58,13 +58,12 @@ function PublicHeader({ active }: { active?: PublicNav }) {
           >
             {t("land.nav.signup")}
           </Link>
-          <Link
-            to="/"
-            hash="login"
+          <a
+            href="/#login"
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <LogIn className="h-4 w-4" /> {t("land.nav.login")}
-          </Link>
+          </a>
         </div>
       </div>
     </header>
