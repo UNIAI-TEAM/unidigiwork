@@ -689,41 +689,39 @@ function PersonCard({
   onDelete: () => void;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`group flex flex-col gap-3 rounded-xl border bg-surface p-4 text-left transition-colors hover:border-primary/50 ${
+    <div
+      className={`group flex flex-col gap-3 rounded-xl border bg-surface text-left transition-colors hover:border-primary/50 ${
         active ? "border-primary/70 ring-1 ring-primary/40" : "border-border"
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div className="relative shrink-0">
-          <img src={avatar(p.seed)} alt={p.name} className="h-14 w-14 rounded-full object-cover" />
-          <span
-            className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
-          />
+      <button onClick={onClick} className="flex flex-col gap-3 p-4 text-left">
+        <div className="flex items-start gap-3">
+          <div className="relative shrink-0">
+            <img src={avatar(p.seed)} alt={p.name} className="h-14 w-14 rounded-full object-cover" />
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-semibold">{p.name}</div>
+            <span
+              className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}
+            >
+              {p.role}
+            </span>
+            <div className="mt-1 truncate text-xs text-muted-foreground">{p.title}</div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-semibold">{p.name}</div>
-          <span
-            className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}
-          >
-            {p.role}
-          </span>
-          <div className="mt-1 truncate text-xs text-muted-foreground">{p.title}</div>
+        <div className="space-y-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5" /> {p.team}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5" /> <span className="truncate">{p.email}</span>
+          </div>
         </div>
-      </div>
-      <div className="space-y-1.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <Building2 className="h-3.5 w-3.5" /> {p.team}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Mail className="h-3.5 w-3.5" /> <span className="truncate">{p.email}</span>
-        </div>
-      </div>
-      <div
-        className="mt-1 flex items-center gap-1 border-t border-border pt-3"
-        onClick={(e) => e.stopPropagation()}
-      >
+      </button>
+      <div className="flex items-center gap-1 border-t border-border px-4 pb-4 pt-3">
         <IconBtn>
           <MessageCircle className="h-3.5 w-3.5" />
         </IconBtn>
@@ -749,7 +747,7 @@ function PersonCard({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </button>
+    </div>
   );
 }
 
