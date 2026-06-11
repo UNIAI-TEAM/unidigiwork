@@ -89,6 +89,7 @@ type RecentDoc = {
   tags: string[];
   visibility: "workspace" | "private";
   description: string;
+  file: File;
 };
 
 const WORKSPACES: Record<string, Workspace> = {
