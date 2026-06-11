@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 
-export const Route = createFileRoute("/documents/$id")({
+export const Route = createFileRoute("/_authenticated/documents/$id")({
   head: ({ params }) => ({
     meta: [{ title: `Tài liệu ${params.id} · UNIWORK` }],
   }),

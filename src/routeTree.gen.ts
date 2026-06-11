@@ -23,7 +23,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
-import { Route as DocumentsIdRouteImport } from './routes/documents.$id'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -31,6 +30,7 @@ import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -102,11 +102,6 @@ const ReportsTypeRoute = ReportsTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => ReportsRoute,
 } as any)
-const DocumentsIdRoute = DocumentsIdRouteImport.update({
-  id: '/documents/$id',
-  path: '/documents/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -144,6 +139,12 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDocumentsIdRoute =
+  AuthenticatedDocumentsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedDocumentsRoute,
+  } as any)
 const AuthenticatedWorkspaceIdStosRoute =
   AuthenticatedWorkspaceIdStosRouteImport.update({
     id: '/stos',
@@ -163,15 +164,15 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/documents': typeof AuthenticatedDocumentsRoute
+  '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/documents/$id': typeof DocumentsIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
   '/reports/': typeof ReportsIndexRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -186,15 +187,15 @@ export interface FileRoutesByTo {
   '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/documents': typeof AuthenticatedDocumentsRoute
+  '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/documents/$id': typeof DocumentsIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
   '/reports': typeof ReportsIndexRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -212,15 +213,15 @@ export interface FileRoutesById {
   '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/_authenticated/email': typeof AuthenticatedEmailRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/documents/$id': typeof DocumentsIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
   '/reports/': typeof ReportsIndexRoute
+  '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -243,10 +244,10 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
-    | '/documents/$id'
     | '/reports/$type'
     | '/tasks/$id'
     | '/reports/'
+    | '/documents/$id'
     | '/workspace/$id'
     | '/workspace/$id/stos'
   fileRoutesByTo: FileRoutesByTo
@@ -266,10 +267,10 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
-    | '/documents/$id'
     | '/reports/$type'
     | '/tasks/$id'
     | '/reports'
+    | '/documents/$id'
     | '/workspace/$id'
     | '/workspace/$id/stos'
   id:
@@ -291,10 +292,10 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
-    | '/documents/$id'
     | '/reports/$type'
     | '/tasks/$id'
     | '/reports/'
+    | '/_authenticated/documents/$id'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/$id/stos'
   fileRoutesById: FileRoutesById
@@ -311,7 +312,6 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRouteWithChildren
   WorkflowsRoute: typeof WorkflowsRoute
-  DocumentsIdRoute: typeof DocumentsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -414,13 +414,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsTypeRouteImport
       parentRoute: typeof ReportsRoute
     }
-    '/documents/$id': {
-      id: '/documents/$id'
-      path: '/documents/$id'
-      fullPath: '/documents/$id'
-      preLoaderRoute: typeof DocumentsIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -470,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/documents/$id': {
+      id: '/_authenticated/documents/$id'
+      path: '/$id'
+      fullPath: '/documents/$id'
+      preLoaderRoute: typeof AuthenticatedDocumentsIdRouteImport
+      parentRoute: typeof AuthenticatedDocumentsRoute
+    }
     '/_authenticated/workspace/$id/stos': {
       id: '/_authenticated/workspace/$id/stos'
       path: '/stos'
@@ -479,6 +479,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedDocumentsRouteChildren {
+  AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
+}
+
+const AuthenticatedDocumentsRouteChildren: AuthenticatedDocumentsRouteChildren =
+  {
+    AuthenticatedDocumentsIdRoute: AuthenticatedDocumentsIdRoute,
+  }
+
+const AuthenticatedDocumentsRouteWithChildren =
+  AuthenticatedDocumentsRoute._addFileChildren(
+    AuthenticatedDocumentsRouteChildren,
+  )
 
 interface AuthenticatedWorkspaceIdRouteChildren {
   AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
@@ -496,7 +510,7 @@ const AuthenticatedWorkspaceIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -506,7 +520,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
   AuthenticatedEmailRoute: AuthenticatedEmailRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
@@ -552,8 +566,17 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRouteWithChildren,
   WorkflowsRoute: WorkflowsRoute,
-  DocumentsIdRoute: DocumentsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
