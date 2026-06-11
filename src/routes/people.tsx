@@ -1289,3 +1289,158 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
     </div>
   );
 }
+
+function AddPersonDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    title: "",
+    department: "",
+    role: "",
+    location: "",
+    empId: "",
+    joinDate: "",
+    about: "",
+  });
+
+  const handleChange = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto bg-surface">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold">Thêm nhân sự mới</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Họ và tên</label>
+              <Input
+                placeholder="Nguyễn Văn A"
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                placeholder="a.nguyen@uniwork.vn"
+                value={form.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Số điện thoại</label>
+              <Input
+                type="tel"
+                placeholder="(+84) 912 345 678"
+                value={form.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Chức danh</label>
+              <Input
+                placeholder="Senior Developer"
+                value={form.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Phòng ban</label>
+              <select
+                value={form.department}
+                onChange={(e) => handleChange("department", e.target.value)}
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Chọn phòng ban</option>
+                {departments.filter((d) => d !== "All").map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Vai trò</label>
+              <select
+                value={form.role}
+                onChange={(e) => handleChange("role", e.target.value)}
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Chọn vai trò</option>
+                {roles.filter((r) => r !== "All").map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Địa điểm</label>
+              <select
+                value={form.location}
+                onChange={(e) => handleChange("location", e.target.value)}
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Chọn địa điểm</option>
+                {locations.filter((l) => l !== "All").map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Mã nhân viên</label>
+              <Input
+                placeholder="UNI-0000"
+                value={form.empId}
+                onChange={(e) => handleChange("empId", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Ngày vào làm</label>
+              <Input
+                type="date"
+                value={form.joinDate}
+                onChange={(e) => handleChange("joinDate", e.target.value)}
+                className="bg-surface-2"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Giới thiệu</label>
+            <Textarea
+              placeholder="Mô tả ngắn về nhân sự…"
+              value={form.about}
+              onChange={(e) => handleChange("about", e.target.value)}
+              className="min-h-[80px] bg-surface-2"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
+            >
+              Huỷ
+            </button>
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Thêm nhân sự
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
