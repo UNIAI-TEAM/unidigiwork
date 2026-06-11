@@ -35,6 +35,8 @@ import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
+import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
@@ -169,6 +171,17 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEmailComposeRoute =
+  AuthenticatedEmailComposeRouteImport.update({
+    id: '/compose',
+    path: '/compose',
+    getParentRoute: () => AuthenticatedEmailRoute,
+  } as any)
+const AuthenticatedEmailIdRoute = AuthenticatedEmailIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedEmailRoute,
+} as any)
 const AuthenticatedDocumentsIdRoute =
   AuthenticatedDocumentsIdRouteImport.update({
     id: '/$id',
@@ -195,7 +208,7 @@ export interface FileRoutesByFullPath {
   '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
-  '/email': typeof AuthenticatedEmailRoute
+  '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -208,6 +221,8 @@ export interface FileRoutesByFullPath {
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
+  '/email/$id': typeof AuthenticatedEmailIdRoute
+  '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -223,7 +238,7 @@ export interface FileRoutesByTo {
   '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
-  '/email': typeof AuthenticatedEmailRoute
+  '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -236,6 +251,8 @@ export interface FileRoutesByTo {
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports': typeof ReportsIndexRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
+  '/email/$id': typeof AuthenticatedEmailIdRoute
+  '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -254,7 +271,7 @@ export interface FileRoutesById {
   '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
-  '/_authenticated/email': typeof AuthenticatedEmailRoute
+  '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -267,6 +284,8 @@ export interface FileRoutesById {
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
+  '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
+  '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -298,6 +317,8 @@ export interface FileRouteTypes {
     | '/workflows/$id'
     | '/reports/'
     | '/documents/$id'
+    | '/email/$id'
+    | '/email/compose'
     | '/workspace/$id'
     | '/workspace/$id/stos'
   fileRoutesByTo: FileRoutesByTo
@@ -326,6 +347,8 @@ export interface FileRouteTypes {
     | '/workflows/$id'
     | '/reports'
     | '/documents/$id'
+    | '/email/$id'
+    | '/email/compose'
     | '/workspace/$id'
     | '/workspace/$id/stos'
   id:
@@ -356,6 +379,8 @@ export interface FileRouteTypes {
     | '/workflows/$id'
     | '/reports/'
     | '/_authenticated/documents/$id'
+    | '/_authenticated/email/$id'
+    | '/_authenticated/email/compose'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/$id/stos'
   fileRoutesById: FileRoutesById
@@ -558,6 +583,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/email/compose': {
+      id: '/_authenticated/email/compose'
+      path: '/compose'
+      fullPath: '/email/compose'
+      preLoaderRoute: typeof AuthenticatedEmailComposeRouteImport
+      parentRoute: typeof AuthenticatedEmailRoute
+    }
+    '/_authenticated/email/$id': {
+      id: '/_authenticated/email/$id'
+      path: '/$id'
+      fullPath: '/email/$id'
+      preLoaderRoute: typeof AuthenticatedEmailIdRouteImport
+      parentRoute: typeof AuthenticatedEmailRoute
+    }
     '/_authenticated/documents/$id': {
       id: '/_authenticated/documents/$id'
       path: '/$id'
@@ -589,6 +628,19 @@ const AuthenticatedDocumentsRouteWithChildren =
     AuthenticatedDocumentsRouteChildren,
   )
 
+interface AuthenticatedEmailRouteChildren {
+  AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
+  AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
+}
+
+const AuthenticatedEmailRouteChildren: AuthenticatedEmailRouteChildren = {
+  AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
+  AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
+}
+
+const AuthenticatedEmailRouteWithChildren =
+  AuthenticatedEmailRoute._addFileChildren(AuthenticatedEmailRouteChildren)
+
 interface AuthenticatedWorkspaceIdRouteChildren {
   AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -606,7 +658,7 @@ const AuthenticatedWorkspaceIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
-  AuthenticatedEmailRoute: typeof AuthenticatedEmailRoute
+  AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -616,7 +668,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
-  AuthenticatedEmailRoute: AuthenticatedEmailRoute,
+  AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -721,3 +773,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
