@@ -118,14 +118,27 @@ function BlogPage() {
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
-            {categories.map((c, i) => (
-              <button
-                key={c}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium ${i === 0 ? "bg-primary text-primary-foreground" : "border border-border bg-surface text-muted-foreground hover:text-foreground"}`}
-              >
-                {c}
-              </button>
-            ))}
+            {categories.map((c, i) => {
+              const isAll = i === 0;
+              const cls = `rounded-full px-3 py-1.5 text-xs font-medium ${isAll ? "bg-primary text-primary-foreground" : "border border-border bg-surface text-muted-foreground hover:text-foreground"}`;
+              if (isAll) {
+                return (
+                  <Link key={c} to="/blog" className={cls}>
+                    {c}
+                  </Link>
+                );
+              }
+              return (
+                <Link
+                  key={c}
+                  to="/blog/category/$category"
+                  params={{ category: categorySlug(c) }}
+                  className={cls}
+                >
+                  {c}
+                </Link>
+              );
+            })}
           </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
