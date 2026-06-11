@@ -32,9 +32,20 @@ import {
   GraduationCap,
   Globe,
   ExternalLink,
+  User,
+  Briefcase as BriefcaseIcon,
+  MapPin as MapPinIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/people")({
   head: () => ({
