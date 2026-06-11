@@ -499,7 +499,7 @@ function PeoplePage() {
 
             {/* Tabs */}
             <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border">
-              <Tab label={t("people.tab.all")} count={people.length} active />
+              <Tab label={t("people.tab.all")} count={peopleList.length} active />
               <Tab label={t("people.tab.teams")} count={16} />
               <Tab label={t("people.tab.departments")} count={8} />
               <Tab label={t("people.tab.positions")} count={24} />
@@ -541,7 +541,7 @@ function PeoplePage() {
             {/* Pagination */}
             <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
               <div>
-                {t("people.showing")} 1 - {filtered.length} {t("people.of")} {people.length}{" "}
+                {t("people.showing")} 1 - {filtered.length} {t("people.of")} {peopleList.length}{" "}
                 {t("people.people")}
               </div>
               <div className="flex items-center gap-1">
@@ -857,7 +857,7 @@ function OverviewTab({ person }: { person: Person }) {
       <section>
         <SectionTitle>{t("people.panel.direct")} (8)</SectionTitle>
         <div className="flex -space-x-2">
-          {people.slice(1, 6).map((p) => (
+          {DEFAULT_PEOPLE.slice(1, 6).map((p) => (
             <img
               key={p.id}
               src={avatar(p.seed)}
