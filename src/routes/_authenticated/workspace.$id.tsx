@@ -848,7 +848,13 @@ function WorkspaceDetailPage() {
                     </div>
                   </div>
                   <ul className="divide-y divide-emerald-500/10">
-                    {recentUploads.map((d) => (
+                    {[...recentUploads]
+                      .sort((a, b) =>
+                        recentSort === "newest"
+                          ? b.uploadedAt - a.uploadedAt
+                          : a.uploadedAt - b.uploadedAt,
+                      )
+                      .map((d) => (
                       <li key={d.name} className="flex items-center gap-3 py-2.5">
                         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
                           {docTypeIcon(d.type)}
