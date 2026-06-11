@@ -23,7 +23,7 @@ export function categorySlug(cat: string) {
   return cat.toLowerCase().replace(/\s+/g, "-");
 }
 
-const featured = {
+export const featured = {
   slug: "ra-mat-uniwork-meeting-copilot",
   cat: "Sản phẩm",
   title: "Ra mắt UNIWORK Meeting Copilot — biên bản tự động bằng tiếng Việt",
