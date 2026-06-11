@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Users,
@@ -398,6 +398,9 @@ function WorkspaceDetailPage() {
   const [members, setMembers] = useState<MemberRow[]>(INITIAL_MEMBERS);
   const [showInvite, setShowInvite] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [showUploadDoc, setShowUploadDoc] = useState(false);
+  const navigate = useNavigate();
 
   const healthCls =
     ws.health === "Tốt"
@@ -463,7 +466,10 @@ function WorkspaceDetailPage() {
               >
                 <Users className="h-4 w-4" /> Mời
               </button>
-              <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <button
+                onClick={() => setShowCreateTask(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
                 <Plus className="h-4 w-4" /> Nhiệm vụ
               </button>
               <button
@@ -645,7 +651,10 @@ function WorkspaceDetailPage() {
                             {m.title} · {ROLE_LABEL[m.role]}
                           </div>
                         </div>
-                        <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                        <button
+                          onClick={() => toast.message(`Thao tác cho ${m.name}`)}
+                          className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                       </li>
@@ -693,7 +702,10 @@ function WorkspaceDetailPage() {
                     3 nhiệm vụ trong Sprint 9 có nguy cơ trễ hạn. Đề xuất phân bổ lại cho Trần Minh
                     và Phạm Quỳnh để đảm bảo milestone MVP.
                   </p>
-                  <button className="mt-2 text-xs font-medium text-primary hover:underline">
+                  <button
+                    onClick={() => navigate({ to: "/ai" })}
+                    className="mt-2 text-xs font-medium text-primary hover:underline"
+                  >
                     Xem chi tiết →
                   </button>
                 </div>
@@ -705,7 +717,10 @@ function WorkspaceDetailPage() {
             <div className="rounded-xl border border-border bg-surface">
               <div className="flex items-center justify-between border-b border-border p-4">
                 <h2 className="text-sm font-semibold">Tất cả nhiệm vụ</h2>
-                <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                <button
+                  onClick={() => setShowCreateTask(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
                   <Plus className="h-3.5 w-3.5" /> Tạo nhiệm vụ
                 </button>
               </div>
@@ -740,7 +755,10 @@ function WorkspaceDetailPage() {
                     <Link to="/documents" className="text-xs text-primary hover:underline">
                       Mở Documents
                     </Link>
-                    <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                    <button
+                      onClick={() => setShowUploadDoc(true)}
+                      className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
                       <Plus className="h-3.5 w-3.5" /> Thêm tài liệu
                     </button>
                   </div>
@@ -816,12 +834,16 @@ function WorkspaceDetailPage() {
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
+                            onClick={() => toast.success(`Đang tải xuống ${d.name}`)}
                             className="rounded p-1.5 text-muted-foreground hover:bg-surface-2"
                             title="Tải xuống"
                           >
                             <Download className="h-4 w-4" />
                           </button>
-                          <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
+                          <button
+                            onClick={() => toast.message("Thao tác tài liệu", { description: d.name })}
+                            className="rounded p-1.5 text-muted-foreground hover:bg-surface-2"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </button>
                         </div>
@@ -852,7 +874,13 @@ function WorkspaceDetailPage() {
                       <Users className="mr-1 inline h-3 w-3" />
                       {m.attendees} tham gia
                     </span>
-                    <button className="rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/25">
+                    <button
+                      onClick={() => {
+                        toast.success(`Đang vào: ${m.title}`);
+                        navigate({ to: "/meeting" });
+                      }}
+                      className="rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/25"
+                    >
                       Tham gia
                     </button>
                   </div>
@@ -907,6 +935,7 @@ function WorkspaceDetailPage() {
                       {m.role === "owner" && <option value="owner">{ROLE_LABEL.owner}</option>}
                     </select>
                     <button
+                      onClick={() => navigate({ to: "/chat" })}
                       className="rounded p-1 text-muted-foreground hover:bg-surface-2"
                       aria-label="Nhắn tin"
                     >
@@ -970,6 +999,17 @@ function WorkspaceDetailPage() {
           setWs((prev) => ({ ...prev, ...patch }));
           toast.success("Đã cập nhật workspace");
         }}
+      />
+      <CreateTaskDialog
+        open={showCreateTask}
+        onOpenChange={setShowCreateTask}
+        wsName={ws.name}
+        members={members}
+      />
+      <UploadDocumentDialog
+        open={showUploadDoc}
+        onOpenChange={setShowUploadDoc}
+        wsName={ws.name}
       />
     </div>
   );
@@ -1191,6 +1231,252 @@ function EditWorkspaceDialog({
             Huỷ
           </Button>
           <Button onClick={submit}>Lưu thay đổi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CreateTaskDialog({
+  open,
+  onOpenChange,
+  wsName,
+  members,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  wsName: string;
+  members: MemberRow[];
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [assignee, setAssignee] = useState(members[0]?.seed ?? "");
+  const [priority, setPriority] = useState<"Cao" | "Trung bình" | "Thấp">("Trung bình");
+  const [due, setDue] = useState("");
+  const [status, setStatus] = useState("Mới");
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle("");
+    setDescription("");
+    setAssignee(members[0]?.seed ?? "");
+    setPriority("Trung bình");
+    setDue("");
+    setStatus("Mới");
+  }, [open, members]);
+
+  const submit = () => {
+    if (!title.trim()) {
+      toast.error("Tên nhiệm vụ không được trống");
+      return;
+    }
+    const who = members.find((m) => m.seed === assignee)?.name ?? "—";
+    toast.success(`Đã tạo nhiệm vụ "${title.trim()}" cho ${who}`);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="size-5 text-primary" /> Tạo nhiệm vụ trong {wsName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium">Tiêu đề</label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="vd: Soạn báo cáo tuần"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Mô tả</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Mô tả ngắn gọn nội dung công việc..."
+              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium">Người phụ trách</label>
+              <select
+                value={assignee}
+                onChange={(e) => setAssignee(e.target.value)}
+                className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
+              >
+                {members.map((m) => (
+                  <option key={m.seed} value={m.seed}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">Hạn</label>
+              <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Mức ưu tiên</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["Thấp", "Trung bình", "Cao"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPriority(p)}
+                  className={`rounded-md border py-2 text-xs transition ${
+                    priority === p
+                      ? "border-primary bg-primary/10 font-semibold text-primary"
+                      : "border-border text-muted-foreground hover:bg-surface-2"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Trạng thái</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
+            >
+              <option>Mới</option>
+              <option>Đang làm</option>
+              <option>Cần review</option>
+              <option>Hoàn thành</option>
+            </select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button onClick={submit}>
+            <Plus className="size-4" /> Tạo nhiệm vụ
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UploadDocumentDialog({
+  open,
+  onOpenChange,
+  wsName,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  wsName: string;
+}) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [folder, setFolder] = useState("Tài liệu dự án");
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setFiles([]);
+      setNote("");
+    }
+  }, [open]);
+
+  const submit = () => {
+    if (files.length === 0) {
+      toast.error("Chọn ít nhất một tệp để tải lên");
+      return;
+    }
+    toast.success(`Đã tải lên ${files.length} tệp vào ${wsName}`);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="size-5 text-primary" /> Thêm tài liệu
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <label
+            htmlFor="ws-upload"
+            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-surface-2/40 px-4 py-8 text-center hover:bg-surface-2/70"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Plus className="size-5" />
+            </span>
+            <div className="text-sm font-medium">Kéo thả hoặc bấm để chọn tệp</div>
+            <div className="text-[11px] text-muted-foreground">
+              PDF, Word, Excel, PowerPoint, hình ảnh (tối đa 50MB)
+            </div>
+            <input
+              id="ws-upload"
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+          </label>
+
+          {files.length > 0 && (
+            <ul className="space-y-1.5 rounded-md border border-border p-2">
+              {files.map((f, i) => (
+                <li
+                  key={i}
+                  className="flex items-center gap-2 rounded px-2 py-1 text-xs hover:bg-surface-2"
+                >
+                  <FileText className="size-3.5 text-muted-foreground" />
+                  <span className="flex-1 truncate">{f.name}</span>
+                  <span className="text-muted-foreground">
+                    {(f.size / 1024).toFixed(0)} KB
+                  </span>
+                  <button
+                    onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                    className="rounded p-0.5 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div>
+            <label className="mb-1 block text-xs font-medium">Thư mục</label>
+            <select
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
+            >
+              <option>Tài liệu dự án</option>
+              <option>Kế hoạch</option>
+              <option>Báo cáo</option>
+              <option>Thiết kế</option>
+              <option>Khác</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">Ghi chú (tuỳ chọn)</label>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Mô tả tệp tải lên..."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Huỷ
+          </Button>
+          <Button onClick={submit}>Tải lên</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
