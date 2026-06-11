@@ -1602,6 +1602,7 @@ function UploadDocumentDialog({
               tags,
               visibility,
               description,
+              file: c.file,
             })),
           );
           setUploading(false);
