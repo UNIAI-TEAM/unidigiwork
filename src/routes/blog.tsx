@@ -134,7 +134,7 @@ function BlogPage() {
 
         {/* Featured */}
         <Link
-          to="/knowledge/$slug"
+          to="/blog/$slug"
           params={{ slug: featured.slug }}
           className="mt-8 grid gap-6 overflow-hidden rounded-2xl border border-border bg-surface p-6 transition-all hover:shadow-2xl hover:shadow-primary/10 lg:grid-cols-2 lg:p-8"
         >
