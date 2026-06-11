@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useAuditPagination } from "@/lib/audit-pagination";
 import {
   Users,
   Calendar,
@@ -1339,14 +1340,19 @@ function AuditDialog({
 }) {
   const [filter, setFilter] = useState<"all" | AuditTarget>("all");
   const [actor, setActor] = useState<string>("all");
-  const [keyword, setKeyword] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [sortOrder, setSortOrder] = useState<
     "newest" | "oldest" | "actor" | "action"
   >("newest");
   const [pageSize, setPageSize] = useState<number>(10);
-  const [page, setPage] = useState<number>(1);
+  const {
+    keyword,
+    page,
+    updateKeyword,
+    clearKeyword,
+    setPage,
+  } = useAuditPagination();
 
   const actors = useMemo(
     () => Array.from(new Set(entries.map((e) => e.actor))).sort(),
@@ -1393,22 +1399,16 @@ function AuditDialog({
   // người dùng đã đổi trang trước đó).
   useEffect(() => {
     setPage(1);
-  }, [filter, actor, keyword, fromDate, toDate, sortOrder, pageSize]);
-
-  const updateKeyword = (value: string) => {
-    setKeyword(value);
-    setPage(1);
-  };
+  }, [filter, actor, keyword, fromDate, toDate, sortOrder, pageSize, setPage]);
 
   const hasFilter =
     filter !== "all" || actor !== "all" || keyword !== "" || fromDate !== "" || toDate !== "";
   const resetFilters = () => {
     setFilter("all");
     setActor("all");
-    setKeyword("");
+    clearKeyword();
     setFromDate("");
     setToDate("");
-    setPage(1);
   };
 
   return (
@@ -1602,7 +1602,7 @@ function AuditDialog({
                 «
               </button>
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -1612,7 +1612,7 @@ function AuditDialog({
                 Trang {currentPage} / {totalPages}
               </span>
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
                 className="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
