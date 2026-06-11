@@ -34,6 +34,7 @@ import { Route as PeopleIdRouteImport } from './routes/people.$id'
 import { Route as MeetingIdRouteImport } from './routes/meeting.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
 import { Route as ChatChannelIdRouteImport } from './routes/chat.$channelId'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -170,6 +171,11 @@ const ChatChannelIdRoute = ChatChannelIdRouteImport.update({
   path: '/$channelId',
   getParentRoute: () => ChatRoute,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -236,7 +242,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
@@ -273,7 +280,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
@@ -311,7 +319,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
@@ -329,6 +337,7 @@ export interface FileRoutesById {
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
@@ -368,6 +377,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/blog/$slug'
     | '/chat/$channelId'
     | '/knowledge/$slug'
     | '/meeting/$id'
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/blog/$slug'
     | '/chat/$channelId'
     | '/knowledge/$slug'
     | '/meeting/$id'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
+    | '/blog/$slug'
     | '/chat/$channelId'
     | '/knowledge/$slug'
     | '/meeting/$id'
@@ -463,7 +475,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRoute
-  BlogRoute: typeof BlogRoute
+  BlogRoute: typeof BlogRouteWithChildren
   ChatRoute: typeof ChatRouteWithChildren
   ContactRoute: typeof ContactRoute
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
@@ -654,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatChannelIdRouteImport
       parentRoute: typeof ChatRoute
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -798,6 +817,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
+
 interface ChatRouteChildren {
   ChatChannelIdRoute: typeof ChatChannelIdRoute
 }
@@ -883,7 +912,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AiRoute: AiRoute,
   AuthRoute: AuthRoute,
-  BlogRoute: BlogRoute,
+  BlogRoute: BlogRouteWithChildren,
   ChatRoute: ChatRouteWithChildren,
   ContactRoute: ContactRoute,
   KnowledgeRoute: KnowledgeRouteWithChildren,
@@ -899,3 +928,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
