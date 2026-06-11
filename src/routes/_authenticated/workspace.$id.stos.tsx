@@ -1387,10 +1387,18 @@ function AuditDialog({
   const pageStart = (currentPage - 1) * pageSize;
   const pageItems = list.slice(pageStart, pageStart + pageSize);
 
-  // Reset page về 1 khi bộ lọc/sắp xếp/kích thước trang thay đổi
+  // Reset page về 1 khi bộ lọc/sắp xếp/kích thước trang thay đổi.
+  // Dùng cả useEffect (cho mọi đường thay đổi state) và helper updateKeyword
+  // (đảm bảo reset xảy ra ngay trong cùng một render, không bị lệch nhịp khi
+  // người dùng đã đổi trang trước đó).
   useEffect(() => {
     setPage(1);
   }, [filter, actor, keyword, fromDate, toDate, sortOrder, pageSize]);
+
+  const updateKeyword = (value: string) => {
+    setKeyword(value);
+    setPage(1);
+  };
 
   const hasFilter =
     filter !== "all" || actor !== "all" || keyword !== "" || fromDate !== "" || toDate !== "";
@@ -1400,6 +1408,7 @@ function AuditDialog({
     setKeyword("");
     setFromDate("");
     setToDate("");
+    setPage(1);
   };
 
   return (
@@ -1468,7 +1477,7 @@ function AuditDialog({
               </div>
               <Input
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => updateKeyword(e.target.value)}
                 placeholder="Tên milestone / tài liệu"
                 className="h-8 text-sm"
               />
@@ -1530,13 +1539,13 @@ function AuditDialog({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
               <Input
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => updateKeyword(e.target.value)}
                 placeholder="Tìm nhanh theo tên milestone / tài liệu…"
                 className="h-8 text-sm pl-8 pr-8"
               />
               {keyword && (
                 <button
-                  onClick={() => setKeyword("")}
+                  onClick={() => updateKeyword("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   aria-label="Xoá tìm kiếm"
                 >
@@ -1548,7 +1557,7 @@ function AuditDialog({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setKeyword("")}
+                onClick={() => updateKeyword("")}
                 className="h-8 px-2 text-xs text-slate-500 hover:text-rose-600 hover:bg-rose-50 shrink-0"
               >
                 <X className="size-3.5 mr-1" /> Xoá
