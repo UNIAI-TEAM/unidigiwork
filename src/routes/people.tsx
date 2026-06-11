@@ -1602,7 +1602,7 @@ function EditPersonDialog({
     about: "",
   });
 
-  useState(() => {
+  useEffect(() => {
     if (person) {
       setForm({
         name: person.name,
@@ -1617,7 +1617,7 @@ function EditPersonDialog({
         about: person.about,
       });
     }
-  });
+  }, [person]);
 
   const handleChange = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
