@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { categorySlug } from "./blog";
 import { ArrowLeft, Clock, BookOpen, ThumbsUp, MessageSquare, Share2, Bookmark, Tag } from "lucide-react";
 import { PublicShell } from "@/components/public-shell";
 import { avatar } from "@/components/app-shell";
