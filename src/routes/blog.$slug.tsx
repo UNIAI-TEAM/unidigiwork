@@ -109,10 +109,14 @@ function BlogDetailPage() {
         </Link>
 
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
+          <Link
+            to="/blog/category/$category"
+            params={{ category: categorySlug(post.cat) }}
+            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-medium text-primary hover:underline"
+          >
             <BookOpen className="h-3 w-3" />
             {post.cat}
-          </span>
+          </Link>
           <span className="inline-flex items-center gap-1 text-muted-foreground">
             <Clock className="h-3 w-3" />
             {post.time}
