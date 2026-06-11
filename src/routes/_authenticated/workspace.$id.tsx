@@ -398,6 +398,9 @@ function WorkspaceDetailPage() {
   const [members, setMembers] = useState<MemberRow[]>(INITIAL_MEMBERS);
   const [showInvite, setShowInvite] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [showUploadDoc, setShowUploadDoc] = useState(false);
+  const navigate = useNavigate();
 
   const healthCls =
     ws.health === "Tốt"
@@ -463,7 +466,10 @@ function WorkspaceDetailPage() {
               >
                 <Users className="h-4 w-4" /> Mời
               </button>
-              <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <button
+                onClick={() => setShowCreateTask(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
                 <Plus className="h-4 w-4" /> Nhiệm vụ
               </button>
               <button
@@ -705,7 +711,10 @@ function WorkspaceDetailPage() {
             <div className="rounded-xl border border-border bg-surface">
               <div className="flex items-center justify-between border-b border-border p-4">
                 <h2 className="text-sm font-semibold">Tất cả nhiệm vụ</h2>
-                <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                <button
+                  onClick={() => setShowCreateTask(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
                   <Plus className="h-3.5 w-3.5" /> Tạo nhiệm vụ
                 </button>
               </div>
@@ -740,7 +749,10 @@ function WorkspaceDetailPage() {
                     <Link to="/documents" className="text-xs text-primary hover:underline">
                       Mở Documents
                     </Link>
-                    <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                    <button
+                      onClick={() => setShowUploadDoc(true)}
+                      className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
                       <Plus className="h-3.5 w-3.5" /> Thêm tài liệu
                     </button>
                   </div>
@@ -816,12 +828,16 @@ function WorkspaceDetailPage() {
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
+                            onClick={() => toast.success(`Đang tải xuống ${d.name}`)}
                             className="rounded p-1.5 text-muted-foreground hover:bg-surface-2"
                             title="Tải xuống"
                           >
                             <Download className="h-4 w-4" />
                           </button>
-                          <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
+                          <button
+                            onClick={() => toast.message("Thao tác tài liệu", { description: d.name })}
+                            className="rounded p-1.5 text-muted-foreground hover:bg-surface-2"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </button>
                         </div>
@@ -852,7 +868,13 @@ function WorkspaceDetailPage() {
                       <Users className="mr-1 inline h-3 w-3" />
                       {m.attendees} tham gia
                     </span>
-                    <button className="rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/25">
+                    <button
+                      onClick={() => {
+                        toast.success(`Đang vào: ${m.title}`);
+                        navigate({ to: "/meeting" });
+                      }}
+                      className="rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/25"
+                    >
                       Tham gia
                     </button>
                   </div>
