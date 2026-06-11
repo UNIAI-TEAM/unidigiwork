@@ -21,7 +21,13 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
+import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
+import { Route as PeopleIdRouteImport } from './routes/people.$id'
+import { Route as MeetingIdRouteImport } from './routes/meeting.$id'
+import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
+import { Route as ChatChannelIdRouteImport } from './routes/chat.$channelId'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -29,6 +35,9 @@ import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
+import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
+import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -90,10 +99,40 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ReportsRoute,
 } as any)
+const WorkflowsIdRoute = WorkflowsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => WorkflowsRoute,
+} as any)
+const TasksIdRoute = TasksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => TasksRoute,
+} as any)
 const ReportsTypeRoute = ReportsTypeRouteImport.update({
   id: '/$type',
   path: '/$type',
   getParentRoute: () => ReportsRoute,
+} as any)
+const PeopleIdRoute = PeopleIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PeopleRoute,
+} as any)
+const MeetingIdRoute = MeetingIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MeetingRoute,
+} as any)
+const KnowledgeSlugRoute = KnowledgeSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => KnowledgeRoute,
+} as any)
+const ChatChannelIdRoute = ChatChannelIdRouteImport.update({
+  id: '/$channelId',
+  path: '/$channelId',
+  getParentRoute: () => ChatRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -132,6 +171,23 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEmailComposeRoute =
+  AuthenticatedEmailComposeRouteImport.update({
+    id: '/compose',
+    path: '/compose',
+    getParentRoute: () => AuthenticatedEmailRoute,
+  } as any)
+const AuthenticatedEmailIdRoute = AuthenticatedEmailIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedEmailRoute,
+} as any)
+const AuthenticatedDocumentsIdRoute =
+  AuthenticatedDocumentsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedDocumentsRoute,
+  } as any)
 const AuthenticatedWorkspaceIdStosRoute =
   AuthenticatedWorkspaceIdStosRouteImport.update({
     id: '/stos',
@@ -143,21 +199,30 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRoute
-  '/knowledge': typeof KnowledgeRoute
-  '/meeting': typeof MeetingRoute
-  '/people': typeof PeopleRoute
+  '/chat': typeof ChatRouteWithChildren
+  '/knowledge': typeof KnowledgeRouteWithChildren
+  '/meeting': typeof MeetingRouteWithChildren
+  '/people': typeof PeopleRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
-  '/tasks': typeof TasksRoute
-  '/workflows': typeof WorkflowsRoute
+  '/tasks': typeof TasksRouteWithChildren
+  '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/documents': typeof AuthenticatedDocumentsRoute
-  '/email': typeof AuthenticatedEmailRoute
+  '/documents': typeof AuthenticatedDocumentsRouteWithChildren
+  '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/chat/$channelId': typeof ChatChannelIdRoute
+  '/knowledge/$slug': typeof KnowledgeSlugRoute
+  '/meeting/$id': typeof MeetingIdRoute
+  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/tasks/$id': typeof TasksIdRoute
+  '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
+  '/email/$id': typeof AuthenticatedEmailIdRoute
+  '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -165,20 +230,29 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRoute
-  '/knowledge': typeof KnowledgeRoute
-  '/meeting': typeof MeetingRoute
-  '/people': typeof PeopleRoute
-  '/tasks': typeof TasksRoute
-  '/workflows': typeof WorkflowsRoute
+  '/chat': typeof ChatRouteWithChildren
+  '/knowledge': typeof KnowledgeRouteWithChildren
+  '/meeting': typeof MeetingRouteWithChildren
+  '/people': typeof PeopleRouteWithChildren
+  '/tasks': typeof TasksRouteWithChildren
+  '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/documents': typeof AuthenticatedDocumentsRoute
-  '/email': typeof AuthenticatedEmailRoute
+  '/documents': typeof AuthenticatedDocumentsRouteWithChildren
+  '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/chat/$channelId': typeof ChatChannelIdRoute
+  '/knowledge/$slug': typeof KnowledgeSlugRoute
+  '/meeting/$id': typeof MeetingIdRoute
+  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/tasks/$id': typeof TasksIdRoute
+  '/workflows/$id': typeof WorkflowsIdRoute
   '/reports': typeof ReportsIndexRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
+  '/email/$id': typeof AuthenticatedEmailIdRoute
+  '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -188,21 +262,30 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRoute
-  '/knowledge': typeof KnowledgeRoute
-  '/meeting': typeof MeetingRoute
-  '/people': typeof PeopleRoute
+  '/chat': typeof ChatRouteWithChildren
+  '/knowledge': typeof KnowledgeRouteWithChildren
+  '/meeting': typeof MeetingRouteWithChildren
+  '/people': typeof PeopleRouteWithChildren
   '/reports': typeof ReportsRouteWithChildren
-  '/tasks': typeof TasksRoute
-  '/workflows': typeof WorkflowsRoute
+  '/tasks': typeof TasksRouteWithChildren
+  '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
-  '/_authenticated/email': typeof AuthenticatedEmailRoute
+  '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
+  '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/chat/$channelId': typeof ChatChannelIdRoute
+  '/knowledge/$slug': typeof KnowledgeSlugRoute
+  '/meeting/$id': typeof MeetingIdRoute
+  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/tasks/$id': typeof TasksIdRoute
+  '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
+  '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
+  '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
+  '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -225,8 +308,17 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/chat/$channelId'
+    | '/knowledge/$slug'
+    | '/meeting/$id'
+    | '/people/$id'
     | '/reports/$type'
+    | '/tasks/$id'
+    | '/workflows/$id'
     | '/reports/'
+    | '/documents/$id'
+    | '/email/$id'
+    | '/email/compose'
     | '/workspace/$id'
     | '/workspace/$id/stos'
   fileRoutesByTo: FileRoutesByTo
@@ -246,8 +338,17 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/chat/$channelId'
+    | '/knowledge/$slug'
+    | '/meeting/$id'
+    | '/people/$id'
     | '/reports/$type'
+    | '/tasks/$id'
+    | '/workflows/$id'
     | '/reports'
+    | '/documents/$id'
+    | '/email/$id'
+    | '/email/compose'
     | '/workspace/$id'
     | '/workspace/$id/stos'
   id:
@@ -269,8 +370,17 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
+    | '/chat/$channelId'
+    | '/knowledge/$slug'
+    | '/meeting/$id'
+    | '/people/$id'
     | '/reports/$type'
+    | '/tasks/$id'
+    | '/workflows/$id'
     | '/reports/'
+    | '/_authenticated/documents/$id'
+    | '/_authenticated/email/$id'
+    | '/_authenticated/email/compose'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/$id/stos'
   fileRoutesById: FileRoutesById
@@ -280,13 +390,13 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRoute
-  ChatRoute: typeof ChatRoute
-  KnowledgeRoute: typeof KnowledgeRoute
-  MeetingRoute: typeof MeetingRoute
-  PeopleRoute: typeof PeopleRoute
+  ChatRoute: typeof ChatRouteWithChildren
+  KnowledgeRoute: typeof KnowledgeRouteWithChildren
+  MeetingRoute: typeof MeetingRouteWithChildren
+  PeopleRoute: typeof PeopleRouteWithChildren
   ReportsRoute: typeof ReportsRouteWithChildren
-  TasksRoute: typeof TasksRoute
-  WorkflowsRoute: typeof WorkflowsRoute
+  TasksRoute: typeof TasksRouteWithChildren
+  WorkflowsRoute: typeof WorkflowsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -375,12 +485,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsIndexRouteImport
       parentRoute: typeof ReportsRoute
     }
+    '/workflows/$id': {
+      id: '/workflows/$id'
+      path: '/$id'
+      fullPath: '/workflows/$id'
+      preLoaderRoute: typeof WorkflowsIdRouteImport
+      parentRoute: typeof WorkflowsRoute
+    }
+    '/tasks/$id': {
+      id: '/tasks/$id'
+      path: '/$id'
+      fullPath: '/tasks/$id'
+      preLoaderRoute: typeof TasksIdRouteImport
+      parentRoute: typeof TasksRoute
+    }
     '/reports/$type': {
       id: '/reports/$type'
       path: '/$type'
       fullPath: '/reports/$type'
       preLoaderRoute: typeof ReportsTypeRouteImport
       parentRoute: typeof ReportsRoute
+    }
+    '/people/$id': {
+      id: '/people/$id'
+      path: '/$id'
+      fullPath: '/people/$id'
+      preLoaderRoute: typeof PeopleIdRouteImport
+      parentRoute: typeof PeopleRoute
+    }
+    '/meeting/$id': {
+      id: '/meeting/$id'
+      path: '/$id'
+      fullPath: '/meeting/$id'
+      preLoaderRoute: typeof MeetingIdRouteImport
+      parentRoute: typeof MeetingRoute
+    }
+    '/knowledge/$slug': {
+      id: '/knowledge/$slug'
+      path: '/$slug'
+      fullPath: '/knowledge/$slug'
+      preLoaderRoute: typeof KnowledgeSlugRouteImport
+      parentRoute: typeof KnowledgeRoute
+    }
+    '/chat/$channelId': {
+      id: '/chat/$channelId'
+      path: '/$channelId'
+      fullPath: '/chat/$channelId'
+      preLoaderRoute: typeof ChatChannelIdRouteImport
+      parentRoute: typeof ChatRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -431,6 +583,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/email/compose': {
+      id: '/_authenticated/email/compose'
+      path: '/compose'
+      fullPath: '/email/compose'
+      preLoaderRoute: typeof AuthenticatedEmailComposeRouteImport
+      parentRoute: typeof AuthenticatedEmailRoute
+    }
+    '/_authenticated/email/$id': {
+      id: '/_authenticated/email/$id'
+      path: '/$id'
+      fullPath: '/email/$id'
+      preLoaderRoute: typeof AuthenticatedEmailIdRouteImport
+      parentRoute: typeof AuthenticatedEmailRoute
+    }
+    '/_authenticated/documents/$id': {
+      id: '/_authenticated/documents/$id'
+      path: '/$id'
+      fullPath: '/documents/$id'
+      preLoaderRoute: typeof AuthenticatedDocumentsIdRouteImport
+      parentRoute: typeof AuthenticatedDocumentsRoute
+    }
     '/_authenticated/workspace/$id/stos': {
       id: '/_authenticated/workspace/$id/stos'
       path: '/stos'
@@ -440,6 +613,33 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedDocumentsRouteChildren {
+  AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
+}
+
+const AuthenticatedDocumentsRouteChildren: AuthenticatedDocumentsRouteChildren =
+  {
+    AuthenticatedDocumentsIdRoute: AuthenticatedDocumentsIdRoute,
+  }
+
+const AuthenticatedDocumentsRouteWithChildren =
+  AuthenticatedDocumentsRoute._addFileChildren(
+    AuthenticatedDocumentsRouteChildren,
+  )
+
+interface AuthenticatedEmailRouteChildren {
+  AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
+  AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
+}
+
+const AuthenticatedEmailRouteChildren: AuthenticatedEmailRouteChildren = {
+  AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
+  AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
+}
+
+const AuthenticatedEmailRouteWithChildren =
+  AuthenticatedEmailRoute._addFileChildren(AuthenticatedEmailRouteChildren)
 
 interface AuthenticatedWorkspaceIdRouteChildren {
   AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
@@ -457,8 +657,8 @@ const AuthenticatedWorkspaceIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
-  AuthenticatedEmailRoute: typeof AuthenticatedEmailRoute
+  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
+  AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -467,8 +667,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
-  AuthenticatedEmailRoute: AuthenticatedEmailRoute,
+  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
+  AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -477,6 +677,50 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface ChatRouteChildren {
+  ChatChannelIdRoute: typeof ChatChannelIdRoute
+}
+
+const ChatRouteChildren: ChatRouteChildren = {
+  ChatChannelIdRoute: ChatChannelIdRoute,
+}
+
+const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
+
+interface KnowledgeRouteChildren {
+  KnowledgeSlugRoute: typeof KnowledgeSlugRoute
+}
+
+const KnowledgeRouteChildren: KnowledgeRouteChildren = {
+  KnowledgeSlugRoute: KnowledgeSlugRoute,
+}
+
+const KnowledgeRouteWithChildren = KnowledgeRoute._addFileChildren(
+  KnowledgeRouteChildren,
+)
+
+interface MeetingRouteChildren {
+  MeetingIdRoute: typeof MeetingIdRoute
+}
+
+const MeetingRouteChildren: MeetingRouteChildren = {
+  MeetingIdRoute: MeetingIdRoute,
+}
+
+const MeetingRouteWithChildren =
+  MeetingRoute._addFileChildren(MeetingRouteChildren)
+
+interface PeopleRouteChildren {
+  PeopleIdRoute: typeof PeopleIdRoute
+}
+
+const PeopleRouteChildren: PeopleRouteChildren = {
+  PeopleIdRoute: PeopleIdRoute,
+}
+
+const PeopleRouteWithChildren =
+  PeopleRoute._addFileChildren(PeopleRouteChildren)
 
 interface ReportsRouteChildren {
   ReportsTypeRoute: typeof ReportsTypeRoute
@@ -491,18 +735,40 @@ const ReportsRouteChildren: ReportsRouteChildren = {
 const ReportsRouteWithChildren =
   ReportsRoute._addFileChildren(ReportsRouteChildren)
 
+interface TasksRouteChildren {
+  TasksIdRoute: typeof TasksIdRoute
+}
+
+const TasksRouteChildren: TasksRouteChildren = {
+  TasksIdRoute: TasksIdRoute,
+}
+
+const TasksRouteWithChildren = TasksRoute._addFileChildren(TasksRouteChildren)
+
+interface WorkflowsRouteChildren {
+  WorkflowsIdRoute: typeof WorkflowsIdRoute
+}
+
+const WorkflowsRouteChildren: WorkflowsRouteChildren = {
+  WorkflowsIdRoute: WorkflowsIdRoute,
+}
+
+const WorkflowsRouteWithChildren = WorkflowsRoute._addFileChildren(
+  WorkflowsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AiRoute: AiRoute,
   AuthRoute: AuthRoute,
-  ChatRoute: ChatRoute,
-  KnowledgeRoute: KnowledgeRoute,
-  MeetingRoute: MeetingRoute,
-  PeopleRoute: PeopleRoute,
+  ChatRoute: ChatRouteWithChildren,
+  KnowledgeRoute: KnowledgeRouteWithChildren,
+  MeetingRoute: MeetingRouteWithChildren,
+  PeopleRoute: PeopleRouteWithChildren,
   ReportsRoute: ReportsRouteWithChildren,
-  TasksRoute: TasksRoute,
-  WorkflowsRoute: WorkflowsRoute,
+  TasksRoute: TasksRouteWithChildren,
+  WorkflowsRoute: WorkflowsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
