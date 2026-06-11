@@ -836,18 +836,33 @@ function WorkspaceDetailPage() {
                   </div>
                   <ul className="divide-y divide-emerald-500/10">
                     {recentUploads.map((d) => (
-                      <li key={d.name} className="flex items-center gap-3 py-2">
-                        <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
+                      <li key={d.name} className="flex items-center gap-3 py-2.5">
+                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
                           {docTypeIcon(d.type)}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{d.name}</div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {d.size} · {d.folder}
-                            {d.tags.length > 0 && ` · Tags: ${d.tags.join(", ")}`}
+                          <div className="flex items-center gap-2">
+                            <div className="truncate text-sm font-medium">{d.name}</div>
+                            <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${docTypeBg(d.type)}`}>
+                              {d.type === "xlsx" ? "Excel" : d.type === "ppt" ? "PPTX" : d.type === "image" ? "Image" : d.type === "pdf" ? "PDF" : d.type === "doc" ? "Word" : "File"}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                            <span className="font-medium text-foreground/80">{d.size}</span>
+                            <span>·</span>
+                            <span>{d.folder}</span>
+                            {d.tags.length > 0 && (
+                              <>
+                                <span>·</span>
+                                <span className="flex items-center gap-1">
+                                  <TagIcon className="h-3 w-3" />
+                                  {d.tags.join(", ")}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex shrink-0 items-center gap-2">
                           <button
                             onClick={() => {
                               const url = URL.createObjectURL(d.file);
