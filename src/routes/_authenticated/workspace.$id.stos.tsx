@@ -1387,10 +1387,18 @@ function AuditDialog({
   const pageStart = (currentPage - 1) * pageSize;
   const pageItems = list.slice(pageStart, pageStart + pageSize);
 
-  // Reset page về 1 khi bộ lọc/sắp xếp/kích thước trang thay đổi
+  // Reset page về 1 khi bộ lọc/sắp xếp/kích thước trang thay đổi.
+  // Dùng cả useEffect (cho mọi đường thay đổi state) và helper updateKeyword
+  // (đảm bảo reset xảy ra ngay trong cùng một render, không bị lệch nhịp khi
+  // người dùng đã đổi trang trước đó).
   useEffect(() => {
     setPage(1);
   }, [filter, actor, keyword, fromDate, toDate, sortOrder, pageSize]);
+
+  const updateKeyword = (value: string) => {
+    setKeyword(value);
+    setPage(1);
+  };
 
   const hasFilter =
     filter !== "all" || actor !== "all" || keyword !== "" || fromDate !== "" || toDate !== "";
@@ -1400,6 +1408,7 @@ function AuditDialog({
     setKeyword("");
     setFromDate("");
     setToDate("");
+    setPage(1);
   };
 
   return (
