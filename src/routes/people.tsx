@@ -35,6 +35,7 @@ import {
   User,
   Briefcase as BriefcaseIcon,
   MapPin as MapPinIcon,
+  Trash2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -82,7 +83,7 @@ type Person = {
   about: string;
 };
 
-const people: Person[] = [
+const DEFAULT_PEOPLE: Person[] = [
   {
     id: "p1",
     name: "Nguyễn Văn A",
