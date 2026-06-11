@@ -27,6 +27,7 @@ import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as PeopleIdRouteImport } from './routes/people.$id'
 import { Route as MeetingIdRouteImport } from './routes/meeting.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
+import { Route as ChatChannelIdRouteImport } from './routes/chat.$channelId'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -126,6 +127,11 @@ const KnowledgeSlugRoute = KnowledgeSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => KnowledgeRoute,
 } as any)
+const ChatChannelIdRoute = ChatChannelIdRouteImport.update({
+  id: '/$channelId',
+  path: '/$channelId',
+  getParentRoute: () => ChatRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -180,7 +186,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRoute
+  '/chat': typeof ChatRouteWithChildren
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/chat/$channelId': typeof ChatChannelIdRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
@@ -208,7 +215,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRoute
+  '/chat': typeof ChatRouteWithChildren
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/chat/$channelId': typeof ChatChannelIdRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
@@ -237,7 +245,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRoute
+  '/chat': typeof ChatRouteWithChildren
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/chat/$channelId': typeof ChatChannelIdRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/chat/$channelId'
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/chat/$channelId'
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
+    | '/chat/$channelId'
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
@@ -353,7 +365,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AiRoute: typeof AiRoute
   AuthRoute: typeof AuthRoute
-  ChatRoute: typeof ChatRoute
+  ChatRoute: typeof ChatRouteWithChildren
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
   MeetingRoute: typeof MeetingRouteWithChildren
   PeopleRoute: typeof PeopleRouteWithChildren
@@ -490,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KnowledgeSlugRouteImport
       parentRoute: typeof KnowledgeRoute
     }
+    '/chat/$channelId': {
+      id: '/chat/$channelId'
+      path: '/$channelId'
+      fullPath: '/chat/$channelId'
+      preLoaderRoute: typeof ChatChannelIdRouteImport
+      parentRoute: typeof ChatRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -607,6 +626,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ChatRouteChildren {
+  ChatChannelIdRoute: typeof ChatChannelIdRoute
+}
+
+const ChatRouteChildren: ChatRouteChildren = {
+  ChatChannelIdRoute: ChatChannelIdRoute,
+}
+
+const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
+
 interface KnowledgeRouteChildren {
   KnowledgeSlugRoute: typeof KnowledgeSlugRoute
 }
@@ -681,7 +710,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AiRoute: AiRoute,
   AuthRoute: AuthRoute,
-  ChatRoute: ChatRoute,
+  ChatRoute: ChatRouteWithChildren,
   KnowledgeRoute: KnowledgeRouteWithChildren,
   MeetingRoute: MeetingRouteWithChildren,
   PeopleRoute: PeopleRouteWithChildren,
@@ -692,3 +721,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
