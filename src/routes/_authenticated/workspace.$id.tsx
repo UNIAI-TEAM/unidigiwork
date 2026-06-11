@@ -830,12 +830,22 @@ function WorkspaceDetailPage() {
                         Vừa tải lên ({recentUploads.length})
                       </h3>
                     </div>
-                    <button
-                      onClick={() => setRecentUploads([])}
-                      className="text-[11px] text-muted-foreground hover:text-foreground"
-                    >
-                      Ẩn
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setRecentSort((s) => (s === "newest" ? "oldest" : "newest"))}
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                        title={recentSort === "newest" ? "Mới nhất trước" : "Cũ nhất trước"}
+                      >
+                        <ArrowUpDown className="h-3 w-3" />
+                        {recentSort === "newest" ? "Mới nhất" : "Cũ nhất"}
+                      </button>
+                      <button
+                        onClick={() => setRecentUploads([])}
+                        className="text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        Ẩn
+                      </button>
+                    </div>
                   </div>
                   <ul className="divide-y divide-emerald-500/10">
                     {recentUploads.map((d) => (
