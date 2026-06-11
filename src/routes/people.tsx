@@ -722,39 +722,65 @@ function PersonRow({
   active,
   divider,
   onClick,
+  onEdit,
+  onDelete,
 }: {
   p: Person;
   active?: boolean;
   divider?: boolean;
   onClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-surface-2 ${
+    <div
+      className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-2 ${
         active ? "bg-surface-2" : ""
       } ${divider ? "border-t border-border" : ""}`}
     >
-      <div className="relative shrink-0">
-        <img src={avatar(p.seed)} alt={p.name} className="h-9 w-9 rounded-full object-cover" />
-        <span
-          className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
-        />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-medium">{p.name}</span>
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}>
-            {p.role}
-          </span>
+      <button
+        onClick={onClick}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <div className="relative shrink-0">
+          <img src={avatar(p.seed)} alt={p.name} className="h-9 w-9 rounded-full object-cover" />
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
+          />
         </div>
-        <div className="truncate text-xs text-muted-foreground">
-          {p.title} · {p.team}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-medium">{p.name}</span>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${p.roleColor}`}>
+              {p.role}
+            </span>
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            {p.title} · {p.team}
+          </div>
         </div>
-      </div>
+      </button>
       <div className="hidden text-xs text-muted-foreground sm:block">{p.email}</div>
       <div className="hidden text-xs text-muted-foreground md:block">{p.location}</div>
-    </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="bg-surface border-border">
+          <DropdownMenuItem onClick={onEdit} className="cursor-pointer focus:bg-surface-2">
+            <Edit3 className="h-4 w-4 mr-2" /> Sửa
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
+            <Trash2 className="h-4 w-4 mr-2" /> Xóa
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
