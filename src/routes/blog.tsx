@@ -35,7 +35,7 @@ export const featured = {
   date: "08/06/2026",
 };
 
-const posts = [
+export const posts = [
   {
     slug: "huong-dan-su-dung-ai-copilot",
     cat: "Hướng dẫn",
