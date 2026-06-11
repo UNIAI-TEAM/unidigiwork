@@ -370,10 +370,15 @@ function PeoplePage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selectedId, setSelectedId] = useState<string>("p1");
   const [addOpen, setAddOpen] = useState(false);
+  const [peopleList, setPeopleList] = useState<Person[]>(DEFAULT_PEOPLE);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    return people.filter((p) => {
+    return peopleList.filter((p) => {
       if (department !== "All" && p.department !== department) return false;
       if (role !== "All" && p.role !== role) return false;
       if (location !== "All" && p.location !== location) return false;
@@ -386,12 +391,33 @@ function PeoplePage() {
         p.skills.some((s) => s.toLowerCase().includes(q))
       );
     });
-  }, [query, department, role, location]);
+  }, [query, department, role, location, peopleList]);
 
   const selected = useMemo(
-    () => people.find((p) => p.id === selectedId) ?? people[0],
-    [selectedId],
+    () => peopleList.find((p) => p.id === selectedId) ?? peopleList[0],
+    [selectedId, peopleList],
   );
+
+  const handleEdit = (person: Person) => {
+    setEditingPerson(person);
+    setEditOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!deletingId) return;
+    setPeopleList((prev) => prev.filter((p) => p.id !== deletingId));
+    if (selectedId === deletingId) {
+      const remaining = peopleList.filter((p) => p.id !== deletingId);
+      setSelectedId(remaining[0]?.id ?? "");
+    }
+    setDeletingId(null);
+    setDeleteOpen(false);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
