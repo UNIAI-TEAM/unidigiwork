@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowsRouteImport } from './routes/workflows'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as MeetingRouteImport } from './routes/meeting'
@@ -57,6 +58,11 @@ const TasksRoute = TasksRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRouteWithChildren
@@ -266,6 +273,7 @@ export interface FileRoutesByTo {
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRouteWithChildren
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/people'
     | '/pricing'
+    | '/privacy'
     | '/reports'
     | '/tasks'
     | '/workflows'
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/people'
     | '/pricing'
+    | '/privacy'
     | '/tasks'
     | '/workflows'
     | '/dashboard'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/meeting'
     | '/people'
     | '/pricing'
+    | '/privacy'
     | '/reports'
     | '/tasks'
     | '/workflows'
@@ -446,6 +458,7 @@ export interface RootRouteChildren {
   MeetingRoute: typeof MeetingRouteWithChildren
   PeopleRoute: typeof PeopleRouteWithChildren
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRouteWithChildren
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
@@ -472,6 +485,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -850,6 +870,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingRoute: MeetingRouteWithChildren,
   PeopleRoute: PeopleRouteWithChildren,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRouteWithChildren,
   WorkflowsRoute: WorkflowsRouteWithChildren,
