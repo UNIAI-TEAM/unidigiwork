@@ -34,6 +34,11 @@ import {
   Copy,
   Trash2,
   Shield,
+  Upload,
+  FolderOpen,
+  Tag as TagIcon,
+  Eye,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
