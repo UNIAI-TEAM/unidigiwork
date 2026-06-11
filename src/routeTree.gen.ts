@@ -23,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
+import { Route as MeetingIdRouteImport } from './routes/meeting.$id'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -102,6 +103,11 @@ const ReportsTypeRoute = ReportsTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => ReportsRoute,
 } as any)
+const MeetingIdRoute = MeetingIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MeetingRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -158,7 +164,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/knowledge': typeof KnowledgeRoute
-  '/meeting': typeof MeetingRoute
+  '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRoute
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/meeting/$id': typeof MeetingIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
   '/reports/': typeof ReportsIndexRoute
@@ -182,7 +189,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/knowledge': typeof KnowledgeRoute
-  '/meeting': typeof MeetingRoute
+  '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRoute
   '/tasks': typeof TasksRouteWithChildren
   '/workflows': typeof WorkflowsRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/meeting/$id': typeof MeetingIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
   '/reports': typeof ReportsIndexRoute
@@ -207,7 +215,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/knowledge': typeof KnowledgeRoute
-  '/meeting': typeof MeetingRoute
+  '/meeting': typeof MeetingRouteWithChildren
   '/people': typeof PeopleRoute
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/meeting/$id': typeof MeetingIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
   '/reports/': typeof ReportsIndexRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/meeting/$id'
     | '/reports/$type'
     | '/tasks/$id'
     | '/reports/'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/notifications'
     | '/settings'
+    | '/meeting/$id'
     | '/reports/$type'
     | '/tasks/$id'
     | '/reports'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/notifications'
     | '/_authenticated/settings'
+    | '/meeting/$id'
     | '/reports/$type'
     | '/tasks/$id'
     | '/reports/'
@@ -307,7 +319,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
   KnowledgeRoute: typeof KnowledgeRoute
-  MeetingRoute: typeof MeetingRoute
+  MeetingRoute: typeof MeetingRouteWithChildren
   PeopleRoute: typeof PeopleRoute
   ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRouteWithChildren
@@ -413,6 +425,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/$type'
       preLoaderRoute: typeof ReportsTypeRouteImport
       parentRoute: typeof ReportsRoute
+    }
+    '/meeting/$id': {
+      id: '/meeting/$id'
+      path: '/$id'
+      fullPath: '/meeting/$id'
+      preLoaderRoute: typeof MeetingIdRouteImport
+      parentRoute: typeof MeetingRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -531,6 +550,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface MeetingRouteChildren {
+  MeetingIdRoute: typeof MeetingIdRoute
+}
+
+const MeetingRouteChildren: MeetingRouteChildren = {
+  MeetingIdRoute: MeetingIdRoute,
+}
+
+const MeetingRouteWithChildren =
+  MeetingRoute._addFileChildren(MeetingRouteChildren)
+
 interface ReportsRouteChildren {
   ReportsTypeRoute: typeof ReportsTypeRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
@@ -561,7 +591,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
   KnowledgeRoute: KnowledgeRoute,
-  MeetingRoute: MeetingRoute,
+  MeetingRoute: MeetingRouteWithChildren,
   PeopleRoute: PeopleRoute,
   ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRouteWithChildren,
