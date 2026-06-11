@@ -651,7 +651,10 @@ function WorkspaceDetailPage() {
                             {m.title} · {ROLE_LABEL[m.role]}
                           </div>
                         </div>
-                        <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                        <button
+                          onClick={() => toast.message(`Thao tác cho ${m.name}`)}
+                          className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                       </li>
