@@ -848,8 +848,17 @@ function WorkspaceDetailPage() {
                           value={recentSearch}
                           onChange={(e) => setRecentSearch(e.target.value)}
                           placeholder="Tìm theo tên hoặc tags..."
-                          className="h-8 w-40 rounded-md border border-emerald-500/20 bg-emerald-500/10 pl-7 pr-2 text-xs text-emerald-100 placeholder:text-emerald-300/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/40 sm:w-56"
+                          className="h-8 w-40 rounded-md border border-emerald-500/20 bg-emerald-500/10 pl-7 pr-7 text-xs text-emerald-100 placeholder:text-emerald-300/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/40 sm:w-56"
                         />
+                        {recentSearch && (
+                          <button
+                            onClick={() => setRecentSearch("")}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-emerald-300/70 hover:bg-emerald-500/20 hover:text-emerald-200"
+                            title="Xóa tìm kiếm"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                       <button
                         onClick={() => setRecentSort((s) => (s === "newest" ? "oldest" : "newest"))}
