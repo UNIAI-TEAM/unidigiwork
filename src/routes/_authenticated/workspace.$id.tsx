@@ -833,14 +833,24 @@ function WorkspaceDetailPage() {
               {/* Recent uploads */}
               {recentUploads.length > 0 && (
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                       <h3 className="text-sm font-semibold text-emerald-200">
-                        Vừa tải lên ({recentUploads.length})
+                        Vừa tải lên ({displayRecent.length})
                       </h3>
                     </div>
                     <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-emerald-300/70" />
+                        <input
+                          type="text"
+                          value={recentSearch}
+                          onChange={(e) => setRecentSearch(e.target.value)}
+                          placeholder="Tìm theo tên hoặc tags..."
+                          className="h-8 w-40 rounded-md border border-emerald-500/20 bg-emerald-500/10 pl-7 pr-2 text-xs text-emerald-100 placeholder:text-emerald-300/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/40 sm:w-56"
+                        />
+                      </div>
                       <button
                         onClick={() => setRecentSort((s) => (s === "newest" ? "oldest" : "newest"))}
                         className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
@@ -857,65 +867,71 @@ function WorkspaceDetailPage() {
                       </button>
                     </div>
                   </div>
-                  <ul className="divide-y divide-emerald-500/10">
-                    {[...recentUploads]
-                      .sort((a, b) =>
-                        recentSort === "newest"
-                          ? b.uploadedAt - a.uploadedAt
-                          : a.uploadedAt - b.uploadedAt,
-                      )
-                      .map((d) => (
-                      <li key={d.name} className="flex items-center gap-3 py-2.5">
-                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
-                          {docTypeIcon(d.type)}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <div className="truncate text-sm font-medium">{d.name}</div>
-                            <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${docTypeBg(d.type)}`}>
-                              {d.type === "xlsx" ? "Excel" : d.type === "ppt" ? "PPTX" : d.type === "image" ? "Image" : d.type === "pdf" ? "PDF" : d.type === "doc" ? "Word" : "File"}
+                  {displayRecent.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-emerald-300/80">
+                      Không tìm thấy tài liệu phù hợp
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-emerald-500/10">
+                      {[...displayRecent]
+                        .sort((a, b) =>
+                          recentSort === "newest"
+                            ? b.uploadedAt - a.uploadedAt
+                            : a.uploadedAt - b.uploadedAt,
+                        )
+                        .map((d) => (
+                        <li key={d.name} className="flex items-center gap-3 py-2.5">
+                          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
+                            {docTypeIcon(d.type)}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="truncate text-sm font-medium">{d.name}</div>
+                              <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${docTypeBg(d.type)}`}>
+                                {d.type === "xlsx" ? "Excel" : d.type === "ppt" ? "PPTX" : d.type === "image" ? "Image" : d.type === "pdf" ? "PDF" : d.type === "doc" ? "Word" : "File"}
+                              </span>
+                            </div>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                              <span className="font-medium text-foreground/80">{d.size}</span>
+                              <span>·</span>
+                              <span>{d.folder}</span>
+                              {d.tags.length > 0 && (
+                                <>
+                                  <span>·</span>
+                                  <span className="flex items-center gap-1">
+                                    <TagIcon className="h-3 w-3" />
+                                    {d.tags.join(", ")}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button
+                              onClick={() => {
+                                const url = URL.createObjectURL(d.file);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = d.file.name;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                                toast.success(`Đã tải xuống ${d.file.name}`);
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                              title="Tải xuống"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">
+                              Đã xong
                             </span>
                           </div>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-                            <span className="font-medium text-foreground/80">{d.size}</span>
-                            <span>·</span>
-                            <span>{d.folder}</span>
-                            {d.tags.length > 0 && (
-                              <>
-                                <span>·</span>
-                                <span className="flex items-center gap-1">
-                                  <TagIcon className="h-3 w-3" />
-                                  {d.tags.join(", ")}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <button
-                            onClick={() => {
-                              const url = URL.createObjectURL(d.file);
-                              const a = document.createElement("a");
-                              a.href = url;
-                              a.download = d.file.name;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                              URL.revokeObjectURL(url);
-                              toast.success(`Đã tải xuống ${d.file.name}`);
-                            }}
-                            className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-                            title="Tải xuống"
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">
-                            Đã xong
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
 
