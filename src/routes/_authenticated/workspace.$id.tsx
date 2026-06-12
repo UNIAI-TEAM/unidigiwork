@@ -420,6 +420,7 @@ function WorkspaceDetailPage() {
   const [showUploadDoc, setShowUploadDoc] = useState(false);
   const [recentUploads, setRecentUploads] = useState<RecentDoc[]>([]);
   const [recentSort, setRecentSort] = useState<"newest" | "oldest">("newest");
+  const [recentSearch, setRecentSearch] = useState("");
   const navigate = useNavigate();
 
   const healthCls =
