@@ -423,6 +423,15 @@ function WorkspaceDetailPage() {
   const [recentSearch, setRecentSearch] = useState("");
   const navigate = useNavigate();
 
+  const displayRecent = useMemo(() => {
+    const q = recentSearch.trim().toLowerCase();
+    if (!q) return recentUploads;
+    return recentUploads.filter((d) =>
+      d.name.toLowerCase().includes(q) ||
+      d.tags.some((t) => t.toLowerCase().includes(q))
+    );
+  }, [recentUploads, recentSearch]);
+
   const healthCls =
     ws.health === "Tốt"
       ? "bg-emerald-500/15 text-emerald-300"
