@@ -9,6 +9,7 @@ const dict = {
     "nav.dashboard": "Bảng điều khiển",
     "nav.chat": "Trò chuyện",
     "nav.meetings": "Họp",
+    "nav.calendar": "Lịch",
     "nav.tasks": "Công việc & Dự án",
     "nav.documents": "Tài liệu",
     "nav.knowledge": "Kho tri thức",
