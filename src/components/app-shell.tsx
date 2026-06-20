@@ -62,6 +62,7 @@ type NavKey =
   | "dashboard"
   | "chat"
   | "meetings"
+  | "calendar"
   | "tasks"
   | "documents"
   | "knowledge"
@@ -299,6 +300,13 @@ export function AppSidebar({
                 </span>
               ) : undefined
             }
+            collapsed={collapsed}
+          />
+          <NavItem
+            icon={Calendar}
+            label={t("nav.calendar")}
+            to="/calendar"
+            active={active === "calendar"}
             collapsed={collapsed}
           />
           <NavItem
