@@ -43,12 +43,10 @@ import {
   AtSign,
   CheckCircle2,
   ExternalLink,
-  Dot,
 } from "lucide-react";
 import { ThemeToggle } from "@/lib/theme";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { openCommandPalette } from "@/components/command-palette";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Dialog,
