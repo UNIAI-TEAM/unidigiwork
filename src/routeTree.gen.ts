@@ -36,6 +36,7 @@ import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
 import { Route as ChatChannelIdRouteImport } from './routes/chat.$channelId'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/email'
@@ -183,6 +184,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedNotificationsRoute =
   AuthenticatedNotificationsRouteImport.update({
     id: '/notifications',
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
@@ -311,6 +318,7 @@ export interface FileRoutesByTo {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
@@ -395,6 +404,7 @@ export interface FileRouteTypes {
     | '/email'
     | '/help'
     | '/notifications'
+    | '/search'
     | '/settings'
     | '/blog/$slug'
     | '/chat/$channelId'
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/email'
     | '/help'
     | '/notifications'
+    | '/search'
     | '/settings'
     | '/blog/$slug'
     | '/chat/$channelId'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email'
     | '/_authenticated/help'
     | '/_authenticated/notifications'
+    | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/blog/$slug'
     | '/chat/$channelId'
@@ -704,6 +716,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/search': {
+      id: '/_authenticated/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof AuthenticatedSearchRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/notifications': {
       id: '/_authenticated/notifications'
       path: '/notifications'
@@ -839,6 +858,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
 }
@@ -850,6 +870,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
 }
