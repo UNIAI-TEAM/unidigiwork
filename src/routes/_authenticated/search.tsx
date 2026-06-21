@@ -285,6 +285,25 @@ const ASSIGNEES = Array.from(
   new Map(DATA.filter((d) => d.owner).map((d) => [d.owner!.seed, d.owner!])).values(),
 ).sort((a, b) => a.name.localeCompare(b.name));
 
+// Precomputed search index: lowercased fields are computed ONCE at module load
+// instead of on every keystroke. Each entry carries a direct reference to the
+// original Result, so filtering/sorting never re-touches the source object's
+// strings. This is what an actual backend index would do — we just do it
+// client-side because the dataset is in memory.
+type IndexedResult = {
+  r: Result;
+  titleLc: string;
+  snippetLc: string;
+  metaLc: string;
+  hay: string;
+};
+const INDEX: IndexedResult[] = DATA.map((r) => {
+  const titleLc = r.title.toLowerCase();
+  const snippetLc = r.snippet.toLowerCase();
+  const metaLc = r.meta.toLowerCase();
+  return { r, titleLc, snippetLc, metaLc, hay: titleLc + " " + snippetLc + " " + metaLc };
+});
+
 const DATE_PRESETS: { id: string; label: string; range: () => [string, string] }[] = [
   {
     id: "today",
