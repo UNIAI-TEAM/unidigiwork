@@ -1181,7 +1181,7 @@ function EmailHubPage() {
                   {selectedEmail.body
                     ? selectedEmail.body.substring(0, 180).replace(/\n/g, " ") +
                       (selectedEmail.body.length > 180 ? "..." : "")
-                    : "Không có nội dung để tóm tắt."}
+                    : "Chưa có nội dung để tóm tắt"}
                 </p>
                 <div className="mt-4 text-sm font-medium">Đề xuất hành động</div>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
