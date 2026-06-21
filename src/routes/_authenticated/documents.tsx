@@ -344,7 +344,7 @@ function DocumentsPage() {
             <div className="flex-1 overflow-y-auto px-2 pb-3">
               {docs.length === 0 ? (
                 <div className="px-2 py-6 text-center text-xs text-muted-foreground">
-                  {currentWs ? "Chưa có tài liệu. Bấm + để tạo." : "Hãy tạo workspace đầu tiên."}
+                  {currentWs ? "Chưa có tài liệu nào. Bấm + để tạo mới" : "Tạo workspace đầu tiên để bắt đầu"}
                 </div>
               ) : (
                 userFolders.map((f) => (

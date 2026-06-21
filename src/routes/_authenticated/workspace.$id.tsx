@@ -1753,8 +1753,7 @@ function UploadDocumentDialog({
               <FileText className="mx-auto size-6 text-muted-foreground" />
               <p className="mt-2 text-sm font-medium">Chưa có tệp nào</p>
               <p className="text-[11px] text-muted-foreground">
-                Thêm tệp hoặc cả thư mục để bắt đầu. Metadata sẽ áp dụng cho mọi tệp trong lần
-                tải lên này.
+                Kéo thả hoặc chọn tệp để tải lên. Metadata áp dụng cho toàn bộ lần tải lên này
               </p>
             </div>
           ) : (

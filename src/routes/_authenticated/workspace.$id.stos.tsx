@@ -538,7 +538,7 @@ function StosDetailPage() {
                 <div className="space-y-3">
                   {milestones.length === 0 && (
                     <div className="text-center py-8 text-sm text-slate-500">
-                      Chưa có milestone nào.
+                      Chưa có milestone nào
                     </div>
                   )}
                   {milestones.map((m, i) => (
@@ -635,7 +635,7 @@ function StosDetailPage() {
                 <div className="divide-y divide-slate-100">
                   {docs.length === 0 && (
                     <div className="text-center py-8 text-sm text-slate-500">
-                      Chưa có tài liệu nào.
+                      Chưa có tài liệu nào
                     </div>
                   )}
                   {docs.map((d) => (
@@ -786,7 +786,7 @@ function StosDetailPage() {
                   </div>
                   {audit.length === 0 ? (
                     <div className="text-xs text-slate-500 py-4 text-center">
-                      Chưa có hoạt động nào.
+                      Chưa có hoạt động nào
                     </div>
                   ) : (
                     <ul className="space-y-3">
@@ -1565,7 +1565,7 @@ function AuditDialog({
             )}
           </div>
           {list.length === 0 ? (
-            <div className="text-sm text-slate-500 text-center py-8">Không có hoạt động.</div>
+            <div className="text-sm text-slate-500 text-center py-8">Chưa có hoạt động nào</div>
           ) : (
             <ul className="space-y-3">
               {pageItems.map((e) => (
