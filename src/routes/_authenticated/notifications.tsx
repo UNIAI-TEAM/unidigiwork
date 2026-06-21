@@ -223,7 +223,7 @@ function NotificationsPage() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Thông báo</h1>
               <p className="text-xs text-muted-foreground">
-                {unreadCount} chưa đọc · {NOTIFS.length} tổng cộng
+                {unreadCount} chưa đọc · {items.length} tổng cộng
               </p>
             </div>
             <nav className="space-y-1 rounded-2xl border border-border bg-surface p-2">
