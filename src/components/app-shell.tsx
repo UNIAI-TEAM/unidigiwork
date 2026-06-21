@@ -40,6 +40,10 @@ import {
   Languages,
   FileSearch,
   Lightbulb,
+  AtSign,
+  CheckCircle2,
+  ExternalLink,
+  Dot,
 } from "lucide-react";
 import { ThemeToggle } from "@/lib/theme";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
