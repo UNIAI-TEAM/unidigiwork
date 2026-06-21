@@ -15,6 +15,7 @@ import {
   Briefcase,
   User as UserIcon,
   ArrowUpDown,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -435,6 +436,36 @@ function SearchPage() {
     (project ? 1 : 0) + (assignee ? 1 : 0) + (from || to ? 1 : 0);
 
   const assigneeName = ASSIGNEES.find((a) => a.seed === assignee)?.name;
+
+  // Infinite scroll: reset visible count whenever filters / query / tab / sort change
+  const PAGE_SIZE = 8;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [q, type, project, assignee, from, to, sort]);
+
+  const visible = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount],
+  );
+  const hasMore = visibleCount < filtered.length;
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "300px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, filtered.length]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
