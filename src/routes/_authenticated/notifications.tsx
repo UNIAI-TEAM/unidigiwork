@@ -18,6 +18,8 @@ import {
   Trash2,
   Circle,
   Archive,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -171,10 +173,12 @@ function NotifRow({
   n,
   selected,
   onToggle,
+  onMarkRead,
 }: {
   n: Notif;
   selected: boolean;
   onToggle: () => void;
+  onMarkRead: () => void;
 }) {
   const meta = iconFor(n.cat);
   const Icon = meta.icon;
@@ -226,12 +230,26 @@ function NotifRow({
           <span>{n.time}</span>
           <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/60 sm:inline-block" />
           <button className="hidden text-primary hover:underline sm:inline">Xem chi tiết</button>
-          <button className="hidden text-muted-foreground hover:text-foreground sm:inline">
-            Đánh dấu đã đọc
-          </button>
+          {n.unread && (
+            <button
+              onClick={onMarkRead}
+              className="hidden text-muted-foreground hover:text-foreground sm:inline"
+            >
+              Đánh dấu đã đọc
+            </button>
+          )}
         </div>
       </div>
       <div className="hidden items-center gap-1 self-center opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+        {n.unread && (
+          <button
+            title="Đánh dấu đã đọc"
+            onClick={onMarkRead}
+            className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-primary"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           title="Lưu trữ"
           className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground"
@@ -255,9 +273,12 @@ function NotificationsPage() {
   const [tab, setTab] = useState<"inbox" | "unread" | "mentions" | "archived">("inbox");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<Notif[]>(NOTIFS);
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
 
   const filtered = useMemo(() => {
-    return NOTIFS.filter((n) => {
+    return items.filter((n) => {
       if (cat !== "all" && n.cat !== cat) return false;
       if (tab === "unread" && !n.unread) return false;
       if (tab === "mentions" && n.cat !== "mention") return false;
@@ -266,17 +287,29 @@ function NotificationsPage() {
         return false;
       return true;
     });
+  }, [items, cat, tab, q]);
+
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setPage(1);
   }, [cat, tab, q]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage],
+  );
 
   const groups = useMemo(() => {
     const map = new Map<Notif["group"], Notif[]>();
-    filtered.forEach((n) => {
+    pageItems.forEach((n) => {
       map.set(n.group, [...(map.get(n.group) ?? []), n]);
     });
     return Array.from(map.entries());
-  }, [filtered]);
+  }, [pageItems]);
 
-  const unreadCount = NOTIFS.filter((n) => n.unread).length;
+  const unreadCount = items.filter((n) => n.unread).length;
 
   const toggle = (id: string) => {
     setSelected((s) => {
@@ -285,6 +318,17 @@ function NotificationsPage() {
       else n.add(id);
       return n;
     });
+  };
+
+  const markRead = (ids: string[]) => {
+    const set = new Set(ids);
+    setItems((arr) => arr.map((n) => (set.has(n.id) ? { ...n, unread: false } : n)));
+  };
+  const markAllRead = () => setItems((arr) => arr.map((n) => ({ ...n, unread: false })));
+  const removeItems = (ids: string[]) => {
+    const set = new Set(ids);
+    setItems((arr) => arr.filter((n) => !set.has(n.id)));
+    setSelected(new Set());
   };
 
   return (
@@ -305,7 +349,7 @@ function NotificationsPage() {
             <nav className="space-y-1 rounded-2xl border border-border bg-surface p-2">
               {CATS.map((c) => {
                 const count =
-                  c.key === "all" ? NOTIFS.length : NOTIFS.filter((n) => n.cat === c.key).length;
+                    c.key === "all" ? items.length : items.filter((n) => n.cat === c.key).length;
                 const active = cat === c.key;
                 return (
                   <button
@@ -366,7 +410,10 @@ function NotificationsPage() {
               <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-surface-2">
                 <Filter className="h-3.5 w-3.5" /> Bộ lọc
               </button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20">
+              <button
+                onClick={markAllRead}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
+              >
                 <CheckCheck className="h-3.5 w-3.5" /> Đánh dấu tất cả đã đọc
               </button>
             </div>
@@ -374,11 +421,22 @@ function NotificationsPage() {
             {selected.size > 0 && (
               <div className="flex items-center gap-3 border-b border-border bg-primary/10 px-4 py-2 text-xs">
                 <span className="font-medium">{selected.size} được chọn</span>
-                <button className="text-muted-foreground hover:text-foreground">
+                <button
+                  onClick={() => {
+                    markRead(Array.from(selected));
+                    setSelected(new Set());
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
                   Đánh dấu đã đọc
                 </button>
                 <button className="text-muted-foreground hover:text-foreground">Lưu trữ</button>
-                <button className="text-destructive hover:underline">Xóa</button>
+                <button
+                  onClick={() => removeItems(Array.from(selected))}
+                  className="text-destructive hover:underline"
+                >
+                  Xóa
+                </button>
                 <button
                   onClick={() => setSelected(new Set())}
                   className="ml-auto text-muted-foreground hover:text-foreground"
@@ -399,21 +457,62 @@ function NotificationsPage() {
                 </p>
               </div>
             ) : (
-              groups.map(([g, items]) => (
+              <>
+              {groups.map(([g, list]) => (
                 <div key={g}>
                   <div className="flex items-center gap-2 bg-surface-2/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {g} <span className="text-muted-foreground/70">· {items.length}</span>
+                    {g} <span className="text-muted-foreground/70">· {list.length}</span>
                   </div>
-                  {items.map((n) => (
+                  {list.map((n) => (
                     <NotifRow
                       key={n.id}
                       n={n}
                       selected={selected.has(n.id)}
                       onToggle={() => toggle(n.id)}
+                      onMarkRead={() => markRead([n.id])}
                     />
                   ))}
                 </div>
-              ))
+              ))}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+                <span>
+                  Hiển thị{" "}
+                  <span className="font-medium text-foreground">
+                    {(currentPage - 1) * pageSize + 1}–
+                    {Math.min(currentPage * pageSize, filtered.length)}
+                  </span>{" "}
+                  trong tổng {filtered.length}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" /> Trước
+                  </button>
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const p = i + 1;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`min-w-[28px] rounded-lg px-2 py-1 ${p === currentPage ? "bg-primary text-primary-foreground" : "border border-border bg-surface hover:bg-surface-2"}`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Sau <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              </>
             )}
           </section>
         </div>
