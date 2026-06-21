@@ -258,6 +258,43 @@ function NotificationDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Delete confirmation dialog */}
+        {confirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-lg">
+              <div className="mb-4 flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                  <Trash2 className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">Xóa thông báo?</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Bạn có chắc muốn xóa thông báo này? Hành động này không thể hoàn tác.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setConfirmOpen(false)}
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={() => {
+                    removeNotif(notif.id);
+                    setConfirmOpen(false);
+                    router.navigate({ to: "/notifications" });
+                  }}
+                  className="rounded-lg bg-destructive px-3 py-2 text-sm font-medium text-white hover:bg-destructive/90"
+                >
+                  Xóa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
