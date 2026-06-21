@@ -1,16 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { LucideIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Bell,
-  AtSign,
   CheckCircle2,
-  Video,
-  FileText,
-  Workflow,
-  MessageCircle,
   AlertTriangle,
-  ShieldCheck,
   Filter,
   CheckCheck,
   Settings2,
@@ -22,6 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { CATS, NOTIFS, catMeta, type Cat, type Notif } from "@/lib/notifications-data";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
@@ -36,139 +31,6 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   component: NotificationsPage,
 });
 
-type Cat = "all" | "mention" | "task" | "meeting" | "document" | "workflow" | "system";
-
-type Notif = {
-  id: string;
-  cat: Exclude<Cat, "all">;
-  actor?: string;
-  title: string;
-  body: string;
-  time: string;
-  group: "Hôm nay" | "Hôm qua" | "Tuần này";
-  unread?: boolean;
-  important?: boolean;
-};
-
-const CATS: { key: Cat; label: string; icon: LucideIcon; tint: string }[] = [
-  { key: "all", label: "Tất cả", icon: Bell, tint: "text-foreground" },
-  { key: "mention", label: "Nhắc tên", icon: AtSign, tint: "text-violet-300" },
-  { key: "task", label: "Nhiệm vụ", icon: CheckCircle2, tint: "text-emerald-300" },
-  { key: "meeting", label: "Họp", icon: Video, tint: "text-rose-300" },
-  { key: "document", label: "Tài liệu", icon: FileText, tint: "text-sky-300" },
-  { key: "workflow", label: "Quy trình", icon: Workflow, tint: "text-amber-300" },
-  { key: "system", label: "Hệ thống", icon: ShieldCheck, tint: "text-primary" },
-];
-
-const NOTIFS: Notif[] = [
-  {
-    id: "1",
-    cat: "mention",
-    actor: "Trần Thị B",
-    title: "đã nhắc bạn trong #dev-team",
-    body: '"@Nguyễn Văn A vui lòng review PR #482 trước 17:00 nhé."',
-    time: "5 phút trước",
-    group: "Hôm nay",
-    unread: true,
-    important: true,
-  },
-  {
-    id: "2",
-    cat: "task",
-    actor: "Phạm Minh C",
-    title: "đã giao nhiệm vụ cho bạn",
-    body: "Thiết kế API Gateway v2.2 — hạn 15/06/2026",
-    time: "32 phút trước",
-    group: "Hôm nay",
-    unread: true,
-  },
-  {
-    id: "3",
-    cat: "meeting",
-    title: "Sắp diễn ra: Sprint 6 Daily Standup",
-    body: "Bắt đầu lúc 09:30 AM · 5 người tham gia",
-    time: "1 giờ trước",
-    group: "Hôm nay",
-    unread: true,
-  },
-  {
-    id: "4",
-    cat: "document",
-    actor: "Phạm Minh C",
-    title: "đã cập nhật tài liệu",
-    body: "API_Gateway_Spec_v2.1.docx trong STOS Project",
-    time: "2 giờ trước",
-    group: "Hôm nay",
-  },
-  {
-    id: "5",
-    cat: "workflow",
-    actor: "Lê Hoàng D",
-    title: "cần bạn phê duyệt",
-    body: "Approval — Leave Request của Nguyễn Hương (3 ngày)",
-    time: "3 giờ trước",
-    group: "Hôm nay",
-    unread: true,
-    important: true,
-  },
-  {
-    id: "6",
-    cat: "system",
-    title: "Bảo trì định kỳ hệ thống",
-    body: "Hệ thống sẽ bảo trì vào 22:00 ngày 25/05/2026 (GMT+7), ngừng dịch vụ ~30 phút.",
-    time: "Hôm qua, 18:00",
-    group: "Hôm qua",
-  },
-  {
-    id: "7",
-    cat: "mention",
-    actor: "Nguyễn Hương",
-    title: "đã bình luận trong tài liệu",
-    body: '"Phần API Gateway có thể chia nhỏ section 3 không?"',
-    time: "Hôm qua, 14:22",
-    group: "Hôm qua",
-  },
-  {
-    id: "8",
-    cat: "task",
-    actor: "Trần Thị B",
-    title: "đã hoàn thành nhiệm vụ",
-    body: "Thiết kế UI Dashboard — STOS Project",
-    time: "Hôm qua, 09:45",
-    group: "Hôm qua",
-  },
-  {
-    id: "9",
-    cat: "meeting",
-    title: "Tóm tắt cuộc họp: Review API Gateway",
-    body: "5 quyết định, 7 hành động được tạo. Xem tóm tắt AI.",
-    time: "Hôm qua, 11:30",
-    group: "Hôm qua",
-  },
-  {
-    id: "10",
-    cat: "document",
-    actor: "Bạn",
-    title: "đã được chia sẻ tài liệu",
-    body: "Kế hoạch tuyển dụng Q3 — UNI-HRM workspace",
-    time: "T3, 16:10",
-    group: "Tuần này",
-  },
-  {
-    id: "11",
-    cat: "system",
-    title: "Đăng nhập thiết bị mới",
-    body: "UNIWORK iOS · Hà Nội, Việt Nam · IP 14.232.xxx.12",
-    time: "T2, 08:05",
-    group: "Tuần này",
-    important: true,
-  },
-];
-
-function iconFor(cat: Notif["cat"]) {
-  return CATS.find((c) => c.key === cat)!;
-}
-
 function NotifRow({
   n,
   selected,
@@ -180,7 +42,7 @@ function NotifRow({
   onToggle: () => void;
   onMarkRead: () => void;
 }) {
-  const meta = iconFor(n.cat);
+  const meta = catMeta(n.cat);
   const Icon = meta.icon;
   return (
     <div
@@ -192,7 +54,12 @@ function NotifRow({
         onChange={onToggle}
         className="mt-1.5 h-4 w-4 rounded border-border bg-surface accent-primary"
       />
-      <div className="relative shrink-0">
+      <Link
+        to="/notifications/$id"
+        params={{ id: n.id }}
+        onClick={() => n.unread && onMarkRead()}
+        className="relative shrink-0"
+      >
         {n.actor ? (
           <img src={avatar(n.actor)} alt="" className="h-10 w-10 rounded-full object-cover" />
         ) : (
@@ -209,8 +76,13 @@ function NotifRow({
             <Icon className="h-3 w-3" />
           </span>
         )}
-      </div>
-      <div className="min-w-0 flex-1">
+      </Link>
+      <Link
+        to="/notifications/$id"
+        params={{ id: n.id }}
+        onClick={() => n.unread && onMarkRead()}
+        className="min-w-0 flex-1"
+      >
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1 text-sm leading-snug">
             {n.actor && <span className="font-semibold">{n.actor}</span>}{" "}
@@ -229,17 +101,21 @@ function NotifRow({
         <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
           <span>{n.time}</span>
           <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/60 sm:inline-block" />
-          <button className="hidden text-primary hover:underline sm:inline">Xem chi tiết</button>
+          <span className="hidden text-primary group-hover:underline sm:inline">Xem chi tiết</span>
           {n.unread && (
-            <button
-              onClick={onMarkRead}
+            <span
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onMarkRead();
+              }}
               className="hidden text-muted-foreground hover:text-foreground sm:inline"
             >
               Đánh dấu đã đọc
-            </button>
+            </span>
           )}
         </div>
-      </div>
+      </Link>
       <div className="hidden items-center gap-1 self-center opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
         {n.unread && (
           <button
