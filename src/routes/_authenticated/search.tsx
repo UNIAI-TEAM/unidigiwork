@@ -27,6 +27,7 @@ type SearchParams = {
   assignee?: string;
   from?: string; // YYYY-MM-DD
   to?: string; // YYYY-MM-DD
+  sort?: "relevance" | "time";
 };
 
 export const Route = createFileRoute("/_authenticated/search")({
