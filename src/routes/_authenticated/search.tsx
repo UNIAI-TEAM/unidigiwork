@@ -453,8 +453,8 @@ function SearchPage() {
       document: 0,
       person: 0,
     };
-    all.forEach((r) => {
-      c[r.type] += 1;
+    all.forEach((x) => {
+      c[x.r.type] += 1;
     });
     return c;
   }, [all]);
