@@ -393,10 +393,28 @@ function SearchPage() {
     });
   }, [q, project, assignee, from, to]);
 
-  const filtered = useMemo(
-    () => (type === "all" ? all : all.filter((r) => r.type === type)),
-    [all, type],
-  );
+  const filtered = useMemo(() => {
+    const list = type === "all" ? [...all] : all.filter((r) => r.type === type);
+    if (sort === "time") {
+      list.sort((a, b) => {
+        if (a.iso && b.iso) return b.iso.localeCompare(a.iso);
+        if (a.iso) return -1;
+        if (b.iso) return 1;
+        return 0;
+      });
+    } else if (sort === "relevance" && q.trim()) {
+      const needle = q.trim().toLowerCase();
+      const score = (r: Result) => {
+        let s = 0;
+        if (r.title.toLowerCase().includes(needle)) s += 3;
+        if (r.snippet.toLowerCase().includes(needle)) s += 2;
+        if (r.meta.toLowerCase().includes(needle)) s += 1;
+        return s;
+      };
+      list.sort((a, b) => score(b) - score(a));
+    }
+    return list;
+  }, [all, type, sort, q]);
 
   const counts = useMemo(() => {
     const c: Record<ResultType | "all", number> = {
