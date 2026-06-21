@@ -10,37 +10,55 @@ import {
   Calendar as CalendarIcon,
   ArrowUpRight,
   Sparkles,
+  SlidersHorizontal,
+  X,
+  Briefcase,
+  User as UserIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
-type SearchParams = { q?: string; type?: ResultType | "all" };
+type ResultType = "meeting" | "task" | "deadline" | "document" | "person";
+
+type SearchParams = {
+  q?: string;
+  type?: ResultType | "all";
+  project?: string;
+  assignee?: string;
+  from?: string; // YYYY-MM-DD
+  to?: string; // YYYY-MM-DD
+};
 
 export const Route = createFileRoute("/_authenticated/search")({
-  validateSearch: (s: Record<string, unknown>): SearchParams => ({
-    q: typeof s.q === "string" ? s.q : undefined,
-    type:
-      s.type === "meeting" ||
-      s.type === "task" ||
-      s.type === "deadline" ||
-      s.type === "document" ||
-      s.type === "person"
-        ? s.type
-        : "all",
-  }),
+  validateSearch: (s: Record<string, unknown>): SearchParams => {
+    const str = (v: unknown) =>
+      typeof v === "string" && v.trim() ? v : undefined;
+    const t = s.type;
+    return {
+      q: str(s.q),
+      type:
+        t === "meeting" || t === "task" || t === "deadline" || t === "document" || t === "person"
+          ? t
+          : "all",
+      project: str(s.project),
+      assignee: str(s.assignee),
+      from: str(s.from),
+      to: str(s.to),
+    };
+  },
   head: () => ({
     meta: [
       { title: "Tìm kiếm — UNIWORK" },
       {
         name: "description",
         content:
-          "Tìm kiếm toàn workspace: meeting, công việc, hạn chót, tài liệu và nhân sự.",
+          "Tìm kiếm toàn workspace với bộ lọc nâng cao: thời gian, dự án, người phụ trách.",
       },
     ],
   }),
   component: SearchPage,
 });
 
-type ResultType = "meeting" | "task" | "deadline" | "document" | "person";
+type Person = { name: string; seed: string };
 
 type Result = {
   id: string;
@@ -50,8 +68,9 @@ type Result = {
   meta: string;
   to: string;
   search?: Record<string, unknown>;
-  owner?: { name: string; seed: string };
-  date?: string;
+  owner?: Person;
+  iso?: string; // YYYY-MM-DD when applicable
+  project?: string;
 };
 
 const DATA: Result[] = [
@@ -60,37 +79,44 @@ const DATA: Result[] = [
     type: "meeting",
     title: "Standup Engineering",
     snippet: "Daily sync 9:00 — cập nhật tiến độ sprint, blockers và mục tiêu trong ngày.",
-    meta: "Hôm nay · 09:00 · Meet Room A",
+    meta: "21/06 · 09:00 · Meet Room A",
     to: "/meeting",
     owner: { name: "Minh", seed: "minh" },
-    date: "Hôm nay",
+    iso: "2026-06-21",
+    project: "UNIWORK Core",
   },
   {
     id: "m2",
     type: "meeting",
     title: "Demo khách hàng VPBank",
     snippet: "Trình bày phiên bản beta cho khối Khách hàng doanh nghiệp.",
-    meta: "Thứ 5 · 14:00 · Zoom",
+    meta: "25/06 · 14:00 · Zoom",
     to: "/meeting",
     owner: { name: "Phong", seed: "phong" },
+    iso: "2026-06-25",
+    project: "UNIWORK Core",
   },
   {
     id: "m3",
     type: "meeting",
     title: "Sprint Review Q3",
     snippet: "Tổng kết sprint, retro và lên kế hoạch sprint tiếp theo cùng PO.",
-    meta: "Thứ 6 · 15:30",
+    meta: "26/06 · 15:30",
     to: "/meeting",
     owner: { name: "Linh", seed: "linh" },
+    iso: "2026-06-26",
+    project: "Redesign",
   },
   {
     id: "t1",
     type: "task",
     title: "Hoàn thiện wireframe Dashboard",
     snippet: "Cập nhật wireframe cho trang Dashboard mới theo feedback của Linh.",
-    meta: "Dự án Redesign · Cao",
+    meta: "Dự án Redesign · Ưu tiên cao",
     to: "/tasks",
     owner: { name: "Linh", seed: "linh" },
+    iso: "2026-06-22",
+    project: "Redesign",
   },
   {
     id: "t2",
@@ -100,6 +126,8 @@ const DATA: Result[] = [
     meta: "Dự án Core · Trung bình",
     to: "/tasks",
     owner: { name: "An", seed: "an" },
+    iso: "2026-06-24",
+    project: "UNIWORK Core",
   },
   {
     id: "t3",
@@ -109,15 +137,19 @@ const DATA: Result[] = [
     meta: "DevOps · Đang làm",
     to: "/tasks",
     owner: { name: "Bảo", seed: "bao" },
+    iso: "2026-06-27",
+    project: "DevOps",
   },
   {
     id: "d1",
     type: "deadline",
     title: "Nộp đề xuất Q3",
     snippet: "Đề xuất ngân sách và roadmap Q3 cho ban giám đốc.",
-    meta: "Hạn 17:00 hôm nay",
+    meta: "Hạn 21/06 · 17:00",
     to: "/calendar",
     owner: { name: "Hà", seed: "ha" },
+    iso: "2026-06-21",
+    project: "HR",
   },
   {
     id: "d2",
@@ -127,6 +159,8 @@ const DATA: Result[] = [
     meta: "Hạn 30/06",
     to: "/calendar",
     owner: { name: "Phong", seed: "phong" },
+    iso: "2026-06-30",
+    project: "UNIWORK Core",
   },
   {
     id: "doc1",
@@ -137,6 +171,8 @@ const DATA: Result[] = [
     meta: "Kho tri thức · cập nhật 2 giờ trước",
     to: "/knowledge",
     owner: { name: "Khang", seed: "khang" },
+    iso: "2026-06-21",
+    project: "UNIWORK Core",
   },
   {
     id: "doc2",
@@ -146,6 +182,8 @@ const DATA: Result[] = [
     meta: "Tài liệu · HR",
     to: "/documents",
     owner: { name: "Hà", seed: "ha" },
+    iso: "2026-06-10",
+    project: "HR",
   },
   {
     id: "doc3",
@@ -155,6 +193,8 @@ const DATA: Result[] = [
     meta: "Tài liệu · Brand",
     to: "/documents",
     owner: { name: "Trang", seed: "trang" },
+    iso: "2026-05-28",
+    project: "Brand",
   },
   {
     id: "p1",
@@ -164,6 +204,7 @@ const DATA: Result[] = [
     meta: "Online · TP.HCM",
     to: "/people",
     owner: { name: "Linh", seed: "linh" },
+    project: "Redesign",
   },
   {
     id: "p2",
@@ -173,6 +214,7 @@ const DATA: Result[] = [
     meta: "Đang họp · Hà Nội",
     to: "/people",
     owner: { name: "Bảo", seed: "bao" },
+    project: "DevOps",
   },
   {
     id: "p3",
@@ -182,6 +224,7 @@ const DATA: Result[] = [
     meta: "Vắng đến 16:00",
     to: "/people",
     owner: { name: "Phong", seed: "phong" },
+    project: "UNIWORK Core",
   },
 ];
 
@@ -230,9 +273,64 @@ const TYPE_ORDER: (ResultType | "all")[] = [
   "person",
 ];
 
+const PROJECTS = Array.from(
+  new Set(DATA.map((d) => d.project).filter((p): p is string => Boolean(p))),
+).sort();
+
+const ASSIGNEES = Array.from(
+  new Map(DATA.filter((d) => d.owner).map((d) => [d.owner!.seed, d.owner!])).values(),
+).sort((a, b) => a.name.localeCompare(b.name));
+
+const DATE_PRESETS: { id: string; label: string; range: () => [string, string] }[] = [
+  {
+    id: "today",
+    label: "Hôm nay",
+    range: () => {
+      const t = isoToday();
+      return [t, t];
+    },
+  },
+  {
+    id: "7d",
+    label: "7 ngày tới",
+    range: () => [isoToday(), isoAdd(isoToday(), 7)],
+  },
+  {
+    id: "30d",
+    label: "30 ngày tới",
+    range: () => [isoToday(), isoAdd(isoToday(), 30)],
+  },
+  {
+    id: "month",
+    label: "Tháng này",
+    range: () => {
+      const d = new Date();
+      const first = new Date(d.getFullYear(), d.getMonth(), 1);
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      return [toIso(first), toIso(last)];
+    },
+  },
+];
+
+function pad(n: number) {
+  return n.toString().padStart(2, "0");
+}
+function toIso(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function isoToday() {
+  return toIso(new Date());
+}
+function isoAdd(iso: string, days: number) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const x = new Date(y, m - 1, d);
+  x.setDate(x.getDate() + days);
+  return toIso(x);
+}
+
 function highlight(text: string, q: string) {
   if (!q.trim()) return text;
-  const parts = text.split(new RegExp(`(${escape(q)})`, "ig"));
+  const parts = text.split(new RegExp(`(${esc(q)})`, "ig"));
   return parts.map((p, i) =>
     p.toLowerCase() === q.toLowerCase() ? (
       <mark key={i} className="rounded bg-primary/25 px-0.5 text-foreground">
@@ -243,35 +341,54 @@ function highlight(text: string, q: string) {
     ),
   );
 }
-function escape(s: string) {
+function esc(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function SearchPage() {
-  const { q = "", type = "all" } = Route.useSearch();
+  const params = Route.useSearch();
+  const { q = "", type = "all", project, assignee, from, to } = params;
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [draft, setDraft] = useState(q);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setDraft(q);
   }, [q]);
-
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  const update = (patch: Partial<SearchParams>) => {
+    const next: SearchParams = { ...params, ...patch };
+    // strip empty
+    const clean: Record<string, unknown> = {};
+    (Object.keys(next) as (keyof SearchParams)[]).forEach((k) => {
+      const v = next[k];
+      if (v === undefined || v === "" || (k === "type" && v === "all")) return;
+      clean[k] = v;
+    });
+    navigate({ to: "/search", search: clean });
+  };
+
   const all = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return DATA;
-    return DATA.filter(
-      (r) =>
-        r.title.toLowerCase().includes(needle) ||
-        r.snippet.toLowerCase().includes(needle) ||
-        r.meta.toLowerCase().includes(needle),
-    );
-  }, [q]);
+    return DATA.filter((r) => {
+      if (needle) {
+        const hay = (r.title + " " + r.snippet + " " + r.meta).toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
+      if (project && r.project !== project) return false;
+      if (assignee && r.owner?.seed !== assignee) return false;
+      if (from && r.iso && r.iso < from) return false;
+      if (to && r.iso && r.iso > to) return false;
+      // When date range is set, exclude items without an `iso` (e.g. people)
+      if ((from || to) && !r.iso) return false;
+      return true;
+    });
+  }, [q, project, assignee, from, to]);
 
   const filtered = useMemo(
     () => (type === "all" ? all : all.filter((r) => r.type === type)),
@@ -293,13 +410,10 @@ function SearchPage() {
     return c;
   }, [all]);
 
-  const submit = (value: string) => {
-    const v = value.trim();
-    navigate({
-      to: "/search",
-      search: { ...(v ? { q: v } : {}), ...(type !== "all" ? { type } : {}) },
-    });
-  };
+  const activeFilterCount =
+    (project ? 1 : 0) + (assignee ? 1 : 0) + (from || to ? 1 : 0);
+
+  const assigneeName = ASSIGNEES.find((a) => a.seed === assignee)?.name;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -334,9 +448,9 @@ function SearchPage() {
             role="search"
             onSubmit={(e) => {
               e.preventDefault();
-              submit(draft);
+              update({ q: draft.trim() || undefined });
             }}
-            className="relative mb-5"
+            className="relative mb-3"
           >
             <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -354,17 +468,158 @@ function SearchPage() {
             </button>
           </form>
 
-          {/* Filter tabs */}
+          {/* Filter toolbar */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((v) => !v)}
+              className={
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
+                (filtersOpen || activeFilterCount > 0
+                  ? "border-primary/40 bg-primary/15 text-primary"
+                  : "border-border bg-surface text-muted-foreground hover:text-foreground")
+              }
+              aria-expanded={filtersOpen}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Bộ lọc nâng cao
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-primary/25 px-1.5 text-[10px]">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+
+            {/* Active filter chips */}
+            {project && (
+              <FilterChip
+                icon={Briefcase}
+                label={`Dự án: ${project}`}
+                onClear={() => update({ project: undefined })}
+              />
+            )}
+            {assignee && (
+              <FilterChip
+                icon={UserIcon}
+                label={`Người phụ trách: ${assigneeName ?? assignee}`}
+                onClear={() => update({ assignee: undefined })}
+              />
+            )}
+            {(from || to) && (
+              <FilterChip
+                icon={CalendarIcon}
+                label={`Thời gian: ${from ?? "…"} → ${to ?? "…"}`}
+                onClear={() => update({ from: undefined, to: undefined })}
+              />
+            )}
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  update({
+                    project: undefined,
+                    assignee: undefined,
+                    from: undefined,
+                    to: undefined,
+                  })
+                }
+                className="ml-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Xoá tất cả
+              </button>
+            )}
+          </div>
+
+          {/* Filter panel */}
+          {filtersOpen && (
+            <div className="mb-5 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Project */}
+              <FilterField icon={Briefcase} label="Dự án">
+                <select
+                  value={project ?? ""}
+                  onChange={(e) => update({ project: e.target.value || undefined })}
+                  className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <option value="">Tất cả dự án</option>
+                  {PROJECTS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              {/* Assignee */}
+              <FilterField icon={UserIcon} label="Người phụ trách">
+                <select
+                  value={assignee ?? ""}
+                  onChange={(e) => update({ assignee: e.target.value || undefined })}
+                  className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <option value="">Tất cả nhân sự</option>
+                  {ASSIGNEES.map((a) => (
+                    <option key={a.seed} value={a.seed}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              {/* Date range */}
+              <FilterField icon={CalendarIcon} label="Khoảng thời gian">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={from ?? ""}
+                    onChange={(e) => update({ from: e.target.value || undefined })}
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    aria-label="Từ ngày"
+                  />
+                  <span className="text-xs text-muted-foreground">→</span>
+                  <input
+                    type="date"
+                    value={to ?? ""}
+                    onChange={(e) => update({ to: e.target.value || undefined })}
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    aria-label="Đến ngày"
+                  />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {DATE_PRESETS.map((p) => {
+                    const [f, t] = p.range();
+                    const active = from === f && to === t;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => update({ from: f, to: t })}
+                        className={
+                          "rounded-full border px-2 py-0.5 text-[11px] transition-colors " +
+                          (active
+                            ? "border-primary/40 bg-primary/15 text-primary"
+                            : "border-border bg-surface-2 text-muted-foreground hover:text-foreground")
+                        }
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </FilterField>
+            </div>
+          )}
+
+          {/* Type tabs */}
           <div className="mb-5 flex flex-wrap gap-2">
             {TYPE_ORDER.map((t) => {
               const active = type === t;
               const label = t === "all" ? "Tất cả" : TYPE_META[t].label;
               const Icon = t === "all" ? Sparkles : TYPE_META[t].icon;
               return (
-                <Link
+                <button
                   key={t}
-                  to="/search"
-                  search={{ ...(q ? { q } : {}), ...(t !== "all" ? { type: t } : {}) }}
+                  type="button"
+                  onClick={() => update({ type: t === "all" ? undefined : t })}
                   className={
                     "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
                     (active
@@ -382,7 +637,7 @@ function SearchPage() {
                   >
                     {counts[t]}
                   </span>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -393,7 +648,7 @@ function SearchPage() {
               <SearchIcon className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
               <h2 className="text-base font-medium">Không có kết quả phù hợp</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Thử từ khoá khác hoặc chọn loại nội dung khác ở trên.
+                Thử nới rộng khoảng thời gian, đổi dự án hoặc người phụ trách.
               </p>
             </div>
           ) : (
@@ -444,6 +699,11 @@ function SearchPage() {
                               {r.owner.name}
                             </span>
                           )}
+                          {r.project && (
+                            <span className="flex items-center gap-1.5">
+                              <Briefcase className="h-3.5 w-3.5" /> {r.project}
+                            </span>
+                          )}
                           <span className="flex items-center gap-1.5">
                             <CalendarIcon className="h-3.5 w-3.5" /> {r.meta}
                           </span>
@@ -456,30 +716,52 @@ function SearchPage() {
               })}
             </ul>
           )}
-
-          {/* Tips */}
-          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px]">
-                ⌘K
-              </kbd>
-              Mở nhanh tìm kiếm
-            </span>
-            <span className="flex items-center gap-1.5">
-              <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px]">
-                Enter
-              </kbd>
-              Tìm
-            </span>
-            <span className="flex items-center gap-1.5">
-              <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px]">
-                Esc
-              </kbd>
-              Đóng
-            </span>
-          </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function FilterChip({
+  icon: Icon,
+  label,
+  onClear,
+}: {
+  icon: typeof Briefcase;
+  label: string;
+  onClear: () => void;
+}) {
+  return (
+    <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary">
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label="Xoá bộ lọc"
+        className="-mr-1 ml-0.5 rounded-full p-0.5 hover:bg-primary/20"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
+function FilterField({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: typeof Briefcase;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </label>
+      {children}
     </div>
   );
 }
