@@ -663,6 +663,42 @@ function SearchPage() {
             })}
           </div>
 
+          {/* Sort bar */}
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {filtered.length} kết quả
+            </span>
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="flex rounded-lg border border-border bg-surface p-0.5">
+                <button
+                  type="button"
+                  onClick={() => update({ sort: undefined })}
+                  className={
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors " +
+                    (sort === "relevance"
+                      ? "bg-surface-2 text-foreground"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  Liên quan nhất
+                </button>
+                <button
+                  type="button"
+                  onClick={() => update({ sort: "time" })}
+                  className={
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors " +
+                    (sort === "time"
+                      ? "bg-surface-2 text-foreground"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  Mới nhất
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Results */}
           {filtered.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-16 text-center">
