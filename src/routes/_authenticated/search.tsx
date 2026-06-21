@@ -350,7 +350,7 @@ function esc(s: string) {
 
 function SearchPage() {
   const params = Route.useSearch();
-  const { q = "", type = "all", project, assignee, from, to } = params;
+  const { q = "", type = "all", project, assignee, from, to, sort = "relevance" } = params;
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [draft, setDraft] = useState(q);
