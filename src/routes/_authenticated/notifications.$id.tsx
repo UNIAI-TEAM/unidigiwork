@@ -46,6 +46,7 @@ function NotificationDetailPage() {
   const Icon = meta.icon;
   const [unread, setUnread] = useState(!!notif.unread);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Sibling navigation by id (uses module order)
   const idx = NOTIFS.findIndex((n) => n.id === notif.id);
