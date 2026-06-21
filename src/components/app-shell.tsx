@@ -40,6 +40,9 @@ import {
   Languages,
   FileSearch,
   Lightbulb,
+  AtSign,
+  CheckCircle2,
+  ExternalLink,
 } from "lucide-react";
 import { ThemeToggle } from "@/lib/theme";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
@@ -1145,6 +1148,192 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+type PanelNotif = {
+  id: string;
+  icon: LucideIcon;
+  tint: string;
+  actor?: string;
+  title: string;
+  body: string;
+  time: string;
+  unread?: boolean;
+};
+
+const PANEL_NOTIFS: PanelNotif[] = [
+  {
+    id: "1",
+    icon: AtSign,
+    tint: "text-violet-400 bg-violet-500/15",
+    actor: "Trần Thị B",
+    title: "đã nhắc bạn trong #dev-team",
+    body: "@Nguyễn Văn A vui lòng review PR #482 trước 17:00.",
+    time: "5 phút trước",
+    unread: true,
+  },
+  {
+    id: "2",
+    icon: CheckCircle2,
+    tint: "text-emerald-400 bg-emerald-500/15",
+    actor: "Phạm Minh C",
+    title: "đã giao nhiệm vụ cho bạn",
+    body: "Thiết kế API Gateway v2.2 — hạn 15/06/2026.",
+    time: "32 phút trước",
+    unread: true,
+  },
+  {
+    id: "3",
+    icon: Video,
+    tint: "text-rose-400 bg-rose-500/15",
+    title: "Sắp diễn ra: Sprint 6 Daily Standup",
+    body: "Bắt đầu lúc 09:30 · 5 người tham gia.",
+    time: "1 giờ trước",
+    unread: true,
+  },
+  {
+    id: "4",
+    icon: FileText,
+    tint: "text-sky-400 bg-sky-500/15",
+    actor: "Phạm Minh C",
+    title: "đã cập nhật tài liệu",
+    body: "API_Gateway_Spec_v2.1.docx trong STOS Project.",
+    time: "2 giờ trước",
+  },
+  {
+    id: "5",
+    icon: Workflow,
+    tint: "text-amber-400 bg-amber-500/15",
+    actor: "Lê Hoàng D",
+    title: "cần bạn phê duyệt",
+    body: "Leave Request — Nguyễn Hương (3 ngày).",
+    time: "3 giờ trước",
+    unread: true,
+  },
+];
+
+function NotificationsPanel({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<"all" | "unread">("all");
+  const [items, setItems] = useState(PANEL_NOTIFS);
+  const list = tab === "unread" ? items.filter((n) => n.unread) : items;
+  const unreadCount = items.filter((n) => n.unread).length;
+
+  const markAll = () =>
+    setItems((arr) => arr.map((n) => ({ ...n, unread: false })));
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Thông báo"
+      className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[380px]"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 via-surface to-surface px-4 py-3">
+        <div>
+          <div className="text-sm font-semibold">Thông báo</div>
+          <div className="text-[11px] text-muted-foreground">
+            {unreadCount > 0
+              ? `${unreadCount} chưa đọc`
+              : "Bạn đã đọc hết thông báo"}
+          </div>
+        </div>
+        <button
+          onClick={markAll}
+          disabled={unreadCount === 0}
+          className="rounded-md px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
+        >
+          Đánh dấu đã đọc
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-border px-2 pt-2">
+        {(["all", "unread"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={cn(
+              "rounded-t-md px-3 py-1.5 text-xs font-medium transition-colors",
+              tab === k
+                ? "bg-surface-2 text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {k === "all" ? "Tất cả" : `Chưa đọc${unreadCount ? ` (${unreadCount})` : ""}`}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto">
+        {list.length === 0 ? (
+          <li className="px-6 py-10 text-center text-sm text-muted-foreground">
+            Không có thông báo trong mục này.
+          </li>
+        ) : (
+          list.map((n) => {
+            const Icon = n.icon;
+            return (
+              <li
+                key={n.id}
+                className={cn(
+                  "group relative flex gap-3 px-4 py-3 transition-colors hover:bg-surface-2/60",
+                  n.unread && "bg-primary/[0.04]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg",
+                    n.tint,
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm leading-snug">
+                    {n.actor && (
+                      <span className="font-medium">{n.actor} </span>
+                    )}
+                    <span className="text-foreground/90">{n.title}</span>
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {n.body}
+                  </div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    {n.time}
+                  </div>
+                </div>
+                {n.unread && (
+                  <span
+                    aria-label="Chưa đọc"
+                    className="absolute right-3 top-3.5 h-2 w-2 rounded-full bg-primary"
+                  />
+                )}
+              </li>
+            );
+          })
+        )}
+      </ul>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2">
+        <Link
+          to="/notifications"
+          onClick={onClose}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+        >
+          <ExternalLink className="h-3.5 w-3.5" /> Xem tất cả
+        </Link>
+        <Link
+          to="/settings"
+          onClick={onClose}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        >
+          <Settings className="h-3.5 w-3.5" /> Cài đặt
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function AppTopbar({
   variant = "meeting",
   onOpenSidebar,
@@ -1163,6 +1352,8 @@ export function AppTopbar({
   const newRef = useRef<HTMLDivElement | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const aiRef = useRef<HTMLDivElement | null>(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!userOpen) return;
@@ -1228,21 +1419,30 @@ export function AppTopbar({
     };
   }, [aiOpen]);
 
+  useEffect(() => {
+    if (!notifOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node))
+        setNotifOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNotifOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [notifOpen]);
+
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchValue, setSearchValue] = useState("");
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
+  // ⌘K is owned globally by <CommandPalette />. Topbar input stays as a
+  // standard search field (Enter → /search).
 
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
@@ -1351,16 +1551,24 @@ export function AppTopbar({
           <span className="text-sm">16</span>
         </button>
       )}
-      <Link
-        to="/notifications"
-        className="relative rounded-lg p-2 hover:bg-surface-2"
-        aria-label="Thông báo"
-      >
-        <Bell className="h-5 w-5 text-muted-foreground" />
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">
-          12
-        </span>
-      </Link>
+      <div className="relative" ref={notifRef}>
+        <button
+          onClick={() => setNotifOpen((v) => !v)}
+          className={cn(
+            "relative rounded-lg p-2 hover:bg-surface-2",
+            notifOpen && "bg-surface-2",
+          )}
+          aria-label="Thông báo"
+          aria-haspopup="dialog"
+          aria-expanded={notifOpen}
+        >
+          <Bell className="h-5 w-5 text-muted-foreground" />
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
+            12
+          </span>
+        </button>
+        {notifOpen && <NotificationsPanel onClose={() => setNotifOpen(false)} />}
+      </div>
       <div className="relative" ref={calRef}>
         <button
           onClick={() => setCalOpen((v) => !v)}
