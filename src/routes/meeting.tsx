@@ -348,7 +348,7 @@ function MeetingPage() {
                   ))}
                   {list.length === 0 && (
                     <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-                      Không có cuộc họp nào phù hợp.
+                      Không tìm thấy cuộc họp nào
                     </div>
                   )}
                 </div>

@@ -1266,7 +1266,7 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
       <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto">
         {list.length === 0 ? (
           <li className="px-6 py-10 text-center text-sm text-muted-foreground">
-            Không có thông báo trong mục này.
+            Không có thông báo nào
           </li>
         ) : (
           list.map((n) => {
