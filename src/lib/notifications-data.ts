@@ -222,3 +222,8 @@ export const NOTIFS: Notif[] = [
 export function findNotif(id: string) {
   return NOTIFS.find((n) => n.id === id);
 }
+
+export function removeNotif(id: string) {
+  const idx = NOTIFS.findIndex((n) => n.id === id);
+  if (idx !== -1) NOTIFS.splice(idx, 1);
+}
