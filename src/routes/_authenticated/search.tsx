@@ -45,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/search")({
       assignee: str(s.assignee),
       from: str(s.from),
       to: str(s.to),
+      sort: s.sort === "time" ? "time" : "relevance",
     };
   },
   head: () => ({
