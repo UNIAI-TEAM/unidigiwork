@@ -396,44 +396,52 @@ function SearchPage() {
     navigate({ to: "/search", search: clean });
   };
 
+  // Step 1: apply filters that don't depend on the type tab. Cached separately
+  // so switching tabs (Tất cả → Họp → Tài liệu…) doesn't redo the expensive
+  // text/date/project/assignee scan or rebuild scores.
   const all = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return DATA.filter((r) => {
+    const hasDate = Boolean(from || to);
+    const out: { r: Result; score: number }[] = [];
+    for (let i = 0; i < INDEX.length; i++) {
+      const e = INDEX[i];
+      const r = e.r;
+      if (needle && !e.hay.includes(needle)) continue;
+      if (project && r.project !== project) continue;
+      if (assignee && r.owner?.seed !== assignee) continue;
+      if (hasDate && !r.iso) continue;
+      if (from && r.iso && r.iso < from) continue;
+      if (to && r.iso && r.iso > to) continue;
+      // Score once during filter; reused by relevance sort below.
+      let score = 0;
       if (needle) {
-        const hay = (r.title + " " + r.snippet + " " + r.meta).toLowerCase();
-        if (!hay.includes(needle)) return false;
+        if (e.titleLc.includes(needle)) score += 3;
+        if (e.snippetLc.includes(needle)) score += 2;
+        if (e.metaLc.includes(needle)) score += 1;
       }
-      if (project && r.project !== project) return false;
-      if (assignee && r.owner?.seed !== assignee) return false;
-      if (from && r.iso && r.iso < from) return false;
-      if (to && r.iso && r.iso > to) return false;
-      // When date range is set, exclude items without an `iso` (e.g. people)
-      if ((from || to) && !r.iso) return false;
-      return true;
-    });
+      out.push({ r, score });
+    }
+    return out;
   }, [q, project, assignee, from, to]);
 
-  const filtered = useMemo(() => {
-    const list = type === "all" ? [...all] : all.filter((r) => r.type === type);
+  // Step 2: cheap tab filter + sort. No string work here.
+  const filtered = useMemo<Result[]>(() => {
+    const scoped = type === "all" ? all : all.filter((x) => x.r.type === type);
     if (sort === "time") {
-      list.sort((a, b) => {
-        if (a.iso && b.iso) return b.iso.localeCompare(a.iso);
-        if (a.iso) return -1;
-        if (b.iso) return 1;
+      const sorted = scoped.slice().sort((a, b) => {
+        const ai = a.r.iso, bi = b.r.iso;
+        if (ai && bi) return bi.localeCompare(ai);
+        if (ai) return -1;
+        if (bi) return 1;
         return 0;
       });
-    } else if (sort === "relevance" && q.trim()) {
-      const needle = q.trim().toLowerCase();
-      const score = (r: Result) => {
-        let s = 0;
-        if (r.title.toLowerCase().includes(needle)) s += 3;
-        if (r.snippet.toLowerCase().includes(needle)) s += 2;
-        if (r.meta.toLowerCase().includes(needle)) s += 1;
-        return s;
-      };
-      list.sort((a, b) => score(b) - score(a));
+      return sorted.map((x) => x.r);
     }
-    return list;
+    if (sort === "relevance" && q.trim()) {
+      const sorted = scoped.slice().sort((a, b) => b.score - a.score);
+      return sorted.map((x) => x.r);
+    }
+    return scoped.map((x) => x.r);
   }, [all, type, sort, q]);
 
   const counts = useMemo(() => {
