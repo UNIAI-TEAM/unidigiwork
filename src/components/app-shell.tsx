@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -220,7 +220,7 @@ export function AppSidebar({
   open,
   onClose,
 }: {
-  active: NavKey;
+  active?: NavKey;
   open: boolean;
   onClose: () => void;
 }) {
@@ -1230,6 +1230,20 @@ export function AppTopbar({
 
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
+  const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchValue, setSearchValue] = useState("");
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
       <button
@@ -1246,13 +1260,27 @@ export function AppTopbar({
       >
         {collapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
       </button>
-      <div className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = searchValue.trim();
+          navigate({ to: "/search", search: q ? { q } : {} });
+        }}
+        className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl"
+      >
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
+          ref={searchInputRef}
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
           placeholder={variant === "documents" ? t("topbar.search.docs") : t("topbar.search")}
-          className="w-full rounded-lg bg-surface-2 py-2.5 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="w-full rounded-lg bg-surface-2 py-2.5 pl-10 pr-16 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
-      </div>
+        <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-surface-1 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+          ⌘K
+        </kbd>
+      </form>
       {variant === "meeting" ? (
         <>
           <span className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-medium text-destructive">
