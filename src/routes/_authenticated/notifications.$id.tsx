@@ -10,9 +10,10 @@ import {
   Circle,
   ExternalLink,
   Trash2,
+  X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
-import { catMeta, findNotif, NOTIFS } from "@/lib/notifications-data";
+import { catMeta, findNotif, NOTIFS, removeNotif } from "@/lib/notifications-data";
 
 export const Route = createFileRoute("/_authenticated/notifications/$id")({
   head: ({ params }) => {
