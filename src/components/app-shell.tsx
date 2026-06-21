@@ -220,7 +220,7 @@ export function AppSidebar({
   open,
   onClose,
 }: {
-  active: NavKey;
+  active?: NavKey;
   open: boolean;
   onClose: () => void;
 }) {
