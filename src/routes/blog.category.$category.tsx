@@ -60,7 +60,7 @@ function BlogCategoryPage() {
       <section className="mx-auto max-w-7xl px-4 py-10 pb-20 sm:px-6">
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-border bg-surface py-20 text-center text-muted-foreground">
-            Chưa có bài viết nào trong chủ đề này.
+            Chưa có bài viết nào trong danh mục này
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

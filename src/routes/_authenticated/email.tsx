@@ -931,9 +931,10 @@ function EmailHubPage() {
 
             <div className="flex-1 overflow-y-auto">
               {filteredEmails.length === 0 && (
-                <div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center text-sm text-muted-foreground">
-                  <Inbox className="mb-2 h-8 w-8 opacity-50" />
-                  Không có email phù hợp trong hộp thư này.
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
+                  <Inbox className="h-8 w-8 opacity-50" />
+                  <span className="font-medium">Chưa có email nào</span>
+                  <span className="text-xs">Email mới sẽ hiển thị tại đây</span>
                 </div>
               )}
               {Object.entries(groups).map(([group, items]) => (
@@ -1121,7 +1122,7 @@ function EmailHubPage() {
                 {selectedEmail.body ? (
                   selectedEmail.body.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
                 ) : (
-                  <p className="text-muted-foreground">Không có nội dung chi tiết cho email này.</p>
+                  <p className="text-muted-foreground">Email này chưa có nội dung</p>
                 )}
               </div>
 
@@ -1180,7 +1181,7 @@ function EmailHubPage() {
                   {selectedEmail.body
                     ? selectedEmail.body.substring(0, 180).replace(/\n/g, " ") +
                       (selectedEmail.body.length > 180 ? "..." : "")
-                    : "Không có nội dung để tóm tắt."}
+                    : "Chưa có nội dung để tóm tắt"}
                 </p>
                 <div className="mt-4 text-sm font-medium">Đề xuất hành động</div>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

@@ -309,13 +309,13 @@ function NotificationNotFound() {
         </div>
         <h1 className="text-lg font-semibold">Không tìm thấy thông báo</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Thông báo này có thể đã bị xóa hoặc không tồn tại. Hãy kiểm tra lại danh sách thông báo.
+          Thông báo này không tồn tại hoặc đã bị xóa
         </p>
         <Link
           to="/notifications"
           className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Quay lại danh sách thông báo
+          <ArrowLeft className="h-3.5 w-3.5" /> Về danh sách thông báo
         </Link>
       </div>
     </div>

@@ -265,7 +265,7 @@ export function CommandPalette() {
         >
           {results.length === 0 ? (
             <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-              Không có kết quả phù hợp.
+              Không tìm thấy kết quả nào
             </div>
           ) : (
             grouped.map(([group, items]) => (
