@@ -14,6 +14,10 @@ import {
   Archive,
   ChevronLeft,
   ChevronRight,
+  Inbox,
+  SearchX,
+  RotateCcw,
+  ArrowLeft,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { CATS, NOTIFS, catMeta, type Cat, type Notif } from "@/lib/notifications-data";
