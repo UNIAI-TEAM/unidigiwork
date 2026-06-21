@@ -14,6 +14,7 @@ import {
   X,
   Briefcase,
   User as UserIcon,
+  ArrowUpDown,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
