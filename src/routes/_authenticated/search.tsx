@@ -14,6 +14,7 @@ import {
   X,
   Briefcase,
   User as UserIcon,
+  ArrowUpDown,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -26,6 +27,7 @@ type SearchParams = {
   assignee?: string;
   from?: string; // YYYY-MM-DD
   to?: string; // YYYY-MM-DD
+  sort?: "relevance" | "time";
 };
 
 export const Route = createFileRoute("/_authenticated/search")({
@@ -43,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/search")({
       assignee: str(s.assignee),
       from: str(s.from),
       to: str(s.to),
+      sort: s.sort === "time" ? "time" : "relevance",
     };
   },
   head: () => ({
@@ -347,7 +350,7 @@ function esc(s: string) {
 
 function SearchPage() {
   const params = Route.useSearch();
-  const { q = "", type = "all", project, assignee, from, to } = params;
+  const { q = "", type = "all", project, assignee, from, to, sort = "relevance" } = params;
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [draft, setDraft] = useState(q);
@@ -363,11 +366,11 @@ function SearchPage() {
 
   const update = (patch: Partial<SearchParams>) => {
     const next: SearchParams = { ...params, ...patch };
-    // strip empty
+    // strip empty / defaults
     const clean: Record<string, unknown> = {};
     (Object.keys(next) as (keyof SearchParams)[]).forEach((k) => {
       const v = next[k];
-      if (v === undefined || v === "" || (k === "type" && v === "all")) return;
+      if (v === undefined || v === "" || (k === "type" && v === "all") || (k === "sort" && v === "relevance")) return;
       clean[k] = v;
     });
     navigate({ to: "/search", search: clean });
@@ -390,10 +393,28 @@ function SearchPage() {
     });
   }, [q, project, assignee, from, to]);
 
-  const filtered = useMemo(
-    () => (type === "all" ? all : all.filter((r) => r.type === type)),
-    [all, type],
-  );
+  const filtered = useMemo(() => {
+    const list = type === "all" ? [...all] : all.filter((r) => r.type === type);
+    if (sort === "time") {
+      list.sort((a, b) => {
+        if (a.iso && b.iso) return b.iso.localeCompare(a.iso);
+        if (a.iso) return -1;
+        if (b.iso) return 1;
+        return 0;
+      });
+    } else if (sort === "relevance" && q.trim()) {
+      const needle = q.trim().toLowerCase();
+      const score = (r: Result) => {
+        let s = 0;
+        if (r.title.toLowerCase().includes(needle)) s += 3;
+        if (r.snippet.toLowerCase().includes(needle)) s += 2;
+        if (r.meta.toLowerCase().includes(needle)) s += 1;
+        return s;
+      };
+      list.sort((a, b) => score(b) - score(a));
+    }
+    return list;
+  }, [all, type, sort, q]);
 
   const counts = useMemo(() => {
     const c: Record<ResultType | "all", number> = {
@@ -640,6 +661,42 @@ function SearchPage() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Sort bar */}
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {filtered.length} kết quả
+            </span>
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="flex rounded-lg border border-border bg-surface p-0.5">
+                <button
+                  type="button"
+                  onClick={() => update({ sort: undefined })}
+                  className={
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors " +
+                    (sort === "relevance"
+                      ? "bg-surface-2 text-foreground"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  Liên quan nhất
+                </button>
+                <button
+                  type="button"
+                  onClick={() => update({ sort: "time" })}
+                  className={
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors " +
+                    (sort === "time"
+                      ? "bg-surface-2 text-foreground"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  Mới nhất
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Results */}
