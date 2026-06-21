@@ -696,7 +696,7 @@ export function LabelsRulesDialog({
               ))}
               {labels.length === 0 && (
                 <li className="px-3 py-6 text-center text-sm text-muted-foreground">
-                  Chưa có nhãn nào.
+                  Chưa có nhãn nào
                 </li>
               )}
             </ul>
@@ -781,7 +781,7 @@ export function LabelsRulesDialog({
               ))}
               {rules.length === 0 && (
                 <li className="px-3 py-6 text-center text-sm text-muted-foreground">
-                  Chưa có quy tắc nào.
+                  Chưa có quy tắc nào
                 </li>
               )}
             </ul>
