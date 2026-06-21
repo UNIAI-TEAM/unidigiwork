@@ -1168,6 +1168,8 @@ export function AppTopbar({
   const newRef = useRef<HTMLDivElement | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const aiRef = useRef<HTMLDivElement | null>(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!userOpen) return;
@@ -1232,6 +1234,23 @@ export function AppTopbar({
       document.removeEventListener("keydown", onKey);
     };
   }, [aiOpen]);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node))
+        setNotifOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNotifOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [notifOpen]);
 
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
