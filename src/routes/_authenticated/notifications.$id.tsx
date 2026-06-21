@@ -102,6 +102,7 @@ function NotificationDetailPage() {
               </button>
               <button
                 title="Xóa"
+                onClick={() => setConfirmOpen(true)}
                 className="rounded-lg border border-border bg-surface p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5" />
