@@ -1367,16 +1367,24 @@ export function AppTopbar({
           <span className="text-sm">16</span>
         </button>
       )}
-      <Link
-        to="/notifications"
-        className="relative rounded-lg p-2 hover:bg-surface-2"
-        aria-label="Thông báo"
-      >
-        <Bell className="h-5 w-5 text-muted-foreground" />
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">
-          12
-        </span>
-      </Link>
+      <div className="relative" ref={notifRef}>
+        <button
+          onClick={() => setNotifOpen((v) => !v)}
+          className={cn(
+            "relative rounded-lg p-2 hover:bg-surface-2",
+            notifOpen && "bg-surface-2",
+          )}
+          aria-label="Thông báo"
+          aria-haspopup="dialog"
+          aria-expanded={notifOpen}
+        >
+          <Bell className="h-5 w-5 text-muted-foreground" />
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
+            12
+          </span>
+        </button>
+        {notifOpen && <NotificationsPanel onClose={() => setNotifOpen(false)} />}
+      </div>
       <div className="relative" ref={calRef}>
         <button
           onClick={() => setCalOpen((v) => !v)}
