@@ -444,7 +444,7 @@ function HelpPage() {
                   </div>
                   <div className="text-sm font-medium">Không tìm thấy bài viết</div>
                   <p className="max-w-sm text-xs text-muted-foreground">
-                    Thử từ khoá khác hoặc đặt câu hỏi trực tiếp cho trợ lý AI bên phải.
+                    Thử từ khóa khác hoặc hỏi trợ lý AI bên phải
                   </p>
                 </div>
               ) : (

@@ -763,9 +763,9 @@ function SearchPage() {
           {filtered.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-16 text-center">
               <SearchIcon className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-              <h2 className="text-base font-medium">Không có kết quả phù hợp</h2>
+              <h2 className="text-base font-medium">Không tìm thấy kết quả nào</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Thử nới rộng khoảng thời gian, đổi dự án hoặc người phụ trách.
+                Thử thay đổi bộ lọc thời gian, dự án hoặc người phụ trách
               </p>
             </div>
           ) : (
