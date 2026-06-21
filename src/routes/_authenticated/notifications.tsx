@@ -332,15 +332,15 @@ function NotificationsPage() {
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
                     <Inbox className="h-6 w-6" />
                   </div>
-                  <div className="text-sm font-medium">Không có thông báo nào</div>
+                  <div className="text-sm font-medium">Chưa có thông báo nào</div>
                   <p className="max-w-xs text-xs text-muted-foreground">
-                    Hộp thư thông báo của bạn đang trống. Các thông báo mới sẽ xuất hiện tại đây.
+                    Thông báo mới sẽ hiển thị khi có hoạt động liên quan đến bạn
                   </p>
                   <Link
                     to="/dashboard"
                     className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                   >
-                    <ArrowLeft className="h-3.5 w-3.5" /> Quay lại Trang chủ
+                    <ArrowLeft className="h-3.5 w-3.5" /> Về Trang chủ
                   </Link>
                 </div>
               ) : (
@@ -350,7 +350,7 @@ function NotificationsPage() {
                   </div>
                   <div className="text-sm font-medium">Không tìm thấy thông báo</div>
                   <p className="max-w-xs text-xs text-muted-foreground">
-                    Không có thông báo nào phù hợp với bộ lọc hiện tại.
+                    Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm
                   </p>
                   <button
                     onClick={() => {
