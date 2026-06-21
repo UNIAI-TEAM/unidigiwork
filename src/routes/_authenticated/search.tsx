@@ -15,6 +15,7 @@ import {
   Briefcase,
   User as UserIcon,
   ArrowUpDown,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -436,6 +437,36 @@ function SearchPage() {
 
   const assigneeName = ASSIGNEES.find((a) => a.seed === assignee)?.name;
 
+  // Infinite scroll: reset visible count whenever filters / query / tab / sort change
+  const PAGE_SIZE = 8;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [q, type, project, assignee, from, to, sort]);
+
+  const visible = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount],
+  );
+  const hasMore = visibleCount < filtered.length;
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "300px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, filtered.length]);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -666,7 +697,9 @@ function SearchPage() {
           {/* Sort bar */}
           <div className="mb-3 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {filtered.length} kết quả
+              {filtered.length === 0
+                ? "0 kết quả"
+                : `Hiển thị ${visible.length} / ${filtered.length} kết quả`}
             </span>
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -709,8 +742,9 @@ function SearchPage() {
               </p>
             </div>
           ) : (
+            <>
             <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
-              {filtered.map((r) => {
+              {visible.map((r) => {
                 const meta = TYPE_META[r.type];
                 const Icon = meta.icon;
                 return (
@@ -772,6 +806,30 @@ function SearchPage() {
                 );
               })}
             </ul>
+            {hasMore && (
+              <div
+                ref={sentinelRef}
+                className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground"
+              >
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang tải thêm kết quả…
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length))
+                  }
+                  className="ml-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-foreground hover:bg-surface-2"
+                >
+                  Tải thêm
+                </button>
+              </div>
+            )}
+            {!hasMore && filtered.length > PAGE_SIZE && (
+              <div className="py-6 text-center text-xs text-muted-foreground">
+                Đã hiển thị tất cả {filtered.length} kết quả.
+              </div>
+            )}
+            </>
           )}
         </div>
       </main>
