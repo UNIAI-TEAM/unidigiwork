@@ -45,6 +45,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
@@ -231,6 +232,12 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedNotificationsIdRoute =
+  AuthenticatedNotificationsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedNotificationsRoute,
+  } as any)
 const AuthenticatedEmailComposeRoute =
   AuthenticatedEmailComposeRouteImport.update({
     id: '/compose',
@@ -277,7 +284,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -317,7 +325,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -332,6 +340,7 @@ export interface FileRoutesByTo {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -360,7 +369,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
-  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -375,6 +384,7 @@ export interface FileRoutesById {
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/notifications/$id'
     | '/workspace/$id'
     | '/blog/category/$category'
     | '/workspace/$id/stos'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/notifications/$id'
     | '/workspace/$id'
     | '/blog/category/$category'
     | '/workspace/$id/stos'
@@ -500,6 +512,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/$id'
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
+    | '/_authenticated/notifications/$id'
     | '/_authenticated/workspace/$id'
     | '/blog/category/$category'
     | '/_authenticated/workspace/$id/stos'
@@ -779,6 +792,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notifications/$id': {
+      id: '/_authenticated/notifications/$id'
+      path: '/$id'
+      fullPath: '/notifications/$id'
+      preLoaderRoute: typeof AuthenticatedNotificationsIdRouteImport
+      parentRoute: typeof AuthenticatedNotificationsRoute
+    }
     '/_authenticated/email/compose': {
       id: '/_authenticated/email/compose'
       path: '/compose'
@@ -837,6 +857,20 @@ const AuthenticatedEmailRouteChildren: AuthenticatedEmailRouteChildren = {
 const AuthenticatedEmailRouteWithChildren =
   AuthenticatedEmailRoute._addFileChildren(AuthenticatedEmailRouteChildren)
 
+interface AuthenticatedNotificationsRouteChildren {
+  AuthenticatedNotificationsIdRoute: typeof AuthenticatedNotificationsIdRoute
+}
+
+const AuthenticatedNotificationsRouteChildren: AuthenticatedNotificationsRouteChildren =
+  {
+    AuthenticatedNotificationsIdRoute: AuthenticatedNotificationsIdRoute,
+  }
+
+const AuthenticatedNotificationsRouteWithChildren =
+  AuthenticatedNotificationsRoute._addFileChildren(
+    AuthenticatedNotificationsRouteChildren,
+  )
+
 interface AuthenticatedWorkspaceIdRouteChildren {
   AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -857,7 +891,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
-  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -869,7 +903,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
   AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
-  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,

@@ -186,7 +186,7 @@ function NotificationDetailPage() {
                     Thông tin chi tiết
                   </h2>
                   <dl className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-surface-2/40 p-3 text-sm sm:grid-cols-2">
-                    {notif.details.map((d) => (
+                    {notif.details.map((d: { label: string; value: string }) => (
                       <div key={d.label} className="flex flex-col">
                         <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">
                           {d.label}
@@ -200,7 +200,7 @@ function NotificationDetailPage() {
 
               {notif.actions && notif.actions.length > 0 && (
                 <section className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-                  {notif.actions.map((a) => {
+                  {notif.actions.map((a: { label: string; kind?: "primary" | "ghost" | "danger" }) => {
                     const cls =
                       a.kind === "primary"
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
