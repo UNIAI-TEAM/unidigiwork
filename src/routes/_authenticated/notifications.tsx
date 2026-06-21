@@ -327,15 +327,43 @@ function NotificationsPage() {
             )}
 
             {groups.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
-                  <Bell className="h-6 w-6" />
+              items.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
+                    <Inbox className="h-6 w-6" />
+                  </div>
+                  <div className="text-sm font-medium">Không có thông báo nào</div>
+                  <p className="max-w-xs text-xs text-muted-foreground">
+                    Hộp thư thông báo của bạn đang trống. Các thông báo mới sẽ xuất hiện tại đây.
+                  </p>
+                  <Link
+                    to="/dashboard"
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" /> Quay lại Trang chủ
+                  </Link>
                 </div>
-                <div className="text-sm font-medium">Không có thông báo nào</div>
-                <p className="max-w-xs text-xs text-muted-foreground">
-                  Bạn đã xem hết các thông báo phù hợp với bộ lọc hiện tại.
-                </p>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
+                    <SearchX className="h-6 w-6" />
+                  </div>
+                  <div className="text-sm font-medium">Không tìm thấy thông báo</div>
+                  <p className="max-w-xs text-xs text-muted-foreground">
+                    Không có thông báo nào phù hợp với bộ lọc hiện tại.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setCat("all");
+                      setTab("inbox");
+                      setQ("");
+                    }}
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Xóa bộ lọc
+                  </button>
+                </div>
+              )
             ) : (
               <>
               {groups.map(([g, list]) => (
