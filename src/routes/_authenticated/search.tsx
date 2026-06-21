@@ -366,11 +366,11 @@ function SearchPage() {
 
   const update = (patch: Partial<SearchParams>) => {
     const next: SearchParams = { ...params, ...patch };
-    // strip empty
+    // strip empty / defaults
     const clean: Record<string, unknown> = {};
     (Object.keys(next) as (keyof SearchParams)[]).forEach((k) => {
       const v = next[k];
-      if (v === undefined || v === "" || (k === "type" && v === "all")) return;
+      if (v === undefined || v === "" || (k === "type" && v === "all") || (k === "sort" && v === "relevance")) return;
       clean[k] = v;
     });
     navigate({ to: "/search", search: clean });
