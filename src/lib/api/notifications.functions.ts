@@ -72,6 +72,57 @@ export const deleteNotifications = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Mark notifications as unread (undo of mark-read). */
+export const unmarkNotificationsRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("notifications")
+      .update({ is_read: false, read_at: null })
+      .in("id", data.ids)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Restore previously deleted notifications by re-inserting them (undo of delete). */
+const restoreRowSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid().nullable().optional(),
+  type: z.enum(["mention", "task", "meeting", "document", "workflow", "system", "email"]),
+  title: z.string(),
+  body: z.string().nullable().optional(),
+  link: z.string().nullable().optional(),
+  meta: z.unknown().optional(),
+  is_read: z.boolean().optional(),
+  read_at: z.string().nullable().optional(),
+  created_at: z.string().optional(),
+});
+export const restoreNotifications = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ rows: z.array(restoreRowSchema).min(1) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const payload = data.rows.map((r) => ({
+      id: r.id,
+      user_id: context.userId,
+      workspace_id: r.workspace_id ?? null,
+      type: r.type,
+      title: r.title,
+      body: r.body ?? null,
+      link: r.link ?? null,
+      meta: (r.meta ?? {}) as never,
+      is_read: r.is_read ?? false,
+      read_at: r.read_at ?? null,
+      created_at: r.created_at,
+    }));
+    const { error } = await context.supabase.from("notifications").upsert(payload);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Create a notification (used by server-side triggers e.g. new email). */
 export const createNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
