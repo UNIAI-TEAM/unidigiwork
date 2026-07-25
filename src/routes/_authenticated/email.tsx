@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { listEmailMessages } from "@/lib/api/emails.functions";
 import {
   Mail,
   Search,
