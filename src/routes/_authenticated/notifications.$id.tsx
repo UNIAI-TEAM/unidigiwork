@@ -1,5 +1,6 @@
-import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -13,45 +14,76 @@ import {
   X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
-import { catMeta, findNotif, NOTIFS, removeNotif } from "@/lib/notifications-data";
+import { catMeta, mapNotifRow } from "@/lib/notifications-data";
+import {
+  deleteNotifications,
+  getNotification,
+  listNotifications,
+  markNotificationsRead,
+} from "@/lib/api/notifications.functions";
 
 export const Route = createFileRoute("/_authenticated/notifications/$id")({
-  head: ({ params }) => {
-    const n = findNotif(params.id);
-    const title = n ? `${n.actor ? n.actor + " " : ""}${n.title}` : "Chi tiết thông báo";
-    return {
-      meta: [
-        { title: `${title} — UNIWORK` },
-        {
-          name: "description",
-          content: n?.body ?? "Chi tiết thông báo trong UNIWORK.",
-        },
-      ],
-    };
-  },
-  loader: ({ params }) => {
-    const n = findNotif(params.id);
-    if (!n) throw notFound();
-    return { notif: n };
-  },
+  head: () => ({
+    meta: [
+      { title: "Chi tiết thông báo — UNIWORK" },
+      { name: "description", content: "Chi tiết thông báo trong UNIWORK." },
+    ],
+  }),
   notFoundComponent: NotificationNotFound,
   errorComponent: NotificationError,
   component: NotificationDetailPage,
 });
 
 function NotificationDetailPage() {
-  const { notif } = Route.useLoaderData();
+  const { id } = Route.useParams();
   const router = useRouter();
-  const meta = catMeta(notif.cat);
-  const Icon = meta.icon;
-  const [unread, setUnread] = useState(!!notif.unread);
+  const qc = useQueryClient();
+
+  const { data: row, isLoading, isError, error } = useQuery({
+    queryKey: ["notification", id],
+    queryFn: () => getNotification({ data: { id } }),
+  });
+  const { data: listRows = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => listNotifications(),
+  });
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["notifications"] });
+    qc.invalidateQueries({ queryKey: ["notification", id] });
+  };
+  const readMut = useMutation({
+    mutationFn: (ids: string[]) => markNotificationsRead({ data: { ids } }),
+    onSuccess: invalidate,
+  });
+  const deleteMut = useMutation({
+    mutationFn: (ids: string[]) => deleteNotifications({ data: { ids } }),
+    onSuccess: invalidate,
+  });
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Sibling navigation by id (uses module order)
-  const idx = NOTIFS.findIndex((n) => n.id === notif.id);
-  const prev = idx > 0 ? NOTIFS[idx - 1] : undefined;
-  const next = idx >= 0 && idx < NOTIFS.length - 1 ? NOTIFS[idx + 1] : undefined;
+  const list = useMemo(() => listRows.map(mapNotifRow), [listRows]);
+  const notif = useMemo(() => (row ? mapNotifRow(row) : null), [row]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Đang tải…
+      </div>
+    );
+  }
+  if (isError) throw error instanceof Error ? error : new Error(String(error));
+  if (!notif) return <NotificationNotFound />;
+
+  const meta = catMeta(notif.cat);
+  const Icon = meta.icon;
+  const unread = !!notif.unread;
+
+  const idx = list.findIndex((n) => n.id === notif.id);
+  const prev = idx > 0 ? list[idx - 1] : undefined;
+  const next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : undefined;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -81,10 +113,7 @@ function NotificationDetailPage() {
             <div className="flex items-center gap-1.5">
               {unread ? (
                 <button
-                  onClick={() => {
-                    setUnread(false);
-                    notif.unread = false;
-                  }}
+                  onClick={() => readMut.mutate([notif.id])}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" /> Đánh dấu đã đọc
@@ -283,9 +312,12 @@ function NotificationDetailPage() {
                 </button>
                 <button
                   onClick={() => {
-                    removeNotif(notif.id);
-                    setConfirmOpen(false);
-                    router.navigate({ to: "/notifications" });
+                    deleteMut.mutate([notif.id], {
+                      onSuccess: () => {
+                        setConfirmOpen(false);
+                        router.navigate({ to: "/notifications" });
+                      },
+                    });
                   }}
                   className="rounded-lg bg-destructive px-3 py-2 text-sm font-medium text-white hover:bg-destructive/90"
                 >
