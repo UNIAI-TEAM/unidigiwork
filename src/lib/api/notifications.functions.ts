@@ -96,7 +96,7 @@ export const createNotification = createServerFn({ method: "POST" })
       title: data.title,
       body: data.body ?? null,
       link: data.link ?? null,
-      meta: data.meta ?? {},
+      meta: (data.meta ?? {}) as never,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
