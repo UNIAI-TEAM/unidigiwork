@@ -53,7 +53,13 @@ export const updateMyNotifPrefs = createServerFn({ method: "POST" })
     for (const k of PREF_KEYS) {
       if (typeof data[k] === "boolean") patch[k] = data[k];
     }
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (context.supabase as unknown as {
+      from: (t: string) => {
+        upsert: (v: unknown, o: { onConflict: string }) => {
+          select: (c: string) => { single: () => Promise<{ data: unknown; error: { message: string } | null }> };
+        };
+      };
+    })
       .from("notification_preferences")
       .upsert(patch, { onConflict: "user_id" })
       .select("*")
