@@ -94,7 +94,34 @@ export const getEmailThread = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return thread;
+    if (!thread) return null;
+    const messages = (thread.email_messages ?? []).slice().sort(
+      (a: { created_at: string }, b: { created_at: string }) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+    const senderIds = Array.from(
+      new Set(messages.map((m: { from_user_id: string }) => m.from_user_id)),
+    );
+    let senderMap = new Map<string, { display_name: string | null; email: string }>();
+    if (senderIds.length) {
+      const { data: senders } = await context.supabase
+        .from("profiles")
+        .select("id, display_name, email")
+        .in("id", senderIds);
+      senderMap = new Map(
+        (senders ?? []).map((p) => [p.id, { display_name: p.display_name, email: p.email }]),
+      );
+    }
+    return {
+      id: thread.id,
+      subject: thread.subject,
+      workspace_id: thread.workspace_id,
+      last_message_at: thread.last_message_at,
+      messages: messages.map((m: Record<string, unknown> & { from_user_id: string }) => ({
+        ...m,
+        sender: senderMap.get(m.from_user_id) ?? null,
+      })),
+    };
   });
 
 const sendSchema = z.object({
