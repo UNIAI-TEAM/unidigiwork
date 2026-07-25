@@ -1026,13 +1026,32 @@ function EmailHubPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {effectiveTotal === 0 && (
+              {dbMode && dbQuery.isLoading ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
+                  <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
+                  <span className="text-xs">Đang tải email…</span>
+                </div>
+              ) : dbMode && dbQuery.error ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-destructive">
+                  <AlertCircle className="h-6 w-6" />
+                  <span className="font-medium">Không tải được email</span>
+                  <span className="text-xs text-muted-foreground">
+                    {(dbQuery.error as Error).message}
+                  </span>
+                </div>
+              ) : effectiveTotal === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <Inbox className="h-8 w-8 opacity-50" />
-                  <span className="font-medium">Chưa có email nào</span>
-                  <span className="text-xs">Email mới sẽ hiển thị tại đây</span>
+                  <span className="font-medium">
+                    {debouncedSearch ? "Không tìm thấy email phù hợp" : "Chưa có email nào"}
+                  </span>
+                  <span className="text-xs">
+                    {debouncedSearch
+                      ? "Thử thay đổi từ khóa hoặc bỏ bộ lọc"
+                      : "Email mới sẽ hiển thị tại đây"}
+                  </span>
                 </div>
-              )}
+              ) : null}
               {Object.entries(groups).map(([group, items]) => (
                 <div key={group}>
                   <div className="sticky top-0 z-10 bg-background/95 px-4 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
