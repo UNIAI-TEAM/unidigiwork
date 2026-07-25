@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { CATS, catMeta, mapNotifRow, type Cat, type Notif } from "@/lib/notifications-data";
+import { supabase } from "@/integrations/supabase/client";
 import {
   deleteNotifications,
   listNotifications,
@@ -171,6 +172,24 @@ function NotificationsPage() {
   const items = useMemo<Notif[]>(() => rows.map(mapNotifRow), [rows]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["notifications"] });
+
+  // Realtime: khi có notification mới/sửa/xóa thì refetch danh sách
+  useEffect(() => {
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["notifications"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const readMut = useMutation({
     mutationFn: (ids: string[]) => markNotificationsRead({ data: { ids } }),
     onSuccess: invalidate,
