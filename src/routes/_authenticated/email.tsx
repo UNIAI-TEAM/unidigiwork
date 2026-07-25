@@ -679,12 +679,18 @@ function EmailHubPage() {
     });
   }, [searchQuery, filterLabel, filterUnread, sortBy, activeMailbox, advanced]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEmails.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedEmails = useMemo(
-    () => filteredEmails.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filteredEmails, currentPage],
+  const mockTotalPages = Math.max(1, Math.ceil(filteredEmails.length / PAGE_SIZE));
+  const mockCurrentPage = Math.min(page, mockTotalPages);
+  const mockPagedEmails = useMemo(
+    () => filteredEmails.slice((mockCurrentPage - 1) * PAGE_SIZE, mockCurrentPage * PAGE_SIZE),
+    [filteredEmails, mockCurrentPage],
   );
+  const effectiveTotal = dbMode ? (dbQuery.data?.total ?? 0) : filteredEmails.length;
+  const totalPages = dbMode
+    ? Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE))
+    : mockTotalPages;
+  const currentPage = Math.min(page, totalPages);
+  const pagedEmails = dbMode ? dbEmails : mockPagedEmails;
 
   // Reset paging + selection when mailbox/filters change
   function changeMailbox(key: string) {
