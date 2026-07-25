@@ -8,6 +8,9 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
+
+export type NotifRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 export type Cat = "all" | "mention" | "task" | "meeting" | "document" | "workflow" | "system";
 
@@ -18,7 +21,7 @@ export type Notif = {
   title: string;
   body: string;
   time: string;
-  group: "Hôm nay" | "Hôm qua" | "Tuần này";
+  group: "Hôm nay" | "Hôm qua" | "Tuần này" | "Cũ hơn";
   unread?: boolean;
   important?: boolean;
   /** Optional rich detail fields for the detail page */
