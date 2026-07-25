@@ -117,7 +117,7 @@ export const getEmailThread = createServerFn({ method: "GET" })
       subject: thread.subject,
       workspace_id: thread.workspace_id,
       last_message_at: thread.last_message_at,
-      messages: messages.map((m: { from_user_id: string }) => ({
+      messages: messages.map((m: Record<string, unknown> & { from_user_id: string }) => ({
         ...m,
         sender: senderMap.get(m.from_user_id) ?? null,
       })),
