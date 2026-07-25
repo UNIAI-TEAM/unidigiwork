@@ -28,7 +28,10 @@ import {
   listNotifications,
   markAllNotificationsRead,
   markNotificationsRead,
+  restoreNotifications,
+  unmarkNotificationsRead,
 } from "@/lib/api/notifications.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
@@ -202,6 +205,15 @@ function NotificationsPage() {
     mutationFn: (ids: string[]) => deleteNotifications({ data: { ids } }),
     onSuccess: invalidate,
   });
+  const unreadMut = useMutation({
+    mutationFn: (ids: string[]) => unmarkNotificationsRead({ data: { ids } }),
+    onSuccess: invalidate,
+  });
+  const restoreMut = useMutation({
+    mutationFn: (rows: Parameters<typeof restoreNotifications>[0]["data"]["rows"]) =>
+      restoreNotifications({ data: { rows } }),
+    onSuccess: invalidate,
+  });
 
   const filtered = useMemo(() => {
     return items.filter((n) => {
@@ -248,12 +260,73 @@ function NotificationsPage() {
 
   const markRead = (ids: string[]) => {
     if (ids.length === 0) return;
-    readMut.mutate(ids);
+    // Only undo the ones that were actually unread before
+    const unreadIds = rows.filter((r) => ids.includes(r.id) && !r.is_read).map((r) => r.id);
+    readMut.mutate(ids, {
+      onSuccess: () => {
+        if (unreadIds.length === 0) return;
+        toast.success(`Đã đánh dấu đã đọc ${unreadIds.length} thông báo`, {
+          action: {
+            label: "Hoàn tác",
+            onClick: () => unreadMut.mutate(unreadIds),
+          },
+          duration: 6000,
+        });
+      },
+    });
   };
-  const markAllRead = () => readAllMut.mutate();
+  const markAllRead = () => {
+    const unreadIds = rows.filter((r) => !r.is_read).map((r) => r.id);
+    readAllMut.mutate(undefined, {
+      onSuccess: () => {
+        if (unreadIds.length === 0) return;
+        toast.success(`Đã đánh dấu đã đọc tất cả (${unreadIds.length})`, {
+          action: {
+            label: "Hoàn tác",
+            onClick: () => unreadMut.mutate(unreadIds),
+          },
+          duration: 6000,
+        });
+      },
+    });
+  };
   const removeItems = (ids: string[]) => {
     if (ids.length === 0) return;
-    deleteMut.mutate(ids, { onSettled: () => setSelected(new Set()) });
+    // Snapshot rows before deletion so we can restore them
+    const snapshot = rows.filter((r) => ids.includes(r.id));
+    deleteMut.mutate(ids, {
+      onSuccess: () => {
+        toast.success(`Đã xóa ${snapshot.length} thông báo`, {
+          action: {
+            label: "Hoàn tác",
+            onClick: () =>
+              restoreMut.mutate(
+                snapshot.map((r) => ({
+                  id: r.id,
+                  workspace_id: r.workspace_id,
+                  type: r.type as
+                    | "mention"
+                    | "task"
+                    | "meeting"
+                    | "document"
+                    | "workflow"
+                    | "system"
+                    | "email",
+                  title: r.title,
+                  body: r.body,
+                  link: r.link,
+                  meta: r.meta,
+                  is_read: r.is_read,
+                  read_at: r.read_at,
+                  created_at: r.created_at,
+                })),
+              ),
+          },
+          duration: 6000,
+        });
+      },
+      onSettled: () => setSelected(new Set()),
+    });
   };
   // Silence unused warning while loading state is not yet rendered.
   useEffect(() => void isLoading, [isLoading]);
