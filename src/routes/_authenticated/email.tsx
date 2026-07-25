@@ -121,6 +121,32 @@ type Email = {
   attachments?: { name: string; size: string; type: "pdf" | "excel" | "doc" | "image" }[];
 };
 
+const DB_FOLDERS = ["inbox", "sent", "drafts", "archive", "trash"] as const;
+type DbFolder = (typeof DB_FOLDERS)[number];
+
+function formatEmailTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  if (sameDay) {
+    return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function bucketEmailWhen(iso: string): Email["group"] {
+  const d = new Date(iso);
+  const now = new Date();
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / 86_400_000);
+  if (diffDays <= 0) return "Hôm nay";
+  if (diffDays === 1) return "Hôm qua";
+  return "Tuần này";
+}
+
 const EMAILS: Email[] = [
   {
     id: "1",
