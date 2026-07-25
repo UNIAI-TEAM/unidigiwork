@@ -43,12 +43,16 @@ import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -221,6 +225,16 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   id: '/category/$category',
   path: '/category/$category',
@@ -255,6 +269,16 @@ const AuthenticatedDocumentsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedDocumentsRoute,
   } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminRulesRoute = AuthenticatedAdminRulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedWorkspaceIdStosRoute =
   AuthenticatedWorkspaceIdStosRouteImport.update({
     id: '/stos',
@@ -279,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -296,12 +321,15 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
+  '/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesByTo {
@@ -337,12 +365,15 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports': typeof ReportsIndexRoute
+  '/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesById {
@@ -364,6 +395,7 @@ export interface FileRoutesById {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -381,12 +413,15 @@ export interface FileRoutesById {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
+  '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRouteTypes {
@@ -408,6 +443,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/terms'
     | '/workflows'
+    | '/admin'
     | '/calendar'
     | '/dashboard'
     | '/documents'
@@ -425,12 +461,15 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/reports/'
+    | '/admin/rules'
+    | '/admin/users'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
     | '/notifications/$id'
     | '/workspace/$id'
     | '/blog/category/$category'
+    | '/admin/'
     | '/workspace/$id/stos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -466,12 +505,15 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/reports'
+    | '/admin/rules'
+    | '/admin/users'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
     | '/notifications/$id'
     | '/workspace/$id'
     | '/blog/category/$category'
+    | '/admin'
     | '/workspace/$id/stos'
   id:
     | '__root__'
@@ -492,6 +534,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/terms'
     | '/workflows'
+    | '/_authenticated/admin'
     | '/_authenticated/calendar'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
@@ -509,12 +552,15 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/reports/'
+    | '/_authenticated/admin/rules'
+    | '/_authenticated/admin/users'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/workspace/$id'
     | '/blog/category/$category'
+    | '/_authenticated/admin/'
     | '/_authenticated/workspace/$id/stos'
   fileRoutesById: FileRoutesById
 }
@@ -778,6 +824,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/blog/category/$category': {
       id: '/blog/category/$category'
       path: '/category/$category'
@@ -820,6 +880,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsIdRouteImport
       parentRoute: typeof AuthenticatedDocumentsRoute
     }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/rules': {
+      id: '/_authenticated/admin/rules'
+      path: '/rules'
+      fullPath: '/admin/rules'
+      preLoaderRoute: typeof AuthenticatedAdminRulesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/workspace/$id/stos': {
       id: '/_authenticated/workspace/$id/stos'
       path: '/stos'
@@ -829,6 +903,21 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedDocumentsRouteChildren {
   AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
@@ -886,6 +975,7 @@ const AuthenticatedWorkspaceIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
@@ -898,6 +988,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
