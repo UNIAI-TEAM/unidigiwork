@@ -86,7 +86,7 @@ function EmailDetailPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {thread.messages.map((m) => (
+                  {(thread.messages as unknown as ThreadMessage[]).map((m) => (
                     <MessageCard key={m.id} m={m} />
                   ))}
                 </div>
