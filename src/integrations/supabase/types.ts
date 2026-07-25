@@ -52,6 +52,157 @@ export type Database = {
           },
         ]
       }
+      email_messages: {
+        Row: {
+          body: string
+          cc_user_ids: string[]
+          created_at: string
+          from_user_id: string
+          id: string
+          is_draft: boolean
+          sent_at: string | null
+          subject: string
+          thread_id: string
+          to_user_ids: string[]
+          workspace_id: string
+        }
+        Insert: {
+          body?: string
+          cc_user_ids?: string[]
+          created_at?: string
+          from_user_id: string
+          id?: string
+          is_draft?: boolean
+          sent_at?: string | null
+          subject: string
+          thread_id: string
+          to_user_ids?: string[]
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          cc_user_ids?: string[]
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          is_draft?: boolean
+          sent_at?: string | null
+          subject?: string
+          thread_id?: string
+          to_user_ids?: string[]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_states: {
+        Row: {
+          folder: string
+          is_read: boolean
+          is_starred: boolean
+          message_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          folder?: string
+          is_read?: boolean
+          is_starred?: boolean
+          message_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          folder?: string
+          is_read?: boolean
+          is_starred?: boolean
+          message_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_states_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "email_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          subject: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          subject: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          subject?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          meta: Json
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          meta?: Json
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          meta?: Json
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

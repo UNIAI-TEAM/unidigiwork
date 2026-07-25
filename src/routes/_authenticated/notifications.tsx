@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   CheckCircle2,
@@ -20,7 +21,13 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
-import { CATS, NOTIFS, catMeta, type Cat, type Notif } from "@/lib/notifications-data";
+import { CATS, catMeta, mapNotifRow, type Cat, type Notif } from "@/lib/notifications-data";
+import {
+  deleteNotifications,
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationsRead,
+} from "@/lib/api/notifications.functions";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
@@ -153,9 +160,29 @@ function NotificationsPage() {
   const [tab, setTab] = useState<"inbox" | "unread" | "mentions" | "archived">("inbox");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [items, setItems] = useState<Notif[]>(NOTIFS);
   const [page, setPage] = useState(1);
   const pageSize = 6;
+
+  const qc = useQueryClient();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => listNotifications(),
+  });
+  const items = useMemo<Notif[]>(() => rows.map(mapNotifRow), [rows]);
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["notifications"] });
+  const readMut = useMutation({
+    mutationFn: (ids: string[]) => markNotificationsRead({ data: { ids } }),
+    onSuccess: invalidate,
+  });
+  const readAllMut = useMutation({
+    mutationFn: () => markAllNotificationsRead(),
+    onSuccess: invalidate,
+  });
+  const deleteMut = useMutation({
+    mutationFn: (ids: string[]) => deleteNotifications({ data: { ids } }),
+    onSuccess: invalidate,
+  });
 
   const filtered = useMemo(() => {
     return items.filter((n) => {
@@ -201,15 +228,16 @@ function NotificationsPage() {
   };
 
   const markRead = (ids: string[]) => {
-    const set = new Set(ids);
-    setItems((arr) => arr.map((n) => (set.has(n.id) ? { ...n, unread: false } : n)));
+    if (ids.length === 0) return;
+    readMut.mutate(ids);
   };
-  const markAllRead = () => setItems((arr) => arr.map((n) => ({ ...n, unread: false })));
+  const markAllRead = () => readAllMut.mutate();
   const removeItems = (ids: string[]) => {
-    const set = new Set(ids);
-    setItems((arr) => arr.filter((n) => !set.has(n.id)));
-    setSelected(new Set());
+    if (ids.length === 0) return;
+    deleteMut.mutate(ids, { onSettled: () => setSelected(new Set()) });
   };
+  // Silence unused warning while loading state is not yet rendered.
+  useEffect(() => void isLoading, [isLoading]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
