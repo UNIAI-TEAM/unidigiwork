@@ -200,6 +200,66 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_daily_digest: boolean
+          email_document: boolean
+          email_meeting: boolean
+          email_mention: boolean
+          email_product_news: boolean
+          email_system: boolean
+          email_task: boolean
+          email_workflow: boolean
+          in_app_document: boolean
+          in_app_meeting: boolean
+          in_app_mention: boolean
+          in_app_system: boolean
+          in_app_task: boolean
+          in_app_workflow: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_daily_digest?: boolean
+          email_document?: boolean
+          email_meeting?: boolean
+          email_mention?: boolean
+          email_product_news?: boolean
+          email_system?: boolean
+          email_task?: boolean
+          email_workflow?: boolean
+          in_app_document?: boolean
+          in_app_meeting?: boolean
+          in_app_mention?: boolean
+          in_app_system?: boolean
+          in_app_task?: boolean
+          in_app_workflow?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_daily_digest?: boolean
+          email_document?: boolean
+          email_meeting?: boolean
+          email_mention?: boolean
+          email_product_news?: boolean
+          email_system?: boolean
+          email_task?: boolean
+          email_workflow?: boolean
+          in_app_document?: boolean
+          in_app_meeting?: boolean
+          in_app_mention?: boolean
+          in_app_system?: boolean
+          in_app_task?: boolean
+          in_app_workflow?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null

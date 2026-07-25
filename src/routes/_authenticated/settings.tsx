@@ -1,8 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { toast } from "sonner";
+import {
+  getMyNotifPrefs,
+  updateMyNotifPrefs,
+  PREF_KEYS,
+  type NotifPrefs,
+  type PrefKey,
+} from "@/lib/api/notif-prefs.functions";
 import {
   User,
   Lock,
@@ -34,6 +43,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { RefreshCw } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
 const searchSchema = z.object({
@@ -331,18 +341,176 @@ function PasswordSection() {
 }
 
 function NotificationsSection() {
+  return <NotificationsPrefsPanel />;
+}
+
+const CAT_LABELS: { key: "mention" | "task" | "meeting" | "document" | "workflow" | "system"; label: string; desc: string }[] = [
+  { key: "mention", label: "Đề cập (@mention)", desc: "Khi ai đó nhắc tên bạn trong chat hoặc bình luận" },
+  { key: "task", label: "Nhiệm vụ", desc: "Nhiệm vụ được gán, đến hạn hoặc hoàn thành" },
+  { key: "meeting", label: "Cuộc họp", desc: "Lịch họp mới, lời mời và nhắc trước giờ họp" },
+  { key: "document", label: "Tài liệu", desc: "Tài liệu được chia sẻ hoặc cập nhật" },
+  { key: "workflow", label: "Quy trình", desc: "Trạng thái workflow thay đổi hoặc chờ phê duyệt" },
+  { key: "system", label: "Hệ thống", desc: "Cảnh báo bảo mật, bảo trì và thông báo quản trị" },
+];
+
+function NotificationsPrefsPanel() {
+  const qc = useQueryClient();
+  const fetchPrefs = useServerFn(getMyNotifPrefs);
+  const savePrefs = useServerFn(updateMyNotifPrefs);
+  const q = useQuery({ queryKey: ["notif-prefs"], queryFn: () => fetchPrefs() });
+  const [local, setLocal] = useState<NotifPrefs | null>(null);
+
+  useEffect(() => {
+    if (q.data && !local) setLocal(q.data);
+  }, [q.data, local]);
+
+  const mutation = useMutation({
+    mutationFn: (patch: Partial<NotifPrefs>) => savePrefs({ data: patch }),
+    onSuccess: (data) => {
+      setLocal(data);
+      qc.setQueryData(["notif-prefs"], data);
+      toast.success("Đã lưu tùy chọn thông báo");
+    },
+    onError: (err: Error) => toast.error(err.message || "Không thể lưu"),
+  });
+
+  const toggle = (k: PrefKey) => {
+    if (!local) return;
+    const next = { ...local, [k]: !local[k] };
+    setLocal(next);
+    mutation.mutate({ [k]: next[k] } as Partial<NotifPrefs>);
+  };
+
+  const setAll = (kind: "in_app" | "email", value: boolean) => {
+    if (!local) return;
+    const patch: Partial<NotifPrefs> = {};
+    for (const k of PREF_KEYS) {
+      if (k.startsWith(`${kind}_`) && k !== "email_daily_digest" && k !== "email_product_news") {
+        patch[k] = value;
+      }
+    }
+    setLocal({ ...local, ...patch });
+    mutation.mutate(patch);
+  };
+
+  if (q.isLoading || !local) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-surface-2/40 py-12 text-sm text-muted-foreground">
+        <RefreshCw className="h-4 w-4 animate-spin opacity-60" /> Đang tải tùy chọn…
+      </div>
+    );
+  }
+  if (q.error) {
+    return (
+      <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+        Không tải được tùy chọn: {(q.error as Error).message}
+      </div>
+    );
+  }
+
+  const prefs = local;
+
   return (
-    <div className="space-y-3">
-      {[
-        { t: "Đề cập (@mention)", d: "Khi ai đó nhắc tên bạn trong chat hoặc bình luận", on: true },
-        { t: "Cập nhật nhiệm vụ", d: "Nhiệm vụ được gán, đến hạn hoặc hoàn thành", on: true },
-        { t: "Lời mời họp", d: "Lịch họp mới và lời mời tham gia", on: true },
-        { t: "Tài liệu mới", d: "Khi có tài liệu được chia sẻ hoặc cập nhật", on: false },
-        { t: "Tóm tắt hàng ngày", d: "Email tóm tắt vào 08:00 mỗi sáng", on: true },
-        { t: "Bản tin sản phẩm", d: "Tin tức về tính năng mới và mẹo sử dụng", on: false },
-      ].map((i) => (
-        <Toggle key={i.t} title={i.t} desc={i.d} defaultOn={i.on} />
-      ))}
+    <div className="space-y-6">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold">Thông báo trong ứng dụng</h3>
+            <p className="text-xs text-muted-foreground">Hiển thị trong chuông thông báo và trang /notifications</p>
+          </div>
+          <div className="flex gap-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setAll("in_app", true)}
+              className="rounded-md px-2 py-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+            >Bật tất cả</button>
+            <button
+              type="button"
+              onClick={() => setAll("in_app", false)}
+              className="rounded-md px-2 py-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+            >Tắt tất cả</button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {CAT_LABELS.map((c) => {
+            const key = `in_app_${c.key}` as PrefKey;
+            return (
+              <PrefRow
+                key={key}
+                title={c.label}
+                desc={c.desc}
+                checked={prefs[key]}
+                onChange={() => toggle(key)}
+              />
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold">Thông báo qua email</h3>
+            <p className="text-xs text-muted-foreground">Gửi tới email đăng ký của bạn</p>
+          </div>
+          <div className="flex gap-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setAll("email", true)}
+              className="rounded-md px-2 py-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+            >Bật tất cả</button>
+            <button
+              type="button"
+              onClick={() => setAll("email", false)}
+              className="rounded-md px-2 py-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+            >Tắt tất cả</button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {CAT_LABELS.map((c) => {
+            const key = `email_${c.key}` as PrefKey;
+            return (
+              <PrefRow
+                key={key}
+                title={c.label}
+                desc={`Gửi email khi có ${c.label.toLowerCase()} mới`}
+                checked={prefs[key]}
+                onChange={() => toggle(key)}
+              />
+            );
+          })}
+          <PrefRow
+            title="Tóm tắt hàng ngày"
+            desc="Email tóm tắt hoạt động vào 08:00 mỗi sáng"
+            checked={prefs.email_daily_digest}
+            onChange={() => toggle("email_daily_digest")}
+          />
+          <PrefRow
+            title="Bản tin sản phẩm"
+            desc="Tin tức về tính năng mới và mẹo sử dụng"
+            checked={prefs.email_product_news}
+            onChange={() => toggle("email_product_news")}
+          />
+        </div>
+      </section>
+
+      {mutation.isPending && (
+        <div className="text-xs text-muted-foreground">Đang lưu…</div>
+      )}
+    </div>
+  );
+}
+
+function PrefRow({
+  title, desc, checked, onChange,
+}: { title: string; desc: string; checked: boolean; onChange: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-surface-2/40 p-3">
+      <div className="min-w-0">
+        <div className="text-sm font-medium">{title}</div>
+        <div className="text-xs text-muted-foreground">{desc}</div>
+      </div>
+      <Switch checked={checked} onChange={onChange} />
     </div>
   );
 }
