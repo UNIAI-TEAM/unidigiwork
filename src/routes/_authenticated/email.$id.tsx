@@ -1,15 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Reply, ReplyAll, Forward, Star, Archive, Trash2, MoreHorizontal, Paperclip, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  ArrowLeft, Reply, ReplyAll, Forward, Star, Archive, Trash2,
+  MoreHorizontal, RefreshCw, AlertCircle, Inbox,
+} from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { getEmailThread } from "@/lib/api/emails.functions";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/_authenticated/email/$id")({
-  head: ({ params }) => ({ meta: [{ title: `Email ${params.id} · UNIWORK` }] }),
+  head: () => ({ meta: [{ title: "Chi tiết email · UNIWORK" }] }),
   component: EmailDetailPage,
 });
 
 function EmailDetailPage() {
   const { id } = Route.useParams();
   const [open, setOpen] = useSidebarState();
+  const fetchThread = useServerFn(getEmailThread);
+  const isUuid = UUID_RE.test(id);
+  const q = useQuery({
+    queryKey: ["email-thread", id],
+    queryFn: () => fetchThread({ data: { id } }),
+    enabled: isUuid,
+  });
+
+  const thread = q.data;
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="email" open={open} onClose={() => setOpen(false)} />
@@ -18,8 +36,11 @@ function EmailDetailPage() {
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
             <div className="mb-4 flex items-center justify-between">
-              <Link to="/email" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" /> Hộp thư
+              <Link
+                to="/email"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" /> Quay lại hộp thư
               </Link>
               <div className="flex items-center gap-1">
                 <IconBtn icon={Archive} />
@@ -29,76 +50,134 @@ function EmailDetailPage() {
               </div>
             </div>
 
-            <article className="rounded-2xl border border-border bg-surface p-6">
-              <h1 className="text-2xl font-bold">Đề xuất hợp tác triển khai UNIWORK Q3</h1>
-              <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono">#{id}</span>
-                <span>30/05/2026 · 09:42</span>
+            {!isUuid ? (
+              <EmptyState
+                icon={AlertCircle}
+                title="ID không hợp lệ"
+                desc="Đường dẫn email này không đúng định dạng."
+              />
+            ) : q.isLoading ? (
+              <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface p-16 text-sm text-muted-foreground">
+                <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
+                <span>Đang tải cuộc hội thoại…</span>
               </div>
-
-              <div className="mt-5 flex items-start gap-3 border-b border-border pb-5">
-                <img src={avatar("partner")} className="h-10 w-10 rounded-full" alt="" />
-                <div className="flex-1">
-                  <div className="text-sm">
-                    <span className="font-medium">Lê Thanh Tùng</span>{" "}
-                    <span className="text-muted-foreground">&lt;tung.le@partner.vn&gt;</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Tới: tôi · CC: minh.anh@uniwork.vn, tuan.nam@uniwork.vn
+            ) : q.error ? (
+              <EmptyState
+                icon={AlertCircle}
+                title="Không tải được email"
+                desc={(q.error as Error).message}
+              />
+            ) : !thread ? (
+              <EmptyState
+                icon={Inbox}
+                title="Không tìm thấy cuộc hội thoại"
+                desc="Email có thể đã bị xóa hoặc bạn không có quyền truy cập."
+              />
+            ) : (
+              <>
+                <div className="mb-4">
+                  <h1 className="text-2xl font-bold">{thread.subject || "(không có tiêu đề)"}</h1>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {thread.messages.length} tin nhắn ·{" "}
+                    {thread.last_message_at
+                      ? new Date(thread.last_message_at).toLocaleString("vi-VN")
+                      : "chưa gửi"}
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-5 rounded-lg border border-primary/30 bg-primary/10 p-3">
-                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-primary">
-                  <Sparkles className="h-3.5 w-3.5" /> Tóm tắt AI
+                <div className="space-y-3">
+                  {thread.messages.map((m) => (
+                    <MessageCard key={m.id} m={m} />
+                  ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Đối tác đề xuất pilot UNIWORK cho 200 nhân sự trong Q3, kèm yêu cầu SSO
-                  và báo cáo tuỳ chỉnh. Cần phản hồi trước 05/06.
-                </p>
-              </div>
 
-              <div className="prose prose-invert mt-5 max-w-none text-sm">
-                <p>Chào anh/chị,</p>
-                <p>
-                  Sau buổi demo tuần trước, đội ngũ chúng tôi rất ấn tượng với UNIWORK và
-                  mong muốn triển khai pilot cho 200 nhân sự văn phòng trong quý 3.
-                </p>
-                <p>Các yêu cầu chính:</p>
-                <ul>
-                  <li>Single Sign-On với AD nội bộ</li>
-                  <li>Báo cáo định kỳ tuỳ chỉnh theo phòng ban</li>
-                  <li>SLA 99.9% và hỗ trợ giờ hành chính</li>
-                </ul>
-                <p>Trân trọng,<br />Lê Thanh Tùng</p>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {["Proposal-Q3.pdf", "SSO-Requirements.docx"].map((f) => (
-                  <div key={f} className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-2.5 text-xs">
-                    <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="flex-1 truncate">{f}</span>
-                    <span className="text-muted-foreground">1.2 MB</span>
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link to="/email/compose" className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                <Reply className="h-4 w-4" /> Trả lời
-              </Link>
-              <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
-                <ReplyAll className="h-4 w-4" /> Trả lời tất cả
-              </button>
-              <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
-                <Forward className="h-4 w-4" /> Chuyển tiếp
-              </button>
-            </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    to="/email/compose"
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Reply className="h-4 w-4" /> Trả lời
+                  </Link>
+                  <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                    <ReplyAll className="h-4 w-4" /> Trả lời tất cả
+                  </button>
+                  <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                    <Forward className="h-4 w-4" /> Chuyển tiếp
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </main>
       </div>
+    </div>
+  );
+}
+
+type ThreadMessage = {
+  id: string;
+  from_user_id: string;
+  subject: string | null;
+  body: string | null;
+  sent_at: string | null;
+  created_at: string;
+  is_draft: boolean;
+  sender: { display_name: string | null; email: string } | null;
+};
+
+function MessageCard({ m }: { m: ThreadMessage }) {
+  const name = m.sender?.display_name || m.sender?.email || "Người dùng";
+  const when = m.sent_at ?? m.created_at;
+  return (
+    <article className="rounded-2xl border border-border bg-surface p-5">
+      <div className="flex items-start gap-3 border-b border-border pb-4">
+        <img src={avatar(m.from_user_id)} className="h-10 w-10 rounded-full" alt="" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm truncate">
+              <span className="font-medium">{name}</span>
+              {m.sender?.email && (
+                <span className="ml-1 text-muted-foreground">&lt;{m.sender.email}&gt;</span>
+              )}
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {new Date(when).toLocaleString("vi-VN")}
+            </span>
+          </div>
+          {m.is_draft && (
+            <span className="mt-1 inline-block rounded bg-warning/15 px-1.5 py-0.5 text-[11px] font-medium text-warning">
+              Bản nháp
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+        {m.body || <span className="text-muted-foreground italic">(không có nội dung)</span>}
+      </div>
+    </article>
+  );
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-surface p-16 text-center">
+      <Icon className="h-8 w-8 text-muted-foreground opacity-60" />
+      <div className="text-sm font-medium">{title}</div>
+      <div className="max-w-md text-xs text-muted-foreground">{desc}</div>
+      <Link
+        to="/email"
+        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        <ArrowLeft className="h-4 w-4" /> Về hộp thư
+      </Link>
     </div>
   );
 }
