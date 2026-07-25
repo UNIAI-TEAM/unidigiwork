@@ -43,6 +43,7 @@ import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
@@ -221,6 +222,11 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   id: '/category/$category',
   path: '/category/$category',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -408,6 +417,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/terms'
     | '/workflows'
+    | '/admin'
     | '/calendar'
     | '/dashboard'
     | '/documents'
@@ -449,6 +459,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/terms'
     | '/workflows'
+    | '/admin'
     | '/calendar'
     | '/dashboard'
     | '/documents'
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/terms'
     | '/workflows'
+    | '/_authenticated/admin'
     | '/_authenticated/calendar'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
@@ -778,6 +790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/blog/category/$category': {
       id: '/blog/category/$category'
       path: '/category/$category'
@@ -886,6 +905,7 @@ const AuthenticatedWorkspaceIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
@@ -898,6 +918,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
