@@ -331,20 +331,7 @@ function PasswordSection() {
 }
 
 function NotificationsSection() {
-  return (
-    <div className="space-y-3">
-      {[
-        { t: "Đề cập (@mention)", d: "Khi ai đó nhắc tên bạn trong chat hoặc bình luận", on: true },
-        { t: "Cập nhật nhiệm vụ", d: "Nhiệm vụ được gán, đến hạn hoặc hoàn thành", on: true },
-        { t: "Lời mời họp", d: "Lịch họp mới và lời mời tham gia", on: true },
-        { t: "Tài liệu mới", d: "Khi có tài liệu được chia sẻ hoặc cập nhật", on: false },
-        { t: "Tóm tắt hàng ngày", d: "Email tóm tắt vào 08:00 mỗi sáng", on: true },
-        { t: "Bản tin sản phẩm", d: "Tin tức về tính năng mới và mẹo sử dụng", on: false },
-      ].map((i) => (
-        <Toggle key={i.t} title={i.t} desc={i.d} defaultOn={i.on} />
-      ))}
-    </div>
-  );
+  return <NotificationsPrefsPanel />;
 }
 
 function AppearanceSection() {
