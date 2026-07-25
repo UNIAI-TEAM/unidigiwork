@@ -960,7 +960,7 @@ function EmailHubPage() {
                   </Badge>
                 )}
                 <span className="ml-auto text-[11px] text-muted-foreground">
-                  {filteredEmails.length} thư
+                  {effectiveTotal} thư
                 </span>
               </div>
             </div>
@@ -1003,9 +1003,9 @@ function EmailHubPage() {
                 </button>
               )}
               <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                {filteredEmails.length === 0
+                {effectiveTotal === 0
                   ? "0"
-                  : `${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, filteredEmails.length)} / ${filteredEmails.length}`}
+                  : `${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, effectiveTotal)} / ${effectiveTotal}`}
               </span>
               <div className="flex items-center gap-0.5">
                 <button
@@ -1026,7 +1026,7 @@ function EmailHubPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {filteredEmails.length === 0 && (
+              {effectiveTotal === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <Inbox className="h-8 w-8 opacity-50" />
                   <span className="font-medium">Chưa có email nào</span>
@@ -1116,7 +1116,7 @@ function EmailHubPage() {
               ))}
 
               {/* Pagination footer */}
-              {filteredEmails.length > 0 && (
+              {effectiveTotal > 0 && (
                 <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
                   <span>
                     Trang {currentPage} / {totalPages}
