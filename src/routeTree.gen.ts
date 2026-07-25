@@ -44,6 +44,7 @@ import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
@@ -227,6 +228,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   id: '/category/$category',
   path: '/category/$category',
@@ -285,7 +291,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesByTo {
@@ -327,7 +334,6 @@ export interface FileRoutesByTo {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
-  '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -351,6 +357,7 @@ export interface FileRoutesByTo {
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRoutesById {
@@ -372,7 +379,7 @@ export interface FileRoutesById {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
@@ -396,6 +403,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
 }
 export interface FileRouteTypes {
@@ -441,6 +449,7 @@ export interface FileRouteTypes {
     | '/notifications/$id'
     | '/workspace/$id'
     | '/blog/category/$category'
+    | '/admin/'
     | '/workspace/$id/stos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -459,7 +468,6 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/terms'
     | '/workflows'
-    | '/admin'
     | '/calendar'
     | '/dashboard'
     | '/documents'
@@ -483,6 +491,7 @@ export interface FileRouteTypes {
     | '/notifications/$id'
     | '/workspace/$id'
     | '/blog/category/$category'
+    | '/admin'
     | '/workspace/$id/stos'
   id:
     | '__root__'
@@ -527,6 +536,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications/$id'
     | '/_authenticated/workspace/$id'
     | '/blog/category/$category'
+    | '/_authenticated/admin/'
     | '/_authenticated/workspace/$id/stos'
   fileRoutesById: FileRoutesById
 }
@@ -797,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/blog/category/$category': {
       id: '/blog/category/$category'
       path: '/category/$category'
@@ -848,6 +865,17 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedDocumentsRouteChildren {
   AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
@@ -905,7 +933,7 @@ const AuthenticatedWorkspaceIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
@@ -918,7 +946,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
