@@ -1,8 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { toast } from "sonner";
+import {
+  getMyNotifPrefs,
+  updateMyNotifPrefs,
+  PREF_KEYS,
+  type NotifPrefs,
+  type PrefKey,
+} from "@/lib/api/notif-prefs.functions";
 import {
   User,
   Lock,
@@ -34,6 +43,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { RefreshCw } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
 const searchSchema = z.object({
