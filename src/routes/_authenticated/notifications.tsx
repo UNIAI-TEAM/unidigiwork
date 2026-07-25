@@ -210,8 +210,8 @@ function NotificationsPage() {
     onSuccess: invalidate,
   });
   const restoreMut = useMutation({
-    mutationFn: (rows: Parameters<typeof restoreNotifications>[0]["data"]["rows"]) =>
-      restoreNotifications({ data: { rows } }),
+    mutationFn: (rows: Array<Record<string, unknown>>) =>
+      restoreNotifications({ data: { rows } as never }),
     onSuccess: invalidate,
   });
 
