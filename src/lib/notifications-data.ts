@@ -230,3 +230,62 @@ export function removeNotif(id: string) {
   const idx = NOTIFS.findIndex((n) => n.id === id);
   if (idx !== -1) NOTIFS.splice(idx, 1);
 }
+
+// ------------------------------------------------------------------
+// DB row → UI Notif mapper
+// ------------------------------------------------------------------
+
+const KNOWN_CATS = new Set<Notif["cat"]>([
+  "mention",
+  "task",
+  "meeting",
+  "document",
+  "workflow",
+  "system",
+]);
+
+function relativeTime(iso: string) {
+  const now = Date.now();
+  const t = new Date(iso).getTime();
+  const s = Math.max(1, Math.floor((now - t) / 1000));
+  if (s < 60) return `${s} giây trước`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} phút trước`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} giờ trước`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} ngày trước`;
+  return new Date(iso).toLocaleDateString("vi-VN");
+}
+
+function groupOf(iso: string): Notif["group"] {
+  const d = new Date(iso);
+  const today = new Date();
+  const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const t = d.getTime();
+  if (t >= startToday) return "Hôm nay";
+  if (t >= startToday - 86400_000) return "Hôm qua";
+  if (t >= startToday - 7 * 86400_000) return "Tuần này";
+  return "Cũ hơn";
+}
+
+export function mapNotifRow(row: NotifRow): Notif {
+  const cat = (KNOWN_CATS.has(row.type as Notif["cat"]) ? row.type : "system") as Notif["cat"];
+  const meta = (row.meta ?? {}) as Record<string, unknown>;
+  const linkLabel = typeof meta.linkLabel === "string" ? meta.linkLabel : "Xem chi tiết";
+  return {
+    id: row.id,
+    cat,
+    actor: typeof meta.actor === "string" ? meta.actor : undefined,
+    title: row.title,
+    body: row.body ?? "",
+    time: relativeTime(row.created_at),
+    group: groupOf(row.created_at),
+    unread: !row.is_read,
+    important: meta.important === true,
+    context: typeof meta.context === "string" ? meta.context : undefined,
+    link: row.link ? { label: linkLabel, to: row.link } : undefined,
+    details: Array.isArray(meta.details) ? (meta.details as Notif["details"]) : undefined,
+    actions: Array.isArray(meta.actions) ? (meta.actions as Notif["actions"]) : undefined,
+  };
+}
