@@ -529,7 +529,69 @@ function EmailHubPage() {
   const [page, setPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
   const PAGE_SIZE = 6;
-  const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
+
+  // Debounce search to avoid a query per keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset to first page whenever the effective filters or folder change.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, activeMailbox]);
+
+  // Wire DB-backed folders to the server; other mailboxes stay on mock data.
+  const dbMode = DB_FOLDERS.includes(activeMailbox as DbFolder);
+  const dbQuery = useQuery({
+    enabled: dbMode,
+    queryKey: ["emails", activeMailbox, debouncedSearch, page],
+    queryFn: () =>
+      listEmailMessages({
+        data: {
+          folder: activeMailbox as DbFolder,
+          search: debouncedSearch,
+          limit: PAGE_SIZE,
+          offset: (page - 1) * PAGE_SIZE,
+        },
+      }),
+    placeholderData: (prev) => prev,
+    staleTime: 15_000,
+  });
+  const dbEmails: Email[] = useMemo(() => {
+    if (!dbMode || !dbQuery.data) return [];
+    return dbQuery.data.items.map((r) => {
+      const m = r.message as {
+        id: string;
+        subject: string;
+        body: string;
+        sent_at: string | null;
+        created_at: string;
+        from_user_id: string;
+      };
+      const senderName = r.sender?.display_name ?? r.sender?.email ?? "Người gửi";
+      const when = m.sent_at ?? m.created_at;
+      return {
+        id: m.id,
+        from: senderName,
+        fromEmail: r.sender?.email,
+        subject: m.subject,
+        preview: (m.body ?? "").replace(/\s+/g, " ").slice(0, 160),
+        body: m.body,
+        time: formatEmailTime(when),
+        group: bucketEmailWhen(when),
+        unread: !r.is_read,
+        starred: r.is_starred,
+        mailbox: r.folder as Email["mailbox"],
+      } satisfies Email;
+    });
+  }, [dbMode, dbQuery.data]);
+  const selectedEmail =
+    dbEmails.find((e) => e.id === selected) ??
+    EMAILS.find((e) => e.id === selected) ??
+    dbEmails[0] ??
+    EMAILS[0];
 
   function timeSortValue(e: Email): number {
     const groupWeight = e.group === "Hôm nay" ? 3 : e.group === "Hôm qua" ? 2 : 1;
