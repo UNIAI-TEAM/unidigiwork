@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { listEmailMessages } from "@/lib/api/emails.functions";
 import {
   Mail,
   Search,
@@ -118,6 +120,32 @@ type Email = {
   mailbox?: "inbox" | "sent" | "drafts" | "spam" | "trash" | "archive" | "bin";
   attachments?: { name: string; size: string; type: "pdf" | "excel" | "doc" | "image" }[];
 };
+
+const DB_FOLDERS = ["inbox", "sent", "drafts", "archive", "trash"] as const;
+type DbFolder = (typeof DB_FOLDERS)[number];
+
+function formatEmailTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  if (sameDay) {
+    return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function bucketEmailWhen(iso: string): Email["group"] {
+  const d = new Date(iso);
+  const now = new Date();
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / 86_400_000);
+  if (diffDays <= 0) return "Hôm nay";
+  if (diffDays === 1) return "Hôm qua";
+  return "Tuần này";
+}
 
 const EMAILS: Email[] = [
   {
@@ -527,7 +555,69 @@ function EmailHubPage() {
   const [page, setPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
   const PAGE_SIZE = 6;
-  const selectedEmail = EMAILS.find((e) => e.id === selected) ?? EMAILS[0];
+
+  // Debounce search to avoid a query per keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset to first page whenever the effective filters or folder change.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, activeMailbox]);
+
+  // Wire DB-backed folders to the server; other mailboxes stay on mock data.
+  const dbMode = DB_FOLDERS.includes(activeMailbox as DbFolder);
+  const dbQuery = useQuery({
+    enabled: dbMode,
+    queryKey: ["emails", activeMailbox, debouncedSearch, page],
+    queryFn: () =>
+      listEmailMessages({
+        data: {
+          folder: activeMailbox as DbFolder,
+          search: debouncedSearch,
+          limit: PAGE_SIZE,
+          offset: (page - 1) * PAGE_SIZE,
+        },
+      }),
+    placeholderData: (prev) => prev,
+    staleTime: 15_000,
+  });
+  const dbEmails: Email[] = useMemo(() => {
+    if (!dbMode || !dbQuery.data) return [];
+    return dbQuery.data.items.map((r) => {
+      const m = r.message as {
+        id: string;
+        subject: string;
+        body: string;
+        sent_at: string | null;
+        created_at: string;
+        from_user_id: string;
+      };
+      const senderName = r.sender?.display_name ?? r.sender?.email ?? "Người gửi";
+      const when = m.sent_at ?? m.created_at;
+      return {
+        id: m.id,
+        from: senderName,
+        fromEmail: r.sender?.email,
+        subject: m.subject,
+        preview: (m.body ?? "").replace(/\s+/g, " ").slice(0, 160),
+        body: m.body,
+        time: formatEmailTime(when),
+        group: bucketEmailWhen(when),
+        unread: !r.is_read,
+        starred: r.is_starred,
+        mailbox: r.folder as Email["mailbox"],
+      } satisfies Email;
+    });
+  }, [dbMode, dbQuery.data]);
+  const selectedEmail =
+    dbEmails.find((e) => e.id === selected) ??
+    EMAILS.find((e) => e.id === selected) ??
+    dbEmails[0] ??
+    EMAILS[0];
 
   function timeSortValue(e: Email): number {
     const groupWeight = e.group === "Hôm nay" ? 3 : e.group === "Hôm qua" ? 2 : 1;
@@ -589,12 +679,18 @@ function EmailHubPage() {
     });
   }, [searchQuery, filterLabel, filterUnread, sortBy, activeMailbox, advanced]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEmails.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedEmails = useMemo(
-    () => filteredEmails.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filteredEmails, currentPage],
+  const mockTotalPages = Math.max(1, Math.ceil(filteredEmails.length / PAGE_SIZE));
+  const mockCurrentPage = Math.min(page, mockTotalPages);
+  const mockPagedEmails = useMemo(
+    () => filteredEmails.slice((mockCurrentPage - 1) * PAGE_SIZE, mockCurrentPage * PAGE_SIZE),
+    [filteredEmails, mockCurrentPage],
   );
+  const effectiveTotal = dbMode ? (dbQuery.data?.total ?? 0) : filteredEmails.length;
+  const totalPages = dbMode
+    ? Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE))
+    : mockTotalPages;
+  const currentPage = Math.min(page, totalPages);
+  const pagedEmails = dbMode ? dbEmails : mockPagedEmails;
 
   // Reset paging + selection when mailbox/filters change
   function changeMailbox(key: string) {
@@ -864,7 +960,7 @@ function EmailHubPage() {
                   </Badge>
                 )}
                 <span className="ml-auto text-[11px] text-muted-foreground">
-                  {filteredEmails.length} thư
+                  {effectiveTotal} thư
                 </span>
               </div>
             </div>
@@ -907,9 +1003,9 @@ function EmailHubPage() {
                 </button>
               )}
               <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                {filteredEmails.length === 0
+                {effectiveTotal === 0
                   ? "0"
-                  : `${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, filteredEmails.length)} / ${filteredEmails.length}`}
+                  : `${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, effectiveTotal)} / ${effectiveTotal}`}
               </span>
               <div className="flex items-center gap-0.5">
                 <button
@@ -930,13 +1026,32 @@ function EmailHubPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {filteredEmails.length === 0 && (
+              {dbMode && dbQuery.isLoading ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
+                  <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
+                  <span className="text-xs">Đang tải email…</span>
+                </div>
+              ) : dbMode && dbQuery.error ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-destructive">
+                  <AlertCircle className="h-6 w-6" />
+                  <span className="font-medium">Không tải được email</span>
+                  <span className="text-xs text-muted-foreground">
+                    {(dbQuery.error as Error).message}
+                  </span>
+                </div>
+              ) : effectiveTotal === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <Inbox className="h-8 w-8 opacity-50" />
-                  <span className="font-medium">Chưa có email nào</span>
-                  <span className="text-xs">Email mới sẽ hiển thị tại đây</span>
+                  <span className="font-medium">
+                    {debouncedSearch ? "Không tìm thấy email phù hợp" : "Chưa có email nào"}
+                  </span>
+                  <span className="text-xs">
+                    {debouncedSearch
+                      ? "Thử thay đổi từ khóa hoặc bỏ bộ lọc"
+                      : "Email mới sẽ hiển thị tại đây"}
+                  </span>
                 </div>
-              )}
+              ) : null}
               {Object.entries(groups).map(([group, items]) => (
                 <div key={group}>
                   <div className="sticky top-0 z-10 bg-background/95 px-4 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
@@ -1020,7 +1135,7 @@ function EmailHubPage() {
               ))}
 
               {/* Pagination footer */}
-              {filteredEmails.length > 0 && (
+              {effectiveTotal > 0 && (
                 <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
                   <span>
                     Trang {currentPage} / {totalPages}

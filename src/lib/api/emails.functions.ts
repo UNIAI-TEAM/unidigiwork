@@ -21,30 +21,66 @@ export const listEmailMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
-      .object({ folder: z.enum(["inbox", "sent", "drafts", "archive", "trash"]).default("inbox") })
+      .object({
+        folder: z.enum(["inbox", "sent", "drafts", "archive", "trash"]).default("inbox"),
+        search: z.string().default(""),
+        limit: z.number().int().min(1).max(100).default(20),
+        offset: z.number().int().min(0).default(0),
+      })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    // Escape PostgREST-sensitive characters for ilike inside .or()
+    const s = data.search.replace(/[,()%]/g, " ").trim();
+    let q = context.supabase
       .from("email_states")
-      .select("message_id, folder, is_read, is_starred, email_messages(*)")
+      .select("message_id, folder, is_read, is_starred, email_messages!inner(*)", {
+        count: "exact",
+      })
       .eq("user_id", context.userId)
-      .eq("folder", data.folder)
-      .limit(200);
+      .eq("folder", data.folder);
+    if (s) {
+      q = q.or(`subject.ilike.%${s}%,body.ilike.%${s}%`, {
+        referencedTable: "email_messages",
+      });
+    }
+    const { data: rows, error, count } = await q
+      .order("created_at", { referencedTable: "email_messages", ascending: false })
+      .range(data.offset, data.offset + data.limit - 1);
     if (error) throw new Error(error.message);
-    return (rows ?? [])
+
+    const items = (rows ?? [])
       .map((r) => ({
         message: r.email_messages,
         folder: r.folder,
         is_read: r.is_read,
         is_starred: r.is_starred,
       }))
-      .filter((r) => r.message != null)
-      .sort((a, b) => {
-        const at = (a.message as { sent_at: string | null; created_at: string }).sent_at ?? (a.message as { created_at: string }).created_at;
-        const bt = (b.message as { sent_at: string | null; created_at: string }).sent_at ?? (b.message as { created_at: string }).created_at;
-        return bt.localeCompare(at);
-      });
+      .filter((r) => r.message != null);
+
+    // Enrich with sender profile info
+    const senderIds = Array.from(
+      new Set(items.map((r) => (r.message as { from_user_id: string }).from_user_id)),
+    );
+    let senderMap = new Map<string, { display_name: string | null; email: string }>();
+    if (senderIds.length) {
+      const { data: senders } = await context.supabase
+        .from("profiles")
+        .select("id, display_name, email")
+        .in("id", senderIds);
+      senderMap = new Map(
+        (senders ?? []).map((p) => [p.id, { display_name: p.display_name, email: p.email }]),
+      );
+    }
+
+    return {
+      items: items.map((r) => ({
+        ...r,
+        sender:
+          senderMap.get((r.message as { from_user_id: string }).from_user_id) ?? null,
+      })),
+      total: count ?? 0,
+    };
   });
 
 /** Get a thread with all its messages. */
