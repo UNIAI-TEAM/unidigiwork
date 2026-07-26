@@ -198,6 +198,7 @@ export type Database = {
           tenant_id: string
           thread_id: string
           to_user_ids: string[]
+          updated_at: string
           updated_by: string | null
           workspace_id: string
         }
@@ -215,6 +216,7 @@ export type Database = {
           tenant_id: string
           thread_id: string
           to_user_ids?: string[]
+          updated_at?: string
           updated_by?: string | null
           workspace_id: string
         }
@@ -232,6 +234,7 @@ export type Database = {
           tenant_id?: string
           thread_id?: string
           to_user_ids?: string[]
+          updated_at?: string
           updated_by?: string | null
           workspace_id?: string
         }
@@ -334,6 +337,7 @@ export type Database = {
           row_version: number
           subject: string
           tenant_id: string
+          updated_at: string
           updated_by: string | null
           workspace_id: string
         }
@@ -346,6 +350,7 @@ export type Database = {
           row_version?: number
           subject: string
           tenant_id: string
+          updated_at?: string
           updated_by?: string | null
           workspace_id: string
         }
@@ -358,6 +363,7 @@ export type Database = {
           row_version?: number
           subject?: string
           tenant_id?: string
+          updated_at?: string
           updated_by?: string | null
           workspace_id?: string
         }
@@ -498,6 +504,7 @@ export type Database = {
           tenant_id: string | null
           title: string
           type: string
+          updated_at: string
           updated_by: string | null
           user_id: string
           workspace_id: string | null
@@ -516,6 +523,7 @@ export type Database = {
           tenant_id?: string | null
           title: string
           type: string
+          updated_at?: string
           updated_by?: string | null
           user_id: string
           workspace_id?: string | null
@@ -534,6 +542,7 @@ export type Database = {
           tenant_id?: string | null
           title?: string
           type?: string
+          updated_at?: string
           updated_by?: string | null
           user_id?: string
           workspace_id?: string | null
