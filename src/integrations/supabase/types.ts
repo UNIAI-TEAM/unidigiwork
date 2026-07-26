@@ -57,31 +57,57 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
           folder: string
           id: string
+          row_version: number
+          tenant_id: string
           title: string
           updated_at: string
+          updated_by: string | null
           workspace_id: string
         }
         Insert: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
           folder?: string
           id?: string
+          row_version?: number
+          tenant_id: string
           title: string
           updated_at?: string
+          updated_by?: string | null
           workspace_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
           folder?: string
           id?: string
+          row_version?: number
+          tenant_id?: string
           title?: string
           updated_at?: string
+          updated_by?: string | null
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -96,47 +122,80 @@ export type Database = {
           body: string
           cc_user_ids: string[]
           created_at: string
+          created_by: string | null
           from_user_id: string
           id: string
           is_draft: boolean
+          row_version: number
           sent_at: string | null
           subject: string
+          tenant_id: string
           thread_id: string
           to_user_ids: string[]
+          updated_by: string | null
           workspace_id: string
         }
         Insert: {
           body?: string
           cc_user_ids?: string[]
           created_at?: string
+          created_by?: string | null
           from_user_id: string
           id?: string
           is_draft?: boolean
+          row_version?: number
           sent_at?: string | null
           subject: string
+          tenant_id: string
           thread_id: string
           to_user_ids?: string[]
+          updated_by?: string | null
           workspace_id: string
         }
         Update: {
           body?: string
           cc_user_ids?: string[]
           created_at?: string
+          created_by?: string | null
           from_user_id?: string
           id?: string
           is_draft?: boolean
+          row_version?: number
           sent_at?: string | null
           subject?: string
+          tenant_id?: string
           thread_id?: string
           to_user_ids?: string[]
+          updated_by?: string | null
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "email_messages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "email_messages_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -147,7 +206,10 @@ export type Database = {
           is_read: boolean
           is_starred: boolean
           message_id: string
+          row_version: number
+          tenant_id: string
           updated_at: string
+          updated_by: string | null
           user_id: string
         }
         Insert: {
@@ -155,7 +217,10 @@ export type Database = {
           is_read?: boolean
           is_starred?: boolean
           message_id: string
+          row_version?: number
+          tenant_id: string
           updated_at?: string
+          updated_by?: string | null
           user_id: string
         }
         Update: {
@@ -163,7 +228,10 @@ export type Database = {
           is_read?: boolean
           is_starred?: boolean
           message_id?: string
+          row_version?: number
+          tenant_id?: string
           updated_at?: string
+          updated_by?: string | null
           user_id?: string
         }
         Relationships: [
@@ -174,31 +242,82 @@ export type Database = {
             referencedRelation: "email_messages"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "email_states_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_states_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       email_threads: {
         Row: {
           created_at: string
+          created_by: string | null
+          deleted_at: string | null
           id: string
           last_message_at: string
+          row_version: number
           subject: string
+          tenant_id: string
+          updated_by: string | null
           workspace_id: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
           id?: string
           last_message_at?: string
+          row_version?: number
           subject: string
+          tenant_id: string
+          updated_by?: string | null
           workspace_id: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
           id?: string
           last_message_at?: string
+          row_version?: number
           subject?: string
+          tenant_id?: string
+          updated_by?: string | null
           workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_threads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       external_identities: {
         Row: {
@@ -302,43 +421,80 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          created_by: string | null
           id: string
           is_read: boolean
           link: string | null
           meta: Json
           read_at: string | null
+          row_version: number
+          scope_type: string
+          tenant_id: string | null
           title: string
           type: string
+          updated_by: string | null
           user_id: string
           workspace_id: string | null
         }
         Insert: {
           body?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           is_read?: boolean
           link?: string | null
           meta?: Json
           read_at?: string | null
+          row_version?: number
+          scope_type?: string
+          tenant_id?: string | null
           title: string
           type: string
+          updated_by?: string | null
           user_id: string
           workspace_id?: string | null
         }
         Update: {
           body?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           is_read?: boolean
           link?: string | null
           meta?: Json
           read_at?: string | null
+          row_version?: number
+          scope_type?: string
+          tenant_id?: string | null
           title?: string
           type?: string
+          updated_by?: string | null
           user_id?: string
           workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -566,23 +722,53 @@ export type Database = {
       workspaces: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           name: string
           owner_id: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name: string
           owner_id: string
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name?: string
           owner_id?: string
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workspaces_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspaces_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
