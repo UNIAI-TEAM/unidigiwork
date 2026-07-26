@@ -18,10 +18,11 @@ export function createSupabaseRealtimeClient(): RealtimeClient {
         { event: "*" },
         (message) => {
           try {
+            const msg = message as unknown as { event?: string; payload?: unknown };
             const evt: RealtimeEvent<T> = {
               channel,
-              type: (message as { event?: string }).event ?? "message",
-              payload: (message as { payload: T }).payload,
+              type: msg.event ?? "message",
+              payload: msg.payload as T,
               occurredAt: new Date().toISOString(),
             };
             handler(evt);
