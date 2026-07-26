@@ -200,6 +200,44 @@ export type Database = {
         }
         Relationships: []
       }
+      external_identities: {
+        Row: {
+          created_at: string
+          email_snapshot: string | null
+          id: string
+          provider: string
+          provider_subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_snapshot?: string | null
+          id?: string
+          provider: string
+          provider_subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_snapshot?: string | null
+          id?: string
+          provider?: string
+          provider_subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_identities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -344,6 +382,36 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          primary_email: string | null
+          row_version: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          primary_email?: string | null
+          row_version?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          primary_email?: string | null
+          row_version?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workspace_members: {
         Row: {
           created_at: string
@@ -399,6 +467,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_internal_user_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
