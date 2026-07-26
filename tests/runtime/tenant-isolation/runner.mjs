@@ -258,14 +258,16 @@ async function runMatrix(ctx) {
   //    (`user_id = auth.uid()`). Reflect that in expectations.
   for (const actor of ["owner_a", "admin_a", "member_a", "guest_a"]) {
     for (const table of TENANT_TABLES) {
-      const expectA = table === "notifications" && actor !== "owner_a" ? "deny" : "allow";
+      const perUser = table === "notifications" || table === "email_states";
+      const expectA = perUser && actor !== "owner_a" ? "deny" : "allow";
       await readTenantTable(actor, table, "A", expectA);
       await readTenantTable(actor, table, "B", "deny");
     }
   }
   for (const actor of ["owner_b", "admin_b", "member_b", "guest_b"]) {
     for (const table of TENANT_TABLES) {
-      const expectB = table === "notifications" && actor !== "owner_b" ? "deny" : "allow";
+      const perUser = table === "notifications" || table === "email_states";
+      const expectB = perUser && actor !== "owner_b" ? "deny" : "allow";
       await readTenantTable(actor, table, "B", expectB);
       await readTenantTable(actor, table, "A", "deny");
     }
@@ -285,7 +287,8 @@ async function runMatrix(ctx) {
   // 7. Multi-tenant user (member of A and B active). notifications are
   //    per-user (multi doesn't own the fixture notifications).
   for (const table of TENANT_TABLES) {
-    const exp = table === "notifications" ? "deny" : "allow";
+    const perUser = table === "notifications" || table === "email_states";
+    const exp = perUser ? "deny" : "allow";
     await readTenantTable("multi", table, "A", exp);
     await readTenantTable("multi", table, "B", exp);
   }
