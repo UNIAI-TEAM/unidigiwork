@@ -1,0 +1,43 @@
+{
+  "startedAt": "2026-07-26T14:36:11.363Z",
+  "tenants": {
+    "A": {
+      "id": "34c9aec4-df3b-4726-a02a-9492cf26b524",
+      "workspaceId": "34c9aec4-df3b-4726-a02a-9492cf26b524",
+      "ownerId": "8b6db747-0ee5-4bb0-8e13-cc0db01b9696"
+    },
+    "B": {
+      "id": "effe93b7-061d-4369-ada8-8ddbc418b507",
+      "workspaceId": "effe93b7-061d-4369-ada8-8ddbc418b507",
+      "ownerId": "699cef24-0817-49c5-add2-403a0d421712"
+    }
+  },
+  "resources": {
+    "A": {
+      "docId": "7e6f0315-dd48-456e-992b-47f234f96782",
+      "threadId": "1e420be0-df62-4566-84e3-8680045fc6c8",
+      "messageId": "7439135b-3b3f-4c3a-bf37-52c460258f71",
+      "notifId": "f32a56ce-5c8f-4d04-8276-d1ca7723c47a"
+    },
+    "B": {
+      "docId": "523165b8-cbcf-4b09-9c33-e955b4eb5416",
+      "threadId": "a05013b4-cb74-45c2-9723-4489172a1153",
+      "messageId": "3d812922-a384-4308-924c-737961342d0d",
+      "notifId": "08a6dc11-1a25-46f2-957e-c4e7643d5969"
+    }
+  },
+  "users": {
+    "owner_a": "8b6db747-0ee5-4bb0-8e13-cc0db01b9696",
+    "admin_a": "85ab7688-e468-4922-9af1-c3c0cfff32e3",
+    "member_a": "1affbb13-6398-4289-8627-fcc30d48a490",
+    "guest_a": "5fbd380a-9a2a-419a-8778-28a741776f0b",
+    "owner_b": "699cef24-0817-49c5-add2-403a0d421712",
+    "admin_b": "6bf088c7-4ddb-478f-97c3-cfece5c54d2d",
+    "member_b": "3152fc69-8a0a-4936-94ee-4a684e2b3bd0",
+    "guest_b": "b76fe85d-e02b-4468-b543-2fbaeda8dcb6",
+    "platform_admin": "831e9f16-1272-4019-8f5d-a5859a7fdfa2",
+    "outsider": "da88663e-960b-43ef-94c6-4d32f2579441",
+    "inactive_a": "8b219c55-2711-42d3-995e-723fe1d73e2e",
+    "multi": "024fbb23-5e7a-4bf1-9485-ca06957517d0"
+  }
+}
