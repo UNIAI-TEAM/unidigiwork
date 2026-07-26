@@ -51,6 +51,7 @@ if (fx) {
   }
 }
 await admin.from("workspaces").delete().like("name", `${P}%`);
+await admin.from("tenants").delete().like("slug", `${P}%`);
 
 // Auth users
 const emails = new Set();
