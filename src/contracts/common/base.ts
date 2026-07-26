@@ -1,10 +1,5 @@
 // Blueprint §5, §9, §25 — neutral base shapes for aggregates and commands.
-import type {
-  TenantId,
-  UserId,
-  CorrelationId,
-  IdempotencyKey,
-} from "./ids";
+import type { TenantId, UserId, CorrelationId, IdempotencyKey } from "./ids";
 
 export interface VersionedResource {
   rowVersion: number;

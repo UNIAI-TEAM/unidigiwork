@@ -39,14 +39,8 @@ describe("tenant isolation invariants", () => {
   it("every tenant-scoped table gains a tenant_id column", () => {
     if (!sql) return; // no migrations checked in — skip
     for (const table of TENANT_SCOPED_TABLES) {
-      const re = new RegExp(
-        `alter\\s+table[^;]*${table}[^;]*add\\s+column[^;]*tenant_id`,
-        "i",
-      );
-      const created = new RegExp(
-        `create\\s+table[^;]*${table}[\\s\\S]*?tenant_id`,
-        "i",
-      );
+      const re = new RegExp(`alter\\s+table[^;]*${table}[^;]*add\\s+column[^;]*tenant_id`, "i");
+      const created = new RegExp(`create\\s+table[^;]*${table}[\\s\\S]*?tenant_id`, "i");
       expect(re.test(sql) || created.test(sql)).toBe(true);
     }
   });
@@ -64,8 +58,6 @@ describe("tenant isolation invariants", () => {
 
   it("audit_events is append-only (no update/delete policy)", () => {
     if (!sql) return;
-    expect(/audit_events[\s\S]*append-only|tg_audit_events_immutable/i.test(sql)).toBe(
-      true,
-    );
+    expect(/audit_events[\s\S]*append-only|tg_audit_events_immutable/i.test(sql)).toBe(true);
   });
 });

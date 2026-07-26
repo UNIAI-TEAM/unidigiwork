@@ -25,9 +25,7 @@ const rel = (f: string) => relative(process.cwd(), f);
 function isRouteOrComponent(f: string): boolean {
   const r = rel(f);
   return (
-    r.startsWith("src/routes/") ||
-    r.startsWith("src/components/") ||
-    r.startsWith("src/hooks/")
+    r.startsWith("src/routes/") || r.startsWith("src/components/") || r.startsWith("src/hooks/")
   );
 }
 
@@ -72,8 +70,7 @@ describe("architecture rules", () => {
     for (const f of files) {
       if (!f.includes("/src/sdk/")) continue;
       const src = read(f);
-      if (/from\s+['"]react['"]|from\s+['"]@\/components\//.test(src))
-        violations.push(rel(f));
+      if (/from\s+['"]react['"]|from\s+['"]@\/components\//.test(src)) violations.push(rel(f));
     }
     expect(violations).toEqual([]);
   });

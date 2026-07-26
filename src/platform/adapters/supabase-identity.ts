@@ -1,11 +1,7 @@
 // Blueprint §13 — identity adapter. Fail-closed: never returns anonymous
 // as authenticated, never fabricates identity.
 import { supabase } from "@/integrations/supabase/client";
-import type {
-  AuthenticatedIdentity,
-  IdentityResolver,
-  InternalUserId,
-} from "../identity";
+import type { AuthenticatedIdentity, IdentityResolver, InternalUserId } from "../identity";
 import { ApiError } from "@/contracts/errors";
 
 export function createSupabaseIdentityResolver(): IdentityResolver {
@@ -16,8 +12,7 @@ export function createSupabaseIdentityResolver(): IdentityResolver {
       return {
         subject: data.user.id,
         email: data.user.email ?? undefined,
-        displayName:
-          (data.user.user_metadata as { display_name?: string } | null)?.display_name,
+        displayName: (data.user.user_metadata as { display_name?: string } | null)?.display_name,
         provider: "supabase",
       };
     },

@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  STABLE_ERROR_CODES,
-  isApiErrorContract,
-  toApiError,
-  ApiError,
-} from "./errors";
+import { STABLE_ERROR_CODES, isApiErrorContract, toApiError, ApiError } from "./errors";
 
 describe("stable error catalogue", () => {
   it("codes are unique", () => {
