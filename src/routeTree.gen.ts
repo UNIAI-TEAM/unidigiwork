@@ -54,6 +54,7 @@ import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authent
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminTenantRouteImport } from './routes/_authenticated/admin.tenant'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
@@ -286,6 +287,12 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminTenantRoute =
+  AuthenticatedAdminTenantRouteImport.update({
+    id: '/tenant',
+    path: '/tenant',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminRulesRoute = AuthenticatedAdminRulesRouteImport.update({
   id: '/rules',
   path: '/rules',
@@ -336,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/admin/tenant': typeof AuthenticatedAdminTenantRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -382,6 +390,7 @@ export interface FileRoutesByTo {
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports': typeof ReportsIndexRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/admin/tenant': typeof AuthenticatedAdminTenantRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -432,6 +441,7 @@ export interface FileRoutesById {
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
+  '/_authenticated/admin/tenant': typeof AuthenticatedAdminTenantRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
@@ -482,6 +492,7 @@ export interface FileRouteTypes {
     | '/workflows/$id'
     | '/reports/'
     | '/admin/rules'
+    | '/admin/tenant'
     | '/admin/users'
     | '/documents/$id'
     | '/email/$id'
@@ -528,6 +539,7 @@ export interface FileRouteTypes {
     | '/workflows/$id'
     | '/reports'
     | '/admin/rules'
+    | '/admin/tenant'
     | '/admin/users'
     | '/documents/$id'
     | '/email/$id'
@@ -577,6 +589,7 @@ export interface FileRouteTypes {
     | '/workflows/$id'
     | '/reports/'
     | '/_authenticated/admin/rules'
+    | '/_authenticated/admin/tenant'
     | '/_authenticated/admin/users'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email/$id'
@@ -927,6 +940,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/tenant': {
+      id: '/_authenticated/admin/tenant'
+      path: '/tenant'
+      fullPath: '/admin/tenant'
+      preLoaderRoute: typeof AuthenticatedAdminTenantRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/rules': {
       id: '/_authenticated/admin/rules'
       path: '/rules'
@@ -946,12 +966,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
+  AuthenticatedAdminTenantRoute: typeof AuthenticatedAdminTenantRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
+  AuthenticatedAdminTenantRoute: AuthenticatedAdminTenantRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
