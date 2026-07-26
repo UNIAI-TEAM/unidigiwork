@@ -57,7 +57,11 @@ async function listAllUsers() {
 
 async function ensureUser(email, existing) {
   const found = existing.find((u) => u.email === email);
-  if (found) return found;
+  if (found) {
+    // Reset password so token generation works across runs with a fresh PW.
+    await admin.auth.admin.updateUserById(found.id, { password: PW, email_confirm: true });
+    return found;
+  }
   const { data, error } = await admin.auth.admin.createUser({ email, password: PW, email_confirm: true });
   if (error) throw error;
   return data.user;
