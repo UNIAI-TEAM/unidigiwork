@@ -48,7 +48,9 @@ function InviteAcceptPage() {
                 ? "Lời mời không hợp lệ."
                 : msg === "AUTHENTICATION_REQUIRED"
                   ? "Bạn cần đăng nhập trước."
-                  : msg;
+                  : msg === "TENANT_INVITATION_EMAIL_MISMATCH"
+                    ? "Email đăng nhập không khớp với email được mời. Vui lòng đăng nhập bằng đúng email đã nhận lời mời."
+                    : msg;
       toast.error(friendly);
     }
   };
