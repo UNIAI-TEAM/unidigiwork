@@ -53,6 +53,72 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_events: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          after_state: Json | null
+          before_state: Json | null
+          correlation_id: string | null
+          created_at: string
+          id: string
+          ip_address: unknown
+          occurred_at: string
+          resource_id: string | null
+          resource_type: string
+          source: string
+          tenant_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          occurred_at?: string
+          resource_id?: string | null
+          resource_type: string
+          source?: string
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          occurred_at?: string
+          resource_id?: string | null
+          resource_type?: string
+          source?: string
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           content: string
@@ -496,6 +562,74 @@ export type Database = {
           },
         ]
       }
+      outbox_events: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          attempt_count: number
+          available_at: string
+          correlation_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          occurred_at: string
+          payload: Json
+          processed_at: string | null
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          attempt_count?: number
+          available_at?: string
+          correlation_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          idempotency_key: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          occurred_at?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+          tenant_id?: string | null
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          attempt_count?: number
+          available_at?: string
+          correlation_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          occurred_at?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbox_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -775,7 +909,52 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_outbox_events: {
+        Args: { _batch?: number; _lease_seconds?: number; _worker: string }
+        Returns: {
+          aggregate_id: string
+          aggregate_type: string
+          attempt_count: number
+          available_at: string
+          correlation_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          occurred_at: string
+          payload: Json
+          processed_at: string | null
+          status: string
+          tenant_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "outbox_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      complete_outbox_event: {
+        Args: { _id: string; _worker: string }
+        Returns: boolean
+      }
       current_internal_user_id: { Args: never; Returns: string }
+      extend_outbox_lease: {
+        Args: { _id: string; _seconds: number; _worker: string }
+        Returns: boolean
+      }
+      fail_outbox_event: {
+        Args: {
+          _error: string
+          _id: string
+          _retry_after_seconds?: number
+          _worker: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
