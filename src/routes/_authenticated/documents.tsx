@@ -143,7 +143,7 @@ function DocumentsPage() {
     setSaving(true);
     const { data, error } = await supabase
       .from("workspaces")
-      .insert({ name: newWsName.trim(), owner_id: userId })
+      .insert({ name: newWsName.trim(), owner_id: userId } as never)
       .select()
       .single();
     setSaving(false);
@@ -171,6 +171,7 @@ function DocumentsPage() {
         folder: newFolder.trim() || "My Documents",
         content: "",
         workspace_id: currentWs.id,
+        tenant_id: currentWs.id,
       })
       .select()
       .single();
