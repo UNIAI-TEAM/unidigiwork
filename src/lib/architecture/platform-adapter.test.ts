@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveBackendProvider, assertJavaConfigured } from "@/sdk/core/provider";
 import { resolveTaskApi } from "@/sdk/tasks";
 import { requireTenantContext } from "@/platform/tenant-context";
+import { asIdempotencyKey, asWorkspaceId } from "@/contracts";
 
 describe("platform adapters fail-closed", () => {
   it("resolveBackendProvider defaults to lovable when unset", () => {
@@ -16,8 +17,8 @@ describe("platform adapters fail-closed", () => {
     const api = resolveTaskApi();
     await expect(
       api.create({
-        idempotencyKey: "k",
-        workspaceId: "w" as never,
+        idempotencyKey: asIdempotencyKey("k"),
+        workspaceId: asWorkspaceId("w"),
         title: "t",
       }),
     ).rejects.toMatchObject({ code: "NOT_IMPLEMENTED" });
