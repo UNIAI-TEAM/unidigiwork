@@ -94,63 +94,75 @@ async function ensureWorkspace(name, ownerId, slug) {
 }
 
 async function seed() {
+  const log = (s) => console.log(`[seed] ${s}`);
   const existing = await listAllUsers();
   const users = {};
+  log(`ensureUsers x${IDENTITIES.length}`);
   for (const id of IDENTITIES) {
     const email = `${FIXTURE_TAG}${id.key}@uniwork.test`;
     const u = await ensureUser(email, existing);
     await ensureUsersTableRow(u.id, email);
     users[id.key] = { id: u.id, email };
   }
-  // Workspaces (trigger creates matching tenant + owner membership)
+  log("ensureWorkspace A");
   const wsA = await ensureWorkspace(`${FIXTURE_TAG}Workspace A`, users.owner_a.id, `${FIXTURE_TAG}a`);
+  log("ensureWorkspace B");
   const wsB = await ensureWorkspace(`${FIXTURE_TAG}Workspace B`, users.owner_b.id, `${FIXTURE_TAG}b`);
   const tenants = {
     A: { id: wsA.tenant_id, workspaceId: wsA.id, ownerId: users.owner_a.id },
     B: { id: wsB.tenant_id, workspaceId: wsB.id, ownerId: users.owner_b.id },
   };
 
-  // Extra tenant_members (owner_a/b already inserted by trigger)
+  log("extra tenant_members");
   for (const id of IDENTITIES.filter((i) => i.tenant && i.key !== "owner_a" && i.key !== "owner_b")) {
     const t = tenants[id.tenant];
-    await admin.from("tenant_members").upsert({
+    const r = await admin.from("tenant_members").upsert({
       tenant_id: t.id, user_id: users[id.key].id, role: id.role,
       status: id.status ?? "active", created_by: t.ownerId, updated_by: t.ownerId,
     }, { onConflict: "tenant_id,user_id" });
+    if (r.error) throw new Error(`tenant_members ${id.key}: ${r.error.message}`);
   }
-  // Multi-tenant user: also join tenant B
-  await admin.from("tenant_members").upsert({
+  log("multi-tenant B membership");
+  const rMulti = await admin.from("tenant_members").upsert({
     tenant_id: tenants.B.id, user_id: users.multi.id, role: "member",
     status: "active", created_by: tenants.B.ownerId, updated_by: tenants.B.ownerId,
   }, { onConflict: "tenant_id,user_id" });
+  if (rMulti.error) throw new Error(`multi B: ${rMulti.error.message}`);
 
-  // Platform admin
-  await admin.from("user_roles").upsert({ user_id: users.platform_admin.id, role: "admin" }, { onConflict: "user_id,role" });
+  log("platform admin role");
+  const rPa = await admin.from("user_roles").upsert({ user_id: users.platform_admin.id, role: "admin" }, { onConflict: "user_id,role" });
+  if (rPa.error) throw new Error(`user_roles: ${rPa.error.message}`);
 
-  // Resources per tenant — idempotent by name+tenant
+  log("resources");
   const resources = { A: {}, B: {} };
   for (const label of ["A", "B"]) {
     const t = tenants[label];
+    log(`  ${label} document`);
     // document
     let { data: doc } = await admin.from("documents").select("id").eq("workspace_id", t.workspaceId).eq("title", `${FIXTURE_TAG}doc_${label}`).maybeSingle();
     if (!doc) {
       const r = await admin.from("documents").insert({ title: `${FIXTURE_TAG}doc_${label}`, workspace_id: t.workspaceId, updated_by: t.ownerId }).select("id").single();
       if (r.error) throw r.error; doc = r.data;
     }
+    log(`  ${label} thread`);
     // thread
     let { data: thr } = await admin.from("email_threads").select("id").eq("workspace_id", t.workspaceId).eq("subject", `${FIXTURE_TAG}thread_${label}`).maybeSingle();
     if (!thr) {
       const r = await admin.from("email_threads").insert({ subject: `${FIXTURE_TAG}thread_${label}`, workspace_id: t.workspaceId, created_by: t.ownerId, updated_by: t.ownerId }).select("id").single();
       if (r.error) throw r.error; thr = r.data;
     }
+    log(`  ${label} message`);
     // message
     let { data: msg } = await admin.from("email_messages").select("id").eq("thread_id", thr.id).eq("subject", `${FIXTURE_TAG}msg_${label}`).maybeSingle();
     if (!msg) {
       const r = await admin.from("email_messages").insert({ subject: `${FIXTURE_TAG}msg_${label}`, thread_id: thr.id, workspace_id: t.workspaceId, from_user_id: t.ownerId, sent_at: new Date().toISOString(), created_by: t.ownerId, updated_by: t.ownerId }).select("id").single();
       if (r.error) throw r.error; msg = r.data;
     }
+    log(`  ${label} state`);
     // state
-    await admin.from("email_states").upsert({ message_id: msg.id, user_id: t.ownerId, is_read: false, created_by: t.ownerId, updated_by: t.ownerId }, { onConflict: "message_id,user_id" });
+    const rSt = await admin.from("email_states").upsert({ message_id: msg.id, user_id: t.ownerId, is_read: false, updated_by: t.ownerId }, { onConflict: "message_id,user_id" });
+    if (rSt.error) throw new Error(`email_states ${label}: ${rSt.error.message}`);
+    log(`  ${label} notification`);
     // notification
     let { data: notif } = await admin.from("notifications").select("id").eq("user_id", t.ownerId).eq("title", `${FIXTURE_TAG}notif_${label}`).maybeSingle();
     if (!notif) {
