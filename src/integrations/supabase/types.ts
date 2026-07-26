@@ -828,18 +828,21 @@ export type Database = {
         Row: {
           created_at: string
           role: string
+          updated_at: string
           user_id: string
           workspace_id: string
         }
         Insert: {
           created_at?: string
           role?: string
+          updated_at?: string
           user_id: string
           workspace_id: string
         }
         Update: {
           created_at?: string
           role?: string
+          updated_at?: string
           user_id?: string
           workspace_id?: string
         }
