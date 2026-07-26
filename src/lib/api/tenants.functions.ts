@@ -29,6 +29,7 @@ function mapPgError(err: { message?: string; code?: string } | null): never {
     "TENANT_INVITATION_EXPIRED",
     "TENANT_INVITATION_REVOKED",
     "TENANT_INVITATION_ALREADY_ACCEPTED",
+    "TENANT_INVITATION_EMAIL_MISMATCH",
     "VALIDATION_FAILED",
   ];
   const match = known.find((c) => raw.startsWith(c));
