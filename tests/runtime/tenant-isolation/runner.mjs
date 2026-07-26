@@ -64,7 +64,8 @@ async function ensureUser(email, existing) {
 }
 
 async function ensureUsersTableRow(userId, email) {
-  await admin.from("users").upsert({ id: userId, primary_email: email, display_name: email.split("@")[0], status: "active" }, { onConflict: "id" });
+  const r = await admin.from("users").upsert({ id: userId, primary_email: email, display_name: email.split("@")[0], status: "active" }, { onConflict: "id" });
+  if (r.error) throw new Error(`ensureUsersTableRow ${email}: ${r.error.message}`);
 }
 
 async function findWorkspaceByName(name) {
