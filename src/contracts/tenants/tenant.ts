@@ -16,9 +16,9 @@ export type TenantStatus = "active" | "suspended" | "archived";
 export type TenantRole =
   | "tenant_owner"
   | "tenant_admin"
-  | "tenant_manager"
-  | "tenant_member"
-  | "tenant_guest";
+  | "manager"
+  | "member"
+  | "guest";
 export type TenantMemberStatus = "active" | "invited" | "suspended" | "removed";
 export type TenantInvitationStatus = "pending" | "accepted" | "expired" | "revoked";
 
@@ -91,13 +91,7 @@ export type ChangeTenantStatusCommand = z.infer<typeof ChangeTenantStatusCommand
 export const ChangeMemberRoleCommandSchema = z.object({
   tenantId: z.string().uuid(),
   userId: z.string().uuid(),
-  newRole: z.enum([
-    "tenant_owner",
-    "tenant_admin",
-    "tenant_manager",
-    "tenant_member",
-    "tenant_guest",
-  ]),
+  newRole: z.enum(["tenant_owner", "tenant_admin", "manager", "member", "guest"]),
   metadata: z.object({ correlationId: z.string().optional() }).optional(),
 });
 export type ChangeMemberRoleCommand = z.infer<typeof ChangeMemberRoleCommandSchema>;
@@ -120,7 +114,7 @@ export type ChangeMemberStatusCommand = z.infer<typeof ChangeMemberStatusCommand
 export const CreateInvitationCommandSchema = z.object({
   tenantId: z.string().uuid(),
   email: z.string().email(),
-  role: z.enum(["tenant_admin", "tenant_manager", "tenant_member", "tenant_guest"]),
+  role: z.enum(["tenant_admin", "manager", "member", "guest"]),
   ttlSeconds: z.number().int().min(60).max(60 * 60 * 24 * 14),
   metadata: z.object({
     idempotencyKey: z.string().min(8),
