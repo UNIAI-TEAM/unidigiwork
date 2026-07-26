@@ -81,13 +81,18 @@ async function findWorkspaceByName(name) {
 async function ensureWorkspace(name, ownerId, slug) {
   const found = await findWorkspaceByName(name);
   if (found) return found;
-  // Pre-create tenant with a generated id.
+  // Reuse an existing tenant row (may persist across runs because audit_events
+  // are immutable and hold a FK to tenants). Otherwise create one.
   const { randomUUID } = await import("node:crypto");
-  const id = randomUUID();
-  const t = await admin.from("tenants").insert({
-    id, slug, name, status: "active", created_by: ownerId, updated_by: ownerId,
-  }).select("id").single();
-  if (t.error) throw t.error;
+  const existingTenant = await admin.from("tenants").select("id").eq("slug", slug).maybeSingle();
+  let id = existingTenant.data?.id;
+  if (!id) {
+    id = randomUUID();
+    const t = await admin.from("tenants").insert({
+      id, slug, name, status: "active", created_by: ownerId, updated_by: ownerId,
+    }).select("id").single();
+    if (t.error) throw t.error;
+  }
   const w = await admin.from("workspaces").insert({ id, name, owner_id: ownerId }).select("id, tenant_id").single();
   if (w.error) throw w.error;
   return w.data;
