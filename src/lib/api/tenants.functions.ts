@@ -65,7 +65,7 @@ export const provisionTenant = createServerFn({ method: "POST" })
       _owner_id: userId,
       _default_workspace_name: data.defaultWorkspaceName,
       _idempotency_key: data.metadata.idempotencyKey,
-      _correlation_id: data.metadata.correlationId ?? null,
+      _correlation_id: data.metadata.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     const row = Array.isArray(rows) ? rows[0] : rows;
@@ -84,7 +84,7 @@ export const changeTenantStatus = createServerFn({ method: "POST" })
     const { data: row, error } = await supabase.rpc("change_tenant_status", {
       _tenant_id: data.tenantId,
       _new_status: data.newStatus,
-      _correlation_id: data.metadata?.correlationId ?? null,
+      _correlation_id: data.metadata?.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     return row;
@@ -99,7 +99,7 @@ export const changeMemberRole = createServerFn({ method: "POST" })
       _tenant_id: data.tenantId,
       _user_id: data.userId,
       _new_role: data.newRole,
-      _correlation_id: data.metadata?.correlationId ?? null,
+      _correlation_id: data.metadata?.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     return row;
@@ -113,7 +113,7 @@ export const transferOwnership = createServerFn({ method: "POST" })
     const { error } = await supabase.rpc("transfer_tenant_ownership", {
       _tenant_id: data.tenantId,
       _new_owner_id: data.newOwnerId,
-      _correlation_id: data.metadata?.correlationId ?? null,
+      _correlation_id: data.metadata?.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     return { ok: true };
@@ -128,7 +128,7 @@ export const changeMemberStatus = createServerFn({ method: "POST" })
       _tenant_id: data.tenantId,
       _user_id: data.userId,
       _new_status: data.newStatus,
-      _correlation_id: data.metadata?.correlationId ?? null,
+      _correlation_id: data.metadata?.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     return row;
@@ -148,7 +148,7 @@ export const createInvitation = createServerFn({ method: "POST" })
       _role: data.role,
       _token_hash: tokenHash,
       _expires_at: expiresAt,
-      _correlation_id: data.metadata.correlationId ?? null,
+      _correlation_id: data.metadata.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     // Token is returned ONCE to the caller; never persisted in the clear.
@@ -162,7 +162,7 @@ export const revokeInvitation = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: row, error } = await supabase.rpc("revoke_tenant_invitation", {
       _invitation_id: data.invitationId,
-      _correlation_id: data.metadata?.correlationId ?? null,
+      _correlation_id: data.metadata?.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     return row;
@@ -176,7 +176,7 @@ export const acceptInvitation = createServerFn({ method: "POST" })
     const tokenHash = await hashToken(data.token);
     const { data: row, error } = await supabase.rpc("accept_tenant_invitation", {
       _token_hash: tokenHash,
-      _correlation_id: data.metadata.correlationId ?? null,
+      _correlation_id: data.metadata.correlationId ??? undefined,
     });
     if (error) mapPgError(error);
     return row;
