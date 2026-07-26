@@ -26,6 +26,17 @@ Nguồn quét: `grep -RIn "supabase.from(" src` và `grep -RIn "supabase.channel
 - Direct realtime subscribe từ component: **1 chỗ** (`notifications.tsx`) — cần abstraction ở Batch 0C.
 - **Không caller nào đang vi phạm §25.11 nghiêm trọng** — nền tảng tương đối sạch để bước vào Batch 0B.
 
+## Cập nhật Batch 0C
+
+| File | Trạng thái sau 0C | Ghi chú |
+|---|---|---|
+| `src/lib/api/emails.functions.ts` | allowed trusted boundary | `createServerFn` + `requireSupabaseAuth`, RLS + tenant trigger bảo vệ. |
+| `src/lib/api/notifications.functions.ts` | allowed trusted boundary | Như trên. |
+| `src/routes/_authenticated/documents.tsx` | deferred to Phase 2 | Không refactor trong 0C để tránh UI regression; `DocumentApi` skeleton fail-closed `NOT_IMPLEMENTED`. |
+| `src/routes/_authenticated/notifications.tsx` | deferred to Phase 2 | `RealtimeClient` adapter sẵn sàng nhưng chưa wire để giữ nguyên behavior. |
+
+Không caller mới nào được thêm trong Batch 0C.
+
 ## Ghi chú
 
 Manifest phải cập nhật lại mỗi khi có refactor hoặc thêm module mới. Suggested CI check (Batch 0C): script fail nếu số caller `supabase.from` tăng ngoài whitelist.

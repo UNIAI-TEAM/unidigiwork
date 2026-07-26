@@ -15,6 +15,16 @@ Toàn bộ tài liệu kiến trúc của UNIWORK được lưu ở đây. Bluep
 - [Domain Ownership Manifest](./manifests/DOMAIN_OWNERSHIP_MANIFEST.md) — 16 bounded context
 - [Direct Database Access Manifest](./manifests/DIRECT_DATABASE_ACCESS_MANIFEST.md) — mọi caller `supabase.from(...)`
 
+## Contracts, Testing & CI (Batch 0C)
+
+- [API Contract Rules](./contracts/API_CONTRACT_RULES.md)
+- [Stable Error Catalogue](./contracts/STABLE_ERROR_CATALOGUE.md)
+- [Domain Event Catalogue](./contracts/DOMAIN_EVENT_CATALOGUE.md)
+- [Architecture Test Strategy](./testing/ARCHITECTURE_TEST_STRATEGY.md)
+- [Tenant Isolation Test Matrix](./testing/TENANT_ISOLATION_TEST_MATRIX.md)
+- [CI Quality Gates](./ci/QUALITY_GATES.md)
+- [Lint Baseline](./technical-debt/LINT_BASELINE.md)
+
 ## Migration
 
 - [Lovable → Java Migration Rules](./migration/LOVABLE_TO_JAVA_MIGRATION_RULES.md)

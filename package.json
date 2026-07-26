@@ -9,7 +9,15 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "lint:changed": "eslint src/contracts src/sdk src/platform src/lib/architecture src/lib/api/tenant-context.functions.ts",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:contracts": "vitest run src/contracts",
+    "test:architecture": "vitest run src/lib/architecture/architecture-rules.test.ts src/lib/architecture/platform-adapter.test.ts",
+    "test:tenant": "vitest run src/lib/architecture/tenant-isolation.test.ts",
+    "test:rls": "vitest run src/lib/architecture/rls-policies.test.ts",
+    "verify": "bun run typecheck && bun run lint:changed && bun run test && bun run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -20,11 +20,14 @@ export interface RequestContext {
 export type TenantContextResolver = () => Promise<RequestContext>;
 
 /**
- * Placeholder resolver. Throws until Batch 0C provides the real implementation
- * backed by `tenants` / `tenant_members` (Batch 0B).
+ * Batch 0C: fail-closed default. Callers that need tenant context should
+ * invoke the trusted server function `resolveTenantContext` from
+ * `@/lib/api/tenant-context.functions` and then adapt to RequestContext.
+ * This module intentionally does NOT import the server function to keep
+ * the platform layer vendor-neutral.
  */
 export const requireTenantContext: TenantContextResolver = async () => {
   throw new Error(
-    "requireTenantContext: not yet implemented. Wire a real resolver in Batch 0C after Batch 0B creates the tenants/tenant_members tables. Do NOT return a fake tenant.",
+    "requireTenantContext: no resolver installed. Call resolveTenantContext() server-side and pass the result explicitly. Never fabricate a tenant.",
   );
 };
