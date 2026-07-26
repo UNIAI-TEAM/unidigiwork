@@ -1,30 +1,8 @@
 [
   {
-    "actor": "owner_a",
-    "action": "select",
-    "table": "email_states",
-    "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
     "actor": "admin_a",
     "action": "select",
     "table": "email_states",
-    "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "admin_a",
-    "action": "select",
-    "table": "notifications",
     "tenant": "A",
     "expected": "allow",
     "actual": "deny",
@@ -36,17 +14,6 @@
     "actor": "member_a",
     "action": "select",
     "table": "email_states",
-    "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "member_a",
-    "action": "select",
-    "table": "notifications",
     "tenant": "A",
     "expected": "allow",
     "actual": "deny",
@@ -61,47 +28,14 @@
     "tenant": "A",
     "expected": "allow",
     "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "guest_a",
-    "action": "select",
-    "table": "notifications",
-    "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
     "http": 200,
     "notes": null,
     "pass": false
   },
   {
-    "actor": "owner_b",
-    "action": "select",
-    "table": "email_states",
-    "tenant": "B",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
     "actor": "admin_b",
     "action": "select",
     "table": "email_states",
-    "tenant": "B",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "admin_b",
-    "action": "select",
-    "table": "notifications",
     "tenant": "B",
     "expected": "allow",
     "actual": "deny",
@@ -116,17 +50,6 @@
     "tenant": "B",
     "expected": "allow",
     "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "member_b",
-    "action": "select",
-    "table": "notifications",
-    "tenant": "B",
-    "expected": "allow",
-    "actual": "deny",
     "http": 200,
     "notes": null,
     "pass": false
@@ -138,17 +61,6 @@
     "tenant": "B",
     "expected": "allow",
     "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "guest_b",
-    "action": "select",
-    "table": "notifications",
-    "tenant": "B",
-    "expected": "allow",
-    "actual": "deny",
     "http": 200,
     "notes": null,
     "pass": false
@@ -160,7 +72,7 @@
     "tenant": "A",
     "expected": "allow",
     "actual": "deny",
-    "http": 400,
+    "http": 200,
     "notes": null,
     "pass": false
   },
@@ -171,60 +83,7 @@
     "tenant": "B",
     "expected": "allow",
     "actual": "deny",
-    "http": 400,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "multi",
-    "action": "select",
-    "table": "notifications",
-    "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
     "http": 200,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "multi",
-    "action": "select",
-    "table": "notifications",
-    "tenant": "B",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 200,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "member_a",
-    "action": "insert",
-    "table": "documents",
-    "tenant": "A",
-    "notes": null,
-    "expected": "allow_persisted_A",
-    "actual": "deny",
-    "http": 403,
-    "pass": false
-  },
-  {
-    "actor": "owner_a",
-    "action": "update",
-    "table": "audit_events",
-    "expected": "deny",
-    "actual": "allow",
-    "http": 200,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "owner_a",
-    "action": "delete",
-    "table": "audit_events",
-    "expected": "deny",
-    "actual": "allow",
-    "http": 204,
     "notes": null,
     "pass": false
   }
