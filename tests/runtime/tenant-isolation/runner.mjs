@@ -188,9 +188,9 @@ function http(actorToken, method, path, body) {
   return fetch(`${URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
 }
 
-async function selectCell(token, table, filter) {
+async function selectCell(token, table, filter, selectCols = "*") {
   const q = Object.entries(filter).map(([k, v]) => `${k}=eq.${v}`).join("&");
-  const res = await http(token, "GET", `/rest/v1/${table}?${q}&select=id`);
+  const res = await http(token, "GET", `/rest/v1/${table}?${q}&select=${selectCols}&limit=5`);
   const rows = res.ok ? await res.json().catch(() => []) : [];
   return { http: res.status, rows: Array.isArray(rows) ? rows.length : 0, ok: res.ok };
 }
@@ -230,8 +230,10 @@ async function runMatrix(ctx) {
   // Helper: is-there-any-row-for-tenant read
   async function readTenantTable(actorKey, table, tenantLabel, expected) {
     const token = actorKey === "anonymous" ? null : tokens[actorKey]?.token;
-    const filter = table === "workspaces" ? { id: tenants[tenantLabel].workspaceId } : { tenant_id: tenants[tenantLabel].id };
-    const r = await selectCell(token, table, filter);
+    let filter = table === "workspaces" ? { id: tenants[tenantLabel].workspaceId } : { tenant_id: tenants[tenantLabel].id };
+    // email_states has no `id` column; select a real column
+    const selectCols = table === "email_states" ? "message_id" : "*";
+    const r = await selectCell(token, table, filter, selectCols);
     record(results, { actor: actorKey, action: "select", table, tenant: tenantLabel }, { actual: r.rows > 0 ? "allow" : "deny", http: r.http }, expected);
   }
 
@@ -250,17 +252,21 @@ async function runMatrix(ctx) {
     for (const label of ["A", "B"]) await readTenantTable("outsider", table, label, "deny");
   }
 
-  // 3. Tenant A members: allow A, deny B
+  // 3. Tenant A members: allow A, deny B. Notifications are per-user so only
+  //    owner_a (who owns the fixture notification) can see it; others get 0
+  //    rows but that's *by design* of `notifications_tenant_scope`
+  //    (`user_id = auth.uid()`). Reflect that in expectations.
   for (const actor of ["owner_a", "admin_a", "member_a", "guest_a"]) {
     for (const table of TENANT_TABLES) {
-      await readTenantTable(actor, table, "A", "allow");
+      const expectA = table === "notifications" && actor !== "owner_a" ? "deny" : "allow";
+      await readTenantTable(actor, table, "A", expectA);
       await readTenantTable(actor, table, "B", "deny");
     }
   }
-  // 4. Tenant B members: allow B, deny A
   for (const actor of ["owner_b", "admin_b", "member_b", "guest_b"]) {
     for (const table of TENANT_TABLES) {
-      await readTenantTable(actor, table, "B", "allow");
+      const expectB = table === "notifications" && actor !== "owner_b" ? "deny" : "allow";
+      await readTenantTable(actor, table, "B", expectB);
       await readTenantTable(actor, table, "A", "deny");
     }
   }
@@ -276,11 +282,12 @@ async function runMatrix(ctx) {
     await readTenantTable("inactive_a", table, "B", "deny");
   }
 
-  // 7. Multi-tenant user (member of A and B active). Under current is_tenant_member(),
-  //    they can see both. Explicit tenant-context switching is Batch 1B.
+  // 7. Multi-tenant user (member of A and B active). notifications are
+  //    per-user (multi doesn't own the fixture notifications).
   for (const table of TENANT_TABLES) {
-    await readTenantTable("multi", table, "A", "allow");
-    await readTenantTable("multi", table, "B", "allow");
+    const exp = table === "notifications" ? "deny" : "allow";
+    await readTenantTable("multi", table, "A", exp);
+    await readTenantTable("multi", table, "B", exp);
   }
 
   // 8. Cross-tenant insert: member_a inserting document into workspace B
@@ -297,8 +304,13 @@ async function runMatrix(ctx) {
       const { data } = await admin.from("documents").select("tenant_id").eq("title", FIXTURE_TAG + "override").maybeSingle();
       persisted = data?.tenant_id;
     }
-    const actual = !r.ok ? "deny" : (persisted === tenants.A.id ? "allow_persisted_A" : "leak_tenant_B");
-    record(results, { actor: "member_a", action: "insert", table: "documents", tenant: "A", notes: "body override tenant_id=B" }, { actual, http: r.http }, "allow_persisted_A");
+    // Expected: policy rejects (tenant_id=B in body fails is_tenant_member OR
+    // workspace/tenant mismatch check). deny is the correct security outcome.
+    let actual;
+    if (!r.ok) actual = "deny";
+    else if (persisted === tenants.A.id) actual = "allow_persisted_A";
+    else actual = "leak_tenant_B";
+    record(results, { actor: "member_a", action: "insert", table: "documents", tenant: "A", notes: "body override tenant_id=B" }, { actual, http: r.http }, "deny");
   }
 
   // 9. Cross-tenant update/delete: member_a on tenant B document
@@ -327,12 +339,23 @@ async function runMatrix(ctx) {
     record(results, { actor, action: "insert", table: "outbox_events" }, { actual: r2.ok ? "allow" : "deny", http: r2.http }, "deny");
   }
 
-  // 11. Outbox: audit-events browser update/delete rejected (trigger + RLS)
+  // 11. audit_events browser update/delete: must have zero effect. HTTP 200/204
+  //     with 0 affected rows is acceptable (RLS-filtered no-op).
   {
-    const u = await updateCell(tokens.owner_a.token, "audit_events", { tenant_id: tenants.A.id }, { action: "tamper" });
-    record(results, { actor: "owner_a", action: "update", table: "audit_events" }, { actual: u.ok ? "allow" : "deny", http: u.http }, "deny");
-    const d = await deleteCell(tokens.owner_a.token, "audit_events", { tenant_id: tenants.A.id });
-    record(results, { actor: "owner_a", action: "delete", table: "audit_events" }, { actual: d.ok ? "allow" : "deny", http: d.http }, "deny");
+    // seed one audit row so we have something to try to mutate
+    const key = `${FIXTURE_TAG}audit_${Date.now()}`;
+    await admin.from("audit_events").insert({ action: key, resource_type: "test", tenant_id: tenants.A.id });
+    const u = await updateCell(tokens.owner_a.token, "audit_events", { action: `eq.${key}` }, { action: "tamper" });
+    // Verify no row was actually changed
+    const { data: postU } = await admin.from("audit_events").select("action").eq("action", key).maybeSingle();
+    const effU = postU ? "deny" : "allow";
+    record(results, { actor: "owner_a", action: "update", table: "audit_events" }, { actual: effU, http: u.http }, "deny");
+    const d = await deleteCell(tokens.owner_a.token, "audit_events", { action: `eq.${key}` });
+    const { data: postD } = await admin.from("audit_events").select("action").eq("action", key).maybeSingle();
+    const effD = postD ? "deny" : "allow";
+    record(results, { actor: "owner_a", action: "delete", table: "audit_events" }, { actual: effD, http: d.http }, "deny");
+    // cleanup
+    await admin.from("audit_events").delete().eq("action", key);
   }
 
   // 12. Outbox concurrent claim (server-side RPC, via service role for concurrency correctness)
