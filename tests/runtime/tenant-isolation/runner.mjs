@@ -345,12 +345,12 @@ async function runMatrix(ctx) {
     // seed one audit row so we have something to try to mutate
     const key = `${FIXTURE_TAG}audit_${Date.now()}`;
     await admin.from("audit_events").insert({ action: key, resource_type: "test", tenant_id: tenants.A.id });
-    const u = await updateCell(tokens.owner_a.token, "audit_events", { action: `eq.${key}` }, { action: "tamper" });
+    const u = await updateCell(tokens.owner_a.token, "audit_events", { action: key }, { action: "tamper" });
     // Verify no row was actually changed
     const { data: postU } = await admin.from("audit_events").select("action").eq("action", key).maybeSingle();
     const effU = postU ? "deny" : "allow";
     record(results, { actor: "owner_a", action: "update", table: "audit_events" }, { actual: effU, http: u.http }, "deny");
-    const d = await deleteCell(tokens.owner_a.token, "audit_events", { action: `eq.${key}` });
+    const d = await deleteCell(tokens.owner_a.token, "audit_events", { action: key });
     const { data: postD } = await admin.from("audit_events").select("action").eq("action", key).maybeSingle();
     const effD = postD ? "deny" : "allow";
     record(results, { actor: "owner_a", action: "delete", table: "audit_events" }, { actual: effD, http: d.http }, "deny");
