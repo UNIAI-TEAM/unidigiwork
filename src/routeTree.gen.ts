@@ -16,6 +16,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PeopleRouteImport } from './routes/people'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -33,6 +34,7 @@ import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as PeopleIdRouteImport } from './routes/people.$id'
 import { Route as MeetingIdRouteImport } from './routes/meeting.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ChatChannelIdRouteImport } from './routes/chat.$channelId'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -88,6 +90,11 @@ const PricingRoute = PricingRouteImport.update({
 const PeopleRoute = PeopleRouteImport.update({
   id: '/people',
   path: '/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeetingRoute = MeetingRouteImport.update({
@@ -173,6 +180,11 @@ const KnowledgeSlugRoute = KnowledgeSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => KnowledgeRoute,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ChatChannelIdRoute = ChatChannelIdRouteImport.update({
   id: '/$channelId',
@@ -296,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
+  '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -314,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
@@ -342,6 +356,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
+  '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -358,6 +373,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
@@ -388,6 +404,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRouteWithChildren
+  '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -406,6 +423,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/chat/$channelId': typeof ChatChannelIdRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
@@ -436,6 +454,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/knowledge'
     | '/meeting'
+    | '/onboarding'
     | '/people'
     | '/pricing'
     | '/privacy'
@@ -454,6 +473,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/blog/$slug'
     | '/chat/$channelId'
+    | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
@@ -482,6 +502,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/knowledge'
     | '/meeting'
+    | '/onboarding'
     | '/people'
     | '/pricing'
     | '/privacy'
@@ -498,6 +519,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/blog/$slug'
     | '/chat/$channelId'
+    | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
@@ -527,6 +549,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/knowledge'
     | '/meeting'
+    | '/onboarding'
     | '/people'
     | '/pricing'
     | '/privacy'
@@ -545,6 +568,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/blog/$slug'
     | '/chat/$channelId'
+    | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/people/$id'
@@ -575,6 +599,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
   MeetingRoute: typeof MeetingRouteWithChildren
+  OnboardingRoute: typeof OnboardingRoute
   PeopleRoute: typeof PeopleRouteWithChildren
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -582,6 +607,7 @@ export interface RootRouteChildren {
   TasksRoute: typeof TasksRouteWithChildren
   TermsRoute: typeof TermsRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -633,6 +659,13 @@ declare module '@tanstack/react-router' {
       path: '/people'
       fullPath: '/people'
       preLoaderRoute: typeof PeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meeting': {
@@ -753,6 +786,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/knowledge/$slug'
       preLoaderRoute: typeof KnowledgeSlugRouteImport
       parentRoute: typeof KnowledgeRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/chat/$channelId': {
       id: '/chat/$channelId'
@@ -1105,6 +1145,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   KnowledgeRoute: KnowledgeRouteWithChildren,
   MeetingRoute: MeetingRouteWithChildren,
+  OnboardingRoute: OnboardingRoute,
   PeopleRoute: PeopleRouteWithChildren,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
@@ -1112,6 +1153,7 @@ const rootRouteChildren: RootRouteChildren = {
   TasksRoute: TasksRouteWithChildren,
   TermsRoute: TermsRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
