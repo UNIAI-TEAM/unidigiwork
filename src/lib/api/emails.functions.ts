@@ -161,7 +161,7 @@ export const sendEmail = createServerFn({ method: "POST" })
     if (!threadId) {
       const { data: t, error: tErr } = await context.supabase
         .from("email_threads")
-        .insert({ workspace_id: wm.workspace_id, subject: data.subject })
+        .insert({ workspace_id: wm.workspace_id, tenant_id: wm.workspace_id, subject: data.subject })
         .select("id")
         .single();
       if (tErr) throw new Error(tErr.message);
@@ -173,6 +173,7 @@ export const sendEmail = createServerFn({ method: "POST" })
       .insert({
         thread_id: threadId,
         workspace_id: wm.workspace_id,
+        tenant_id: wm.workspace_id,
         from_user_id: context.userId,
         to_user_ids: toUserIds,
         cc_user_ids: ccUserIds,
@@ -187,10 +188,10 @@ export const sendEmail = createServerFn({ method: "POST" })
 
     // Per-user state rows
     const stateRows = [
-      { user_id: context.userId, message_id: msg.id, folder: "sent", is_read: true },
+      { user_id: context.userId, message_id: msg.id, tenant_id: wm.workspace_id, folder: "sent", is_read: true },
       ...[...new Set([...toUserIds, ...ccUserIds])]
         .filter((uid) => uid !== context.userId)
-        .map((uid) => ({ user_id: uid, message_id: msg.id, folder: "inbox", is_read: false })),
+        .map((uid) => ({ user_id: uid, message_id: msg.id, tenant_id: wm.workspace_id, folder: "inbox", is_read: false })),
     ];
     const { error: sErr } = await context.supabase.from("email_states").insert(stateRows);
     if (sErr) throw new Error(sErr.message);
