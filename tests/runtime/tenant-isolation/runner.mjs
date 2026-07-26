@@ -375,4 +375,4 @@ async function main() {
   process.exit(failed.length ? 1 : 0);
 }
 
-main().catch((e) => { console.error("[batch-1a-r] FATAL", e?.message ?? e); process.exit(2); });
+main().catch((e) => { console.error("[batch-1a-r] FATAL", e?.message ?? e); console.error(e?.stack ?? ""); process.exit(2); });
