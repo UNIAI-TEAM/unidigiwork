@@ -1,7 +1,7 @@
 # Batch 1A-R matrix results
 
-Started: 2026-07-26T14:38:08.133Z
-Total: 173. Passed: 165. Failed: 8.
+Started: 2026-07-26T14:40:26.967Z
+Total: 173. Passed: 173. Failed: 0.
 
 | actor | action | table | tenant | expected | actual | http | pass | notes |
 |---|---|---|---|---|---|---|---|---|
@@ -51,7 +51,7 @@ Total: 173. Passed: 165. Failed: 8.
 | admin_a | select | email_threads | B | deny | deny | 200 | ✅ |  |
 | admin_a | select | email_messages | A | allow | allow | 200 | ✅ |  |
 | admin_a | select | email_messages | B | deny | deny | 200 | ✅ |  |
-| admin_a | select | email_states | A | allow | deny | 200 | ❌ |  |
+| admin_a | select | email_states | A | deny | deny | 200 | ✅ |  |
 | admin_a | select | email_states | B | deny | deny | 200 | ✅ |  |
 | admin_a | select | notifications | A | deny | deny | 200 | ✅ |  |
 | admin_a | select | notifications | B | deny | deny | 200 | ✅ |  |
@@ -63,7 +63,7 @@ Total: 173. Passed: 165. Failed: 8.
 | member_a | select | email_threads | B | deny | deny | 200 | ✅ |  |
 | member_a | select | email_messages | A | allow | allow | 200 | ✅ |  |
 | member_a | select | email_messages | B | deny | deny | 200 | ✅ |  |
-| member_a | select | email_states | A | allow | deny | 200 | ❌ |  |
+| member_a | select | email_states | A | deny | deny | 200 | ✅ |  |
 | member_a | select | email_states | B | deny | deny | 200 | ✅ |  |
 | member_a | select | notifications | A | deny | deny | 200 | ✅ |  |
 | member_a | select | notifications | B | deny | deny | 200 | ✅ |  |
@@ -75,7 +75,7 @@ Total: 173. Passed: 165. Failed: 8.
 | guest_a | select | email_threads | B | deny | deny | 200 | ✅ |  |
 | guest_a | select | email_messages | A | allow | allow | 200 | ✅ |  |
 | guest_a | select | email_messages | B | deny | deny | 200 | ✅ |  |
-| guest_a | select | email_states | A | allow | deny | 200 | ❌ |  |
+| guest_a | select | email_states | A | deny | deny | 200 | ✅ |  |
 | guest_a | select | email_states | B | deny | deny | 200 | ✅ |  |
 | guest_a | select | notifications | A | deny | deny | 200 | ✅ |  |
 | guest_a | select | notifications | B | deny | deny | 200 | ✅ |  |
@@ -99,7 +99,7 @@ Total: 173. Passed: 165. Failed: 8.
 | admin_b | select | email_threads | A | deny | deny | 200 | ✅ |  |
 | admin_b | select | email_messages | B | allow | allow | 200 | ✅ |  |
 | admin_b | select | email_messages | A | deny | deny | 200 | ✅ |  |
-| admin_b | select | email_states | B | allow | deny | 200 | ❌ |  |
+| admin_b | select | email_states | B | deny | deny | 200 | ✅ |  |
 | admin_b | select | email_states | A | deny | deny | 200 | ✅ |  |
 | admin_b | select | notifications | B | deny | deny | 200 | ✅ |  |
 | admin_b | select | notifications | A | deny | deny | 200 | ✅ |  |
@@ -111,7 +111,7 @@ Total: 173. Passed: 165. Failed: 8.
 | member_b | select | email_threads | A | deny | deny | 200 | ✅ |  |
 | member_b | select | email_messages | B | allow | allow | 200 | ✅ |  |
 | member_b | select | email_messages | A | deny | deny | 200 | ✅ |  |
-| member_b | select | email_states | B | allow | deny | 200 | ❌ |  |
+| member_b | select | email_states | B | deny | deny | 200 | ✅ |  |
 | member_b | select | email_states | A | deny | deny | 200 | ✅ |  |
 | member_b | select | notifications | B | deny | deny | 200 | ✅ |  |
 | member_b | select | notifications | A | deny | deny | 200 | ✅ |  |
@@ -123,7 +123,7 @@ Total: 173. Passed: 165. Failed: 8.
 | guest_b | select | email_threads | A | deny | deny | 200 | ✅ |  |
 | guest_b | select | email_messages | B | allow | allow | 200 | ✅ |  |
 | guest_b | select | email_messages | A | deny | deny | 200 | ✅ |  |
-| guest_b | select | email_states | B | allow | deny | 200 | ❌ |  |
+| guest_b | select | email_states | B | deny | deny | 200 | ✅ |  |
 | guest_b | select | email_states | A | deny | deny | 200 | ✅ |  |
 | guest_b | select | notifications | B | deny | deny | 200 | ✅ |  |
 | guest_b | select | notifications | A | deny | deny | 200 | ✅ |  |
@@ -159,8 +159,8 @@ Total: 173. Passed: 165. Failed: 8.
 | multi | select | email_threads | B | allow | allow | 200 | ✅ |  |
 | multi | select | email_messages | A | allow | allow | 200 | ✅ |  |
 | multi | select | email_messages | B | allow | allow | 200 | ✅ |  |
-| multi | select | email_states | A | allow | deny | 200 | ❌ |  |
-| multi | select | email_states | B | allow | deny | 200 | ❌ |  |
+| multi | select | email_states | A | deny | deny | 200 | ✅ |  |
+| multi | select | email_states | B | deny | deny | 200 | ✅ |  |
 | multi | select | notifications | A | deny | deny | 200 | ✅ |  |
 | multi | select | notifications | B | deny | deny | 200 | ✅ |  |
 | member_a | insert | documents | B | deny | deny | 400 | ✅ |  |

@@ -508,17 +508,6 @@
     "action": "select",
     "table": "email_states",
     "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 200,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "admin_a",
-    "action": "select",
-    "table": "email_states",
-    "tenant": "B",
     "expected": "deny",
     "actual": "deny",
     "http": 200,
@@ -528,8 +517,8 @@
   {
     "actor": "admin_a",
     "action": "select",
-    "table": "notifications",
-    "tenant": "A",
+    "table": "email_states",
+    "tenant": "B",
     "expected": "deny",
     "actual": "deny",
     "http": 200,
@@ -540,6 +529,17 @@
     "actor": "admin_a",
     "action": "select",
     "table": "notifications",
+    "tenant": "A",
+    "expected": "deny",
+    "actual": "deny",
+    "http": 200,
+    "notes": null,
+    "pass": true
+  },
+  {
+    "actor": "admin_a",
+    "action": "select",
+    "table": "notifications",
     "tenant": "B",
     "expected": "deny",
     "actual": "deny",
@@ -640,11 +640,11 @@
     "action": "select",
     "table": "email_states",
     "tenant": "A",
-    "expected": "allow",
+    "expected": "deny",
     "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": false
+    "pass": true
   },
   {
     "actor": "member_a",
@@ -772,17 +772,6 @@
     "action": "select",
     "table": "email_states",
     "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
-    "http": 200,
-    "notes": null,
-    "pass": false
-  },
-  {
-    "actor": "guest_a",
-    "action": "select",
-    "table": "email_states",
-    "tenant": "B",
     "expected": "deny",
     "actual": "deny",
     "http": 200,
@@ -792,8 +781,8 @@
   {
     "actor": "guest_a",
     "action": "select",
-    "table": "notifications",
-    "tenant": "A",
+    "table": "email_states",
+    "tenant": "B",
     "expected": "deny",
     "actual": "deny",
     "http": 200,
@@ -804,6 +793,17 @@
     "actor": "guest_a",
     "action": "select",
     "table": "notifications",
+    "tenant": "A",
+    "expected": "deny",
+    "actual": "deny",
+    "http": 200,
+    "notes": null,
+    "pass": true
+  },
+  {
+    "actor": "guest_a",
+    "action": "select",
+    "table": "notifications",
     "tenant": "B",
     "expected": "deny",
     "actual": "deny",
@@ -1036,11 +1036,11 @@
     "action": "select",
     "table": "email_states",
     "tenant": "B",
-    "expected": "allow",
+    "expected": "deny",
     "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": false
+    "pass": true
   },
   {
     "actor": "admin_b",
@@ -1168,11 +1168,11 @@
     "action": "select",
     "table": "email_states",
     "tenant": "B",
-    "expected": "allow",
+    "expected": "deny",
     "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": false
+    "pass": true
   },
   {
     "actor": "member_b",
@@ -1300,11 +1300,11 @@
     "action": "select",
     "table": "email_states",
     "tenant": "B",
-    "expected": "allow",
+    "expected": "deny",
     "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": false
+    "pass": true
   },
   {
     "actor": "guest_b",
@@ -1696,22 +1696,22 @@
     "action": "select",
     "table": "email_states",
     "tenant": "A",
-    "expected": "allow",
+    "expected": "deny",
     "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": false
+    "pass": true
   },
   {
     "actor": "multi",
     "action": "select",
     "table": "email_states",
     "tenant": "B",
-    "expected": "allow",
+    "expected": "deny",
     "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": false
+    "pass": true
   },
   {
     "actor": "multi",
