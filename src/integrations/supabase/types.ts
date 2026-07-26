@@ -660,6 +660,79 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["tenant_role"]
+          row_version: number
+          status: string
+          tenant_id: string
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["tenant_role"]
+          row_version?: number
+          status?: string
+          tenant_id: string
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["tenant_role"]
+          row_version?: number
+          status?: string
+          tenant_id?: string
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_invitations_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_members: {
         Row: {
           created_at: string
@@ -921,6 +994,104 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_tenant_invitation: {
+        Args: { _correlation_id?: string; _token_hash: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          row_version: number
+          status: Database["public"]["Enums"]["tenant_member_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenant_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      change_tenant_member_role: {
+        Args: {
+          _correlation_id?: string
+          _new_role: Database["public"]["Enums"]["tenant_role"]
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          row_version: number
+          status: Database["public"]["Enums"]["tenant_member_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenant_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      change_tenant_member_status: {
+        Args: {
+          _correlation_id?: string
+          _new_status: Database["public"]["Enums"]["tenant_member_status"]
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          row_version: number
+          status: Database["public"]["Enums"]["tenant_member_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenant_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      change_tenant_status: {
+        Args: {
+          _correlation_id?: string
+          _new_status: string
+          _tenant_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          name: string
+          row_version: number
+          slug: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       claim_outbox_events: {
         Args: { _batch?: number; _lease_seconds?: number; _worker: string }
         Returns: {
@@ -953,6 +1124,38 @@ export type Database = {
         Args: { _id: string; _worker: string }
         Returns: boolean
       }
+      create_tenant_invitation: {
+        Args: {
+          _correlation_id?: string
+          _email: string
+          _expires_at: string
+          _role: Database["public"]["Enums"]["tenant_role"]
+          _tenant_id: string
+          _token_hash: string
+        }
+        Returns: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["tenant_role"]
+          row_version: number
+          status: string
+          tenant_id: string
+          token_hash: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenant_invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_internal_user_id: { Args: never; Returns: string }
       extend_outbox_lease: {
         Args: { _id: string; _seconds: number; _worker: string }
@@ -981,6 +1184,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_reserved_slug: { Args: { _slug: string }; Returns: boolean }
       is_tenant_member: { Args: { _tenant_id: string }; Returns: boolean }
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
@@ -989,6 +1193,54 @@ export type Database = {
       is_workspace_owner: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
+      }
+      provision_tenant: {
+        Args: {
+          _correlation_id?: string
+          _default_workspace_name: string
+          _idempotency_key?: string
+          _name: string
+          _owner_id: string
+          _slug: string
+        }
+        Returns: {
+          membership_id: string
+          tenant_id: string
+          workspace_id: string
+        }[]
+      }
+      revoke_tenant_invitation: {
+        Args: { _correlation_id?: string; _invitation_id: string }
+        Returns: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["tenant_role"]
+          row_version: number
+          status: string
+          tenant_id: string
+          token_hash: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenant_invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      transfer_tenant_ownership: {
+        Args: {
+          _correlation_id?: string
+          _new_owner_id: string
+          _tenant_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
