@@ -51,6 +51,13 @@ if (fx) {
   }
 }
 await admin.from("workspaces").delete().like("name", `${P}%`);
+// audit_events references tenants; delete any that reference stale tenants
+{
+  const { data: stale } = await admin.from("tenants").select("id").like("slug", `${P}%`);
+  for (const t of stale ?? []) {
+    await admin.from("audit_events").delete().eq("tenant_id", t.id);
+  }
+}
 await admin.from("tenants").delete().like("slug", `${P}%`);
 
 // Auth users
