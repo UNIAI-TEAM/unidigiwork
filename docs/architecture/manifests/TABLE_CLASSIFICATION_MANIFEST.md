@@ -48,4 +48,12 @@ Ký hiệu scope:
 ## Trạng thái review
 
 - Created: Batch 0A.
-- Review status: DRAFT — chờ approval trước khi Batch 0B chạy migration.
+- Review status: APPROVED & APPLIED (Batch 0B).
+
+## Trạng thái sau Batch 0B
+
+Đã tạo: `users`, `external_identities`, `tenants`, `tenant_members`, `audit_events`, `outbox_events`.
+Đã thêm `tenant_id` + `row_version` + `created_by`/`updated_by` + trigger cho:
+`workspaces`, `documents`, `email_threads`, `email_messages`, `email_states`, `notifications` (kèm `scope_type`).
+Compatibility trigger tự điền `tenant_id` từ `workspace_id` — tạm thời, sẽ gỡ ở Batch 0C.
+RLS tenant-aware (policy `*_tenant_*`) đã bổ sung song song, chưa drop policy cũ.
