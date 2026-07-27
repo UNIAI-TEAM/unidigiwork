@@ -379,17 +379,15 @@ async function run() {
   }
 
   // 3. Unconfirmed email — flip email_confirmed_at to null via SQL if reachable
-  // NOTE: Supabase admin JS lacks a direct "unset confirmation" API. We already attempted admin PUT above.
-  // Confirm the state by reading auth.users through service key.
   {
-    const check = await fetch(`${URL_}/auth/v1/admin/users/${U.unconfirmed.id}`, {
-      headers: { apikey: SVC, Authorization: `Bearer ${SVC}` },
-    });
-    const uJson = check.ok ? await check.json() : null;
-    const unconfirmed = uJson && !uJson.email_confirmed_at;
+    // SEC.4: source of truth is the guarded RPC's return value.
+    const unconfirmed = unc.ok;
     if (!unconfirmed) {
       rec({ actor: "unconfirmed", action: "unconfirm_setup" }, "allow", "environmental",
-        { notes: "Supabase admin API kept email_confirmed_at set; unconfirmed cell is environmental." });
+        { notes: unc.reason || "guarded unconfirm RPC did not report success" });
+    } else {
+      rec({ actor: "unconfirmed", action: "unconfirm_setup" }, "allow", "allow",
+        { notes: "email_confirmed_at nulled via guarded _test_unconfirm_auth_email RPC" });
     }
     const inv = await seedInvitationDirect({ tenantId: tA, email: U.unconfirmed.email, role: "member", invitedBy: U.owner_a.id });
     if (TK.unconfirmed?.token) {
