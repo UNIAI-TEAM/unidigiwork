@@ -1,0 +1,28 @@
+{
+  "runId": "sec3_2026-07-27T02-42-22-213Z",
+  "startedAt": "2026-07-27T02:42:57.320Z",
+  "tenants": {
+    "A": "1115c97a-7704-4b88-b776-0dae0a9eb5f0",
+    "B": "47a17f33-2d11-4e21-9a57-96a0d7b78ca1"
+  },
+  "users": {
+    "owner_a": "7c2df4c8-ab3f-42bf-a823-0375f1809bbc",
+    "admin_a": "cf7c7bbd-ac5a-4a81-ba89-d9715bc3a41e",
+    "member_a": "74dc2daa-ee6e-45a6-a847-c9baf2465a18",
+    "guest_a": "9e03f779-97af-4e27-93de-9d4e0fc4f32a",
+    "owner_b": "fad003cd-979b-4737-abe9-1dccb54b9ea8",
+    "admin_b": "ba53fc3c-e305-4a9a-9f3e-db5ebfbf7217",
+    "member_b": "61a0cb52-3d18-43de-854c-9f8493427323",
+    "guest_b": "f9a1558e-dd93-4517-9463-643f1e783c31",
+    "outsider": "63d897bd-318d-4153-9928-5f6867825f4c",
+    "platform_admin": "cd90dfa0-7c94-4e67-9bcf-bc14c5ee9f84",
+    "correct_email": "0a9ef3fe-aa4c-4adb-9806-b6e9a15da616",
+    "wrong_email": "8d948629-a255-4bd6-b020-40ce8d1a84d4",
+    "unconfirmed": "676c37f4-1250-436a-8b52-552ad01c2a11",
+    "existing_active": "e5adef53-fa47-4644-812e-e706da1a4411",
+    "suspended_a": "8a9af5c4-8afd-4795-8c01-5e2283d9e1ad",
+    "removed_a": "20af3779-81df-4150-bb3f-91d2772874fb",
+    "concurrent": "ccb0282b-76e5-4d36-902c-b0a21656bd35",
+    "cross_tenant": "1f7ff2a9-6f06-4178-92ab-51e7023a5275"
+  }
+}
