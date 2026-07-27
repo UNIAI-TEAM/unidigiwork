@@ -1015,6 +1015,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _test_unconfirm_auth_email: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       accept_tenant_invitation: {
         Args: { _correlation_id?: string; _token_hash: string }
         Returns: {
@@ -1264,6 +1268,15 @@ export type Database = {
           tenant_id: string
           workspace_id: string
         }[]
+      }
+      record_tenant_invitation_rejection: {
+        Args: {
+          _actor_id: string
+          _correlation_id?: string
+          _invitation_id: string
+          _reason_code: string
+        }
+        Returns: string
       }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }
