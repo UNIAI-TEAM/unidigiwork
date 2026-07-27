@@ -1,12 +1,1 @@
-[
-  {
-    "actor": "server",
-    "action": "rpc",
-    "table": "claim_outbox_events",
-    "expected": "single-winner",
-    "actual": "w1=0 w2=0",
-    "http": null,
-    "notes": null,
-    "pass": false
-  }
-]
+[]

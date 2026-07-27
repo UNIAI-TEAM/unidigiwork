@@ -39,6 +39,11 @@ async function seed(aggregateType, n, extra = {}) {
     idempotency_key: `${aggregateType}_${i}`,
     tenant_id: null,
     status: "pending",
+    // Sort our seeded events ahead of any pre-existing backlog so
+    // `ORDER BY available_at LIMIT _batch` in claim_outbox_events picks
+    // them first — the invariant (single-winner / all-unique) is what we
+    // are testing, not competition against unrelated stale rows.
+    available_at: "1970-01-02T00:00:00Z",
     ...extra,
   }));
   const { error } = await admin.from("outbox_events").insert(rows);
