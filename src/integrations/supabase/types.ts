@@ -55,50 +55,68 @@ export type Database = {
       }
       audit_events: {
         Row: {
-          action: string
+          action: string | null
+          actor_id: string | null
           actor_user_id: string | null
           after_state: Json | null
+          aggregate_id: string | null
+          aggregate_type: string | null
           before_state: Json | null
           correlation_id: string | null
           created_at: string
+          event_type: string | null
           id: string
+          idempotency_key: string | null
           ip_address: unknown
           occurred_at: string
+          payload: Json | null
           resource_id: string | null
-          resource_type: string
-          source: string
+          resource_type: string | null
+          source: string | null
           tenant_id: string | null
           user_agent: string | null
         }
         Insert: {
-          action: string
+          action?: string | null
+          actor_id?: string | null
           actor_user_id?: string | null
           after_state?: Json | null
+          aggregate_id?: string | null
+          aggregate_type?: string | null
           before_state?: Json | null
           correlation_id?: string | null
           created_at?: string
+          event_type?: string | null
           id?: string
+          idempotency_key?: string | null
           ip_address?: unknown
           occurred_at?: string
+          payload?: Json | null
           resource_id?: string | null
-          resource_type: string
-          source?: string
+          resource_type?: string | null
+          source?: string | null
           tenant_id?: string | null
           user_agent?: string | null
         }
         Update: {
-          action?: string
+          action?: string | null
+          actor_id?: string | null
           actor_user_id?: string | null
           after_state?: Json | null
+          aggregate_id?: string | null
+          aggregate_type?: string | null
           before_state?: Json | null
           correlation_id?: string | null
           created_at?: string
+          event_type?: string | null
           id?: string
+          idempotency_key?: string | null
           ip_address?: unknown
           occurred_at?: string
+          payload?: Json | null
           resource_id?: string | null
-          resource_type?: string
-          source?: string
+          resource_type?: string | null
+          source?: string | null
           tenant_id?: string | null
           user_agent?: string | null
         }
