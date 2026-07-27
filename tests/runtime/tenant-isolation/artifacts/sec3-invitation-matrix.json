@@ -10,7 +10,7 @@
     "pass": false,
     "http": 400,
     "stable": null,
-    "tokenMask": "1730f678…(len=48)"
+    "tokenMask": "13964c4a…(len=48)"
   },
   {
     "id": "C002",
@@ -165,8 +165,8 @@
     "expected": "deny",
     "actual": "deny",
     "pass": true,
-    "http": 400,
-    "stable": null
+    "http": 403,
+    "stable": "TENANT_INVITATION_EMAIL_MISMATCH"
   },
   {
     "id": "C015",
@@ -177,9 +177,9 @@
     "expected": "deny",
     "actual": "deny",
     "pass": true,
-    "http": 400,
-    "stable": null,
-    "notes": "wrong stable"
+    "http": 403,
+    "stable": "TENANT_INVITATION_EMAIL_MISMATCH",
+    "notes": "stable OK"
   },
   {
     "id": "C016",

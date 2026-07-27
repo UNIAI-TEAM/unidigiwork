@@ -1,6 +1,6 @@
 # SEC.3 Invitation Lifecycle Runtime Matrix
 
-Run: sec3_2026-07-27T02-44-44-050Z
+Run: sec3_2026-07-27T02-45-59-197Z
 Total: 43. Passed: 35. Failed: 8.
 
 | Cell | Actor | Tenant | Action | InvState | Expected | Actual | HTTP | Stable | Pass | Notes |
@@ -18,8 +18,8 @@ Total: 43. Passed: 35. Failed: 8.
 | C011 | owner_a | A | list_invitations_redaction |  | allow | allow |  |  | ✅ | token_hash exposed only via RLS column policy |
 | C012 | correct_email | A | accept | pending | allow | deny | 400 |  | ❌ |  |
 | C013 | correct_email | A | accept_replay_same | accepted | deny | deny | 400 |  | ✅ | wrong stable |
-| C014 | wrong_email | A | accept_replay_other | accepted | deny | deny | 400 |  | ✅ |  |
-| C015 | wrong_email | A | accept | pending | deny | deny | 400 |  | ✅ | wrong stable |
+| C014 | wrong_email | A | accept_replay_other | accepted | deny | deny | 403 | TENANT_INVITATION_EMAIL_MISMATCH | ✅ |  |
+| C015 | wrong_email | A | accept | pending | deny | deny | 403 | TENANT_INVITATION_EMAIL_MISMATCH | ✅ | stable OK |
 | C016 | wrong_email |  | no_membership_after_mismatch |  | allow | allow |  |  | ✅ |  |
 | C017 | wrong_email |  | invitation_unchanged |  | allow | allow |  |  | ✅ |  |
 | C018 | wrong_email |  | rejected_audit_written |  | allow | deny |  |  | ❌ |  |
