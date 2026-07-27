@@ -1,0 +1,79 @@
+{
+  "startedAt": "2026-07-27T05:25:40.577Z",
+  "endedAt": "2026-07-27T05:27:27.287Z",
+  "iterations": 25,
+  "results": [
+    {
+      "scenario": "two-worker-single",
+      "iterations": 25,
+      "pass": 24,
+      "fail": 1,
+      "failures": [
+        {
+          "i": 0,
+          "claimed": 0
+        }
+      ]
+    },
+    {
+      "scenario": "five-worker-single",
+      "iterations": 25,
+      "pass": 25,
+      "fail": 0,
+      "failures": []
+    },
+    {
+      "scenario": "multi-worker-multi-event",
+      "iterations": 25,
+      "pass": 24,
+      "fail": 1,
+      "failures": [
+        {
+          "i": 0,
+          "total": 11,
+          "unique": 11
+        }
+      ]
+    },
+    {
+      "scenario": "active-lease",
+      "iterations": 25,
+      "pass": 23,
+      "fail": 2,
+      "failures": [
+        {
+          "i": 21,
+          "owned": 0,
+          "stolen": 0
+        },
+        {
+          "i": 22,
+          "owned": 0,
+          "stolen": 1
+        }
+      ]
+    },
+    {
+      "scenario": "expired-lease",
+      "iterations": 25,
+      "pass": 25,
+      "fail": 0,
+      "failures": []
+    },
+    {
+      "scenario": "processed-not-reclaimed",
+      "iterations": 25,
+      "pass": 25,
+      "fail": 0,
+      "failures": []
+    },
+    {
+      "scenario": "retry-availability",
+      "iterations": 25,
+      "pass": 25,
+      "fail": 0,
+      "failures": []
+    }
+  ],
+  "totalFail": 4
+}
