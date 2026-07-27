@@ -11,6 +11,9 @@ import {
   Plus,
   Trash2,
   Crown,
+  FolderKanban,
+  ScrollText,
+  Search as SearchIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import {
@@ -23,6 +26,8 @@ import {
   useCreateInvitation,
   useRevokeInvitation,
   useChangeTenantStatus,
+  useTenantWorkspaces,
+  useTenantAuditEvents,
 } from "@/features/tenants/hooks";
 import { toast } from "sonner";
 
@@ -37,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/admin/tenant")({
   component: TenantAdminPage,
 });
 
-type Tab = "overview" | "members" | "invitations";
+type Tab = "overview" | "members" | "invitations" | "workspaces" | "audit";
 
 function TenantAdminPage() {
   const [tab, setTab] = useState<Tab>("overview");
@@ -96,6 +101,8 @@ function TenantAdminPage() {
                   { id: "overview", label: "Tổng quan", icon: Building2 },
                   { id: "members", label: "Thành viên", icon: Users },
                   { id: "invitations", label: "Lời mời", icon: Mail },
+                  { id: "workspaces", label: "Workspaces", icon: FolderKanban },
+                  { id: "audit", label: "Audit", icon: ScrollText },
                 ] as Array<{ id: Tab; label: string; icon: typeof Building2 }>
               ).map(({ id, label, icon: Icon }) => (
                 <button
@@ -115,6 +122,8 @@ function TenantAdminPage() {
             {tab === "overview" && <OverviewTab tenantId={tenant.tenantId} tenantStatus={tenant.tenantStatus} tenantName={tenant.tenantName} canManage={canManage} isOwner={tenant.role === "tenant_owner"} />}
             {tab === "members" && <MembersTab tenantId={tenant.tenantId} canManage={canManage} isOwner={tenant.role === "tenant_owner"} actorId={tenant.actorId} />}
             {tab === "invitations" && <InvitationsTab tenantId={tenant.tenantId} canManage={canManage} />}
+            {tab === "workspaces" && <WorkspacesTab tenantId={tenant.tenantId} canManage={canManage} />}
+            {tab === "audit" && <AuditTab tenantId={tenant.tenantId} canManage={canManage} />}
           </div>
         </main>
       </div>
