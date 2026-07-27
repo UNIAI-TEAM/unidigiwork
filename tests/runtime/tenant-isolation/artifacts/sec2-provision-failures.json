@@ -1,67 +1,56 @@
 [
   {
-    "id": "S001",
-    "actor": "actor_a",
-    "action": "first_provision",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "http": 404,
-    "stable": null,
-    "errMsg": "function digest(text, unknown) does not exist"
-  },
-  {
-    "id": "S002",
-    "actor": "actor_a",
-    "action": "concurrent_same_key",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "okCount": 0,
-    "unique": 0
-  },
-  {
-    "id": "S003",
-    "actor": "actor_a",
-    "action": "concurrent_diff_payload",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "r1": {
-      "ok": false,
-      "stable": null
-    },
-    "r2": {
-      "ok": false,
-      "stable": null
-    }
-  },
-  {
-    "id": "S004",
-    "actor": "actor_a",
-    "action": "dup_slug_first",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "stable": null
-  },
-  {
-    "id": "S027",
-    "actor": "platform_admin",
-    "action": "provision_for_other_owner",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "stable": null,
-    "http": 404
-  },
-  {
-    "id": "S033",
+    "id": "S021",
     "actor": "actor_b",
-    "action": "retry_after_failure",
+    "action": "slug_normalized_collision",
+    "expected": "deny",
+    "actual": "allow",
+    "pass": false,
+    "stable": null
+  },
+  {
+    "id": "S035",
+    "actor": "actor_a",
+    "action": "invalid_slug_slash",
+    "expected": "deny",
+    "actual": "allow",
+    "pass": false,
+    "stable": null
+  },
+  {
+    "id": "S038",
+    "actor": "actor_a",
+    "action": "invalid_slug_leading_hyphen",
+    "expected": "deny",
+    "actual": "allow",
+    "pass": false,
+    "stable": null
+  },
+  {
+    "id": "S047",
+    "actor": "actor_b",
+    "action": "atomic_slug_conflict",
+    "expected": "deny",
+    "actual": "allow",
+    "pass": false,
+    "stable": null
+  },
+  {
+    "id": "S048",
+    "actor": "actor_b",
+    "action": "atomic_no_orphan_member",
     "expected": "allow",
     "actual": "deny",
     "pass": false,
-    "stable": null
+    "before": 2,
+    "after": 3
+  },
+  {
+    "id": "S049",
+    "actor": "actor_b",
+    "action": "atomic_no_success_audit",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false
   }
 ]

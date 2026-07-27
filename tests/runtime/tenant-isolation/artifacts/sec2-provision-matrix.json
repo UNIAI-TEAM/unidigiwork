@@ -1,7 +1,7 @@
 {
-  "runId": "sec2_2026-07-27T03-49-31-915Z",
-  "total": 33,
-  "passed": 27,
+  "runId": "sec2_2026-07-27T03-50-26-742Z",
+  "total": 50,
+  "passed": 44,
   "failed": 6,
   "results": [
     {
@@ -9,68 +9,227 @@
       "actor": "actor_a",
       "action": "first_provision",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false,
-      "http": 404,
+      "actual": "allow",
+      "pass": true,
+      "http": 200,
       "stable": null,
-      "errMsg": "function digest(text, unknown) does not exist"
+      "errMsg": "[{\"tenant_id\":\"903d230c-04d5-4db1-ad24-48113a02509c\",\"workspace_id\":\"903d230c-04d5-4db1-ad24-48113a02509c\",\"membership_id\":\"ce368162-8b70-4d0b-b94d-2d4a734f90cf\"}]"
     },
     {
       "id": "S002",
       "actor": "actor_a",
-      "action": "concurrent_same_key",
+      "action": "invariants",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false,
-      "okCount": 0,
-      "unique": 0
+      "actual": "allow",
+      "pass": true,
+      "counts": {
+        "tenant": 1,
+        "member": 1,
+        "workspace": 1,
+        "audit": 3,
+        "outbox": 3
+      }
     },
     {
       "id": "S003",
       "actor": "actor_a",
-      "action": "concurrent_diff_payload",
+      "action": "owner_membership",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false,
-      "r1": {
-        "ok": false,
-        "stable": null
-      },
-      "r2": {
-        "ok": false,
-        "stable": null
-      }
+      "actual": "allow",
+      "pass": true
     },
     {
       "id": "S004",
       "actor": "actor_a",
-      "action": "dup_slug_first",
+      "action": "workspace_invariant",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false,
-      "stable": null
+      "actual": "allow",
+      "pass": true
     },
     {
       "id": "S005",
+      "actor": "actor_a",
+      "action": "workspace_owner_member",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S006",
+      "actor": "actor_a",
+      "action": "audit_provisioned_row",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S007",
+      "actor": "actor_a",
+      "action": "audit_no_secret",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S008",
+      "actor": "actor_a",
+      "action": "outbox_catalog",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "types": [
+        "tenant.created.v1",
+        "tenant.member_added.v1",
+        "workspace.created.v1"
+      ]
+    },
+    {
+      "id": "S009",
+      "actor": "actor_a",
+      "action": "outbox_idem_key_set",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S010",
+      "actor": "actor_a",
+      "action": "replay_same_payload",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "http": 200
+    },
+    {
+      "id": "S011",
+      "actor": "actor_a",
+      "action": "replay_no_duplicate",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "before": {
+        "tenant": 1,
+        "member": 1,
+        "workspace": 1,
+        "audit": 3,
+        "outbox": 3
+      },
+      "after": {
+        "tenant": 1,
+        "member": 1,
+        "workspace": 1,
+        "audit": 3,
+        "outbox": 3
+      }
+    },
+    {
+      "id": "S012",
+      "actor": "actor_a",
+      "action": "same_key_diff_payload",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "IDEMPOTENCY_CONFLICT",
+      "http": 409,
+      "notes": "stable OK"
+    },
+    {
+      "id": "S013",
+      "actor": "actor_a",
+      "action": "conflict_no_side_effect",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S014",
+      "actor": "actor_a",
+      "action": "concurrent_same_key",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "okCount": 5,
+      "unique": 1
+    },
+    {
+      "id": "S015",
+      "actor": "actor_a",
+      "action": "concurrent_single_aggregate",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "counts": {
+        "tenant": 1,
+        "member": 1,
+        "workspace": 1,
+        "audit": 3,
+        "outbox": 3
+      }
+    },
+    {
+      "id": "S016",
+      "actor": "actor_a",
+      "action": "concurrent_audit_dedup",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "count": 1
+    },
+    {
+      "id": "S017",
+      "actor": "actor_a",
+      "action": "concurrent_outbox_dedup",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "count": 1
+    },
+    {
+      "id": "S018",
+      "actor": "actor_a",
+      "action": "concurrent_diff_payload",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "r1": {
+        "ok": false,
+        "stable": "IDEMPOTENCY_CONFLICT"
+      },
+      "r2": {
+        "ok": true,
+        "stable": null
+      }
+    },
+    {
+      "id": "S019",
+      "actor": "actor_a",
+      "action": "dup_slug_first",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "stable": null
+    },
+    {
+      "id": "S020",
       "actor": "actor_b",
       "action": "dup_slug_conflict",
       "expected": "deny",
       "actual": "deny",
       "pass": true,
-      "stable": null,
-      "notes": "wrong stable"
+      "stable": "TENANT_SLUG_CONFLICT",
+      "notes": "stable OK"
     },
     {
-      "id": "S006",
+      "id": "S021",
       "actor": "actor_b",
       "action": "slug_normalized_collision",
       "expected": "deny",
-      "actual": "deny",
-      "pass": true,
+      "actual": "allow",
+      "pass": false,
       "stable": null
     },
     {
-      "id": "S007",
+      "id": "S022",
       "actor": "actor_a",
       "action": "reserved_admin",
       "expected": "deny",
@@ -79,7 +238,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S008",
+      "id": "S023",
       "actor": "actor_a",
       "action": "reserved_api",
       "expected": "deny",
@@ -88,7 +247,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S009",
+      "id": "S024",
       "actor": "actor_a",
       "action": "reserved_app",
       "expected": "deny",
@@ -97,7 +256,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S010",
+      "id": "S025",
       "actor": "actor_a",
       "action": "reserved_auth",
       "expected": "deny",
@@ -106,7 +265,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S011",
+      "id": "S026",
       "actor": "actor_a",
       "action": "reserved_login",
       "expected": "deny",
@@ -115,7 +274,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S012",
+      "id": "S027",
       "actor": "actor_a",
       "action": "reserved_logout",
       "expected": "deny",
@@ -124,7 +283,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S013",
+      "id": "S028",
       "actor": "actor_a",
       "action": "reserved_platform",
       "expected": "deny",
@@ -133,7 +292,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S014",
+      "id": "S029",
       "actor": "actor_a",
       "action": "reserved_system",
       "expected": "deny",
@@ -142,7 +301,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S015",
+      "id": "S030",
       "actor": "actor_a",
       "action": "reserved_support",
       "expected": "deny",
@@ -151,7 +310,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S016",
+      "id": "S031",
       "actor": "actor_a",
       "action": "reserved_www",
       "expected": "deny",
@@ -160,7 +319,7 @@
       "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S017",
+      "id": "S032",
       "actor": "actor_a",
       "action": "invalid_slug_empty",
       "expected": "deny",
@@ -169,7 +328,7 @@
       "stable": "VALIDATION_FAILED"
     },
     {
-      "id": "S018",
+      "id": "S033",
       "actor": "actor_a",
       "action": "invalid_slug_too_short",
       "expected": "deny",
@@ -178,7 +337,7 @@
       "stable": "VALIDATION_FAILED"
     },
     {
-      "id": "S019",
+      "id": "S034",
       "actor": "actor_a",
       "action": "invalid_slug_too_long",
       "expected": "deny",
@@ -187,43 +346,43 @@
       "stable": "VALIDATION_FAILED"
     },
     {
-      "id": "S020",
+      "id": "S035",
       "actor": "actor_a",
       "action": "invalid_slug_slash",
       "expected": "deny",
-      "actual": "deny",
-      "pass": true,
+      "actual": "allow",
+      "pass": false,
       "stable": null
     },
     {
-      "id": "S021",
+      "id": "S036",
       "actor": "actor_a",
       "action": "invalid_slug_backslash",
       "expected": "deny",
       "actual": "deny",
       "pass": true,
-      "stable": null
+      "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S022",
+      "id": "S037",
       "actor": "actor_a",
       "action": "invalid_slug_ctrl",
       "expected": "deny",
       "actual": "deny",
       "pass": true,
-      "stable": null
+      "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S023",
+      "id": "S038",
       "actor": "actor_a",
       "action": "invalid_slug_leading_hyphen",
       "expected": "deny",
-      "actual": "deny",
-      "pass": true,
+      "actual": "allow",
+      "pass": false,
       "stable": null
     },
     {
-      "id": "S024",
+      "id": "S039",
       "actor": "actor_a",
       "action": "owner_spoof_other",
       "expected": "deny",
@@ -233,7 +392,7 @@
       "notes": "stable OK"
     },
     {
-      "id": "S025",
+      "id": "S040",
       "actor": "actor_a",
       "action": "owner_spoof_no_tenant",
       "expected": "allow",
@@ -241,7 +400,7 @@
       "pass": true
     },
     {
-      "id": "S026",
+      "id": "S041",
       "actor": "actor_a",
       "action": "owner_unknown",
       "expected": "deny",
@@ -250,17 +409,33 @@
       "stable": "PERMISSION_DENIED"
     },
     {
-      "id": "S027",
+      "id": "S042",
       "actor": "platform_admin",
       "action": "provision_for_other_owner",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false,
+      "actual": "allow",
+      "pass": true,
       "stable": null,
-      "http": 404
+      "http": 200
     },
     {
-      "id": "S028",
+      "id": "S043",
+      "actor": "platform_admin",
+      "action": "owner_is_target",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S044",
+      "actor": "platform_admin",
+      "action": "audit_actor_is_admin",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S045",
       "actor": "anonymous",
       "action": "provision_denied",
       "expected": "deny",
@@ -270,7 +445,7 @@
       "http": 403
     },
     {
-      "id": "S029",
+      "id": "S046",
       "actor": "anonymous",
       "action": "no_tenant_created",
       "expected": "allow",
@@ -278,39 +453,39 @@
       "pass": true
     },
     {
-      "id": "S030",
+      "id": "S047",
       "actor": "actor_b",
       "action": "atomic_slug_conflict",
       "expected": "deny",
-      "actual": "deny",
-      "pass": true,
+      "actual": "allow",
+      "pass": false,
       "stable": null
     },
     {
-      "id": "S031",
+      "id": "S048",
       "actor": "actor_b",
       "action": "atomic_no_orphan_member",
       "expected": "allow",
-      "actual": "allow",
-      "pass": true,
-      "before": 0,
-      "after": 0
+      "actual": "deny",
+      "pass": false,
+      "before": 2,
+      "after": 3
     },
     {
-      "id": "S032",
+      "id": "S049",
       "actor": "actor_b",
       "action": "atomic_no_success_audit",
       "expected": "allow",
-      "actual": "allow",
-      "pass": true
+      "actual": "deny",
+      "pass": false
     },
     {
-      "id": "S033",
+      "id": "S050",
       "actor": "actor_b",
       "action": "retry_after_failure",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false,
+      "actual": "allow",
+      "pass": true,
       "stable": null
     }
   ]
