@@ -16,3 +16,31 @@ export const workspaceKeys = {
   detail: (tenantId: string, workspaceId: string) =>
     ["workspaces", tenantId, workspaceId] as const,
 };
+
+// Batch 1B-UI-FINISH — admin workspace list & audit list keys.
+// Every key MUST include tenantId to prevent cross-tenant cache leaks.
+export interface AdminWorkspaceFilters {
+  search?: string;
+  status?: "active" | "archived" | "all";
+  sort?: "newest" | "oldest" | "name";
+  page?: number;
+  pageSize?: number;
+}
+export const adminWorkspaceKeys = {
+  list: (tenantId: string, filters: AdminWorkspaceFilters) =>
+    ["admin", "workspaces", tenantId, filters] as const,
+};
+
+export interface AuditFilters {
+  action?: string;
+  resourceType?: string;
+  actorId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+}
+export const auditKeys = {
+  list: (tenantId: string, filters: AuditFilters) =>
+    ["admin", "audit", tenantId, filters] as const,
+};

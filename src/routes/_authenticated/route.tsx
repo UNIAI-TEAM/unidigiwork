@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-
 import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette } from "@/components/command-palette";
 import { useActiveTenant } from "@/features/tenants/hooks";
-import { TenantSwitcher } from "@/components/tenant-switcher";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -43,30 +42,23 @@ function AuthenticatedLayout() {
         ? { tone: "danger" as const, text: "Tenant đã lưu trữ." }
         : null;
 
-  const showMultiTenantBar = (tenant?.availableCount ?? 0) > 1;
-
   return (
     <>
-      {(banner || showMultiTenantBar) && (
+      {banner && (
         <div
           className={`flex flex-wrap items-center justify-between gap-2 border-b px-4 py-1.5 text-xs ${
-            banner?.tone === "danger"
+            banner.tone === "danger"
               ? "border-destructive/40 bg-destructive/10 text-destructive"
-              : banner
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-500"
-                : "border-border bg-surface-2 text-muted-foreground"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-500"
           }`}
         >
           <div className="flex items-center gap-2">
-            {banner && <AlertTriangle className="h-3.5 w-3.5" />}
-            <span>{banner?.text ?? `Đang làm việc tại: ${tenant?.tenantName}`}</span>
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <span>{banner.text}</span>
           </div>
-          <div className="flex items-center gap-2">
-            {showMultiTenantBar && <TenantSwitcher compact />}
-            <Link to="/admin/tenant" className="rounded-md px-2 py-1 hover:bg-surface">
-              Quản trị tenant
-            </Link>
-          </div>
+          <Link to="/admin/tenant" className="rounded-md px-2 py-1 hover:bg-surface">
+            Quản trị tenant
+          </Link>
         </div>
       )}
       <Outlet />

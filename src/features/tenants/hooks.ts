@@ -20,7 +20,15 @@ import {
   acceptInvitation,
   changeTenantStatus,
 } from "@/lib/api/tenants.functions";
-import { tenantKeys } from "./query-keys";
+import { listTenantWorkspaces } from "@/lib/api/workspaces-admin.functions";
+import { listTenantAuditEvents } from "@/lib/api/audit.functions";
+import {
+  tenantKeys,
+  adminWorkspaceKeys,
+  auditKeys,
+  type AdminWorkspaceFilters,
+  type AuditFilters,
+} from "./query-keys";
 
 export function useActiveTenant() {
   const fn = useServerFn(getActiveTenant);
@@ -167,5 +175,49 @@ export function useChangeTenantStatus(tenantId: string) {
     mutationFn: (newStatus: "active" | "suspended" | "archived") =>
       fn({ data: { tenantId, newStatus } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: tenantKeys.all }),
+  });
+}
+
+export function useTenantWorkspaces(tenantId: string | undefined, filters: AdminWorkspaceFilters) {
+  const fn = useServerFn(listTenantWorkspaces);
+  return useQuery({
+    queryKey: tenantId
+      ? adminWorkspaceKeys.list(tenantId, filters)
+      : ["admin", "workspaces", "disabled"],
+    queryFn: () =>
+      fn({
+        data: {
+          tenantId: tenantId!,
+          search: filters.search || undefined,
+          status: filters.status ?? "all",
+          sort: filters.sort ?? "newest",
+          page: filters.page ?? 1,
+          pageSize: filters.pageSize ?? 25,
+        },
+      }),
+    enabled: !!tenantId,
+  });
+}
+
+export function useTenantAuditEvents(tenantId: string | undefined, filters: AuditFilters) {
+  const fn = useServerFn(listTenantAuditEvents);
+  return useQuery({
+    queryKey: tenantId
+      ? auditKeys.list(tenantId, filters)
+      : ["admin", "audit", "disabled"],
+    queryFn: () =>
+      fn({
+        data: {
+          tenantId: tenantId!,
+          action: filters.action || undefined,
+          resourceType: filters.resourceType || undefined,
+          actorId: filters.actorId || undefined,
+          from: filters.from || undefined,
+          to: filters.to || undefined,
+          page: filters.page ?? 1,
+          pageSize: filters.pageSize ?? 25,
+        },
+      }),
+    enabled: !!tenantId,
   });
 }
