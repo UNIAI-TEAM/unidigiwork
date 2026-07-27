@@ -600,7 +600,7 @@ export type Database = {
           event_type: string
           event_version: number
           id: string
-          idempotency_key: string
+          idempotency_key: string | null
           last_error: string | null
           lease_expires_at: string | null
           lease_owner: string | null
@@ -620,7 +620,7 @@ export type Database = {
           event_type: string
           event_version?: number
           id?: string
-          idempotency_key: string
+          idempotency_key?: string | null
           last_error?: string | null
           lease_expires_at?: string | null
           lease_owner?: string | null
@@ -640,7 +640,7 @@ export type Database = {
           event_type?: string
           event_version?: number
           id?: string
-          idempotency_key?: string
+          idempotency_key?: string | null
           last_error?: string | null
           lease_expires_at?: string | null
           lease_owner?: string | null
@@ -1125,7 +1125,7 @@ export type Database = {
           event_type: string
           event_version: number
           id: string
-          idempotency_key: string
+          idempotency_key: string | null
           last_error: string | null
           lease_expires_at: string | null
           lease_owner: string | null
