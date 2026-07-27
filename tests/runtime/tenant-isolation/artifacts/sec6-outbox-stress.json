@@ -1,19 +1,14 @@
 {
-  "startedAt": "2026-07-27T05:25:40.577Z",
-  "endedAt": "2026-07-27T05:27:27.287Z",
+  "startedAt": "2026-07-27T05:28:18.797Z",
+  "endedAt": "2026-07-27T05:30:04.080Z",
   "iterations": 25,
   "results": [
     {
       "scenario": "two-worker-single",
       "iterations": 25,
-      "pass": 24,
-      "fail": 1,
-      "failures": [
-        {
-          "i": 0,
-          "claimed": 0
-        }
-      ]
+      "pass": 25,
+      "fail": 0,
+      "failures": []
     },
     {
       "scenario": "five-worker-single",
@@ -25,33 +20,16 @@
     {
       "scenario": "multi-worker-multi-event",
       "iterations": 25,
-      "pass": 24,
-      "fail": 1,
-      "failures": [
-        {
-          "i": 0,
-          "total": 11,
-          "unique": 11
-        }
-      ]
+      "pass": 25,
+      "fail": 0,
+      "failures": []
     },
     {
       "scenario": "active-lease",
       "iterations": 25,
-      "pass": 23,
-      "fail": 2,
-      "failures": [
-        {
-          "i": 21,
-          "owned": 0,
-          "stolen": 0
-        },
-        {
-          "i": 22,
-          "owned": 0,
-          "stolen": 1
-        }
-      ]
+      "pass": 25,
+      "fail": 0,
+      "failures": []
     },
     {
       "scenario": "expired-lease",
@@ -75,5 +53,5 @@
       "failures": []
     }
   ],
-  "totalFail": 4
+  "totalFail": 0
 }
