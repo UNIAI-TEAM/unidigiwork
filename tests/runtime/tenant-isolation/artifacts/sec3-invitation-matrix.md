@@ -1,6 +1,6 @@
 # SEC.3 Invitation Lifecycle Runtime Matrix
 
-Run: sec3_2026-07-27T05-31-20-417Z
+Run: sec3_2026-07-27T05-35-32-449Z
 Total: 51. Passed: 51. Failed: 0.
 
 | Cell | Actor | Tenant | Action | InvState | Expected | Actual | HTTP | Stable | Pass | Notes |

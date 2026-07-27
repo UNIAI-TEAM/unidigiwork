@@ -1,7 +1,7 @@
 # Batch 1A-R matrix results
 
-Started: 2026-07-27T05:30:11.662Z
-Total: 173. Passed: 172. Failed: 1.
+Started: 2026-07-27T05:34:28.312Z
+Total: 173. Passed: 173. Failed: 0.
 
 | actor | action | table | tenant | expected | actual | http | pass | notes |
 |---|---|---|---|---|---|---|---|---|
@@ -177,4 +177,4 @@ Total: 173. Passed: 172. Failed: 1.
 | platform_admin | insert | outbox_events |  | deny | deny | 403 | ✅ |  |
 | owner_a | update | audit_events |  | deny | deny | 200 | ✅ |  |
 | owner_a | delete | audit_events |  | deny | deny | 204 | ✅ |  |
-| server | rpc | claim_outbox_events |  | single-winner | duplicate=false claimed=0/20 |  | ❌ |  |
+| server | rpc | claim_outbox_events |  | single-winner | single-winner |  | ✅ |  |

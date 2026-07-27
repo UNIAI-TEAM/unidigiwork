@@ -1884,9 +1884,9 @@
     "action": "rpc",
     "table": "claim_outbox_events",
     "expected": "single-winner",
-    "actual": "duplicate=false claimed=0/20",
+    "actual": "single-winner",
     "http": null,
     "notes": null,
-    "pass": false
+    "pass": true
   }
 ]
