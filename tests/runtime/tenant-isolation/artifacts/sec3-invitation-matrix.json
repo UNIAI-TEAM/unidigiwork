@@ -10,7 +10,7 @@
     "pass": true,
     "http": 200,
     "stable": null,
-    "tokenMask": "c7fb53f6…(len=48)"
+    "tokenMask": "501005cb…(len=48)"
   },
   {
     "id": "C002",
@@ -287,8 +287,8 @@
     "actor": "unconfirmed",
     "action": "no_membership_after_unconfirmed",
     "expected": "allow",
-    "actual": "deny",
-    "pass": false
+    "actual": "allow",
+    "pass": true
   },
   {
     "id": "C028",

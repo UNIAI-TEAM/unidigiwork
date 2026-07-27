@@ -1,10 +1,1 @@
-[
-  {
-    "id": "C027",
-    "actor": "unconfirmed",
-    "action": "no_membership_after_unconfirmed",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false
-  }
-]
+[]

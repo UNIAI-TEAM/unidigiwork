@@ -1,7 +1,7 @@
 # SEC.3 Invitation Lifecycle Runtime Matrix
 
-Run: sec3_2026-07-27T03-13-59-078Z
-Total: 51. Passed: 50. Failed: 1.
+Run: sec3_2026-07-27T03-14-48-558Z
+Total: 51. Passed: 51. Failed: 0.
 
 | Cell | Actor | Tenant | Action | InvState | Expected | Actual | HTTP | Stable | Pass | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -31,7 +31,7 @@ Total: 51. Passed: 50. Failed: 1.
 | C024 | wrong_email |  | rejection_sink_not_public |  | deny | deny | 403 |  | ✅ | record_tenant_invitation_rejection revoked from authenticated |
 | C025 | unconfirmed |  | unconfirm_setup |  | allow | allow |  |  | ✅ | email_confirmed_at nulled via guarded _test_unconfirm_auth_email RPC |
 | C026 | unconfirmed | A | accept | pending | deny | deny | 403 | TENANT_INVITATION_EMAIL_MISMATCH | ✅ | unconfirmed=true |
-| C027 | unconfirmed |  | no_membership_after_unconfirmed |  | allow | deny |  |  | ❌ |  |
+| C027 | unconfirmed |  | no_membership_after_unconfirmed |  | allow | allow |  |  | ✅ |  |
 | C028 | correct_email | A | accept | expired | deny | deny | 403 | TENANT_INVITATION_EXPIRED | ✅ |  |
 | C029 | correct_email | A | accept | revoked | deny | deny | 403 | TENANT_INVITATION_REVOKED | ✅ |  |
 | C030 | concurrent |  | concurrent_accept_single_membership |  | allow | allow |  |  | ✅ | ok=1 deniedStable=TENANT_INVITATION_ALREADY_ACCEPTED members=1 |
