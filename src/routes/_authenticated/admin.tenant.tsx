@@ -533,3 +533,314 @@ function SkeletonList() {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Workspaces tab (read-only) — Batch 1B-UI-FINISH
+// Lifecycle actions (create/archive) deferred to Collaboration Core batch.
+// ---------------------------------------------------------------------------
+function WorkspacesTab({ tenantId, canManage }: { tenantId: string; canManage: boolean }) {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"all" | "active" | "archived">("all");
+  const [sort, setSort] = useState<"newest" | "oldest" | "name">("newest");
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+  const filters = useMemo(
+    () => ({ search, status, sort, page, pageSize }),
+    [search, status, sort, page],
+  );
+  const q = useTenantWorkspaces(tenantId, filters);
+
+  if (!canManage) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-6 text-center text-sm text-muted-foreground">
+        Bạn không có quyền xem danh sách workspaces của tenant này.
+      </div>
+    );
+  }
+
+  const rows = q.data?.rows ?? [];
+  const total = q.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-[1fr_160px_160px]">
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Tìm workspace theo tên…"
+            className="w-full rounded-md border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+        </div>
+        <select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value as typeof status);
+            setPage(1);
+          }}
+          className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+        >
+          <option value="all">Mọi trạng thái</option>
+          <option value="active">Hoạt động</option>
+          <option value="archived">Đã lưu trữ</option>
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as typeof sort)}
+          className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+        >
+          <option value="newest">Mới nhất</option>
+          <option value="oldest">Cũ nhất</option>
+          <option value="name">Theo tên</option>
+        </select>
+      </div>
+
+      {q.isLoading ? (
+        <SkeletonList />
+      ) : q.error ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          Không thể tải danh sách workspaces. Vui lòng thử lại.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <table className="w-full text-sm">
+            <thead className="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Tên workspace</th>
+                <th className="px-4 py-3">Trạng thái</th>
+                <th className="px-4 py-3">Tạo lúc</th>
+                <th className="px-4 py-3">Cập nhật</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((w) => (
+                <tr key={w.id} className="border-t border-border">
+                  <td className="px-4 py-3">
+                    <div className="font-medium">{w.name}</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">{w.id.slice(0, 8)}…</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs capitalize ${
+                        w.status === "active"
+                          ? "bg-emerald-500/10 text-emerald-500"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {w.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {new Date(w.createdAt).toLocaleString("vi-VN")}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {new Date(w.updatedAt).toLocaleString("vi-VN")}
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    Chưa có workspace nào phù hợp bộ lọc.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          {total} workspace · trang {page}/{totalPages}
+        </span>
+        <div className="flex gap-2">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="rounded-md border border-border px-2 py-1 disabled:opacity-40"
+          >
+            ← Trước
+          </button>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="rounded-md border border-border px-2 py-1 disabled:opacity-40"
+          >
+            Sau →
+          </button>
+        </div>
+      </div>
+
+      <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground">
+        Hành động tạo/lưu trữ workspace sẽ được mở trong batch Collaboration Core (trusted command chưa sẵn sàng).
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Audit tab (read-only, redacted) — Batch 1B-UI-FINISH
+// ---------------------------------------------------------------------------
+function AuditTab({ tenantId, canManage }: { tenantId: string; canManage: boolean }) {
+  const [action, setAction] = useState("");
+  const [resourceType, setResourceType] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+
+  const filters = useMemo(
+    () => ({
+      action: action.trim() || undefined,
+      resourceType: resourceType.trim() || undefined,
+      from: from ? new Date(from).toISOString() : undefined,
+      to: to ? new Date(to).toISOString() : undefined,
+      page,
+      pageSize,
+    }),
+    [action, resourceType, from, to, page],
+  );
+  const q = useTenantAuditEvents(tenantId, filters);
+
+  if (!canManage) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-6 text-center text-sm text-muted-foreground">
+        Bạn không có quyền xem audit log của tenant này.
+      </div>
+    );
+  }
+
+  const rows = q.data?.rows ?? [];
+  const total = q.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-4">
+        <input
+          value={action}
+          onChange={(e) => {
+            setAction(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Action (vd: tenant.provisioned)"
+          className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+        />
+        <input
+          value={resourceType}
+          onChange={(e) => {
+            setResourceType(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Resource type"
+          className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+        />
+        <input
+          type="date"
+          value={from}
+          onChange={(e) => {
+            setFrom(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+        />
+        <input
+          type="date"
+          value={to}
+          onChange={(e) => {
+            setTo(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+        />
+      </div>
+
+      {q.isLoading ? (
+        <SkeletonList />
+      ) : q.error ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          Không thể tải audit log.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <table className="w-full text-sm">
+            <thead className="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Thời điểm</th>
+                <th className="px-4 py-3">Action</th>
+                <th className="px-4 py-3">Resource</th>
+                <th className="px-4 py-3">Actor</th>
+                <th className="px-4 py-3">Nguồn</th>
+                <th className="px-4 py-3">Correlation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((e) => (
+                <tr key={e.id} className="border-t border-border">
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {new Date(e.occurredAt).toLocaleString("vi-VN")}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs">{e.action}</td>
+                  <td className="px-4 py-3 text-xs">
+                    <div>{e.resourceType ?? "—"}</div>
+                    {e.resourceId && (
+                      <div className="font-mono text-[11px] text-muted-foreground">
+                        {e.resourceId.slice(0, 12)}…
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground">
+                    {e.actorId ? `${e.actorId.slice(0, 8)}…` : "system"}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{e.source ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground">
+                    {e.correlationId ? e.correlationId.slice(0, 8) : "—"}
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    Không có sự kiện phù hợp.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          {total} sự kiện · trang {page}/{totalPages}
+        </span>
+        <div className="flex gap-2">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="rounded-md border border-border px-2 py-1 disabled:opacity-40"
+          >
+            ← Trước
+          </button>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="rounded-md border border-border px-2 py-1 disabled:opacity-40"
+          >
+            Sau →
+          </button>
+        </div>
+      </div>
+
+      <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground">
+        Audit log là append-only. Nội dung nhạy cảm (before/after state, token, secret) không được hiển thị theo chính sách redaction.
+      </p>
+    </div>
+  );
+}
