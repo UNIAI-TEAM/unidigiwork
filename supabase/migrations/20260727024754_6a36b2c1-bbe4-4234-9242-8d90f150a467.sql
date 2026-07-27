@@ -1,0 +1,1 @@
+ALTER TABLE public.outbox_events ALTER COLUMN idempotency_key DROP NOT NULL;

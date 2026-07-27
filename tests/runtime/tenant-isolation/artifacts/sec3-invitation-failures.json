@@ -1,0 +1,19 @@
+[
+  {
+    "id": "C022",
+    "actor": "wrong_email",
+    "action": "rejected_audit_written",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false
+  },
+  {
+    "id": "C023",
+    "actor": "unconfirmed",
+    "action": "unconfirm_setup",
+    "expected": "allow",
+    "actual": "environmental",
+    "pass": false,
+    "notes": "Supabase admin API kept email_confirmed_at set; unconfirmed cell is environmental."
+  }
+]

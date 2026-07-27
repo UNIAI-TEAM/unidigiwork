@@ -55,50 +55,68 @@ export type Database = {
       }
       audit_events: {
         Row: {
-          action: string
+          action: string | null
+          actor_id: string | null
           actor_user_id: string | null
           after_state: Json | null
+          aggregate_id: string | null
+          aggregate_type: string | null
           before_state: Json | null
           correlation_id: string | null
           created_at: string
+          event_type: string | null
           id: string
+          idempotency_key: string | null
           ip_address: unknown
           occurred_at: string
+          payload: Json | null
           resource_id: string | null
-          resource_type: string
-          source: string
+          resource_type: string | null
+          source: string | null
           tenant_id: string | null
           user_agent: string | null
         }
         Insert: {
-          action: string
+          action?: string | null
+          actor_id?: string | null
           actor_user_id?: string | null
           after_state?: Json | null
+          aggregate_id?: string | null
+          aggregate_type?: string | null
           before_state?: Json | null
           correlation_id?: string | null
           created_at?: string
+          event_type?: string | null
           id?: string
+          idempotency_key?: string | null
           ip_address?: unknown
           occurred_at?: string
+          payload?: Json | null
           resource_id?: string | null
-          resource_type: string
-          source?: string
+          resource_type?: string | null
+          source?: string | null
           tenant_id?: string | null
           user_agent?: string | null
         }
         Update: {
-          action?: string
+          action?: string | null
+          actor_id?: string | null
           actor_user_id?: string | null
           after_state?: Json | null
+          aggregate_id?: string | null
+          aggregate_type?: string | null
           before_state?: Json | null
           correlation_id?: string | null
           created_at?: string
+          event_type?: string | null
           id?: string
+          idempotency_key?: string | null
           ip_address?: unknown
           occurred_at?: string
+          payload?: Json | null
           resource_id?: string | null
-          resource_type?: string
-          source?: string
+          resource_type?: string | null
+          source?: string | null
           tenant_id?: string | null
           user_agent?: string | null
         }
@@ -580,8 +598,9 @@ export type Database = {
           correlation_id: string | null
           created_at: string
           event_type: string
+          event_version: number
           id: string
-          idempotency_key: string
+          idempotency_key: string | null
           last_error: string | null
           lease_expires_at: string | null
           lease_owner: string | null
@@ -599,8 +618,9 @@ export type Database = {
           correlation_id?: string | null
           created_at?: string
           event_type: string
+          event_version?: number
           id?: string
-          idempotency_key: string
+          idempotency_key?: string | null
           last_error?: string | null
           lease_expires_at?: string | null
           lease_owner?: string | null
@@ -618,8 +638,9 @@ export type Database = {
           correlation_id?: string | null
           created_at?: string
           event_type?: string
+          event_version?: number
           id?: string
-          idempotency_key?: string
+          idempotency_key?: string | null
           last_error?: string | null
           lease_expires_at?: string | null
           lease_owner?: string | null
@@ -1102,8 +1123,9 @@ export type Database = {
           correlation_id: string | null
           created_at: string
           event_type: string
+          event_version: number
           id: string
-          idempotency_key: string
+          idempotency_key: string | null
           last_error: string | null
           lease_expires_at: string | null
           lease_owner: string | null
@@ -1157,6 +1179,40 @@ export type Database = {
         }
       }
       current_internal_user_id: { Args: never; Returns: string }
+      dblink: { Args: { "": string }; Returns: Record<string, unknown>[] }
+      dblink_cancel_query: { Args: { "": string }; Returns: string }
+      dblink_close: { Args: { "": string }; Returns: string }
+      dblink_connect: { Args: { "": string }; Returns: string }
+      dblink_connect_u: { Args: { "": string }; Returns: string }
+      dblink_current_query: { Args: never; Returns: string }
+      dblink_disconnect:
+        | { Args: never; Returns: string }
+        | { Args: { "": string }; Returns: string }
+      dblink_error_message: { Args: { "": string }; Returns: string }
+      dblink_exec: { Args: { "": string }; Returns: string }
+      dblink_fdw_validator: {
+        Args: { catalog: unknown; options: string[] }
+        Returns: undefined
+      }
+      dblink_get_connections: { Args: never; Returns: string[] }
+      dblink_get_notify:
+        | { Args: { conname: string }; Returns: Record<string, unknown>[] }
+        | { Args: never; Returns: Record<string, unknown>[] }
+      dblink_get_pkey: {
+        Args: { "": string }
+        Returns: Database["public"]["CompositeTypes"]["dblink_pkey_results"][]
+        SetofOptions: {
+          from: "*"
+          to: "dblink_pkey_results"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      dblink_get_result: {
+        Args: { "": string }
+        Returns: Record<string, unknown>[]
+      }
+      dblink_is_busy: { Args: { "": string }; Returns: number }
       extend_outbox_lease: {
         Args: { _id: string; _seconds: number; _worker: string }
         Returns: boolean
@@ -1254,7 +1310,10 @@ export type Database = {
         | "guest"
     }
     CompositeTypes: {
-      [_ in never]: never
+      dblink_pkey_results: {
+        position: number | null
+        colname: string | null
+      }
     }
   }
 }

@@ -1,0 +1,1 @@
+ALTER TABLE public.outbox_events ADD COLUMN IF NOT EXISTS event_version INTEGER NOT NULL DEFAULT 1;
