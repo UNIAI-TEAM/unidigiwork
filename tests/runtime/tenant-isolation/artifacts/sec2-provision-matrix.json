@@ -1,8 +1,8 @@
 {
-  "runId": "sec2_2026-07-27T03-51-25-598Z",
+  "runId": "sec2_2026-07-27T03-52-38-660Z",
   "total": 46,
-  "passed": 45,
-  "failed": 1,
+  "passed": 46,
+  "failed": 0,
   "results": [
     {
       "id": "S001",
@@ -13,7 +13,7 @@
       "pass": true,
       "http": 200,
       "stable": null,
-      "errMsg": "[{\"tenant_id\":\"be0e1388-ab52-4b38-92c2-dfdb302777aa\",\"workspace_id\":\"be0e1388-ab52-4b38-92c2-dfdb302777aa\",\"membership_id\":\"dda7da4b-11a2-4982-836b-21da5e52ef08\"}]"
+      "errMsg": "[{\"tenant_id\":\"eb9e0327-cbf3-4b4a-8f1a-2a5960d7613f\",\"workspace_id\":\"eb9e0327-cbf3-4b4a-8f1a-2a5960d7613f\",\"membership_id\":\"c6951e2c-962a-4546-acf8-73405a63bede\"}]"
     },
     {
       "id": "S002",
@@ -192,12 +192,12 @@
       "actual": "allow",
       "pass": true,
       "r1": {
-        "ok": false,
-        "stable": "IDEMPOTENCY_CONFLICT"
-      },
-      "r2": {
         "ok": true,
         "stable": null
+      },
+      "r2": {
+        "ok": false,
+        "stable": "IDEMPOTENCY_CONFLICT"
       }
     },
     {
@@ -224,12 +224,12 @@
       "actor": "actor_b",
       "action": "slug_normalized_collision",
       "expected": "deny",
-      "actual": "allow",
-      "pass": false,
-      "stable": null,
-      "errMsg": "[{\"tenant_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"workspace_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"membership_id\":\"a81847e4-7fa1-4f85-bf6d-d317b35d118e\"}]",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT",
+      "errMsg": "TENANT_SLUG_CONFLICT",
       "rn1_ok": true,
-      "rn1_err": "[{\"tenant_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"workspace_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"membership_id\":\"8ca82fdd-6751-488e-ac47-62a091ef9a6b\"}]"
+      "rn1_err": "[{\"tenant_id\":\"e5d9f3cb-0d19-4100-8793-2ab05b665267\",\"workspace_id\":\"e5d9f3cb-0d19-4100-8793-2ab05b665267\",\"membership_id\":\"17188203-d967-40a2-a884-251782d6ce80\"}]"
     },
     {
       "id": "S022",
@@ -438,8 +438,8 @@
       "expected": "allow",
       "actual": "allow",
       "pass": true,
-      "before": 6,
-      "after": 6
+      "before": 8,
+      "after": 8
     },
     {
       "id": "S045",

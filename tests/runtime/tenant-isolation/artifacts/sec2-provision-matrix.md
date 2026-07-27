@@ -1,6 +1,6 @@
-# SEC.2 Provision Matrix (sec2_2026-07-27T03-51-25-598Z)
+# SEC.2 Provision Matrix (sec2_2026-07-27T03-52-38-660Z)
 
-Total: 46 · Passed: 45 · Failed: 1
+Total: 46 · Passed: 46 · Failed: 0
 
 | ID | Actor | Action | Expected | Actual | Info | Result |
 |---|---|---|---|---|---|---|
@@ -24,7 +24,7 @@ Total: 46 · Passed: 45 · Failed: 1
 | S018 | actor_a | concurrent_diff_payload | allow | allow |  | PASS |
 | S019 | actor_a | dup_slug_first | allow | allow |  | PASS |
 | S020 | actor_b | dup_slug_conflict | deny | deny | TENANT_SLUG_CONFLICT | PASS |
-| S021 | actor_b | slug_normalized_collision | deny | allow |  | FAIL |
+| S021 | actor_b | slug_normalized_collision | deny | deny | TENANT_SLUG_CONFLICT | PASS |
 | S022 | actor_a | reserved_admin | deny | deny | TENANT_SLUG_CONFLICT | PASS |
 | S023 | actor_a | reserved_api | deny | deny | TENANT_SLUG_CONFLICT | PASS |
 | S024 | actor_a | reserved_app | deny | deny | TENANT_SLUG_CONFLICT | PASS |

@@ -1,14 +1,1 @@
-[
-  {
-    "id": "S021",
-    "actor": "actor_b",
-    "action": "slug_normalized_collision",
-    "expected": "deny",
-    "actual": "allow",
-    "pass": false,
-    "stable": null,
-    "errMsg": "[{\"tenant_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"workspace_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"membership_id\":\"a81847e4-7fa1-4f85-bf6d-d317b35d118e\"}]",
-    "rn1_ok": true,
-    "rn1_err": "[{\"tenant_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"workspace_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"membership_id\":\"8ca82fdd-6751-488e-ac47-62a091ef9a6b\"}]"
-  }
-]
+[]
