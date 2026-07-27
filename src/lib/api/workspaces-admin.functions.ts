@@ -27,11 +27,10 @@ const Input = z.object({
   pageSize: z.number().int().min(1).max(100).optional().default(25),
 });
 
-async function assertTenantAdmin(
-  supabase: { from: (t: string) => { select: (c: string) => { eq: (k: string, v: string) => { eq: (k: string, v: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: unknown; error: unknown }> } } } } } },
-  tenantId: string,
-  userId: string,
-): Promise<string> {
+// Typed loosely to avoid coupling to the auto-generated Supabase client type.
+// The middleware guarantees this is an authenticated per-request client.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertTenantAdmin(supabase: any, tenantId: string, userId: string): Promise<string> {
   const { data, error } = await supabase
     .from("tenant_members")
     .select("role")
