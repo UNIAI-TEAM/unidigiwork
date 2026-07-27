@@ -1,43 +1,16 @@
 [
   {
-    "id": "C001",
+    "id": "C013",
     "actor": "owner_a",
-    "action": "create",
+    "action": "list_invitations_redaction",
     "tenant": "A",
-    "role": "member",
     "expected": "allow",
     "actual": "deny",
     "pass": false,
-    "http": 400,
-    "stable": null,
-    "tokenMask": "e0aaff4c…(len=48)"
+    "notes": "token_hash present in list response"
   },
   {
-    "id": "C004",
-    "actor": "admin_a",
-    "action": "create",
-    "tenant": "A",
-    "role": "member",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "http": 400,
-    "stable": null
-  },
-  {
-    "id": "C012",
-    "actor": "correct_email",
-    "action": "accept",
-    "tenant": "A",
-    "invState": "pending",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "http": 400,
-    "stable": null
-  },
-  {
-    "id": "C018",
+    "id": "C022",
     "actor": "wrong_email",
     "action": "rejected_audit_written",
     "expected": "allow",
@@ -45,40 +18,12 @@
     "pass": false
   },
   {
-    "id": "C019",
+    "id": "C023",
     "actor": "unconfirmed",
     "action": "unconfirm_setup",
     "expected": "allow",
     "actual": "environmental",
     "pass": false,
     "notes": "Supabase admin API kept email_confirmed_at set; unconfirmed cell is environmental."
-  },
-  {
-    "id": "C023",
-    "actor": "concurrent",
-    "action": "concurrent_accept_single_membership",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "notes": "ok=0 deniedStable=null members=0"
-  },
-  {
-    "id": "C027",
-    "actor": "removed_a",
-    "action": "accept_removed_becomes_member",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "http": 400,
-    "stable": null
-  },
-  {
-    "id": "C041",
-    "actor": "cross_tenant",
-    "action": "cross_tenant_scoped_membership",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "notes": "A=false B=false"
   }
 ]
