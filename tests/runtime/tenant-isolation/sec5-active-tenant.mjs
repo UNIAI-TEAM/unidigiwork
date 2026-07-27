@@ -133,9 +133,15 @@ function actorClient(token) {
 // getActiveTenant / setActiveTenant).
 async function svcListAvailable(token) {
   const c = actorClient(token);
+  // Match the fixed contract in src/lib/api/active-tenant.functions.ts:
+  // the caller's OWN memberships only. Requires user_id from the JWT.
+  const { data: me } = await c.auth.getUser();
+  const uid = me?.user?.id;
+  if (!uid) return { rows: [] };
   const { data, error } = await c
     .from("tenant_members")
     .select("role, status, tenant:tenants(id, name, slug, status)")
+    .eq("user_id", uid)
     .eq("status", "active");
   if (error) return { error: error.message };
   const rows = (data ?? [])
