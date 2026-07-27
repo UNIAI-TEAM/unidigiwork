@@ -47,10 +47,11 @@ function cookieOpts() {
 export const listAvailableTenants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AvailableTenantDto[]> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("tenant_members")
       .select("role, status, tenant:tenants(id, name, slug, status)")
+      .eq("user_id", userId)
       .eq("status", "active");
     if (error) throw new ApiError({ code: "IDENTITY_RESOLUTION_FAILED", message: error.message });
     const rows = (data ?? []) as Array<{
@@ -85,6 +86,7 @@ export const getActiveTenant = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("tenant_members")
       .select("role, status, tenant:tenants(id, name, slug, status)")
+      .eq("user_id", userId)
       .eq("status", "active");
     if (error) throw new ApiError({ code: "IDENTITY_RESOLUTION_FAILED", message: error.message });
     const memberships = (data ?? [])
