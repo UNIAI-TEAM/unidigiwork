@@ -1265,6 +1265,15 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      record_tenant_invitation_rejection: {
+        Args: {
+          _actor_id: string
+          _correlation_id?: string
+          _invitation_id: string
+          _reason_code: string
+        }
+        Returns: string
+      }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }
         Returns: {
