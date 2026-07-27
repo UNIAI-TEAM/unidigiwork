@@ -385,6 +385,10 @@ async function runMatrix(ctx) {
       idempotency_key: `${runId}_${i}`,
       tenant_id: tenants.A.id,
       status: "pending",
+      // Sort ahead of any pre-existing backlog so ORDER BY available_at
+      // in claim_outbox_events picks our namespace first — the invariant
+      // (no id claimed twice) is what we are asserting.
+      available_at: "1970-01-02T00:00:00Z",
     }));
     await admin.from("outbox_events").insert(seeded);
     // Large batch + high worker count guarantees contention on our namespace.
