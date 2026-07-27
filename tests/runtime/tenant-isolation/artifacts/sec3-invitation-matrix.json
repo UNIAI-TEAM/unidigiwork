@@ -10,7 +10,7 @@
     "pass": true,
     "http": 200,
     "stable": null,
-    "tokenMask": "685e20f6…(len=48)"
+    "tokenMask": "29ecda2b…(len=48)"
   },
   {
     "id": "C002",
@@ -238,11 +238,30 @@
     "actor": "wrong_email",
     "action": "rejected_audit_written",
     "expected": "allow",
-    "actual": "deny",
-    "pass": false
+    "actual": "allow",
+    "pass": true,
+    "notes": "sink1=true sink2=true added=1"
   },
   {
     "id": "C023",
+    "actor": "wrong_email",
+    "action": "audit_no_email_leak",
+    "expected": "allow",
+    "actual": "allow",
+    "pass": true
+  },
+  {
+    "id": "C024",
+    "actor": "wrong_email",
+    "action": "rejection_sink_not_public",
+    "expected": "deny",
+    "actual": "deny",
+    "pass": true,
+    "http": 403,
+    "notes": "record_tenant_invitation_rejection revoked from authenticated"
+  },
+  {
+    "id": "C025",
     "actor": "unconfirmed",
     "action": "unconfirm_setup",
     "expected": "allow",
@@ -251,7 +270,7 @@
     "notes": "Supabase admin API kept email_confirmed_at set; unconfirmed cell is environmental."
   },
   {
-    "id": "C024",
+    "id": "C026",
     "actor": "unconfirmed",
     "action": "accept",
     "tenant": "A",
@@ -264,7 +283,7 @@
     "notes": "unconfirmed=false"
   },
   {
-    "id": "C025",
+    "id": "C027",
     "actor": "correct_email",
     "action": "accept",
     "tenant": "A",
@@ -276,7 +295,7 @@
     "stable": "TENANT_INVITATION_EXPIRED"
   },
   {
-    "id": "C026",
+    "id": "C028",
     "actor": "correct_email",
     "action": "accept",
     "tenant": "A",
@@ -288,7 +307,7 @@
     "stable": "TENANT_INVITATION_REVOKED"
   },
   {
-    "id": "C027",
+    "id": "C029",
     "actor": "concurrent",
     "action": "concurrent_accept_single_membership",
     "expected": "allow",
@@ -297,7 +316,7 @@
     "notes": "ok=1 deniedStable=TENANT_INVITATION_ALREADY_ACCEPTED members=1"
   },
   {
-    "id": "C028",
+    "id": "C030",
     "actor": "concurrent",
     "action": "concurrent_no_duplicate_success_audit",
     "expected": "allow",
@@ -306,7 +325,7 @@
     "notes": "success_audit_count=0"
   },
   {
-    "id": "C029",
+    "id": "C031",
     "actor": "existing_active",
     "action": "accept_existing_member_single_row",
     "expected": "allow",
@@ -317,7 +336,7 @@
     "notes": "role_after=guest"
   },
   {
-    "id": "C030",
+    "id": "C032",
     "actor": "suspended_a",
     "action": "accept_suspended_no_bypass",
     "expected": "deny",
@@ -328,7 +347,7 @@
     "notes": "kept suspended"
   },
   {
-    "id": "C031",
+    "id": "C033",
     "actor": "removed_a",
     "action": "accept_removed_becomes_member",
     "expected": "allow",
@@ -338,7 +357,7 @@
     "stable": null
   },
   {
-    "id": "C032",
+    "id": "C034",
     "actor": "owner_a",
     "action": "create_role_allowlist",
     "tenant": "A",
@@ -350,7 +369,7 @@
     "stable": null
   },
   {
-    "id": "C033",
+    "id": "C035",
     "actor": "owner_a",
     "action": "create_role_allowlist",
     "tenant": "A",
@@ -362,7 +381,7 @@
     "stable": null
   },
   {
-    "id": "C034",
+    "id": "C036",
     "actor": "owner_a",
     "action": "create_role_allowlist",
     "tenant": "A",
@@ -374,7 +393,7 @@
     "stable": null
   },
   {
-    "id": "C035",
+    "id": "C037",
     "actor": "owner_a",
     "action": "create_role_allowlist",
     "tenant": "A",
@@ -386,7 +405,7 @@
     "stable": null
   },
   {
-    "id": "C036",
+    "id": "C038",
     "actor": "owner_a",
     "action": "revoke",
     "tenant": "A",
@@ -397,7 +416,7 @@
     "stable": null
   },
   {
-    "id": "C037",
+    "id": "C039",
     "actor": "admin_a",
     "action": "revoke",
     "tenant": "A",
@@ -408,7 +427,7 @@
     "stable": null
   },
   {
-    "id": "C038",
+    "id": "C040",
     "actor": "member_a",
     "action": "revoke",
     "tenant": "A",
@@ -419,7 +438,7 @@
     "stable": "PERMISSION_DENIED"
   },
   {
-    "id": "C039",
+    "id": "C041",
     "actor": "guest_a",
     "action": "revoke",
     "tenant": "A",
@@ -430,7 +449,7 @@
     "stable": "PERMISSION_DENIED"
   },
   {
-    "id": "C040",
+    "id": "C042",
     "actor": "outsider",
     "action": "revoke",
     "tenant": "A",
@@ -441,7 +460,7 @@
     "stable": "PERMISSION_DENIED"
   },
   {
-    "id": "C041",
+    "id": "C043",
     "actor": "owner_b",
     "action": "revoke",
     "tenant": "A",
@@ -452,7 +471,7 @@
     "stable": "PERMISSION_DENIED"
   },
   {
-    "id": "C042",
+    "id": "C044",
     "actor": "owner_a",
     "action": "revoke_accepted",
     "tenant": "A",
@@ -463,7 +482,7 @@
     "stable": null
   },
   {
-    "id": "C043",
+    "id": "C045",
     "actor": "owner_a",
     "action": "revoke_repeat",
     "tenant": "A",
@@ -475,7 +494,7 @@
     "notes": "first=true"
   },
   {
-    "id": "C044",
+    "id": "C046",
     "actor": "owner_b",
     "action": "cross_tenant_revoke",
     "tenant": "A",
@@ -486,7 +505,7 @@
     "stable": "PERMISSION_DENIED"
   },
   {
-    "id": "C045",
+    "id": "C047",
     "actor": "cross_tenant",
     "action": "cross_tenant_scoped_membership",
     "expected": "allow",
@@ -495,7 +514,7 @@
     "notes": "A=true B=false"
   },
   {
-    "id": "C046",
+    "id": "C048",
     "actor": "member_b",
     "action": "cross_tenant_list_invitations",
     "tenant": "A",
@@ -505,7 +524,7 @@
     "notes": "rows=0"
   },
   {
-    "id": "C047",
+    "id": "C049",
     "actor": "system",
     "action": "outbox_no_token",
     "expected": "allow",
@@ -514,7 +533,7 @@
     "notes": "events=1"
   },
   {
-    "id": "C048",
+    "id": "C050",
     "actor": "anonymous",
     "action": "accept",
     "tenant": "A",
