@@ -40,19 +40,12 @@ async function serverRecordRejection({ invitationId, actorId, reasonCode, correl
   return { ok: !error, error: error?.message };
 }
 
-// SEC.4: unconfirm an auth.users email via direct SQL, since the Supabase
-// admin API does not expose a way to null email_confirmed_at once set.
-function unconfirmAuthUserViaSql(userId) {
-  if (!process.env.PGHOST || !process.env.PGUSER) {
-    return { ok: false, reason: "PG env vars unavailable in test runtime" };
-  }
-  const res = spawnSync(
-    "psql",
-    ["-tAc", `UPDATE auth.users SET email_confirmed_at = NULL, confirmed_at = NULL WHERE id = '${userId}';`],
-    { encoding: "utf-8" }
-  );
-  if (res.status !== 0) return { ok: false, reason: (res.stderr || "").trim().slice(0, 200) };
-  return { ok: true };
+// SEC.4: unconfirm an auth.users email via the guarded test-only RPC.
+// The RPC restricts mutations to sec3_ fixture accounts and is service-role-only.
+async function unconfirmAuthUser(userId) {
+  const { data, error } = await admin.rpc("_test_unconfirm_auth_email", { _user_id: userId });
+  if (error) return { ok: false, reason: error.message };
+  return { ok: data === true };
 }
 const TAG = "sec3_";
 const RUN_ID = `sec3_${new Date().toISOString().replace(/[:.]/g, "-")}`;
@@ -222,8 +215,8 @@ async function run() {
   // Unconfirmed strategy: sign in while confirmed, then flip email_confirmed_at to null.
   await admin.auth.admin.updateUserById(U.unconfirmed.id, { email_confirm: true });
   TK.unconfirmed = await tokenFor(U.unconfirmed.email);
-  // SEC.4: null out email_confirmed_at via direct SQL so RPC guard fires.
-  const unc = unconfirmAuthUserViaSql(U.unconfirmed.id);
+  // SEC.4: null out email_confirmed_at via guarded test RPC so RPC guard fires.
+  const unc = await unconfirmAuthUser(U.unconfirmed.id);
   if (!unc.ok) console.log("  warn: unconfirm via SQL failed:", unc.reason);
 
   console.log("[sec3] token masks:", Object.fromEntries(Object.entries(TK).map(([k, v]) => [k, v?.token ? mask(v.token) : v?.error])));
