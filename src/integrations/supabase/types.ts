@@ -598,6 +598,7 @@ export type Database = {
           correlation_id: string | null
           created_at: string
           event_type: string
+          event_version: number
           id: string
           idempotency_key: string
           last_error: string | null
@@ -617,6 +618,7 @@ export type Database = {
           correlation_id?: string | null
           created_at?: string
           event_type: string
+          event_version?: number
           id?: string
           idempotency_key: string
           last_error?: string | null
@@ -636,6 +638,7 @@ export type Database = {
           correlation_id?: string | null
           created_at?: string
           event_type?: string
+          event_version?: number
           id?: string
           idempotency_key?: string
           last_error?: string | null
@@ -1120,6 +1123,7 @@ export type Database = {
           correlation_id: string | null
           created_at: string
           event_type: string
+          event_version: number
           id: string
           idempotency_key: string
           last_error: string | null
