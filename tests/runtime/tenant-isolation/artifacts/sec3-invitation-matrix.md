@@ -1,7 +1,7 @@
 # SEC.3 Invitation Lifecycle Runtime Matrix
 
-Run: sec3_2026-07-27T03-13-00-178Z
-Total: 50. Passed: 49. Failed: 1.
+Run: sec3_2026-07-27T03-13-59-078Z
+Total: 51. Passed: 50. Failed: 1.
 
 | Cell | Actor | Tenant | Action | InvState | Expected | Actual | HTTP | Stable | Pass | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -29,29 +29,30 @@ Total: 50. Passed: 49. Failed: 1.
 | C022 | wrong_email |  | rejected_audit_written |  | allow | allow |  |  | ✅ | sink1=true sink2=true added=1 |
 | C023 | wrong_email |  | audit_no_email_leak |  | allow | allow |  |  | ✅ |  |
 | C024 | wrong_email |  | rejection_sink_not_public |  | deny | deny | 403 |  | ✅ | record_tenant_invitation_rejection revoked from authenticated |
-| C025 | unconfirmed |  | unconfirm_setup |  | allow | environmental |  |  | ❌ | column "confirmed_at" can only be updated to DEFAULT |
-| C026 | unconfirmed | A | accept | pending | allow | allow | 200 |  | ✅ | unconfirmed=false |
-| C027 | correct_email | A | accept | expired | deny | deny | 403 | TENANT_INVITATION_EXPIRED | ✅ |  |
-| C028 | correct_email | A | accept | revoked | deny | deny | 403 | TENANT_INVITATION_REVOKED | ✅ |  |
-| C029 | concurrent |  | concurrent_accept_single_membership |  | allow | allow |  |  | ✅ | ok=1 deniedStable=TENANT_INVITATION_ALREADY_ACCEPTED members=1 |
-| C030 | concurrent |  | concurrent_no_duplicate_success_audit |  | allow | allow |  |  | ✅ | success_audit_count=0 |
-| C031 | existing_active |  | accept_existing_member_single_row |  | allow | allow | 200 |  | ✅ | role_after=guest |
-| C032 | suspended_a |  | accept_suspended_no_bypass |  | deny | deny | 400 |  | ✅ | kept suspended |
-| C033 | removed_a |  | accept_removed_becomes_member |  | allow | allow | 200 |  | ✅ |  |
-| C034 | owner_a | A | create_role_allowlist |  | deny | deny | 400 |  | ✅ |  |
+| C025 | unconfirmed |  | unconfirm_setup |  | allow | allow |  |  | ✅ | email_confirmed_at nulled via guarded _test_unconfirm_auth_email RPC |
+| C026 | unconfirmed | A | accept | pending | deny | deny | 403 | TENANT_INVITATION_EMAIL_MISMATCH | ✅ | unconfirmed=true |
+| C027 | unconfirmed |  | no_membership_after_unconfirmed |  | allow | deny |  |  | ❌ |  |
+| C028 | correct_email | A | accept | expired | deny | deny | 403 | TENANT_INVITATION_EXPIRED | ✅ |  |
+| C029 | correct_email | A | accept | revoked | deny | deny | 403 | TENANT_INVITATION_REVOKED | ✅ |  |
+| C030 | concurrent |  | concurrent_accept_single_membership |  | allow | allow |  |  | ✅ | ok=1 deniedStable=TENANT_INVITATION_ALREADY_ACCEPTED members=1 |
+| C031 | concurrent |  | concurrent_no_duplicate_success_audit |  | allow | allow |  |  | ✅ | success_audit_count=0 |
+| C032 | existing_active |  | accept_existing_member_single_row |  | allow | allow | 200 |  | ✅ | role_after=guest |
+| C033 | suspended_a |  | accept_suspended_no_bypass |  | deny | deny | 400 |  | ✅ | kept suspended |
+| C034 | removed_a |  | accept_removed_becomes_member |  | allow | allow | 200 |  | ✅ |  |
 | C035 | owner_a | A | create_role_allowlist |  | deny | deny | 400 |  | ✅ |  |
 | C036 | owner_a | A | create_role_allowlist |  | deny | deny | 400 |  | ✅ |  |
 | C037 | owner_a | A | create_role_allowlist |  | deny | deny | 400 |  | ✅ |  |
-| C038 | owner_a | A | revoke |  | allow | allow | 200 |  | ✅ |  |
-| C039 | admin_a | A | revoke |  | allow | allow | 200 |  | ✅ |  |
-| C040 | member_a | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
-| C041 | guest_a | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
-| C042 | outsider | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
-| C043 | owner_b | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
-| C044 | owner_a | A | revoke_accepted |  | deny | deny | 400 |  | ✅ |  |
-| C045 | owner_a | A | revoke_repeat |  | deny | deny | 400 |  | ✅ | first=true |
-| C046 | owner_b | A | cross_tenant_revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
-| C047 | cross_tenant |  | cross_tenant_scoped_membership |  | allow | allow |  |  | ✅ | A=true B=false |
-| C048 | member_b | A | cross_tenant_list_invitations |  | deny | deny |  |  | ✅ | rows=0 |
-| C049 | system |  | outbox_no_token |  | allow | allow |  |  | ✅ | events=1 |
-| C050 | anonymous | A | accept | pending | deny | deny | 401 |  | ✅ |  |
+| C038 | owner_a | A | create_role_allowlist |  | deny | deny | 400 |  | ✅ |  |
+| C039 | owner_a | A | revoke |  | allow | allow | 200 |  | ✅ |  |
+| C040 | admin_a | A | revoke |  | allow | allow | 200 |  | ✅ |  |
+| C041 | member_a | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
+| C042 | guest_a | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
+| C043 | outsider | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
+| C044 | owner_b | A | revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
+| C045 | owner_a | A | revoke_accepted |  | deny | deny | 400 |  | ✅ |  |
+| C046 | owner_a | A | revoke_repeat |  | deny | deny | 400 |  | ✅ | first=true |
+| C047 | owner_b | A | cross_tenant_revoke |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
+| C048 | cross_tenant |  | cross_tenant_scoped_membership |  | allow | allow |  |  | ✅ | A=true B=false |
+| C049 | member_b | A | cross_tenant_list_invitations |  | deny | deny |  |  | ✅ | rows=0 |
+| C050 | system |  | outbox_no_token |  | allow | allow |  |  | ✅ | events=1 |
+| C051 | anonymous | A | accept | pending | deny | deny | 401 |  | ✅ |  |

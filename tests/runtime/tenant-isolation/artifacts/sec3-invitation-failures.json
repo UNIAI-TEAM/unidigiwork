@@ -1,11 +1,10 @@
 [
   {
-    "id": "C025",
+    "id": "C027",
     "actor": "unconfirmed",
-    "action": "unconfirm_setup",
+    "action": "no_membership_after_unconfirmed",
     "expected": "allow",
-    "actual": "environmental",
-    "pass": false,
-    "notes": "column \"confirmed_at\" can only be updated to DEFAULT"
+    "actual": "deny",
+    "pass": false
   }
 ]
