@@ -135,7 +135,7 @@ async function main() {
       _name: "Sec2 First", _slug: S.first, _owner_id: U.actor_a.id,
       _default_workspace_name: "Main", _idempotency_key: key, _correlation_id: `cor-${key}`,
     });
-    rec({ actor: "actor_a", action: "first_provision" }, "allow", res.ok ? "allow" : "deny", { http: res.http, stable: res.stable });
+    rec({ actor: "actor_a", action: "first_provision" }, "allow", res.ok ? "allow" : "deny", { http: res.http, stable: res.stable, errMsg: res.errMsg });
     if (res.ok) {
       const row = Array.isArray(res.json) ? res.json[0] : res.json;
       track(row.tenant_id);
