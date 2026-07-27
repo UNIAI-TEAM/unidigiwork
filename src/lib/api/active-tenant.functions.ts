@@ -125,12 +125,13 @@ export const setActiveTenant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SetActiveInput.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     // Re-validate that caller has an active membership on an active tenant.
     const { data: row, error } = await supabase
       .from("tenant_members")
       .select("status, tenant:tenants(id, status)")
       .eq("tenant_id", data.tenantId)
+      .eq("user_id", userId)
       .eq("status", "active")
       .maybeSingle();
     if (error) throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "Cannot resolve tenant" });
