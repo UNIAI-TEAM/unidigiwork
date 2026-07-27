@@ -372,17 +372,44 @@ async function runMatrix(ctx) {
 
   // 12. Outbox concurrent claim (server-side RPC, via service role for concurrency correctness)
   {
-    // seed one pending event
-    const key = `${FIXTURE_TAG}claim_${Date.now()}`;
-    await admin.from("outbox_events").insert({ event_type: "test.event", aggregate_type: "t", aggregate_id: "a", idempotency_key: key, tenant_id: tenants.A.id, status: "pending" });
-    const [c1, c2] = await Promise.all([
-      admin.rpc("claim_outbox_events", { _worker: "worker_1", _batch: 5, _lease_seconds: 30 }),
-      admin.rpc("claim_outbox_events", { _worker: "worker_2", _batch: 5, _lease_seconds: 30 }),
-    ]);
-    const rows1 = (c1.data ?? []).filter((e) => e.idempotency_key === key);
-    const rows2 = (c2.data ?? []).filter((e) => e.idempotency_key === key);
-    const claimedOnce = rows1.length + rows2.length === 1;
-    record(results, { actor: "server", action: "rpc", table: "claim_outbox_events" }, { actual: claimedOnce ? "single-winner" : `w1=${rows1.length} w2=${rows2.length}` }, "single-winner");
+    // Single-winner invariant (SEC.6): the same event MUST NOT be claimed by
+    // two workers. Use a unique aggregate_type namespace so we can isolate our
+    // seeded events from any pre-existing backlog and evaluate the invariant
+    // deterministically regardless of unrelated pending events.
+    const runId = `${FIXTURE_TAG}claim_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const aggregateType = runId; // unique per run
+    const seeded = Array.from({ length: 20 }, (_, i) => ({
+      event_type: "test.claim.v1",
+      aggregate_type: aggregateType,
+      aggregate_id: `${runId}_${i}`,
+      idempotency_key: `${runId}_${i}`,
+      tenant_id: tenants.A.id,
+      status: "pending",
+    }));
+    await admin.from("outbox_events").insert(seeded);
+    // Large batch + high worker count guarantees contention on our namespace.
+    const workers = ["w1", "w2", "w3", "w4", "w5"].map((w) => `${runId}_${w}`);
+    const claims = await Promise.all(
+      workers.map((w) => admin.rpc("claim_outbox_events", { _worker: w, _batch: 20, _lease_seconds: 30 })),
+    );
+    const claimedIds = claims.flatMap((c) => (c.data ?? []).filter((e) => e.aggregate_type === aggregateType).map((e) => e.id));
+    const unique = new Set(claimedIds);
+    const duplicate = claimedIds.length !== unique.size;
+    const singleWinner = !duplicate && claimedIds.length > 0;
+    record(
+      results,
+      { actor: "server", action: "rpc", table: "claim_outbox_events" },
+      { actual: singleWinner ? "single-winner" : `duplicate=${duplicate} claimed=${claimedIds.length}/${seeded.length}` },
+      "single-winner",
+    );
+    // Cleanup — release leases and mark processed by exact IDs (no wildcards).
+    if (claimedIds.length > 0) {
+      await admin
+        .from("outbox_events")
+        .update({ status: "processed", processed_at: new Date().toISOString(), lease_owner: null, lease_expires_at: null })
+        .in("id", [...unique]);
+    }
+    await admin.from("outbox_events").delete().eq("aggregate_type", aggregateType);
   }
 
   return results;
