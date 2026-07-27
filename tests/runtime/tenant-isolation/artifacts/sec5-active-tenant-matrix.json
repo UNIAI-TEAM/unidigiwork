@@ -1,8 +1,8 @@
 {
-  "runId": "sec5_2026-07-27T04-18-02-895Z",
+  "runId": "sec5_2026-07-27T04-18-51-174Z",
   "total": 47,
-  "passed": 42,
-  "failed": 5,
+  "passed": 47,
+  "failed": 0,
   "cells": [
     {
       "id": "C001",
@@ -95,8 +95,8 @@
       "actor": "multi_ab",
       "action": "setActive_A",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false
+      "actual": "allow",
+      "pass": true
     },
     {
       "id": "C011",
@@ -104,8 +104,8 @@
       "actor": "multi_ab",
       "action": "setActive_B",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false
+      "actual": "allow",
+      "pass": true
     },
     {
       "id": "C012",
@@ -205,8 +205,8 @@
       "actor": "susp_member",
       "action": "baseline_active_allow",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false
+      "actual": "allow",
+      "pass": true
     },
     {
       "id": "C023",
@@ -232,8 +232,8 @@
       "actor": "susp_member",
       "action": "reactivate_allow",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false
+      "actual": "allow",
+      "pass": true
     },
     {
       "id": "C026",
@@ -421,8 +421,8 @@
       "actor": "multi_ab",
       "action": "two_tabs_both_selections_valid",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false
+      "actual": "allow",
+      "pass": true
     },
     {
       "id": "C046",
