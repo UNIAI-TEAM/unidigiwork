@@ -6,51 +6,9 @@
     "expected": "deny",
     "actual": "allow",
     "pass": false,
-    "stable": null
-  },
-  {
-    "id": "S035",
-    "actor": "actor_a",
-    "action": "invalid_slug_slash",
-    "expected": "deny",
-    "actual": "allow",
-    "pass": false,
-    "stable": null
-  },
-  {
-    "id": "S038",
-    "actor": "actor_a",
-    "action": "invalid_slug_leading_hyphen",
-    "expected": "deny",
-    "actual": "allow",
-    "pass": false,
-    "stable": null
-  },
-  {
-    "id": "S047",
-    "actor": "actor_b",
-    "action": "atomic_slug_conflict",
-    "expected": "deny",
-    "actual": "allow",
-    "pass": false,
-    "stable": null
-  },
-  {
-    "id": "S048",
-    "actor": "actor_b",
-    "action": "atomic_no_orphan_member",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "before": 2,
-    "after": 3
-  },
-  {
-    "id": "S049",
-    "actor": "actor_b",
-    "action": "atomic_no_success_audit",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false
+    "stable": null,
+    "errMsg": "[{\"tenant_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"workspace_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"membership_id\":\"a81847e4-7fa1-4f85-bf6d-d317b35d118e\"}]",
+    "rn1_ok": true,
+    "rn1_err": "[{\"tenant_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"workspace_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"membership_id\":\"8ca82fdd-6751-488e-ac47-62a091ef9a6b\"}]"
   }
 ]

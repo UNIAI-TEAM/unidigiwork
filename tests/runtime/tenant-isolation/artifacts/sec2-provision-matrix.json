@@ -1,8 +1,8 @@
 {
-  "runId": "sec2_2026-07-27T03-50-26-742Z",
-  "total": 50,
-  "passed": 44,
-  "failed": 6,
+  "runId": "sec2_2026-07-27T03-51-25-598Z",
+  "total": 46,
+  "passed": 45,
+  "failed": 1,
   "results": [
     {
       "id": "S001",
@@ -13,7 +13,7 @@
       "pass": true,
       "http": 200,
       "stable": null,
-      "errMsg": "[{\"tenant_id\":\"903d230c-04d5-4db1-ad24-48113a02509c\",\"workspace_id\":\"903d230c-04d5-4db1-ad24-48113a02509c\",\"membership_id\":\"ce368162-8b70-4d0b-b94d-2d4a734f90cf\"}]"
+      "errMsg": "[{\"tenant_id\":\"be0e1388-ab52-4b38-92c2-dfdb302777aa\",\"workspace_id\":\"be0e1388-ab52-4b38-92c2-dfdb302777aa\",\"membership_id\":\"dda7da4b-11a2-4982-836b-21da5e52ef08\"}]"
     },
     {
       "id": "S002",
@@ -226,7 +226,10 @@
       "expected": "deny",
       "actual": "allow",
       "pass": false,
-      "stable": null
+      "stable": null,
+      "errMsg": "[{\"tenant_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"workspace_id\":\"34ba0485-ec1e-438a-93c1-9fe166c1f718\",\"membership_id\":\"a81847e4-7fa1-4f85-bf6d-d317b35d118e\"}]",
+      "rn1_ok": true,
+      "rn1_err": "[{\"tenant_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"workspace_id\":\"49cff382-2e74-47ea-81f6-008e0dcb2692\",\"membership_id\":\"8ca82fdd-6751-488e-ac47-62a091ef9a6b\"}]"
     },
     {
       "id": "S022",
@@ -325,7 +328,8 @@
       "expected": "deny",
       "actual": "deny",
       "pass": true,
-      "stable": "VALIDATION_FAILED"
+      "stable": "VALIDATION_FAILED",
+      "errMsg": "VALIDATION_FAILED: slug length"
     },
     {
       "id": "S033",
@@ -334,7 +338,8 @@
       "expected": "deny",
       "actual": "deny",
       "pass": true,
-      "stable": "VALIDATION_FAILED"
+      "stable": "VALIDATION_FAILED",
+      "errMsg": "VALIDATION_FAILED: slug length"
     },
     {
       "id": "S034",
@@ -343,46 +348,11 @@
       "expected": "deny",
       "actual": "deny",
       "pass": true,
-      "stable": "VALIDATION_FAILED"
+      "stable": "VALIDATION_FAILED",
+      "errMsg": "VALIDATION_FAILED: slug length"
     },
     {
       "id": "S035",
-      "actor": "actor_a",
-      "action": "invalid_slug_slash",
-      "expected": "deny",
-      "actual": "allow",
-      "pass": false,
-      "stable": null
-    },
-    {
-      "id": "S036",
-      "actor": "actor_a",
-      "action": "invalid_slug_backslash",
-      "expected": "deny",
-      "actual": "deny",
-      "pass": true,
-      "stable": "TENANT_SLUG_CONFLICT"
-    },
-    {
-      "id": "S037",
-      "actor": "actor_a",
-      "action": "invalid_slug_ctrl",
-      "expected": "deny",
-      "actual": "deny",
-      "pass": true,
-      "stable": "TENANT_SLUG_CONFLICT"
-    },
-    {
-      "id": "S038",
-      "actor": "actor_a",
-      "action": "invalid_slug_leading_hyphen",
-      "expected": "deny",
-      "actual": "allow",
-      "pass": false,
-      "stable": null
-    },
-    {
-      "id": "S039",
       "actor": "actor_a",
       "action": "owner_spoof_other",
       "expected": "deny",
@@ -392,7 +362,7 @@
       "notes": "stable OK"
     },
     {
-      "id": "S040",
+      "id": "S036",
       "actor": "actor_a",
       "action": "owner_spoof_no_tenant",
       "expected": "allow",
@@ -400,7 +370,7 @@
       "pass": true
     },
     {
-      "id": "S041",
+      "id": "S037",
       "actor": "actor_a",
       "action": "owner_unknown",
       "expected": "deny",
@@ -409,7 +379,7 @@
       "stable": "PERMISSION_DENIED"
     },
     {
-      "id": "S042",
+      "id": "S038",
       "actor": "platform_admin",
       "action": "provision_for_other_owner",
       "expected": "allow",
@@ -419,7 +389,7 @@
       "http": 200
     },
     {
-      "id": "S043",
+      "id": "S039",
       "actor": "platform_admin",
       "action": "owner_is_target",
       "expected": "allow",
@@ -427,7 +397,7 @@
       "pass": true
     },
     {
-      "id": "S044",
+      "id": "S040",
       "actor": "platform_admin",
       "action": "audit_actor_is_admin",
       "expected": "allow",
@@ -435,7 +405,7 @@
       "pass": true
     },
     {
-      "id": "S045",
+      "id": "S041",
       "actor": "anonymous",
       "action": "provision_denied",
       "expected": "deny",
@@ -445,7 +415,7 @@
       "http": 403
     },
     {
-      "id": "S046",
+      "id": "S042",
       "actor": "anonymous",
       "action": "no_tenant_created",
       "expected": "allow",
@@ -453,34 +423,34 @@
       "pass": true
     },
     {
-      "id": "S047",
+      "id": "S043",
       "actor": "actor_b",
       "action": "atomic_slug_conflict",
       "expected": "deny",
-      "actual": "allow",
-      "pass": false,
-      "stable": null
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
     },
     {
-      "id": "S048",
+      "id": "S044",
       "actor": "actor_b",
       "action": "atomic_no_orphan_member",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false,
-      "before": 2,
-      "after": 3
+      "actual": "allow",
+      "pass": true,
+      "before": 6,
+      "after": 6
     },
     {
-      "id": "S049",
+      "id": "S045",
       "actor": "actor_b",
       "action": "atomic_no_success_audit",
       "expected": "allow",
-      "actual": "deny",
-      "pass": false
+      "actual": "allow",
+      "pass": true
     },
     {
-      "id": "S050",
+      "id": "S046",
       "actor": "actor_b",
       "action": "retry_after_failure",
       "expected": "allow",

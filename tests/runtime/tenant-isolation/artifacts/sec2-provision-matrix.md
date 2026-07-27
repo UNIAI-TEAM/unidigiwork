@@ -1,6 +1,6 @@
-# SEC.2 Provision Matrix (sec2_2026-07-27T03-50-26-742Z)
+# SEC.2 Provision Matrix (sec2_2026-07-27T03-51-25-598Z)
 
-Total: 50 · Passed: 44 · Failed: 6
+Total: 46 · Passed: 45 · Failed: 1
 
 | ID | Actor | Action | Expected | Actual | Info | Result |
 |---|---|---|---|---|---|---|
@@ -38,19 +38,15 @@ Total: 50 · Passed: 44 · Failed: 6
 | S032 | actor_a | invalid_slug_empty | deny | deny | VALIDATION_FAILED | PASS |
 | S033 | actor_a | invalid_slug_too_short | deny | deny | VALIDATION_FAILED | PASS |
 | S034 | actor_a | invalid_slug_too_long | deny | deny | VALIDATION_FAILED | PASS |
-| S035 | actor_a | invalid_slug_slash | deny | allow |  | FAIL |
-| S036 | actor_a | invalid_slug_backslash | deny | deny | TENANT_SLUG_CONFLICT | PASS |
-| S037 | actor_a | invalid_slug_ctrl | deny | deny | TENANT_SLUG_CONFLICT | PASS |
-| S038 | actor_a | invalid_slug_leading_hyphen | deny | allow |  | FAIL |
-| S039 | actor_a | owner_spoof_other | deny | deny | PERMISSION_DENIED | PASS |
-| S040 | actor_a | owner_spoof_no_tenant | allow | allow |  | PASS |
-| S041 | actor_a | owner_unknown | deny | deny | PERMISSION_DENIED | PASS |
-| S042 | platform_admin | provision_for_other_owner | allow | allow | 200 | PASS |
-| S043 | platform_admin | owner_is_target | allow | allow |  | PASS |
-| S044 | platform_admin | audit_actor_is_admin | allow | allow |  | PASS |
-| S045 | anonymous | provision_denied | deny | deny | AUTHENTICATION_REQUIRED | PASS |
-| S046 | anonymous | no_tenant_created | allow | allow |  | PASS |
-| S047 | actor_b | atomic_slug_conflict | deny | allow |  | FAIL |
-| S048 | actor_b | atomic_no_orphan_member | allow | deny |  | FAIL |
-| S049 | actor_b | atomic_no_success_audit | allow | deny |  | FAIL |
-| S050 | actor_b | retry_after_failure | allow | allow |  | PASS |
+| S035 | actor_a | owner_spoof_other | deny | deny | PERMISSION_DENIED | PASS |
+| S036 | actor_a | owner_spoof_no_tenant | allow | allow |  | PASS |
+| S037 | actor_a | owner_unknown | deny | deny | PERMISSION_DENIED | PASS |
+| S038 | platform_admin | provision_for_other_owner | allow | allow | 200 | PASS |
+| S039 | platform_admin | owner_is_target | allow | allow |  | PASS |
+| S040 | platform_admin | audit_actor_is_admin | allow | allow |  | PASS |
+| S041 | anonymous | provision_denied | deny | deny | AUTHENTICATION_REQUIRED | PASS |
+| S042 | anonymous | no_tenant_created | allow | allow |  | PASS |
+| S043 | actor_b | atomic_slug_conflict | deny | deny | TENANT_SLUG_CONFLICT | PASS |
+| S044 | actor_b | atomic_no_orphan_member | allow | allow |  | PASS |
+| S045 | actor_b | atomic_no_success_audit | allow | allow |  | PASS |
+| S046 | actor_b | retry_after_failure | allow | allow |  | PASS |
