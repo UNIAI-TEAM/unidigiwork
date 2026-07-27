@@ -1,8 +1,8 @@
 {
-  "startedAt": "2026-07-26T15:03:42.075Z",
-  "endedAt": "2026-07-26T15:04:35.990Z",
+  "startedAt": "2026-07-27T04:20:26.038Z",
+  "endedAt": "2026-07-27T04:21:12.546Z",
   "host": "wjqsth…",
   "total": 173,
-  "passed": 173,
-  "failed": 0
+  "passed": 172,
+  "failed": 1
 }

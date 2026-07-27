@@ -137,7 +137,7 @@
     "table": "audit_events",
     "expected": "deny",
     "actual": "deny",
-    "http": 400,
+    "http": 401,
     "notes": null,
     "pass": true
   },
@@ -1884,9 +1884,9 @@
     "action": "rpc",
     "table": "claim_outbox_events",
     "expected": "single-winner",
-    "actual": "single-winner",
+    "actual": "w1=0 w2=0",
     "http": null,
     "notes": null,
-    "pass": true
+    "pass": false
   }
 ]
