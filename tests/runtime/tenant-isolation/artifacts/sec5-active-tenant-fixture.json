@@ -1,0 +1,23 @@
+{
+  "runId": "sec5_2026-07-27T04-15-59-045Z",
+  "fixtureIds": {
+    "tenants": [
+      "15c99c82-b2ae-4c66-918c-c3af6b010356",
+      "be411d47-fb5e-4515-86e2-689c5a397e92",
+      "0b18589d-66f1-4baf-8fd5-5e8b7ad750f7",
+      "fd9d2f54-1c49-49e2-bfbb-0d24dbf28412"
+    ],
+    "users": {
+      "owner_a": "3701e552-8064-4295-8e4f-6d0d6fa4a93c",
+      "admin_a": "abdda018-cfc1-4d5f-832a-c9df60473d44",
+      "single_a": "b61d5941-328c-42a4-b91f-558fcb70fa0e",
+      "multi_ab": "847e8ff4-c454-4c2c-bb80-a6666fdda07a",
+      "susp_member": "3d362a2e-3552-4886-99ae-a37b676609e5",
+      "susp_tenant_member": "ba0b3d7e-ef5a-4dd2-b437-2a8291f06018",
+      "arch_tenant_member": "8a884386-ebdd-48b0-8f3b-736e0d6873bb",
+      "role_downgrade": "2a3e2e7d-8ea4-4675-92a2-ef75980ea688",
+      "outsider": "ba45945a-7f23-45ab-b3ec-67269502d95c",
+      "owner_b": "1b683f8f-f485-418e-abbf-1685798a614c"
+    }
+  }
+}

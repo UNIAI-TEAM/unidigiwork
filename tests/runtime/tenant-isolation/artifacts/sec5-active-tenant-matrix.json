@@ -1,0 +1,448 @@
+{
+  "runId": "sec5_2026-07-27T04-15-59-045Z",
+  "total": 47,
+  "passed": 38,
+  "failed": 9,
+  "cells": [
+    {
+      "id": "C001",
+      "group": "A",
+      "actor": "single_a",
+      "action": "no_cookie_auto_select",
+      "expected": "tenantA",
+      "actual": "other",
+      "pass": false,
+      "notes": "multi_tenant_no_hint"
+    },
+    {
+      "id": "C002",
+      "group": "A",
+      "actor": "single_a",
+      "action": "valid_cookie_A",
+      "expected": "tenantA",
+      "actual": "tenantA",
+      "pass": true
+    },
+    {
+      "id": "C003",
+      "group": "A",
+      "actor": "single_a",
+      "action": "foreign_cookie_B_falls_back_to_A",
+      "expected": "tenantA_or_null",
+      "actual": "other",
+      "pass": false,
+      "notes": "single-tenant compat: cookie ignored, sole membership auto-selected"
+    },
+    {
+      "id": "C004",
+      "group": "A",
+      "actor": "single_a",
+      "action": "malformed_cookie_ignored",
+      "expected": "tenantA_or_null",
+      "actual": "other",
+      "pass": false
+    },
+    {
+      "id": "C005",
+      "group": "A",
+      "actor": "single_a",
+      "action": "nonexistent_cookie_ignored",
+      "expected": "tenantA_or_null",
+      "actual": "other",
+      "pass": false
+    },
+    {
+      "id": "C006",
+      "group": "A",
+      "actor": "single_a",
+      "action": "setActive_B_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "notes": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "C007",
+      "group": "A",
+      "actor": "single_a",
+      "action": "setActive_random_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C008",
+      "group": "A",
+      "actor": "single_a",
+      "action": "setActive_malformed_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "notes": "malformed"
+    },
+    {
+      "id": "C009",
+      "group": "B",
+      "actor": "multi_ab",
+      "action": "no_cookie_no_autoselect",
+      "expected": "null",
+      "actual": "null",
+      "pass": true,
+      "notes": "multi_tenant_no_hint"
+    },
+    {
+      "id": "C010",
+      "group": "B",
+      "actor": "multi_ab",
+      "action": "setActive_A",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false
+    },
+    {
+      "id": "C011",
+      "group": "B",
+      "actor": "multi_ab",
+      "action": "setActive_B",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false
+    },
+    {
+      "id": "C012",
+      "group": "B",
+      "actor": "multi_ab",
+      "action": "cookie_A_resolves_A",
+      "expected": "tenantA",
+      "actual": "tenantA",
+      "pass": true
+    },
+    {
+      "id": "C013",
+      "group": "B",
+      "actor": "multi_ab",
+      "action": "cookie_B_resolves_B",
+      "expected": "tenantB",
+      "actual": "tenantB",
+      "pass": true
+    },
+    {
+      "id": "C014",
+      "group": "B",
+      "actor": "multi_ab",
+      "action": "foreign_cookie_no_autoselect",
+      "expected": "null",
+      "actual": "null",
+      "pass": true
+    },
+    {
+      "id": "C015",
+      "group": "C",
+      "actor": "outsider",
+      "action": "setActive_A_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C016",
+      "group": "C",
+      "actor": "outsider",
+      "action": "getActive_no_membership",
+      "expected": "null",
+      "actual": "null",
+      "pass": true
+    },
+    {
+      "id": "C017",
+      "group": "D",
+      "actor": "owner_a",
+      "action": "setActive_foreign_B_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C018",
+      "group": "D",
+      "actor": "owner_b",
+      "action": "setActive_foreign_A_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C019",
+      "group": "D",
+      "actor": "owner_a",
+      "action": "setActive_sqli_shape_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "notes": "UUID validator strips shape"
+    },
+    {
+      "id": "C020",
+      "group": "D",
+      "actor": "owner_a",
+      "action": "setActive_empty_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C021",
+      "group": "E",
+      "actor": "single_a",
+      "action": "cross_tenant_read_denied_by_rls",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "notes": "rows=0"
+    },
+    {
+      "id": "C022",
+      "group": "F",
+      "actor": "susp_member",
+      "action": "baseline_active_allow",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false
+    },
+    {
+      "id": "C023",
+      "group": "F",
+      "actor": "susp_member",
+      "action": "after_suspend_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C024",
+      "group": "F",
+      "actor": "susp_member",
+      "action": "after_suspend_get_returns_null",
+      "expected": "null",
+      "actual": "null",
+      "pass": true
+    },
+    {
+      "id": "C025",
+      "group": "F",
+      "actor": "susp_member",
+      "action": "reactivate_allow",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false
+    },
+    {
+      "id": "C026",
+      "group": "F",
+      "actor": "susp_member",
+      "action": "after_remove_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C027",
+      "group": "G",
+      "actor": "role_downgrade",
+      "action": "baseline_role_is_admin",
+      "expected": "tenant_admin",
+      "actual": "tenant_admin",
+      "pass": true
+    },
+    {
+      "id": "C028",
+      "group": "G",
+      "actor": "role_downgrade",
+      "action": "after_demote_role_is_member",
+      "expected": "member",
+      "actual": "member",
+      "pass": true,
+      "notes": "role always re-fetched from DB, never cached in cookie"
+    },
+    {
+      "id": "C029",
+      "group": "G",
+      "actor": "role_downgrade",
+      "action": "demoted_admin_action_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "notes": "PERMISSION_DENIED"
+    },
+    {
+      "id": "C030",
+      "group": "H",
+      "actor": "susp_tenant_member",
+      "action": "baseline_active_tenant_allow",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "C031",
+      "group": "H",
+      "actor": "susp_tenant_member",
+      "action": "after_suspend_setActive_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C032",
+      "group": "H",
+      "actor": "susp_tenant_member",
+      "action": "after_suspend_get_returns_null",
+      "expected": "null",
+      "actual": "null",
+      "pass": true
+    },
+    {
+      "id": "C033",
+      "group": "H",
+      "actor": "susp_tenant_member",
+      "action": "suspended_tenant_not_in_available",
+      "expected": "hidden",
+      "actual": "hidden",
+      "pass": true
+    },
+    {
+      "id": "C034",
+      "group": "H",
+      "actor": "arch_tenant_member",
+      "action": "archived_setActive_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C035",
+      "group": "H",
+      "actor": "arch_tenant_member",
+      "action": "archived_get_returns_null",
+      "expected": "null",
+      "actual": "null",
+      "pass": true
+    },
+    {
+      "id": "C036",
+      "group": "I",
+      "actor": "expired",
+      "action": "bad_jwt_no_data",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "notes": "No suitable key or wrong key type"
+    },
+    {
+      "id": "C037",
+      "group": "I",
+      "actor": "anon",
+      "action": "no_bearer_no_data",
+      "expected": "empty",
+      "actual": "empty",
+      "pass": true
+    },
+    {
+      "id": "C038",
+      "group": "J",
+      "actor": "code",
+      "action": "setActive_calls_cancelQueries_and_clear",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "src/features/tenants/hooks.ts:42-43"
+    },
+    {
+      "id": "C039",
+      "group": "J",
+      "actor": "code",
+      "action": "switcher_forces_hard_reload",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "src/components/tenant-switcher.tsx:27 window.location.reload()"
+    },
+    {
+      "id": "C040",
+      "group": "J",
+      "actor": "code",
+      "action": "logout_clears_cache_and_signs_out",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "AppShell logout path calls signOut + navigate; cache reset via clear on reload"
+    },
+    {
+      "id": "C041",
+      "group": "K",
+      "actor": "code",
+      "action": "cache_cleared_before_switch_completes",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "cancelQueries awaited before clear; reload discards any in-flight fetch resolution"
+    },
+    {
+      "id": "C042",
+      "group": "L",
+      "actor": "code",
+      "action": "notifications_useEffect_cleanup_present",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "src/routes/_authenticated/notifications.tsx:192 removeChannel(channel)"
+    },
+    {
+      "id": "C043",
+      "group": "L",
+      "actor": "code",
+      "action": "reload_unmounts_all_channels",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "Hard reload on tenant switch terminates every realtime subscription"
+    },
+    {
+      "id": "C044",
+      "group": "L",
+      "actor": "owner_b",
+      "action": "cross_user_notifications_deny",
+      "expected": "empty",
+      "actual": "empty",
+      "pass": true
+    },
+    {
+      "id": "C045",
+      "group": "M",
+      "actor": "multi_ab",
+      "action": "two_tabs_both_selections_valid",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false
+    },
+    {
+      "id": "C046",
+      "group": "M",
+      "actor": "multi_ab",
+      "action": "tab_with_stale_context_denied_after_suspend",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true
+    },
+    {
+      "id": "C047",
+      "group": "N",
+      "actor": "outsider",
+      "action": "error_no_secret_leak",
+      "expected": "safe",
+      "actual": "safe",
+      "pass": true,
+      "notes": "TENANT_ACCESS_DENIED"
+    }
+  ]
+}

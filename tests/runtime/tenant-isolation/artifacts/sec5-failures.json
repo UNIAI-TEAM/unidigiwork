@@ -1,0 +1,85 @@
+[
+  {
+    "id": "C001",
+    "group": "A",
+    "actor": "single_a",
+    "action": "no_cookie_auto_select",
+    "expected": "tenantA",
+    "actual": "other",
+    "pass": false,
+    "notes": "multi_tenant_no_hint"
+  },
+  {
+    "id": "C003",
+    "group": "A",
+    "actor": "single_a",
+    "action": "foreign_cookie_B_falls_back_to_A",
+    "expected": "tenantA_or_null",
+    "actual": "other",
+    "pass": false,
+    "notes": "single-tenant compat: cookie ignored, sole membership auto-selected"
+  },
+  {
+    "id": "C004",
+    "group": "A",
+    "actor": "single_a",
+    "action": "malformed_cookie_ignored",
+    "expected": "tenantA_or_null",
+    "actual": "other",
+    "pass": false
+  },
+  {
+    "id": "C005",
+    "group": "A",
+    "actor": "single_a",
+    "action": "nonexistent_cookie_ignored",
+    "expected": "tenantA_or_null",
+    "actual": "other",
+    "pass": false
+  },
+  {
+    "id": "C010",
+    "group": "B",
+    "actor": "multi_ab",
+    "action": "setActive_A",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false
+  },
+  {
+    "id": "C011",
+    "group": "B",
+    "actor": "multi_ab",
+    "action": "setActive_B",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false
+  },
+  {
+    "id": "C022",
+    "group": "F",
+    "actor": "susp_member",
+    "action": "baseline_active_allow",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false
+  },
+  {
+    "id": "C025",
+    "group": "F",
+    "actor": "susp_member",
+    "action": "reactivate_allow",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false
+  },
+  {
+    "id": "C045",
+    "group": "M",
+    "actor": "multi_ab",
+    "action": "two_tabs_both_selections_valid",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false
+  }
+]

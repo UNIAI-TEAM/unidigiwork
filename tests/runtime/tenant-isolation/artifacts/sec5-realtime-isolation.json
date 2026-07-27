@@ -1,0 +1,37 @@
+{
+  "strategy": "useEffect(() => channel; return () => removeChannel(channel), []); hard reload on switch unmounts all channels; RLS scopes events by user_id",
+  "references": [
+    "src/routes/_authenticated/notifications.tsx:184-193"
+  ],
+  "verifiedCells": [
+    {
+      "id": "C042",
+      "group": "L",
+      "actor": "code",
+      "action": "notifications_useEffect_cleanup_present",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "src/routes/_authenticated/notifications.tsx:192 removeChannel(channel)"
+    },
+    {
+      "id": "C043",
+      "group": "L",
+      "actor": "code",
+      "action": "reload_unmounts_all_channels",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "Hard reload on tenant switch terminates every realtime subscription"
+    },
+    {
+      "id": "C044",
+      "group": "L",
+      "actor": "owner_b",
+      "action": "cross_user_notifications_deny",
+      "expected": "empty",
+      "actual": "empty",
+      "pass": true
+    }
+  ]
+}
