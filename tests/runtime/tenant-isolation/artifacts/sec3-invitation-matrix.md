@@ -1,6 +1,6 @@
 # SEC.3 Invitation Lifecycle Runtime Matrix
 
-Run: sec3_2026-07-27T02-42-22-213Z
+Run: sec3_2026-07-27T02-44-44-050Z
 Total: 43. Passed: 35. Failed: 8.
 
 | Cell | Actor | Tenant | Action | InvState | Expected | Actual | HTTP | Stable | Pass | Notes |
@@ -28,7 +28,7 @@ Total: 43. Passed: 35. Failed: 8.
 | C021 | correct_email | A | accept | expired | deny | deny | 403 | TENANT_INVITATION_EXPIRED | ✅ |  |
 | C022 | correct_email | A | accept | revoked | deny | deny | 403 | TENANT_INVITATION_REVOKED | ✅ |  |
 | C023 | concurrent |  | concurrent_accept_single_membership |  | allow | deny |  |  | ❌ | ok=0 deniedStable=null members=0 |
-| C024 | concurrent |  | concurrent_no_duplicate_success_audit |  | allow | allow |  |  | ✅ | success_audit_count=undefined |
+| C024 | concurrent |  | concurrent_no_duplicate_success_audit |  | allow | allow |  |  | ✅ | success_audit_count=0 |
 | C025 | existing_active |  | accept_existing_member_single_row |  | allow | allow | 400 |  | ✅ | role_after=member |
 | C026 | suspended_a |  | accept_suspended_no_bypass |  | deny | deny | 400 |  | ✅ | kept suspended |
 | C027 | removed_a |  | accept_removed_becomes_member |  | allow | deny | 400 |  | ❌ |  |
