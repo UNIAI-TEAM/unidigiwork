@@ -57,6 +57,26 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { TenantSwitcher } from "@/components/tenant-switcher";
+import { useAvailableTenants } from "@/features/tenants/hooks";
+
+/**
+ * Batch 1B-UI-FINISH — Tenant switcher slot embedded in AppTopbar.
+ * Single-tenant users see nothing (the strip in _authenticated/route.tsx was
+ * removed to avoid duplicate switchers). Multi-tenant users see the compact
+ * switcher inline. Kept as a small dedicated component to avoid touching the
+ * 1.7k-LOC AppTopbar for anything beyond a single insertion point.
+ */
+function TenantSwitcherSlot() {
+  const list = useAvailableTenants();
+  const count = list.data?.length ?? 0;
+  if (count <= 1) return null;
+  return (
+    <div className="hidden md:block">
+      <TenantSwitcher compact />
+    </div>
+  );
+}
 
 export const avatar = (seed: string) =>
   `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear`;
