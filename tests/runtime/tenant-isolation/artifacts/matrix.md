@@ -1,7 +1,7 @@
 # Batch 1A-R matrix results
 
-Started: 2026-07-26T15:03:42.075Z
-Total: 173. Passed: 173. Failed: 0.
+Started: 2026-07-27T04:20:26.038Z
+Total: 173. Passed: 172. Failed: 1.
 
 | actor | action | table | tenant | expected | actual | http | pass | notes |
 |---|---|---|---|---|---|---|---|---|
@@ -17,7 +17,7 @@ Total: 173. Passed: 173. Failed: 0.
 | anonymous | select | email_states | B | deny | deny | 200 | ✅ |  |
 | anonymous | select | notifications | A | deny | deny | 200 | ✅ |  |
 | anonymous | select | notifications | B | deny | deny | 200 | ✅ |  |
-| anonymous | insert | audit_events |  | deny | deny | 400 | ✅ |  |
+| anonymous | insert | audit_events |  | deny | deny | 401 | ✅ |  |
 | anonymous | insert | outbox_events |  | deny | deny | 400 | ✅ |  |
 | outsider | select | workspaces | A | deny | deny | 200 | ✅ |  |
 | outsider | select | workspaces | B | deny | deny | 200 | ✅ |  |
@@ -177,4 +177,4 @@ Total: 173. Passed: 173. Failed: 0.
 | platform_admin | insert | outbox_events |  | deny | deny | 403 | ✅ |  |
 | owner_a | update | audit_events |  | deny | deny | 200 | ✅ |  |
 | owner_a | delete | audit_events |  | deny | deny | 204 | ✅ |  |
-| server | rpc | claim_outbox_events |  | single-winner | single-winner |  | ✅ |  |
+| server | rpc | claim_outbox_events |  | single-winner | w1=0 w2=0 |  | ❌ |  |

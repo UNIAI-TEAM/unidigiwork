@@ -47,10 +47,11 @@ function cookieOpts() {
 export const listAvailableTenants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AvailableTenantDto[]> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("tenant_members")
       .select("role, status, tenant:tenants(id, name, slug, status)")
+      .eq("user_id", userId)
       .eq("status", "active");
     if (error) throw new ApiError({ code: "IDENTITY_RESOLUTION_FAILED", message: error.message });
     const rows = (data ?? []) as Array<{
@@ -85,6 +86,7 @@ export const getActiveTenant = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("tenant_members")
       .select("role, status, tenant:tenants(id, name, slug, status)")
+      .eq("user_id", userId)
       .eq("status", "active");
     if (error) throw new ApiError({ code: "IDENTITY_RESOLUTION_FAILED", message: error.message });
     const memberships = (data ?? [])
@@ -123,12 +125,13 @@ export const setActiveTenant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SetActiveInput.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     // Re-validate that caller has an active membership on an active tenant.
     const { data: row, error } = await supabase
       .from("tenant_members")
       .select("status, tenant:tenants(id, status)")
       .eq("tenant_id", data.tenantId)
+      .eq("user_id", userId)
       .eq("status", "active")
       .maybeSingle();
     if (error) throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "Cannot resolve tenant" });

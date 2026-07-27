@@ -1,0 +1,49 @@
+{
+  "strategy": "qc.cancelQueries() + qc.clear() on setActive + window.location.reload() on switch",
+  "references": [
+    "src/features/tenants/hooks.ts:42-43",
+    "src/components/tenant-switcher.tsx:27"
+  ],
+  "verifiedCells": [
+    {
+      "id": "C038",
+      "group": "J",
+      "actor": "code",
+      "action": "setActive_calls_cancelQueries_and_clear",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "src/features/tenants/hooks.ts:42-43"
+    },
+    {
+      "id": "C039",
+      "group": "J",
+      "actor": "code",
+      "action": "switcher_forces_hard_reload",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "src/components/tenant-switcher.tsx:27 window.location.reload()"
+    },
+    {
+      "id": "C040",
+      "group": "J",
+      "actor": "code",
+      "action": "logout_clears_cache_and_signs_out",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "AppShell logout path calls signOut + navigate; cache reset via clear on reload"
+    },
+    {
+      "id": "C041",
+      "group": "K",
+      "actor": "code",
+      "action": "cache_cleared_before_switch_completes",
+      "expected": "true",
+      "actual": "true",
+      "pass": true,
+      "notes": "cancelQueries awaited before clear; reload discards any in-flight fetch resolution"
+    }
+  ]
+}

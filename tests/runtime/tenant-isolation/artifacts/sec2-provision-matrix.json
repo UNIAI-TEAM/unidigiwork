@@ -1,5 +1,5 @@
 {
-  "runId": "sec2_2026-07-27T03-52-38-660Z",
+  "runId": "sec2_2026-07-27T04-20-03-763Z",
   "total": 46,
   "passed": 46,
   "failed": 0,
@@ -13,7 +13,7 @@
       "pass": true,
       "http": 200,
       "stable": null,
-      "errMsg": "[{\"tenant_id\":\"eb9e0327-cbf3-4b4a-8f1a-2a5960d7613f\",\"workspace_id\":\"eb9e0327-cbf3-4b4a-8f1a-2a5960d7613f\",\"membership_id\":\"c6951e2c-962a-4546-acf8-73405a63bede\"}]"
+      "errMsg": "[{\"tenant_id\":\"0acdc00e-c427-46e9-8116-3cab80b1af95\",\"workspace_id\":\"0acdc00e-c427-46e9-8116-3cab80b1af95\",\"membership_id\":\"a5b714af-e52b-424c-a9b6-df587955c343\"}]"
     },
     {
       "id": "S002",
@@ -192,12 +192,12 @@
       "actual": "allow",
       "pass": true,
       "r1": {
-        "ok": true,
-        "stable": null
-      },
-      "r2": {
         "ok": false,
         "stable": "IDEMPOTENCY_CONFLICT"
+      },
+      "r2": {
+        "ok": true,
+        "stable": null
       }
     },
     {
@@ -229,7 +229,7 @@
       "stable": "TENANT_SLUG_CONFLICT",
       "errMsg": "TENANT_SLUG_CONFLICT",
       "rn1_ok": true,
-      "rn1_err": "[{\"tenant_id\":\"e5d9f3cb-0d19-4100-8793-2ab05b665267\",\"workspace_id\":\"e5d9f3cb-0d19-4100-8793-2ab05b665267\",\"membership_id\":\"17188203-d967-40a2-a884-251782d6ce80\"}]"
+      "rn1_err": "[{\"tenant_id\":\"c9ca8716-861d-412b-9fd2-ec206af2e315\",\"workspace_id\":\"c9ca8716-861d-412b-9fd2-ec206af2e315\",\"membership_id\":\"ceb77fc7-abae-4557-bde8-cd65e62b93d0\"}]"
     },
     {
       "id": "S022",
@@ -438,8 +438,8 @@
       "expected": "allow",
       "actual": "allow",
       "pass": true,
-      "before": 8,
-      "after": 8
+      "before": 10,
+      "after": 10
     },
     {
       "id": "S045",
