@@ -1,0 +1,66 @@
+[
+  {
+    "id": "S001",
+    "actor": "actor_a",
+    "action": "first_provision",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false,
+    "http": 404,
+    "stable": null
+  },
+  {
+    "id": "S002",
+    "actor": "actor_a",
+    "action": "concurrent_same_key",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false,
+    "okCount": 0,
+    "unique": 0
+  },
+  {
+    "id": "S003",
+    "actor": "actor_a",
+    "action": "concurrent_diff_payload",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false,
+    "r1": {
+      "ok": false,
+      "stable": null
+    },
+    "r2": {
+      "ok": false,
+      "stable": null
+    }
+  },
+  {
+    "id": "S004",
+    "actor": "actor_a",
+    "action": "dup_slug_first",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false,
+    "stable": null
+  },
+  {
+    "id": "S027",
+    "actor": "platform_admin",
+    "action": "provision_for_other_owner",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false,
+    "stable": null,
+    "http": 404
+  },
+  {
+    "id": "S033",
+    "actor": "actor_b",
+    "action": "retry_after_failure",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false,
+    "stable": null
+  }
+]

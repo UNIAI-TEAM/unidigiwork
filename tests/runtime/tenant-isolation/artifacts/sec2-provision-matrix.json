@@ -1,0 +1,316 @@
+{
+  "runId": "sec2_2026-07-27T03-47-23-151Z",
+  "total": 33,
+  "passed": 27,
+  "failed": 6,
+  "results": [
+    {
+      "id": "S001",
+      "actor": "actor_a",
+      "action": "first_provision",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false,
+      "http": 404,
+      "stable": null
+    },
+    {
+      "id": "S002",
+      "actor": "actor_a",
+      "action": "concurrent_same_key",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false,
+      "okCount": 0,
+      "unique": 0
+    },
+    {
+      "id": "S003",
+      "actor": "actor_a",
+      "action": "concurrent_diff_payload",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false,
+      "r1": {
+        "ok": false,
+        "stable": null
+      },
+      "r2": {
+        "ok": false,
+        "stable": null
+      }
+    },
+    {
+      "id": "S004",
+      "actor": "actor_a",
+      "action": "dup_slug_first",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false,
+      "stable": null
+    },
+    {
+      "id": "S005",
+      "actor": "actor_b",
+      "action": "dup_slug_conflict",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": null,
+      "notes": "wrong stable"
+    },
+    {
+      "id": "S006",
+      "actor": "actor_b",
+      "action": "slug_normalized_collision",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": null
+    },
+    {
+      "id": "S007",
+      "actor": "actor_a",
+      "action": "reserved_admin",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S008",
+      "actor": "actor_a",
+      "action": "reserved_api",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S009",
+      "actor": "actor_a",
+      "action": "reserved_app",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S010",
+      "actor": "actor_a",
+      "action": "reserved_auth",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S011",
+      "actor": "actor_a",
+      "action": "reserved_login",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S012",
+      "actor": "actor_a",
+      "action": "reserved_logout",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S013",
+      "actor": "actor_a",
+      "action": "reserved_platform",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S014",
+      "actor": "actor_a",
+      "action": "reserved_system",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S015",
+      "actor": "actor_a",
+      "action": "reserved_support",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S016",
+      "actor": "actor_a",
+      "action": "reserved_www",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "TENANT_SLUG_CONFLICT"
+    },
+    {
+      "id": "S017",
+      "actor": "actor_a",
+      "action": "invalid_slug_empty",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "VALIDATION_FAILED"
+    },
+    {
+      "id": "S018",
+      "actor": "actor_a",
+      "action": "invalid_slug_too_short",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "VALIDATION_FAILED"
+    },
+    {
+      "id": "S019",
+      "actor": "actor_a",
+      "action": "invalid_slug_too_long",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "VALIDATION_FAILED"
+    },
+    {
+      "id": "S020",
+      "actor": "actor_a",
+      "action": "invalid_slug_slash",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": null
+    },
+    {
+      "id": "S021",
+      "actor": "actor_a",
+      "action": "invalid_slug_backslash",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": null
+    },
+    {
+      "id": "S022",
+      "actor": "actor_a",
+      "action": "invalid_slug_ctrl",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": null
+    },
+    {
+      "id": "S023",
+      "actor": "actor_a",
+      "action": "invalid_slug_leading_hyphen",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": null
+    },
+    {
+      "id": "S024",
+      "actor": "actor_a",
+      "action": "owner_spoof_other",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "PERMISSION_DENIED",
+      "notes": "stable OK"
+    },
+    {
+      "id": "S025",
+      "actor": "actor_a",
+      "action": "owner_spoof_no_tenant",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S026",
+      "actor": "actor_a",
+      "action": "owner_unknown",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "PERMISSION_DENIED"
+    },
+    {
+      "id": "S027",
+      "actor": "platform_admin",
+      "action": "provision_for_other_owner",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false,
+      "stable": null,
+      "http": 404
+    },
+    {
+      "id": "S028",
+      "actor": "anonymous",
+      "action": "provision_denied",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": "AUTHENTICATION_REQUIRED",
+      "http": 403
+    },
+    {
+      "id": "S029",
+      "actor": "anonymous",
+      "action": "no_tenant_created",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S030",
+      "actor": "actor_b",
+      "action": "atomic_slug_conflict",
+      "expected": "deny",
+      "actual": "deny",
+      "pass": true,
+      "stable": null
+    },
+    {
+      "id": "S031",
+      "actor": "actor_b",
+      "action": "atomic_no_orphan_member",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true,
+      "before": 0,
+      "after": 0
+    },
+    {
+      "id": "S032",
+      "actor": "actor_b",
+      "action": "atomic_no_success_audit",
+      "expected": "allow",
+      "actual": "allow",
+      "pass": true
+    },
+    {
+      "id": "S033",
+      "actor": "actor_b",
+      "action": "retry_after_failure",
+      "expected": "allow",
+      "actual": "deny",
+      "pass": false,
+      "stable": null
+    }
+  ]
+}
