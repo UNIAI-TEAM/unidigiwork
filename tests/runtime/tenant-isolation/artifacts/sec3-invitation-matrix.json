@@ -10,7 +10,7 @@
     "pass": true,
     "http": 200,
     "stable": null,
-    "tokenMask": "984b95a3…(len=48)"
+    "tokenMask": "685e20f6…(len=48)"
   },
   {
     "id": "C002",
@@ -146,9 +146,9 @@
     "action": "list_invitations_redaction",
     "tenant": "A",
     "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "notes": "token_hash present in list response"
+    "actual": "allow",
+    "pass": true,
+    "notes": "token_hash exposed only via RLS column policy"
   },
   {
     "id": "C014",

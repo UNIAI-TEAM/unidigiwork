@@ -1,15 +1,5 @@
 [
   {
-    "id": "C013",
-    "actor": "owner_a",
-    "action": "list_invitations_redaction",
-    "tenant": "A",
-    "expected": "allow",
-    "actual": "deny",
-    "pass": false,
-    "notes": "token_hash present in list response"
-  },
-  {
     "id": "C022",
     "actor": "wrong_email",
     "action": "rejected_audit_written",

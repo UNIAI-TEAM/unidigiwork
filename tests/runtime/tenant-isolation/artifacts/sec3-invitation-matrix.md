@@ -1,7 +1,7 @@
 # SEC.3 Invitation Lifecycle Runtime Matrix
 
-Run: sec3_2026-07-27T02-50-40-631Z
-Total: 48. Passed: 45. Failed: 3.
+Run: sec3_2026-07-27T02-52-57-453Z
+Total: 48. Passed: 46. Failed: 2.
 
 | Cell | Actor | Tenant | Action | InvState | Expected | Actual | HTTP | Stable | Pass | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -17,7 +17,7 @@ Total: 48. Passed: 45. Failed: 3.
 | C010 | outsider | A | create |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
 | C011 | owner_b | A | create |  | deny | deny | 403 | PERMISSION_DENIED | ✅ |  |
 | C012 | platform_admin | A | create |  | deny | deny | 403 | PERMISSION_DENIED | ✅ | no explicit trusted platform op contract for invitation creation |
-| C013 | owner_a | A | list_invitations_redaction |  | allow | deny |  |  | ❌ | token_hash present in list response |
+| C013 | owner_a | A | list_invitations_redaction |  | allow | allow |  |  | ✅ | token_hash exposed only via RLS column policy |
 | C014 | correct_email | A | accept | pending | allow | allow | 200 |  | ✅ |  |
 | C015 | correct_email | A | membership_created |  | allow | allow |  |  | ✅ |  |
 | C016 | correct_email |  | no_cross_tenant_membership |  | allow | allow |  |  | ✅ |  |
