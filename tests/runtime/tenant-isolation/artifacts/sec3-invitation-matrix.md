@@ -1,6 +1,6 @@
 # SEC.3 Invitation Lifecycle Runtime Matrix
 
-Run: sec3_2026-07-27T03-11-54-693Z
+Run: sec3_2026-07-27T03-13-00-178Z
 Total: 50. Passed: 49. Failed: 1.
 
 | Cell | Actor | Tenant | Action | InvState | Expected | Actual | HTTP | Stable | Pass | Notes |
@@ -29,7 +29,7 @@ Total: 50. Passed: 49. Failed: 1.
 | C022 | wrong_email |  | rejected_audit_written |  | allow | allow |  |  | ✅ | sink1=true sink2=true added=1 |
 | C023 | wrong_email |  | audit_no_email_leak |  | allow | allow |  |  | ✅ |  |
 | C024 | wrong_email |  | rejection_sink_not_public |  | deny | deny | 403 |  | ✅ | record_tenant_invitation_rejection revoked from authenticated |
-| C025 | unconfirmed |  | unconfirm_setup |  | allow | environmental |  |  | ❌ | Supabase admin API kept email_confirmed_at set; unconfirmed cell is environmental. |
+| C025 | unconfirmed |  | unconfirm_setup |  | allow | environmental |  |  | ❌ | column "confirmed_at" can only be updated to DEFAULT |
 | C026 | unconfirmed | A | accept | pending | allow | allow | 200 |  | ✅ | unconfirmed=false |
 | C027 | correct_email | A | accept | expired | deny | deny | 403 | TENANT_INVITATION_EXPIRED | ✅ |  |
 | C028 | correct_email | A | accept | revoked | deny | deny | 403 | TENANT_INVITATION_REVOKED | ✅ |  |

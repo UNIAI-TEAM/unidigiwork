@@ -10,7 +10,7 @@
     "pass": true,
     "http": 200,
     "stable": null,
-    "tokenMask": "31bab1b5…(len=48)"
+    "tokenMask": "8a267725…(len=48)"
   },
   {
     "id": "C002",
@@ -267,7 +267,7 @@
     "expected": "allow",
     "actual": "environmental",
     "pass": false,
-    "notes": "Supabase admin API kept email_confirmed_at set; unconfirmed cell is environmental."
+    "notes": "column \"confirmed_at\" can only be updated to DEFAULT"
   },
   {
     "id": "C026",
