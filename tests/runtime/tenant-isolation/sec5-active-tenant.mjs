@@ -174,10 +174,14 @@ async function svcSetActive(token, tenantId) {
     return { error: "TENANT_ACCESS_DENIED", stable: "TENANT_ACCESS_DENIED", reason: "malformed" };
   }
   const c = actorClient(token);
+  const { data: me } = await c.auth.getUser();
+  const uid = me?.user?.id;
+  if (!uid) return { error: "TENANT_ACCESS_DENIED", stable: "TENANT_ACCESS_DENIED", reason: "no_session" };
   const { data, error } = await c
     .from("tenant_members")
     .select("status, tenant:tenants(id, status)")
     .eq("tenant_id", tenantId)
+    .eq("user_id", uid)
     .eq("status", "active")
     .maybeSingle();
   if (error) return { error: error.message, stable: "TENANT_ACCESS_DENIED" };
