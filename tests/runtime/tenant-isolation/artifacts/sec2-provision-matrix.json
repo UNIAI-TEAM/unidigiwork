@@ -1,5 +1,5 @@
 {
-  "runId": "sec2_2026-07-27T03-49-04-675Z",
+  "runId": "sec2_2026-07-27T03-49-31-915Z",
   "total": 33,
   "passed": 27,
   "failed": 6,
@@ -12,7 +12,8 @@
       "actual": "deny",
       "pass": false,
       "http": 404,
-      "stable": null
+      "stable": null,
+      "errMsg": "function digest(text, unknown) does not exist"
     },
     {
       "id": "S002",
