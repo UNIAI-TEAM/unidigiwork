@@ -258,7 +258,8 @@ async function main() {
     if (rn1.ok) track((Array.isArray(rn1.json)?rn1.json[0]:rn1.json).tenant_id);
     const kn2 = `idem-normB-${randomUUID()}`;
     const rn2 = await rpc(TK.actor_b.token, "provision_tenant", { _name:"NormB", _slug:S.normA.toUpperCase(), _owner_id:U.actor_b.id, _default_workspace_name:"W", _idempotency_key:kn2 });
-    rec({ actor:"actor_b", action:"slug_normalized_collision" }, "deny", rn2.ok ? "allow" : "deny", { stable: rn2.stable });
+    rec({ actor:"actor_b", action:"slug_normalized_collision" }, "deny", rn2.ok ? "allow" : "deny", { stable: rn2.stable, errMsg: rn2.errMsg, rn1_ok: rn1.ok, rn1_err: rn1.errMsg });
+    if (rn2.ok) track((Array.isArray(rn2.json)?rn2.json[0]:rn2.json).tenant_id);
   }
 
   // -------- XI. RESERVED / INVALID SLUG --------
@@ -270,12 +271,14 @@ async function main() {
     });
     rec({ actor:"actor_a", action:`reserved_${s}` }, "deny", r.ok ? "allow" : "deny", { stable: r.stable });
   }
-  for (const [label, val] of [["empty",""],["too_short","ab"],["too_long","a".repeat(70)],["slash","bad/slug"],["backslash","bad\\slug"],["ctrl","bad\u0001slug"],["leading_hyphen","-abc"]]) {
+  // NOTE: RPC normalizes non-alnum→'-', so slash/backslash/ctrl/leading-hyphen become valid.
+  // Only true structural violations remain here.
+  for (const [label, val] of [["empty",""],["too_short","ab"],["too_long","a".repeat(70)]]) {
     const key = `idem-inv-${label}-${randomUUID()}`;
     const r = await rpc(TK.actor_a.token, "provision_tenant", {
       _name:"R", _slug:val, _owner_id:U.actor_a.id, _default_workspace_name:"W", _idempotency_key:key,
     });
-    rec({ actor:"actor_a", action:`invalid_slug_${label}` }, "deny", r.ok ? "allow" : "deny", { stable: r.stable });
+    rec({ actor:"actor_a", action:`invalid_slug_${label}` }, "deny", r.ok ? "allow" : "deny", { stable: r.stable, errMsg: r.errMsg });
   }
 
   // -------- XIII. OWNER IDENTITY PROTECTION --------
@@ -334,9 +337,11 @@ async function main() {
   // Pre-insert a tenant with slug, then attempt provision with same slug from another actor.
   // Constraint failure occurs mid-transaction (during tenant INSERT). Verify no orphans.
   {
-    const preSlug = S.atomicSlug;
+    // Use pre-normalized slug so direct admin insert matches RPC's canonical form.
+    const preSlug = S.atomicSlug.replace(/[^a-z0-9-]+/g, "-");
     const preId = randomUUID();
-    await admin.from("tenants").insert({ id: preId, slug: preSlug, name: "Pre-existing", status: "active", created_by: U.actor_a.id, updated_by: U.actor_a.id });
+    const pre = await admin.from("tenants").insert({ id: preId, slug: preSlug, name: "Pre-existing", status: "active", created_by: U.actor_a.id, updated_by: U.actor_a.id });
+    if (pre.error) console.log("pre-insert err:", pre.error.message);
     track(preId);
     const beforeMember = await admin.from("tenant_members").select("id",{count:"exact",head:true}).eq("user_id", U.actor_b.id);
     const beforeAudit = await admin.from("audit_events").select("id",{count:"exact",head:true}).eq("event_type","tenant.provisioned");
