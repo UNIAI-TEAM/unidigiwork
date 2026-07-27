@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-07-27T05:30:11.361Z",
+  "endedAt": "2026-07-27T05:34:07.562Z",
+  "suites": [
+    {
+      "script": "runner.mjs",
+      "code": 1,
+      "ms": 53113
+    },
+    {
+      "script": "sec2-provisioning.mjs",
+      "code": 0,
+      "ms": 15753
+    },
+    {
+      "script": "sec3-invitations.mjs",
+      "code": 0,
+      "ms": 33117
+    },
+    {
+      "script": "sec5-active-tenant.mjs",
+      "code": 0,
+      "ms": 29003
+    },
+    {
+      "script": "sec6-outbox-stress.mjs",
+      "code": 0,
+      "ms": 105215
+    }
+  ],
+  "failedCount": 1
+}

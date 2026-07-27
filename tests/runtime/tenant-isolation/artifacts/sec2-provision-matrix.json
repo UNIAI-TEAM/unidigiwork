@@ -1,5 +1,5 @@
 {
-  "runId": "sec2_2026-07-27T04-20-03-763Z",
+  "runId": "sec2_2026-07-27T05-31-04-689Z",
   "total": 46,
   "passed": 46,
   "failed": 0,
@@ -13,7 +13,7 @@
       "pass": true,
       "http": 200,
       "stable": null,
-      "errMsg": "[{\"tenant_id\":\"0acdc00e-c427-46e9-8116-3cab80b1af95\",\"workspace_id\":\"0acdc00e-c427-46e9-8116-3cab80b1af95\",\"membership_id\":\"a5b714af-e52b-424c-a9b6-df587955c343\"}]"
+      "errMsg": "[{\"tenant_id\":\"46c2fac6-5c7a-404c-b7e5-b01db2fc1fd0\",\"workspace_id\":\"46c2fac6-5c7a-404c-b7e5-b01db2fc1fd0\",\"membership_id\":\"b78d26dc-902f-45ef-acbc-2cc1b2c74e53\"}]"
     },
     {
       "id": "S002",
@@ -229,7 +229,7 @@
       "stable": "TENANT_SLUG_CONFLICT",
       "errMsg": "TENANT_SLUG_CONFLICT",
       "rn1_ok": true,
-      "rn1_err": "[{\"tenant_id\":\"c9ca8716-861d-412b-9fd2-ec206af2e315\",\"workspace_id\":\"c9ca8716-861d-412b-9fd2-ec206af2e315\",\"membership_id\":\"ceb77fc7-abae-4557-bde8-cd65e62b93d0\"}]"
+      "rn1_err": "[{\"tenant_id\":\"db75c647-2092-48ff-a853-1066f1ee7ebe\",\"workspace_id\":\"db75c647-2092-48ff-a853-1066f1ee7ebe\",\"membership_id\":\"29e528ae-ffcc-4552-a863-1ed369f2cdaf\"}]"
     },
     {
       "id": "S022",
@@ -438,8 +438,8 @@
       "expected": "allow",
       "actual": "allow",
       "pass": true,
-      "before": 10,
-      "after": 10
+      "before": 12,
+      "after": 12
     },
     {
       "id": "S045",
