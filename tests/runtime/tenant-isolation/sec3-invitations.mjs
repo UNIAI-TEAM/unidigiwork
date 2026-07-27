@@ -8,6 +8,7 @@ import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { spawnSync } from "node:child_process";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "artifacts");
@@ -24,6 +25,35 @@ if (!URL_ || !ANON || !SVC) die("missing SUPABASE_URL / PUBLISHABLE / SERVICE ke
 if (ALLOW && !URL_.startsWith(ALLOW)) die("refusing: E2E_1A_ALLOW_URL must prefix SUPABASE_URL");
 
 const admin = createClient(URL_, SVC, { auth: { persistSession: false, autoRefreshToken: false } });
+
+// SEC.4: server-boundary simulation for rejection audit sink.
+// The TanStack server function invokes `record_tenant_invitation_rejection`
+// via service-role after receiving a stable rejection from accept_tenant_invitation.
+// The test mimics that trusted-boundary hop so DB-level guarantees are verified.
+async function serverRecordRejection({ invitationId, actorId, reasonCode, correlationId = null }) {
+  const { error } = await admin.rpc("record_tenant_invitation_rejection", {
+    _invitation_id: invitationId,
+    _actor_id: actorId,
+    _reason_code: reasonCode,
+    _correlation_id: correlationId,
+  });
+  return { ok: !error, error: error?.message };
+}
+
+// SEC.4: unconfirm an auth.users email via direct SQL, since the Supabase
+// admin API does not expose a way to null email_confirmed_at once set.
+function unconfirmAuthUserViaSql(userId) {
+  if (!process.env.PGHOST || !process.env.PGUSER) {
+    return { ok: false, reason: "PG env vars unavailable in test runtime" };
+  }
+  const res = spawnSync(
+    "psql",
+    ["-tAc", `UPDATE auth.users SET email_confirmed_at = NULL, confirmed_at = NULL WHERE id = '${userId}';`],
+    { encoding: "utf-8" }
+  );
+  if (res.status !== 0) return { ok: false, reason: (res.stderr || "").trim().slice(0, 200) };
+  return { ok: true };
+}
 const TAG = "sec3_";
 const RUN_ID = `sec3_${new Date().toISOString().replace(/[:.]/g, "-")}`;
 const mask = (t) => t ? `${t.slice(0, 8)}…(len=${t.length})` : null;
@@ -192,21 +222,9 @@ async function run() {
   // Unconfirmed strategy: sign in while confirmed, then flip email_confirmed_at to null.
   await admin.auth.admin.updateUserById(U.unconfirmed.id, { email_confirm: true });
   TK.unconfirmed = await tokenFor(U.unconfirmed.email);
-  await admin.rpc; // noop
-  const uu = await admin.from("users").select("id").eq("id", U.unconfirmed.id); void uu;
-  // Flip confirmed_at to null via SQL through admin (Supabase JS has no direct field). Use REST.
-  {
-    const r = await fetch(`${URL_}/auth/v1/admin/users/${U.unconfirmed.id}`, {
-      method: "PUT",
-      headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ email_confirm: false }),
-    });
-    if (!r.ok) console.log("  warn: cannot unconfirm via admin:", r.status);
-  }
-  // Fallback: direct SQL update via pg not available in Node; use RPC? None. Try postgres via pgmeta not available.
-  // We rely on the RPC's second check: if email_confirmed_at IS NULL. If admin API refuses to un-confirm,
-  // we simulate by setting the user's email to a *known-unconfirmed* pattern via updateUserById(email_confirm:false)
-  // which some Supabase versions honor. If not, we mark this cell as "environmental" in the matrix.
+  // SEC.4: null out email_confirmed_at via direct SQL so RPC guard fires.
+  const unc = unconfirmAuthUserViaSql(U.unconfirmed.id);
+  if (!unc.ok) console.log("  warn: unconfirm via SQL failed:", unc.reason);
 
   console.log("[sec3] token masks:", Object.fromEntries(Object.entries(TK).map(([k, v]) => [k, v?.token ? mask(v.token) : v?.error])));
 
@@ -315,11 +333,27 @@ async function run() {
   // 2. Wrong email
   {
     const inv = await seedInvitationDirect({ tenantId: tA, email: U.correct_email.email, role: "member", invitedBy: U.owner_a.id });
-    const before = await admin.from("audit_events").select("id").eq("aggregate_id", inv.id).eq("event_type", "tenant.invitation_email_mismatch");
+    const before = await admin
+      .from("audit_events")
+      .select("id")
+      .eq("aggregate_id", inv.id)
+      .eq("event_type", "tenant.invitation_rejected");
     const res = await rpc(TK.wrong_email.token, "accept_tenant_invitation", { _token_hash: inv.hash });
     rec({ actor: "wrong_email", action: "accept", tenant: "A", invState: "pending" }, "deny",
       res.ok ? "allow" : "deny", { http: res.http, stable: res.stable,
         notes: res.stable === "TENANT_INVITATION_EMAIL_MISMATCH" ? "stable OK" : "wrong stable" });
+    // SEC.4: simulate server-boundary rejection audit sink hop.
+    const sink1 = await serverRecordRejection({
+      invitationId: inv.id,
+      actorId: U.wrong_email.id,
+      reasonCode: "TENANT_INVITATION_EMAIL_MISMATCH",
+    });
+    // Idempotent replay — must not create a second audit row.
+    const sink2 = await serverRecordRejection({
+      invitationId: inv.id,
+      actorId: U.wrong_email.id,
+      reasonCode: "TENANT_INVITATION_EMAIL_MISMATCH",
+    });
     // Membership must NOT exist
     const m = await admin.from("tenant_members").select("id").eq("tenant_id", tA).eq("user_id", U.wrong_email.id).maybeSingle();
     rec({ actor: "wrong_email", action: "no_membership_after_mismatch" }, "allow", m.data ? "deny" : "allow");
@@ -327,15 +361,28 @@ async function run() {
     const inv2 = await admin.from("tenant_invitations").select("status,accepted_by").eq("id", inv.id).single();
     rec({ actor: "wrong_email", action: "invitation_unchanged" }, "allow",
       inv2.data?.status === "pending" && inv2.data?.accepted_by === null ? "allow" : "deny");
-    // Rejected audit written, no email leak
-    const after = await admin.from("audit_events").select("payload").eq("aggregate_id", inv.id).eq("event_type", "tenant.invitation_email_mismatch");
-    const gotAudit = (after.data?.length || 0) > (before.data?.length || 0);
-    rec({ actor: "wrong_email", action: "rejected_audit_written" }, "allow", gotAudit ? "allow" : "deny");
+    // Rejected audit written by trusted sink, idempotent, no email leak.
+    const after = await admin
+      .from("audit_events")
+      .select("payload, actor_id, idempotency_key")
+      .eq("aggregate_id", inv.id)
+      .eq("event_type", "tenant.invitation_rejected");
+    const rows = after.data || [];
+    const added = rows.length - (before.data?.length || 0);
+    const gotAudit = added === 1 && sink1.ok && sink2.ok;
+    rec({ actor: "wrong_email", action: "rejected_audit_written" }, "allow", gotAudit ? "allow" : "deny",
+      { notes: `sink1=${sink1.ok} sink2=${sink2.ok} added=${added}` });
     if (gotAudit) {
-      const lastPayload = JSON.stringify(after.data[after.data.length - 1].payload);
+      const lastPayload = JSON.stringify(rows[rows.length - 1].payload);
       const leaks = lastPayload.includes(U.wrong_email.email) || lastPayload.includes(U.correct_email.email);
       rec({ actor: "wrong_email", action: "audit_no_email_leak" }, "allow", leaks ? "deny" : "allow");
     }
+    // Sink must be inaccessible to authenticated callers.
+    const denied = await rpc(TK.wrong_email.token, "record_tenant_invitation_rejection", {
+      _invitation_id: inv.id, _actor_id: U.wrong_email.id, _reason_code: "TENANT_INVITATION_EMAIL_MISMATCH",
+    });
+    rec({ actor: "wrong_email", action: "rejection_sink_not_public" }, "deny",
+      denied.ok ? "allow" : "deny", { http: denied.http, notes: "record_tenant_invitation_rejection revoked from authenticated" });
   }
 
   // 3. Unconfirmed email — flip email_confirmed_at to null via SQL if reachable
