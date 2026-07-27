@@ -1,10 +1,6 @@
 // Blueprint §5, §7 — Tenant domain contracts (Batch 1B).
 import { z } from "zod";
-import type {
-  TenantId,
-  UserId,
-  WorkspaceId,
-} from "../common/ids";
+import type { TenantId, UserId, WorkspaceId } from "../common/ids";
 import type {
   AuditMetadata,
   CommandMetadata,
@@ -13,12 +9,7 @@ import type {
 } from "../common/base";
 
 export type TenantStatus = "active" | "suspended" | "archived";
-export type TenantRole =
-  | "tenant_owner"
-  | "tenant_admin"
-  | "manager"
-  | "member"
-  | "guest";
+export type TenantRole = "tenant_owner" | "tenant_admin" | "manager" | "member" | "guest";
 export type TenantMemberStatus = "active" | "invited" | "suspended" | "removed";
 export type TenantInvitationStatus = "pending" | "accepted" | "expired" | "revoked";
 
@@ -29,20 +20,14 @@ export interface Tenant extends VersionedResource, AuditMetadata {
   status: TenantStatus;
 }
 
-export interface TenantMember
-  extends VersionedResource,
-    TenantScopedResource,
-    AuditMetadata {
+export interface TenantMember extends VersionedResource, TenantScopedResource, AuditMetadata {
   id: string;
   userId: UserId;
   role: TenantRole;
   status: TenantMemberStatus;
 }
 
-export interface TenantInvitation
-  extends VersionedResource,
-    TenantScopedResource,
-    AuditMetadata {
+export interface TenantInvitation extends VersionedResource, TenantScopedResource, AuditMetadata {
   id: string;
   email: string;
   role: TenantRole;
@@ -115,7 +100,11 @@ export const CreateInvitationCommandSchema = z.object({
   tenantId: z.string().uuid(),
   email: z.string().email(),
   role: z.enum(["tenant_admin", "manager", "member", "guest"]),
-  ttlSeconds: z.number().int().min(60).max(60 * 60 * 24 * 14),
+  ttlSeconds: z
+    .number()
+    .int()
+    .min(60)
+    .max(60 * 60 * 24 * 14),
   metadata: z.object({
     idempotencyKey: z.string().min(8),
     correlationId: z.string().optional(),
