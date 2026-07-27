@@ -218,6 +218,8 @@ async function run() {
   // SEC.4: null out email_confirmed_at via guarded test RPC so RPC guard fires.
   const unc = await unconfirmAuthUser(U.unconfirmed.id);
   if (!unc.ok) console.log("  warn: unconfirm via SQL failed:", unc.reason);
+  // Purge any stale membership from prior runs so the "no membership after unconfirmed" assertion is meaningful.
+  await admin.from("tenant_members").delete().eq("user_id", U.unconfirmed.id);
 
   console.log("[sec3] token masks:", Object.fromEntries(Object.entries(TK).map(([k, v]) => [k, v?.token ? mask(v.token) : v?.error])));
 
