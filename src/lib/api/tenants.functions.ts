@@ -173,13 +173,52 @@ export const acceptInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => AcceptInvitationCommandSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const tokenHash = await hashToken(data.token);
     const { data: row, error } = await supabase.rpc("accept_tenant_invitation", {
       _token_hash: tokenHash,
       _correlation_id: data.metadata.correlationId ?? undefined,
     });
-    if (error) mapPgError(error);
+    if (error) {
+      // SEC.4: rejected-attempt audit sink — write via trusted service-role RPC
+      // in a separate transaction so the rejection is persisted after the
+      // accept RPC rolls back with a stable error.
+      const raw = (error.message ?? "").toUpperCase();
+      const rejectionReasons = [
+        "TENANT_INVITATION_EMAIL_MISMATCH",
+        "TENANT_INVITATION_EXPIRED",
+        "TENANT_INVITATION_REVOKED",
+        "TENANT_INVITATION_ALREADY_ACCEPTED",
+        "TENANT_INVITATION_NOT_FOUND",
+        "TENANT_INVALID_TRANSITION",
+      ] as const;
+      const reason = rejectionReasons.find((r) => raw.startsWith(r));
+      if (reason) {
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const invLookup = await supabaseAdmin
+            .from("tenant_invitations")
+            .select("id")
+            .eq("token_hash", tokenHash)
+            .maybeSingle();
+          if (invLookup.data?.id) {
+            const reasonCode =
+              reason === "TENANT_INVALID_TRANSITION"
+                ? "TENANT_INVITATION_MEMBERSHIP_INACTIVE"
+                : reason;
+            await supabaseAdmin.rpc("record_tenant_invitation_rejection", {
+              _invitation_id: invLookup.data.id,
+              _actor_id: userId,
+              _reason_code: reasonCode,
+              _correlation_id: data.metadata.correlationId ?? undefined,
+            });
+          }
+        } catch {
+          // Best-effort audit; never mask the original stable error.
+        }
+      }
+      mapPgError(error);
+    }
     return row;
   });
 
