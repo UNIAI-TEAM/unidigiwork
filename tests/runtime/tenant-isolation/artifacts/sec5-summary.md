@@ -1,8 +1,8 @@
-# SEC.5 Summary (sec5_2026-07-27T04-15-59-045Z)
+# SEC.5 Summary (sec5_2026-07-27T04-18-02-895Z)
 
 ## Verdict
 
-- Runtime cells: **38/47 PASS** (9 FAIL)
+- Runtime cells: **42/47 PASS** (5 FAIL)
 
 ## Active tenant storage strategy
 

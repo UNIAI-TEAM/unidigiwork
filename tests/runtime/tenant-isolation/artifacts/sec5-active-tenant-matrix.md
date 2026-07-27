@@ -1,16 +1,16 @@
-# SEC.5 Active Tenant Runtime Matrix (sec5_2026-07-27T04-15-59-045Z)
+# SEC.5 Active Tenant Runtime Matrix (sec5_2026-07-27T04-18-02-895Z)
 
 - Total: 47
-- Passed: 38
-- Failed: 9
+- Passed: 42
+- Failed: 5
 
 | ID | Group | Actor | Action | Expected | Actual | Notes |
 |---|---|---|---|---|---|---|
-| C001 | A | single_a | no_cookie_auto_select | tenantA | other | multi_tenant_no_hint | ❌
+| C001 | A | single_a | no_cookie_auto_select | tenantA | tenantA |  |
 | C002 | A | single_a | valid_cookie_A | tenantA | tenantA |  |
-| C003 | A | single_a | foreign_cookie_B_falls_back_to_A | tenantA_or_null | other | single-tenant compat: cookie ignored, sole membership auto-selected | ❌
-| C004 | A | single_a | malformed_cookie_ignored | tenantA_or_null | other |  | ❌
-| C005 | A | single_a | nonexistent_cookie_ignored | tenantA_or_null | other |  | ❌
+| C003 | A | single_a | foreign_cookie_B_falls_back_to_A | tenantA_or_null | tenantA_or_null | single-tenant compat: cookie ignored, sole membership auto-selected |
+| C004 | A | single_a | malformed_cookie_ignored | tenantA_or_null | tenantA_or_null |  |
+| C005 | A | single_a | nonexistent_cookie_ignored | tenantA_or_null | tenantA_or_null |  |
 | C006 | A | single_a | setActive_B_denied | deny | deny | TENANT_ACCESS_DENIED |
 | C007 | A | single_a | setActive_random_denied | deny | deny |  |
 | C008 | A | single_a | setActive_malformed_denied | deny | deny | malformed |

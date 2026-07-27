@@ -1,8 +1,8 @@
 {
-  "runId": "sec5_2026-07-27T04-15-59-045Z",
+  "runId": "sec5_2026-07-27T04-18-02-895Z",
   "total": 47,
-  "passed": 38,
-  "failed": 9,
+  "passed": 42,
+  "failed": 5,
   "cells": [
     {
       "id": "C001",
@@ -10,9 +10,8 @@
       "actor": "single_a",
       "action": "no_cookie_auto_select",
       "expected": "tenantA",
-      "actual": "other",
-      "pass": false,
-      "notes": "multi_tenant_no_hint"
+      "actual": "tenantA",
+      "pass": true
     },
     {
       "id": "C002",
@@ -29,8 +28,8 @@
       "actor": "single_a",
       "action": "foreign_cookie_B_falls_back_to_A",
       "expected": "tenantA_or_null",
-      "actual": "other",
-      "pass": false,
+      "actual": "tenantA_or_null",
+      "pass": true,
       "notes": "single-tenant compat: cookie ignored, sole membership auto-selected"
     },
     {
@@ -39,8 +38,8 @@
       "actor": "single_a",
       "action": "malformed_cookie_ignored",
       "expected": "tenantA_or_null",
-      "actual": "other",
-      "pass": false
+      "actual": "tenantA_or_null",
+      "pass": true
     },
     {
       "id": "C005",
@@ -48,8 +47,8 @@
       "actor": "single_a",
       "action": "nonexistent_cookie_ignored",
       "expected": "tenantA_or_null",
-      "actual": "other",
-      "pass": false
+      "actual": "tenantA_or_null",
+      "pass": true
     },
     {
       "id": "C006",
