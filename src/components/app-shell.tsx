@@ -1481,19 +1481,15 @@ export function AppTopbar({
           ⌘K
         </kbd>
       </form>
+      <TenantSwitcherSlot />
       {variant === "meeting" ? (
-        <>
-          <TenantSwitcherSlot />
         <>
           <span className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-medium text-destructive">
             <Circle className="h-2 w-2 fill-current" /> {t("nav.live")}
           </span>
           <span className="hidden font-mono text-sm tabular-nums sm:inline">00:28:45</span>
         </>
-        </>
       ) : (
-        <>
-        <TenantSwitcherSlot />
         <>
           <div className="relative" ref={newRef}>
             <button
