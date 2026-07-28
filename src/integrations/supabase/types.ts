@@ -2010,11 +2010,11 @@ export type Database = {
       }
       advance_workflow_step: {
         Args: {
-          _correlation_id: string
-          _error: string
-          _idempotency_key: string
-          _input: Json
-          _output: Json
+          _correlation_id?: string
+          _error?: string
+          _idempotency_key?: string
+          _input?: Json
+          _output?: Json
           _run_id: string
           _step_key: string
           _to_status: Database["public"]["Enums"]["workflow_step_status"]
@@ -2043,10 +2043,10 @@ export type Database = {
       }
       archive_document: {
         Args: {
-          _correlation_id: string
+          _correlation_id?: string
           _document_id: string
-          _expected_row_version: number
-          _idempotency_key: string
+          _expected_row_version?: number
+          _idempotency_key?: string
         }
         Returns: {
           content: string
@@ -2077,9 +2077,9 @@ export type Database = {
       assign_task: {
         Args: {
           _assignee_id: string
-          _correlation_id: string
-          _idempotency_key: string
-          _role: string
+          _correlation_id?: string
+          _idempotency_key?: string
+          _role?: string
           _task_id: string
         }
         Returns: {
@@ -2110,11 +2110,11 @@ export type Database = {
       }
       cancel_meeting: {
         Args: {
-          _correlation_id: string
-          _expected_row_version: number
-          _idempotency_key: string
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
           _meeting_id: string
-          _reason: string
+          _reason?: string
         }
         Returns: {
           agenda: string | null
@@ -2146,9 +2146,9 @@ export type Database = {
       }
       cancel_workflow_run: {
         Args: {
-          _correlation_id: string
-          _idempotency_key: string
-          _reason: string
+          _correlation_id?: string
+          _idempotency_key?: string
+          _reason?: string
           _run_id: string
         }
         Returns: {
@@ -2319,8 +2319,8 @@ export type Database = {
       comment_task: {
         Args: {
           _body: string
-          _correlation_id: string
-          _idempotency_key: string
+          _correlation_id?: string
+          _idempotency_key?: string
           _task_id: string
         }
         Returns: {
@@ -2348,13 +2348,13 @@ export type Database = {
       }
       create_document: {
         Args: {
-          _correlation_id: string
-          _folder: string
-          _idempotency_key: string
-          _mime_type: string
-          _size_bytes: number
-          _storage_ref: Json
-          _tags: string[]
+          _correlation_id?: string
+          _folder?: string
+          _idempotency_key?: string
+          _mime_type?: string
+          _size_bytes?: number
+          _storage_ref?: Json
+          _tags?: string[]
           _title: string
           _workspace_id: string
         }
@@ -2386,12 +2386,12 @@ export type Database = {
       }
       create_task: {
         Args: {
-          _assignee_id: string
-          _correlation_id: string
-          _description: string
-          _due_at: string
-          _idempotency_key: string
-          _priority: Database["public"]["Enums"]["task_priority"]
+          _assignee_id?: string
+          _correlation_id?: string
+          _description?: string
+          _due_at?: string
+          _idempotency_key?: string
+          _priority?: Database["public"]["Enums"]["task_priority"]
           _title: string
           _workspace_id: string
         }
@@ -2453,39 +2453,73 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_workflow: {
-        Args: {
-          _correlation_id: string
-          _definition: Json
-          _description: string
-          _idempotency_key: string
-          _name: string
-          _workspace_id: string
-        }
-        Returns: {
-          created_at: string
-          created_by: string | null
-          definition: Json
-          deleted_at: string | null
-          description: string | null
-          id: string
-          name: string
-          published_at: string | null
-          row_version: number
-          status: Database["public"]["Enums"]["workflow_status"]
-          tenant_id: string
-          updated_at: string
-          updated_by: string | null
-          version: number
-          workspace_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "workflows"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      create_workflow:
+        | {
+            Args: {
+              _correlation_id?: string
+              _definition: Json
+              _description?: string
+              _idempotency_key?: string
+              _name: string
+              _workspace_id: string
+            }
+            Returns: {
+              created_at: string
+              created_by: string | null
+              definition: Json
+              deleted_at: string | null
+              description: string | null
+              id: string
+              name: string
+              published_at: string | null
+              row_version: number
+              status: Database["public"]["Enums"]["workflow_status"]
+              tenant_id: string
+              updated_at: string
+              updated_by: string | null
+              version: number
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "workflows"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _correlation_id: string
+              _definition: Json
+              _description: string
+              _idempotency_key: string
+              _name: string
+              _workspace_id: string
+            }
+            Returns: {
+              created_at: string
+              created_by: string | null
+              definition: Json
+              deleted_at: string | null
+              description: string | null
+              id: string
+              name: string
+              published_at: string | null
+              row_version: number
+              status: Database["public"]["Enums"]["workflow_status"]
+              tenant_id: string
+              updated_at: string
+              updated_by: string | null
+              version: number
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "workflows"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       current_internal_user_id: { Args: never; Returns: string }
       dblink: { Args: { "": string }; Returns: Record<string, unknown>[] }
       dblink_cancel_query: { Args: { "": string }; Returns: string }
@@ -2579,9 +2613,9 @@ export type Database = {
       }
       publish_workflow: {
         Args: {
-          _correlation_id: string
-          _expected_row_version: number
-          _idempotency_key: string
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
           _workflow_id: string
         }
         Returns: {
@@ -2655,52 +2689,95 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      schedule_meeting: {
-        Args: {
-          _agenda: string
-          _correlation_id: string
-          _end_at: string
-          _idempotency_key: string
-          _location: string
-          _participant_ids: string[]
-          _rrule: string
-          _start_at: string
-          _timezone: string
-          _title: string
-          _workspace_id: string
-        }
-        Returns: {
-          agenda: string | null
-          conference_provider: string | null
-          conference_ref: Json | null
-          created_at: string
-          created_by: string | null
-          deleted_at: string | null
-          end_at: string
-          id: string
-          location: string | null
-          row_version: number
-          rrule: string | null
-          start_at: string
-          status: Database["public"]["Enums"]["meeting_status"]
-          tenant_id: string
-          timezone: string
-          title: string
-          updated_at: string
-          updated_by: string | null
-          workspace_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "meetings"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      schedule_meeting:
+        | {
+            Args: {
+              _agenda: string
+              _correlation_id: string
+              _end_at: string
+              _idempotency_key: string
+              _location: string
+              _participant_ids: string[]
+              _rrule: string
+              _start_at: string
+              _timezone: string
+              _title: string
+              _workspace_id: string
+            }
+            Returns: {
+              agenda: string | null
+              conference_provider: string | null
+              conference_ref: Json | null
+              created_at: string
+              created_by: string | null
+              deleted_at: string | null
+              end_at: string
+              id: string
+              location: string | null
+              row_version: number
+              rrule: string | null
+              start_at: string
+              status: Database["public"]["Enums"]["meeting_status"]
+              tenant_id: string
+              timezone: string
+              title: string
+              updated_at: string
+              updated_by: string | null
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "meetings"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _agenda?: string
+              _correlation_id?: string
+              _end_at: string
+              _idempotency_key?: string
+              _location?: string
+              _participant_ids?: string[]
+              _rrule?: string
+              _start_at: string
+              _timezone?: string
+              _title: string
+              _workspace_id: string
+            }
+            Returns: {
+              agenda: string | null
+              conference_provider: string | null
+              conference_ref: Json | null
+              created_at: string
+              created_by: string | null
+              deleted_at: string | null
+              end_at: string
+              id: string
+              location: string | null
+              row_version: number
+              rrule: string | null
+              start_at: string
+              status: Database["public"]["Enums"]["meeting_status"]
+              tenant_id: string
+              timezone: string
+              title: string
+              updated_at: string
+              updated_by: string | null
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "meetings"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       set_meeting_rsvp: {
         Args: {
-          _correlation_id: string
-          _idempotency_key: string
+          _correlation_id?: string
+          _idempotency_key?: string
           _meeting_id: string
           _rsvp: Database["public"]["Enums"]["meeting_rsvp"]
         }
@@ -2723,9 +2800,9 @@ export type Database = {
       }
       share_document: {
         Args: {
-          _correlation_id: string
+          _correlation_id?: string
           _document_id: string
-          _idempotency_key: string
+          _idempotency_key?: string
           _level: string
           _principal_id: string
           _principal_type: string
@@ -2750,9 +2827,9 @@ export type Database = {
       }
       start_workflow_run: {
         Args: {
-          _context: Json
-          _correlation_id: string
-          _idempotency_key: string
+          _context?: Json
+          _correlation_id?: string
+          _idempotency_key?: string
           _workflow_id: string
         }
         Returns: {
@@ -2787,9 +2864,9 @@ export type Database = {
       }
       transition_task: {
         Args: {
-          _correlation_id: string
-          _expected_row_version: number
-          _idempotency_key: string
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
           _task_id: string
           _to_status: Database["public"]["Enums"]["task_status"]
         }
@@ -2821,13 +2898,13 @@ export type Database = {
       }
       update_document: {
         Args: {
-          _correlation_id: string
+          _correlation_id?: string
           _document_id: string
-          _expected_row_version: number
-          _folder: string
-          _idempotency_key: string
-          _tags: string[]
-          _title: string
+          _expected_row_version?: number
+          _folder?: string
+          _idempotency_key?: string
+          _tags?: string[]
+          _title?: string
         }
         Returns: {
           content: string
@@ -2857,16 +2934,16 @@ export type Database = {
       }
       update_meeting: {
         Args: {
-          _agenda: string
-          _correlation_id: string
-          _end_at: string
-          _expected_row_version: number
-          _idempotency_key: string
-          _location: string
+          _agenda?: string
+          _correlation_id?: string
+          _end_at?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _location?: string
           _meeting_id: string
-          _start_at: string
-          _timezone: string
-          _title: string
+          _start_at?: string
+          _timezone?: string
+          _title?: string
         }
         Returns: {
           agenda: string | null
@@ -2898,14 +2975,14 @@ export type Database = {
       }
       update_task: {
         Args: {
-          _correlation_id: string
-          _description: string
-          _due_at: string
-          _expected_row_version: number
-          _idempotency_key: string
-          _priority: Database["public"]["Enums"]["task_priority"]
+          _correlation_id?: string
+          _description?: string
+          _due_at?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _priority?: Database["public"]["Enums"]["task_priority"]
           _task_id: string
-          _title: string
+          _title?: string
         }
         Returns: {
           completed_at: string | null
@@ -2935,12 +3012,12 @@ export type Database = {
       }
       upload_document_version: {
         Args: {
-          _comment: string
-          _correlation_id: string
+          _comment?: string
+          _correlation_id?: string
           _document_id: string
-          _idempotency_key: string
-          _mime_type: string
-          _size_bytes: number
+          _idempotency_key?: string
+          _mime_type?: string
+          _size_bytes?: number
           _storage_ref: Json
         }
         Returns: {
