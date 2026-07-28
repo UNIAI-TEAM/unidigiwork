@@ -56,6 +56,16 @@ Current debt:
 | File | Reason | Resolved by |
 |---|---|---|
 | `src/routes/_authenticated/documents.tsx` | Direct `supabase.from("documents")` | Batch 1D-API (Documents) |
+| `src/lib/api/admin.functions.ts` | Admin stats `supabase.from("documents")` count | Batch 1D-API (Documents) |
+
+## Server-side scope (src/lib/api, src/server)
+
+Server actions and server functions MUST route domain reads/writes through the
+domain RPCs (SECURITY DEFINER) — never `supabase.from("<domain_table>")` at the
+query builder level. The command lifecycle (quota check, audit, outbox) must
+run inside the RPC transaction (ADR-1D-001 §2.6). The gate covers `src/lib/api/**`
+and `src/server/**` and tracks pre-existing debt in
+`KNOWN_DEBT_SERVER_DIRECT_SUPABASE`.
 
 ## How to fix a violation
 
