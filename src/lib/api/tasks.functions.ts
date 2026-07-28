@@ -47,12 +47,12 @@ export const createTask = createServerFn({ method: "POST" })
     const res = await context.supabase.rpc("create_task", {
       _workspace_id: data.workspaceId,
       _title: data.title,
-      _description: data.description ?? null,
+      _description: data.description ?? undefined,
       _priority: data.priority,
-      _due_at: data.dueAt ?? null,
-      _assignee_id: data.assigneeId ?? null,
+      _due_at: data.dueAt ?? undefined,
+      _assignee_id: data.assigneeId ?? undefined,
       _idempotency_key: data.idempotencyKey,
-      _correlation_id: data.correlationId ?? null,
+      _correlation_id: data.correlationId ?? undefined,
     });
     return ensureOk(res, "TASK_NOT_FOUND");
   });
@@ -72,13 +72,13 @@ export const updateTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("update_task", {
       _task_id: data.taskId,
-      _title: data.title ?? null,
-      _description: data.description ?? null,
-      _priority: data.priority ?? null,
-      _due_at: data.dueAt ?? null,
-      _expected_row_version: data.expectedRowVersion ?? null,
+      _title: data.title ?? undefined,
+      _description: data.description ?? undefined,
+      _priority: data.priority ?? undefined,
+      _due_at: data.dueAt ?? undefined,
+      _expected_row_version: data.expectedRowVersion ?? undefined,
       _idempotency_key: data.idempotencyKey,
-      _correlation_id: data.correlationId ?? null,
+      _correlation_id: data.correlationId ?? undefined,
     });
     return ensureOk(res, "TASK_NOT_FOUND");
   });
@@ -96,9 +96,9 @@ export const transitionTask = createServerFn({ method: "POST" })
     const res = await context.supabase.rpc("transition_task", {
       _task_id: data.taskId,
       _to_status: data.toStatus,
-      _expected_row_version: data.expectedRowVersion ?? null,
+      _expected_row_version: data.expectedRowVersion ?? undefined,
       _idempotency_key: data.idempotencyKey,
-      _correlation_id: data.correlationId ?? null,
+      _correlation_id: data.correlationId ?? undefined,
     });
     return ensureOk(res, "TASK_NOT_FOUND");
   });
@@ -119,7 +119,7 @@ export const assignTask = createServerFn({ method: "POST" })
       _assignee_id: data.assigneeId,
       _role: data.role,
       _idempotency_key: data.idempotencyKey,
-      _correlation_id: data.correlationId ?? null,
+      _correlation_id: data.correlationId ?? undefined,
     });
     return ensureOk(res, "TASK_NOT_FOUND");
   });
@@ -138,7 +138,7 @@ export const commentTask = createServerFn({ method: "POST" })
       _task_id: data.taskId,
       _body: data.body,
       _idempotency_key: data.idempotencyKey,
-      _correlation_id: data.correlationId ?? null,
+      _correlation_id: data.correlationId ?? undefined,
     });
     return ensureOk(res, "TASK_NOT_FOUND");
   });
