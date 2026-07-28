@@ -409,6 +409,48 @@ export type Database = {
           },
         ]
       }
+      entitlements: {
+        Row: {
+          enabled: boolean
+          feature_key: string
+          quota_limit: number | null
+          source: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature_key: string
+          quota_limit?: number | null
+          source?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          feature_key?: string
+          quota_limit?: number | null
+          source?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlements_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "entitlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_identities: {
         Row: {
           created_at: string
@@ -446,6 +488,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      features: {
+        Row: {
+          category: string
+          created_at: string
+          key: string
+          kind: string
+          name: string
+          sort_order: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          key: string
+          kind: string
+          name: string
+          sort_order?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          key?: string
+          kind?: string
+          name?: string
+          sort_order?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_preferences: {
         Row: {
@@ -660,6 +735,84 @@ export type Database = {
           },
         ]
       }
+      plan_features: {
+        Row: {
+          enabled: boolean
+          feature_key: string
+          plan_id: string
+          quota_limit: number | null
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature_key: string
+          plan_id: string
+          quota_limit?: number | null
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          feature_key?: string
+          plan_id?: string
+          quota_limit?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "plan_features_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          row_version: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          row_version?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          row_version?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -680,6 +833,78 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at: string | null
+          canceled_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          period_end: string | null
+          period_start: string
+          plan_id: string
+          provider: string
+          provider_ref: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cancel_at?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          period_end?: string | null
+          period_start?: string
+          plan_id: string
+          provider?: string
+          provider_ref?: string | null
+          row_version?: number
+          status: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cancel_at?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          period_end?: string | null
+          period_start?: string
+          plan_id?: string
+          provider?: string
+          provider_ref?: string | null
+          row_version?: number
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenant_invitations: {
         Row: {
@@ -876,6 +1101,108 @@ export type Database = {
           },
         ]
       }
+      usage_counters: {
+        Row: {
+          meter_key: string
+          period_end: string | null
+          period_start: string
+          row_version: number
+          tenant_id: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          meter_key: string
+          period_end?: string | null
+          period_start: string
+          row_version?: number
+          tenant_id: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          meter_key?: string
+          period_end?: string | null
+          period_start?: string
+          row_version?: number
+          tenant_id?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_counters_meter_key_fkey"
+            columns: ["meter_key"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "usage_counters_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usage_events: {
+        Row: {
+          actor_id: string | null
+          correlation_id: string | null
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          metadata: Json
+          meter_key: string
+          occurred_at: string
+          quantity: number
+          tenant_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json
+          meter_key: string
+          occurred_at?: string
+          quantity: number
+          tenant_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json
+          meter_key?: string
+          occurred_at?: string
+          quantity?: number
+          tenant_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_events_meter_key_fkey"
+            columns: ["meter_key"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "usage_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1040,6 +1367,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      change_subscription: {
+        Args: {
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _plan_code: string
+          _tenant_id: string
+        }
+        Returns: {
+          cancel_at: string | null
+          canceled_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          period_end: string | null
+          period_start: string
+          plan_id: string
+          provider: string
+          provider_ref: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       change_tenant_member_role: {
         Args: {
           _correlation_id?: string
@@ -1116,6 +1476,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      check_quota: {
+        Args: { _delta?: number; _meter_key: string; _tenant_id: string }
+        Returns: boolean
       }
       claim_outbox_events: {
         Args: { _batch?: number; _lease_seconds?: number; _worker: string }
@@ -1254,6 +1618,10 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      provision_default_subscription: {
+        Args: { _actor: string; _tenant_id: string }
+        Returns: string
+      }
       provision_tenant: {
         Args: {
           _correlation_id?: string
@@ -1278,6 +1646,19 @@ export type Database = {
         }
         Returns: string
       }
+      record_usage: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _metadata?: Json
+          _meter_key: string
+          _quantity: number
+          _tenant_id: string
+          _workspace_id?: string
+        }
+        Returns: string
+      }
+      refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }
         Returns: {
