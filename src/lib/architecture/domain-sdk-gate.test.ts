@@ -84,7 +84,93 @@ const KNOWN_DEBT_DIRECT_SUPABASE: Record<string, string> = {
   "src/routes/_authenticated/documents.tsx": "BATCH_1D_DOCS",
 };
 
-const KNOWN_DEBT_INLINE_MOCK: Record<string, string> = {};
+const KNOWN_DEBT_INLINE_MOCK: Record<string, string> = {
+  // `initialTasks` — Kanban seed; refactor to sdk/tasks in Batch 1D-API.
+  "src/routes/tasks.tsx": "BATCH_1D_TASKS",
+  // STOS workspace demo fixtures — refactor to sdk/* in Batch 1D-API.
+  "src/routes/_authenticated/workspace.$id.stos.tsx": "BATCH_1D_TASKS",
+};
+
+/**
+ * Files with pre-existing inline domain fixtures (typed arrays / suspicious
+ * naming) that predate the SDK gate. New violations MUST fail — refactor to
+ * `@/sdk/*` instead of extending this list.
+ */
+const KNOWN_DEBT_INLINE_FIXTURE: Record<string, string> = {
+  // Kanban seed data — refactor to sdk/tasks in Batch 1D-API.
+  "src/routes/tasks.tsx": "BATCH_1D_TASKS",
+};
+
+/**
+ * Faker / mock-data libraries banned from client bundles for the four domains.
+ * Any import of these packages in a client-reachable file fails the gate.
+ */
+const FORBIDDEN_MOCK_LIBS = [
+  "@faker-js/faker",
+  "faker",
+  "@ngneat/falso",
+  "chance",
+  "casual",
+  "@mockoon/commons",
+  "mockjs",
+  "json-server",
+];
+
+// Domain TypeScript types owned by the four bounded contexts. Any client-file
+// declaration typed as one of these + assigned an array/object literal is an
+// inline fixture (bypasses `@/sdk/*`).
+const DOMAIN_TYPES = [
+  "Task",
+  "Tasks",
+  "TaskAssignment",
+  "TaskComment",
+  "TaskAttachment",
+  "Document",
+  "Documents",
+  "DocumentVersion",
+  "DocumentPermission",
+  "Meeting",
+  "Meetings",
+  "MeetingParticipant",
+  "MeetingRecording",
+  "Workflow",
+  "Workflows",
+  "WorkflowRun",
+  "WorkflowStep",
+  "WorkflowStepRun",
+];
+
+// Suspicious variable-name prefixes/roots that almost always indicate a
+// hand-rolled fixture when paired with a domain noun.
+const FIXTURE_NAME_ROOTS = [
+  "mock",
+  "fake",
+  "demo",
+  "sample",
+  "seed",
+  "stub",
+  "dummy",
+  "fixture",
+  "example",
+  "hardcoded",
+  "initial",
+  "default",
+  "placeholder",
+  "test",
+];
+const DOMAIN_NOUNS = [
+  "Tasks?",
+  "Documents?",
+  "Docs?",
+  "Meetings?",
+  "Workflows?",
+  "WorkflowRuns?",
+  "WorkflowSteps?",
+  "Participants?",
+  "Assignments?",
+  "Comments?",
+  "Attachments?",
+];
 
 /**
  * Server-side debt: files under src/lib/api or src/server that still hit
@@ -129,9 +215,20 @@ describe("domain SDK enforcement gate", () => {
   it("client-reachable files do not declare inline mock domain data", () => {
     const newViolations: string[] = [];
     const seen = new Set<string>();
-    // const MOCK_TASKS = [...], let FAKE_DOCS = ..., const mockMeetings = ...
-    const mockPattern =
-      /\b(?:const|let|var)\s+(MOCK_[A-Z_]+|FAKE_[A-Z_]+|DEMO_[A-Z_]+_DATA|mock(?:Tasks?|Documents?|Docs?|Meetings?|Workflows?|WorkflowRuns?)[A-Za-z]*)\b/;
+    // Catches: MOCK_/FAKE_/DEMO_/SAMPLE_/SEED_/STUB_/DUMMY_/FIXTURE_ constants,
+    // plus camelCase like mockTasks, fakeDocs, sampleMeetings, seedWorkflows,
+    // initialTasks, defaultDocuments, placeholderMeetings, etc. Case-insensitive.
+    const upperPrefix = FIXTURE_NAME_ROOTS.map((r) => r.toUpperCase()).join("|");
+    const camelPrefix = FIXTURE_NAME_ROOTS.join("|");
+    const nouns = DOMAIN_NOUNS.join("|");
+    const mockPattern = new RegExp(
+      `\\b(?:const|let|var)\\s+(` +
+        `(?:${upperPrefix})_[A-Z0-9_]*(?:${DOMAIN_NOUNS.join("|")
+          .replace(/\?/g, "")
+          .toUpperCase()})[A-Z0-9_]*` +
+        `|(?:${camelPrefix})(?:${nouns})[A-Za-z0-9]*` +
+        `)\\b`,
+    );
 
     for (const f of files) {
       if (!isClientReachable(f)) continue;
@@ -144,6 +241,95 @@ describe("domain SDK enforcement gate", () => {
     }
 
     expect(newViolations, "inline mock/fake domain data forbidden — call @/sdk/*").toEqual([]);
+  });
+
+  it("client-reachable files do not declare domain-typed inline fixtures", () => {
+    const newViolations: string[] = [];
+    const paidDebt: string[] = [];
+    const seen = new Set<string>();
+
+    // Matches: `const foo: Task[] = [`, `let bar: Readonly<Document[]> = [`,
+    //          `const x: Array<Meeting> = [`, `const y: Workflow = {`.
+    // The RHS must be a literal (`[` or `{`) — call expressions like
+    // `= useQuery(...)` or `= fromSdk(...)` are allowed.
+    const typedFixture = new RegExp(
+      `\\b(?:const|let|var)\\s+\\w+\\s*:\\s*` +
+        `(?:Readonly<\\s*)?(?:Array<\\s*)?` +
+        `(${DOMAIN_TYPES.join("|")})` +
+        `(?:\\s*>)?(?:\\[\\])?(?:\\s*>)?\\s*=\\s*[\\[\\{]`,
+    );
+
+    for (const f of files) {
+      if (!isClientReachable(f)) continue;
+      if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
+      const src = read(f);
+      if (!typedFixture.test(src)) continue;
+      const key = rel(f);
+      seen.add(key);
+      if (!(key in KNOWN_DEBT_INLINE_FIXTURE)) newViolations.push(key);
+    }
+
+    for (const key of Object.keys(KNOWN_DEBT_INLINE_FIXTURE)) {
+      if (!seen.has(key)) paidDebt.push(key);
+    }
+
+    expect(
+      newViolations,
+      "domain-typed inline fixtures forbidden — hydrate via @/sdk/* or a loader",
+    ).toEqual([]);
+    expect(
+      paidDebt,
+      "KNOWN_DEBT_INLINE_FIXTURE entries no longer violate — remove them",
+    ).toEqual([]);
+  });
+
+  it("client-reachable files do not import faker / mock-data libraries", () => {
+    const violations: string[] = [];
+    const libPattern = new RegExp(
+      `from\\s+['"](${FORBIDDEN_MOCK_LIBS.map((l) => l.replace(/[/@-]/g, "\\$&")).join("|")})['"]`,
+    );
+    for (const f of files) {
+      if (!isClientReachable(f)) continue;
+      if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
+      const src = read(f);
+      if (libPattern.test(src)) violations.push(rel(f));
+    }
+    expect(
+      violations,
+      `faker/mock-data libs are forbidden in client bundles: ${FORBIDDEN_MOCK_LIBS.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("client-reachable files do not carry fixture-tagged domain blocks", () => {
+    // Comments like `// mock data`, `// fake tasks`, `// seed documents`,
+    // `// hardcoded meetings`, `// TODO replace with API` immediately followed
+    // (within 5 lines) by a reference to a domain table/type indicate an
+    // inline fixture even if the variable name is neutral (e.g. `data`).
+    const commentTag =
+      /\/\/\s*(?:@?(?:mock|fake|demo|sample|seed|stub|dummy|fixture|hardcoded|placeholder|todo[:\s].*replace|replace\s+with\s+api)\b)/i;
+    const domainRef = new RegExp(
+      `\\b(${[...DOMAIN_TABLES, ...DOMAIN_TYPES].join("|")})\\b`,
+    );
+    const violations: string[] = [];
+    for (const f of files) {
+      if (!isClientReachable(f)) continue;
+      if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
+      const key = rel(f);
+      if (key in KNOWN_DEBT_INLINE_FIXTURE) continue;
+      const lines = read(f).split("\n");
+      for (let i = 0; i < lines.length; i++) {
+        if (!commentTag.test(lines[i])) continue;
+        const window = lines.slice(i, Math.min(i + 6, lines.length)).join("\n");
+        if (domainRef.test(window)) {
+          violations.push(`${key}:${i + 1}`);
+          break;
+        }
+      }
+    }
+    expect(
+      violations,
+      "fixture-tagged comments next to domain refs — remove hand-rolled data, call @/sdk/*",
+    ).toEqual([]);
   });
 
   it("SDK barrel exposes each of the four business domains", () => {
