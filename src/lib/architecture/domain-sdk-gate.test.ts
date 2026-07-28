@@ -84,7 +84,12 @@ const KNOWN_DEBT_DIRECT_SUPABASE: Record<string, string> = {
   "src/routes/_authenticated/documents.tsx": "BATCH_1D_DOCS",
 };
 
-const KNOWN_DEBT_INLINE_MOCK: Record<string, string> = {};
+const KNOWN_DEBT_INLINE_MOCK: Record<string, string> = {
+  // `initialTasks` — Kanban seed; refactor to sdk/tasks in Batch 1D-API.
+  "src/routes/tasks.tsx": "BATCH_1D_TASKS",
+  // STOS workspace demo fixtures — refactor to sdk/* in Batch 1D-API.
+  "src/routes/_authenticated/workspace.$id.stos.tsx": "BATCH_1D_TASKS",
+};
 
 /**
  * Files with pre-existing inline domain fixtures (typed arrays / suspicious
