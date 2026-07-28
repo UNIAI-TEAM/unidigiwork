@@ -1,0 +1,33 @@
+{
+  "$schema": "./domain-sdk-debt.schema.json",
+  "description": "Whitelist of pre-existing Domain SDK Gate violations. Keyed by rule → file path → ticket ID. New violations MUST NOT be added — fix the code instead. Remove entries as tickets land (the gate fails when a whitelisted file no longer violates, so debt cannot silently linger).",
+  "tickets": {
+    "BATCH_1D_DOCS": {
+      "title": "Documents domain SDK migration",
+      "owner": "@uniwork/docs",
+      "targetBatch": "1D-API"
+    },
+    "BATCH_1D_TASKS": {
+      "title": "Tasks domain SDK migration (Kanban + STOS)",
+      "owner": "@uniwork/tasks",
+      "targetBatch": "1D-API"
+    }
+  },
+  "waivers": {
+    "client-supabase-from-domain": {
+      "src/routes/_authenticated/documents.tsx": "BATCH_1D_DOCS"
+    },
+    "server-supabase-from-domain": {
+      "src/lib/api/admin.functions.ts": "BATCH_1D_DOCS"
+    },
+    "inline-mock-name": {
+      "src/routes/tasks.tsx": "BATCH_1D_TASKS",
+      "src/routes/_authenticated/workspace.$id.stos.tsx": "BATCH_1D_TASKS"
+    },
+    "typed-inline-fixture": {
+      "src/routes/tasks.tsx": "BATCH_1D_TASKS"
+    },
+    "forbidden-mock-lib-import": {},
+    "fixture-tagged-comment": {}
+  }
+}

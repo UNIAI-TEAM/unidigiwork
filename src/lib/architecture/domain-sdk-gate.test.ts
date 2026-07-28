@@ -18,6 +18,23 @@ import { join, relative } from "node:path";
 
 const SRC = join(process.cwd(), "src");
 
+// ---------------------------------------------------------------------------
+// Debt manifest — externalized whitelist keyed by rule → file → ticket.
+// Update `docs/architecture/ci/domain-sdk-debt.manifest.json` (not this file)
+// when a refactor is accepted. Every ticket referenced in `waivers` must be
+// declared under `tickets` so ownership stays traceable.
+// ---------------------------------------------------------------------------
+type DebtManifest = {
+  tickets: Record<string, { title: string; owner: string; targetBatch: string }>;
+  waivers: Record<string, Record<string, string>>;
+};
+const MANIFEST_PATH = join(
+  process.cwd(),
+  "docs/architecture/ci/domain-sdk-debt.manifest.json",
+);
+const MANIFEST: DebtManifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
+const waiver = (rule: string): Record<string, string> => MANIFEST.waivers[rule] ?? {};
+
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -150,27 +167,9 @@ const DOMAIN_TABLES = [
  * Every entry MUST reference a follow-up ticket / batch that will remove it.
  * Do NOT add new entries — refactor to `@/sdk/*` instead.
  */
-const KNOWN_DEBT_DIRECT_SUPABASE: Record<string, string> = {
-  // Refactor scheduled in Batch 1D-API (Documents domain).
-  "src/routes/_authenticated/documents.tsx": "BATCH_1D_DOCS",
-};
-
-const KNOWN_DEBT_INLINE_MOCK: Record<string, string> = {
-  // `initialTasks` — Kanban seed; refactor to sdk/tasks in Batch 1D-API.
-  "src/routes/tasks.tsx": "BATCH_1D_TASKS",
-  // STOS workspace demo fixtures — refactor to sdk/* in Batch 1D-API.
-  "src/routes/_authenticated/workspace.$id.stos.tsx": "BATCH_1D_TASKS",
-};
-
-/**
- * Files with pre-existing inline domain fixtures (typed arrays / suspicious
- * naming) that predate the SDK gate. New violations MUST fail — refactor to
- * `@/sdk/*` instead of extending this list.
- */
-const KNOWN_DEBT_INLINE_FIXTURE: Record<string, string> = {
-  // Kanban seed data — refactor to sdk/tasks in Batch 1D-API.
-  "src/routes/tasks.tsx": "BATCH_1D_TASKS",
-};
+const KNOWN_DEBT_DIRECT_SUPABASE = waiver("client-supabase-from-domain");
+const KNOWN_DEBT_INLINE_MOCK = waiver("inline-mock-name");
+const KNOWN_DEBT_INLINE_FIXTURE = waiver("typed-inline-fixture");
 
 /**
  * Faker / mock-data libraries banned from client bundles for the four domains.
@@ -248,12 +247,18 @@ const DOMAIN_NOUNS = [
  * domain tables via the query builder instead of a domain RPC. Empty today
  * because Batch 1D-DB hasn't landed; keep it empty going forward.
  */
-const KNOWN_DEBT_SERVER_DIRECT_SUPABASE: Record<string, string> = {
-  // Admin stats count on `documents` — refactor to domain RPC in Batch 1D-API.
-  "src/lib/api/admin.functions.ts": "BATCH_1D_DOCS",
-};
+const KNOWN_DEBT_SERVER_DIRECT_SUPABASE = waiver("server-supabase-from-domain");
 
 describe("domain SDK enforcement gate", () => {
+  it("debt manifest — every waived ticket is declared in tickets{}", () => {
+    const declared = new Set(Object.keys(MANIFEST.tickets));
+    const referenced = new Set<string>();
+    for (const rule of Object.values(MANIFEST.waivers))
+      for (const ticket of Object.values(rule)) referenced.add(ticket);
+    const undeclared = [...referenced].filter((t) => !declared.has(t));
+    expect(undeclared, "waivers reference tickets missing from tickets{}").toEqual([]);
+  });
+
   it("client-reachable files do not read/write domain tables via supabase.from()", () => {
     const newViolations: string[] = [];
     const paidDebt: string[] = [];
