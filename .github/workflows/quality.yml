@@ -5,8 +5,20 @@ on:
   pull_request:
 
 jobs:
+  domain-sdk-gate:
+    name: Domain SDK Enforcement Gate (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - name: Enforce Domain SDK boundaries (Blueprint §25 + ADR-1D-001)
+        run: bun run test:domain-sdk
+
   verify:
     runs-on: ubuntu-latest
+    needs: [domain-sdk-gate]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -19,5 +31,6 @@ jobs:
       - run: bun run test:architecture
       - run: bun run test:tenant
       - run: bun run test:rls
+      - run: bun run test:domain-sdk
       - run: bun run test
       - run: bun run build
