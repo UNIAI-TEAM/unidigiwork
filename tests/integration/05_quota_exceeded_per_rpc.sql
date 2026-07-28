@@ -73,10 +73,12 @@ DO $$
 DECLARE _did uuid; _err text; _ref jsonb := '{"bucket":"docs","path":"x"}'::jsonb;
 BEGIN
   SELECT id INTO _did FROM _doc;
+  -- delta = new - current. v1: +1024 (total 1024), v2: +1024 (total 2048)
   PERFORM public.upload_document_version(_did, _ref, 'text/plain', 1024, 'v1', 'qx-v-1', NULL);
-  PERFORM public.upload_document_version(_did, _ref, 'text/plain', 1024, 'v2', 'qx-v-2', NULL);
+  PERFORM public.upload_document_version(_did, _ref, 'text/plain', 2048, 'v2', 'qx-v-2', NULL);
   BEGIN
-    PERFORM public.upload_document_version(_did, _ref, 'text/plain', 1, 'v3', 'qx-v-3', NULL);
+    -- v3: delta = 4096-2048 = +2048 → cumulative 4096 > 2048 limit
+    PERFORM public.upload_document_version(_did, _ref, 'text/plain', 4096, 'v3', 'qx-v-3', NULL);
     RAISE EXCEPTION 'FAIL upload_document_version: accepted upload past 2048-byte limit';
   EXCEPTION WHEN OTHERS THEN
     _err := SQLERRM;
