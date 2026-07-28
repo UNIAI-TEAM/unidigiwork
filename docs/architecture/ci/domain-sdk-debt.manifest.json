@@ -28,6 +28,7 @@
       "src/routes/tasks.tsx": "BATCH_1D_TASKS"
     },
     "forbidden-mock-lib-import": {},
-    "fixture-tagged-comment": {}
+    "fixture-tagged-comment": {},
+    "nonsrc-mock-data": {}
   }
 }
