@@ -3,6 +3,7 @@
 import { z } from "zod";
 import type { TenantId, UserId } from "../common/ids";
 import type { CommandMetadata, VersionedResource, TenantScopedResource, AuditMetadata } from "../common/base";
+import { commandMetadataSchema } from "../common/base";
 
 // -------- Feature catalog (global) --------
 export type FeatureKind = "flag" | "quota";
@@ -81,11 +82,7 @@ export interface EntitlementSnapshotDto {
 export const ChangeSubscriptionCommandSchema = z.object({
   tenantId: z.string().uuid(),
   planCode: z.string().min(1).max(64),
-  metadata: z.object({
-    idempotencyKey: z.string().min(1),
-    correlationId: z.string().optional(),
-    expectedRowVersion: z.number().int().nonnegative().optional(),
-  }),
+  metadata: commandMetadataSchema,
 });
 export type ChangeSubscriptionCommand = z.infer<typeof ChangeSubscriptionCommandSchema>;
 
@@ -94,10 +91,7 @@ export const RecordUsageCommandSchema = z.object({
   meterKey: z.string().min(1).max(128),
   quantity: z.number().int().positive(),
   workspaceId: z.string().uuid().optional(),
-  metadata: z.object({
-    idempotencyKey: z.string().min(1),
-    correlationId: z.string().optional(),
-  }),
+  metadata: commandMetadataSchema.pick({ idempotencyKey: true, correlationId: true }),
   extra: z.record(z.unknown()).optional(),
 });
 export type RecordUsageCommand = z.infer<typeof RecordUsageCommandSchema>;

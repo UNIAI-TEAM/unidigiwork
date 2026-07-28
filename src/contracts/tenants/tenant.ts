@@ -7,6 +7,7 @@ import type {
   TenantScopedResource,
   VersionedResource,
 } from "../common/base";
+import { commandMetadataSchema, optionalCommandMetadataSchema } from "../common/base";
 
 export type TenantStatus = "active" | "suspended" | "archived";
 export type TenantRole = "tenant_owner" | "tenant_admin" | "manager" | "member" | "guest";
@@ -47,10 +48,7 @@ export const ProvisionTenantCommandSchema = z.object({
   name: z.string().min(2).max(120),
   slug: z.string().regex(SLUG_PATTERN),
   defaultWorkspaceName: z.string().min(2).max(120),
-  metadata: z.object({
-    idempotencyKey: z.string().min(8),
-    correlationId: z.string().optional(),
-  }),
+  metadata: commandMetadataSchema,
 });
 export type ProvisionTenantCommand = z.infer<typeof ProvisionTenantCommandSchema>;
 
@@ -63,13 +61,7 @@ export interface ProvisionTenantResult {
 export const ChangeTenantStatusCommandSchema = z.object({
   tenantId: z.string().uuid(),
   newStatus: z.enum(["active", "suspended", "archived"]),
-  metadata: z
-    .object({
-      idempotencyKey: z.string().min(8).optional(),
-      correlationId: z.string().optional(),
-      expectedRowVersion: z.number().int().nonnegative().optional(),
-    })
-    .optional(),
+  metadata: optionalCommandMetadataSchema.optional(),
 });
 export type ChangeTenantStatusCommand = z.infer<typeof ChangeTenantStatusCommandSchema>;
 
@@ -105,19 +97,13 @@ export const CreateInvitationCommandSchema = z.object({
     .int()
     .min(60)
     .max(60 * 60 * 24 * 14),
-  metadata: z.object({
-    idempotencyKey: z.string().min(8),
-    correlationId: z.string().optional(),
-  }),
+  metadata: commandMetadataSchema,
 });
 export type CreateInvitationCommand = z.infer<typeof CreateInvitationCommandSchema>;
 
 export const AcceptInvitationCommandSchema = z.object({
   token: z.string().min(16),
-  metadata: z.object({
-    idempotencyKey: z.string().min(8),
-    correlationId: z.string().optional(),
-  }),
+  metadata: commandMetadataSchema,
 });
 export type AcceptInvitationCommand = z.infer<typeof AcceptInvitationCommandSchema>;
 

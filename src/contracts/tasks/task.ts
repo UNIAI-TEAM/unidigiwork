@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { TaskId, TenantId, WorkspaceId, UserId } from "../common/ids";
 import type { CommandMetadata } from "../common/base";
+import { commandMetadataSchema } from "../common/base";
 
 export type TaskStatus = "todo" | "in_progress" | "blocked" | "done" | "cancelled";
 
@@ -29,9 +30,7 @@ export interface AssignTaskCommand extends CommandMetadata {
 export type CompleteTaskCommand = CommandMetadata;
 
 export const CreateTaskCommandSchema = z.object({
-  idempotencyKey: z.string().min(1),
-  correlationId: z.string().optional(),
-  expectedRowVersion: z.number().int().nonnegative().optional(),
+  ...commandMetadataSchema.shape,
   workspaceId: z.string().uuid(),
   title: z.string().min(1).max(500),
   description: z.string().max(10000).optional(),
@@ -39,8 +38,6 @@ export const CreateTaskCommandSchema = z.object({
 });
 
 export const AssignTaskCommandSchema = z.object({
-  idempotencyKey: z.string().min(1),
-  correlationId: z.string().optional(),
-  expectedRowVersion: z.number().int().nonnegative().optional(),
+  ...commandMetadataSchema.shape,
   assigneeId: z.string().uuid(),
 });
