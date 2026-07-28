@@ -1967,6 +1967,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _emit_outbox_event: {
+        Args: {
+          _aggregate_id: string
+          _aggregate_type: string
+          _correlation_id?: string
+          _event_type: string
+          _idempotency_key?: string
+          _payload: Json
+          _tenant_id: string
+        }
+        Returns: string
+      }
+      _resolve_workspace_tenant: {
+        Args: { _workspace_id: string }
+        Returns: string
+      }
       _test_unconfirm_auth_email: {
         Args: { _user_id: string }
         Returns: boolean
@@ -1988,6 +2004,171 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "tenant_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      advance_workflow_step: {
+        Args: {
+          _correlation_id?: string
+          _error?: string
+          _idempotency_key?: string
+          _input?: Json
+          _output?: Json
+          _run_id: string
+          _step_key: string
+          _to_status: Database["public"]["Enums"]["workflow_step_status"]
+        }
+        Returns: {
+          created_at: string
+          ended_at: string | null
+          error: string | null
+          id: string
+          input: Json
+          output: Json | null
+          row_version: number
+          run_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_step_status"]
+          step_key: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflow_steps"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      archive_document: {
+        Args: {
+          _correlation_id?: string
+          _document_id: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          created_by: string | null
+          current_version: number
+          deleted_at: string | null
+          folder: string
+          id: string
+          mime_type: string | null
+          row_version: number
+          size_bytes: number | null
+          storage_ref: Json | null
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_task: {
+        Args: {
+          _assignee_id: string
+          _correlation_id?: string
+          _idempotency_key?: string
+          _role?: string
+          _task_id: string
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_meeting: {
+        Args: {
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _meeting_id: string
+          _reason?: string
+        }
+        Returns: {
+          agenda: string | null
+          conference_provider: string | null
+          conference_ref: Json | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          end_at: string
+          id: string
+          location: string | null
+          row_version: number
+          rrule: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_workflow_run: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _reason?: string
+          _run_id: string
+        }
+        Returns: {
+          context: Json
+          correlation_id: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          row_version: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          tenant_id: string
+          triggered_by: string | null
+          updated_at: string
+          workflow_id: string
+          workflow_version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflow_runs"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2135,9 +2316,110 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      comment_task: {
+        Args: {
+          _body: string
+          _correlation_id?: string
+          _idempotency_key?: string
+          _task_id: string
+        }
+        Returns: {
+          author_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          row_version: number
+          task_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "task_comments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       complete_outbox_event: {
         Args: { _id: string; _worker: string }
         Returns: boolean
+      }
+      create_document: {
+        Args: {
+          _correlation_id?: string
+          _folder?: string
+          _idempotency_key?: string
+          _mime_type?: string
+          _size_bytes?: number
+          _storage_ref?: Json
+          _tags?: string[]
+          _title: string
+          _workspace_id: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          created_by: string | null
+          current_version: number
+          deleted_at: string | null
+          folder: string
+          id: string
+          mime_type: string | null
+          row_version: number
+          size_bytes: number | null
+          storage_ref: Json | null
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_task: {
+        Args: {
+          _assignee_id?: string
+          _correlation_id?: string
+          _description?: string
+          _due_at?: string
+          _idempotency_key?: string
+          _priority?: Database["public"]["Enums"]["task_priority"]
+          _title: string
+          _workspace_id: string
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_tenant_invitation: {
         Args: {
@@ -2171,6 +2453,73 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_workflow:
+        | {
+            Args: {
+              _correlation_id?: string
+              _definition: Json
+              _description?: string
+              _idempotency_key?: string
+              _name: string
+              _workspace_id: string
+            }
+            Returns: {
+              created_at: string
+              created_by: string | null
+              definition: Json
+              deleted_at: string | null
+              description: string | null
+              id: string
+              name: string
+              published_at: string | null
+              row_version: number
+              status: Database["public"]["Enums"]["workflow_status"]
+              tenant_id: string
+              updated_at: string
+              updated_by: string | null
+              version: number
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "workflows"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _correlation_id: string
+              _definition: Json
+              _description: string
+              _idempotency_key: string
+              _name: string
+              _workspace_id: string
+            }
+            Returns: {
+              created_at: string
+              created_by: string | null
+              definition: Json
+              deleted_at: string | null
+              description: string | null
+              id: string
+              name: string
+              published_at: string | null
+              row_version: number
+              status: Database["public"]["Enums"]["workflow_status"]
+              tenant_id: string
+              updated_at: string
+              updated_by: string | null
+              version: number
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "workflows"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       current_internal_user_id: { Args: never; Returns: string }
       dblink: { Args: { "": string }; Returns: Record<string, unknown>[] }
       dblink_cancel_query: { Args: { "": string }; Returns: string }
@@ -2262,6 +2611,37 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      publish_workflow: {
+        Args: {
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _workflow_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          published_at: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["workflow_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflows"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_tenant_invitation_rejection: {
         Args: {
           _actor_id: string
@@ -2309,6 +2689,171 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      schedule_meeting:
+        | {
+            Args: {
+              _agenda: string
+              _correlation_id: string
+              _end_at: string
+              _idempotency_key: string
+              _location: string
+              _participant_ids: string[]
+              _rrule: string
+              _start_at: string
+              _timezone: string
+              _title: string
+              _workspace_id: string
+            }
+            Returns: {
+              agenda: string | null
+              conference_provider: string | null
+              conference_ref: Json | null
+              created_at: string
+              created_by: string | null
+              deleted_at: string | null
+              end_at: string
+              id: string
+              location: string | null
+              row_version: number
+              rrule: string | null
+              start_at: string
+              status: Database["public"]["Enums"]["meeting_status"]
+              tenant_id: string
+              timezone: string
+              title: string
+              updated_at: string
+              updated_by: string | null
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "meetings"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _agenda?: string
+              _correlation_id?: string
+              _end_at: string
+              _idempotency_key?: string
+              _location?: string
+              _participant_ids?: string[]
+              _rrule?: string
+              _start_at: string
+              _timezone?: string
+              _title: string
+              _workspace_id: string
+            }
+            Returns: {
+              agenda: string | null
+              conference_provider: string | null
+              conference_ref: Json | null
+              created_at: string
+              created_by: string | null
+              deleted_at: string | null
+              end_at: string
+              id: string
+              location: string | null
+              row_version: number
+              rrule: string | null
+              start_at: string
+              status: Database["public"]["Enums"]["meeting_status"]
+              tenant_id: string
+              timezone: string
+              title: string
+              updated_at: string
+              updated_by: string | null
+              workspace_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "meetings"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      set_meeting_rsvp: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _meeting_id: string
+          _rsvp: Database["public"]["Enums"]["meeting_rsvp"]
+        }
+        Returns: {
+          created_at: string
+          meeting_id: string
+          role: string
+          rsvp: Database["public"]["Enums"]["meeting_rsvp"]
+          rsvp_at: string | null
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      share_document: {
+        Args: {
+          _correlation_id?: string
+          _document_id: string
+          _idempotency_key?: string
+          _level: string
+          _principal_id: string
+          _principal_type: string
+        }
+        Returns: {
+          created_at: string
+          document_id: string
+          granted_by: string | null
+          id: string
+          level: string
+          principal_id: string
+          principal_type: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "document_permissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      start_workflow_run: {
+        Args: {
+          _context?: Json
+          _correlation_id?: string
+          _idempotency_key?: string
+          _workflow_id: string
+        }
+        Returns: {
+          context: Json
+          correlation_id: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          row_version: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          tenant_id: string
+          triggered_by: string | null
+          updated_at: string
+          workflow_id: string
+          workflow_version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflow_runs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       transfer_tenant_ownership: {
         Args: {
           _correlation_id?: string
@@ -2316,6 +2861,183 @@ export type Database = {
           _tenant_id: string
         }
         Returns: undefined
+      }
+      transition_task: {
+        Args: {
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _task_id: string
+          _to_status: Database["public"]["Enums"]["task_status"]
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_document: {
+        Args: {
+          _correlation_id?: string
+          _document_id: string
+          _expected_row_version?: number
+          _folder?: string
+          _idempotency_key?: string
+          _tags?: string[]
+          _title?: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          created_by: string | null
+          current_version: number
+          deleted_at: string | null
+          folder: string
+          id: string
+          mime_type: string | null
+          row_version: number
+          size_bytes: number | null
+          storage_ref: Json | null
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_meeting: {
+        Args: {
+          _agenda?: string
+          _correlation_id?: string
+          _end_at?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _location?: string
+          _meeting_id: string
+          _start_at?: string
+          _timezone?: string
+          _title?: string
+        }
+        Returns: {
+          agenda: string | null
+          conference_provider: string | null
+          conference_ref: Json | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          end_at: string
+          id: string
+          location: string | null
+          row_version: number
+          rrule: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_task: {
+        Args: {
+          _correlation_id?: string
+          _description?: string
+          _due_at?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _priority?: Database["public"]["Enums"]["task_priority"]
+          _task_id: string
+          _title?: string
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upload_document_version: {
+        Args: {
+          _comment?: string
+          _correlation_id?: string
+          _document_id: string
+          _idempotency_key?: string
+          _mime_type?: string
+          _size_bytes?: number
+          _storage_ref: Json
+        }
+        Returns: {
+          author_id: string | null
+          comment: string | null
+          created_at: string
+          document_id: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_ref: Json | null
+          tenant_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "document_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
