@@ -222,8 +222,8 @@ export const changeSubscription = createServerFn({ method: "POST" })
       _tenant_id: data.tenantId,
       _plan_code: data.planCode,
       _idempotency_key: data.metadata.idempotencyKey,
-      _correlation_id: data.metadata.correlationId ?? null,
-      _expected_row_version: data.metadata.expectedRowVersion ?? null,
+      _correlation_id: data.metadata.correlationId ?? undefined,
+      _expected_row_version: data.metadata.expectedRowVersion ?? undefined,
     });
     if (error) mapPgError(error);
     return { ok: true as const, subscriptionId: (row as { id?: string } | null)?.id ?? null };
