@@ -39,6 +39,7 @@ BEGIN
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
   LEFT JOIN pg_policy p ON p.polrelid = c.oid
   WHERE n.nspname='public' AND c.relkind='r' AND c.relrowsecurity=true
+    AND c.relname <> 'outbox_events'  -- intentionally locked; accessed only via SECURITY DEFINER RPCs
   GROUP BY c.relname
   HAVING count(p.polname) = 0;
   IF _bad IS NOT NULL THEN
