@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { DocumentId, TenantId, WorkspaceId, UserId } from "../common/ids";
 import type { CommandMetadata, StorageObjectRef } from "../common/base";
+import { commandMetadataSchema } from "../common/base";
 
 export interface DocumentDto {
   id: DocumentId;
@@ -29,9 +30,7 @@ export interface UpdateDocumentCommand extends CommandMetadata {
 export type DeleteDocumentCommand = CommandMetadata;
 
 export const CreateDocumentCommandSchema = z.object({
-  idempotencyKey: z.string().min(1),
-  correlationId: z.string().optional(),
-  expectedRowVersion: z.number().int().nonnegative().optional(),
+  ...commandMetadataSchema.shape,
   workspaceId: z.string().uuid(),
   title: z.string().min(1).max(500),
   storageRef: z

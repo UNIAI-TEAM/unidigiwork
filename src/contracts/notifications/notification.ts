@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { NotificationId, TenantId, UserId } from "../common/ids";
 import type { CommandMetadata } from "../common/base";
+import { commandMetadataSchema } from "../common/base";
 
 export type NotificationScope = "platform" | "identity" | "tenant";
 
@@ -28,8 +29,6 @@ export interface MarkNotificationReadCommand extends CommandMetadata {
 }
 
 export const MarkNotificationReadCommandSchema = z.object({
-  idempotencyKey: z.string().min(1),
-  correlationId: z.string().optional(),
-  expectedRowVersion: z.number().int().nonnegative().optional(),
+  ...commandMetadataSchema.shape,
   notificationId: z.string().uuid(),
 });
