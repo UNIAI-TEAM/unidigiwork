@@ -179,7 +179,7 @@ BEGIN
     'tasks.active',
     'documents.storage_bytes',
     'meetings.scheduled_per_month',
-    'workflows.active',
+    'workflows.runs_per_month',
     'member.count',
     'workspace.count'
   ]) AS k
@@ -190,7 +190,7 @@ BEGIN
 
   SELECT string_agg(k, ', ') INTO _bad
   FROM unnest(ARRAY[
-    'tasks.active','documents.storage_bytes','meetings.scheduled_per_month','workflows.active'
+    'tasks.active','documents.storage_bytes','meetings.scheduled_per_month','workflows.runs_per_month'
   ]) AS k
   WHERE NOT EXISTS (
     SELECT 1 FROM public.plan_features pf
