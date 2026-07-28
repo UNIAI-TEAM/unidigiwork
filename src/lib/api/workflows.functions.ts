@@ -41,7 +41,7 @@ export const createWorkflow = createServerFn({ method: "POST" })
     const res = await context.supabase.rpc("create_workflow", {
       _workspace_id: data.workspaceId,
       _name: data.name,
-      _definition: data.definition,
+      _definition: data.definition as never,
       _description: data.description ?? undefined,
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
@@ -79,7 +79,7 @@ export const startWorkflowRun = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("start_workflow_run", {
       _workflow_id: data.workflowId,
-      _context: data.context,
+      _context: data.context as never,
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
     });
@@ -104,8 +104,8 @@ export const advanceWorkflowStep = createServerFn({ method: "POST" })
       _run_id: data.runId,
       _step_key: data.stepKey,
       _to_status: data.toStatus,
-      _input: data.input,
-      _output: data.output ?? undefined,
+      _input: data.input as never,
+      _output: (data.output ?? undefined) as never,
       _error: data.error ?? undefined,
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
