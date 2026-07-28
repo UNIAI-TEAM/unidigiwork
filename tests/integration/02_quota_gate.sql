@@ -15,10 +15,7 @@ SELECT * FROM public.provision_tenant(
   :OWNER_A::uuid, 'WS-Q');
 
 -- entitlement: tasks.active limit = 2
-INSERT INTO public.entitlements(tenant_id, feature_key, enabled, quota_limit, source)
-SELECT tenant_id, 'tasks.active', true, 2, 'test' FROM _t
-ON CONFLICT (tenant_id, feature_key)
-DO UPDATE SET enabled=true, quota_limit=2;
+SELECT public._test_seed_entitlement(tenant_id, 'tasks.active', true, 2) FROM _t;
 
 -- ---- assertion 1: first two create_task calls succeed ----------------------
 DO $$
@@ -65,8 +62,7 @@ BEGIN
 END $$;
 
 -- ---- assertion 4: disabled entitlement blocks any creation -----------------
-UPDATE public.entitlements SET enabled=false
- WHERE tenant_id=(SELECT tenant_id FROM _t) AND feature_key='tasks.active';
+SELECT public._test_seed_entitlement(tenant_id, 'tasks.active', false, 2) FROM _t;
 
 DO $$
 DECLARE _ok boolean;
@@ -77,8 +73,7 @@ BEGIN
 END $$;
 
 -- ---- assertion 5: NULL limit = unlimited -----------------------------------
-UPDATE public.entitlements SET enabled=true, quota_limit=NULL
- WHERE tenant_id=(SELECT tenant_id FROM _t) AND feature_key='tasks.active';
+SELECT public._test_seed_entitlement(tenant_id, 'tasks.active', true, NULL) FROM _t;
 
 DO $$
 DECLARE _ok boolean;
