@@ -3,7 +3,7 @@ import type {
   DocumentId,
   CreateDocumentCommand,
   UpdateDocumentCommand,
-  DeleteDocumentCommand,
+  ArchiveDocumentCommand,
   WorkspaceId,
 } from "@/contracts";
 import { ApiError } from "@/contracts/errors";
@@ -14,7 +14,7 @@ export interface DocumentApi {
   getById(id: DocumentId): Promise<DocumentDto>;
   create(command: CreateDocumentCommand): Promise<DocumentDto>;
   update(id: DocumentId, command: UpdateDocumentCommand): Promise<DocumentDto>;
-  remove(id: DocumentId, command: DeleteDocumentCommand): Promise<void>;
+  archive(id: DocumentId, command: ArchiveDocumentCommand): Promise<void>;
 }
 
 // Phase 0: existing UI still uses direct Supabase reads for documents;
@@ -35,7 +35,7 @@ const lovableDocumentApi: DocumentApi = {
   async update() {
     throw new ApiError({ code: "NOT_IMPLEMENTED", message: "Deferred to Phase 2." });
   },
-  async remove() {
+  async archive() {
     throw new ApiError({ code: "NOT_IMPLEMENTED", message: "Deferred to Phase 2." });
   },
 };

@@ -1,7 +1,7 @@
 import type {
   MeetingDto,
   MeetingId,
-  CreateMeetingCommand,
+  ScheduleMeetingCommand,
   JoinMeetingTokenRequest,
   JoinMeetingTokenResponse,
 } from "@/contracts";
@@ -10,7 +10,7 @@ import { assertJavaConfigured, resolveBackendProvider } from "../core/provider";
 
 export interface MeetingApi {
   getById(id: MeetingId): Promise<MeetingDto>;
-  create(command: CreateMeetingCommand): Promise<MeetingDto>;
+  schedule(command: ScheduleMeetingCommand): Promise<MeetingDto>;
   requestJoinToken(
     meetingId: MeetingId,
     input: JoinMeetingTokenRequest,
@@ -28,7 +28,7 @@ const lovableMeetingApi: MeetingApi = {
   async getById() {
     return notImplemented();
   },
-  async create() {
+  async schedule() {
     return notImplemented();
   },
   async requestJoinToken() {
