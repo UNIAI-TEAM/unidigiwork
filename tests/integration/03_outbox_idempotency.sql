@@ -15,9 +15,7 @@ SELECT * FROM public.provision_tenant(
   'itest_outbox', 'itest-outbox-'||substr(md5(random()::text),1,10),
   :OWNER_A::uuid, 'WS-O');
 
-INSERT INTO public.entitlements(tenant_id, feature_key, enabled, quota_limit, source)
-SELECT tenant_id, 'tasks.active', true, 100, 'test' FROM _t
-ON CONFLICT (tenant_id, feature_key) DO UPDATE SET enabled=true, quota_limit=100;
+SELECT public._test_seed_entitlement(tenant_id, 'tasks.active', true, 100) FROM _t;
 
 -- ---- assertion 1: _emit_outbox_event dedupes on idempotency_key ------------
 DO $$
