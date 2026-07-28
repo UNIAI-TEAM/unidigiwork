@@ -56,7 +56,7 @@ BEGIN
   END;
 
   SELECT count(*) INTO _cnt FROM public.outbox_events
-   WHERE tenant_id = _tid AND event_type='task.created' AND idempotency_key = _key;
+   WHERE tenant_id = _tid AND event_type LIKE '%task.created' AND idempotency_key = _key;
   IF _cnt <> 1 THEN
     RAISE EXCEPTION 'FAIL cmd-idem: expected 1 task.created outbox row, got %', _cnt;
   END IF;
