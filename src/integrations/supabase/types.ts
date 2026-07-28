@@ -137,14 +137,125 @@ export type Database = {
           },
         ]
       }
+      document_permissions: {
+        Row: {
+          created_at: string
+          document_id: string
+          granted_by: string | null
+          id: string
+          level: string
+          principal_id: string
+          principal_type: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          granted_by?: string | null
+          id?: string
+          level: string
+          principal_id: string
+          principal_type: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          granted_by?: string | null
+          id?: string
+          level?: string
+          principal_id?: string
+          principal_type?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_permissions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          author_id: string | null
+          comment: string | null
+          created_at: string
+          document_id: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_ref: Json | null
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          author_id?: string | null
+          comment?: string | null
+          created_at?: string
+          document_id: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_ref?: Json | null
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          author_id?: string | null
+          comment?: string | null
+          created_at?: string
+          document_id?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_ref?: Json | null
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           content: string
           created_at: string
+          created_by: string | null
+          current_version: number
           deleted_at: string | null
           folder: string
           id: string
+          mime_type: string | null
           row_version: number
+          size_bytes: number | null
+          storage_ref: Json | null
+          tags: string[]
           tenant_id: string
           title: string
           updated_at: string
@@ -154,10 +265,16 @@ export type Database = {
         Insert: {
           content?: string
           created_at?: string
+          created_by?: string | null
+          current_version?: number
           deleted_at?: string | null
           folder?: string
           id?: string
+          mime_type?: string | null
           row_version?: number
+          size_bytes?: number | null
+          storage_ref?: Json | null
+          tags?: string[]
           tenant_id: string
           title: string
           updated_at?: string
@@ -167,10 +284,16 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          created_by?: string | null
+          current_version?: number
           deleted_at?: string | null
           folder?: string
           id?: string
+          mime_type?: string | null
           row_version?: number
+          size_bytes?: number | null
+          storage_ref?: Json | null
+          tags?: string[]
           tenant_id?: string
           title?: string
           updated_at?: string
@@ -521,6 +644,135 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      meeting_participants: {
+        Row: {
+          created_at: string
+          meeting_id: string
+          role: string
+          rsvp: Database["public"]["Enums"]["meeting_rsvp"]
+          rsvp_at: string | null
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          meeting_id: string
+          role?: string
+          rsvp?: Database["public"]["Enums"]["meeting_rsvp"]
+          rsvp_at?: string | null
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          meeting_id?: string
+          role?: string
+          rsvp?: Database["public"]["Enums"]["meeting_rsvp"]
+          rsvp_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          agenda: string | null
+          conference_provider: string | null
+          conference_ref: Json | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          end_at: string
+          id: string
+          location: string | null
+          row_version: number
+          rrule: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          agenda?: string | null
+          conference_provider?: string | null
+          conference_ref?: Json | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          end_at: string
+          id?: string
+          location?: string | null
+          row_version?: number
+          rrule?: string | null
+          start_at: string
+          status?: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          agenda?: string | null
+          conference_provider?: string | null
+          conference_ref?: Json | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          end_at?: string
+          id?: string
+          location?: string | null
+          row_version?: number
+          rrule?: string | null
+          start_at?: string
+          status?: Database["public"]["Enums"]["meeting_status"]
+          tenant_id?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_preferences: {
         Row: {
@@ -906,6 +1158,184 @@ export type Database = {
           },
         ]
       }
+      task_assignees: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          role: string
+          task_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          role?: string
+          task_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          role?: string
+          task_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          row_version: number
+          task_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          row_version?: number
+          task_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          row_version?: number
+          task_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_comments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          parent_task_id?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
+          row_version?: number
+          status?: Database["public"]["Enums"]["task_status"]
+          tenant_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          parent_task_id?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
+          row_version?: number
+          status?: Database["public"]["Enums"]["task_status"]
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_invitations: {
         Row: {
           accepted_at: string | null
@@ -1253,6 +1683,201 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      workflow_runs: {
+        Row: {
+          context: Json
+          correlation_id: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          row_version: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          tenant_id: string
+          triggered_by: string | null
+          updated_at: string
+          workflow_id: string
+          workflow_version: number
+        }
+        Insert: {
+          context?: Json
+          correlation_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          row_version?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          tenant_id: string
+          triggered_by?: string | null
+          updated_at?: string
+          workflow_id: string
+          workflow_version: number
+        }
+        Update: {
+          context?: Json
+          correlation_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          row_version?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          tenant_id?: string
+          triggered_by?: string | null
+          updated_at?: string
+          workflow_id?: string
+          workflow_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_steps: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          error: string | null
+          id: string
+          input: Json
+          output: Json | null
+          row_version: number
+          run_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_step_status"]
+          step_key: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          error?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          row_version?: number
+          run_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_step_status"]
+          step_key: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          error?: string | null
+          id?: string
+          input?: Json
+          output?: Json | null
+          row_version?: number
+          run_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_step_status"]
+          step_key?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_steps_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_steps_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflows: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          published_at: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["workflow_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          published_at?: string | null
+          row_version?: number
+          status?: Database["public"]["Enums"]["workflow_status"]
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          published_at?: string | null
+          row_version?: number
+          status?: Database["public"]["Enums"]["workflow_status"]
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflows_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflows_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_members: {
         Row: {
@@ -1695,6 +2320,10 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      meeting_rsvp: "pending" | "accepted" | "declined" | "tentative"
+      meeting_status: "scheduled" | "live" | "ended" | "canceled"
+      task_priority: "low" | "normal" | "high" | "urgent"
+      task_status: "todo" | "in_progress" | "blocked" | "done" | "canceled"
       tenant_member_status: "active" | "invited" | "suspended" | "removed"
       tenant_role:
         | "tenant_owner"
@@ -1702,6 +2331,19 @@ export type Database = {
         | "manager"
         | "member"
         | "guest"
+      workflow_run_status:
+        | "pending"
+        | "running"
+        | "succeeded"
+        | "failed"
+        | "canceled"
+      workflow_status: "draft" | "published" | "archived"
+      workflow_step_status:
+        | "pending"
+        | "running"
+        | "succeeded"
+        | "failed"
+        | "skipped"
     }
     CompositeTypes: {
       dblink_pkey_results: {
@@ -1833,6 +2475,10 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      meeting_rsvp: ["pending", "accepted", "declined", "tentative"],
+      meeting_status: ["scheduled", "live", "ended", "canceled"],
+      task_priority: ["low", "normal", "high", "urgent"],
+      task_status: ["todo", "in_progress", "blocked", "done", "canceled"],
       tenant_member_status: ["active", "invited", "suspended", "removed"],
       tenant_role: [
         "tenant_owner",
@@ -1840,6 +2486,21 @@ export const Constants = {
         "manager",
         "member",
         "guest",
+      ],
+      workflow_run_status: [
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "canceled",
+      ],
+      workflow_status: ["draft", "published", "archived"],
+      workflow_step_status: [
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "skipped",
       ],
     },
   },
