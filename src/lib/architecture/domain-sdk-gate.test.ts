@@ -91,7 +91,10 @@ const KNOWN_DEBT_INLINE_MOCK: Record<string, string> = {};
  * domain tables via the query builder instead of a domain RPC. Empty today
  * because Batch 1D-DB hasn't landed; keep it empty going forward.
  */
-const KNOWN_DEBT_SERVER_DIRECT_SUPABASE: Record<string, string> = {};
+const KNOWN_DEBT_SERVER_DIRECT_SUPABASE: Record<string, string> = {
+  // Admin stats count on `documents` — refactor to domain RPC in Batch 1D-API.
+  "src/lib/api/admin.functions.ts": "BATCH_1D_DOCS",
+};
 
 describe("domain SDK enforcement gate", () => {
   it("client-reachable files do not read/write domain tables via supabase.from()", () => {
