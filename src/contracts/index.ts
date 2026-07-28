@@ -8,3 +8,4 @@ export * from "./documents/document";
 export * from "./notifications/notification";
 export * from "./tenants/tenant";
 export * from "./billing/plan";
+export * from "./workflows/workflow";
