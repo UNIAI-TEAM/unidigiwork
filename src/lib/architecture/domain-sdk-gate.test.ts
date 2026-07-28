@@ -14,7 +14,7 @@
  */
 import { afterAll, describe, it, expect } from "vitest";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { join, relative } from "node:path";
 
 const SRC = join(process.cwd(), "src");
 
