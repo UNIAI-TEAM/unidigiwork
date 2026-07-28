@@ -30,10 +30,14 @@ INSERT INTO _ctx SELECT 'A', tenant_id, workspace_id FROM _t OFFSET 0 LIMIT 1;
 INSERT INTO _ctx SELECT 'B', tenant_id, workspace_id FROM _t OFFSET 1 LIMIT 1;
 
 -- seed entitlements so create_task passes quota gate
-INSERT INTO public.entitlements(tenant_id, feature_key, enabled, quota_limit, source)
-SELECT tenant_id, 'tasks.active', true, 100, 'test' FROM _ctx
-ON CONFLICT (tenant_id, feature_key)
-DO UPDATE SET enabled=EXCLUDED.enabled, quota_limit=EXCLUDED.quota_limit;
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub', :OWNER_A, 'role','authenticated')::text, true);
+SELECT public._test_seed_entitlement(tenant_id, 'tasks.active', true, 100)
+  FROM _ctx WHERE label='A';
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub', :OWNER_B, 'role','authenticated')::text, true);
+SELECT public._test_seed_entitlement(tenant_id, 'tasks.active', true, 100)
+  FROM _ctx WHERE label='B';
 
 -- ---- owner A creates a task in tenant A ------------------------------------
 SELECT set_config('request.jwt.claims',
