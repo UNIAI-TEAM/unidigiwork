@@ -42,6 +42,16 @@ function isClientReachable(path: string): boolean {
   );
 }
 
+// Server-side surfaces that MUST route domain mutations/reads through the
+// domain RPCs (SECURITY DEFINER) — not raw `supabase.from(<domain_table>)`.
+// ADR-1D-001 §2.6: command lifecycle owns quota, audit, outbox in one tx.
+// Applies to `src/lib/api/**` (server functions) and `src/server/**`
+// (server actions / route server handlers).
+function isServerActionSurface(path: string): boolean {
+  const r = rel(path);
+  return r.startsWith("src/lib/api/") || r.startsWith("src/server/");
+}
+
 // Domain tables owned by the four business bounded contexts (ADR-1D-001 §1).
 const DOMAIN_TABLES = [
   // Tasks
@@ -75,6 +85,16 @@ const KNOWN_DEBT_DIRECT_SUPABASE: Record<string, string> = {
 };
 
 const KNOWN_DEBT_INLINE_MOCK: Record<string, string> = {};
+
+/**
+ * Server-side debt: files under src/lib/api or src/server that still hit
+ * domain tables via the query builder instead of a domain RPC. Empty today
+ * because Batch 1D-DB hasn't landed; keep it empty going forward.
+ */
+const KNOWN_DEBT_SERVER_DIRECT_SUPABASE: Record<string, string> = {
+  // Admin stats count on `documents` — refactor to domain RPC in Batch 1D-API.
+  "src/lib/api/admin.functions.ts": "BATCH_1D_DOCS",
+};
 
 describe("domain SDK enforcement gate", () => {
   it("client-reachable files do not read/write domain tables via supabase.from()", () => {
@@ -134,5 +154,41 @@ describe("domain SDK enforcement gate", () => {
       );
     }
     // Workflow SDK is scheduled for Batch 1D-API; add re-export when created.
+  });
+
+  it("server actions (src/lib/api, src/server) do not query domain tables outside a domain RPC", () => {
+    const newViolations: string[] = [];
+    const paidDebt: string[] = [];
+    const seen = new Set<string>();
+
+    // Matches supabase.from("<domain_table>") AND generic query builders
+    // (from("<domain_table>"), .from(`<domain_table>`)) — any call that
+    // targets a domain table by name outside the RPC seam.
+    const tablePattern = new RegExp(
+      `\\.from\\(\\s*['"\`](${DOMAIN_TABLES.join("|")})['"\`]\\s*\\)`,
+    );
+
+    for (const f of files) {
+      if (!isServerActionSurface(f)) continue;
+      if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
+      const src = read(f);
+      if (!tablePattern.test(src)) continue;
+      const key = rel(f);
+      seen.add(key);
+      if (!(key in KNOWN_DEBT_SERVER_DIRECT_SUPABASE)) newViolations.push(key);
+    }
+
+    for (const key of Object.keys(KNOWN_DEBT_SERVER_DIRECT_SUPABASE)) {
+      if (!seen.has(key)) paidDebt.push(key);
+    }
+
+    expect(
+      newViolations,
+      "server actions must call domain RPCs (SECURITY DEFINER), not supabase.from(<domain_table>) — ADR-1D-001 §2.6",
+    ).toEqual([]);
+    expect(
+      paidDebt,
+      "KNOWN_DEBT_SERVER_DIRECT_SUPABASE entries no longer violate — remove them",
+    ).toEqual([]);
   });
 });
