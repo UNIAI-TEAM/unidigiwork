@@ -1983,6 +1983,15 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: string
       }
+      _test_seed_entitlement: {
+        Args: {
+          _enabled: boolean
+          _feature_key: string
+          _quota_limit: number
+          _tenant_id: string
+        }
+        Returns: undefined
+      }
       _test_unconfirm_auth_email: {
         Args: { _user_id: string }
         Returns: boolean
