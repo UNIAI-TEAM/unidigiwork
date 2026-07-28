@@ -17,6 +17,7 @@
     "test:architecture": "vitest run src/lib/architecture/architecture-rules.test.ts src/lib/architecture/platform-adapter.test.ts",
     "test:tenant": "vitest run src/lib/architecture/tenant-isolation.test.ts",
     "test:rls": "vitest run src/lib/architecture/rls-policies.test.ts",
+    "test:domain-sdk": "vitest run src/lib/architecture/domain-sdk-gate.test.ts",
     "verify": "bun run typecheck && bun run lint:changed && bun run test && bun run build"
   },
   "dependencies": {
