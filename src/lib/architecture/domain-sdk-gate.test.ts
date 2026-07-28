@@ -50,6 +50,43 @@ const read = (f: string) => readFileSync(f, "utf8");
 const rel = (f: string) => relative(process.cwd(), f).replace(/\\/g, "/");
 
 // ---------------------------------------------------------------------------
+// Non-source scan — configs, seeds, JSON/YAML fixtures anywhere in the repo.
+// Scans the whole tree except vendor / build / test / migration / doc outputs.
+// Extensions: .json .jsonc .yml .yaml .toml .js .cjs .mjs .sql (non-migration)
+// ---------------------------------------------------------------------------
+const NONSRC_EXT = /\.(json|jsonc|yml|yaml|toml|js|cjs|mjs)$/i;
+const NONSRC_SKIP_DIRS = new Set([
+  "node_modules", ".git", "dist", "build", ".next", ".turbo", ".cache",
+  "coverage", ".lovable", "tests", "src", // src covered by the other rules
+  "supabase", // migrations own seeds legitimately (Blueprint §25)
+]);
+const NONSRC_SKIP_FILES = new Set<string>([
+  "docs/architecture/ci/domain-sdk-debt.manifest.json", // the waiver list itself
+  "package-lock.json", "bun.lockb", "bun.lock", "yarn.lock", "pnpm-lock.yaml",
+  ".prettierrc", "components.json", "tsconfig.json", "vite.config.ts",
+  "vitest.config.ts", "eslint.config.js",
+]);
+
+function walkNonSrc(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    if (entry.startsWith(".") && entry !== ".github") continue;
+    const full = join(dir, entry);
+    const st = statSync(full);
+    if (st.isDirectory()) {
+      if (NONSRC_SKIP_DIRS.has(entry)) continue;
+      walkNonSrc(full, out);
+    } else if (NONSRC_EXT.test(entry)) {
+      const r = relative(process.cwd(), full).replace(/\\/g, "/");
+      if (NONSRC_SKIP_FILES.has(r)) continue;
+      if (r.endsWith(".test.js") || r.endsWith(".test.mjs")) continue;
+      out.push(full);
+    }
+  }
+  return out;
+}
+const nonSrcFiles = walkNonSrc(process.cwd());
+
+// ---------------------------------------------------------------------------
 // Reporting helpers — emit `path:line: snippet` for every hit and persist a
 // consolidated report to `.lovable/reports/domain-sdk-violations.{json,md}`
 // so a failed CI run gives the exact locations to fix before merge.
@@ -250,6 +287,59 @@ const DOMAIN_NOUNS = [
 const KNOWN_DEBT_SERVER_DIRECT_SUPABASE = waiver("server-supabase-from-domain");
 
 describe("domain SDK enforcement gate", () => {
+  it("non-source files (configs, seeds, JSON/YAML) do not carry mock domain data", () => {
+    const newViolations: string[] = [];
+    const seen = new Set<string>();
+
+    // 1. Faker / mock libs referenced in package.json / config scripts.
+    const libPattern = new RegExp(
+      `(?:"|')(${FORBIDDEN_MOCK_LIBS.map((l) => l.replace(/[/@-]/g, "\\$&")).join("|")})(?:"|')`,
+    );
+    // 2. Fixture-named keys or vars with a domain noun — matches JSON keys
+    //    ("mockTasks":), YAML keys (seed_documents:), and JS/TS assignments.
+    const upperPrefix = FIXTURE_NAME_ROOTS.map((r) => r.toUpperCase()).join("|");
+    const camelPrefix = FIXTURE_NAME_ROOTS.join("|");
+    const nouns = DOMAIN_NOUNS.join("|");
+    const upperNouns = DOMAIN_NOUNS.map((n) => n.replace(/\?/g, "").toUpperCase()).join("|");
+    const fixturePattern = new RegExp(
+      `["']?\\b(` +
+        `(?:${upperPrefix})_[A-Z0-9_]*(?:${upperNouns})[A-Z0-9_]*` +
+        `|(?:${camelPrefix})(?:${nouns})[A-Za-z0-9]*` +
+        `|(?:${camelPrefix})_(?:${nouns.toLowerCase()})[A-Za-z0-9_]*` +
+        `)\\b["']?\\s*[:=]`,
+    );
+    // 3. Direct supabase.from("<domain_table>") in scripts / seed JS.
+    const tablePattern = new RegExp(
+      `\\.from\\(\\s*['"\`](${DOMAIN_TABLES.join("|")})['"\`]\\s*\\)`,
+    );
+
+    const waived = waiver("nonsrc-mock-data");
+
+    for (const f of nonSrcFiles) {
+      const src = read(f);
+      const key = rel(f);
+      const hits = [
+        ...scanLines(src, libPattern),
+        ...scanLines(src, fixturePattern),
+        ...scanLines(src, tablePattern),
+      ].sort((a, b) => a.line - b.line);
+      if (hits.length === 0) continue;
+      seen.add(key);
+      if (key in waived) continue;
+      newViolations.push(...record("nonsrc-mock-data", key, hits));
+    }
+
+    const paidDebt = Object.keys(waived).filter((k) => !seen.has(k));
+    expect(
+      newViolations,
+      "config/seed/JSON files must not carry mock domain data — move fixtures to *.test.ts or migrations",
+    ).toEqual([]);
+    expect(
+      paidDebt,
+      "nonsrc-mock-data waivers no longer violate — remove them from the manifest",
+    ).toEqual([]);
+  });
+
   it("debt manifest — every waived ticket is declared in tickets{}", () => {
     const declared = new Set(Object.keys(MANIFEST.tickets));
     const referenced = new Set<string>();
