@@ -12,9 +12,9 @@
  * Known pre-existing violations are listed in KNOWN_DEBT with a tracking note.
  * New violations fail the gate. Remove entries from KNOWN_DEBT as debt is paid.
  */
-import { describe, it, expect } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { afterAll, describe, it, expect } from "vitest";
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 
 const SRC = join(process.cwd(), "src");
 
@@ -31,6 +31,77 @@ function walk(dir: string, out: string[] = []): string[] {
 const files = walk(SRC);
 const read = (f: string) => readFileSync(f, "utf8");
 const rel = (f: string) => relative(process.cwd(), f).replace(/\\/g, "/");
+
+// ---------------------------------------------------------------------------
+// Reporting helpers — emit `path:line: snippet` for every hit and persist a
+// consolidated report to `.lovable/reports/domain-sdk-violations.{json,md}`
+// so a failed CI run gives the exact locations to fix before merge.
+// ---------------------------------------------------------------------------
+type Hit = { file: string; line: number; snippet: string; rule: string };
+const ALL_HITS: Hit[] = [];
+
+function snippet(line: string): string {
+  const t = line.trim();
+  return t.length > 140 ? `${t.slice(0, 137)}...` : t;
+}
+
+/** Returns matched lines (1-based) for `pattern` in file `src`. */
+function scanLines(src: string, pattern: RegExp): { line: number; snippet: string }[] {
+  const out: { line: number; snippet: string }[] = [];
+  const lines = src.split("\n");
+  const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+  for (let i = 0; i < lines.length; i++) {
+    re.lastIndex = 0;
+    if (re.test(lines[i])) out.push({ line: i + 1, snippet: snippet(lines[i]) });
+  }
+  return out;
+}
+
+function record(rule: string, file: string, hits: { line: number; snippet: string }[]): string[] {
+  const out: string[] = [];
+  for (const h of hits) {
+    ALL_HITS.push({ rule, file, line: h.line, snippet: h.snippet });
+    out.push(`${file}:${h.line}  ${h.snippet}`);
+  }
+  return out;
+}
+
+afterAll(() => {
+  if (ALL_HITS.length === 0) return;
+  const reportDir = join(process.cwd(), ".lovable", "reports");
+  mkdirSync(reportDir, { recursive: true });
+  const jsonPath = join(reportDir, "domain-sdk-violations.json");
+  const mdPath = join(reportDir, "domain-sdk-violations.md");
+  writeFileSync(jsonPath, JSON.stringify({ generatedAt: new Date().toISOString(), hits: ALL_HITS }, null, 2));
+
+  const byRule = new Map<string, Hit[]>();
+  for (const h of ALL_HITS) {
+    if (!byRule.has(h.rule)) byRule.set(h.rule, []);
+    byRule.get(h.rule)!.push(h);
+  }
+  const md: string[] = [
+    "# Domain SDK Enforcement — Violations",
+    "",
+    `Generated: ${new Date().toISOString()}`,
+    `Total hits: **${ALL_HITS.length}** across ${new Set(ALL_HITS.map((h) => h.file)).size} file(s).`,
+    "",
+    "Fix each file below before merging. See `docs/architecture/ci/DOMAIN_SDK_ENFORCEMENT.md`.",
+    "",
+  ];
+  for (const [rule, hits] of byRule) {
+    md.push(`## ${rule} (${hits.length})`, "");
+    for (const h of hits) md.push(`- \`${h.file}:${h.line}\` — \`${h.snippet.replace(/`/g, "\\`")}\``);
+    md.push("");
+  }
+  writeFileSync(mdPath, md.join("\n"));
+
+  // Also print a compact summary to stderr so CI logs surface it immediately.
+  const lines = ALL_HITS.map((h) => `  ${h.rule}  ${h.file}:${h.line}`).join("\n");
+  console.error(
+    `\n[domain-sdk-gate] ${ALL_HITS.length} violation(s):\n${lines}\n` +
+      `Report: ${relative(process.cwd(), mdPath)} / ${relative(process.cwd(), jsonPath)}\n`,
+  );
+});
 
 function isClientReachable(path: string): boolean {
   const r = rel(path);
@@ -195,10 +266,12 @@ describe("domain SDK enforcement gate", () => {
     for (const f of files) {
       if (!isClientReachable(f)) continue;
       const src = read(f);
-      if (!tablePattern.test(src)) continue;
       const key = rel(f);
+      const hits = scanLines(src, tablePattern);
+      if (hits.length === 0) continue;
       seen.add(key);
-      if (!(key in KNOWN_DEBT_DIRECT_SUPABASE)) newViolations.push(key);
+      if (key in KNOWN_DEBT_DIRECT_SUPABASE) continue;
+      newViolations.push(...record("client-supabase-from-domain", key, hits));
     }
 
     for (const key of Object.keys(KNOWN_DEBT_DIRECT_SUPABASE)) {
@@ -234,10 +307,12 @@ describe("domain SDK enforcement gate", () => {
       if (!isClientReachable(f)) continue;
       if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
       const src = read(f);
-      if (!mockPattern.test(src)) continue;
       const key = rel(f);
+      const hits = scanLines(src, mockPattern);
+      if (hits.length === 0) continue;
       seen.add(key);
-      if (!(key in KNOWN_DEBT_INLINE_MOCK)) newViolations.push(key);
+      if (key in KNOWN_DEBT_INLINE_MOCK) continue;
+      newViolations.push(...record("inline-mock-name", key, hits));
     }
 
     expect(newViolations, "inline mock/fake domain data forbidden — call @/sdk/*").toEqual([]);
@@ -263,10 +338,12 @@ describe("domain SDK enforcement gate", () => {
       if (!isClientReachable(f)) continue;
       if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
       const src = read(f);
-      if (!typedFixture.test(src)) continue;
       const key = rel(f);
+      const hits = scanLines(src, typedFixture);
+      if (hits.length === 0) continue;
       seen.add(key);
-      if (!(key in KNOWN_DEBT_INLINE_FIXTURE)) newViolations.push(key);
+      if (key in KNOWN_DEBT_INLINE_FIXTURE) continue;
+      newViolations.push(...record("typed-inline-fixture", key, hits));
     }
 
     for (const key of Object.keys(KNOWN_DEBT_INLINE_FIXTURE)) {
@@ -292,7 +369,9 @@ describe("domain SDK enforcement gate", () => {
       if (!isClientReachable(f)) continue;
       if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
       const src = read(f);
-      if (libPattern.test(src)) violations.push(rel(f));
+      const hits = scanLines(src, libPattern);
+      if (hits.length === 0) continue;
+      violations.push(...record("forbidden-mock-lib-import", rel(f), hits));
     }
     expect(
       violations,
@@ -321,7 +400,11 @@ describe("domain SDK enforcement gate", () => {
         if (!commentTag.test(lines[i])) continue;
         const window = lines.slice(i, Math.min(i + 6, lines.length)).join("\n");
         if (domainRef.test(window)) {
-          violations.push(`${key}:${i + 1}`);
+          violations.push(
+            ...record("fixture-tagged-comment", key, [
+              { line: i + 1, snippet: snippet(lines[i]) },
+            ]),
+          );
           break;
         }
       }
@@ -358,10 +441,12 @@ describe("domain SDK enforcement gate", () => {
       if (!isServerActionSurface(f)) continue;
       if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
       const src = read(f);
-      if (!tablePattern.test(src)) continue;
       const key = rel(f);
+      const hits = scanLines(src, tablePattern);
+      if (hits.length === 0) continue;
       seen.add(key);
-      if (!(key in KNOWN_DEBT_SERVER_DIRECT_SUPABASE)) newViolations.push(key);
+      if (key in KNOWN_DEBT_SERVER_DIRECT_SUPABASE) continue;
+      newViolations.push(...record("server-supabase-from-domain", key, hits));
     }
 
     for (const key of Object.keys(KNOWN_DEBT_SERVER_DIRECT_SUPABASE)) {
