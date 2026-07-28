@@ -11,6 +11,11 @@
       "title": "Tasks domain SDK migration (Kanban + STOS)",
       "owner": "@uniwork/tasks",
       "targetBatch": "1D-API"
+    },
+    "BATCH_1D_LIST_RPC": {
+      "title": "List/query RPCs for 4 business domains (replace direct supabase.from reads with SECURITY INVOKER list functions or projections)",
+      "owner": "@uniwork/platform",
+      "targetBatch": "1D-API-LIST"
     }
   },
   "waivers": {
@@ -18,7 +23,11 @@
       "src/routes/_authenticated/documents.tsx": "BATCH_1D_DOCS"
     },
     "server-supabase-from-domain": {
-      "src/lib/api/admin.functions.ts": "BATCH_1D_DOCS"
+      "src/lib/api/admin.functions.ts": "BATCH_1D_DOCS",
+      "src/lib/api/tasks.functions.ts": "BATCH_1D_LIST_RPC",
+      "src/lib/api/documents.functions.ts": "BATCH_1D_LIST_RPC",
+      "src/lib/api/meetings.functions.ts": "BATCH_1D_LIST_RPC",
+      "src/lib/api/workflows.functions.ts": "BATCH_1D_LIST_RPC"
     },
     "inline-mock-name": {
       "src/routes/tasks.tsx": "BATCH_1D_TASKS",
