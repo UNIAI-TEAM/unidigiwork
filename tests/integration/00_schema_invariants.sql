@@ -69,10 +69,7 @@ BEGIN
   )
   SELECT string_agg(r.tbl || ':' || r.role || ':' || r.priv, ', ') INTO _bad
   FROM required r
-  LEFT JOIN information_schema.role_table_grants g
-    ON g.table_schema='public' AND g.table_name = r.tbl
-   AND g.grantee = r.role AND g.privilege_type = r.priv
-  WHERE g.privilege_type IS NULL;
+  WHERE NOT has_table_privilege(r.role, ('public.' || r.tbl)::regclass, r.priv);
   IF _bad IS NOT NULL THEN
     RAISE EXCEPTION 'FAIL grants missing: %', _bad;
   END IF;
