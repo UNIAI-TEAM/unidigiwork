@@ -157,9 +157,12 @@ BEGIN
   SELECT string_agg(r.tbl || '(' || r.cols || ')', ', ') INTO _bad
   FROM required r
   WHERE NOT EXISTS (
-    SELECT 1 FROM pg_indexes i
-    WHERE i.schemaname='public' AND i.tablename=r.tbl
-      AND i.indexdef ILIKE '%(' || r.cols || '%'
+    SELECT 1
+    FROM pg_index ix
+    JOIN pg_class c ON c.oid = ix.indrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY (ix.indkey)
+    WHERE n.nspname='public' AND c.relname = r.tbl AND a.attname = r.cols
   );
   IF _bad IS NOT NULL THEN
     RAISE EXCEPTION 'FAIL indexes missing: %', _bad;
