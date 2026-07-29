@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3 } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -29,6 +29,10 @@ const DEFAULT_COLUMNS: ColumnPrefs = {
   meta: true, tenant: true, actor: true, target: true, payload: true,
 };
 const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
+
+const REFRESH_OPTIONS = [0, 5, 15, 30, 60, 120] as const;
+type RefreshSec = (typeof REFRESH_OPTIONS)[number];
+const REFRESH_STORAGE_KEY = "uniwork.admin.trace.autorefresh.v1";
 
 // datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
 function localToIso(v: string | undefined): string | undefined {
@@ -198,6 +202,39 @@ function AdminTracePage() {
     navigate({ search: (prev: SearchState) => ({ ...prev, sort: next, page: 1 }) });
   };
 
+  const [autoRefreshSec, setAutoRefreshSec] = useState<RefreshSec>(() => {
+    if (typeof window === "undefined") return 0;
+    const raw = Number(window.localStorage.getItem(REFRESH_STORAGE_KEY));
+    return (REFRESH_OPTIONS as readonly number[]).includes(raw) ? (raw as RefreshSec) : 0;
+  });
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(REFRESH_STORAGE_KEY, String(autoRefreshSec));
+    } catch { /* noop */ }
+  }, [autoRefreshSec]);
+  useEffect(() => {
+    if (traceMut.isSuccess) setLastRefreshedAt(Date.now());
+  }, [traceMut.isSuccess, traceMut.data]);
+
+  const refreshNow = () => {
+    const v = (cid ?? input).trim();
+    if (!v) return;
+    traceMut.mutate({ correlationId: v, page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso, sort: currentSort });
+  };
+
+  useEffect(() => {
+    if (!cid || autoRefreshSec === 0) return;
+    const tick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      if (traceMut.isPending) return;
+      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso, sort: currentSort });
+    };
+    const id = window.setInterval(tick, autoRefreshSec * 1000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cid, autoRefreshSec, currentPage, currentLimit, activeKinds.join(","), fromIso, toIso, currentSort]);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 text-xs">
@@ -295,6 +332,10 @@ function AdminTracePage() {
           onResetKinds={resetKinds}
           sort={currentSort}
           onToggleSort={toggleSort}
+          autoRefreshSec={autoRefreshSec}
+          onChangeAutoRefresh={setAutoRefreshSec}
+          onRefreshNow={refreshNow}
+          lastRefreshedAt={lastRefreshedAt}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -321,6 +362,10 @@ function TraceResultView({
   onResetKinds,
   sort,
   onToggleSort,
+  autoRefreshSec,
+  onChangeAutoRefresh,
+  onRefreshNow,
+  lastRefreshedAt,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -333,6 +378,10 @@ function TraceResultView({
   onResetKinds: () => void;
   sort: "asc" | "desc";
   onToggleSort: () => void;
+  autoRefreshSec: RefreshSec;
+  onChangeAutoRefresh: (v: RefreshSec) => void;
+  onRefreshNow: () => void;
+  lastRefreshedAt: number | null;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const [keyword, setKeyword] = useState("");
@@ -455,6 +504,13 @@ function TraceResultView({
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
               {exporting ? "Đang export…" : "Export CSV"}
             </button>
+            <AutoRefreshControl
+              value={autoRefreshSec}
+              onChange={onChangeAutoRefresh}
+              onRefreshNow={onRefreshNow}
+              pending={pending}
+              lastRefreshedAt={lastRefreshedAt}
+            />
             <ColumnsMenu columns={columns} onToggle={toggleColumn} onReset={resetColumns} activeCount={activeColumnCount} />
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
@@ -905,6 +961,64 @@ function ColumnsMenu({
             ))}
           </ul>
         </div>
+      )}
+    </div>
+  );
+}
+
+function AutoRefreshControl({
+  value,
+  onChange,
+  onRefreshNow,
+  pending,
+  lastRefreshedAt,
+}: {
+  value: RefreshSec;
+  onChange: (v: RefreshSec) => void;
+  onRefreshNow: () => void;
+  pending: boolean;
+  lastRefreshedAt: number | null;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const secsAgo = lastRefreshedAt ? Math.max(0, Math.floor((now - lastRefreshedAt) / 1000)) : null;
+  const label = (v: RefreshSec) => (v === 0 ? "Tắt" : v < 60 ? `${v}s` : `${v / 60}m`);
+  const active = value > 0;
+  return (
+    <div
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${active ? "border-primary/40 bg-primary/5 text-foreground" : "border-border bg-surface-2 text-muted-foreground"}`}
+      title={active ? `Tự động làm mới mỗi ${label(value)}` : "Tự động làm mới đang tắt"}
+    >
+      <RefreshCw className={`h-3 w-3 ${pending ? "animate-spin" : ""}`} />
+      <span className="hidden sm:inline">Tự động</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value) as RefreshSec)}
+        className="rounded bg-transparent px-0.5 py-0 text-xs outline-none focus:ring-0"
+        aria-label="Chu kỳ tự động làm mới timeline"
+      >
+        {REFRESH_OPTIONS.map((v) => (
+          <option key={v} value={v} className="bg-surface text-foreground">
+            {label(v)}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={onRefreshNow}
+        disabled={pending}
+        className="ml-0.5 rounded px-1 text-muted-foreground hover:text-foreground disabled:opacity-40"
+        title="Làm mới ngay"
+        aria-label="Làm mới ngay"
+      >
+        ↻
+      </button>
+      {secsAgo !== null && (
+        <span className="hidden md:inline text-[10px] tabular-nums text-muted-foreground">
+          · {secsAgo < 60 ? `${secsAgo}s trước` : `${Math.floor(secsAgo / 60)}m trước`}
+        </span>
       )}
     </div>
   );
