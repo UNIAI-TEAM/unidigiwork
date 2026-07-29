@@ -469,6 +469,8 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
       .object({
         correlationId: z.string().min(1).max(200),
         limit: z.number().int().min(1).max(1000).default(500),
+        offset: z.number().int().min(0).max(1_000_000).default(0),
+        page: z.number().int().min(1).max(100_000).optional(),
       })
       .parse(i),
   )
@@ -476,55 +478,77 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const cid = data.correlationId;
+    const limit = data.limit;
+    const offset = data.page ? (data.page - 1) * limit : data.offset;
+    const from = offset;
+    const to = offset + limit - 1;
+
+    type RangeBuilder = {
+      from: (t: string) => {
+        select: (
+          c: string,
+          opts?: { count?: "exact" | "planned" | "estimated"; head?: boolean },
+        ) => {
+          eq: (c: string, v: string) => {
+            order: (c: string, o: { ascending: boolean }) => {
+              range: (
+                f: number,
+                t: number,
+              ) => Promise<{
+                data: unknown[] | null;
+                count: number | null;
+                error: { message: string } | null;
+              }>;
+            };
+          };
+        };
+      };
+    };
+    const sb = supabaseAdmin as unknown as RangeBuilder;
 
     const [quotaRes, auditRes, outboxRes] = await Promise.all([
-      supabaseAdmin
+      sb
         .from("quota_check_events")
-        .select("id, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id, occurred_at")
+        .select(
+          "id, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id, occurred_at",
+          { count: "exact" },
+        )
         .eq("correlation_id", cid)
         .order("occurred_at", { ascending: true })
-        .limit(data.limit),
-      (supabaseAdmin as unknown as {
-        from: (t: string) => {
-          select: (c: string) => {
-            eq: (c: string, v: string) => {
-              order: (c: string, o: { ascending: boolean }) => {
-                limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-              };
-            };
-          };
-        };
-      })
+        .range(from, to),
+      sb
         .from("audit_events")
-        .select("id, tenant_id, actor_user_id, action, resource_type, resource_id, event_type, aggregate_type, aggregate_id, payload, correlation_id, occurred_at")
+        .select(
+          "id, tenant_id, actor_user_id, action, resource_type, resource_id, event_type, aggregate_type, aggregate_id, payload, correlation_id, occurred_at",
+          { count: "exact" },
+        )
         .eq("correlation_id", cid)
         .order("occurred_at", { ascending: true })
-        .limit(data.limit),
-      (supabaseAdmin as unknown as {
-        from: (t: string) => {
-          select: (c: string) => {
-            eq: (c: string, v: string) => {
-              order: (c: string, o: { ascending: boolean }) => {
-                limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-              };
-            };
-          };
-        };
-      })
+        .range(from, to),
+      sb
         .from("outbox_events")
-        .select("id, tenant_id, event_type, aggregate_type, aggregate_id, status, attempt_count, last_error, correlation_id, occurred_at, processed_at")
+        .select(
+          "id, tenant_id, event_type, aggregate_type, aggregate_id, status, attempt_count, last_error, correlation_id, occurred_at, processed_at",
+          { count: "exact" },
+        )
         .eq("correlation_id", cid)
         .order("occurred_at", { ascending: true })
-        .limit(data.limit),
+        .range(from, to),
     ]);
 
     if (quotaRes.error) throw new Error(quotaRes.error.message);
     if (auditRes.error) throw new Error(auditRes.error.message);
     if (outboxRes.error) throw new Error(outboxRes.error.message);
 
-    const quota = quotaRes.data ?? [];
+    const quota = (quotaRes.data ?? []) as Array<{ occurred_at: string }>;
     const audit = (auditRes.data ?? []) as Array<{ occurred_at: string }>;
     const outbox = (outboxRes.data ?? []) as Array<{ occurred_at: string }>;
+    const totals = {
+      quota: quotaRes.count ?? quota.length,
+      audit: auditRes.count ?? audit.length,
+      outbox: outboxRes.count ?? outbox.length,
+    };
+    const grandTotal = totals.quota + totals.audit + totals.outbox;
 
     const timeline = [
       ...quota.map((r) => ({ kind: "quota_check" as const, at: r.occurred_at, data: r })),
@@ -535,6 +559,23 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
     return {
       correlationId: cid,
       counts: { quota: quota.length, audit: audit.length, outbox: outbox.length, total: timeline.length },
+      totals: { ...totals, total: grandTotal },
+      pagination: {
+        limit,
+        offset,
+        page: Math.floor(offset / limit) + 1,
+        pageSize: limit,
+        pageCount: Math.max(1, Math.ceil(grandTotal / limit)),
+        hasMore: {
+          quota: offset + quota.length < totals.quota,
+          audit: offset + audit.length < totals.audit,
+          outbox: offset + outbox.length < totals.outbox,
+          any:
+            offset + quota.length < totals.quota ||
+            offset + audit.length < totals.audit ||
+            offset + outbox.length < totals.outbox,
+        },
+      },
       quotaEvents: quota,
       auditEvents: audit,
       outboxEvents: outbox,

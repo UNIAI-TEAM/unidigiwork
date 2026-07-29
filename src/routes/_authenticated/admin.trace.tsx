@@ -1,12 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { traceByCorrelationId } from "@/lib/api/admin.functions";
 
-const searchSchema = z.object({ cid: z.string().trim().max(200).optional() });
+const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
+const searchSchema = z.object({
+  cid: z.string().trim().max(200).optional(),
+  page: z.coerce.number().int().min(1).max(100000).optional(),
+  limit: z.coerce.number().int().min(1).max(1000).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/admin/trace")({
   head: () => ({
@@ -23,28 +28,35 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
-  const { cid } = Route.useSearch();
+  const { cid, page, limit } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
   const [result, setResult] = useState<TraceResult | null>(null);
+  const currentPage = page ?? 1;
+  const currentLimit = limit ?? 500;
+
+  type SearchState = { cid?: string; page?: number; limit?: number };
 
   const traceMut = useMutation({
-    mutationFn: (correlationId: string) => traceByCorrelationId({ data: { correlationId, limit: 500 } }),
+    mutationFn: (args: { correlationId: string; page: number; limit: number }) =>
+      traceByCorrelationId({
+        data: { correlationId: args.correlationId, page: args.page, limit: args.limit },
+      }),
     onSuccess: (data) => {
       setResult(data);
-      if (data.counts.total === 0) toast.info("Không tìm thấy event nào với correlation_id này.");
+      if (data.totals.total === 0) toast.info("Không tìm thấy event nào với correlation_id này.");
     },
     onError: (e: Error) => toast.error(e.message ?? "Không truy vết được"),
   });
 
-  // Auto-run when arriving with ?cid=
+  // Auto-run when arriving with ?cid= (or page/limit change)
   useEffect(() => {
     if (cid && cid.trim()) {
       setInput(cid);
-      traceMut.mutate(cid.trim());
+      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid]);
+  }, [cid, currentPage, currentLimit]);
 
   const submit = () => {
     const v = input.trim();
@@ -52,8 +64,14 @@ function AdminTracePage() {
       toast.error("Nhập correlation_id trước");
       return;
     }
-    navigate({ search: (prev: { cid?: string }) => ({ ...prev, cid: v }) });
-    traceMut.mutate(v);
+    navigate({ search: (prev: SearchState) => ({ ...prev, cid: v, page: 1 }) });
+  };
+
+  const goToPage = (nextPage: number) => {
+    navigate({ search: (prev: SearchState) => ({ ...prev, page: nextPage }) });
+  };
+  const changeLimit = (nextLimit: number) => {
+    navigate({ search: (prev: SearchState) => ({ ...prev, limit: nextLimit, page: 1 }) });
   };
 
   return (
@@ -100,7 +118,12 @@ function AdminTracePage() {
       </section>
 
       {result ? (
-        <TraceResultView result={result} />
+        <TraceResultView
+          result={result}
+          onPage={goToPage}
+          onLimit={changeLimit}
+          pending={traceMut.isPending}
+        />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
           Đang truy vết…
@@ -114,21 +137,34 @@ function AdminTracePage() {
   );
 }
 
-function TraceResultView({ result }: { result: TraceResult }) {
-  const { correlationId, counts, timeline } = result;
+function TraceResultView({
+  result,
+  onPage,
+  onLimit,
+  pending,
+}: {
+  result: TraceResult;
+  onPage: (p: number) => void;
+  onLimit: (n: number) => void;
+  pending: boolean;
+}) {
+  const { correlationId, counts, totals, pagination, timeline } = result;
   const copyCid = () => {
     navigator.clipboard.writeText(correlationId).then(
       () => toast.success("Đã copy correlation_id"),
       () => toast.error("Copy thất bại"),
     );
   };
+  const { page, pageCount, pageSize, offset } = pagination;
+  const rangeStart = timeline.length === 0 ? 0 : offset + 1;
+  const rangeEnd = offset + timeline.length;
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <CountCard label="Tổng events" value={counts.total} icon={Activity} tint="text-foreground" />
-        <CountCard label="Quota checks" value={counts.quota} icon={CheckCircle2} tint="text-emerald-400" />
-        <CountCard label="Audit" value={counts.audit} icon={ShieldCheck} tint="text-sky-400" />
-        <CountCard label="Outbox" value={counts.outbox} icon={Radio} tint="text-amber-400" />
+        <CountCard label="Tổng events" value={totals.total} icon={Activity} tint="text-foreground" hint={`hiện ${counts.total}`} />
+        <CountCard label="Quota checks" value={totals.quota} icon={CheckCircle2} tint="text-emerald-400" hint={`hiện ${counts.quota}`} />
+        <CountCard label="Audit" value={totals.audit} icon={ShieldCheck} tint="text-sky-400" hint={`hiện ${counts.audit}`} />
+        <CountCard label="Outbox" value={totals.outbox} icon={Radio} tint="text-amber-400" hint={`hiện ${counts.outbox}`} />
       </div>
 
       <section className="rounded-2xl border border-border bg-surface">
@@ -145,6 +181,17 @@ function TraceResultView({ result }: { result: TraceResult }) {
           </div>
           <h2 className="text-sm font-semibold">Timeline</h2>
         </div>
+        <PaginationBar
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          total={totals.total}
+          pending={pending}
+          onPage={onPage}
+          onLimit={onLimit}
+        />
         {timeline.length === 0 ? (
           <div className="py-10 text-center text-sm text-muted-foreground">Không có event nào.</div>
         ) : (
@@ -154,8 +201,91 @@ function TraceResultView({ result }: { result: TraceResult }) {
             ))}
           </ol>
         )}
+        {timeline.length > 0 && (
+          <PaginationBar
+            page={page}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            total={totals.total}
+            pending={pending}
+            onPage={onPage}
+            onLimit={onLimit}
+          />
+        )}
       </section>
     </>
+  );
+}
+
+function PaginationBar({
+  page,
+  pageCount,
+  pageSize,
+  rangeStart,
+  rangeEnd,
+  total,
+  pending,
+  onPage,
+  onLimit,
+}: {
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  rangeStart: number;
+  rangeEnd: number;
+  total: number;
+  pending: boolean;
+  onPage: (p: number) => void;
+  onLimit: (n: number) => void;
+}) {
+  const canPrev = page > 1 && !pending;
+  const canNext = page < pageCount && !pending;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-2/40 px-4 py-2 text-[11px] text-muted-foreground">
+      <div className="tabular-nums">
+        {rangeStart}–{rangeEnd} / {total.toLocaleString("vi-VN")}
+      </div>
+      <div className="flex items-center gap-3">
+        <label className="flex items-center gap-1">
+          <span>Mỗi trang</span>
+          <select
+            value={pageSize}
+            onChange={(e) => onLimit(Number(e.target.value))}
+            disabled={pending}
+            className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-foreground outline-none focus:border-primary/60 disabled:opacity-50"
+          >
+            {PAGE_SIZE_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onPage(page - 1)}
+            disabled={!canPrev}
+            className="inline-flex items-center rounded-md border border-border bg-surface px-1.5 py-1 hover:text-foreground disabled:opacity-40"
+            aria-label="Trang trước"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="tabular-nums text-foreground">
+            {page} / {pageCount}
+          </span>
+          <button
+            onClick={() => onPage(page + 1)}
+            disabled={!canNext}
+            className="inline-flex items-center rounded-md border border-border bg-surface px-1.5 py-1 hover:text-foreground disabled:opacity-40"
+            aria-label="Trang sau"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -334,11 +464,13 @@ function CountCard({
   value,
   icon: Icon,
   tint,
+  hint,
 }: {
   label: string;
   value: number;
   icon: typeof Activity;
   tint: string;
+  hint?: string;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-3">
@@ -346,6 +478,7 @@ function CountCard({
         <Icon className="h-3 w-3" /> {label}
       </div>
       <div className={`mt-1 text-xl font-semibold tabular-nums ${tint}`}>{value.toLocaleString("vi-VN")}</div>
+      {hint && <div className="mt-0.5 text-[10px] text-muted-foreground">{hint}</div>}
     </div>
   );
 }
