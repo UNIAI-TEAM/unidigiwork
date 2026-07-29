@@ -202,6 +202,39 @@ function AdminTracePage() {
     navigate({ search: (prev: SearchState) => ({ ...prev, sort: next, page: 1 }) });
   };
 
+  const [autoRefreshSec, setAutoRefreshSec] = useState<RefreshSec>(() => {
+    if (typeof window === "undefined") return 0;
+    const raw = Number(window.localStorage.getItem(REFRESH_STORAGE_KEY));
+    return (REFRESH_OPTIONS as readonly number[]).includes(raw) ? (raw as RefreshSec) : 0;
+  });
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(REFRESH_STORAGE_KEY, String(autoRefreshSec));
+    } catch { /* noop */ }
+  }, [autoRefreshSec]);
+  useEffect(() => {
+    if (traceMut.isSuccess) setLastRefreshedAt(Date.now());
+  }, [traceMut.isSuccess, traceMut.data]);
+
+  const refreshNow = () => {
+    const v = (cid ?? input).trim();
+    if (!v) return;
+    traceMut.mutate({ correlationId: v, page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso, sort: currentSort });
+  };
+
+  useEffect(() => {
+    if (!cid || autoRefreshSec === 0) return;
+    const tick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      if (traceMut.isPending) return;
+      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso, sort: currentSort });
+    };
+    const id = window.setInterval(tick, autoRefreshSec * 1000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cid, autoRefreshSec, currentPage, currentLimit, activeKinds.join(","), fromIso, toIso, currentSort]);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 text-xs">
@@ -299,6 +332,10 @@ function AdminTracePage() {
           onResetKinds={resetKinds}
           sort={currentSort}
           onToggleSort={toggleSort}
+          autoRefreshSec={autoRefreshSec}
+          onChangeAutoRefresh={setAutoRefreshSec}
+          onRefreshNow={refreshNow}
+          lastRefreshedAt={lastRefreshedAt}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
