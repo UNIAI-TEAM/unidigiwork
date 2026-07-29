@@ -221,8 +221,18 @@ function buildCsvMetadataLine(
   return csvEscape(summary, csv.delimiter, csv.quoteChar);
 }
 async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions, metadataLine?: string): Promise<void> {
+  return downloadCsvOrZipWithFooter(csvText, csvFilename, opts, metadataLine, undefined);
+}
+async function downloadCsvOrZipWithFooter(
+  csvText: string,
+  csvFilename: string,
+  opts: CsvOptions,
+  metadataLine?: string,
+  footerLine?: string,
+): Promise<void> {
   const header = opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
-  const body = (opts.bom ? "\ufeff" : "") + header + csvText;
+  const footer = footerLine ? (csvText.endsWith("\n") ? "" : "\r\n") + footerLine + "\r\n" : "";
+  const body = (opts.bom ? "\ufeff" : "") + header + csvText + footer;
   if (opts.zip) {
     const { zipSync, strToU8 } = await import("fflate");
     const zipped = zipSync({ [csvFilename]: strToU8(body) }, { level: 6 });
@@ -230,6 +240,36 @@ async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvO
   } else {
     triggerBlobDownload(new Blob([body], { type: "text/csv;charset=utf-8;" }), csvFilename);
   }
+}
+
+/** Build a single-line CSV footer với tổng rows, số record theo severity, và thời gian xử lý. */
+function buildCsvFooterLine(
+  info: {
+    variant: "all" | "columns";
+    totalRows: number;
+    severityCounts: { info: number; warn: number; error: number };
+    durationMs: number;
+    truncated?: boolean;
+    exportedRows?: number;
+  },
+  csv: CsvOptions,
+): string {
+  const fields: Array<[string, string]> = [
+    ["summary", info.variant === "all" ? "all-results" : "current-cols"],
+    ["total_rows", String(info.totalRows)],
+  ];
+  if (typeof info.exportedRows === "number" && info.exportedRows !== info.totalRows) {
+    fields.push(["exported_rows", String(info.exportedRows)]);
+  }
+  if (info.truncated) fields.push(["truncated", "true"]);
+  fields.push(
+    ["severity_info", String(info.severityCounts.info)],
+    ["severity_warn", String(info.severityCounts.warn)],
+    ["severity_error", String(info.severityCounts.error)],
+    ["processing_ms", String(Math.max(0, Math.round(info.durationMs)))],
+  );
+  const line = "# " + fields.map(([k, v]) => `${k}=${v}`).join(" | ");
+  return csvEscape(line, csv.delimiter, csv.quoteChar);
 }
 
 /** Chuẩn hoá tên file .zip từ tên .csv tương ứng: giữ nguyên stem (bao gồm timezone, sort, severity, status, kinds, keyword, from/to). */
@@ -650,6 +690,17 @@ function AdminTracePage() {
       if (autoZipped) {
         toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
       }
+      const footerLine = buildCsvFooterLine(
+        {
+          variant: "all",
+          totalRows: data.totalRows,
+          exportedRows: data.rowCount,
+          truncated: data.truncated,
+          severityCounts: data.severityCounts ?? { info: 0, warn: 0, error: 0 },
+          durationMs: data.processingMs ?? 0,
+        },
+        vars.csv,
+      );
       setExportProgress({
         active: true,
         variant: "all",
@@ -658,7 +709,7 @@ function AdminTracePage() {
         percent: 75,
         rows: data.rowCount,
       });
-      void downloadCsvOrZip(data.csv, csvFilename, effOpts, metaLine)
+      void downloadCsvOrZipWithFooter(data.csv, csvFilename, effOpts, metaLine, footerLine)
         .then(() => {
           setExportProgress({
             active: true,
@@ -1606,6 +1657,7 @@ function TraceResultView({
             />
             <button
               onClick={() => {
+                const startedAt = performance.now();
                 const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
                 const csvFilename = buildCsvFilename({
@@ -1642,6 +1694,19 @@ function TraceResultView({
                 if (autoZipped) {
                   toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
                 }
+                const severityCounts = { info: 0, warn: 0, error: 0 } as { info: number; warn: number; error: number };
+                for (const it of filteredTimeline) {
+                  severityCounts[severityOfItem(it)]++;
+                }
+                const footerLine = buildCsvFooterLine(
+                  {
+                    variant: "columns",
+                    totalRows: rows,
+                    severityCounts,
+                    durationMs: performance.now() - startedAt,
+                  },
+                  csvOpts,
+                );
                 setExportProgress({
                   active: true,
                   variant: "columns",
@@ -1650,7 +1715,7 @@ function TraceResultView({
                   percent: 70,
                   rows,
                 });
-                void downloadCsvOrZip(csv, csvFilename, effOpts, metaLine)
+                void downloadCsvOrZipWithFooter(csv, csvFilename, effOpts, metaLine, footerLine)
                   .then(() => {
                     setExportProgress({
                       active: true, variant: "columns", phase: "done",

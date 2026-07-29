@@ -697,6 +697,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
     const cid = data.correlationId;
     const cap = data.maxRows;
     const kinds = new Set(data.kinds ?? ["quota", "audit", "outbox"]);
+    const startedAt = Date.now();
 
     const runQuery = (table: string, cols: string) => {
       // deno-lint-ignore no-explicit-any
@@ -857,6 +858,11 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
     const totalRows = stFiltered.length;
     const truncated = totalRows > cap;
     const capped = truncated ? stFiltered.slice(0, cap) : stFiltered;
+    // Severity breakdown on the exported (capped) rows
+    const severityCounts = { info: 0, warn: 0, error: 0 };
+    for (const r of capped) {
+      severityCounts[severityOfRow(r)]++;
+    }
     // Choose columns + labels (user-selected order/labels win, else defaults)
     const chosen = (data.columns && data.columns.length > 0)
       ? data.columns
@@ -872,6 +878,8 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
       totalRows,
       truncated,
       columns: dataKeys,
+      severityCounts,
+      processingMs: Date.now() - startedAt,
       filename: `trace_${cid.replace(/[^a-zA-Z0-9_.-]/g, "_")}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`,
     };
   });
