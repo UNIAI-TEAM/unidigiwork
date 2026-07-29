@@ -91,6 +91,59 @@ type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: Col
 type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
 const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
 
+// ---- "CSV (tất cả kết quả)" — server export columns ----
+const TRACE_EXPORT_COLUMN_DEFS = [
+  { key: "occurred_at",     label: "Thời gian" },
+  { key: "kind",            label: "Loại" },
+  { key: "event_type",      label: "Loại sự kiện" },
+  { key: "tenant_id",       label: "Tenant" },
+  { key: "actor_id",        label: "Actor" },
+  { key: "meter_key",       label: "Meter" },
+  { key: "allowed",         label: "Cho phép?" },
+  { key: "reason",          label: "Lý do" },
+  { key: "quota_limit",     label: "Quota (limit)" },
+  { key: "current_usage",   label: "Đang dùng" },
+  { key: "requested_delta", label: "Δ yêu cầu" },
+  { key: "aggregate_type",  label: "Aggregate type" },
+  { key: "aggregate_id",    label: "Aggregate ID" },
+  { key: "status",          label: "Trạng thái" },
+  { key: "attempt_count",   label: "Số lần thử" },
+  { key: "last_error",      label: "Lỗi gần nhất" },
+  { key: "processed_at",    label: "Xử lý lúc" },
+  { key: "resource_type",   label: "Resource type" },
+  { key: "resource_id",     label: "Resource ID" },
+  { key: "payload",         label: "Payload" },
+  { key: "correlation_id",  label: "Correlation ID" },
+  { key: "id",              label: "ID" },
+] as const;
+type TraceExportKey = (typeof TRACE_EXPORT_COLUMN_DEFS)[number]["key"];
+type TraceExportColumn = { key: TraceExportKey; label: string; enabled: boolean };
+const DEFAULT_TRACE_EXPORT_COLUMNS: TraceExportColumn[] = TRACE_EXPORT_COLUMN_DEFS.map((c) => ({
+  key: c.key, label: c.label, enabled: true,
+}));
+const TRACE_EXPORT_COLS_STORAGE_KEY = "uniwork.admin.trace.exportCols.v1";
+function normalizeExportColumns(input: unknown): TraceExportColumn[] {
+  const defByKey = new Map(TRACE_EXPORT_COLUMN_DEFS.map((d) => [d.key, d.label] as const));
+  const seen = new Set<string>();
+  const out: TraceExportColumn[] = [];
+  if (Array.isArray(input)) {
+    for (const raw of input) {
+      if (!raw || typeof raw !== "object") continue;
+      const k = (raw as { key?: unknown }).key;
+      if (typeof k !== "string" || !defByKey.has(k as TraceExportKey) || seen.has(k)) continue;
+      seen.add(k);
+      const rawLabel = (raw as { label?: unknown }).label;
+      const label = typeof rawLabel === "string" && rawLabel.trim() ? rawLabel.trim().slice(0, 120) : defByKey.get(k as TraceExportKey)!;
+      const enabled = (raw as { enabled?: unknown }).enabled !== false;
+      out.push({ key: k as TraceExportKey, label, enabled });
+    }
+  }
+  for (const d of TRACE_EXPORT_COLUMN_DEFS) {
+    if (!seen.has(d.key)) out.push({ key: d.key, label: d.label, enabled: true });
+  }
+  return out;
+}
+
 function sanitizeFilenamePart(s: string): string {
   return s
     .normalize("NFKD")
@@ -321,7 +374,7 @@ function AdminTracePage() {
   });
 
   const exportMut = useMutation({
-    mutationFn: (args: { correlationId: string; keyword?: string; csv: CsvOptions }) =>
+    mutationFn: (args: { correlationId: string; keyword?: string; csv: CsvOptions; columns?: Array<{ key: TraceExportKey; label: string }> }) =>
       exportTraceCsv({
         data: {
           correlationId: args.correlationId,
@@ -344,6 +397,7 @@ function AdminTracePage() {
               : (activeStatuses as [Status, ...Status[]]),
           delimiter: args.csv.delimiter,
           quoteChar: args.csv.quoteChar,
+          columns: args.columns && args.columns.length > 0 ? args.columns : undefined,
         },
       }),
     onSuccess: (data, vars) => {
@@ -669,7 +723,7 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
-          onExport={(kw, csv) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw, csv })}
+          onExport={(kw, csv, cols) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw, csv, columns: cols })}
           exporting={exportMut.isPending}
           keyword={keyword}
           onKeywordChange={setKeyword}
@@ -781,7 +835,7 @@ function TraceResultView({
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
   pending: boolean;
-  onExport: (keyword: string | undefined, csv: CsvOptions) => void;
+  onExport: (keyword: string | undefined, csv: CsvOptions, columns?: Array<{ key: TraceExportKey; label: string }>) => void;
   exporting: boolean;
   keyword: string;
   onKeywordChange: (v: string) => void;
@@ -931,6 +985,37 @@ function TraceResultView({
   useEffect(() => {
     try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
   }, [csvOpts]);
+  const [exportCols, setExportCols] = useState<TraceExportColumn[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_TRACE_EXPORT_COLUMNS;
+    try {
+      const raw = window.localStorage.getItem(TRACE_EXPORT_COLS_STORAGE_KEY);
+      return raw ? normalizeExportColumns(JSON.parse(raw)) : DEFAULT_TRACE_EXPORT_COLUMNS;
+    } catch {
+      return DEFAULT_TRACE_EXPORT_COLUMNS;
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(TRACE_EXPORT_COLS_STORAGE_KEY, JSON.stringify(exportCols)); } catch { /* noop */ }
+  }, [exportCols]);
+  const activeExportCols = useMemo(
+    () => exportCols.filter((c) => c.enabled).map((c) => ({ key: c.key, label: c.label })),
+    [exportCols],
+  );
+  const toggleExportCol = (k: TraceExportKey) =>
+    setExportCols((prev) => prev.map((c) => (c.key === k ? { ...c, enabled: !c.enabled } : c)));
+  const relabelExportCol = (k: TraceExportKey, label: string) =>
+    setExportCols((prev) => prev.map((c) => (c.key === k ? { ...c, label } : c)));
+  const moveExportCol = (i: number, dir: -1 | 1) =>
+    setExportCols((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = prev.slice();
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  const resetExportCols = () => setExportCols(DEFAULT_TRACE_EXPORT_COLUMNS);
+  const toggleAllExportCols = (on: boolean) =>
+    setExportCols((prev) => prev.map((c) => ({ ...c, enabled: on })));
   const kw = keyword.trim().toLowerCase();
   const sevFiltered = activeSeverities.length < ALL_SEVERITIES.length;
   const activeSevSet = useMemo(() => new Set(activeSeverities), [activeSeverities]);
@@ -1093,14 +1178,28 @@ function TraceResultView({
               {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
             </button>
             <button
-              onClick={() => onExport(keyword, csvOpts)}
-              disabled={exporting || totals.total === 0}
+              onClick={() => onExport(keyword, csvOpts, activeExportCols)}
+              disabled={exporting || totals.total === 0 || activeExportCols.length === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-              title={keyword.trim() ? "Export toàn bộ event khớp bộ lọc hiện tại (kèm keyword), không giới hạn theo trang" : "Export toàn bộ event khớp bộ lọc hiện tại, không giới hạn theo trang"}
+              title={
+                activeExportCols.length === 0
+                  ? "Chưa chọn cột nào để export"
+                  : keyword.trim()
+                  ? `Export ${activeExportCols.length} cột, kèm keyword`
+                  : `Export ${activeExportCols.length} cột`
+              }
             >
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
-              {exporting ? "Đang export…" : "CSV (tất cả kết quả)"}
+              {exporting ? "Đang export…" : `CSV (tất cả kết quả) · ${activeExportCols.length}/${exportCols.length} cột`}
             </button>
+            <TraceExportColumnsMenu
+              cols={exportCols}
+              onToggle={toggleExportCol}
+              onRelabel={relabelExportCol}
+              onMove={moveExportCol}
+              onReset={resetExportCols}
+              onToggleAll={toggleAllExportCols}
+            />
             <button
               onClick={() => {
                 const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
@@ -1625,6 +1724,122 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
             />
             <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
           </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TraceExportColumnsMenu({
+  cols,
+  onToggle,
+  onRelabel,
+  onMove,
+  onReset,
+  onToggleAll,
+}: {
+  cols: TraceExportColumn[];
+  onToggle: (k: TraceExportKey) => void;
+  onRelabel: (k: TraceExportKey, label: string) => void;
+  onMove: (i: number, dir: -1 | 1) => void;
+  onReset: () => void;
+  onToggleAll: (on: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-export-cols-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const activeCount = cols.filter((c) => c.enabled).length;
+  return (
+    <div className="relative" data-export-cols-menu>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        title="Chọn/đổi thứ tự/đổi tiêu đề các cột khi bấm 'CSV (tất cả kết quả)'"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <Columns3 className="h-3 w-3" />
+        Cột export ({activeCount}/{cols.length})
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-1 w-[420px] rounded-lg border border-border bg-surface p-3 text-xs shadow-lg">
+          <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span>Cột cho "CSV (tất cả kết quả)"</span>
+            <div className="flex items-center gap-1 normal-case tracking-normal">
+              <button
+                onClick={() => onToggleAll(true)}
+                className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+              >
+                Tất cả
+              </button>
+              <button
+                onClick={() => onToggleAll(false)}
+                className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+              >
+                Bỏ chọn
+              </button>
+              <button
+                onClick={onReset}
+                className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+              >
+                Đặt lại
+              </button>
+            </div>
+          </div>
+          <div className="max-h-[360px] overflow-auto rounded-md border border-border">
+            <ul className="divide-y divide-border">
+              {cols.map((c, i) => (
+                <li key={c.key} className="flex items-center gap-2 px-2 py-1.5">
+                  <input
+                    type="checkbox"
+                    checked={c.enabled}
+                    onChange={() => onToggle(c.key)}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary"
+                    aria-label={`Chọn cột ${c.key}`}
+                  />
+                  <code className="w-36 shrink-0 truncate font-mono text-[11px] text-muted-foreground" title={c.key}>
+                    {c.key}
+                  </code>
+                  <input
+                    value={c.label}
+                    onChange={(e) => onRelabel(c.key, e.target.value)}
+                    placeholder="Tiêu đề cột"
+                    className="min-w-0 flex-1 rounded border border-border bg-surface-2 px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => onMove(i, -1)}
+                      disabled={i === 0}
+                      className="rounded border border-border px-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                      aria-label="Lên"
+                      title="Lên"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => onMove(i, 1)}
+                      disabled={i === cols.length - 1}
+                      className="rounded border border-border px-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                      aria-label="Xuống"
+                      title="Xuống"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Cấu hình được lưu tự động trên trình duyệt này.
+          </p>
         </div>
       )}
     </div>

@@ -624,6 +624,19 @@ function toCsv(
   return body ? `${head}\n${body}\n` : `${head}\n`;
 }
 
+/** Like toCsv but with distinct header labels and data-key lookup, preserving order. */
+function toCsvLabeled(
+  headerLabels: readonly string[],
+  dataKeys: readonly string[],
+  rows: Array<Record<string, unknown>>,
+  delim: string = ",",
+  quote: string = '"',
+): string {
+  const head = headerLabels.map((h) => csvEscapeMixed(h, delim, quote)).join(delim);
+  const body = rows.map((r) => dataKeys.map((k) => csvEscapeMixed(r[k], delim, quote)).join(delim)).join("\n");
+  return body ? `${head}\n${body}\n` : `${head}\n`;
+}
+
 const TRACE_CSV_HEADERS = [
   "occurred_at",
   "kind",
@@ -665,6 +678,16 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         statuses: z.array(z.enum(["success", "failure", "pending"])).nonempty().optional(),
         delimiter: z.enum([",", ";", "\t"]).default(","),
         quoteChar: z.enum(['"', "'"]).default('"'),
+        columns: z
+          .array(
+            z.object({
+              key: z.enum(TRACE_CSV_HEADERS as unknown as [string, ...string[]]),
+              label: z.string().trim().min(1).max(120).optional(),
+            }),
+          )
+          .min(1)
+          .max(TRACE_CSV_HEADERS.length)
+          .optional(),
       })
       .parse(i),
   )
@@ -834,7 +857,13 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
     const totalRows = stFiltered.length;
     const truncated = totalRows > cap;
     const capped = truncated ? stFiltered.slice(0, cap) : stFiltered;
-    const csv = toCsv(TRACE_CSV_HEADERS, capped, data.delimiter, data.quoteChar);
+    // Choose columns + labels (user-selected order/labels win, else defaults)
+    const chosen = (data.columns && data.columns.length > 0)
+      ? data.columns
+      : TRACE_CSV_HEADERS.map((k) => ({ key: k, label: k }));
+    const dataKeys = chosen.map((c) => c.key);
+    const headerLabels = chosen.map((c) => c.label ?? c.key);
+    const csv = toCsvLabeled(headerLabels, dataKeys, capped, data.delimiter, data.quoteChar);
 
     return {
       correlationId: cid,
@@ -842,6 +871,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
       rowCount: capped.length,
       totalRows,
       truncated,
+      columns: dataKeys,
       filename: `trace_${cid.replace(/[^a-zA-Z0-9_.-]/g, "_")}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`,
     };
   });
