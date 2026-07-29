@@ -1979,6 +1979,10 @@ export type Database = {
         }
         Returns: string
       }
+      _raise_quota_exceeded: {
+        Args: { _delta: number; _meter_key: string; _tenant_id: string }
+        Returns: undefined
+      }
       _resolve_workspace_tenant: {
         Args: { _workspace_id: string }
         Returns: string
