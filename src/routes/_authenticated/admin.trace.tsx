@@ -110,10 +110,10 @@ function AdminTracePage() {
   });
 
   const exportMut = useMutation({
-    mutationFn: (correlationId: string) =>
+    mutationFn: (args: { correlationId: string; keyword?: string }) =>
       exportTraceCsv({
         data: {
-          correlationId,
+          correlationId: args.correlationId,
           maxRows: 50_000,
           kinds:
             activeKinds.length === ALL_KINDS.length
@@ -122,6 +122,7 @@ function AdminTracePage() {
           fromTs: fromIso,
           toTs: toIso,
           sort: currentSort,
+          keyword: args.keyword?.trim() || undefined,
         },
       }),
     onSuccess: (data) => {
@@ -325,7 +326,7 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
-          onExport={() => exportMut.mutate(result.correlationId)}
+          onExport={(keyword) => exportMut.mutate({ correlationId: result.correlationId, keyword })}
           exporting={exportMut.isPending}
           activeKinds={activeKinds}
           onToggleKind={toggleKind}
@@ -371,7 +372,7 @@ function TraceResultView({
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
   pending: boolean;
-  onExport: () => void;
+  onExport: (keyword?: string) => void;
   exporting: boolean;
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
@@ -496,13 +497,13 @@ function TraceResultView({
               {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
             </button>
             <button
-              onClick={onExport}
+              onClick={() => onExport(keyword)}
               disabled={exporting || totals.total === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-              title="Export toàn bộ trace ra CSV"
+              title={keyword.trim() ? "Export CSV theo bộ lọc hiện tại (kèm keyword)" : "Export CSV theo bộ lọc hiện tại"}
             >
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
-              {exporting ? "Đang export…" : "Export CSV"}
+              {exporting ? "Đang export…" : keyword.trim() ? "Export CSV (đã lọc)" : "Export CSV"}
             </button>
             <AutoRefreshControl
               value={autoRefreshSec}

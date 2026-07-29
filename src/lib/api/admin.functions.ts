@@ -651,6 +651,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         fromTs: z.string().datetime().optional(),
         toTs: z.string().datetime().optional(),
         sort: z.enum(["asc", "desc"]).default("asc"),
+        keyword: z.string().trim().max(200).optional(),
       })
       .parse(i),
   )
@@ -785,9 +786,19 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
       return data.sort === "asc" ? (av < bv ? -1 : 1) : (av < bv ? 1 : -1);
     });
 
-    const totalRows = rows.length;
+    const kw = data.keyword?.toLowerCase() ?? "";
+    const matched = kw
+      ? rows.filter((r) => {
+          try {
+            return JSON.stringify(r).toLowerCase().includes(kw);
+          } catch {
+            return false;
+          }
+        })
+      : rows;
+    const totalRows = matched.length;
     const truncated = totalRows > cap;
-    const capped = truncated ? rows.slice(0, cap) : rows;
+    const capped = truncated ? matched.slice(0, cap) : matched;
     const csv = toCsv(TRACE_CSV_HEADERS, capped);
 
     return {
