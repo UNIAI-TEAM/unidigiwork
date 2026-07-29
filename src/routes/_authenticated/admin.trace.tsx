@@ -420,6 +420,7 @@ function AdminTracePage() {
         keyword: vars.keyword,
         fromIso,
         toIso,
+        filenameTz: vars.csv.filenameTz,
       });
       document.body.appendChild(a);
       a.click();
@@ -1223,6 +1224,7 @@ function TraceResultView({
                   keyword,
                   fromIso,
                   toIso,
+                  filenameTz: csvOpts.filenameTz,
                 });
                 document.body.appendChild(a);
                 a.click();
