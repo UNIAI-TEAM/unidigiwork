@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2 } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -65,7 +65,28 @@ const DEFAULT_COLUMNS: ColumnPrefs = {
   meta: true, tenant: true, actor: true, target: true, payload: true,
 };
 const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
+const COLUMN_ORDER_STORAGE_KEY = "uniwork.admin.trace.columnOrder.v1";
+const COLUMN_PRESETS_STORAGE_KEY = "uniwork.admin.trace.columnPresets.v1";
 const CSV_OPTIONS_STORAGE_KEY = "uniwork.admin.trace.csv.v1";
+
+const DEFAULT_COLUMN_ORDER: ColumnKey[] = COLUMN_DEFS.map((c) => c.key) as ColumnKey[];
+function normalizeColumnOrder(input: unknown): ColumnKey[] {
+  const valid = new Set<string>(DEFAULT_COLUMN_ORDER as string[]);
+  const seen = new Set<string>();
+  const out: ColumnKey[] = [];
+  if (Array.isArray(input)) {
+    for (const k of input) {
+      if (typeof k === "string" && valid.has(k) && !seen.has(k)) {
+        seen.add(k);
+        out.push(k as ColumnKey);
+      }
+    }
+  }
+  for (const k of DEFAULT_COLUMN_ORDER) if (!seen.has(k)) out.push(k);
+  return out;
+}
+
+type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
 type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
 const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
@@ -120,8 +141,9 @@ function timelineCellValue(item: TimelineItem, key: ColumnKey): string {
   }
 }
 
-function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs, opts: CsvOptions = DEFAULT_CSV_OPTIONS): string {
-  const active = COLUMN_DEFS.filter((c) => columns[c.key]);
+function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs, order: ColumnKey[], opts: CsvOptions = DEFAULT_CSV_OPTIONS): string {
+  const byKey = new Map(COLUMN_DEFS.map((c) => [c.key, c] as const));
+  const active = order.map((k) => byKey.get(k)).filter((c): c is (typeof COLUMN_DEFS)[number] => !!c && columns[c.key]);
   if (active.length === 0) return "";
   const d = opts.delimiter;
   const q = opts.quoteChar;
@@ -765,8 +787,91 @@ function TraceResultView({
   }, [columns]);
   const toggleColumn = (k: ColumnKey) =>
     setColumns((prev) => ({ ...prev, [k]: !prev[k] }));
-  const resetColumns = () => setColumns(DEFAULT_COLUMNS);
+  const resetColumns = () => {
+    setColumns(DEFAULT_COLUMNS);
+    setColumnOrder(DEFAULT_COLUMN_ORDER);
+  };
   const activeColumnCount = Object.values(columns).filter(Boolean).length;
+  const [columnOrder, setColumnOrder] = useState<ColumnKey[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_COLUMN_ORDER;
+    try {
+      const raw = window.localStorage.getItem(COLUMN_ORDER_STORAGE_KEY);
+      return normalizeColumnOrder(raw ? JSON.parse(raw) : null);
+    } catch {
+      return DEFAULT_COLUMN_ORDER;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(columnOrder));
+    } catch {
+      /* noop */
+    }
+  }, [columnOrder]);
+  const moveColumn = (k: ColumnKey, dir: -1 | 1) =>
+    setColumnOrder((prev) => {
+      const i = prev.indexOf(k);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const next = prev.slice();
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  const [columnPresets, setColumnPresets] = useState<ColumnPreset[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(COLUMN_PRESETS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((p): p is ColumnPreset => !!p && typeof p.id === "string" && typeof p.name === "string")
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          columns: { ...DEFAULT_COLUMNS, ...(p.columns ?? {}) },
+          order: normalizeColumnOrder(p.order),
+        }));
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMN_PRESETS_STORAGE_KEY, JSON.stringify(columnPresets));
+    } catch {
+      /* noop */
+    }
+  }, [columnPresets]);
+  const saveColumnPreset = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setColumnPresets((prev) => {
+      const existing = prev.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
+      const preset: ColumnPreset = {
+        id: existing?.id ?? (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `p_${Date.now()}`),
+        name: trimmed,
+        columns: { ...columns },
+        order: [...columnOrder],
+      };
+      const next = existing ? prev.map((p) => (p.id === existing.id ? preset : p)) : [...prev, preset];
+      toast.success(existing ? `Đã cập nhật preset "${trimmed}"` : `Đã lưu preset "${trimmed}"`);
+      return next;
+    });
+  };
+  const applyColumnPreset = (id: string) => {
+    const p = columnPresets.find((x) => x.id === id);
+    if (!p) return;
+    setColumns({ ...DEFAULT_COLUMNS, ...p.columns });
+    setColumnOrder(normalizeColumnOrder(p.order));
+    toast.success(`Đã áp dụng preset "${p.name}"`);
+  };
+  const deleteColumnPreset = (id: string) => {
+    setColumnPresets((prev) => {
+      const p = prev.find((x) => x.id === id);
+      if (p) toast.success(`Đã xóa preset "${p.name}"`);
+      return prev.filter((x) => x.id !== id);
+    });
+  };
   const [csvOpts, setCsvOpts] = useState<CsvOptions>(() => {
     if (typeof window === "undefined") return DEFAULT_CSV_OPTIONS;
     try {
@@ -953,7 +1058,7 @@ function TraceResultView({
             </button>
             <button
               onClick={() => {
-                const csv = buildTimelineCsv(filteredTimeline, columns, csvOpts);
+                const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
                 const prefix = csvOpts.bom ? "\ufeff" : "";
                 const blob = new Blob([prefix + csv], { type: "text/csv;charset=utf-8;" });
@@ -982,7 +1087,18 @@ function TraceResultView({
               pending={pending}
               lastRefreshedAt={lastRefreshedAt}
             />
-            <ColumnsMenu columns={columns} onToggle={toggleColumn} onReset={resetColumns} activeCount={activeColumnCount} />
+            <ColumnsMenu
+              columns={columns}
+              order={columnOrder}
+              onToggle={toggleColumn}
+              onMove={moveColumn}
+              onReset={resetColumns}
+              activeCount={activeColumnCount}
+              presets={columnPresets}
+              onSavePreset={saveColumnPreset}
+              onApplyPreset={applyColumnPreset}
+              onDeletePreset={deleteColumnPreset}
+            />
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
         </div>
@@ -1466,14 +1582,26 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
 
 function ColumnsMenu({
   columns,
+  order,
   onToggle,
+  onMove,
   onReset,
   activeCount,
+  presets,
+  onSavePreset,
+  onApplyPreset,
+  onDeletePreset,
 }: {
   columns: ColumnPrefs;
+  order: ColumnKey[];
   onToggle: (k: ColumnKey) => void;
+  onMove: (k: ColumnKey, dir: -1 | 1) => void;
   onReset: () => void;
   activeCount: number;
+  presets: ColumnPreset[];
+  onSavePreset: (name: string) => void;
+  onApplyPreset: (id: string) => void;
+  onDeletePreset: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -1485,12 +1613,14 @@ function ColumnsMenu({
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
+  const [newName, setNewName] = useState("");
+  const byKey = useMemo(() => new Map(COLUMN_DEFS.map((c) => [c.key, c] as const)), []);
   return (
     <div className="relative" data-columns-menu>
       <button
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-        title="Bật/tắt cột hiển thị trên timeline"
+        title="Bật/tắt, sắp xếp cột và quản lý preset"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -1498,9 +1628,9 @@ function ColumnsMenu({
         Cột ({activeCount}/{COLUMN_DEFS.length})
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-lg border border-border bg-surface p-2 shadow-lg">
           <div className="mb-1 flex items-center justify-between px-1 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-            <span>Cột hiển thị</span>
+            <span>Cột hiển thị & thứ tự</span>
             <button
               onClick={onReset}
               className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
@@ -1509,20 +1639,98 @@ function ColumnsMenu({
             </button>
           </div>
           <ul className="flex flex-col">
-            {COLUMN_DEFS.map((c) => (
-              <li key={c.key}>
-                <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground hover:bg-surface-2">
-                  <input
-                    type="checkbox"
-                    checked={columns[c.key]}
-                    onChange={() => onToggle(c.key)}
-                    className="h-3.5 w-3.5 rounded border-border accent-primary"
-                  />
-                  <span>{c.label}</span>
-                </label>
-              </li>
-            ))}
+            {order.map((key, idx) => {
+              const c = byKey.get(key);
+              if (!c) return null;
+              return (
+                <li key={key} className="flex items-center gap-1 rounded hover:bg-surface-2">
+                  <label className="flex flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-xs text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={columns[key]}
+                      onChange={() => onToggle(key)}
+                      className="h-3.5 w-3.5 rounded border-border accent-primary"
+                    />
+                    <span>{c.label}</span>
+                  </label>
+                  <button
+                    onClick={() => onMove(key, -1)}
+                    disabled={idx === 0}
+                    className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    title="Lên"
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => onMove(key, 1)}
+                    disabled={idx === order.length - 1}
+                    className="mr-1 rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    title="Xuống"
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
+          <div className="mt-2 border-t border-border pt-2">
+            <div className="mb-1 flex items-center justify-between px-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <span>Preset</span>
+              <span className="normal-case tracking-normal">{presets.length} đã lưu</span>
+            </div>
+            {presets.length > 0 && (
+              <ul className="mb-2 flex max-h-40 flex-col overflow-auto">
+                {presets.map((p) => (
+                  <li key={p.id} className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-surface-2">
+                    <button
+                      onClick={() => onApplyPreset(p.id)}
+                      className="flex flex-1 items-center gap-2 truncate rounded px-1.5 py-1 text-left text-xs text-foreground"
+                      title={`Áp dụng preset "${p.name}"`}
+                    >
+                      <Bookmark className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{p.name}</span>
+                      <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                        {Object.values(p.columns).filter(Boolean).length}/{COLUMN_DEFS.length}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => onDeletePreset(p.id)}
+                      className="rounded p-1 text-muted-foreground hover:text-red-400"
+                      title="Xóa preset"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newName.trim()) return;
+                onSavePreset(newName);
+                setNewName("");
+              }}
+              className="flex items-center gap-1"
+            >
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Tên preset (vd: Chỉ Quota)"
+                className="flex-1 rounded border border-border bg-surface-2 px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none"
+                maxLength={64}
+              />
+              <button
+                type="submit"
+                disabled={!newName.trim()}
+                className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+                title="Lưu cấu hình cột hiện tại thành preset"
+              >
+                <Save className="h-3 w-3" />
+                Lưu
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>
