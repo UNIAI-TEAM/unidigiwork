@@ -75,34 +75,39 @@ END $$;
 -- Wrap a fully successful create_task in a SAVEPOINT then roll back to
 -- simulate a downstream failure occurring after record_usage committed its
 -- increment inside the outer transaction.
+-- A PL/pgSQL BEGIN...EXCEPTION block is an implicit subtransaction: any
+-- exception raised inside it rolls back everything the block did — including
+-- the record_usage increment — before control returns to the outer tx.
 DO $$
 DECLARE _tid uuid; _ws uuid; _mid bigint; _after bigint;
 BEGIN
   SELECT tenant_id, workspace_id INTO _tid, _ws FROM _t;
-
-  SAVEPOINT sp_leak_b;
-  PERFORM public.create_task(_ws,'leak-B',NULL,'normal',NULL,NULL,'leak-B-idem',NULL);
-  SELECT total INTO _mid FROM public.usage_counters
-    WHERE tenant_id=_tid AND meter_key='tasks.active'
-      AND period_start=date_trunc('month',now());
-  IF COALESCE(_mid,0) <> 1 THEN
-    RAISE EXCEPTION 'FAIL B: expected usage=1 mid-savepoint, got %', _mid;
-  END IF;
-  RAISE NOTICE 'OK B: usage incremented to 1 pre-rollback';
-
-  -- Simulate any post-record_usage failure.
-  ROLLBACK TO SAVEPOINT sp_leak_b;
+  BEGIN
+    PERFORM public.create_task(_ws,'leak-B',NULL,'normal',NULL,NULL,'leak-B-idem',NULL);
+    SELECT total INTO _mid FROM public.usage_counters
+      WHERE tenant_id=_tid AND meter_key='tasks.active'
+        AND period_start=date_trunc('month',now());
+    IF COALESCE(_mid,0) <> 1 THEN
+      RAISE EXCEPTION 'FAIL B: expected usage=1 mid-subtx, got %', _mid;
+    END IF;
+    -- Simulate any post-record_usage failure inside the same RPC transaction.
+    RAISE EXCEPTION 'SIMULATED_POST_USAGE_FAILURE';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM <> 'SIMULATED_POST_USAGE_FAILURE' THEN
+      RAISE EXCEPTION 'FAIL B: unexpected error %', SQLERRM;
+    END IF;
+  END;
 
   SELECT COALESCE(total,0) INTO _after FROM public.usage_counters
     WHERE tenant_id=_tid AND meter_key='tasks.active'
       AND period_start=date_trunc('month',now());
   IF COALESCE(_after,0) <> 0 THEN
-    RAISE EXCEPTION 'FAIL B: quota leaked after rollback, usage=% (expected 0)', _after;
+    RAISE EXCEPTION 'FAIL B: quota leaked after subtx rollback, usage=% (expected 0)', _after;
   END IF;
   IF EXISTS (SELECT 1 FROM public.tasks WHERE workspace_id=_ws AND title='leak-B') THEN
     RAISE EXCEPTION 'FAIL B: task row survived rollback';
   END IF;
-  RAISE NOTICE 'OK B: savepoint rollback undid quota increment cleanly';
+  RAISE NOTICE 'OK B: subtransaction rollback undid quota increment cleanly';
 END $$;
 
 -- ---- Scenario C: quota gate itself denies → no counter movement ----------
