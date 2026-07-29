@@ -57,6 +57,7 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminTenantRouteImport } from './routes/_authenticated/admin.tenant'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminQuotaRouteImport } from './routes/_authenticated/admin.quota'
+import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -304,6 +305,12 @@ const AuthenticatedAdminQuotaRoute = AuthenticatedAdminQuotaRouteImport.update({
   path: '/quota',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const ApiAdminTraceCorrelationIdRoute =
+  ApiAdminTraceCorrelationIdRouteImport.update({
+    id: '/api/admin/trace/$correlationId',
+    path: '/api/admin/trace/$correlationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedWorkspaceIdStosRoute =
   AuthenticatedWorkspaceIdStosRouteImport.update({
     id: '/stos',
@@ -360,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
+  '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -408,6 +416,7 @@ export interface FileRoutesByTo {
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
+  '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -460,6 +469,7 @@ export interface FileRoutesById {
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
+  '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/blog/category/$category'
     | '/admin/'
     | '/workspace/$id/stos'
+    | '/api/admin/trace/$correlationId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -560,6 +571,7 @@ export interface FileRouteTypes {
     | '/blog/category/$category'
     | '/admin'
     | '/workspace/$id/stos'
+    | '/api/admin/trace/$correlationId'
   id:
     | '__root__'
     | '/'
@@ -611,6 +623,7 @@ export interface FileRouteTypes {
     | '/blog/category/$category'
     | '/_authenticated/admin/'
     | '/_authenticated/workspace/$id/stos'
+    | '/api/admin/trace/$correlationId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -633,6 +646,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -973,6 +987,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQuotaRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/admin/trace/$correlationId': {
+      id: '/api/admin/trace/$correlationId'
+      path: '/api/admin/trace/$correlationId'
+      fullPath: '/api/admin/trace/$correlationId'
+      preLoaderRoute: typeof ApiAdminTraceCorrelationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/workspace/$id/stos': {
       id: '/_authenticated/workspace/$id/stos'
       path: '/stos'
@@ -1197,6 +1218,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
+  ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
