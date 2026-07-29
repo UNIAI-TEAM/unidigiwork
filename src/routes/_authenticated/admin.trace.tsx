@@ -429,6 +429,7 @@ type FilterPreset = {
   sev?: string;
   st?: string;
   kw?: string;
+  tz?: FilenameTz;
 };
 
 // datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
@@ -502,6 +503,22 @@ function AdminTracePage() {
   const [toInput, setToInput] = useState<string>(to ?? "");
   const [result, setResult] = useState<TraceResult | null>(null);
   const [keyword, setKeyword] = useState<string>("");
+  const [csvOpts, setCsvOpts] = useState<CsvOptions>(() => {
+    if (typeof window === "undefined") return DEFAULT_CSV_OPTIONS;
+    try {
+      const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);
+      if (!raw) return DEFAULT_CSV_OPTIONS;
+      const parsed = JSON.parse(raw);
+      const merged = { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
+      merged.filenameTemplate = normalizeFilenameTemplate((parsed as { filenameTemplate?: unknown })?.filenameTemplate);
+      return merged;
+    } catch {
+      return DEFAULT_CSV_OPTIONS;
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
+  }, [csvOpts]);
   const [presets, setPresets] = useState<FilterPreset[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -742,6 +759,7 @@ function AdminTracePage() {
       sev: encodedSev,
       st: encodedSt,
       kw: keyword.trim() || undefined,
+      tz: csvOpts.filenameTz,
     };
     setPresets((prev) => {
       const withoutDup = prev.filter((p) => p.name !== trimmed);
@@ -753,6 +771,7 @@ function AdminTracePage() {
     setFromInput(p.from ?? "");
     setToInput(p.to ?? "");
     setKeyword(p.kw ?? "");
+    if (p.tz) setCsvOpts((prev) => ({ ...prev, filenameTz: p.tz! }));
     navigate({
       search: (prev: SearchState) => ({
         ...prev,
@@ -935,6 +954,8 @@ function AdminTracePage() {
           lastRefreshedAt={lastRefreshedAt}
           fromIso={fromIso}
           toIso={toIso}
+          csvOpts={csvOpts}
+          onChangeCsvOpts={setCsvOpts}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -1021,6 +1042,8 @@ function TraceResultView({
   lastRefreshedAt,
   fromIso,
   toIso,
+  csvOpts,
+  onChangeCsvOpts,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -1047,6 +1070,8 @@ function TraceResultView({
   lastRefreshedAt: number | null;
   fromIso?: string;
   toIso?: string;
+  csvOpts: CsvOptions;
+  onChangeCsvOpts: (v: CsvOptions) => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
@@ -1162,22 +1187,6 @@ function TraceResultView({
       return prev.filter((x) => x.id !== id);
     });
   };
-  const [csvOpts, setCsvOpts] = useState<CsvOptions>(() => {
-    if (typeof window === "undefined") return DEFAULT_CSV_OPTIONS;
-    try {
-      const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);
-      if (!raw) return DEFAULT_CSV_OPTIONS;
-      const parsed = JSON.parse(raw);
-      const merged = { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
-      merged.filenameTemplate = normalizeFilenameTemplate((parsed as { filenameTemplate?: unknown })?.filenameTemplate);
-      return merged;
-    } catch {
-      return DEFAULT_CSV_OPTIONS;
-    }
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
-  }, [csvOpts]);
   const [exportCols, setExportCols] = useState<TraceExportColumn[]>(() => {
     if (typeof window === "undefined") return DEFAULT_TRACE_EXPORT_COLUMNS;
     try {
@@ -1438,7 +1447,7 @@ function TraceResultView({
             </button>
             <CsvOptionsMenu
               value={csvOpts}
-              onChange={setCsvOpts}
+              onChange={onChangeCsvOpts}
               preview={{
                 correlationId,
                 keyword,
