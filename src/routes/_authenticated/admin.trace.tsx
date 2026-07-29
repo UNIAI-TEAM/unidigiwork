@@ -1385,6 +1385,85 @@ function OutboxEventRow({ data, columns }: { data: OutboxEvent; columns: ColumnP
   );
 }
 
+function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: CsvOptions) => void }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-csv-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const delimLabel = value.delimiter === "," ? "," : value.delimiter === ";" ? ";" : "Tab";
+  return (
+    <div className="relative" data-csv-menu>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        title="Tùy chọn định dạng CSV (delimiter, quote, BOM)"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        CSV: {delimLabel} · {value.quoteChar === '"' ? "\"" : "'"} · {value.bom ? "BOM" : "no BOM"}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-border bg-surface p-3 text-xs shadow-lg">
+          <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span>Tùy chọn CSV</span>
+            <button
+              onClick={() => onChange(DEFAULT_CSV_OPTIONS)}
+              className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
+            >
+              Đặt lại
+            </button>
+          </div>
+          <div className="mb-3">
+            <div className="mb-1 text-muted-foreground">Delimiter</div>
+            <div className="flex gap-1">
+              {([[",", "Phẩy ,"], [";", "Chấm phẩy ;"], ["\t", "Tab"]] as const).map(([d, label]) => (
+                <button
+                  key={d}
+                  onClick={() => onChange({ ...value, delimiter: d })}
+                  aria-pressed={value.delimiter === d}
+                  className={`flex-1 rounded-md border px-2 py-1 ${value.delimiter === d ? "border-primary bg-surface-2 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mb-3">
+            <div className="mb-1 text-muted-foreground">Ký tự bao chuỗi</div>
+            <div className="flex gap-1">
+              {([['"', "\" (double)"], ["'", "' (single)"]] as const).map(([q, label]) => (
+                <button
+                  key={q}
+                  onClick={() => onChange({ ...value, quoteChar: q })}
+                  aria-pressed={value.quoteChar === q}
+                  className={`flex-1 rounded-md border px-2 py-1 ${value.quoteChar === q ? "border-primary bg-surface-2 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 hover:bg-surface-2">
+            <input
+              type="checkbox"
+              checked={value.bom}
+              onChange={(e) => onChange({ ...value, bom: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ColumnsMenu({
   columns,
   onToggle,
