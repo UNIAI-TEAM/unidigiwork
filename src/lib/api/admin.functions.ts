@@ -697,6 +697,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
     const cid = data.correlationId;
     const cap = data.maxRows;
     const kinds = new Set(data.kinds ?? ["quota", "audit", "outbox"]);
+    const startedAt = Date.now();
 
     const runQuery = (table: string, cols: string) => {
       // deno-lint-ignore no-explicit-any
