@@ -549,3 +549,130 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
       timeline,
     };
   });
+
+// ---------- Background export jobs ----------
+
+export type QuotaExportJob = {
+  id: string;
+  requested_by: string;
+  tenant_id: string | null;
+  meter_key: string | null;
+  status_filter: "all" | "pass" | "fail";
+  from_ts: string;
+  to_ts: string;
+  max_rows: number;
+  status: "pending" | "running" | "succeeded" | "failed" | "canceled";
+  row_count: number | null;
+  file_path: string | null;
+  file_size_bytes: number | null;
+  truncated: boolean;
+  error: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  expires_at: string;
+};
+
+const createJobSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+  tenantId: z.string().uuid().optional(),
+  meterKey: z.string().max(120).optional(),
+  status: z.enum(["all", "pass", "fail"]).default("all"),
+  maxRows: z.number().int().min(1).max(2_000_000).default(500_000),
+});
+
+/** Create a background export job. Admin only. Processed by cron or run-now. */
+export const createQuotaExportJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => createJobSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const fromIso = /T/.test(data.from) ? data.from : `${data.from}T00:00:00.000Z`;
+    const toIso = /T/.test(data.to) ? data.to : `${data.to}T23:59:59.999Z`;
+    const { data: row, error } = await supabaseAdmin
+      .from("quota_export_jobs")
+      .insert({
+        requested_by: context.userId,
+        tenant_id: data.tenantId ?? null,
+        meter_key: data.meterKey ?? null,
+        status_filter: data.status,
+        from_ts: fromIso,
+        to_ts: toIso,
+        max_rows: data.maxRows,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: row.id };
+  });
+
+/** List recent export jobs. Admin only. */
+export const listQuotaExportJobs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("quota_export_jobs")
+      .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, status, row_count, file_path, file_size_bytes, truncated, error, created_at, started_at, completed_at, expires_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as QuotaExportJob[];
+  });
+
+/** Delete an export job (and its file). Admin only. */
+export const deleteQuotaExportJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: job } = await supabaseAdmin
+      .from("quota_export_jobs")
+      .select("file_path")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (job?.file_path) {
+      await supabaseAdmin.storage.from("quota-exports").remove([job.file_path]);
+    }
+    const { error } = await supabaseAdmin.from("quota_export_jobs").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Get signed download URL for a succeeded export. Admin only. */
+export const getQuotaExportDownloadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: job, error } = await supabaseAdmin
+      .from("quota_export_jobs")
+      .select("file_path, status")
+      .eq("id", data.id)
+      .single();
+    if (error) throw new Error(error.message);
+    if (job.status !== "succeeded" || !job.file_path) {
+      throw new Error("Job chưa hoàn tất");
+    }
+    const signed = await supabaseAdmin.storage
+      .from("quota-exports")
+      .createSignedUrl(job.file_path, 300);
+    if (signed.error) throw new Error(signed.error.message);
+    return { url: signed.data.signedUrl };
+  });
+
+/** Trigger immediate processing of pending jobs. Admin only. */
+export const runPendingQuotaExports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { claimAndProcessPending } = await import("./quota-export-processor.server");
+    const processed = await claimAndProcessPending(supabaseAdmin as never, 3);
+    return { processed };
+  });
