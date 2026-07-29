@@ -98,6 +98,7 @@ function AdminTracePage() {
               : (activeKinds as [Kind, ...Kind[]]),
           fromTs: fromIso,
           toTs: toIso,
+          sort: currentSort,
         },
       }),
     onSuccess: (data) => {
@@ -119,14 +120,14 @@ function AdminTracePage() {
     onError: (e: Error) => toast.error(e.message ?? "Không export được"),
   });
 
-  // Auto-run when arriving with ?cid= (or page/limit change)
+  // Auto-run when arriving with ?cid= (or page/limit/sort change)
   useEffect(() => {
     if (cid && cid.trim()) {
       setInput(cid);
-      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso });
+      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso, sort: currentSort });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid, currentPage, currentLimit, activeKinds.join(","), fromIso, toIso]);
+  }, [cid, currentPage, currentLimit, activeKinds.join(","), fromIso, toIso, currentSort]);
 
   const submit = () => {
     const v = input.trim();
