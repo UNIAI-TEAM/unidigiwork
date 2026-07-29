@@ -1,8 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Activity, CheckCircle2, XCircle, RefreshCw, Filter } from "lucide-react";
-import { listQuotaCheckEvents, getQuotaCheckMetrics } from "@/lib/api/admin.functions";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { Activity, CheckCircle2, XCircle, RefreshCw, Filter, Bell, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import {
+  listQuotaCheckEvents,
+  getQuotaCheckMetrics,
+  listQuotaAlertRules,
+  upsertQuotaAlertRule,
+  deleteQuotaAlertRule,
+  listQuotaAlertEvents,
+  type QuotaAlertRule,
+} from "@/lib/api/admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/quota")({
   head: () => ({
@@ -20,6 +30,7 @@ function AdminQuotaPage() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [tenantId, setTenantId] = useState<string>("");
   const [meterKey, setMeterKey] = useState<string>("");
+  const qc = useQueryClient();
 
   const metricsQ = useQuery({
     queryKey: ["admin", "quota", "metrics"],
@@ -40,6 +51,37 @@ function AdminQuotaPage() {
       }),
     refetchInterval: 30_000,
   });
+
+  const rulesQ = useQuery({
+    queryKey: ["admin", "quota", "alert-rules"],
+    queryFn: () => listQuotaAlertRules(),
+  });
+  const alertsQ = useQuery({
+    queryKey: ["admin", "quota", "alert-events"],
+    queryFn: () => listQuotaAlertEvents(),
+    refetchInterval: 15_000,
+  });
+
+  // Realtime: refresh alert list when a new alert fires
+  useEffect(() => {
+    const ch = supabase
+      .channel("quota-alert-events")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "quota_alert_events" },
+        (payload) => {
+          const row = payload.new as { meter_key?: string; exceeded_count?: number };
+          toast.warning(`Quota spike: ${row.meter_key ?? "meter"}`, {
+            description: `${row.exceeded_count ?? "?"} lần exceeded trong cửa sổ giám sát.`,
+          });
+          qc.invalidateQueries({ queryKey: ["admin", "quota", "alert-events"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [qc]);
 
   const metrics = metricsQ.data ?? [];
   const events = eventsQ.data ?? [];
@@ -74,6 +116,7 @@ function AdminQuotaPage() {
   const refresh = () => {
     metricsQ.refetch();
     eventsQ.refetch();
+    alertsQ.refetch();
   };
 
   return (
@@ -140,6 +183,18 @@ function AdminQuotaPage() {
           </div>
         )}
       </section>
+
+      <AlertsSection
+        rules={rulesQ.data ?? []}
+        alerts={alertsQ.data ?? []}
+        loadingRules={rulesQ.isLoading}
+        loadingAlerts={alertsQ.isLoading}
+        meterOptions={meterOptions}
+        tenantOptions={tenantOptions}
+        onChanged={() => {
+          rulesQ.refetch();
+        }}
+      />
 
       {/* Events table */}
       <section className="rounded-2xl border border-border bg-surface">
