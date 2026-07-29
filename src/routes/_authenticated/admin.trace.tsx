@@ -630,6 +630,37 @@ function TraceResultView({
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Lọc trạng thái:</span>
+        {ALL_STATUSES.map((s) => {
+          const active = activeStSet.has(s);
+          return (
+            <button
+              key={s}
+              onClick={() => onToggleStatus(s)}
+              disabled={pending}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition ${
+                active
+                  ? `bg-surface-2 ${STATUS_META[s].className}`
+                  : "border-border bg-surface text-muted-foreground hover:text-foreground"
+              } disabled:opacity-50`}
+            >
+              {STATUS_META[s].label}
+            </button>
+          );
+        })}
+        {stFiltered && (
+          <button
+            onClick={onResetStatuses}
+            disabled={pending}
+            className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            Tất cả
+          </button>
+        )}
+      </div>
+
       <section className="rounded-2xl border border-border bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-4">
           <div className="flex items-center gap-2 text-xs">
