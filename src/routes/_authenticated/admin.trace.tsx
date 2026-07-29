@@ -455,6 +455,7 @@ function TraceResultView({
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
               {exporting ? "Đang export…" : "Export CSV"}
             </button>
+            <ColumnsMenu columns={columns} onToggle={toggleColumn} onReset={resetColumns} activeCount={activeColumnCount} />
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
         </div>
@@ -503,7 +504,7 @@ function TraceResultView({
         ) : (
           <ol className="divide-y divide-border">
             {filteredTimeline.map((item, idx) => (
-              <TimelineRow key={`${item.kind}-${idx}`} item={item} />
+              <TimelineRow key={`${item.kind}-${idx}`} item={item} columns={columns} />
             ))}
           </ol>
         )}
