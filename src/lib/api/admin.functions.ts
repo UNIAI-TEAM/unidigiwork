@@ -569,7 +569,10 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
       ...quota.map((r) => ({ kind: "quota_check" as const, at: r.occurred_at, data: r })),
       ...audit.map((r) => ({ kind: "audit" as const, at: r.occurred_at, data: r })),
       ...outbox.map((r) => ({ kind: "outbox" as const, at: r.occurred_at, data: r })),
-    ].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+    ].sort((a, b) => {
+      if (a.at === b.at) return 0;
+      return data.sort === "asc" ? (a.at < b.at ? -1 : 1) : (a.at < b.at ? 1 : -1);
+    });
 
     return {
       correlationId: cid,
