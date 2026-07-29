@@ -464,3 +464,88 @@ export const exportQuotaCheckEvents = createServerFn({ method: "POST" })
       to: toIso,
     };
   });
+
+/**
+ * Trace a request end-to-end by correlation_id.
+ * Returns all quota_check_events + audit_events + outbox_events sharing the
+ * same correlation_id, ordered chronologically — for fast production debugging.
+ */
+export const traceByCorrelationId = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        correlationId: z.string().min(1).max(200),
+        limit: z.number().int().min(1).max(1000).default(500),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const cid = data.correlationId;
+
+    const [quotaRes, auditRes, outboxRes] = await Promise.all([
+      supabaseAdmin
+        .from("quota_check_events")
+        .select("id, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id, occurred_at")
+        .eq("correlation_id", cid)
+        .order("occurred_at", { ascending: true })
+        .limit(data.limit),
+      (supabaseAdmin as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            eq: (c: string, v: string) => {
+              order: (c: string, o: { ascending: boolean }) => {
+                limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+              };
+            };
+          };
+        };
+      })
+        .from("audit_events")
+        .select("id, tenant_id, actor_user_id, action, resource_type, resource_id, event_type, aggregate_type, aggregate_id, payload, correlation_id, occurred_at")
+        .eq("correlation_id", cid)
+        .order("occurred_at", { ascending: true })
+        .limit(data.limit),
+      (supabaseAdmin as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            eq: (c: string, v: string) => {
+              order: (c: string, o: { ascending: boolean }) => {
+                limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+              };
+            };
+          };
+        };
+      })
+        .from("outbox_events")
+        .select("id, tenant_id, event_type, aggregate_type, aggregate_id, status, attempt_count, last_error, correlation_id, occurred_at, processed_at")
+        .eq("correlation_id", cid)
+        .order("occurred_at", { ascending: true })
+        .limit(data.limit),
+    ]);
+
+    if (quotaRes.error) throw new Error(quotaRes.error.message);
+    if (auditRes.error) throw new Error(auditRes.error.message);
+    if (outboxRes.error) throw new Error(outboxRes.error.message);
+
+    const quota = quotaRes.data ?? [];
+    const audit = (auditRes.data ?? []) as Array<{ occurred_at: string }>;
+    const outbox = (outboxRes.data ?? []) as Array<{ occurred_at: string }>;
+
+    const timeline = [
+      ...quota.map((r) => ({ kind: "quota_check" as const, at: r.occurred_at, data: r })),
+      ...audit.map((r) => ({ kind: "audit" as const, at: r.occurred_at, data: r })),
+      ...outbox.map((r) => ({ kind: "outbox" as const, at: r.occurred_at, data: r })),
+    ].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+
+    return {
+      correlationId: cid,
+      counts: { quota: quota.length, audit: audit.length, outbox: outbox.length, total: timeline.length },
+      quotaEvents: quota,
+      auditEvents: audit,
+      outboxEvents: outbox,
+      timeline,
+    };
+  });
