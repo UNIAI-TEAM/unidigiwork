@@ -11,6 +11,25 @@ const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
 const ALL_KINDS = ["quota", "audit", "outbox"] as const;
 type Kind = (typeof ALL_KINDS)[number];
 
+const COLUMN_DEFS = [
+  { key: "time", label: "Thời gian" },
+  { key: "kind", label: "Loại" },
+  { key: "label", label: "Nhãn (meter/event)" },
+  { key: "status", label: "Trạng thái" },
+  { key: "meta", label: "Chỉ số (Δ/usage/attempts)" },
+  { key: "tenant", label: "Tenant" },
+  { key: "actor", label: "Actor" },
+  { key: "target", label: "Aggregate/Resource ID" },
+  { key: "payload", label: "Payload / Lỗi" },
+] as const;
+type ColumnKey = (typeof COLUMN_DEFS)[number]["key"];
+type ColumnPrefs = Record<ColumnKey, boolean>;
+const DEFAULT_COLUMNS: ColumnPrefs = {
+  time: true, kind: true, label: true, status: true,
+  meta: true, tenant: true, actor: true, target: true, payload: true,
+};
+const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
+
 // datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
 function localToIso(v: string | undefined): string | undefined {
   if (!v) return undefined;
