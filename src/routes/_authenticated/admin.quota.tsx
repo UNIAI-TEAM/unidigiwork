@@ -12,6 +12,12 @@ import {
   listQuotaAlertEvents,
   exportQuotaCheckEvents,
   type QuotaAlertRule,
+  createQuotaExportJob,
+  listQuotaExportJobs,
+  deleteQuotaExportJob,
+  getQuotaExportDownloadUrl,
+  runPendingQuotaExports,
+  type QuotaExportJob,
 } from "@/lib/api/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 
