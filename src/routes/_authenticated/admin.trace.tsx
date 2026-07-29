@@ -1582,14 +1582,26 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
 
 function ColumnsMenu({
   columns,
+  order,
   onToggle,
+  onMove,
   onReset,
   activeCount,
+  presets,
+  onSavePreset,
+  onApplyPreset,
+  onDeletePreset,
 }: {
   columns: ColumnPrefs;
+  order: ColumnKey[];
   onToggle: (k: ColumnKey) => void;
+  onMove: (k: ColumnKey, dir: -1 | 1) => void;
   onReset: () => void;
   activeCount: number;
+  presets: ColumnPreset[];
+  onSavePreset: (name: string) => void;
+  onApplyPreset: (id: string) => void;
+  onDeletePreset: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -1601,12 +1613,14 @@ function ColumnsMenu({
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
+  const [newName, setNewName] = useState("");
+  const byKey = useMemo(() => new Map(COLUMN_DEFS.map((c) => [c.key, c] as const)), []);
   return (
     <div className="relative" data-columns-menu>
       <button
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-        title="Bật/tắt cột hiển thị trên timeline"
+        title="Bật/tắt, sắp xếp cột và quản lý preset"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -1614,9 +1628,9 @@ function ColumnsMenu({
         Cột ({activeCount}/{COLUMN_DEFS.length})
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-lg border border-border bg-surface p-2 shadow-lg">
           <div className="mb-1 flex items-center justify-between px-1 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-            <span>Cột hiển thị</span>
+            <span>Cột hiển thị & thứ tự</span>
             <button
               onClick={onReset}
               className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
@@ -1625,20 +1639,98 @@ function ColumnsMenu({
             </button>
           </div>
           <ul className="flex flex-col">
-            {COLUMN_DEFS.map((c) => (
-              <li key={c.key}>
-                <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground hover:bg-surface-2">
-                  <input
-                    type="checkbox"
-                    checked={columns[c.key]}
-                    onChange={() => onToggle(c.key)}
-                    className="h-3.5 w-3.5 rounded border-border accent-primary"
-                  />
-                  <span>{c.label}</span>
-                </label>
-              </li>
-            ))}
+            {order.map((key, idx) => {
+              const c = byKey.get(key);
+              if (!c) return null;
+              return (
+                <li key={key} className="flex items-center gap-1 rounded hover:bg-surface-2">
+                  <label className="flex flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-xs text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={columns[key]}
+                      onChange={() => onToggle(key)}
+                      className="h-3.5 w-3.5 rounded border-border accent-primary"
+                    />
+                    <span>{c.label}</span>
+                  </label>
+                  <button
+                    onClick={() => onMove(key, -1)}
+                    disabled={idx === 0}
+                    className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    title="Lên"
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => onMove(key, 1)}
+                    disabled={idx === order.length - 1}
+                    className="mr-1 rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    title="Xuống"
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
+          <div className="mt-2 border-t border-border pt-2">
+            <div className="mb-1 flex items-center justify-between px-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <span>Preset</span>
+              <span className="normal-case tracking-normal">{presets.length} đã lưu</span>
+            </div>
+            {presets.length > 0 && (
+              <ul className="mb-2 flex max-h-40 flex-col overflow-auto">
+                {presets.map((p) => (
+                  <li key={p.id} className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-surface-2">
+                    <button
+                      onClick={() => onApplyPreset(p.id)}
+                      className="flex flex-1 items-center gap-2 truncate rounded px-1.5 py-1 text-left text-xs text-foreground"
+                      title={`Áp dụng preset "${p.name}"`}
+                    >
+                      <Bookmark className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{p.name}</span>
+                      <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                        {Object.values(p.columns).filter(Boolean).length}/{COLUMN_DEFS.length}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => onDeletePreset(p.id)}
+                      className="rounded p-1 text-muted-foreground hover:text-red-400"
+                      title="Xóa preset"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newName.trim()) return;
+                onSavePreset(newName);
+                setNewName("");
+              }}
+              className="flex items-center gap-1"
+            >
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Tên preset (vd: Chỉ Quota)"
+                className="flex-1 rounded border border-border bg-surface-2 px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none"
+                maxLength={64}
+              />
+              <button
+                type="submit"
+                disabled={!newName.trim()}
+                className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+                title="Lưu cấu hình cột hiện tại thành preset"
+              >
+                <Save className="h-3 w-3" />
+                Lưu
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>
