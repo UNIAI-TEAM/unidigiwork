@@ -89,8 +89,81 @@ function normalizeColumnOrder(input: unknown): ColumnKey[] {
 type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
 type FilenameTz = "utc" | "local";
-type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz; zip: boolean; includeMetadata: boolean };
-const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc", zip: false, includeMetadata: true };
+type FilenamePartKey =
+  | "prefix"
+  | "correlationId"
+  | "variant"
+  | "keyword"
+  | "from"
+  | "to"
+  | "sort"
+  | "severities"
+  | "statuses"
+  | "kinds"
+  | "timestamp";
+type FilenamePart = { key: FilenamePartKey; enabled: boolean };
+const FILENAME_PART_LABELS: Record<FilenamePartKey, string> = {
+  prefix: "Prefix (trace)",
+  correlationId: "Correlation ID",
+  variant: "Variant (all/columns)",
+  keyword: "Keyword (kw_…)",
+  from: "From (from_…)",
+  to: "To (to_…)",
+  sort: "Sort (sort_…)",
+  severities: "Severities (sev_…)",
+  statuses: "Statuses (st_…)",
+  kinds: "Kinds (kd_…)",
+  timestamp: "Timestamp",
+};
+const DEFAULT_FILENAME_TEMPLATE: FilenamePart[] = [
+  { key: "prefix", enabled: true },
+  { key: "correlationId", enabled: true },
+  { key: "variant", enabled: true },
+  { key: "keyword", enabled: true },
+  { key: "from", enabled: true },
+  { key: "to", enabled: true },
+  { key: "sort", enabled: true },
+  { key: "severities", enabled: true },
+  { key: "statuses", enabled: true },
+  { key: "kinds", enabled: true },
+  { key: "timestamp", enabled: true },
+];
+function normalizeFilenameTemplate(v: unknown): FilenamePart[] {
+  const known = new Set<FilenamePartKey>(DEFAULT_FILENAME_TEMPLATE.map((p) => p.key));
+  const seen = new Set<FilenamePartKey>();
+  const out: FilenamePart[] = [];
+  if (Array.isArray(v)) {
+    for (const p of v) {
+      if (!p || typeof p !== "object") continue;
+      const k = (p as { key?: unknown }).key;
+      if (typeof k !== "string" || !known.has(k as FilenamePartKey) || seen.has(k as FilenamePartKey)) continue;
+      seen.add(k as FilenamePartKey);
+      out.push({ key: k as FilenamePartKey, enabled: (p as { enabled?: unknown }).enabled !== false });
+    }
+  }
+  for (const p of DEFAULT_FILENAME_TEMPLATE) {
+    if (!seen.has(p.key)) out.push({ ...p });
+  }
+  return out;
+}
+type CsvOptions = {
+  delimiter: "," | ";" | "\t";
+  quoteChar: '"' | "'";
+  bom: boolean;
+  filenameTz: FilenameTz;
+  zip: boolean;
+  includeMetadata: boolean;
+  filenameTemplate: FilenamePart[];
+};
+const DEFAULT_CSV_OPTIONS: CsvOptions = {
+  delimiter: ",",
+  quoteChar: '"',
+  bom: true,
+  filenameTz: "utc",
+  zip: false,
+  includeMetadata: true,
+  filenameTemplate: DEFAULT_FILENAME_TEMPLATE,
+};
 
 function triggerBlobDownload(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
