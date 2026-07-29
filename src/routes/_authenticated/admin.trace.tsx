@@ -1494,11 +1494,33 @@ function TraceResultView({
                   },
                   csvOpts,
                 );
+                const rows = filteredTimeline.length;
+                setExportProgress({
+                  active: true,
+                  variant: "columns",
+                  phase: csvOpts.zip ? "compressing" : "saving",
+                  label: csvOpts.zip ? "Đang nén .zip…" : "Đang tạo file…",
+                  percent: 70,
+                  rows,
+                });
                 void downloadCsvOrZip(csv, csvFilename, csvOpts, metaLine)
-                  .then(() => toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`))
-                  .catch((e: unknown) => toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`));
+                  .then(() => {
+                    setExportProgress({
+                      active: true, variant: "columns", phase: "done",
+                      label: `Đã tải xuống ${rows.toLocaleString("vi-VN")} dòng`,
+                      percent: 100, rows,
+                    });
+                    window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 1500);
+                    toast.success(`Đã export ${rows.toLocaleString("vi-VN")} dòng theo cột hiện tại.`);
+                  })
+                  .catch((e: unknown) => {
+                    const msg = (e as Error)?.message ?? "unknown";
+                    setExportProgress({ active: true, variant: "columns", phase: "error", label: `Lỗi tạo file: ${msg}`, percent: 100 });
+                    window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);
+                    toast.error(`Không tạo được file: ${msg}`);
+                  });
               }}
-              disabled={filteredTimeline.length === 0 || activeColumnCount === 0}
+              disabled={filteredTimeline.length === 0 || activeColumnCount === 0 || exportProgress.active}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
               title="Export CSV chỉ gồm các cột đang bật trong timeline (đúng thứ tự và tiêu đề)"
             >
