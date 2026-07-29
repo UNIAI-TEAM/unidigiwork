@@ -110,10 +110,10 @@ function AdminTracePage() {
   });
 
   const exportMut = useMutation({
-    mutationFn: (correlationId: string) =>
+    mutationFn: (args: { correlationId: string; keyword?: string }) =>
       exportTraceCsv({
         data: {
-          correlationId,
+          correlationId: args.correlationId,
           maxRows: 50_000,
           kinds:
             activeKinds.length === ALL_KINDS.length
@@ -122,6 +122,7 @@ function AdminTracePage() {
           fromTs: fromIso,
           toTs: toIso,
           sort: currentSort,
+          keyword: args.keyword?.trim() || undefined,
         },
       }),
     onSuccess: (data) => {
@@ -325,7 +326,7 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
-          onExport={() => exportMut.mutate(result.correlationId)}
+          onExport={(keyword) => exportMut.mutate({ correlationId: result.correlationId, keyword })}
           exporting={exportMut.isPending}
           activeKinds={activeKinds}
           onToggleKind={toggleKind}
