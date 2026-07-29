@@ -2311,6 +2311,21 @@ function CsvOptionsMenu({
             />
             <span className="text-foreground">Nén file thành .zip (khuyến nghị khi &gt;10k dòng)</span>
           </label>
+          <label className={`mt-1 flex items-center gap-2 pl-6 ${value.zip ? "" : "opacity-50"}`}>
+            <input
+              type="checkbox"
+              checked={value.separateMetadata}
+              disabled={!value.zip}
+              onChange={(e) => onChange({ ...value, separateMetadata: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className={value.zip ? "text-foreground" : "text-muted-foreground"}>
+              Tách metadata &amp; footer ra file <code>.meta.txt</code> trong ZIP
+            </span>
+          </label>
+          <p className="pl-6 text-[11px] text-muted-foreground">
+            Khi bật, CSV giữ nguyên dữ liệu; metadata và footer được lưu ở file riêng cùng ZIP để dễ đối chiếu. Chỉ áp dụng khi bật ZIP.
+          </p>
           <div className="mt-3">
             <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
             <div className="flex gap-1">
