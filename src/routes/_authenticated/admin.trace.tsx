@@ -89,8 +89,8 @@ function normalizeColumnOrder(input: unknown): ColumnKey[] {
 type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
 type FilenameTz = "utc" | "local";
-type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz; zip: boolean };
-const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc", zip: false };
+type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz; zip: boolean; includeMetadata: boolean };
+const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc", zip: false, includeMetadata: true };
 
 function triggerBlobDownload(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -102,8 +102,54 @@ function triggerBlobDownload(blob: Blob, name: string) {
   a.remove();
   URL.revokeObjectURL(url);
 }
-async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions): Promise<void> {
-  const body = (opts.bom ? "\ufeff" : "") + csvText;
+function buildCsvMetadataLine(
+  info: {
+    correlationId: string;
+    variant: "all" | "columns";
+    keyword?: string;
+    fromIso?: string;
+    toIso?: string;
+    sort?: "asc" | "desc";
+    severities?: readonly Severity[];
+    statuses?: readonly Status[];
+    kinds?: readonly Kind[];
+    rowCount?: number;
+  },
+  csv: CsvOptions,
+): string {
+  const setStr = (vals: readonly string[] | undefined, total: number) => {
+    if (!vals || vals.length === 0) return "all";
+    if (vals.length === total) return "all";
+    return vals.join("|");
+  };
+  const kw = info.keyword?.trim();
+  const genTz = csv.filenameTz;
+  const now = new Date();
+  const generatedAt =
+    genTz === "utc"
+      ? now.toISOString()
+      : `${now.toLocaleString("sv-SE")} ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+  const fields: Array<[string, string]> = [
+    ["source", "UNIWORK /admin/trace"],
+    ["variant", info.variant],
+    ["correlation_id", info.correlationId],
+    ["keyword", kw ?? ""],
+    ["from", info.fromIso ?? ""],
+    ["to", info.toIso ?? ""],
+    ["sort", info.sort ?? ""],
+    ["severities", setStr(info.severities, ALL_SEVERITIES.length)],
+    ["statuses", setStr(info.statuses, ALL_STATUSES.length)],
+    ["kinds", setStr(info.kinds, ALL_KINDS.length)],
+    ["timezone", genTz === "utc" ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone],
+    ["generated_at", generatedAt],
+  ];
+  if (typeof info.rowCount === "number") fields.push(["rows", String(info.rowCount)]);
+  const summary = "# " + fields.map(([k, v]) => `${k}=${v}`).join(" | ");
+  return csvEscape(summary, csv.delimiter, csv.quoteChar);
+}
+async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions, metadataLine?: string): Promise<void> {
+  const header = opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
+  const body = (opts.bom ? "\ufeff" : "") + header + csvText;
   if (opts.zip) {
     const { zipSync, strToU8 } = await import("fflate");
     const zipped = zipSync({ [csvFilename]: strToU8(body) }, { level: 6 });
