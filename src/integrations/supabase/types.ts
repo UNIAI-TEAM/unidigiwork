@@ -2043,6 +2043,10 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: string
       }
+      _set_correlation_context: {
+        Args: { _correlation_id: string }
+        Returns: undefined
+      }
       _test_purge_tenant: { Args: { _tenant_id: string }; Returns: undefined }
       _test_seed_entitlement: {
         Args: {
