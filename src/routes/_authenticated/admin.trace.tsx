@@ -1167,7 +1167,9 @@ function TraceResultView({
       const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);
       if (!raw) return DEFAULT_CSV_OPTIONS;
       const parsed = JSON.parse(raw);
-      return { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
+      const merged = { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
+      merged.filenameTemplate = normalizeFilenameTemplate((parsed as { filenameTemplate?: unknown })?.filenameTemplate);
+      return merged;
     } catch {
       return DEFAULT_CSV_OPTIONS;
     }
