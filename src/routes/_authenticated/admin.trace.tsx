@@ -29,6 +29,24 @@ function severityOfItem(item: { kind: string; data: unknown }): Severity {
   return "info";
 }
 
+const ALL_STATUSES = ["success", "failure", "pending"] as const;
+type Status = (typeof ALL_STATUSES)[number];
+const STATUS_META: Record<Status, { label: string; className: string }> = {
+  success: { label: "Thành công", className: "text-emerald-400 border-emerald-500/40" },
+  failure: { label: "Thất bại", className: "text-red-400 border-red-500/40" },
+  pending: { label: "Đang xử lý", className: "text-amber-400 border-amber-500/40" },
+};
+function statusOfItem(item: { kind: string; data: unknown }): Status {
+  const d = (item.data ?? {}) as Record<string, unknown>;
+  if (item.kind === "quota_check") return d.allowed ? "success" : "failure";
+  if (item.kind === "outbox") {
+    if (d.last_error || d.status === "failed") return "failure";
+    if (d.status === "pending" || d.status === "running") return "pending";
+    return "success";
+  }
+  return "success";
+}
+
 const COLUMN_DEFS = [
   { key: "time", label: "Thời gian" },
   { key: "kind", label: "Loại" },
@@ -85,6 +103,16 @@ const searchSchema = z.object({
       );
       return set.size === 0 || set.size === ALL_SEVERITIES.length ? undefined : (Array.from(set) as Severity[]);
     }),
+  st: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (!v) return undefined;
+      const set = new Set(
+        v.split(",").map((s) => s.trim()).filter((s): s is Status => (ALL_STATUSES as readonly string[]).includes(s)),
+      );
+      return set.size === 0 || set.size === ALL_STATUSES.length ? undefined : (Array.from(set) as Status[]);
+    }),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/trace")({
@@ -102,7 +130,7 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
-  const { cid, page, limit, kinds, from, to, sort, sev } = Route.useSearch();
+  const { cid, page, limit, kinds, from, to, sort, sev, st } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
   const [fromInput, setFromInput] = useState<string>(from ?? "");
@@ -112,11 +140,12 @@ function AdminTracePage() {
   const currentLimit = limit ?? 500;
   const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
   const activeSeverities: Severity[] = sev ?? [...ALL_SEVERITIES];
+  const activeStatuses: Status[] = st ?? [...ALL_STATUSES];
   const currentSort = sort ?? "asc";
   const fromIso = localToIso(from);
   const toIso = localToIso(to);
 
-  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc"; sev?: string };
+  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc"; sev?: string; st?: string };
 
   const traceMut = useMutation({
     mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string; sort: "asc" | "desc" }) =>
@@ -156,6 +185,10 @@ function AdminTracePage() {
             activeSeverities.length === ALL_SEVERITIES.length
               ? undefined
               : (activeSeverities as [Severity, ...Severity[]]),
+          statuses:
+            activeStatuses.length === ALL_STATUSES.length
+              ? undefined
+              : (activeStatuses as [Status, ...Status[]]),
         },
       }),
     onSuccess: (data) => {
@@ -245,6 +278,21 @@ function AdminTracePage() {
   };
   const resetSeverities = () =>
     navigate({ search: (prev: SearchState) => ({ ...prev, sev: undefined }) });
+
+  const toggleStatus = (s: Status) => {
+    const set = new Set(activeStatuses);
+    if (set.has(s)) set.delete(s);
+    else set.add(s);
+    if (set.size === 0) {
+      toast.error("Phải chọn ít nhất một trạng thái");
+      return;
+    }
+    const next: Status[] = ALL_STATUSES.filter((x) => set.has(x));
+    const encoded = next.length === ALL_STATUSES.length ? undefined : next.join(",");
+    navigate({ search: (prev: SearchState) => ({ ...prev, st: encoded }) });
+  };
+  const resetStatuses = () =>
+    navigate({ search: (prev: SearchState) => ({ ...prev, st: undefined }) });
 
   const toggleSort = () => {
     const next = currentSort === "asc" ? "desc" : "asc";
@@ -382,6 +430,9 @@ function AdminTracePage() {
           activeSeverities={activeSeverities}
           onToggleSeverity={toggleSeverity}
           onResetSeverities={resetSeverities}
+          activeStatuses={activeStatuses}
+          onToggleStatus={toggleStatus}
+          onResetStatuses={resetStatuses}
           sort={currentSort}
           onToggleSort={toggleSort}
           autoRefreshSec={autoRefreshSec}
