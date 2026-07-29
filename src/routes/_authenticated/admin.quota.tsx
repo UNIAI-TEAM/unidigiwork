@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Activity, CheckCircle2, XCircle, RefreshCw, Filter, Bell, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Activity, CheckCircle2, XCircle, RefreshCw, Filter, Bell, Plus, Trash2, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   listQuotaCheckEvents,
@@ -10,6 +10,7 @@ import {
   upsertQuotaAlertRule,
   deleteQuotaAlertRule,
   listQuotaAlertEvents,
+  exportQuotaCheckEvents,
   type QuotaAlertRule,
 } from "@/lib/api/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -195,6 +196,8 @@ function AdminQuotaPage() {
           rulesQ.refetch();
         }}
       />
+
+      <ExportSection meterOptions={meterOptions} tenantOptions={tenantOptions} />
 
       {/* Events table */}
       <section className="rounded-2xl border border-border bg-surface">
