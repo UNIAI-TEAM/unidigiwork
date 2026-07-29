@@ -67,7 +67,7 @@ function AdminTracePage() {
   type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc" };
 
   const traceMut = useMutation({
-    mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string }) =>
+    mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string; sort: "asc" | "desc" }) =>
       traceByCorrelationId({
         data: {
           correlationId: args.correlationId,
@@ -76,6 +76,7 @@ function AdminTracePage() {
           kinds: args.kinds.length === ALL_KINDS.length ? undefined : (args.kinds as [Kind, ...Kind[]]),
           fromTs: args.fromTs,
           toTs: args.toTs,
+          sort: args.sort,
         },
       }),
     onSuccess: (data) => {
