@@ -1730,6 +1730,122 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
   );
 }
 
+function TraceExportColumnsMenu({
+  cols,
+  onToggle,
+  onRelabel,
+  onMove,
+  onReset,
+  onToggleAll,
+}: {
+  cols: TraceExportColumn[];
+  onToggle: (k: TraceExportKey) => void;
+  onRelabel: (k: TraceExportKey, label: string) => void;
+  onMove: (i: number, dir: -1 | 1) => void;
+  onReset: () => void;
+  onToggleAll: (on: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-export-cols-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const activeCount = cols.filter((c) => c.enabled).length;
+  return (
+    <div className="relative" data-export-cols-menu>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        title="Chọn/đổi thứ tự/đổi tiêu đề các cột khi bấm 'CSV (tất cả kết quả)'"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <Columns3 className="h-3 w-3" />
+        Cột export ({activeCount}/{cols.length})
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-1 w-[420px] rounded-lg border border-border bg-surface p-3 text-xs shadow-lg">
+          <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span>Cột cho "CSV (tất cả kết quả)"</span>
+            <div className="flex items-center gap-1 normal-case tracking-normal">
+              <button
+                onClick={() => onToggleAll(true)}
+                className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+              >
+                Tất cả
+              </button>
+              <button
+                onClick={() => onToggleAll(false)}
+                className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+              >
+                Bỏ chọn
+              </button>
+              <button
+                onClick={onReset}
+                className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+              >
+                Đặt lại
+              </button>
+            </div>
+          </div>
+          <div className="max-h-[360px] overflow-auto rounded-md border border-border">
+            <ul className="divide-y divide-border">
+              {cols.map((c, i) => (
+                <li key={c.key} className="flex items-center gap-2 px-2 py-1.5">
+                  <input
+                    type="checkbox"
+                    checked={c.enabled}
+                    onChange={() => onToggle(c.key)}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary"
+                    aria-label={`Chọn cột ${c.key}`}
+                  />
+                  <code className="w-36 shrink-0 truncate font-mono text-[11px] text-muted-foreground" title={c.key}>
+                    {c.key}
+                  </code>
+                  <input
+                    value={c.label}
+                    onChange={(e) => onRelabel(c.key, e.target.value)}
+                    placeholder="Tiêu đề cột"
+                    className="min-w-0 flex-1 rounded border border-border bg-surface-2 px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => onMove(i, -1)}
+                      disabled={i === 0}
+                      className="rounded border border-border px-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                      aria-label="Lên"
+                      title="Lên"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => onMove(i, 1)}
+                      disabled={i === cols.length - 1}
+                      className="rounded border border-border px-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                      aria-label="Xuống"
+                      title="Xuống"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Cấu hình được lưu tự động trên trình duyệt này.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ColumnsMenu({
   columns,
   order,
