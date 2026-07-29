@@ -89,8 +89,81 @@ function normalizeColumnOrder(input: unknown): ColumnKey[] {
 type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
 type FilenameTz = "utc" | "local";
-type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz; zip: boolean; includeMetadata: boolean };
-const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc", zip: false, includeMetadata: true };
+type FilenamePartKey =
+  | "prefix"
+  | "correlationId"
+  | "variant"
+  | "keyword"
+  | "from"
+  | "to"
+  | "sort"
+  | "severities"
+  | "statuses"
+  | "kinds"
+  | "timestamp";
+type FilenamePart = { key: FilenamePartKey; enabled: boolean };
+const FILENAME_PART_LABELS: Record<FilenamePartKey, string> = {
+  prefix: "Prefix (trace)",
+  correlationId: "Correlation ID",
+  variant: "Variant (all/columns)",
+  keyword: "Keyword (kw_…)",
+  from: "From (from_…)",
+  to: "To (to_…)",
+  sort: "Sort (sort_…)",
+  severities: "Severities (sev_…)",
+  statuses: "Statuses (st_…)",
+  kinds: "Kinds (kd_…)",
+  timestamp: "Timestamp",
+};
+const DEFAULT_FILENAME_TEMPLATE: FilenamePart[] = [
+  { key: "prefix", enabled: true },
+  { key: "correlationId", enabled: true },
+  { key: "variant", enabled: true },
+  { key: "keyword", enabled: true },
+  { key: "from", enabled: true },
+  { key: "to", enabled: true },
+  { key: "sort", enabled: true },
+  { key: "severities", enabled: true },
+  { key: "statuses", enabled: true },
+  { key: "kinds", enabled: true },
+  { key: "timestamp", enabled: true },
+];
+function normalizeFilenameTemplate(v: unknown): FilenamePart[] {
+  const known = new Set<FilenamePartKey>(DEFAULT_FILENAME_TEMPLATE.map((p) => p.key));
+  const seen = new Set<FilenamePartKey>();
+  const out: FilenamePart[] = [];
+  if (Array.isArray(v)) {
+    for (const p of v) {
+      if (!p || typeof p !== "object") continue;
+      const k = (p as { key?: unknown }).key;
+      if (typeof k !== "string" || !known.has(k as FilenamePartKey) || seen.has(k as FilenamePartKey)) continue;
+      seen.add(k as FilenamePartKey);
+      out.push({ key: k as FilenamePartKey, enabled: (p as { enabled?: unknown }).enabled !== false });
+    }
+  }
+  for (const p of DEFAULT_FILENAME_TEMPLATE) {
+    if (!seen.has(p.key)) out.push({ ...p });
+  }
+  return out;
+}
+type CsvOptions = {
+  delimiter: "," | ";" | "\t";
+  quoteChar: '"' | "'";
+  bom: boolean;
+  filenameTz: FilenameTz;
+  zip: boolean;
+  includeMetadata: boolean;
+  filenameTemplate: FilenamePart[];
+};
+const DEFAULT_CSV_OPTIONS: CsvOptions = {
+  delimiter: ",",
+  quoteChar: '"',
+  bom: true,
+  filenameTz: "utc",
+  zip: false,
+  includeMetadata: true,
+  filenameTemplate: DEFAULT_FILENAME_TEMPLATE,
+};
 
 function triggerBlobDownload(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -243,27 +316,40 @@ function buildCsvFilename(opts: {
   severities?: readonly Severity[];
   statuses?: readonly Status[];
   kinds?: readonly Kind[];
+  template?: FilenamePart[];
 }): string {
-  const parts: string[] = ["trace", sanitizeFilenamePart(opts.correlationId) || "cid", opts.variant];
-  const kw = opts.keyword?.trim();
-  if (kw) parts.push(`kw_${sanitizeFilenamePart(kw)}`);
   const tz = opts.filenameTz ?? "utc";
-  const from = isoToStamp(opts.fromIso, tz);
-  const to = isoToStamp(opts.toIso, tz);
-  if (from) parts.push(`from_${from}`);
-  if (to) parts.push(`to_${to}`);
-  if (opts.sort) parts.push(`sort_${opts.sort}`);
   const encSet = (vals: readonly string[] | undefined, total: number, prefix: string) => {
     if (!vals || vals.length === 0 || vals.length === total) return null;
     return `${prefix}_${vals.map((v) => sanitizeFilenamePart(v)).join(".")}`;
   };
+  const kw = opts.keyword?.trim();
+  const from = isoToStamp(opts.fromIso, tz);
+  const to = isoToStamp(opts.toIso, tz);
   const sev = encSet(opts.severities, ALL_SEVERITIES.length, "sev");
   const st = encSet(opts.statuses, ALL_STATUSES.length, "st");
   const kd = encSet(opts.kinds, ALL_KINDS.length, "kd");
-  if (sev) parts.push(sev);
-  if (st) parts.push(st);
-  if (kd) parts.push(kd);
-  parts.push(String(Date.now()));
+  const values: Record<FilenamePartKey, string | null> = {
+    prefix: "trace",
+    correlationId: sanitizeFilenamePart(opts.correlationId) || "cid",
+    variant: opts.variant,
+    keyword: kw ? `kw_${sanitizeFilenamePart(kw)}` : null,
+    from: from ? `from_${from}` : null,
+    to: to ? `to_${to}` : null,
+    sort: opts.sort ? `sort_${opts.sort}` : null,
+    severities: sev,
+    statuses: st,
+    kinds: kd,
+    timestamp: String(Date.now()),
+  };
+  const template = normalizeFilenameTemplate(opts.template ?? DEFAULT_FILENAME_TEMPLATE);
+  const parts: string[] = [];
+  for (const p of template) {
+    if (!p.enabled) continue;
+    const v = values[p.key];
+    if (v) parts.push(v);
+  }
+  if (parts.length === 0) parts.push("trace", String(Date.now()));
   return `${parts.join("-")}.csv`;
 }
 
@@ -502,6 +588,7 @@ function AdminTracePage() {
         severities: activeSeverities,
         statuses: activeStatuses,
         kinds: activeKinds,
+        template: vars.csv.filenameTemplate,
       });
       const metaLine = buildCsvMetadataLine(
         {
@@ -1081,7 +1168,9 @@ function TraceResultView({
       const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);
       if (!raw) return DEFAULT_CSV_OPTIONS;
       const parsed = JSON.parse(raw);
-      return { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
+      const merged = { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
+      merged.filenameTemplate = normalizeFilenameTemplate((parsed as { filenameTemplate?: unknown })?.filenameTemplate);
+      return merged;
     } catch {
       return DEFAULT_CSV_OPTIONS;
     }
@@ -1319,6 +1408,7 @@ function TraceResultView({
                   severities: activeSeverities,
                   statuses: activeStatuses,
                   kinds: activeKinds,
+                  template: csvOpts.filenameTemplate,
                 });
                 const metaLine = buildCsvMetadataLine(
                   {
@@ -1910,6 +2000,66 @@ function CsvOptionsMenu({
               Ghi 1 dòng comment (bắt đầu bằng <code># </code>) ghi rõ keyword, from/to, sort, severities, statuses, kinds, timezone và thời gian tạo file.
             </p>
           </div>
+          <div className="mt-3 space-y-1.5 border-t border-border pt-2">
+            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+              <span>Mẫu tên file</span>
+              <button
+                onClick={() => onChange({ ...value, filenameTemplate: DEFAULT_FILENAME_TEMPLATE.map((p) => ({ ...p })) })}
+                className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
+              >
+                Đặt lại
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Kéo thứ tự bằng nút ▲▼, tick để bật/tắt từng trường. Các trường không có dữ liệu sẽ tự bỏ qua.
+            </p>
+            <ul className="space-y-1">
+              {value.filenameTemplate.map((part, idx) => (
+                <li key={part.key} className="flex items-center gap-1 rounded border border-border bg-surface-2 px-1.5 py-1">
+                  <input
+                    type="checkbox"
+                    checked={part.enabled}
+                    onChange={(e) => {
+                      const next = value.filenameTemplate.map((p) => ({ ...p }));
+                      next[idx].enabled = e.target.checked;
+                      onChange({ ...value, filenameTemplate: next });
+                    }}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary"
+                    aria-label={`Bật/tắt ${FILENAME_PART_LABELS[part.key]}`}
+                  />
+                  <span className={`flex-1 text-[11px] ${part.enabled ? "text-foreground" : "text-muted-foreground line-through"}`}>
+                    {idx + 1}. {FILENAME_PART_LABELS[part.key]}
+                  </span>
+                  <button
+                    disabled={idx === 0}
+                    onClick={() => {
+                      if (idx === 0) return;
+                      const next = value.filenameTemplate.map((p) => ({ ...p }));
+                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                      onChange({ ...value, filenameTemplate: next });
+                    }}
+                    className="rounded px-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    aria-label="Di chuyển lên"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    disabled={idx === value.filenameTemplate.length - 1}
+                    onClick={() => {
+                      if (idx === value.filenameTemplate.length - 1) return;
+                      const next = value.filenameTemplate.map((p) => ({ ...p }));
+                      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                      onChange({ ...value, filenameTemplate: next });
+                    }}
+                    className="rounded px-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    aria-label="Di chuyển xuống"
+                  >
+                    ▼
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
           {preview && (() => {
             const nameAll = buildCsvFilename({
               correlationId: preview.correlationId,
@@ -1922,6 +2072,7 @@ function CsvOptionsMenu({
               severities: preview.severities,
               statuses: preview.statuses,
               kinds: preview.kinds,
+              template: value.filenameTemplate,
             });
             const nameCols = buildCsvFilename({
               correlationId: preview.correlationId,
@@ -1934,6 +2085,7 @@ function CsvOptionsMenu({
               severities: preview.severities,
               statuses: preview.statuses,
               kinds: preview.kinds,
+              template: value.filenameTemplate,
             });
             const display = (n: string) => value.zip ? n.replace(/\.csv$/i, "") + ".zip" : n;
             return (
