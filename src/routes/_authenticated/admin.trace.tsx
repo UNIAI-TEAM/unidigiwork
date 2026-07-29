@@ -88,8 +88,9 @@ function normalizeColumnOrder(input: unknown): ColumnKey[] {
 
 type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
-type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
-const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
+type FilenameTz = "utc" | "local";
+type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz };
+const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc" };
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
 const TRACE_EXPORT_COLUMN_DEFS = [
@@ -152,12 +153,17 @@ function sanitizeFilenamePart(s: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
 }
-function isoToStamp(iso: string | undefined): string | null {
+function isoToStamp(iso: string | undefined, tz: FilenameTz = "utc"): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (isNaN(d.getTime())) return null;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}-${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
+  const y = tz === "utc" ? d.getUTCFullYear() : d.getFullYear();
+  const mo = tz === "utc" ? d.getUTCMonth() + 1 : d.getMonth() + 1;
+  const da = tz === "utc" ? d.getUTCDate() : d.getDate();
+  const h = tz === "utc" ? d.getUTCHours() : d.getHours();
+  const mi = tz === "utc" ? d.getUTCMinutes() : d.getMinutes();
+  return `${y}${pad(mo)}${pad(da)}-${pad(h)}${pad(mi)}${tz === "utc" ? "Z" : "L"}`;
 }
 function buildCsvFilename(opts: {
   correlationId: string;
@@ -165,12 +171,14 @@ function buildCsvFilename(opts: {
   keyword?: string;
   fromIso?: string;
   toIso?: string;
+  filenameTz?: FilenameTz;
 }): string {
   const parts: string[] = ["trace", sanitizeFilenamePart(opts.correlationId) || "cid", opts.variant];
   const kw = opts.keyword?.trim();
   if (kw) parts.push(`kw_${sanitizeFilenamePart(kw)}`);
-  const from = isoToStamp(opts.fromIso);
-  const to = isoToStamp(opts.toIso);
+  const tz = opts.filenameTz ?? "utc";
+  const from = isoToStamp(opts.fromIso, tz);
+  const to = isoToStamp(opts.toIso, tz);
   if (from) parts.push(`from_${from}`);
   if (to) parts.push(`to_${to}`);
   parts.push(String(Date.now()));
@@ -412,6 +420,7 @@ function AdminTracePage() {
         keyword: vars.keyword,
         fromIso,
         toIso,
+        filenameTz: vars.csv.filenameTz,
       });
       document.body.appendChild(a);
       a.click();
@@ -1215,6 +1224,7 @@ function TraceResultView({
                   keyword,
                   fromIso,
                   toIso,
+                  filenameTz: csvOpts.filenameTz,
                 });
                 document.body.appendChild(a);
                 a.click();
@@ -1724,6 +1734,22 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
             />
             <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
           </label>
+          <div className="mt-3">
+            <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
+            <div className="flex gap-1">
+              {([["utc", `UTC (Z)`], ["local", `Local (${Intl.DateTimeFormat().resolvedOptions().timeZone})`]] as const).map(([tz, label]) => (
+                <button
+                  key={tz}
+                  onClick={() => onChange({ ...value, filenameTz: tz })}
+                  aria-pressed={value.filenameTz === tz}
+                  className={`flex-1 rounded-md border px-2 py-1 ${value.filenameTz === tz ? "border-primary bg-surface-2 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">Hậu tố Z = UTC, L = local time.</p>
+          </div>
         </div>
       )}
     </div>
