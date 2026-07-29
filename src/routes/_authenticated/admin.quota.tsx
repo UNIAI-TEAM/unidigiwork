@@ -348,9 +348,17 @@ function AlertsSection({
     cooldown_minutes: number;
   }>({ tenant_id: "", meter_key: "", window_minutes: 5, threshold_count: 5, cooldown_minutes: 15 });
 
+  type UpsertInput = {
+    id?: string;
+    tenant_id: string | null;
+    meter_key: string | null;
+    window_minutes: number;
+    threshold_count: number;
+    cooldown_minutes: number;
+    enabled: boolean;
+  };
   const upsert = useMutation({
-    mutationFn: (input: Parameters<typeof upsertQuotaAlertRule>[0]["data"]) =>
-      upsertQuotaAlertRule({ data: input }),
+    mutationFn: (input: UpsertInput) => upsertQuotaAlertRule({ data: input }),
     onSuccess: () => {
       toast.success("Đã lưu rule cảnh báo");
       onChanged();
