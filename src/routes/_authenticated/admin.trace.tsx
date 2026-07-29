@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -10,6 +10,25 @@ import { traceByCorrelationId, exportTraceCsv } from "@/lib/api/admin.functions"
 const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
 const ALL_KINDS = ["quota", "audit", "outbox"] as const;
 type Kind = (typeof ALL_KINDS)[number];
+
+const COLUMN_DEFS = [
+  { key: "time", label: "Thời gian" },
+  { key: "kind", label: "Loại" },
+  { key: "label", label: "Nhãn (meter/event)" },
+  { key: "status", label: "Trạng thái" },
+  { key: "meta", label: "Chỉ số (Δ/usage/attempts)" },
+  { key: "tenant", label: "Tenant" },
+  { key: "actor", label: "Actor" },
+  { key: "target", label: "Aggregate/Resource ID" },
+  { key: "payload", label: "Payload / Lỗi" },
+] as const;
+type ColumnKey = (typeof COLUMN_DEFS)[number]["key"];
+type ColumnPrefs = Record<ColumnKey, boolean>;
+const DEFAULT_COLUMNS: ColumnPrefs = {
+  time: true, kind: true, label: true, status: true,
+  meta: true, tenant: true, actor: true, target: true, payload: true,
+};
+const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
 
 // datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
 function localToIso(v: string | undefined): string | undefined {
@@ -317,6 +336,28 @@ function TraceResultView({
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const [keyword, setKeyword] = useState("");
+  const [columns, setColumns] = useState<ColumnPrefs>(() => {
+    if (typeof window === "undefined") return DEFAULT_COLUMNS;
+    try {
+      const raw = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
+      if (!raw) return DEFAULT_COLUMNS;
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_COLUMNS, ...parsed };
+    } catch {
+      return DEFAULT_COLUMNS;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(columns));
+    } catch {
+      /* noop */
+    }
+  }, [columns]);
+  const toggleColumn = (k: ColumnKey) =>
+    setColumns((prev) => ({ ...prev, [k]: !prev[k] }));
+  const resetColumns = () => setColumns(DEFAULT_COLUMNS);
+  const activeColumnCount = Object.values(columns).filter(Boolean).length;
   const kw = keyword.trim().toLowerCase();
   const filteredTimeline = useMemo(() => {
     if (!kw) return timeline;
@@ -414,6 +455,7 @@ function TraceResultView({
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
               {exporting ? "Đang export…" : "Export CSV"}
             </button>
+            <ColumnsMenu columns={columns} onToggle={toggleColumn} onReset={resetColumns} activeCount={activeColumnCount} />
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
         </div>
@@ -462,7 +504,7 @@ function TraceResultView({
         ) : (
           <ol className="divide-y divide-border">
             {filteredTimeline.map((item, idx) => (
-              <TimelineRow key={`${item.kind}-${idx}`} item={item} />
+              <TimelineRow key={`${item.kind}-${idx}`} item={item} columns={columns} />
             ))}
           </ol>
         )}
@@ -631,25 +673,27 @@ function PaginationBar({
   );
 }
 
-function TimelineRow({ item }: { item: TimelineItem }) {
+function TimelineRow({ item, columns }: { item: TimelineItem; columns: ColumnPrefs }) {
   const t = new Date(item.at);
   const time = t.toLocaleTimeString("vi-VN", { hour12: false });
   const date = t.toLocaleDateString("vi-VN");
-
+  const showTimeCol = columns.time || columns.kind;
   return (
     <li className="flex flex-col gap-2 p-4 text-xs sm:flex-row sm:items-start sm:gap-4">
-      <div className="flex w-40 shrink-0 flex-col gap-0.5 text-muted-foreground">
-        <span className="tabular-nums text-foreground">{time}</span>
-        <span>{date}</span>
-        <KindBadge kind={item.kind} />
-      </div>
+      {showTimeCol && (
+        <div className="flex w-40 shrink-0 flex-col gap-0.5 text-muted-foreground">
+          {columns.time && <span className="tabular-nums text-foreground">{time}</span>}
+          {columns.time && <span>{date}</span>}
+          {columns.kind && <KindBadge kind={item.kind} />}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         {item.kind === "quota_check" ? (
-          <QuotaEventRow data={item.data as unknown as QuotaEvent} />
+          <QuotaEventRow data={item.data as unknown as QuotaEvent} columns={columns} />
         ) : item.kind === "audit" ? (
-          <AuditEventRow data={item.data as unknown as AuditEvent} />
+          <AuditEventRow data={item.data as unknown as AuditEvent} columns={columns} />
         ) : (
-          <OutboxEventRow data={item.data as unknown as OutboxEvent} />
+          <OutboxEventRow data={item.data as unknown as OutboxEvent} columns={columns} />
         )}
       </div>
     </li>
@@ -668,12 +712,12 @@ type QuotaEvent = {
   actor_id: string | null;
 };
 
-function QuotaEventRow({ data }: { data: QuotaEvent }) {
+function QuotaEventRow({ data, columns }: { data: QuotaEvent; columns: ColumnPrefs }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-foreground">{data.meter_key}</span>
-        {data.allowed ? (
+        {columns.label && <span className="font-mono text-foreground">{data.meter_key}</span>}
+        {columns.status && (data.allowed ? (
           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-emerald-400">
             <CheckCircle2 className="h-3 w-3" /> PASS
           </span>
@@ -681,15 +725,19 @@ function QuotaEventRow({ data }: { data: QuotaEvent }) {
           <span className="inline-flex items-center gap-1 rounded-md bg-rose-500/10 px-1.5 py-0.5 text-rose-400">
             <XCircle className="h-3 w-3" /> {data.reason}
           </span>
+        ))}
+        {columns.meta && (
+          <span className="tabular-nums text-muted-foreground">
+            Δ +{data.requested_delta} · {data.current_usage}/{data.quota_limit ?? "∞"}
+          </span>
         )}
-        <span className="tabular-nums text-muted-foreground">
-          Δ +{data.requested_delta} · {data.current_usage}/{data.quota_limit ?? "∞"}
-        </span>
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
-        <span>tenant: {data.tenant_id.slice(0, 8)}…</span>
-        {data.actor_id && <span>actor: {data.actor_id.slice(0, 8)}…</span>}
-      </div>
+      {(columns.tenant || columns.actor) && (
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
+          {columns.tenant && <span>tenant: {data.tenant_id.slice(0, 8)}…</span>}
+          {columns.actor && data.actor_id && <span>actor: {data.actor_id.slice(0, 8)}…</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -707,26 +755,30 @@ type AuditEvent = {
   payload: unknown;
 };
 
-function AuditEventRow({ data }: { data: AuditEvent }) {
+function AuditEventRow({ data, columns }: { data: AuditEvent; columns: ColumnPrefs }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-foreground">
-          {data.event_type ?? data.action ?? "audit"}
-        </span>
-        {data.aggregate_type && (
+        {columns.label && (
+          <span className="font-mono text-foreground">
+            {data.event_type ?? data.action ?? "audit"}
+          </span>
+        )}
+        {columns.status && data.aggregate_type && (
           <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-muted-foreground">
             {data.aggregate_type}
           </span>
         )}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
-        {data.tenant_id && <span>tenant: {data.tenant_id.slice(0, 8)}…</span>}
-        {data.actor_user_id && <span>actor: {data.actor_user_id.slice(0, 8)}…</span>}
-        {data.aggregate_id && <span>id: {String(data.aggregate_id).slice(0, 16)}…</span>}
-        {data.resource_type && <span>res: {data.resource_type}</span>}
-      </div>
-      {data.payload && Object.keys(data.payload as object).length > 0 ? (
+      {(columns.tenant || columns.actor || columns.target) && (
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
+          {columns.tenant && data.tenant_id && <span>tenant: {data.tenant_id.slice(0, 8)}…</span>}
+          {columns.actor && data.actor_user_id && <span>actor: {data.actor_user_id.slice(0, 8)}…</span>}
+          {columns.target && data.aggregate_id && <span>id: {String(data.aggregate_id).slice(0, 16)}…</span>}
+          {columns.target && data.resource_type && <span>res: {data.resource_type}</span>}
+        </div>
+      )}
+      {columns.payload && data.payload && Object.keys(data.payload as object).length > 0 ? (
         <details className="mt-1">
           <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">payload</summary>
           <pre className="mt-1 max-h-48 overflow-auto rounded bg-surface-2 p-2 font-mono text-[11px] text-muted-foreground">
@@ -750,7 +802,7 @@ type OutboxEvent = {
   processed_at: string | null;
 };
 
-function OutboxEventRow({ data }: { data: OutboxEvent }) {
+function OutboxEventRow({ data, columns }: { data: OutboxEvent; columns: ColumnPrefs }) {
   const statusTint =
     data.status === "succeeded" || data.status === "processed" || data.processed_at
       ? "bg-emerald-500/10 text-emerald-400"
@@ -762,26 +814,97 @@ function OutboxEventRow({ data }: { data: OutboxEvent }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-foreground">{data.event_type}</span>
-        <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${statusTint}`}>{data.status}</span>
-        <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-muted-foreground">
-          {data.aggregate_type}
-        </span>
-        {data.attempt_count > 0 && (
+        {columns.label && <span className="font-mono text-foreground">{data.event_type}</span>}
+        {columns.status && (
+          <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${statusTint}`}>{data.status}</span>
+        )}
+        {columns.status && (
+          <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-muted-foreground">
+            {data.aggregate_type}
+          </span>
+        )}
+        {columns.meta && data.attempt_count > 0 && (
           <span className="text-muted-foreground">attempts: {data.attempt_count}</span>
         )}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
-        {data.tenant_id && <span>tenant: {data.tenant_id.slice(0, 8)}…</span>}
-        <span>id: {String(data.aggregate_id).slice(0, 16)}…</span>
-        {data.processed_at && (
-          <span>processed: {new Date(data.processed_at).toLocaleTimeString("vi-VN", { hour12: false })}</span>
-        )}
-      </div>
-      {data.last_error && (
+      {(columns.tenant || columns.target || columns.meta) && (
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
+          {columns.tenant && data.tenant_id && <span>tenant: {data.tenant_id.slice(0, 8)}…</span>}
+          {columns.target && <span>id: {String(data.aggregate_id).slice(0, 16)}…</span>}
+          {columns.meta && data.processed_at && (
+            <span>processed: {new Date(data.processed_at).toLocaleTimeString("vi-VN", { hour12: false })}</span>
+          )}
+        </div>
+      )}
+      {columns.payload && data.last_error && (
         <p className="mt-0.5 rounded bg-rose-500/5 p-1.5 text-[11px] text-rose-400">
           {data.last_error}
         </p>
+      )}
+    </div>
+  );
+}
+
+function ColumnsMenu({
+  columns,
+  onToggle,
+  onReset,
+  activeCount,
+}: {
+  columns: ColumnPrefs;
+  onToggle: (k: ColumnKey) => void;
+  onReset: () => void;
+  activeCount: number;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-columns-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  return (
+    <div className="relative" data-columns-menu>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        title="Bật/tắt cột hiển thị trên timeline"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <Columns3 className="h-3 w-3" />
+        Cột ({activeCount}/{COLUMN_DEFS.length})
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg">
+          <div className="mb-1 flex items-center justify-between px-1 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span>Cột hiển thị</span>
+            <button
+              onClick={onReset}
+              className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
+            >
+              Đặt lại
+            </button>
+          </div>
+          <ul className="flex flex-col">
+            {COLUMN_DEFS.map((c) => (
+              <li key={c.key}>
+                <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground hover:bg-surface-2">
+                  <input
+                    type="checkbox"
+                    checked={columns[c.key]}
+                    onChange={() => onToggle(c.key)}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary"
+                  />
+                  <span>{c.label}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
