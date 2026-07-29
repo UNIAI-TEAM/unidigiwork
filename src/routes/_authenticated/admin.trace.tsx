@@ -91,6 +91,59 @@ type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: Col
 type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
 const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
 
+// ---- "CSV (tất cả kết quả)" — server export columns ----
+const TRACE_EXPORT_COLUMN_DEFS = [
+  { key: "occurred_at",     label: "Thời gian" },
+  { key: "kind",            label: "Loại" },
+  { key: "event_type",      label: "Loại sự kiện" },
+  { key: "tenant_id",       label: "Tenant" },
+  { key: "actor_id",        label: "Actor" },
+  { key: "meter_key",       label: "Meter" },
+  { key: "allowed",         label: "Cho phép?" },
+  { key: "reason",          label: "Lý do" },
+  { key: "quota_limit",     label: "Quota (limit)" },
+  { key: "current_usage",   label: "Đang dùng" },
+  { key: "requested_delta", label: "Δ yêu cầu" },
+  { key: "aggregate_type",  label: "Aggregate type" },
+  { key: "aggregate_id",    label: "Aggregate ID" },
+  { key: "status",          label: "Trạng thái" },
+  { key: "attempt_count",   label: "Số lần thử" },
+  { key: "last_error",      label: "Lỗi gần nhất" },
+  { key: "processed_at",    label: "Xử lý lúc" },
+  { key: "resource_type",   label: "Resource type" },
+  { key: "resource_id",     label: "Resource ID" },
+  { key: "payload",         label: "Payload" },
+  { key: "correlation_id",  label: "Correlation ID" },
+  { key: "id",              label: "ID" },
+] as const;
+type TraceExportKey = (typeof TRACE_EXPORT_COLUMN_DEFS)[number]["key"];
+type TraceExportColumn = { key: TraceExportKey; label: string; enabled: boolean };
+const DEFAULT_TRACE_EXPORT_COLUMNS: TraceExportColumn[] = TRACE_EXPORT_COLUMN_DEFS.map((c) => ({
+  key: c.key, label: c.label, enabled: true,
+}));
+const TRACE_EXPORT_COLS_STORAGE_KEY = "uniwork.admin.trace.exportCols.v1";
+function normalizeExportColumns(input: unknown): TraceExportColumn[] {
+  const defByKey = new Map(TRACE_EXPORT_COLUMN_DEFS.map((d) => [d.key, d.label] as const));
+  const seen = new Set<string>();
+  const out: TraceExportColumn[] = [];
+  if (Array.isArray(input)) {
+    for (const raw of input) {
+      if (!raw || typeof raw !== "object") continue;
+      const k = (raw as { key?: unknown }).key;
+      if (typeof k !== "string" || !defByKey.has(k as TraceExportKey) || seen.has(k)) continue;
+      seen.add(k);
+      const rawLabel = (raw as { label?: unknown }).label;
+      const label = typeof rawLabel === "string" && rawLabel.trim() ? rawLabel.trim().slice(0, 120) : defByKey.get(k as TraceExportKey)!;
+      const enabled = (raw as { enabled?: unknown }).enabled !== false;
+      out.push({ key: k as TraceExportKey, label, enabled });
+    }
+  }
+  for (const d of TRACE_EXPORT_COLUMN_DEFS) {
+    if (!seen.has(d.key)) out.push({ key: d.key, label: d.label, enabled: true });
+  }
+  return out;
+}
+
 function sanitizeFilenamePart(s: string): string {
   return s
     .normalize("NFKD")
