@@ -781,7 +781,8 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
     rows.sort((a, b) => {
       const av = String(a.occurred_at ?? "");
       const bv = String(b.occurred_at ?? "");
-      return av < bv ? -1 : av > bv ? 1 : 0;
+      if (av === bv) return 0;
+      return data.sort === "asc" ? (av < bv ? -1 : 1) : (av < bv ? 1 : -1);
     });
 
     const totalRows = rows.length;
