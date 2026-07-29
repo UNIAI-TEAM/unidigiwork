@@ -2346,7 +2346,7 @@ function CsvOptionsMenu({
               kinds: preview.kinds,
               template: value.filenameTemplate,
             });
-            const display = (n: string) => value.zip ? n.replace(/\.csv$/i, "") + ".zip" : n;
+            const display = (n: string) => (value.zip ? toZipFilename(n) : n);
             return (
               <div className="mt-3 space-y-1.5 border-t border-border pt-2">
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
