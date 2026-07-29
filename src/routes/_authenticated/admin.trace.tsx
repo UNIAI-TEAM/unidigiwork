@@ -574,6 +574,52 @@ function AdminTracePage() {
   );
 }
 
+function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClose: () => void }) {
+  if (!item) return null;
+  const t = new Date(item.at);
+  const timeStr = `${t.toLocaleDateString("vi-VN")} ${t.toLocaleTimeString("vi-VN", { hour12: false })}`;
+  const json = JSON.stringify(item.data, null, 2);
+  const copyJson = () => { void navigator.clipboard?.writeText(json); };
+  return (
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+      <div className="flex-1 bg-black/40" onClick={onClose} aria-label="Đóng panel" />
+      <aside className="flex h-full w-full max-w-xl flex-col border-l border-border bg-surface-1 shadow-xl">
+        <header className="flex items-start justify-between gap-3 border-b border-border p-4">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <KindBadge kind={item.kind} />
+              <span className="tabular-nums text-xs text-muted-foreground">{timeStr}</span>
+            </div>
+            <h3 className="text-sm font-semibold text-foreground">Chi tiết event</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={copyJson}
+              className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-2"
+            >
+              Copy JSON
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-2"
+              aria-label="Đóng"
+            >
+              Đóng
+            </button>
+          </div>
+        </header>
+        <div className="flex-1 overflow-auto p-4">
+          <pre className="whitespace-pre-wrap break-words rounded-md bg-surface-2 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+            {json}
+          </pre>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 function TraceResultView({
   result,
   onPage,
