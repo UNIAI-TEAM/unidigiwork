@@ -704,6 +704,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
   const [meterKey, setMeterKey] = useState<string>("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [maxRows, setMaxRows] = useState<number>(200000);
+  const [format, setFormat] = useState<"csv" | "xlsx">("csv");
 
   const jobsQ = useQuery({
     queryKey: ["admin", "quota", "export-jobs"],
@@ -724,6 +725,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
           meterKey: meterKey || undefined,
           status,
           maxRows,
+          format,
         },
       }),
     onSuccess: async () => {
@@ -750,7 +752,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
       const { url } = await getQuotaExportDownloadUrl({ data: { id: job.id } });
       const a = document.createElement("a");
       a.href = url;
-      a.download = `quota_check_events_${job.id}.csv`;
+      a.download = `quota_check_events_${job.id}.${job.format ?? "csv"}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
