@@ -460,10 +460,6 @@ function TraceResultView({
   );
 }
 
-function PaginationBar({
-  page,
-}: never);
-
 function FrequencyChart({ items }: { items: TimelineItem[] }) {
   const { data, bucketLabel } = useMemo(() => {
     if (items.length === 0) return { data: [] as Array<{ t: string; quota: number; audit: number; outbox: number }>, bucketLabel: "phút" };
@@ -541,7 +537,7 @@ function FrequencyChart({ items }: { items: TimelineItem[] }) {
   );
 }
 
-function _PaginationBar_stub({
+function PaginationBar({
   page,
   pageCount,
   pageSize,
