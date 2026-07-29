@@ -1086,6 +1086,48 @@ export type Database = {
         }
         Relationships: []
       }
+      quota_check_events: {
+        Row: {
+          actor_id: string | null
+          allowed: boolean
+          correlation_id: string | null
+          current_usage: number
+          id: string
+          meter_key: string
+          occurred_at: string
+          quota_limit: number | null
+          reason: string
+          requested_delta: number
+          tenant_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          allowed: boolean
+          correlation_id?: string | null
+          current_usage: number
+          id?: string
+          meter_key: string
+          occurred_at?: string
+          quota_limit?: number | null
+          reason: string
+          requested_delta: number
+          tenant_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          allowed?: boolean
+          correlation_id?: string | null
+          current_usage?: number
+          id?: string
+          meter_key?: string
+          occurred_at?: string
+          quota_limit?: number | null
+          reason?: string
+          requested_delta?: number
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null
@@ -1964,7 +2006,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_quota_check_metrics: {
+        Row: {
+          fail_count: number | null
+          fail_disabled: number | null
+          fail_exceeded: number | null
+          fail_no_entitlement: number | null
+          last_check_at: string | null
+          last_fail_at: string | null
+          meter_key: string | null
+          pass_count: number | null
+          tenant_id: string | null
+          total_checks: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _emit_outbox_event: {
