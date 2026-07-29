@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2 } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -65,7 +65,28 @@ const DEFAULT_COLUMNS: ColumnPrefs = {
   meta: true, tenant: true, actor: true, target: true, payload: true,
 };
 const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
+const COLUMN_ORDER_STORAGE_KEY = "uniwork.admin.trace.columnOrder.v1";
+const COLUMN_PRESETS_STORAGE_KEY = "uniwork.admin.trace.columnPresets.v1";
 const CSV_OPTIONS_STORAGE_KEY = "uniwork.admin.trace.csv.v1";
+
+const DEFAULT_COLUMN_ORDER: ColumnKey[] = COLUMN_DEFS.map((c) => c.key) as ColumnKey[];
+function normalizeColumnOrder(input: unknown): ColumnKey[] {
+  const valid = new Set<string>(DEFAULT_COLUMN_ORDER as string[]);
+  const seen = new Set<string>();
+  const out: ColumnKey[] = [];
+  if (Array.isArray(input)) {
+    for (const k of input) {
+      if (typeof k === "string" && valid.has(k) && !seen.has(k)) {
+        seen.add(k);
+        out.push(k as ColumnKey);
+      }
+    }
+  }
+  for (const k of DEFAULT_COLUMN_ORDER) if (!seen.has(k)) out.push(k);
+  return out;
+}
+
+type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
 type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
 const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
@@ -120,8 +141,9 @@ function timelineCellValue(item: TimelineItem, key: ColumnKey): string {
   }
 }
 
-function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs, opts: CsvOptions = DEFAULT_CSV_OPTIONS): string {
-  const active = COLUMN_DEFS.filter((c) => columns[c.key]);
+function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs, order: ColumnKey[], opts: CsvOptions = DEFAULT_CSV_OPTIONS): string {
+  const byKey = new Map(COLUMN_DEFS.map((c) => [c.key, c] as const));
+  const active = order.map((k) => byKey.get(k)).filter((c): c is (typeof COLUMN_DEFS)[number] => !!c && columns[c.key]);
   if (active.length === 0) return "";
   const d = opts.delimiter;
   const q = opts.quoteChar;
