@@ -1346,7 +1346,20 @@ function TraceResultView({
               <Download className="h-3 w-3" />
               CSV (cột hiện tại)
             </button>
-            <CsvOptionsMenu value={csvOpts} onChange={setCsvOpts} />
+            <CsvOptionsMenu
+              value={csvOpts}
+              onChange={setCsvOpts}
+              preview={{
+                correlationId,
+                keyword,
+                fromIso,
+                toIso,
+                sort,
+                severities: activeSeverities,
+                statuses: activeStatuses,
+                kinds: activeKinds,
+              }}
+            />
             <AutoRefreshControl
               value={autoRefreshSec}
               onChange={onChangeAutoRefresh}
@@ -1768,7 +1781,25 @@ function OutboxEventRow({ data, columns }: { data: OutboxEvent; columns: ColumnP
   );
 }
 
-function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: CsvOptions) => void }) {
+type CsvPreviewContext = {
+  correlationId: string;
+  keyword?: string;
+  fromIso?: string;
+  toIso?: string;
+  sort?: "asc" | "desc";
+  severities?: readonly Severity[];
+  statuses?: readonly Status[];
+  kinds?: readonly Kind[];
+};
+function CsvOptionsMenu({
+  value,
+  onChange,
+  preview,
+}: {
+  value: CsvOptions;
+  onChange: (v: CsvOptions) => void;
+  preview?: CsvPreviewContext;
+}) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -1879,6 +1910,58 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
               Ghi 1 dòng comment (bắt đầu bằng <code># </code>) ghi rõ keyword, from/to, sort, severities, statuses, kinds, timezone và thời gian tạo file.
             </p>
           </div>
+          {preview && (() => {
+            const nameAll = buildCsvFilename({
+              correlationId: preview.correlationId,
+              variant: "all",
+              keyword: preview.keyword,
+              fromIso: preview.fromIso,
+              toIso: preview.toIso,
+              filenameTz: value.filenameTz,
+              sort: preview.sort,
+              severities: preview.severities,
+              statuses: preview.statuses,
+              kinds: preview.kinds,
+            });
+            const nameCols = buildCsvFilename({
+              correlationId: preview.correlationId,
+              variant: "columns",
+              keyword: preview.keyword,
+              fromIso: preview.fromIso,
+              toIso: preview.toIso,
+              filenameTz: value.filenameTz,
+              sort: preview.sort,
+              severities: preview.severities,
+              statuses: preview.statuses,
+              kinds: preview.kinds,
+            });
+            const display = (n: string) => value.zip ? n.replace(/\.csv$/i, "") + ".zip" : n;
+            return (
+              <div className="mt-3 space-y-1.5 border-t border-border pt-2">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Xem trước tên file
+                </div>
+                <div>
+                  <div className="text-[11px] text-muted-foreground">CSV (tất cả kết quả)</div>
+                  <code
+                    className="mt-0.5 block break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
+                    title={display(nameAll)}
+                  >
+                    {display(nameAll)}
+                  </code>
+                </div>
+                <div>
+                  <div className="text-[11px] text-muted-foreground">CSV (cột hiện tại)</div>
+                  <code
+                    className="mt-0.5 block break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
+                    title={display(nameCols)}
+                  >
+                    {display(nameCols)}
+                  </code>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
