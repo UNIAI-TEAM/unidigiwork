@@ -588,6 +588,7 @@ function AdminTracePage() {
         severities: activeSeverities,
         statuses: activeStatuses,
         kinds: activeKinds,
+        template: vars.csv.filenameTemplate,
       });
       const metaLine = buildCsvMetadataLine(
         {
@@ -1407,6 +1408,7 @@ function TraceResultView({
                   severities: activeSeverities,
                   statuses: activeStatuses,
                   kinds: activeKinds,
+                  template: csvOpts.filenameTemplate,
                 });
                 const metaLine = buildCsvMetadataLine(
                   {
@@ -2010,6 +2012,7 @@ function CsvOptionsMenu({
               severities: preview.severities,
               statuses: preview.statuses,
               kinds: preview.kinds,
+              template: value.filenameTemplate,
             });
             const nameCols = buildCsvFilename({
               correlationId: preview.correlationId,
@@ -2022,6 +2025,7 @@ function CsvOptionsMenu({
               severities: preview.severities,
               statuses: preview.statuses,
               kinds: preview.kinds,
+              template: value.filenameTemplate,
             });
             const display = (n: string) => value.zip ? n.replace(/\.csv$/i, "") + ".zip" : n;
             return (
