@@ -274,6 +274,8 @@ function AdminTracePage() {
           activeKinds={activeKinds}
           onToggleKind={toggleKind}
           onResetKinds={resetKinds}
+          sort={currentSort}
+          onToggleSort={toggleSort}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
