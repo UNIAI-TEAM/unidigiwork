@@ -985,6 +985,37 @@ function TraceResultView({
   useEffect(() => {
     try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
   }, [csvOpts]);
+  const [exportCols, setExportCols] = useState<TraceExportColumn[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_TRACE_EXPORT_COLUMNS;
+    try {
+      const raw = window.localStorage.getItem(TRACE_EXPORT_COLS_STORAGE_KEY);
+      return raw ? normalizeExportColumns(JSON.parse(raw)) : DEFAULT_TRACE_EXPORT_COLUMNS;
+    } catch {
+      return DEFAULT_TRACE_EXPORT_COLUMNS;
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(TRACE_EXPORT_COLS_STORAGE_KEY, JSON.stringify(exportCols)); } catch { /* noop */ }
+  }, [exportCols]);
+  const activeExportCols = useMemo(
+    () => exportCols.filter((c) => c.enabled).map((c) => ({ key: c.key, label: c.label })),
+    [exportCols],
+  );
+  const toggleExportCol = (k: TraceExportKey) =>
+    setExportCols((prev) => prev.map((c) => (c.key === k ? { ...c, enabled: !c.enabled } : c)));
+  const relabelExportCol = (k: TraceExportKey, label: string) =>
+    setExportCols((prev) => prev.map((c) => (c.key === k ? { ...c, label } : c)));
+  const moveExportCol = (i: number, dir: -1 | 1) =>
+    setExportCols((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = prev.slice();
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  const resetExportCols = () => setExportCols(DEFAULT_TRACE_EXPORT_COLUMNS);
+  const toggleAllExportCols = (on: boolean) =>
+    setExportCols((prev) => prev.map((c) => ({ ...c, enabled: on })));
   const kw = keyword.trim().toLowerCase();
   const sevFiltered = activeSeverities.length < ALL_SEVERITIES.length;
   const activeSevSet = useMemo(() => new Set(activeSeverities), [activeSeverities]);
