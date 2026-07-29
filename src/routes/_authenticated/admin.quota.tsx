@@ -22,6 +22,59 @@ import {
 } from "@/lib/api/admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 
+const OPTIONAL_EXPORT_COLUMNS = [
+  { key: "quota_limit", label: "quota_limit" },
+  { key: "current_usage", label: "current_usage" },
+  { key: "requested_delta", label: "requested_delta" },
+  { key: "actor_id", label: "actor_id" },
+] as const;
+const DEFAULT_OPTIONAL_COLUMNS = OPTIONAL_EXPORT_COLUMNS.map((c) => c.key);
+
+function ColumnsPicker({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const toggle = (key: string) => {
+    onChange(value.includes(key) ? value.filter((k) => k !== key) : [...value, key]);
+  };
+  return (
+    <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface-2 p-2">
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-wide text-muted-foreground">
+        <span>Cột nâng cao</span>
+        <span className="normal-case tracking-normal text-[10px] text-muted-foreground/80">
+          occurred_at · tenant_id · meter_key · allowed · reason · <span className="text-foreground">correlation_id</span> luôn có
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {OPTIONAL_EXPORT_COLUMNS.map((c) => {
+          const checked = value.includes(c.key);
+          return (
+            <label
+              key={c.key}
+              className={`inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-1 font-mono text-[11px] transition ${
+                checked
+                  ? "border-primary/60 bg-primary/10 text-foreground"
+                  : "border-border bg-surface text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => toggle(c.key)}
+                className="h-3 w-3 accent-primary"
+              />
+              {c.label}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin/quota")({
   head: () => ({
     meta: [
@@ -546,6 +599,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
   const [status, setStatus] = useState<StatusFilter>("all");
   const [format, setFormat] = useState<"csv" | "xlsx">("csv");
   const [busy, setBusy] = useState(false);
+  const [columns, setColumns] = useState<string[]>(DEFAULT_OPTIONAL_COLUMNS);
 
   const run = async () => {
     if (!from || !to) {
@@ -566,7 +620,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
       let truncated: boolean;
       if (format === "xlsx") {
         const res = await exportQuotaCheckEventsXlsx({
-          data: { from, to, tenantId: tenantId || undefined, meterKey: meterKey || undefined, status, maxRows: 20000 },
+          data: { from, to, tenantId: tenantId || undefined, meterKey: meterKey || undefined, status, maxRows: 20000, columns },
         });
         count = res.count;
         truncated = res.truncated;
@@ -577,7 +631,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
         blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       } else {
         const res = await exportQuotaCheckEvents({
-          data: { from, to, tenantId: tenantId || undefined, meterKey: meterKey || undefined, status, maxRows: 20000 },
+          data: { from, to, tenantId: tenantId || undefined, meterKey: meterKey || undefined, status, maxRows: 20000, columns },
         });
         count = res.count;
         truncated = res.truncated;
@@ -690,6 +744,9 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
           </button>
         </div>
       </div>
+      <div className="px-4 pb-4">
+        <ColumnsPicker value={columns} onChange={setColumns} />
+      </div>
     </section>
   );
 }
@@ -705,6 +762,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
   const [status, setStatus] = useState<StatusFilter>("all");
   const [maxRows, setMaxRows] = useState<number>(200000);
   const [format, setFormat] = useState<"csv" | "xlsx">("csv");
+  const [columns, setColumns] = useState<string[]>(DEFAULT_OPTIONAL_COLUMNS);
 
   const jobsQ = useQuery({
     queryKey: ["admin", "quota", "export-jobs"],
@@ -726,6 +784,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
           status,
           maxRows,
           format,
+          columns,
         },
       }),
     onSuccess: async () => {
@@ -835,6 +894,9 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
             {createMut.isPending ? "Đang tạo…" : "Tạo job"}
           </button>
         </div>
+      </div>
+      <div className="px-4 pb-4">
+        <ColumnsPicker value={columns} onChange={setColumns} />
       </div>
 
       <div className="border-t border-border">

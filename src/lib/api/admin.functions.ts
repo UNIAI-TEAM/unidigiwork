@@ -413,12 +413,15 @@ export const exportQuotaCheckEvents = createServerFn({ method: "POST" })
         meterKey: z.string().max(120).optional(),
         status: z.enum(["all", "pass", "fail"]).default("all"),
         maxRows: z.number().int().min(1).max(50000).default(20000),
+        columns: z.array(z.string().max(64)).optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { resolveExportColumns } = await import("./quota-export-processor.server");
+    const header = resolveExportColumns(data.columns ?? null);
     // Normalize inclusive day range
     const fromIso = /T/.test(data.from) ? data.from : `${data.from}T00:00:00.000Z`;
     const toIso = /T/.test(data.to) ? data.to : `${data.to}T23:59:59.999Z`;
@@ -440,18 +443,6 @@ export const exportQuotaCheckEvents = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    const header = [
-      "occurred_at",
-      "tenant_id",
-      "meter_key",
-      "quota_limit",
-      "current_usage",
-      "requested_delta",
-      "allowed",
-      "reason",
-      "actor_id",
-      "correlation_id",
-    ];
     const lines: string[] = [header.join(",")];
     for (const r of rows ?? []) {
       lines.push(header.map((h) => csvEscape((r as Record<string, unknown>)[h])).join(","));
@@ -462,6 +453,7 @@ export const exportQuotaCheckEvents = createServerFn({ method: "POST" })
       truncated: (rows?.length ?? 0) >= data.maxRows,
       from: fromIso,
       to: toIso,
+      columns: header,
     };
   });
 
@@ -562,6 +554,7 @@ export type QuotaExportJob = {
   to_ts: string;
   max_rows: number;
   format: "csv" | "xlsx";
+  columns: string[] | null;
   status: "pending" | "running" | "succeeded" | "failed" | "canceled";
   row_count: number | null;
   file_path: string | null;
@@ -582,6 +575,7 @@ const createJobSchema = z.object({
   status: z.enum(["all", "pass", "fail"]).default("all"),
   maxRows: z.number().int().min(1).max(2_000_000).default(500_000),
   format: z.enum(["csv", "xlsx"]).default("csv"),
+  columns: z.array(z.string().max(64)).optional(),
 });
 
 /** Create a background export job. Admin only. Processed by cron or run-now. */
@@ -604,6 +598,7 @@ export const createQuotaExportJob = createServerFn({ method: "POST" })
         to_ts: toIso,
         max_rows: data.maxRows,
         format: data.format,
+        columns: data.columns ?? null,
       })
       .select("id")
       .single();
@@ -619,7 +614,7 @@ export const listQuotaExportJobs = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("quota_export_jobs")
-      .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format, status, row_count, file_path, file_size_bytes, truncated, error, created_at, started_at, completed_at, expires_at")
+      .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format, columns, status, row_count, file_path, file_size_bytes, truncated, error, created_at, started_at, completed_at, expires_at")
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
@@ -693,12 +688,14 @@ export const exportQuotaCheckEventsXlsx = createServerFn({ method: "POST" })
         meterKey: z.string().max(120).optional(),
         status: z.enum(["all", "pass", "fail"]).default("all"),
         maxRows: z.number().int().min(1).max(20000).default(20000),
+        columns: z.array(z.string().max(64)).optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { resolveExportColumns } = await import("./quota-export-processor.server");
     const XLSX = await import("xlsx");
     const fromIso = /T/.test(data.from) ? data.from : `${data.from}T00:00:00.000Z`;
     const toIso = /T/.test(data.to) ? data.to : `${data.to}T23:59:59.999Z`;
@@ -717,19 +714,13 @@ export const exportQuotaCheckEventsXlsx = createServerFn({ method: "POST" })
     if (data.status === "fail") q = q.eq("allowed", false);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const header = [
-      "occurred_at",
-      "tenant_id",
-      "meter_key",
-      "quota_limit",
-      "current_usage",
-      "requested_delta",
-      "allowed",
-      "reason",
-      "actor_id",
-      "correlation_id",
-    ];
-    const ws = XLSX.utils.json_to_sheet(rows ?? [], { header });
+    const header = resolveExportColumns(data.columns ?? null);
+    const picked = (rows ?? []).map((r) => {
+      const o: Record<string, unknown> = {};
+      for (const h of header) o[h] = (r as Record<string, unknown>)[h];
+      return o;
+    });
+    const ws = XLSX.utils.json_to_sheet(picked, { header });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "quota_check_events");
     const buf = XLSX.write(wb, { type: "base64", bookType: "xlsx" }) as string;
@@ -739,5 +730,6 @@ export const exportQuotaCheckEventsXlsx = createServerFn({ method: "POST" })
       truncated: (rows?.length ?? 0) >= data.maxRows,
       from: fromIso,
       to: toIso,
+      columns: header,
     };
   });

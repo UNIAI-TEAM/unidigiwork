@@ -11,9 +11,26 @@ export type ExportJob = {
   to_ts: string;
   max_rows: number;
   format?: "csv" | "xlsx";
+  columns?: string[] | null;
 };
 
-const HEADER = [
+/** Luôn kèm trong mọi export — không thể tắt (correlation_id là bắt buộc để truy vết). */
+export const ALWAYS_COLUMNS = [
+  "occurred_at",
+  "tenant_id",
+  "meter_key",
+  "allowed",
+  "reason",
+  "correlation_id",
+] as const;
+/** Cột nâng cao — admin bật/tắt khi export. */
+export const OPTIONAL_COLUMNS = [
+  "quota_limit",
+  "current_usage",
+  "requested_delta",
+  "actor_id",
+] as const;
+const ALL_COLUMNS = [
   "occurred_at",
   "tenant_id",
   "meter_key",
@@ -25,6 +42,16 @@ const HEADER = [
   "actor_id",
   "correlation_id",
 ];
+/** Merge selected optional columns with mandatory columns, preserve canonical order. */
+export function resolveExportColumns(optional?: string[] | null): string[] {
+  const opt = new Set(
+    (optional ?? OPTIONAL_COLUMNS).filter((c) =>
+      (OPTIONAL_COLUMNS as readonly string[]).includes(c),
+    ),
+  );
+  const always = new Set<string>(ALWAYS_COLUMNS);
+  return ALL_COLUMNS.filter((c) => always.has(c) || opt.has(c));
+}
 
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -51,7 +78,8 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
   try {
     const pageSize = 5000;
     const format = job.format ?? "csv";
-    const lines: string[] = format === "csv" ? [HEADER.join(",")] : [];
+    const header = resolveExportColumns(job.columns ?? null);
+    const lines: string[] = format === "csv" ? [header.join(",")] : [];
     const rows: Record<string, unknown>[] = [];
     let fetched = 0;
     let truncated = false;
@@ -79,9 +107,11 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
 
       for (const r of data) {
         if (format === "csv") {
-          lines.push(HEADER.map((h) => csvEscape((r as Record<string, unknown>)[h])).join(","));
+          lines.push(header.map((h) => csvEscape((r as Record<string, unknown>)[h])).join(","));
         } else {
-          rows.push(r as Record<string, unknown>);
+          const picked: Record<string, unknown> = {};
+          for (const h of header) picked[h] = (r as Record<string, unknown>)[h];
+          rows.push(picked);
         }
       }
       fetched += data.length;
@@ -103,7 +133,7 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
     let path: string;
     let byteSize: number;
     if (format === "xlsx") {
-      const ws = XLSX.utils.json_to_sheet(rows, { header: HEADER });
+      const ws = XLSX.utils.json_to_sheet(rows, { header });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "quota_check_events");
       const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
@@ -153,7 +183,7 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
 export async function claimAndProcessPending(admin: SupabaseClient, max = 3) {
   const { data: pending, error } = await admin
     .from("quota_export_jobs")
-    .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format")
+    .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format, columns")
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .limit(max);
