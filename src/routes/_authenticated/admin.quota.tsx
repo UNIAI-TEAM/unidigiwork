@@ -853,6 +853,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
                     <span className="text-foreground">{j.meter_key ?? "mọi meter"}</span>
                     <span className="text-muted-foreground">· {j.tenant_id ? `${j.tenant_id.slice(0, 8)}…` : "mọi tenant"}</span>
                     <span className="text-muted-foreground">· {j.status_filter}</span>
+                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{j.format ?? "csv"}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
                     <span>{new Date(j.from_ts).toLocaleDateString("vi-VN")} → {new Date(j.to_ts).toLocaleDateString("vi-VN")}</span>
