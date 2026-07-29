@@ -322,3 +322,196 @@ function StatCard({
     </div>
   );
 }
+
+function AlertsSection({
+  rules,
+  alerts,
+  loadingRules,
+  loadingAlerts,
+  meterOptions,
+  tenantOptions,
+  onChanged,
+}: {
+  rules: QuotaAlertRule[];
+  alerts: Awaited<ReturnType<typeof listQuotaAlertEvents>>;
+  loadingRules: boolean;
+  loadingAlerts: boolean;
+  meterOptions: string[];
+  tenantOptions: string[];
+  onChanged: () => void;
+}) {
+  const [draft, setDraft] = useState<{
+    tenant_id: string;
+    meter_key: string;
+    window_minutes: number;
+    threshold_count: number;
+    cooldown_minutes: number;
+  }>({ tenant_id: "", meter_key: "", window_minutes: 5, threshold_count: 5, cooldown_minutes: 15 });
+
+  const upsert = useMutation({
+    mutationFn: (input: Parameters<typeof upsertQuotaAlertRule>[0]["data"]) =>
+      upsertQuotaAlertRule({ data: input }),
+    onSuccess: () => {
+      toast.success("Đã lưu rule cảnh báo");
+      onChanged();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => deleteQuotaAlertRule({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Đã xóa rule");
+      onChanged();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <section className="rounded-2xl border border-border bg-surface">
+      <div className="flex items-center justify-between gap-3 border-b border-border p-4">
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4 text-amber-400" />
+          <div>
+            <h2 className="text-sm font-semibold">Cảnh báo quota spike (realtime)</h2>
+            <p className="text-xs text-muted-foreground">
+              Rule khớp cụ thể nhất sẽ áp dụng: (tenant, meter) &gt; (tenant, *) &gt; (*, meter) &gt; (*, *).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Add new rule */}
+      <div className="grid grid-cols-2 gap-2 border-b border-border p-4 text-xs sm:grid-cols-6">
+        <select
+          value={draft.tenant_id}
+          onChange={(e) => setDraft({ ...draft, tenant_id: e.target.value })}
+          className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
+        >
+          <option value="">Mọi tenant</option>
+          {tenantOptions.map((t) => (
+            <option key={t} value={t}>{t.slice(0, 8)}…</option>
+          ))}
+        </select>
+        <select
+          value={draft.meter_key}
+          onChange={(e) => setDraft({ ...draft, meter_key: e.target.value })}
+          className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
+        >
+          <option value="">Mọi meter</option>
+          {meterOptions.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+        <NumInput label="Window (m)" value={draft.window_minutes} onChange={(v) => setDraft({ ...draft, window_minutes: v })} />
+        <NumInput label="Ngưỡng" value={draft.threshold_count} onChange={(v) => setDraft({ ...draft, threshold_count: v })} />
+        <NumInput label="Cooldown (m)" value={draft.cooldown_minutes} onChange={(v) => setDraft({ ...draft, cooldown_minutes: v })} />
+        <button
+          onClick={() =>
+            upsert.mutate({
+              tenant_id: draft.tenant_id || null,
+              meter_key: draft.meter_key || null,
+              window_minutes: draft.window_minutes,
+              threshold_count: draft.threshold_count,
+              cooldown_minutes: draft.cooldown_minutes,
+              enabled: true,
+            })
+          }
+          disabled={upsert.isPending}
+          className="inline-flex items-center justify-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          <Plus className="h-3.5 w-3.5" /> Thêm rule
+        </button>
+      </div>
+
+      {/* Rules list */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-surface-2 text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium">Tenant</th>
+              <th className="px-3 py-2 text-left font-medium">Meter</th>
+              <th className="px-3 py-2 text-right font-medium">Window (m)</th>
+              <th className="px-3 py-2 text-right font-medium">Ngưỡng</th>
+              <th className="px-3 py-2 text-right font-medium">Cooldown (m)</th>
+              <th className="px-3 py-2 text-left font-medium">Trạng thái</th>
+              <th className="px-3 py-2" />
+            </tr>
+          </thead>
+          <tbody>
+            {loadingRules ? (
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Đang tải…</td></tr>
+            ) : rules.length === 0 ? (
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Chưa có rule nào.</td></tr>
+            ) : rules.map((r) => (
+              <tr key={r.id} className="border-t border-border/60">
+                <td className="px-3 py-2 font-mono text-muted-foreground">{r.tenant_id ? r.tenant_id.slice(0, 8) + "…" : "*"}</td>
+                <td className="px-3 py-2 font-mono">{r.meter_key ?? "*"}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{r.window_minutes}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{r.threshold_count}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{r.cooldown_minutes}</td>
+                <td className="px-3 py-2">
+                  <button
+                    onClick={() => upsert.mutate({ id: r.id, tenant_id: r.tenant_id, meter_key: r.meter_key, window_minutes: r.window_minutes, threshold_count: r.threshold_count, cooldown_minutes: r.cooldown_minutes, enabled: !r.enabled })}
+                    className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${r.enabled ? "bg-emerald-500/10 text-emerald-400" : "bg-muted text-muted-foreground"}`}
+                  >
+                    {r.enabled ? "Bật" : "Tắt"}
+                  </button>
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <button
+                    onClick={() => del.mutate(r.id)}
+                    className="inline-flex items-center gap-1 rounded-md p-1 text-muted-foreground hover:text-rose-400"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Alert history */}
+      <div className="border-t border-border p-4">
+        <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <AlertTriangle className="h-3.5 w-3.5" /> Cảnh báo gần đây
+        </div>
+        {loadingAlerts ? (
+          <div className="py-4 text-center text-xs text-muted-foreground">Đang tải…</div>
+        ) : alerts.length === 0 ? (
+          <div className="py-4 text-center text-xs text-muted-foreground">Chưa có cảnh báo nào.</div>
+        ) : (
+          <ul className="flex flex-col gap-1.5 text-xs">
+            {alerts.slice(0, 20).map((a) => (
+              <li key={a.id} className="flex items-center justify-between rounded-lg border border-border/60 bg-surface-2 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-amber-400">{a.meter_key}</span>
+                  <span className="font-mono text-muted-foreground">· {a.tenant_id.slice(0, 8)}…</span>
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <span className="text-rose-400 tabular-nums">{a.exceeded_count} / {a.threshold_count}</span>
+                  <span>{new Date(a.created_at).toLocaleString("vi-VN")}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function NumInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <label className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2 py-1.5">
+      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <input
+        type="number"
+        min={1}
+        value={value}
+        onChange={(e) => onChange(Math.max(1, Number(e.target.value) || 1))}
+        className="w-full bg-transparent text-right tabular-nums outline-none"
+      />
+    </label>
+  );
+}
