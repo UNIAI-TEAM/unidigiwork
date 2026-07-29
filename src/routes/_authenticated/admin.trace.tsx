@@ -153,6 +153,7 @@ type CsvOptions = {
   filenameTz: FilenameTz;
   zip: boolean;
   includeMetadata: boolean;
+  separateMetadata: boolean;
   filenameTemplate: FilenamePart[];
 };
 const DEFAULT_CSV_OPTIONS: CsvOptions = {
@@ -162,6 +163,7 @@ const DEFAULT_CSV_OPTIONS: CsvOptions = {
   filenameTz: "utc",
   zip: false,
   includeMetadata: true,
+  separateMetadata: false,
   filenameTemplate: DEFAULT_FILENAME_TEMPLATE,
 };
 
@@ -230,12 +232,21 @@ async function downloadCsvOrZipWithFooter(
   metadataLine?: string,
   footerLine?: string,
 ): Promise<void> {
-  const header = opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
-  const footer = footerLine ? (csvText.endsWith("\n") ? "" : "\r\n") + footerLine + "\r\n" : "";
+  const useSeparate = opts.zip && opts.separateMetadata && (!!metadataLine || !!footerLine);
+  const header = !useSeparate && opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
+  const footer = !useSeparate && footerLine ? (csvText.endsWith("\n") ? "" : "\r\n") + footerLine + "\r\n" : "";
   const body = (opts.bom ? "\ufeff" : "") + header + csvText + footer;
   if (opts.zip) {
     const { zipSync, strToU8 } = await import("fflate");
-    const zipped = zipSync({ [csvFilename]: strToU8(body) }, { level: 6 });
+    const files: Record<string, Uint8Array> = { [csvFilename]: strToU8(body) };
+    if (useSeparate) {
+      const metaName = toMetaFilename(csvFilename);
+      const parts: string[] = [];
+      if (opts.includeMetadata && metadataLine) parts.push(metadataLine);
+      if (footerLine) parts.push(footerLine);
+      files[metaName] = strToU8(parts.join("\r\n") + "\r\n");
+    }
+    const zipped = zipSync(files, { level: 6 });
     triggerBlobDownload(new Blob([zipped as BlobPart], { type: "application/zip" }), toZipFilename(csvFilename));
   } else {
     triggerBlobDownload(new Blob([body], { type: "text/csv;charset=utf-8;" }), csvFilename);
@@ -275,6 +286,11 @@ function buildCsvFooterLine(
 /** Chuẩn hoá tên file .zip từ tên .csv tương ứng: giữ nguyên stem (bao gồm timezone, sort, severity, status, kinds, keyword, from/to). */
 function toZipFilename(csvFilename: string): string {
   return csvFilename.replace(/\.csv$/i, "") + ".zip";
+}
+
+/** Tên file metadata đi kèm khi tách khỏi CSV trong ZIP (giữ nguyên stem). */
+function toMetaFilename(csvFilename: string): string {
+  return csvFilename.replace(/\.csv$/i, "") + ".meta.txt";
 }
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
@@ -2295,6 +2311,21 @@ function CsvOptionsMenu({
             />
             <span className="text-foreground">Nén file thành .zip (khuyến nghị khi &gt;10k dòng)</span>
           </label>
+          <label className={`mt-1 flex items-center gap-2 pl-6 ${value.zip ? "" : "opacity-50"}`}>
+            <input
+              type="checkbox"
+              checked={value.separateMetadata}
+              disabled={!value.zip}
+              onChange={(e) => onChange({ ...value, separateMetadata: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className={value.zip ? "text-foreground" : "text-muted-foreground"}>
+              Tách metadata &amp; footer ra file <code>.meta.txt</code> trong ZIP
+            </span>
+          </label>
+          <p className="pl-6 text-[11px] text-muted-foreground">
+            Khi bật, CSV giữ nguyên dữ liệu; metadata và footer được lưu ở file riêng cùng ZIP để dễ đối chiếu. Chỉ áp dụng khi bật ZIP.
+          </p>
           <div className="mt-3">
             <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
             <div className="flex gap-1">
