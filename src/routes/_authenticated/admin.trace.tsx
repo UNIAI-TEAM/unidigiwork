@@ -1734,6 +1734,22 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
             />
             <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
           </label>
+          <div className="mt-3">
+            <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
+            <div className="flex gap-1">
+              {([["utc", `UTC (Z)`], ["local", `Local (${Intl.DateTimeFormat().resolvedOptions().timeZone})`]] as const).map(([tz, label]) => (
+                <button
+                  key={tz}
+                  onClick={() => onChange({ ...value, filenameTz: tz })}
+                  aria-pressed={value.filenameTz === tz}
+                  className={`flex-1 rounded-md border px-2 py-1 ${value.filenameTz === tz ? "border-primary bg-surface-2 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">Hậu tố Z = UTC, L = local time.</p>
+          </div>
         </div>
       )}
     </div>
