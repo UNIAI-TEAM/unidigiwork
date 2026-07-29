@@ -1110,7 +1110,13 @@ function TraceResultView({
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `trace-${correlationId}-columns-${Date.now()}.csv`;
+                a.download = buildCsvFilename({
+                  correlationId,
+                  variant: "columns",
+                  keyword,
+                  fromIso,
+                  toIso,
+                });
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
