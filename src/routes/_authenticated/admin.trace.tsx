@@ -787,8 +787,91 @@ function TraceResultView({
   }, [columns]);
   const toggleColumn = (k: ColumnKey) =>
     setColumns((prev) => ({ ...prev, [k]: !prev[k] }));
-  const resetColumns = () => setColumns(DEFAULT_COLUMNS);
+  const resetColumns = () => {
+    setColumns(DEFAULT_COLUMNS);
+    setColumnOrder(DEFAULT_COLUMN_ORDER);
+  };
   const activeColumnCount = Object.values(columns).filter(Boolean).length;
+  const [columnOrder, setColumnOrder] = useState<ColumnKey[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_COLUMN_ORDER;
+    try {
+      const raw = window.localStorage.getItem(COLUMN_ORDER_STORAGE_KEY);
+      return normalizeColumnOrder(raw ? JSON.parse(raw) : null);
+    } catch {
+      return DEFAULT_COLUMN_ORDER;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(columnOrder));
+    } catch {
+      /* noop */
+    }
+  }, [columnOrder]);
+  const moveColumn = (k: ColumnKey, dir: -1 | 1) =>
+    setColumnOrder((prev) => {
+      const i = prev.indexOf(k);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const next = prev.slice();
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  const [columnPresets, setColumnPresets] = useState<ColumnPreset[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(COLUMN_PRESETS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((p): p is ColumnPreset => !!p && typeof p.id === "string" && typeof p.name === "string")
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          columns: { ...DEFAULT_COLUMNS, ...(p.columns ?? {}) },
+          order: normalizeColumnOrder(p.order),
+        }));
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMN_PRESETS_STORAGE_KEY, JSON.stringify(columnPresets));
+    } catch {
+      /* noop */
+    }
+  }, [columnPresets]);
+  const saveColumnPreset = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setColumnPresets((prev) => {
+      const existing = prev.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
+      const preset: ColumnPreset = {
+        id: existing?.id ?? (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `p_${Date.now()}`),
+        name: trimmed,
+        columns: { ...columns },
+        order: [...columnOrder],
+      };
+      const next = existing ? prev.map((p) => (p.id === existing.id ? preset : p)) : [...prev, preset];
+      toast.success(existing ? `Đã cập nhật preset "${trimmed}"` : `Đã lưu preset "${trimmed}"`);
+      return next;
+    });
+  };
+  const applyColumnPreset = (id: string) => {
+    const p = columnPresets.find((x) => x.id === id);
+    if (!p) return;
+    setColumns({ ...DEFAULT_COLUMNS, ...p.columns });
+    setColumnOrder(normalizeColumnOrder(p.order));
+    toast.success(`Đã áp dụng preset "${p.name}"`);
+  };
+  const deleteColumnPreset = (id: string) => {
+    setColumnPresets((prev) => {
+      const p = prev.find((x) => x.id === id);
+      if (p) toast.success(`Đã xóa preset "${p.name}"`);
+      return prev.filter((x) => x.id !== id);
+    });
+  };
   const [csvOpts, setCsvOpts] = useState<CsvOptions>(() => {
     if (typeof window === "undefined") return DEFAULT_CSV_OPTIONS;
     try {
@@ -975,7 +1058,7 @@ function TraceResultView({
             </button>
             <button
               onClick={() => {
-                const csv = buildTimelineCsv(filteredTimeline, columns, csvOpts);
+                const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
                 const prefix = csvOpts.bom ? "\ufeff" : "";
                 const blob = new Blob([prefix + csv], { type: "text/csv;charset=utf-8;" });
@@ -1004,7 +1087,18 @@ function TraceResultView({
               pending={pending}
               lastRefreshedAt={lastRefreshedAt}
             />
-            <ColumnsMenu columns={columns} onToggle={toggleColumn} onReset={resetColumns} activeCount={activeColumnCount} />
+            <ColumnsMenu
+              columns={columns}
+              order={columnOrder}
+              onToggle={toggleColumn}
+              onMove={moveColumn}
+              onReset={resetColumns}
+              activeCount={activeColumnCount}
+              presets={columnPresets}
+              onSavePreset={saveColumnPreset}
+              onApplyPreset={applyColumnPreset}
+              onDeletePreset={deleteColumnPreset}
+            />
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
         </div>
