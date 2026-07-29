@@ -277,3 +277,119 @@ export const getQuotaCheckMetrics = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return (data ?? []) as MetricRow[];
   });
+
+// ---------- Quota alert rules & events ----------
+
+type AnyClient = {
+  from: (t: string) => {
+    select: (c: string) => {
+      order: (col: string, opts: { ascending: boolean }) => {
+        limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+      } & Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+    };
+    insert: (v: unknown) => { select: (c: string) => { single: () => Promise<{ data: { id: string } | null; error: { message: string } | null }> } };
+    update: (v: unknown) => { eq: (c: string, v: string) => Promise<{ error: { message: string } | null }> };
+    delete: () => { eq: (c: string, v: string) => Promise<{ error: { message: string } | null }> };
+  };
+};
+
+export type QuotaAlertRule = {
+  id: string;
+  tenant_id: string | null;
+  meter_key: string | null;
+  window_minutes: number;
+  threshold_count: number;
+  cooldown_minutes: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type QuotaAlertEvent = {
+  id: string;
+  tenant_id: string;
+  meter_key: string;
+  rule_id: string | null;
+  window_start: string;
+  window_end: string;
+  exceeded_count: number;
+  threshold_count: number;
+  notified_user_ids: string[];
+  correlation_id: string | null;
+  created_at: string;
+};
+
+export const listQuotaAlertRules = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as unknown as AnyClient)
+      .from("quota_alert_rules")
+      .select("id, tenant_id, meter_key, window_minutes, threshold_count, cooldown_minutes, enabled, created_at, updated_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as QuotaAlertRule[];
+  });
+
+const ruleSchema = z.object({
+  id: z.string().uuid().optional(),
+  tenant_id: z.string().uuid().nullable().optional(),
+  meter_key: z.string().min(1).max(120).nullable().optional(),
+  window_minutes: z.number().int().min(1).max(1440).default(5),
+  threshold_count: z.number().int().min(1).max(10000).default(5),
+  cooldown_minutes: z.number().int().min(1).max(1440).default(15),
+  enabled: z.boolean().default(true),
+});
+
+export const upsertQuotaAlertRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => ruleSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const client = supabaseAdmin as unknown as AnyClient;
+    const payload = {
+      tenant_id: data.tenant_id ?? null,
+      meter_key: data.meter_key ?? null,
+      window_minutes: data.window_minutes,
+      threshold_count: data.threshold_count,
+      cooldown_minutes: data.cooldown_minutes,
+      enabled: data.enabled,
+    };
+    if (data.id) {
+      const { error } = await client.from("quota_alert_rules").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, id: data.id };
+    }
+    const { data: row, error } = await client.from("quota_alert_rules").insert(payload).select("id").single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: row?.id };
+  });
+
+export const deleteQuotaAlertRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as unknown as AnyClient)
+      .from("quota_alert_rules").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listQuotaAlertEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as unknown as AnyClient)
+      .from("quota_alert_events")
+      .select("id, tenant_id, meter_key, rule_id, window_start, window_end, exceeded_count, threshold_count, notified_user_ids, correlation_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as QuotaAlertEvent[];
+  });
