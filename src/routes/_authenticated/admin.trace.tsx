@@ -688,6 +688,8 @@ function AdminTracePage() {
           onChangeAutoRefresh={setAutoRefreshSec}
           onRefreshNow={refreshNow}
           lastRefreshedAt={lastRefreshedAt}
+          fromIso={fromIso}
+          toIso={toIso}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
