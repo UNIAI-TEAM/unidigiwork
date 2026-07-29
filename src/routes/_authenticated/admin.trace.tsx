@@ -943,7 +943,7 @@ function TraceResultView({
               {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
             </button>
             <button
-              onClick={() => onExport(keyword)}
+              onClick={() => onExport(keyword, csvOpts)}
               disabled={exporting || totals.total === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
               title={keyword.trim() ? "Export toàn bộ event khớp bộ lọc hiện tại (kèm keyword), không giới hạn theo trang" : "Export toàn bộ event khớp bộ lọc hiện tại, không giới hạn theo trang"}
@@ -953,9 +953,10 @@ function TraceResultView({
             </button>
             <button
               onClick={() => {
-                const csv = buildTimelineCsv(filteredTimeline, columns);
+                const csv = buildTimelineCsv(filteredTimeline, columns, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
-                const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+                const prefix = csvOpts.bom ? "\ufeff" : "";
+                const blob = new Blob([prefix + csv], { type: "text/csv;charset=utf-8;" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
@@ -973,6 +974,7 @@ function TraceResultView({
               <Download className="h-3 w-3" />
               CSV (cột hiện tại)
             </button>
+            <CsvOptionsMenu value={csvOpts} onChange={setCsvOpts} />
             <AutoRefreshControl
               value={autoRefreshSec}
               onChange={onChangeAutoRefresh}
