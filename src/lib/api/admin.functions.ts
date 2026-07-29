@@ -624,6 +624,19 @@ function toCsv(
   return body ? `${head}\n${body}\n` : `${head}\n`;
 }
 
+/** Like toCsv but with distinct header labels and data-key lookup, preserving order. */
+function toCsvLabeled(
+  headerLabels: readonly string[],
+  dataKeys: readonly string[],
+  rows: Array<Record<string, unknown>>,
+  delim: string = ",",
+  quote: string = '"',
+): string {
+  const head = headerLabels.map((h) => csvEscapeMixed(h, delim, quote)).join(delim);
+  const body = rows.map((r) => dataKeys.map((k) => csvEscapeMixed(r[k], delim, quote)).join(delim)).join("\n");
+  return body ? `${head}\n${body}\n` : `${head}\n`;
+}
+
 const TRACE_CSV_HEADERS = [
   "occurred_at",
   "kind",
