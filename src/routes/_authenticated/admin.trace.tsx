@@ -625,6 +625,13 @@ function TraceResultView({
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
+  const [selected, setSelected] = useState<TimelineItem | null>(null);
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelected(null); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [selected]);
   const [columns, setColumns] = useState<ColumnPrefs>(() => {
     if (typeof window === "undefined") return DEFAULT_COLUMNS;
     try {
