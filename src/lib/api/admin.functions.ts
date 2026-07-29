@@ -82,7 +82,6 @@ export const grantUserRole = createServerFn({ method: "POST" })
     z.object({ user_id: z.string().uuid(), role: roleSchema }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const startedAt = Date.now();
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
