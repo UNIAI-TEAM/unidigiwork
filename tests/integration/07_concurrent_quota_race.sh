@@ -50,19 +50,30 @@ trap cleanup EXIT
 
 LIMIT_TASKS=5
 PARALLEL_TASKS=8
-LIMIT_BYTES=4096
+PARALLEL_DOCS=5
+DOC_SIZE=1024
+LIMIT_BYTES=$((DOC_SIZE * 3))   # only 3 uploads should fit
 
 psql -tAX -v ON_ERROR_STOP=1 >/dev/null <<SQL
 SELECT public._test_seed_entitlement('$TENANT'::uuid, 'tasks.active', true, $LIMIT_TASKS);
 SELECT public._test_seed_entitlement('$TENANT'::uuid, 'documents.storage_bytes', true, $LIMIT_BYTES);
 SQL
 
-DOC="$(psql -tAX -v ON_ERROR_STOP=1 <<SQL | extract_uuid
+# One empty document per parallel worker — parallel uploads then contend on
+# the shared documents.storage_bytes counter without FOR UPDATE serialising
+# them (each locks its own row).
+DOC_IDS=()
+for i in $(seq 1 $PARALLEL_DOCS); do
+  d="$(psql -tAX -v ON_ERROR_STOP=1 <<SQL | extract_uuid
 SELECT set_config('request.jwt.claims', $JWT, false);
-SELECT (public.create_document('$WS'::uuid,'conc-doc','My Documents',ARRAY[]::text[],NULL,NULL,0,'conc-doc-init','$SLUG')).id;
+SELECT (public.create_document('$WS'::uuid,'conc-doc-'||$i,'My Documents',
+          ARRAY[]::text[], NULL, NULL, 0,
+          'conc-doc-init-'||$i||'-'||md5(random()::text), NULL)).id;
 SQL
 )"
-if [ -z "$DOC" ]; then echo "FAIL setup: create_document returned empty"; exit 1; fi
+  if [ -z "$d" ]; then echo "FAIL setup: create_document $i returned empty"; exit 1; fi
+  DOC_IDS+=("$d")
+done
 
 # ---------- test A: concurrent create_task -----------------------------------
 for i in $(seq 1 $PARALLEL_TASKS); do
@@ -110,21 +121,17 @@ if [ "$succ" -ne "$LIMIT_TASKS" ] || [ "$qerr" -ne $((PARALLEL_TASKS-LIMIT_TASKS
 fi
 
 # ---------- test B: concurrent upload_document_version -----------------------
-# Fire 4 parallel uploads with absolute sizes 1024, 2048, 4096, 8192.
-# storage limit = 4096. FOR UPDATE serialises; delta is recomputed as
-# new_size - current_size, so whichever ordering wins:
-#   - final size <= 4096 (no counter overflow),
-#   - at least one upload targeting > 4096 raises QUOTA_EXCEEDED.
-SIZES=(1024 2048 4096 8192)
-for i in "${!SIZES[@]}"; do
-  sz="${SIZES[$i]}"; n=$((i+1))
+# Fire N parallel uploads, one per document, each +DOC_SIZE bytes. The shared
+# storage counter is the only contended resource. Limit permits only 3 uploads.
+for i in "${!DOC_IDS[@]}"; do
+  did="${DOC_IDS[$i]}"; n=$((i+1))
   (
     psql -tAX -v ON_ERROR_STOP=0 -c "
       SELECT set_config('request.jwt.claims', $JWT, false);
       SELECT (public.upload_document_version(
-        '$DOC'::uuid,
+        '$did'::uuid,
         '{\"bucket\":\"docs\",\"path\":\"x\"}'::jsonb,
-        'text/plain', $sz, 'v'||$n,
+        'text/plain', $DOC_SIZE, 'v1',
         'conc-v-'||$n||'-'||md5(random()::text), NULL)).id;
     " > "$WORK/doc_$n.out" 2>&1
     echo "__rc=$?" >> "$WORK/doc_$n.out"
@@ -144,23 +151,22 @@ for f in "$WORK"/doc_*.out; do
   fi
 done
 
-final_size=$(psql -tAXc "SELECT COALESCE(size_bytes,0) FROM public.documents WHERE id='$DOC'" | tr -d ' ')
 storage=$(psql -tAXc "SELECT COALESCE(SUM(total),0) FROM public.usage_counters
   WHERE tenant_id='$TENANT' AND meter_key='documents.storage_bytes'
     AND period_start=date_trunc('month',now())" | tr -d ' ')
-versions=$(psql -tAXc "SELECT COUNT(*) FROM public.document_versions WHERE document_id='$DOC'" | tr -d ' ')
+versions=$(psql -tAXc "SELECT COUNT(*) FROM public.document_versions
+  WHERE tenant_id='$TENANT' AND version > 1" | tr -d ' ')
 
-echo "DOCS   sizes=${SIZES[*]} limit=$LIMIT_BYTES -> ok=$doc_ok quota_err=$doc_qerr other=$doc_other final_size=$final_size storage=$storage versions=$versions"
+expected_ok=$((LIMIT_BYTES / DOC_SIZE))
+expected_qerr=$((PARALLEL_DOCS - expected_ok))
+echo "DOCS   N=$PARALLEL_DOCS size=$DOC_SIZE limit=$LIMIT_BYTES -> ok=$doc_ok quota_err=$doc_qerr other=$doc_other storage=$storage versions=$versions"
 
 if [ "$doc_other" -ne 0 ]; then echo "FAIL docs: unexpected non-quota errors"; FAIL=1; fi
-if [ "$final_size" -gt "$LIMIT_BYTES" ]; then
-  echo "FAIL docs: RACE — final size $final_size > limit $LIMIT_BYTES"; FAIL=1
-fi
 if [ "$storage" -gt "$LIMIT_BYTES" ]; then
   echo "FAIL docs: RACE — storage counter $storage > limit $LIMIT_BYTES"; FAIL=1
 fi
-if [ "$doc_qerr" -lt 1 ]; then
-  echo "FAIL docs: expected at least one QUOTA_EXCEEDED for size > limit"; FAIL=1
+if [ "$doc_ok" -ne "$expected_ok" ] || [ "$doc_qerr" -ne "$expected_qerr" ]; then
+  echo "FAIL docs: expected $expected_ok OK + $expected_qerr QUOTA_EXCEEDED"; FAIL=1
 fi
 
 if [ "$FAIL" -ne 0 ]; then exit 1; fi
