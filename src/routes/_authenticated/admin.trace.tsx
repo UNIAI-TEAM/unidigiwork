@@ -1374,3 +1374,107 @@ function CountCard({
     </div>
   );
 }
+function PresetsMenu({
+  presets,
+  onSave,
+  onApply,
+  onDelete,
+}: {
+  presets: FilterPreset[];
+  onSave: (name: string) => void;
+  onApply: (p: FilterPreset) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-presets-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const handleSave = () => {
+    onSave(name);
+    setName("");
+  };
+  return (
+    <div className="relative" data-presets-menu>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/60 hover:text-foreground"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Lưu và tải nhanh preset bộ lọc"
+      >
+        <Bookmark className="h-3 w-3" />
+        Preset ({presets.length})
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-lg border border-border bg-surface p-2 shadow-lg">
+          <div className="px-1 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            Lưu bộ lọc hiện tại
+          </div>
+          <div className="flex items-center gap-1 px-1 pb-2">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+              placeholder="Tên preset…"
+              maxLength={60}
+              className="flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs outline-none focus:border-primary/60"
+            />
+            <button
+              onClick={handleSave}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Lưu
+            </button>
+          </div>
+          <div className="mb-1 border-t border-border px-1 pt-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+            Đã lưu
+          </div>
+          {presets.length === 0 ? (
+            <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              Chưa có preset. Đặt bộ lọc mong muốn rồi bấm Lưu.
+            </div>
+          ) : (
+            <ul className="flex max-h-64 flex-col overflow-y-auto">
+              {presets.map((p) => {
+                const bits: string[] = [];
+                if (p.kinds) bits.push(p.kinds);
+                if (p.sev) bits.push(`sev:${p.sev}`);
+                if (p.st) bits.push(`st:${p.st}`);
+                if (p.from || p.to) bits.push(`${p.from ?? "…"}→${p.to ?? "…"}`);
+                if (p.sort) bits.push(p.sort);
+                if (p.kw) bits.push(`"${p.kw}"`);
+                return (
+                  <li key={p.id} className="group flex items-center gap-1 rounded px-1 py-1 hover:bg-surface-2">
+                    <button
+                      onClick={() => { onApply(p); setOpen(false); }}
+                      className="flex flex-1 flex-col items-start text-left"
+                    >
+                      <span className="text-xs font-medium text-foreground">{p.name}</span>
+                      {bits.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground line-clamp-1">{bits.join(" · ")}</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => onDelete(p.id)}
+                      aria-label={`Xóa preset ${p.name}`}
+                      className="rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
