@@ -669,7 +669,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
       q = q.eq("correlation_id", cid);
       if (data.fromTs) q = q.gte("occurred_at", data.fromTs);
       if (data.toTs) q = q.lte("occurred_at", data.toTs);
-      return q.order("occurred_at", { ascending: true }) as Promise<{
+      return q.order("occurred_at", { ascending: data.sort === "asc" }) as Promise<{
         data: unknown[] | null;
         error: { message: string } | null;
       }>;
