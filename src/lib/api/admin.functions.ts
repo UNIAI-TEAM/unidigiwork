@@ -213,3 +213,67 @@ export const getAdminStats = createServerFn({ method: "GET" })
       notifications: notifs.count ?? 0,
     };
   });
+
+// ---------- Quota observability (24h) ----------
+
+export const listQuotaCheckEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        tenantId: z.string().uuid().optional(),
+        meterKey: z.string().max(120).optional(),
+        status: z.enum(["all", "pass", "fail"]).default("all"),
+        limit: z.number().int().min(1).max(500).default(100),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+    let q = supabaseAdmin
+      .from("quota_check_events")
+      .select("id, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id, occurred_at")
+      .gte("occurred_at", since)
+      .order("occurred_at", { ascending: false })
+      .limit(data.limit);
+    if (data.tenantId) q = q.eq("tenant_id", data.tenantId);
+    if (data.meterKey) q = q.eq("meter_key", data.meterKey);
+    if (data.status === "pass") q = q.eq("allowed", true);
+    if (data.status === "fail") q = q.eq("allowed", false);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const getQuotaCheckMetrics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    type MetricRow = {
+      tenant_id: string;
+      meter_key: string;
+      total_checks: number;
+      pass_count: number;
+      fail_count: number;
+      fail_exceeded: number;
+      fail_disabled: number;
+      fail_no_entitlement: number;
+      last_check_at: string | null;
+      last_fail_at: string | null;
+    };
+    const { data, error } = await (supabaseAdmin as unknown as {
+      from: (t: string) => {
+        select: (c: string) => {
+          order: (col: string, opts: { ascending: boolean }) => Promise<{ data: MetricRow[] | null; error: { message: string } | null }>;
+        };
+      };
+    })
+      .from("v_quota_check_metrics")
+      .select("tenant_id, meter_key, total_checks, pass_count, fail_count, fail_exceeded, fail_disabled, fail_no_entitlement, last_check_at, last_fail_at")
+      .order("total_checks", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as MetricRow[];
+  });
