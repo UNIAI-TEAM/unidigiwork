@@ -1225,7 +1225,6 @@ function ColumnsMenu({
   onReset: () => void;
   activeCount: number;
 }) {
-  // placeholder anchor
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
