@@ -1149,13 +1149,16 @@ function ExportSizeHint({
       </span>
       {warn && !zip && (
         <>
-          <span className="text-amber-500">· vượt {formatBytes(EXPORT_SIZE_WARN_BYTES)} — nên bật nén ZIP</span>
+          <span className="text-amber-500">
+            · vượt {formatBytes(EXPORT_SIZE_WARN_BYTES)} — sẽ tự động nén ZIP
+          </span>
           <button
             type="button"
             onClick={onEnableZip}
-            className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/20"
+            className="rounded-md border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+            title="Bật ZIP mặc định cho các lần export sau"
           >
-            Bật ZIP
+            Bật mặc định
           </button>
         </>
       )}
