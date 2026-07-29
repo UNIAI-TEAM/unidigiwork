@@ -1563,6 +1563,7 @@ function TraceResultView({
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
         </div>
+        <ExportProgressBar progress={exportProgress} />
         <PaginationBar
           page={page}
           pageCount={pageCount}
