@@ -2443,6 +2443,38 @@ function CsvOptionsMenu({
               template: value.filenameTemplate,
             });
             const display = (n: string) => (value.zip ? toZipFilename(n) : n);
+            const metaAll = value.includeMetadata
+              ? buildCsvMetadataLine(
+                  {
+                    correlationId: preview.correlationId,
+                    variant: "all",
+                    keyword: preview.keyword,
+                    fromIso: preview.fromIso,
+                    toIso: preview.toIso,
+                    sort: preview.sort,
+                    severities: preview.severities,
+                    statuses: preview.statuses,
+                    kinds: preview.kinds,
+                  },
+                  value,
+                )
+              : null;
+            const metaCols = value.includeMetadata
+              ? buildCsvMetadataLine(
+                  {
+                    correlationId: preview.correlationId,
+                    variant: "columns",
+                    keyword: preview.keyword,
+                    fromIso: preview.fromIso,
+                    toIso: preview.toIso,
+                    sort: preview.sort,
+                    severities: preview.severities,
+                    statuses: preview.statuses,
+                    kinds: preview.kinds,
+                  },
+                  value,
+                )
+              : null;
             return (
               <div className="mt-3 space-y-1.5 border-t border-border pt-2">
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -2466,6 +2498,49 @@ function CsvOptionsMenu({
                     {display(nameCols)}
                   </code>
                 </div>
+                {value.includeMetadata && (metaAll || metaCols) && (
+                  <div className="mt-2 space-y-1.5 border-t border-border pt-2">
+                    <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+                      <span>Xem trước dòng metadata</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const text = [metaAll, metaCols].filter(Boolean).join("\n");
+                          if (text) void navigator.clipboard?.writeText(text);
+                        }}
+                        className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
+                        title="Sao chép dòng metadata"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    {metaAll && (
+                      <div>
+                        <div className="text-[11px] text-muted-foreground">Metadata (tất cả kết quả)</div>
+                        <code
+                          className="mt-0.5 block max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
+                          title={metaAll}
+                        >
+                          {metaAll}
+                        </code>
+                      </div>
+                    )}
+                    {metaCols && (
+                      <div>
+                        <div className="text-[11px] text-muted-foreground">Metadata (cột hiện tại)</div>
+                        <code
+                          className="mt-0.5 block max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
+                          title={metaCols}
+                        >
+                          {metaCols}
+                        </code>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-muted-foreground">
+                      Dòng này sẽ được ghi ở đầu CSV (hoặc trong <code>.meta.txt</code> nếu bật tách metadata trong ZIP). <code>rows</code> được thêm khi export.
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })()}
