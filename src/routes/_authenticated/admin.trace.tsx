@@ -374,7 +374,7 @@ function AdminTracePage() {
   });
 
   const exportMut = useMutation({
-    mutationFn: (args: { correlationId: string; keyword?: string; csv: CsvOptions }) =>
+    mutationFn: (args: { correlationId: string; keyword?: string; csv: CsvOptions; columns?: Array<{ key: TraceExportKey; label: string }> }) =>
       exportTraceCsv({
         data: {
           correlationId: args.correlationId,
@@ -397,6 +397,7 @@ function AdminTracePage() {
               : (activeStatuses as [Status, ...Status[]]),
           delimiter: args.csv.delimiter,
           quoteChar: args.csv.quoteChar,
+          columns: args.columns && args.columns.length > 0 ? args.columns : undefined,
         },
       }),
     onSuccess: (data, vars) => {
