@@ -397,6 +397,15 @@ function TraceResultView({
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={onToggleSort}
+              disabled={pending || totals.total === 0}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+              title={sort === "asc" ? "Đang xếp tăng dần (cũ → mới)" : "Đang xếp giảm dần (mới → cũ)"}
+            >
+              {sort === "asc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
+              {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
+            </button>
+            <button
               onClick={onExport}
               disabled={exporting || totals.total === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
