@@ -744,6 +744,9 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
           </button>
         </div>
       </div>
+      <div className="px-4 pb-4">
+        <ColumnsPicker value={columns} onChange={setColumns} />
+      </div>
     </section>
   );
 }
@@ -759,6 +762,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
   const [status, setStatus] = useState<StatusFilter>("all");
   const [maxRows, setMaxRows] = useState<number>(200000);
   const [format, setFormat] = useState<"csv" | "xlsx">("csv");
+  const [columns, setColumns] = useState<string[]>(DEFAULT_OPTIONAL_COLUMNS);
 
   const jobsQ = useQuery({
     queryKey: ["admin", "quota", "export-jobs"],
@@ -780,6 +784,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
           status,
           maxRows,
           format,
+          columns,
         },
       }),
     onSuccess: async () => {
@@ -889,6 +894,9 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
             {createMut.isPending ? "Đang tạo…" : "Tạo job"}
           </button>
         </div>
+      </div>
+      <div className="px-4 pb-4">
+        <ColumnsPicker value={columns} onChange={setColumns} />
       </div>
 
       <div className="border-t border-border">
