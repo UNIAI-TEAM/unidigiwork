@@ -153,6 +153,23 @@ function AdminTracePage() {
   const [fromInput, setFromInput] = useState<string>(from ?? "");
   const [toInput, setToInput] = useState<string>(to ?? "");
   const [result, setResult] = useState<TraceResult | null>(null);
+  const [keyword, setKeyword] = useState<string>("");
+  const [presets, setPresets] = useState<FilterPreset[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(PRESETS_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as FilterPreset[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
+    } catch { /* noop */ }
+  }, [presets]);
   const currentPage = page ?? 1;
   const currentLimit = limit ?? 500;
   const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
