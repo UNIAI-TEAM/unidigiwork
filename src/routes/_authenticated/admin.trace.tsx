@@ -640,15 +640,20 @@ function AdminTracePage() {
         },
         vars.csv,
       );
+      const rawSize = (data.csv?.length ?? 0) + (vars.csv.includeMetadata && metaLine ? metaLine.length + 2 : 0);
+      const { opts: effOpts, auto: autoZipped } = maybeAutoZipOpts(vars.csv, rawSize);
+      if (autoZipped) {
+        toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
+      }
       setExportProgress({
         active: true,
         variant: "all",
-        phase: vars.csv.zip ? "compressing" : "saving",
-        label: vars.csv.zip ? "Đang nén .zip…" : "Đang tạo file…",
+        phase: effOpts.zip ? "compressing" : "saving",
+        label: effOpts.zip ? (autoZipped ? "Tự động nén .zip…" : "Đang nén .zip…") : "Đang tạo file…",
         percent: 75,
         rows: data.rowCount,
       });
-      void downloadCsvOrZip(data.csv, csvFilename, vars.csv, metaLine)
+      void downloadCsvOrZip(data.csv, csvFilename, effOpts, metaLine)
         .then(() => {
           setExportProgress({
             active: true,
