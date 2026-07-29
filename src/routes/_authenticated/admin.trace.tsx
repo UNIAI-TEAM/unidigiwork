@@ -1180,22 +1180,6 @@ function TraceResultView({
       return prev.filter((x) => x.id !== id);
     });
   };
-  const [csvOpts, setCsvOpts] = useState<CsvOptions>(() => {
-    if (typeof window === "undefined") return DEFAULT_CSV_OPTIONS;
-    try {
-      const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);
-      if (!raw) return DEFAULT_CSV_OPTIONS;
-      const parsed = JSON.parse(raw);
-      const merged = { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
-      merged.filenameTemplate = normalizeFilenameTemplate((parsed as { filenameTemplate?: unknown })?.filenameTemplate);
-      return merged;
-    } catch {
-      return DEFAULT_CSV_OPTIONS;
-    }
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
-  }, [csvOpts]);
   const [exportCols, setExportCols] = useState<TraceExportColumn[]>(() => {
     if (typeof window === "undefined") return DEFAULT_TRACE_EXPORT_COLUMNS;
     try {
