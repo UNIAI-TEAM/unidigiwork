@@ -252,10 +252,22 @@ export const getQuotaCheckMetrics = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    type MetricRow = {
+      tenant_id: string;
+      meter_key: string;
+      total_checks: number;
+      pass_count: number;
+      fail_count: number;
+      fail_exceeded: number;
+      fail_disabled: number;
+      fail_no_entitlement: number;
+      last_check_at: string | null;
+      last_fail_at: string | null;
+    };
     const { data, error } = await (supabaseAdmin as unknown as {
       from: (t: string) => {
         select: (c: string) => {
-          order: (col: string, opts: { ascending: boolean }) => Promise<{ data: Array<Record<string, unknown>> | null; error: { message: string } | null }>;
+          order: (col: string, opts: { ascending: boolean }) => Promise<{ data: MetricRow[] | null; error: { message: string } | null }>;
         };
       };
     })
@@ -263,5 +275,5 @@ export const getQuotaCheckMetrics = createServerFn({ method: "GET" })
       .select("tenant_id, meter_key, total_checks, pass_count, fail_count, fail_exceeded, fail_disabled, fail_no_entitlement, last_check_at, last_fail_at")
       .order("total_checks", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []) as MetricRow[];
   });
