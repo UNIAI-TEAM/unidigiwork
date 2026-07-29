@@ -640,15 +640,20 @@ function AdminTracePage() {
         },
         vars.csv,
       );
+      const rawSize = (data.csv?.length ?? 0) + (vars.csv.includeMetadata && metaLine ? metaLine.length + 2 : 0);
+      const { opts: effOpts, auto: autoZipped } = maybeAutoZipOpts(vars.csv, rawSize);
+      if (autoZipped) {
+        toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
+      }
       setExportProgress({
         active: true,
         variant: "all",
-        phase: vars.csv.zip ? "compressing" : "saving",
-        label: vars.csv.zip ? "Đang nén .zip…" : "Đang tạo file…",
+        phase: effOpts.zip ? "compressing" : "saving",
+        label: effOpts.zip ? (autoZipped ? "Tự động nén .zip…" : "Đang nén .zip…") : "Đang tạo file…",
         percent: 75,
         rows: data.rowCount,
       });
-      void downloadCsvOrZip(data.csv, csvFilename, vars.csv, metaLine)
+      void downloadCsvOrZip(data.csv, csvFilename, effOpts, metaLine)
         .then(() => {
           setExportProgress({
             active: true,
@@ -1097,6 +1102,13 @@ function estimateCsvBytes(rows: number, cols: number, includeMetadata: boolean):
   return header + meta + rows * perRow;
 }
 
+function maybeAutoZipOpts(opts: CsvOptions, rawBytes: number): { opts: CsvOptions; auto: boolean } {
+  if (!opts.zip && rawBytes >= EXPORT_SIZE_WARN_BYTES) {
+    return { opts: { ...opts, zip: true }, auto: true };
+  }
+  return { opts, auto: false };
+}
+
 function ExportSizeHint({
   label,
   rows,
@@ -1137,13 +1149,16 @@ function ExportSizeHint({
       </span>
       {warn && !zip && (
         <>
-          <span className="text-amber-500">· vượt {formatBytes(EXPORT_SIZE_WARN_BYTES)} — nên bật nén ZIP</span>
+          <span className="text-amber-500">
+            · vượt {formatBytes(EXPORT_SIZE_WARN_BYTES)} — sẽ tự động nén ZIP
+          </span>
           <button
             type="button"
             onClick={onEnableZip}
-            className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/20"
+            className="rounded-md border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+            title="Bật ZIP mặc định cho các lần export sau"
           >
-            Bật ZIP
+            Bật mặc định
           </button>
         </>
       )}
@@ -1617,15 +1632,20 @@ function TraceResultView({
                   csvOpts,
                 );
                 const rows = filteredTimeline.length;
+                const rawSize = csv.length + (csvOpts.includeMetadata && metaLine ? metaLine.length + 2 : 0);
+                const { opts: effOpts, auto: autoZipped } = maybeAutoZipOpts(csvOpts, rawSize);
+                if (autoZipped) {
+                  toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
+                }
                 setExportProgress({
                   active: true,
                   variant: "columns",
-                  phase: csvOpts.zip ? "compressing" : "saving",
-                  label: csvOpts.zip ? "Đang nén .zip…" : "Đang tạo file…",
+                  phase: effOpts.zip ? "compressing" : "saving",
+                  label: effOpts.zip ? (autoZipped ? "Tự động nén .zip…" : "Đang nén .zip…") : "Đang tạo file…",
                   percent: 70,
                   rows,
                 });
-                void downloadCsvOrZip(csv, csvFilename, csvOpts, metaLine)
+                void downloadCsvOrZip(csv, csvFilename, effOpts, metaLine)
                   .then(() => {
                     setExportProgress({
                       active: true, variant: "columns", phase: "done",
