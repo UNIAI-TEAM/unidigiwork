@@ -471,6 +471,10 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
         limit: z.number().int().min(1).max(1000).default(500),
         offset: z.number().int().min(0).max(1_000_000).default(0),
         page: z.number().int().min(1).max(100_000).optional(),
+        kinds: z
+          .array(z.enum(["quota", "audit", "outbox"]))
+          .nonempty()
+          .optional(),
       })
       .parse(i),
   )
@@ -482,6 +486,10 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
     const offset = data.page ? (data.page - 1) * limit : data.offset;
     const from = offset;
     const to = offset + limit - 1;
+    const activeKinds = new Set(data.kinds ?? ["quota", "audit", "outbox"]);
+    const wantQuota = activeKinds.has("quota");
+    const wantAudit = activeKinds.has("audit");
+    const wantOutbox = activeKinds.has("outbox");
 
     type RangeBuilder = {
       from: (t: string) => {
@@ -506,8 +514,9 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
     };
     const sb = supabaseAdmin as unknown as RangeBuilder;
 
+    const emptyRes = Promise.resolve({ data: [] as unknown[], count: 0, error: null });
     const [quotaRes, auditRes, outboxRes] = await Promise.all([
-      sb
+      wantQuota ? sb
         .from("quota_check_events")
         .select(
           "id, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id, occurred_at",
@@ -515,8 +524,8 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
         )
         .eq("correlation_id", cid)
         .order("occurred_at", { ascending: true })
-        .range(from, to),
-      sb
+        .range(from, to) : emptyRes,
+      wantAudit ? sb
         .from("audit_events")
         .select(
           "id, tenant_id, actor_user_id, action, resource_type, resource_id, event_type, aggregate_type, aggregate_id, payload, correlation_id, occurred_at",
@@ -524,8 +533,8 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
         )
         .eq("correlation_id", cid)
         .order("occurred_at", { ascending: true })
-        .range(from, to),
-      sb
+        .range(from, to) : emptyRes,
+      wantOutbox ? sb
         .from("outbox_events")
         .select(
           "id, tenant_id, event_type, aggregate_type, aggregate_id, status, attempt_count, last_error, correlation_id, occurred_at, processed_at",
@@ -533,7 +542,7 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
         )
         .eq("correlation_id", cid)
         .order("occurred_at", { ascending: true })
-        .range(from, to),
+        .range(from, to) : emptyRes,
     ]);
 
     if (quotaRes.error) throw new Error(quotaRes.error.message);

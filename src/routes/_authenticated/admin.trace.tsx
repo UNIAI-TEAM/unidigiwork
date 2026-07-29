@@ -7,10 +7,22 @@ import { z } from "zod";
 import { traceByCorrelationId, exportTraceCsv } from "@/lib/api/admin.functions";
 
 const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
+const ALL_KINDS = ["quota", "audit", "outbox"] as const;
+type Kind = (typeof ALL_KINDS)[number];
 const searchSchema = z.object({
   cid: z.string().trim().max(200).optional(),
   page: z.coerce.number().int().min(1).max(100000).optional(),
   limit: z.coerce.number().int().min(1).max(1000).optional(),
+  kinds: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (!v) return undefined;
+      const set = new Set(
+        v.split(",").map((s) => s.trim()).filter((s): s is Kind => (ALL_KINDS as readonly string[]).includes(s)),
+      );
+      return set.size === 0 || set.size === ALL_KINDS.length ? undefined : (Array.from(set) as Kind[]);
+    }),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/trace")({
@@ -28,19 +40,25 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
-  const { cid, page, limit } = Route.useSearch();
+  const { cid, page, limit, kinds } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
   const [result, setResult] = useState<TraceResult | null>(null);
   const currentPage = page ?? 1;
   const currentLimit = limit ?? 500;
+  const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
 
-  type SearchState = { cid?: string; page?: number; limit?: number };
+  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string };
 
   const traceMut = useMutation({
-    mutationFn: (args: { correlationId: string; page: number; limit: number }) =>
+    mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[] }) =>
       traceByCorrelationId({
-        data: { correlationId: args.correlationId, page: args.page, limit: args.limit },
+        data: {
+          correlationId: args.correlationId,
+          page: args.page,
+          limit: args.limit,
+          kinds: args.kinds.length === ALL_KINDS.length ? undefined : (args.kinds as [Kind, ...Kind[]]),
+        },
       }),
     onSuccess: (data) => {
       setResult(data);
@@ -75,10 +93,10 @@ function AdminTracePage() {
   useEffect(() => {
     if (cid && cid.trim()) {
       setInput(cid);
-      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit });
+      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid, currentPage, currentLimit]);
+  }, [cid, currentPage, currentLimit, activeKinds.join(",")]);
 
   const submit = () => {
     const v = input.trim();
@@ -95,6 +113,20 @@ function AdminTracePage() {
   const changeLimit = (nextLimit: number) => {
     navigate({ search: (prev: SearchState) => ({ ...prev, limit: nextLimit, page: 1 }) });
   };
+  const toggleKind = (k: Kind) => {
+    const set = new Set(activeKinds);
+    if (set.has(k)) set.delete(k);
+    else set.add(k);
+    if (set.size === 0) {
+      toast.error("Phải chọn ít nhất một loại event");
+      return;
+    }
+    const next: Kind[] = ALL_KINDS.filter((x) => set.has(x));
+    const encoded = next.length === ALL_KINDS.length ? undefined : next.join(",");
+    navigate({ search: (prev: SearchState) => ({ ...prev, kinds: encoded, page: 1 }) });
+  };
+  const resetKinds = () =>
+    navigate({ search: (prev: SearchState) => ({ ...prev, kinds: undefined, page: 1 }) });
 
   return (
     <div className="flex flex-col gap-6">
@@ -147,6 +179,9 @@ function AdminTracePage() {
           pending={traceMut.isPending}
           onExport={() => exportMut.mutate(result.correlationId)}
           exporting={exportMut.isPending}
+          activeKinds={activeKinds}
+          onToggleKind={toggleKind}
+          onResetKinds={resetKinds}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -168,6 +203,9 @@ function TraceResultView({
   pending,
   onExport,
   exporting,
+  activeKinds,
+  onToggleKind,
+  onResetKinds,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -175,6 +213,9 @@ function TraceResultView({
   pending: boolean;
   onExport: () => void;
   exporting: boolean;
+  activeKinds: Kind[];
+  onToggleKind: (k: Kind) => void;
+  onResetKinds: () => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const copyCid = () => {
@@ -186,6 +227,12 @@ function TraceResultView({
   const { page, pageCount, pageSize, offset } = pagination;
   const rangeStart = timeline.length === 0 ? 0 : offset + 1;
   const rangeEnd = offset + timeline.length;
+  const filtered = activeKinds.length < ALL_KINDS.length;
+  const KIND_META: Record<Kind, { label: string; className: string }> = {
+    quota: { label: "Quota", className: "text-emerald-400 border-emerald-500/40" },
+    audit: { label: "Audit", className: "text-sky-400 border-sky-500/40" },
+    outbox: { label: "Outbox", className: "text-amber-400 border-amber-500/40" },
+  };
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -193,6 +240,37 @@ function TraceResultView({
         <CountCard label="Quota checks" value={totals.quota} icon={CheckCircle2} tint="text-emerald-400" hint={`hiện ${counts.quota}`} />
         <CountCard label="Audit" value={totals.audit} icon={ShieldCheck} tint="text-sky-400" hint={`hiện ${counts.audit}`} />
         <CountCard label="Outbox" value={totals.outbox} icon={Radio} tint="text-amber-400" hint={`hiện ${counts.outbox}`} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Lọc loại event:</span>
+        {ALL_KINDS.map((k) => {
+          const active = activeKinds.includes(k);
+          return (
+            <button
+              key={k}
+              onClick={() => onToggleKind(k)}
+              disabled={pending}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition ${
+                active
+                  ? `bg-surface-2 ${KIND_META[k].className}`
+                  : "border-border bg-surface text-muted-foreground hover:text-foreground"
+              } disabled:opacity-50`}
+            >
+              {KIND_META[k].label}
+            </button>
+          );
+        })}
+        {filtered && (
+          <button
+            onClick={onResetKinds}
+            disabled={pending}
+            className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            Tất cả
+          </button>
+        )}
       </div>
 
       <section className="rounded-2xl border border-border bg-surface">
