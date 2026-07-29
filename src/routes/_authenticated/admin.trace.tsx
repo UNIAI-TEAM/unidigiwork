@@ -89,8 +89,29 @@ function normalizeColumnOrder(input: unknown): ColumnKey[] {
 type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
 type FilenameTz = "utc" | "local";
-type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz };
-const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc" };
+type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz; zip: boolean };
+const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc", zip: false };
+
+function triggerBlobDownload(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions): Promise<void> {
+  const body = (opts.bom ? "\ufeff" : "") + csvText;
+  if (opts.zip) {
+    const { zipSync, strToU8 } = await import("fflate");
+    const zipped = zipSync({ [csvFilename]: strToU8(body) }, { level: 6 });
+    triggerBlobDownload(new Blob([zipped as BlobPart], { type: "application/zip" }), csvFilename.replace(/\.csv$/i, "") + ".zip");
+  } else {
+    triggerBlobDownload(new Blob([body], { type: "text/csv;charset=utf-8;" }), csvFilename);
+  }
+}
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
 const TRACE_EXPORT_COLUMN_DEFS = [
