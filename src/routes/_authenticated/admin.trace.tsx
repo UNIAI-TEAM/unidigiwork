@@ -89,8 +89,29 @@ function normalizeColumnOrder(input: unknown): ColumnKey[] {
 type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
 type FilenameTz = "utc" | "local";
-type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz };
-const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc" };
+type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz; zip: boolean };
+const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc", zip: false };
+
+function triggerBlobDownload(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions): Promise<void> {
+  const body = (opts.bom ? "\ufeff" : "") + csvText;
+  if (opts.zip) {
+    const { zipSync, strToU8 } = await import("fflate");
+    const zipped = zipSync({ [csvFilename]: strToU8(body) }, { level: 6 });
+    triggerBlobDownload(new Blob([zipped as BlobPart], { type: "application/zip" }), csvFilename.replace(/\.csv$/i, "") + ".zip");
+  } else {
+    triggerBlobDownload(new Blob([body], { type: "text/csv;charset=utf-8;" }), csvFilename);
+  }
+}
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
 const TRACE_EXPORT_COLUMN_DEFS = [
@@ -424,12 +445,7 @@ function AdminTracePage() {
         },
       }),
     onSuccess: (data, vars) => {
-      const prefix = vars.csv.bom ? "\ufeff" : "";
-      const blob = new Blob([prefix + data.csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = buildCsvFilename({
+      const csvFilename = buildCsvFilename({
         correlationId: vars.correlationId,
         variant: "all",
         keyword: vars.keyword,
@@ -441,10 +457,9 @@ function AdminTracePage() {
         statuses: activeStatuses,
         kinds: activeKinds,
       });
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      void downloadCsvOrZip(data.csv, csvFilename, vars.csv).catch((e: unknown) => {
+        toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`);
+      });
       if (data.truncated) {
         toast.warning(`Đã export ${data.rowCount.toLocaleString("vi-VN")} / ${data.totalRows.toLocaleString("vi-VN")} dòng (đã cắt).`);
       } else {
@@ -1232,12 +1247,7 @@ function TraceResultView({
               onClick={() => {
                 const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
-                const prefix = csvOpts.bom ? "\ufeff" : "";
-                const blob = new Blob([prefix + csv], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = buildCsvFilename({
+                const csvFilename = buildCsvFilename({
                   correlationId,
                   variant: "columns",
                   keyword,
@@ -1249,11 +1259,9 @@ function TraceResultView({
                   statuses: activeStatuses,
                   kinds: activeKinds,
                 });
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-                toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`);
+                void downloadCsvOrZip(csv, csvFilename, csvOpts)
+                  .then(() => toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`))
+                  .catch((e: unknown) => toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`));
               }}
               disabled={filteredTimeline.length === 0 || activeColumnCount === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
@@ -1756,6 +1764,15 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
               className="h-3.5 w-3.5 rounded border-border accent-primary"
             />
             <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 hover:bg-surface-2">
+            <input
+              type="checkbox"
+              checked={value.zip}
+              onChange={(e) => onChange({ ...value, zip: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className="text-foreground">Nén file thành .zip (khuyến nghị khi &gt;10k dòng)</span>
           </label>
           <div className="mt-3">
             <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
