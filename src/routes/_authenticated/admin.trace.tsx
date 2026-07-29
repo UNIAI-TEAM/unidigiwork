@@ -2000,6 +2000,66 @@ function CsvOptionsMenu({
               Ghi 1 dòng comment (bắt đầu bằng <code># </code>) ghi rõ keyword, from/to, sort, severities, statuses, kinds, timezone và thời gian tạo file.
             </p>
           </div>
+          <div className="mt-3 space-y-1.5 border-t border-border pt-2">
+            <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+              <span>Mẫu tên file</span>
+              <button
+                onClick={() => onChange({ ...value, filenameTemplate: DEFAULT_FILENAME_TEMPLATE.map((p) => ({ ...p })) })}
+                className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
+              >
+                Đặt lại
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Kéo thứ tự bằng nút ▲▼, tick để bật/tắt từng trường. Các trường không có dữ liệu sẽ tự bỏ qua.
+            </p>
+            <ul className="space-y-1">
+              {value.filenameTemplate.map((part, idx) => (
+                <li key={part.key} className="flex items-center gap-1 rounded border border-border bg-surface-2 px-1.5 py-1">
+                  <input
+                    type="checkbox"
+                    checked={part.enabled}
+                    onChange={(e) => {
+                      const next = value.filenameTemplate.map((p) => ({ ...p }));
+                      next[idx].enabled = e.target.checked;
+                      onChange({ ...value, filenameTemplate: next });
+                    }}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary"
+                    aria-label={`Bật/tắt ${FILENAME_PART_LABELS[part.key]}`}
+                  />
+                  <span className={`flex-1 text-[11px] ${part.enabled ? "text-foreground" : "text-muted-foreground line-through"}`}>
+                    {idx + 1}. {FILENAME_PART_LABELS[part.key]}
+                  </span>
+                  <button
+                    disabled={idx === 0}
+                    onClick={() => {
+                      if (idx === 0) return;
+                      const next = value.filenameTemplate.map((p) => ({ ...p }));
+                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                      onChange({ ...value, filenameTemplate: next });
+                    }}
+                    className="rounded px-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    aria-label="Di chuyển lên"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    disabled={idx === value.filenameTemplate.length - 1}
+                    onClick={() => {
+                      if (idx === value.filenameTemplate.length - 1) return;
+                      const next = value.filenameTemplate.map((p) => ({ ...p }));
+                      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                      onChange({ ...value, filenameTemplate: next });
+                    }}
+                    className="rounded px-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    aria-label="Di chuyển xuống"
+                  >
+                    ▼
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
           {preview && (() => {
             const nameAll = buildCsvFilename({
               correlationId: preview.correlationId,
