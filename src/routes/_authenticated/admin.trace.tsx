@@ -1244,6 +1244,10 @@ function TraceResultView({
                   fromIso,
                   toIso,
                   filenameTz: csvOpts.filenameTz,
+                  sort,
+                  severities: activeSeverities,
+                  statuses: activeStatuses,
+                  kinds: activeKinds,
                 });
                 document.body.appendChild(a);
                 a.click();
