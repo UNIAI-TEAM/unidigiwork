@@ -482,6 +482,7 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const startedAt = Date.now();
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const cid = data.correlationId;
