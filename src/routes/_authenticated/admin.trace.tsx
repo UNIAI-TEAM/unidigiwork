@@ -466,16 +466,19 @@ function TraceResultView({
   const resetColumns = () => setColumns(DEFAULT_COLUMNS);
   const activeColumnCount = Object.values(columns).filter(Boolean).length;
   const kw = keyword.trim().toLowerCase();
+  const sevFiltered = activeSeverities.length < ALL_SEVERITIES.length;
+  const activeSevSet = useMemo(() => new Set(activeSeverities), [activeSeverities]);
   const filteredTimeline = useMemo(() => {
-    if (!kw) return timeline;
     return timeline.filter((item) => {
+      if (sevFiltered && !activeSevSet.has(severityOfItem(item))) return false;
+      if (!kw) return true;
       try {
         return JSON.stringify(item).toLowerCase().includes(kw);
       } catch {
         return false;
       }
     });
-  }, [timeline, kw]);
+  }, [timeline, kw, sevFiltered, activeSevSet]);
   const copyCid = () => {
     navigator.clipboard.writeText(correlationId).then(
       () => toast.success("Đã copy correlation_id"),
