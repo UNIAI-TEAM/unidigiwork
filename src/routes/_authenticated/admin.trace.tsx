@@ -1010,6 +1010,8 @@ function AdminTracePage() {
           toIso={toIso}
           csvOpts={csvOpts}
           onChangeCsvOpts={setCsvOpts}
+          exportProgress={exportProgress}
+          setExportProgress={setExportProgress}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
