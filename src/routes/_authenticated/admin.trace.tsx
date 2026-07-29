@@ -9,6 +9,13 @@ import { traceByCorrelationId, exportTraceCsv } from "@/lib/api/admin.functions"
 const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
 const ALL_KINDS = ["quota", "audit", "outbox"] as const;
 type Kind = (typeof ALL_KINDS)[number];
+
+// datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
+function localToIso(v: string | undefined): string | undefined {
+  if (!v) return undefined;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? undefined : d.toISOString();
+}
 const searchSchema = z.object({
   cid: z.string().trim().max(200).optional(),
   page: z.coerce.number().int().min(1).max(100000).optional(),
@@ -23,6 +30,8 @@ const searchSchema = z.object({
       );
       return set.size === 0 || set.size === ALL_KINDS.length ? undefined : (Array.from(set) as Kind[]);
     }),
+  from: z.string().trim().max(40).optional(),
+  to: z.string().trim().max(40).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/trace")({
@@ -40,24 +49,30 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
-  const { cid, page, limit, kinds } = Route.useSearch();
+  const { cid, page, limit, kinds, from, to } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
+  const [fromInput, setFromInput] = useState<string>(from ?? "");
+  const [toInput, setToInput] = useState<string>(to ?? "");
   const [result, setResult] = useState<TraceResult | null>(null);
   const currentPage = page ?? 1;
   const currentLimit = limit ?? 500;
   const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
+  const fromIso = localToIso(from);
+  const toIso = localToIso(to);
 
-  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string };
+  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string };
 
   const traceMut = useMutation({
-    mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[] }) =>
+    mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string }) =>
       traceByCorrelationId({
         data: {
           correlationId: args.correlationId,
           page: args.page,
           limit: args.limit,
           kinds: args.kinds.length === ALL_KINDS.length ? undefined : (args.kinds as [Kind, ...Kind[]]),
+          fromTs: args.fromTs,
+          toTs: args.toTs,
         },
       }),
     onSuccess: (data) => {
@@ -77,6 +92,8 @@ function AdminTracePage() {
             activeKinds.length === ALL_KINDS.length
               ? undefined
               : (activeKinds as [Kind, ...Kind[]]),
+          fromTs: fromIso,
+          toTs: toIso,
         },
       }),
     onSuccess: (data) => {
@@ -102,10 +119,10 @@ function AdminTracePage() {
   useEffect(() => {
     if (cid && cid.trim()) {
       setInput(cid);
-      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds });
+      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid, currentPage, currentLimit, activeKinds.join(",")]);
+  }, [cid, currentPage, currentLimit, activeKinds.join(","), fromIso, toIso]);
 
   const submit = () => {
     const v = input.trim();
@@ -114,6 +131,21 @@ function AdminTracePage() {
       return;
     }
     navigate({ search: (prev: SearchState) => ({ ...prev, cid: v, page: 1 }) });
+  };
+
+  const applyRange = () => {
+    const f = fromInput.trim() || undefined;
+    const t = toInput.trim() || undefined;
+    if (f && t && localToIso(f)! > localToIso(t)!) {
+      toast.error("Khoảng thời gian không hợp lệ: 'Từ' phải trước 'Đến'");
+      return;
+    }
+    navigate({ search: (prev: SearchState) => ({ ...prev, from: f, to: t, page: 1 }) });
+  };
+  const clearRange = () => {
+    setFromInput("");
+    setToInput("");
+    navigate({ search: (prev: SearchState) => ({ ...prev, from: undefined, to: undefined, page: 1 }) });
   };
 
   const goToPage = (nextPage: number) => {
@@ -177,6 +209,47 @@ function AdminTracePage() {
             <Search className={`h-3.5 w-3.5 ${traceMut.isPending ? "animate-pulse" : ""}`} />
             {traceMut.isPending ? "Đang truy vết…" : "Truy vết"}
           </button>
+        </div>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+            <span>Từ</span>
+            <input
+              type="datetime-local"
+              value={fromInput}
+              onChange={(e) => setFromInput(e.target.value)}
+              className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono text-xs text-foreground outline-none focus:border-primary/60"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+            <span>Đến</span>
+            <input
+              type="datetime-local"
+              value={toInput}
+              onChange={(e) => setToInput(e.target.value)}
+              className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono text-xs text-foreground outline-none focus:border-primary/60"
+            />
+          </label>
+          <button
+            onClick={applyRange}
+            disabled={traceMut.isPending}
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs text-foreground hover:border-primary/60 disabled:opacity-50"
+          >
+            Áp dụng
+          </button>
+          {(from || to) && (
+            <button
+              onClick={clearRange}
+              disabled={traceMut.isPending}
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              Xóa khoảng
+            </button>
+          )}
+          {(from || to) && (
+            <span className="text-[11px] text-muted-foreground">
+              Đang lọc: {from ?? "…"} → {to ?? "…"}
+            </span>
+          )}
         </div>
       </section>
 
