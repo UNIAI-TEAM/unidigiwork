@@ -66,6 +66,62 @@ const DEFAULT_COLUMNS: ColumnPrefs = {
 };
 const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
 
+function csvEscape(v: unknown): string {
+  if (v == null) return "";
+  const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function timelineCellValue(item: TimelineItem, key: ColumnKey): string {
+  if (key === "time") return item.at;
+  if (key === "kind") return item.kind;
+  const d = item.data as Record<string, unknown>;
+  if (item.kind === "quota_check") {
+    switch (key) {
+      case "label": return String(d.meter_key ?? "");
+      case "status": return d.allowed ? "PASS" : `FAIL:${String(d.reason ?? "")}`;
+      case "meta": return `Δ+${d.requested_delta ?? 0} ${d.current_usage ?? 0}/${d.quota_limit ?? "∞"}`;
+      case "tenant": return String(d.tenant_id ?? "");
+      case "actor": return String(d.actor_id ?? "");
+      default: return "";
+    }
+  }
+  if (item.kind === "audit") {
+    switch (key) {
+      case "label": return String(d.event_type ?? d.action ?? "audit");
+      case "status": return String(d.aggregate_type ?? "");
+      case "tenant": return String(d.tenant_id ?? "");
+      case "actor": return String(d.actor_user_id ?? "");
+      case "target": return String(d.aggregate_id ?? d.resource_id ?? "");
+      case "payload": return d.payload ? JSON.stringify(d.payload) : "";
+      default: return "";
+    }
+  }
+  // outbox
+  switch (key) {
+    case "label": return String(d.event_type ?? "");
+    case "status": return String(d.status ?? "");
+    case "meta": {
+      const parts: string[] = [];
+      if (typeof d.attempt_count === "number" && d.attempt_count > 0) parts.push(`attempts:${d.attempt_count}`);
+      if (d.processed_at) parts.push(`processed:${d.processed_at}`);
+      return parts.join(" ");
+    }
+    case "tenant": return String(d.tenant_id ?? "");
+    case "target": return String(d.aggregate_id ?? "");
+    case "payload": return String(d.last_error ?? "");
+    default: return "";
+  }
+}
+
+function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs): string {
+  const active = COLUMN_DEFS.filter((c) => columns[c.key]);
+  if (active.length === 0) return "";
+  const header = active.map((c) => csvEscape(c.label)).join(",");
+  const rows = items.map((it) => active.map((c) => csvEscape(timelineCellValue(it, c.key))).join(","));
+  return [header, ...rows].join("\r\n");
+}
+
 const REFRESH_OPTIONS = [0, 5, 15, 30, 60, 120] as const;
 type RefreshSec = (typeof REFRESH_OPTIONS)[number];
 const REFRESH_STORAGE_KEY = "uniwork.admin.trace.autorefresh.v1";
