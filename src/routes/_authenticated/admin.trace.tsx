@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { traceByCorrelationId } from "@/lib/api/admin.functions";
+import { traceByCorrelationId, exportTraceCsv } from "@/lib/api/admin.functions";
 
 const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
 const searchSchema = z.object({
@@ -47,6 +47,28 @@ function AdminTracePage() {
       if (data.totals.total === 0) toast.info("Không tìm thấy event nào với correlation_id này.");
     },
     onError: (e: Error) => toast.error(e.message ?? "Không truy vết được"),
+  });
+
+  const exportMut = useMutation({
+    mutationFn: (correlationId: string) =>
+      exportTraceCsv({ data: { correlationId, maxRows: 50_000 } }),
+    onSuccess: (data) => {
+      const blob = new Blob(["\ufeff" + data.csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      if (data.truncated) {
+        toast.warning(`Đã export ${data.rowCount.toLocaleString("vi-VN")} / ${data.totalRows.toLocaleString("vi-VN")} dòng (đã cắt).`);
+      } else {
+        toast.success(`Đã export ${data.rowCount.toLocaleString("vi-VN")} dòng.`);
+      }
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Không export được"),
   });
 
   // Auto-run when arriving with ?cid= (or page/limit change)
@@ -123,6 +145,8 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
+          onExport={() => exportMut.mutate(result.correlationId)}
+          exporting={exportMut.isPending}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -142,11 +166,15 @@ function TraceResultView({
   onPage,
   onLimit,
   pending,
+  onExport,
+  exporting,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
   pending: boolean;
+  onExport: () => void;
+  exporting: boolean;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const copyCid = () => {
@@ -179,7 +207,18 @@ function TraceResultView({
               <Copy className="h-3 w-3" /> Copy
             </button>
           </div>
-          <h2 className="text-sm font-semibold">Timeline</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onExport}
+              disabled={exporting || totals.total === 0}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+              title="Export toàn bộ trace ra CSV"
+            >
+              <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
+              {exporting ? "Đang export…" : "Export CSV"}
+            </button>
+            <h2 className="text-sm font-semibold">Timeline</h2>
+          </div>
         </div>
         <PaginationBar
           page={page}
