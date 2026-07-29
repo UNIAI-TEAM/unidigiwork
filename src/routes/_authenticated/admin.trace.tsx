@@ -203,6 +203,9 @@ function TraceResultView({
   pending,
   onExport,
   exporting,
+  activeKinds,
+  onToggleKind,
+  onResetKinds,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -210,6 +213,9 @@ function TraceResultView({
   pending: boolean;
   onExport: () => void;
   exporting: boolean;
+  activeKinds: Kind[];
+  onToggleKind: (k: Kind) => void;
+  onResetKinds: () => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const copyCid = () => {
@@ -221,6 +227,12 @@ function TraceResultView({
   const { page, pageCount, pageSize, offset } = pagination;
   const rangeStart = timeline.length === 0 ? 0 : offset + 1;
   const rangeEnd = offset + timeline.length;
+  const filtered = activeKinds.length < ALL_KINDS.length;
+  const KIND_META: Record<Kind, { label: string; className: string }> = {
+    quota: { label: "Quota", className: "text-emerald-400 border-emerald-500/40" },
+    audit: { label: "Audit", className: "text-sky-400 border-sky-500/40" },
+    outbox: { label: "Outbox", className: "text-amber-400 border-amber-500/40" },
+  };
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -228,6 +240,37 @@ function TraceResultView({
         <CountCard label="Quota checks" value={totals.quota} icon={CheckCircle2} tint="text-emerald-400" hint={`hiện ${counts.quota}`} />
         <CountCard label="Audit" value={totals.audit} icon={ShieldCheck} tint="text-sky-400" hint={`hiện ${counts.audit}`} />
         <CountCard label="Outbox" value={totals.outbox} icon={Radio} tint="text-amber-400" hint={`hiện ${counts.outbox}`} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Lọc loại event:</span>
+        {ALL_KINDS.map((k) => {
+          const active = activeKinds.includes(k);
+          return (
+            <button
+              key={k}
+              onClick={() => onToggleKind(k)}
+              disabled={pending}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition ${
+                active
+                  ? `bg-surface-2 ${KIND_META[k].className}`
+                  : "border-border bg-surface text-muted-foreground hover:text-foreground"
+              } disabled:opacity-50`}
+            >
+              {KIND_META[k].label}
+            </button>
+          );
+        })}
+        {filtered && (
+          <button
+            onClick={onResetKinds}
+            disabled={pending}
+            className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            Tất cả
+          </button>
+        )}
       </div>
 
       <section className="rounded-2xl border border-border bg-surface">
