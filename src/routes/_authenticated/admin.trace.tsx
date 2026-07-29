@@ -350,6 +350,54 @@ function AdminTracePage() {
     navigate({ search: (prev: SearchState) => ({ ...prev, sort: next, page: 1 }) });
   };
 
+  const savePreset = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error("Nhập tên preset");
+      return;
+    }
+    const encodedKinds = activeKinds.length === ALL_KINDS.length ? undefined : activeKinds.join(",");
+    const encodedSev = activeSeverities.length === ALL_SEVERITIES.length ? undefined : activeSeverities.join(",");
+    const encodedSt = activeStatuses.length === ALL_STATUSES.length ? undefined : activeStatuses.join(",");
+    const preset: FilterPreset = {
+      id: (typeof crypto !== "undefined" && "randomUUID" in crypto) ? crypto.randomUUID() : String(Date.now()),
+      name: trimmed,
+      kinds: encodedKinds,
+      from,
+      to,
+      sort: currentSort,
+      sev: encodedSev,
+      st: encodedSt,
+      kw: keyword.trim() || undefined,
+    };
+    setPresets((prev) => {
+      const withoutDup = prev.filter((p) => p.name !== trimmed);
+      return [preset, ...withoutDup].slice(0, 20);
+    });
+    toast.success(`Đã lưu preset "${trimmed}"`);
+  };
+  const applyPreset = (p: FilterPreset) => {
+    setFromInput(p.from ?? "");
+    setToInput(p.to ?? "");
+    setKeyword(p.kw ?? "");
+    navigate({
+      search: (prev: SearchState) => ({
+        ...prev,
+        kinds: p.kinds,
+        from: p.from,
+        to: p.to,
+        sort: p.sort ?? "asc",
+        sev: p.sev,
+        st: p.st,
+        page: 1,
+      }),
+    });
+    toast.success(`Đã áp dụng preset "${p.name}"`);
+  };
+  const deletePreset = (id: string) => {
+    setPresets((prev) => prev.filter((p) => p.id !== id));
+  };
+
   const [autoRefreshSec, setAutoRefreshSec] = useState<RefreshSec>(() => {
     if (typeof window === "undefined") return 0;
     const raw = Number(window.localStorage.getItem(REFRESH_STORAGE_KEY));
