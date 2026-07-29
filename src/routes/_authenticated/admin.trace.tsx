@@ -1072,6 +1072,88 @@ function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClos
   );
 }
 
+const EXPORT_SIZE_WARN_BYTES = 5 * 1024 * 1024;
+const AVG_BYTES_PER_CELL = 32;
+const ZIP_COMPRESSION_RATIO = 0.25;
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  let v = bytes;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i += 1;
+  }
+  const digits = v >= 100 || i === 0 ? 0 : v >= 10 ? 1 : 2;
+  return `${v.toFixed(digits)} ${units[i]}`;
+}
+
+function estimateCsvBytes(rows: number, cols: number, includeMetadata: boolean): number {
+  if (rows <= 0 || cols <= 0) return 0;
+  const header = cols * 16 + 2;
+  const perRow = cols * AVG_BYTES_PER_CELL + 2;
+  const meta = includeMetadata ? 240 : 0;
+  return header + meta + rows * perRow;
+}
+
+function ExportSizeHint({
+  label,
+  rows,
+  cols,
+  zip,
+  includeMetadata,
+  onEnableZip,
+  disabled,
+}: {
+  label: string;
+  rows: number;
+  cols: number;
+  zip: boolean;
+  includeMetadata: boolean;
+  onEnableZip: () => void;
+  disabled?: boolean;
+}) {
+  if (disabled || rows <= 0 || cols <= 0) return null;
+  const raw = estimateCsvBytes(rows, cols, includeMetadata);
+  const finalBytes = zip ? Math.max(1024, Math.round(raw * ZIP_COMPRESSION_RATIO)) : raw;
+  const warn = raw >= EXPORT_SIZE_WARN_BYTES;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
+      <span className="font-medium text-foreground">{label}</span>
+      <span>·</span>
+      <span>{rows.toLocaleString("vi-VN")} dòng × {cols} cột</span>
+      <span>·</span>
+      <span>
+        ước lượng{" "}
+        <span className={warn ? "font-semibold text-amber-500" : "text-foreground"}>
+          ~{formatBytes(raw)}
+        </span>
+        {zip && (
+          <>
+            {" "}→ ZIP ~<span className="text-foreground">{formatBytes(finalBytes)}</span>
+          </>
+        )}
+      </span>
+      {warn && !zip && (
+        <>
+          <span className="text-amber-500">· vượt {formatBytes(EXPORT_SIZE_WARN_BYTES)} — nên bật nén ZIP</span>
+          <button
+            type="button"
+            onClick={onEnableZip}
+            className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/20"
+          >
+            Bật ZIP
+          </button>
+        </>
+      )}
+      {warn && zip && (
+        <span className="text-emerald-600">· ZIP đang bật</span>
+      )}
+    </div>
+  );
+}
+
 function ExportProgressBar({ progress }: { progress: ExportProgress }) {
   if (!progress.active) return null;
   const variantLabel = progress.variant === "all" ? "CSV · tất cả kết quả" : "CSV · cột hiện tại";
@@ -1602,6 +1684,26 @@ function TraceResultView({
             />
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
+        </div>
+        <div className="flex flex-col gap-1 border-b border-border bg-surface-2/30 px-4 py-2">
+          <ExportSizeHint
+            label="CSV · tất cả kết quả"
+            rows={totals.total}
+            cols={activeExportCols.length}
+            zip={csvOpts.zip}
+            includeMetadata={csvOpts.includeMetadata}
+            onEnableZip={() => onChangeCsvOpts({ ...csvOpts, zip: true })}
+            disabled={totals.total === 0 || activeExportCols.length === 0}
+          />
+          <ExportSizeHint
+            label="CSV · cột hiện tại"
+            rows={filteredTimeline.length}
+            cols={activeColumnCount}
+            zip={csvOpts.zip}
+            includeMetadata={csvOpts.includeMetadata}
+            onEnableZip={() => onChangeCsvOpts({ ...csvOpts, zip: true })}
+            disabled={filteredTimeline.length === 0 || activeColumnCount === 0}
+          />
         </div>
         <ExportProgressBar progress={exportProgress} />
         <PaginationBar
