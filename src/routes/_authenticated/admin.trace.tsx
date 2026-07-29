@@ -534,6 +534,42 @@ function TraceResultView({
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Lọc severity:</span>
+        {ALL_SEVERITIES.map((s) => {
+          const active = activeSevSet.has(s);
+          return (
+            <button
+              key={s}
+              onClick={() => onToggleSeverity(s)}
+              disabled={pending}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition ${
+                active
+                  ? `bg-surface-2 ${SEVERITY_META[s].className}`
+                  : "border-border bg-surface text-muted-foreground hover:text-foreground"
+              } disabled:opacity-50`}
+            >
+              {SEVERITY_META[s].label}
+            </button>
+          );
+        })}
+        {sevFiltered && (
+          <>
+            <button
+              onClick={onResetSeverities}
+              disabled={pending}
+              className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              Tất cả
+            </button>
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              Khớp {filteredTimeline.length.toLocaleString("vi-VN")} / {timeline.length.toLocaleString("vi-VN")}
+            </span>
+          </>
+        )}
+      </div>
+
       <section className="rounded-2xl border border-border bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-4">
           <div className="flex items-center gap-2 text-xs">
