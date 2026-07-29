@@ -1056,13 +1056,19 @@ function PaginationBar({
   );
 }
 
-function TimelineRow({ item, columns }: { item: TimelineItem; columns: ColumnPrefs }) {
+function TimelineRow({ item, columns, onSelect, selected }: { item: TimelineItem; columns: ColumnPrefs; onSelect: () => void; selected: boolean }) {
   const t = new Date(item.at);
   const time = t.toLocaleTimeString("vi-VN", { hour12: false });
   const date = t.toLocaleDateString("vi-VN");
   const showTimeCol = columns.time || columns.kind;
   return (
-    <li className="flex flex-col gap-2 p-4 text-xs sm:flex-row sm:items-start sm:gap-4">
+    <li
+      className={`flex cursor-pointer flex-col gap-2 p-4 text-xs transition-colors hover:bg-surface-2 sm:flex-row sm:items-start sm:gap-4 ${selected ? "bg-surface-2" : ""}`}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
+    >
       {showTimeCol && (
         <div className="flex w-40 shrink-0 flex-col gap-0.5 text-muted-foreground">
           {columns.time && <span className="tabular-nums text-foreground">{time}</span>}
