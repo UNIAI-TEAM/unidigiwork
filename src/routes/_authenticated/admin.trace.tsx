@@ -1446,7 +1446,7 @@ function TraceResultView({
             </button>
             <CsvOptionsMenu
               value={csvOpts}
-              onChange={setCsvOpts}
+              onChange={onChangeCsvOpts}
               preview={{
                 correlationId,
                 keyword,
