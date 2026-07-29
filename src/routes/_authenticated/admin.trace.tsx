@@ -204,7 +204,7 @@ function buildCsvMetadataLine(
       : `${now.toLocaleString("sv-SE")} ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
   const fields: Array<[string, string]> = [
     ["source", "UNIWORK /admin/trace"],
-    ["variant", info.variant],
+    ["variant", info.variant === "all" ? "all-results (CSV tất cả kết quả)" : "current-cols (CSV cột hiện tại)"],
     ["correlation_id", info.correlationId],
     ["keyword", kw ?? ""],
     ["from", info.fromIso ?? ""],
@@ -332,7 +332,7 @@ function buildCsvFilename(opts: {
   const values: Record<FilenamePartKey, string | null> = {
     prefix: "trace",
     correlationId: sanitizeFilenamePart(opts.correlationId) || "cid",
-    variant: opts.variant,
+    variant: opts.variant === "all" ? "all-results" : "current-cols",
     keyword: kw ? `kw_${sanitizeFilenamePart(kw)}` : null,
     from: from ? `from_${from}` : null,
     to: to ? `to_${to}` : null,
