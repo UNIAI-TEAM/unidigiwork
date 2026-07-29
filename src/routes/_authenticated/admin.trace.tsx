@@ -531,6 +531,13 @@ function PaginationBar({
 }
 
 function TimelineRow({ item }: { item: TimelineItem }) {
+  return _TimelineRow({ item });
+}
+
+function _TimelineRow({ item }: { item: TimelineItem }) {
+  void item;
+  return null as unknown as JSX.Element;
+}
   const t = new Date(item.at);
   const time = t.toLocaleTimeString("vi-VN", { hour12: false });
   const date = t.toLocaleDateString("vi-VN");
