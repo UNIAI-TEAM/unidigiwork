@@ -88,8 +88,9 @@ function normalizeColumnOrder(input: unknown): ColumnKey[] {
 
 type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: ColumnKey[] };
 
-type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
-const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
+type FilenameTz = "utc" | "local";
+type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean; filenameTz: FilenameTz };
+const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true, filenameTz: "utc" };
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
 const TRACE_EXPORT_COLUMN_DEFS = [
@@ -152,12 +153,17 @@ function sanitizeFilenamePart(s: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
 }
-function isoToStamp(iso: string | undefined): string | null {
+function isoToStamp(iso: string | undefined, tz: FilenameTz = "utc"): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (isNaN(d.getTime())) return null;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}-${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
+  const y = tz === "utc" ? d.getUTCFullYear() : d.getFullYear();
+  const mo = tz === "utc" ? d.getUTCMonth() + 1 : d.getMonth() + 1;
+  const da = tz === "utc" ? d.getUTCDate() : d.getDate();
+  const h = tz === "utc" ? d.getUTCHours() : d.getHours();
+  const mi = tz === "utc" ? d.getUTCMinutes() : d.getMinutes();
+  return `${y}${pad(mo)}${pad(da)}-${pad(h)}${pad(mi)}${tz === "utc" ? "Z" : "L"}`;
 }
 function buildCsvFilename(opts: {
   correlationId: string;
@@ -165,12 +171,14 @@ function buildCsvFilename(opts: {
   keyword?: string;
   fromIso?: string;
   toIso?: string;
+  filenameTz?: FilenameTz;
 }): string {
   const parts: string[] = ["trace", sanitizeFilenamePart(opts.correlationId) || "cid", opts.variant];
   const kw = opts.keyword?.trim();
   if (kw) parts.push(`kw_${sanitizeFilenamePart(kw)}`);
-  const from = isoToStamp(opts.fromIso);
-  const to = isoToStamp(opts.toIso);
+  const tz = opts.filenameTz ?? "utc";
+  const from = isoToStamp(opts.fromIso, tz);
+  const to = isoToStamp(opts.toIso, tz);
   if (from) parts.push(`from_${from}`);
   if (to) parts.push(`to_${to}`);
   parts.push(String(Date.now()));
