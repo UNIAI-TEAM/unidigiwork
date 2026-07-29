@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3 } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -29,6 +29,10 @@ const DEFAULT_COLUMNS: ColumnPrefs = {
   meta: true, tenant: true, actor: true, target: true, payload: true,
 };
 const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
+
+const REFRESH_OPTIONS = [0, 5, 15, 30, 60, 120] as const;
+type RefreshSec = (typeof REFRESH_OPTIONS)[number];
+const REFRESH_STORAGE_KEY = "uniwork.admin.trace.autorefresh.v1";
 
 // datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
 function localToIso(v: string | undefined): string | undefined {
