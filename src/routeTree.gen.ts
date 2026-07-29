@@ -54,6 +54,7 @@ import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authent
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminTraceRouteImport } from './routes/_authenticated/admin.trace'
 import { Route as AuthenticatedAdminTenantRouteImport } from './routes/_authenticated/admin.tenant'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminQuotaRouteImport } from './routes/_authenticated/admin.quota'
@@ -290,6 +291,11 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminTraceRoute = AuthenticatedAdminTraceRouteImport.update({
+  id: '/trace',
+  path: '/trace',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminTenantRoute =
   AuthenticatedAdminTenantRouteImport.update({
     id: '/tenant',
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/tenant': typeof AuthenticatedAdminTenantRoute
+  '/admin/trace': typeof AuthenticatedAdminTraceRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -415,6 +422,7 @@ export interface FileRoutesByTo {
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/tenant': typeof AuthenticatedAdminTenantRoute
+  '/admin/trace': typeof AuthenticatedAdminTraceRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -469,6 +477,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/_authenticated/admin/tenant': typeof AuthenticatedAdminTenantRoute
+  '/_authenticated/admin/trace': typeof AuthenticatedAdminTraceRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
@@ -523,6 +532,7 @@ export interface FileRouteTypes {
     | '/admin/quota'
     | '/admin/rules'
     | '/admin/tenant'
+    | '/admin/trace'
     | '/admin/users'
     | '/documents/$id'
     | '/email/$id'
@@ -573,6 +583,7 @@ export interface FileRouteTypes {
     | '/admin/quota'
     | '/admin/rules'
     | '/admin/tenant'
+    | '/admin/trace'
     | '/admin/users'
     | '/documents/$id'
     | '/email/$id'
@@ -626,6 +637,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/quota'
     | '/_authenticated/admin/rules'
     | '/_authenticated/admin/tenant'
+    | '/_authenticated/admin/trace'
     | '/_authenticated/admin/users'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email/$id'
@@ -980,6 +992,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/trace': {
+      id: '/_authenticated/admin/trace'
+      path: '/trace'
+      fullPath: '/admin/trace'
+      preLoaderRoute: typeof AuthenticatedAdminTraceRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/tenant': {
       id: '/_authenticated/admin/tenant'
       path: '/tenant'
@@ -1029,6 +1048,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminQuotaRoute: typeof AuthenticatedAdminQuotaRoute
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
   AuthenticatedAdminTenantRoute: typeof AuthenticatedAdminTenantRoute
+  AuthenticatedAdminTraceRoute: typeof AuthenticatedAdminTraceRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1037,6 +1057,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminQuotaRoute: AuthenticatedAdminQuotaRoute,
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
   AuthenticatedAdminTenantRoute: AuthenticatedAdminTenantRoute,
+  AuthenticatedAdminTraceRoute: AuthenticatedAdminTraceRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
