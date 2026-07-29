@@ -771,6 +771,7 @@ function AdminTracePage() {
     setFromInput(p.from ?? "");
     setToInput(p.to ?? "");
     setKeyword(p.kw ?? "");
+    if (p.tz) setCsvOpts((prev) => ({ ...prev, filenameTz: p.tz! }));
     navigate({
       search: (prev: SearchState) => ({
         ...prev,
