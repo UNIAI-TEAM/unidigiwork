@@ -51,7 +51,7 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
-  const { cid, page, limit, kinds, from, to } = Route.useSearch();
+  const { cid, page, limit, kinds, from, to, sort } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
   const [fromInput, setFromInput] = useState<string>(from ?? "");
@@ -60,10 +60,11 @@ function AdminTracePage() {
   const currentPage = page ?? 1;
   const currentLimit = limit ?? 500;
   const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
+  const currentSort = sort ?? "asc";
   const fromIso = localToIso(from);
   const toIso = localToIso(to);
 
-  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string };
+  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc" };
 
   const traceMut = useMutation({
     mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string }) =>
