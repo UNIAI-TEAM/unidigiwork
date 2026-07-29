@@ -300,6 +300,8 @@ function TraceResultView({
   activeKinds,
   onToggleKind,
   onResetKinds,
+  sort,
+  onToggleSort,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -310,6 +312,8 @@ function TraceResultView({
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
   onResetKinds: () => void;
+  sort: "asc" | "desc";
+  onToggleSort: () => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const [keyword, setKeyword] = useState("");
