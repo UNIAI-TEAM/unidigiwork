@@ -1097,6 +1097,13 @@ function estimateCsvBytes(rows: number, cols: number, includeMetadata: boolean):
   return header + meta + rows * perRow;
 }
 
+function maybeAutoZipOpts(opts: CsvOptions, rawBytes: number): { opts: CsvOptions; auto: boolean } {
+  if (!opts.zip && rawBytes >= EXPORT_SIZE_WARN_BYTES) {
+    return { opts: { ...opts, zip: true }, auto: true };
+  }
+  return { opts, auto: false };
+}
+
 function ExportSizeHint({
   label,
   rows,
