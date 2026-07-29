@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -33,6 +33,7 @@ const searchSchema = z.object({
     }),
   from: z.string().trim().max(40).optional(),
   to: z.string().trim().max(40).optional(),
+  sort: z.enum(["asc", "desc"]).default("asc"),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/trace")({
@@ -50,7 +51,7 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
-  const { cid, page, limit, kinds, from, to } = Route.useSearch();
+  const { cid, page, limit, kinds, from, to, sort } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
   const [fromInput, setFromInput] = useState<string>(from ?? "");
@@ -59,13 +60,14 @@ function AdminTracePage() {
   const currentPage = page ?? 1;
   const currentLimit = limit ?? 500;
   const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
+  const currentSort = sort ?? "asc";
   const fromIso = localToIso(from);
   const toIso = localToIso(to);
 
-  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string };
+  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc" };
 
   const traceMut = useMutation({
-    mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string }) =>
+    mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string; sort: "asc" | "desc" }) =>
       traceByCorrelationId({
         data: {
           correlationId: args.correlationId,
@@ -74,6 +76,7 @@ function AdminTracePage() {
           kinds: args.kinds.length === ALL_KINDS.length ? undefined : (args.kinds as [Kind, ...Kind[]]),
           fromTs: args.fromTs,
           toTs: args.toTs,
+          sort: args.sort,
         },
       }),
     onSuccess: (data) => {
@@ -95,6 +98,7 @@ function AdminTracePage() {
               : (activeKinds as [Kind, ...Kind[]]),
           fromTs: fromIso,
           toTs: toIso,
+          sort: currentSort,
         },
       }),
     onSuccess: (data) => {
@@ -116,14 +120,14 @@ function AdminTracePage() {
     onError: (e: Error) => toast.error(e.message ?? "Không export được"),
   });
 
-  // Auto-run when arriving with ?cid= (or page/limit change)
+  // Auto-run when arriving with ?cid= (or page/limit/sort change)
   useEffect(() => {
     if (cid && cid.trim()) {
       setInput(cid);
-      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso });
+      traceMut.mutate({ correlationId: cid.trim(), page: currentPage, limit: currentLimit, kinds: activeKinds, fromTs: fromIso, toTs: toIso, sort: currentSort });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid, currentPage, currentLimit, activeKinds.join(","), fromIso, toIso]);
+  }, [cid, currentPage, currentLimit, activeKinds.join(","), fromIso, toIso, currentSort]);
 
   const submit = () => {
     const v = input.trim();
@@ -169,6 +173,11 @@ function AdminTracePage() {
   };
   const resetKinds = () =>
     navigate({ search: (prev: SearchState) => ({ ...prev, kinds: undefined, page: 1 }) });
+
+  const toggleSort = () => {
+    const next = currentSort === "asc" ? "desc" : "asc";
+    navigate({ search: (prev: SearchState) => ({ ...prev, sort: next, page: 1 }) });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -265,6 +274,8 @@ function AdminTracePage() {
           activeKinds={activeKinds}
           onToggleKind={toggleKind}
           onResetKinds={resetKinds}
+          sort={currentSort}
+          onToggleSort={toggleSort}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -289,6 +300,8 @@ function TraceResultView({
   activeKinds,
   onToggleKind,
   onResetKinds,
+  sort,
+  onToggleSort,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -299,6 +312,8 @@ function TraceResultView({
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
   onResetKinds: () => void;
+  sort: "asc" | "desc";
+  onToggleSort: () => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const [keyword, setKeyword] = useState("");
@@ -381,6 +396,15 @@ function TraceResultView({
             </button>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={onToggleSort}
+              disabled={pending || totals.total === 0}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+              title={sort === "asc" ? "Đang xếp tăng dần (cũ → mới)" : "Đang xếp giảm dần (mới → cũ)"}
+            >
+              {sort === "asc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
+              {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
+            </button>
             <button
               onClick={onExport}
               disabled={exporting || totals.total === 0}

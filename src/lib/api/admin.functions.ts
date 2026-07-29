@@ -477,6 +477,7 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
           .optional(),
         fromTs: z.string().datetime().optional(),
         toTs: z.string().datetime().optional(),
+        sort: z.enum(["asc", "desc"]).default("asc"),
       })
       .parse(i),
   )
@@ -527,7 +528,7 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
       q = q.eq("correlation_id", cid);
       if (data.fromTs) q = q.gte("occurred_at", data.fromTs);
       if (data.toTs) q = q.lte("occurred_at", data.toTs);
-      return q.order("occurred_at", { ascending: true }).range(from, to) as Promise<{
+      return q.order("occurred_at", { ascending: data.sort === "asc" }).range(from, to) as Promise<{
         data: unknown[] | null;
         count: number | null;
         error: { message: string } | null;
@@ -568,7 +569,10 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
       ...quota.map((r) => ({ kind: "quota_check" as const, at: r.occurred_at, data: r })),
       ...audit.map((r) => ({ kind: "audit" as const, at: r.occurred_at, data: r })),
       ...outbox.map((r) => ({ kind: "outbox" as const, at: r.occurred_at, data: r })),
-    ].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+    ].sort((a, b) => {
+      if (a.at === b.at) return 0;
+      return data.sort === "asc" ? (a.at < b.at ? -1 : 1) : (a.at < b.at ? 1 : -1);
+    });
 
     return {
       correlationId: cid,
@@ -646,6 +650,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         kinds: z.array(z.enum(["quota", "audit", "outbox"])).nonempty().optional(),
         fromTs: z.string().datetime().optional(),
         toTs: z.string().datetime().optional(),
+        sort: z.enum(["asc", "desc"]).default("asc"),
       })
       .parse(i),
   )
@@ -664,7 +669,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
       q = q.eq("correlation_id", cid);
       if (data.fromTs) q = q.gte("occurred_at", data.fromTs);
       if (data.toTs) q = q.lte("occurred_at", data.toTs);
-      return q.order("occurred_at", { ascending: true }) as Promise<{
+      return q.order("occurred_at", { ascending: data.sort === "asc" }) as Promise<{
         data: unknown[] | null;
         error: { message: string } | null;
       }>;
@@ -776,7 +781,8 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
     rows.sort((a, b) => {
       const av = String(a.occurred_at ?? "");
       const bv = String(b.occurred_at ?? "");
-      return av < bv ? -1 : av > bv ? 1 : 0;
+      if (av === bv) return 0;
+      return data.sort === "asc" ? (av < bv ? -1 : 1) : (av < bv ? 1 : -1);
     });
 
     const totalRows = rows.length;
