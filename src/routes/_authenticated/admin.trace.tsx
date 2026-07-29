@@ -172,6 +172,10 @@ function buildCsvFilename(opts: {
   fromIso?: string;
   toIso?: string;
   filenameTz?: FilenameTz;
+  sort?: "asc" | "desc";
+  severities?: readonly Severity[];
+  statuses?: readonly Status[];
+  kinds?: readonly Kind[];
 }): string {
   const parts: string[] = ["trace", sanitizeFilenamePart(opts.correlationId) || "cid", opts.variant];
   const kw = opts.keyword?.trim();
@@ -181,6 +185,17 @@ function buildCsvFilename(opts: {
   const to = isoToStamp(opts.toIso, tz);
   if (from) parts.push(`from_${from}`);
   if (to) parts.push(`to_${to}`);
+  if (opts.sort) parts.push(`sort_${opts.sort}`);
+  const encSet = (vals: readonly string[] | undefined, total: number, prefix: string) => {
+    if (!vals || vals.length === 0 || vals.length === total) return null;
+    return `${prefix}_${vals.map((v) => sanitizeFilenamePart(v)).join(".")}`;
+  };
+  const sev = encSet(opts.severities, ALL_SEVERITIES.length, "sev");
+  const st = encSet(opts.statuses, ALL_STATUSES.length, "st");
+  const kd = encSet(opts.kinds, ALL_KINDS.length, "kd");
+  if (sev) parts.push(sev);
+  if (st) parts.push(st);
+  if (kd) parts.push(kd);
   parts.push(String(Date.now()));
   return `${parts.join("-")}.csv`;
 }
@@ -421,6 +436,10 @@ function AdminTracePage() {
         fromIso,
         toIso,
         filenameTz: vars.csv.filenameTz,
+        sort: currentSort,
+        severities: activeSeverities,
+        statuses: activeStatuses,
+        kinds: activeKinds,
       });
       document.body.appendChild(a);
       a.click();
@@ -1225,6 +1244,10 @@ function TraceResultView({
                   fromIso,
                   toIso,
                   filenameTz: csvOpts.filenameTz,
+                  sort,
+                  severities: activeSeverities,
+                  statuses: activeStatuses,
+                  kinds: activeKinds,
                 });
                 document.body.appendChild(a);
                 a.click();
