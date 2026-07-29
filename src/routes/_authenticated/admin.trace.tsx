@@ -221,7 +221,6 @@ function buildCsvMetadataLine(
   return csvEscape(summary, csv.delimiter, csv.quoteChar);
 }
 async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions, metadataLine?: string): Promise<void> {
-  const header = opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
   return downloadCsvOrZipWithFooter(csvText, csvFilename, opts, metadataLine, undefined);
 }
 async function downloadCsvOrZipWithFooter(
