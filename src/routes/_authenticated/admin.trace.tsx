@@ -581,6 +581,8 @@ function TraceResultView({
   pending,
   onExport,
   exporting,
+  keyword,
+  onKeywordChange,
   activeKinds,
   onToggleKind,
   onResetKinds,
@@ -603,6 +605,8 @@ function TraceResultView({
   pending: boolean;
   onExport: (keyword?: string) => void;
   exporting: boolean;
+  keyword: string;
+  onKeywordChange: (v: string) => void;
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
   onResetKinds: () => void;
@@ -620,7 +624,7 @@ function TraceResultView({
   lastRefreshedAt: number | null;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
-  const [keyword, setKeyword] = useState("");
+  const setKeyword = onKeywordChange;
   const [columns, setColumns] = useState<ColumnPrefs>(() => {
     if (typeof window === "undefined") return DEFAULT_COLUMNS;
     try {
