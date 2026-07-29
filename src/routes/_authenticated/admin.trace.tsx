@@ -1781,7 +1781,25 @@ function OutboxEventRow({ data, columns }: { data: OutboxEvent; columns: ColumnP
   );
 }
 
-function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: CsvOptions) => void }) {
+type CsvPreviewContext = {
+  correlationId: string;
+  keyword?: string;
+  fromIso?: string;
+  toIso?: string;
+  sort?: "asc" | "desc";
+  severities?: readonly Severity[];
+  statuses?: readonly Status[];
+  kinds?: readonly Kind[];
+};
+function CsvOptionsMenu({
+  value,
+  onChange,
+  preview,
+}: {
+  value: CsvOptions;
+  onChange: (v: CsvOptions) => void;
+  preview?: CsvPreviewContext;
+}) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
