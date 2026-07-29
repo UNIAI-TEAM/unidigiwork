@@ -76,6 +76,10 @@ function localToIso(v: string | undefined): string | undefined {
   const d = new Date(v);
   return isNaN(d.getTime()) ? undefined : d.toISOString();
 }
+function toToLocalDatetime(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 const searchSchema = z.object({
   cid: z.string().trim().max(200).optional(),
   page: z.coerce.number().int().min(1).max(100000).optional(),
@@ -242,6 +246,23 @@ function AdminTracePage() {
     setToInput("");
     navigate({ search: (prev: SearchState) => ({ ...prev, from: undefined, to: undefined, page: 1 }) });
   };
+
+  const setQuickRange = (minutes: number) => {
+    const to = new Date();
+    const from = new Date(to.getTime() - minutes * 60 * 1000);
+    const toStr = toToLocalDatetime(to);
+    const fromStr = toToLocalDatetime(from);
+    setFromInput(fromStr);
+    setToInput(toStr);
+    navigate({ search: (prev: SearchState) => ({ ...prev, from: fromStr, to: toStr, page: 1 }) });
+  };
+
+  const quickRangeOptions = [
+    { label: "15 phút", minutes: 15 },
+    { label: "1 giờ", minutes: 60 },
+    { label: "24 giờ", minutes: 24 * 60 },
+    { label: "7 ngày", minutes: 7 * 24 * 60 },
+  ] as const;
 
   const goToPage = (nextPage: number) => {
     navigate({ search: (prev: SearchState) => ({ ...prev, page: nextPage }) });
@@ -413,6 +434,19 @@ function AdminTracePage() {
               Đang lọc: {from ?? "…"} → {to ?? "…"}
             </span>
           )}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">Chọn nhanh:</span>
+          {quickRangeOptions.map((opt) => (
+            <button
+              key={opt.minutes}
+              onClick={() => setQuickRange(opt.minutes)}
+              disabled={traceMut.isPending}
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/60 hover:text-foreground disabled:opacity-50"
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </section>
 
