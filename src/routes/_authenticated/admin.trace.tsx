@@ -372,7 +372,7 @@ function TraceResultView({
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
   pending: boolean;
-  onExport: () => void;
+  onExport: (keyword?: string) => void;
   exporting: boolean;
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
