@@ -585,7 +585,7 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
 
 // ---------- Trace CSV export ----------
 
-function csvEscape(v: unknown): string {
+function csvEscapeMixed(v: unknown): string {
   if (v === null || v === undefined) return "";
   const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
   if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -593,7 +593,7 @@ function csvEscape(v: unknown): string {
 }
 function toCsv(headers: readonly string[], rows: Array<Record<string, unknown>>): string {
   const head = headers.join(",");
-  const body = rows.map((r) => headers.map((h) => csvEscape(r[h])).join(",")).join("\n");
+  const body = rows.map((r) => headers.map((h) => csvEscapeMixed(r[h])).join(",")).join("\n");
   return body ? `${head}\n${body}\n` : `${head}\n`;
 }
 
