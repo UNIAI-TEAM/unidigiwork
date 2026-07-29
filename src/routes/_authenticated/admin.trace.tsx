@@ -574,6 +574,52 @@ function AdminTracePage() {
   );
 }
 
+function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClose: () => void }) {
+  if (!item) return null;
+  const t = new Date(item.at);
+  const timeStr = `${t.toLocaleDateString("vi-VN")} ${t.toLocaleTimeString("vi-VN", { hour12: false })}`;
+  const json = JSON.stringify(item.data, null, 2);
+  const copyJson = () => { void navigator.clipboard?.writeText(json); };
+  return (
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+      <div className="flex-1 bg-black/40" onClick={onClose} aria-label="Đóng panel" />
+      <aside className="flex h-full w-full max-w-xl flex-col border-l border-border bg-surface-1 shadow-xl">
+        <header className="flex items-start justify-between gap-3 border-b border-border p-4">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <KindBadge kind={item.kind} />
+              <span className="tabular-nums text-xs text-muted-foreground">{timeStr}</span>
+            </div>
+            <h3 className="text-sm font-semibold text-foreground">Chi tiết event</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={copyJson}
+              className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-2"
+            >
+              Copy JSON
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-2"
+              aria-label="Đóng"
+            >
+              Đóng
+            </button>
+          </div>
+        </header>
+        <div className="flex-1 overflow-auto p-4">
+          <pre className="whitespace-pre-wrap break-words rounded-md bg-surface-2 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+            {json}
+          </pre>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 function TraceResultView({
   result,
   onPage,
@@ -625,6 +671,13 @@ function TraceResultView({
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
+  const [selected, setSelected] = useState<TimelineItem | null>(null);
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelected(null); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [selected]);
   const [columns, setColumns] = useState<ColumnPrefs>(() => {
     if (typeof window === "undefined") return DEFAULT_COLUMNS;
     try {
@@ -873,7 +926,13 @@ function TraceResultView({
         ) : (
           <ol className="divide-y divide-border">
             {filteredTimeline.map((item, idx) => (
-              <TimelineRow key={`${item.kind}-${idx}`} item={item} columns={columns} />
+              <TimelineRow
+                key={`${item.kind}-${idx}`}
+                item={item}
+                columns={columns}
+                onSelect={() => setSelected(item)}
+                selected={selected === item}
+              />
             ))}
           </ol>
         )}
@@ -891,6 +950,7 @@ function TraceResultView({
           />
         )}
       </section>
+      <EventDetailPanel item={selected} onClose={() => setSelected(null)} />
     </>
   );
 }
@@ -1042,13 +1102,19 @@ function PaginationBar({
   );
 }
 
-function TimelineRow({ item, columns }: { item: TimelineItem; columns: ColumnPrefs }) {
+function TimelineRow({ item, columns, onSelect, selected }: { item: TimelineItem; columns: ColumnPrefs; onSelect: () => void; selected: boolean }) {
   const t = new Date(item.at);
   const time = t.toLocaleTimeString("vi-VN", { hour12: false });
   const date = t.toLocaleDateString("vi-VN");
   const showTimeCol = columns.time || columns.kind;
   return (
-    <li className="flex flex-col gap-2 p-4 text-xs sm:flex-row sm:items-start sm:gap-4">
+    <li
+      className={`flex cursor-pointer flex-col gap-2 p-4 text-xs transition-colors hover:bg-surface-2 sm:flex-row sm:items-start sm:gap-4 ${selected ? "bg-surface-2" : ""}`}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
+    >
       {showTimeCol && (
         <div className="flex w-40 shrink-0 flex-col gap-0.5 text-muted-foreground">
           {columns.time && <span className="tabular-nums text-foreground">{time}</span>}
