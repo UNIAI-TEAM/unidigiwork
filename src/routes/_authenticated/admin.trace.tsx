@@ -65,11 +65,17 @@ const DEFAULT_COLUMNS: ColumnPrefs = {
   meta: true, tenant: true, actor: true, target: true, payload: true,
 };
 const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
+const CSV_OPTIONS_STORAGE_KEY = "uniwork.admin.trace.csv.v1";
 
-function csvEscape(v: unknown): string {
+type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
+const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
+
+function csvEscape(v: unknown, delim: string = ",", quote: string = '"'): string {
   if (v == null) return "";
   const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  const needs = s.includes(quote) || s.includes(delim) || /[\r\n]/.test(s);
+  if (!needs) return s;
+  return `${quote}${s.split(quote).join(quote + quote)}${quote}`;
 }
 
 function timelineCellValue(item: TimelineItem, key: ColumnKey): string {
@@ -114,11 +120,13 @@ function timelineCellValue(item: TimelineItem, key: ColumnKey): string {
   }
 }
 
-function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs): string {
+function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs, opts: CsvOptions = DEFAULT_CSV_OPTIONS): string {
   const active = COLUMN_DEFS.filter((c) => columns[c.key]);
   if (active.length === 0) return "";
-  const header = active.map((c) => csvEscape(c.label)).join(",");
-  const rows = items.map((it) => active.map((c) => csvEscape(timelineCellValue(it, c.key))).join(","));
+  const d = opts.delimiter;
+  const q = opts.quoteChar;
+  const header = active.map((c) => csvEscape(c.label, d, q)).join(d);
+  const rows = items.map((it) => active.map((c) => csvEscape(timelineCellValue(it, c.key), d, q)).join(d));
   return [header, ...rows].join("\r\n");
 }
 
@@ -258,7 +266,7 @@ function AdminTracePage() {
   });
 
   const exportMut = useMutation({
-    mutationFn: (args: { correlationId: string; keyword?: string }) =>
+    mutationFn: (args: { correlationId: string; keyword?: string; csv: CsvOptions }) =>
       exportTraceCsv({
         data: {
           correlationId: args.correlationId,
@@ -279,10 +287,13 @@ function AdminTracePage() {
             activeStatuses.length === ALL_STATUSES.length
               ? undefined
               : (activeStatuses as [Status, ...Status[]]),
+          delimiter: args.csv.delimiter,
+          quoteChar: args.csv.quoteChar,
         },
       }),
-    onSuccess: (data) => {
-      const blob = new Blob(["\ufeff" + data.csv], { type: "text/csv;charset=utf-8;" });
+    onSuccess: (data, vars) => {
+      const prefix = vars.csv.bom ? "\ufeff" : "";
+      const blob = new Blob([prefix + data.csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -597,7 +608,7 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
-          onExport={(kw) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw })}
+          onExport={(kw, csv) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw, csv })}
           exporting={exportMut.isPending}
           keyword={keyword}
           onKeywordChange={setKeyword}
@@ -705,7 +716,7 @@ function TraceResultView({
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
   pending: boolean;
-  onExport: (keyword?: string) => void;
+  onExport: (keyword: string | undefined, csv: CsvOptions) => void;
   exporting: boolean;
   keyword: string;
   onKeywordChange: (v: string) => void;
@@ -756,6 +767,20 @@ function TraceResultView({
     setColumns((prev) => ({ ...prev, [k]: !prev[k] }));
   const resetColumns = () => setColumns(DEFAULT_COLUMNS);
   const activeColumnCount = Object.values(columns).filter(Boolean).length;
+  const [csvOpts, setCsvOpts] = useState<CsvOptions>(() => {
+    if (typeof window === "undefined") return DEFAULT_CSV_OPTIONS;
+    try {
+      const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);
+      if (!raw) return DEFAULT_CSV_OPTIONS;
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
+    } catch {
+      return DEFAULT_CSV_OPTIONS;
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
+  }, [csvOpts]);
   const kw = keyword.trim().toLowerCase();
   const sevFiltered = activeSeverities.length < ALL_SEVERITIES.length;
   const activeSevSet = useMemo(() => new Set(activeSeverities), [activeSeverities]);
@@ -918,7 +943,7 @@ function TraceResultView({
               {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
             </button>
             <button
-              onClick={() => onExport(keyword)}
+              onClick={() => onExport(keyword, csvOpts)}
               disabled={exporting || totals.total === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
               title={keyword.trim() ? "Export toàn bộ event khớp bộ lọc hiện tại (kèm keyword), không giới hạn theo trang" : "Export toàn bộ event khớp bộ lọc hiện tại, không giới hạn theo trang"}
@@ -928,9 +953,10 @@ function TraceResultView({
             </button>
             <button
               onClick={() => {
-                const csv = buildTimelineCsv(filteredTimeline, columns);
+                const csv = buildTimelineCsv(filteredTimeline, columns, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
-                const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+                const prefix = csvOpts.bom ? "\ufeff" : "";
+                const blob = new Blob([prefix + csv], { type: "text/csv;charset=utf-8;" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
@@ -948,6 +974,7 @@ function TraceResultView({
               <Download className="h-3 w-3" />
               CSV (cột hiện tại)
             </button>
+            <CsvOptionsMenu value={csvOpts} onChange={setCsvOpts} />
             <AutoRefreshControl
               value={autoRefreshSec}
               onChange={onChangeAutoRefresh}
@@ -1358,6 +1385,85 @@ function OutboxEventRow({ data, columns }: { data: OutboxEvent; columns: ColumnP
   );
 }
 
+function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: CsvOptions) => void }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-csv-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const delimLabel = value.delimiter === "," ? "," : value.delimiter === ";" ? ";" : "Tab";
+  return (
+    <div className="relative" data-csv-menu>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        title="Tùy chọn định dạng CSV (delimiter, quote, BOM)"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        CSV: {delimLabel} · {value.quoteChar === '"' ? "\"" : "'"} · {value.bom ? "BOM" : "no BOM"}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-border bg-surface p-3 text-xs shadow-lg">
+          <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span>Tùy chọn CSV</span>
+            <button
+              onClick={() => onChange(DEFAULT_CSV_OPTIONS)}
+              className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
+            >
+              Đặt lại
+            </button>
+          </div>
+          <div className="mb-3">
+            <div className="mb-1 text-muted-foreground">Delimiter</div>
+            <div className="flex gap-1">
+              {([[",", "Phẩy ,"], [";", "Chấm phẩy ;"], ["\t", "Tab"]] as const).map(([d, label]) => (
+                <button
+                  key={d}
+                  onClick={() => onChange({ ...value, delimiter: d })}
+                  aria-pressed={value.delimiter === d}
+                  className={`flex-1 rounded-md border px-2 py-1 ${value.delimiter === d ? "border-primary bg-surface-2 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mb-3">
+            <div className="mb-1 text-muted-foreground">Ký tự bao chuỗi</div>
+            <div className="flex gap-1">
+              {([['"', "\" (double)"], ["'", "' (single)"]] as const).map(([q, label]) => (
+                <button
+                  key={q}
+                  onClick={() => onChange({ ...value, quoteChar: q })}
+                  aria-pressed={value.quoteChar === q}
+                  className={`flex-1 rounded-md border px-2 py-1 ${value.quoteChar === q ? "border-primary bg-surface-2 text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 hover:bg-surface-2">
+            <input
+              type="checkbox"
+              checked={value.bom}
+              onChange={(e) => onChange({ ...value, bom: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ColumnsMenu({
   columns,
   onToggle,
@@ -1426,6 +1532,7 @@ function ColumnsMenu({
 function AutoRefreshControl({
   value,
   onChange,
+// (kept above)
   onRefreshNow,
   pending,
   lastRefreshedAt,

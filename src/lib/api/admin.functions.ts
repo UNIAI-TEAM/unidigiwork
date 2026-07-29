@@ -603,15 +603,24 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
 
 // ---------- Trace CSV export ----------
 
-function csvEscapeMixed(v: unknown): string {
+function csvEscapeMixed(v: unknown, delim: string, quote: string): string {
   if (v === null || v === undefined) return "";
   const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
-  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  const specials = new RegExp(`[${quote.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}${delim === "\t" ? "\\t" : delim}\\r\\n]`);
+  if (specials.test(s)) {
+    const q = quote;
+    return `${q}${s.split(q).join(q + q)}${q}`;
+  }
   return s;
 }
-function toCsv(headers: readonly string[], rows: Array<Record<string, unknown>>): string {
-  const head = headers.join(",");
-  const body = rows.map((r) => headers.map((h) => csvEscapeMixed(r[h])).join(",")).join("\n");
+function toCsv(
+  headers: readonly string[],
+  rows: Array<Record<string, unknown>>,
+  delim: string = ",",
+  quote: string = '"',
+): string {
+  const head = headers.map((h) => csvEscapeMixed(h, delim, quote)).join(delim);
+  const body = rows.map((r) => headers.map((h) => csvEscapeMixed(r[h], delim, quote)).join(delim)).join("\n");
   return body ? `${head}\n${body}\n` : `${head}\n`;
 }
 
@@ -654,6 +663,8 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         keyword: z.string().trim().max(200).optional(),
         severities: z.array(z.enum(["info", "warn", "error"])).nonempty().optional(),
         statuses: z.array(z.enum(["success", "failure", "pending"])).nonempty().optional(),
+        delimiter: z.enum([",", ";", "\t"]).default(","),
+        quoteChar: z.enum(['"', "'"]).default('"'),
       })
       .parse(i),
   )
@@ -823,7 +834,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
     const totalRows = stFiltered.length;
     const truncated = totalRows > cap;
     const capped = truncated ? stFiltered.slice(0, cap) : stFiltered;
-    const csv = toCsv(TRACE_CSV_HEADERS, capped);
+    const csv = toCsv(TRACE_CSV_HEADERS, capped, data.delimiter, data.quoteChar);
 
     return {
       correlationId: cid,
