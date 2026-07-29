@@ -544,6 +544,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
   const [tenantId, setTenantId] = useState<string>("");
   const [meterKey, setMeterKey] = useState<string>("");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [format, setFormat] = useState<"csv" | "xlsx">("csv");
   const [busy, setBusy] = useState(false);
 
   const run = async () => {
@@ -553,23 +554,6 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
     }
     setBusy(true);
     try {
-      const res = await exportQuotaCheckEvents({
-        data: {
-          from,
-          to,
-          tenantId: tenantId || undefined,
-          meterKey: meterKey || undefined,
-          status,
-          maxRows: 20000,
-        },
-      });
-      if (res.count === 0) {
-        toast.info("Không có sự kiện nào khớp bộ lọc");
-        return;
-      }
-      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
       const suffix = [
         from,
         to,
@@ -577,13 +561,38 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
         meterKey || "all",
         status,
       ].join("_");
+      let blob: Blob;
+      let count: number;
+      let truncated: boolean;
+      if (format === "xlsx") {
+        const res = await exportQuotaCheckEventsXlsx({
+          data: { from, to, tenantId: tenantId || undefined, meterKey: meterKey || undefined, status, maxRows: 20000 },
+        });
+        count = res.count;
+        truncated = res.truncated;
+        if (count === 0) { toast.info("Không có sự kiện nào khớp bộ lọc"); return; }
+        const bin = atob(res.base64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      } else {
+        const res = await exportQuotaCheckEvents({
+          data: { from, to, tenantId: tenantId || undefined, meterKey: meterKey || undefined, status, maxRows: 20000 },
+        });
+        count = res.count;
+        truncated = res.truncated;
+        if (count === 0) { toast.info("Không có sự kiện nào khớp bộ lọc"); return; }
+        blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `quota_check_events_${suffix}.csv`;
+      a.download = `quota_check_events_${suffix}.${format}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success(`Đã export ${res.count} sự kiện${res.truncated ? " (bị cắt ở 20.000 dòng)" : ""}`);
+      toast.success(`Đã export ${count} sự kiện${truncated ? " (bị cắt ở 20.000 dòng)" : ""}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export thất bại");
     } finally {
@@ -596,13 +605,13 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
       <div className="flex items-center gap-2 border-b border-border p-4">
         <Download className="h-4 w-4 text-primary" />
         <div>
-          <h2 className="text-sm font-semibold">Export quota_check_events (CSV)</h2>
+          <h2 className="text-sm font-semibold">Export quota_check_events</h2>
           <p className="text-xs text-muted-foreground">
-            Đối soát production theo khoảng ngày, tenant và meter. Tối đa 20.000 dòng/lần.
+            Đối soát theo khoảng ngày, tenant và meter. CSV hoặc XLSX, tối đa 20.000 dòng/lần.
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-7">
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Từ ngày</span>
           <input
@@ -659,6 +668,17 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
             <option value="fail">FAIL</option>
           </select>
         </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Định dạng</span>
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value as "csv" | "xlsx")}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5"
+          >
+            <option value="csv">CSV</option>
+            <option value="xlsx">XLSX</option>
+          </select>
+        </label>
         <div className="flex flex-col justify-end">
           <button
             onClick={run}
@@ -666,7 +686,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             <Download className={`h-3.5 w-3.5 ${busy ? "animate-pulse" : ""}`} />
-            {busy ? "Đang export…" : "Export CSV"}
+            {busy ? "Đang export…" : `Export ${format.toUpperCase()}`}
           </button>
         </div>
       </div>
