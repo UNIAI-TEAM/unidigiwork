@@ -921,10 +921,10 @@ function TraceResultView({
               onClick={() => onExport(keyword)}
               disabled={exporting || totals.total === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-              title={keyword.trim() ? "Export CSV theo bộ lọc hiện tại (kèm keyword)" : "Export CSV theo bộ lọc hiện tại"}
+              title={keyword.trim() ? "Export toàn bộ event khớp bộ lọc hiện tại (kèm keyword), không giới hạn theo trang" : "Export toàn bộ event khớp bộ lọc hiện tại, không giới hạn theo trang"}
             >
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
-              {exporting ? "Đang export…" : keyword.trim() ? "Export CSV (đã lọc)" : "Export CSV"}
+              {exporting ? "Đang export…" : "CSV (tất cả kết quả)"}
             </button>
             <button
               onClick={() => {
