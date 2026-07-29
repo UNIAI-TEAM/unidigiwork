@@ -690,6 +690,17 @@ function AdminTracePage() {
       if (autoZipped) {
         toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
       }
+      const footerLine = buildCsvFooterLine(
+        {
+          variant: "all",
+          totalRows: data.totalRows,
+          exportedRows: data.rowCount,
+          truncated: data.truncated,
+          severityCounts: data.severityCounts ?? { info: 0, warn: 0, error: 0 },
+          durationMs: data.processingMs ?? 0,
+        },
+        vars.csv,
+      );
       setExportProgress({
         active: true,
         variant: "all",
@@ -698,7 +709,7 @@ function AdminTracePage() {
         percent: 75,
         rows: data.rowCount,
       });
-      void downloadCsvOrZip(data.csv, csvFilename, effOpts, metaLine)
+      void downloadCsvOrZipWithFooter(data.csv, csvFilename, effOpts, metaLine, footerLine)
         .then(() => {
           setExportProgress({
             active: true,
