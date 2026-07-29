@@ -91,6 +91,39 @@ type ColumnPreset = { id: string; name: string; columns: ColumnPrefs; order: Col
 type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
 const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
 
+function sanitizeFilenamePart(s: string): string {
+  return s
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+function isoToStamp(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}-${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
+}
+function buildCsvFilename(opts: {
+  correlationId: string;
+  variant: "all" | "columns";
+  keyword?: string;
+  fromIso?: string;
+  toIso?: string;
+}): string {
+  const parts: string[] = ["trace", sanitizeFilenamePart(opts.correlationId) || "cid", opts.variant];
+  const kw = opts.keyword?.trim();
+  if (kw) parts.push(`kw_${sanitizeFilenamePart(kw)}`);
+  const from = isoToStamp(opts.fromIso);
+  const to = isoToStamp(opts.toIso);
+  if (from) parts.push(`from_${from}`);
+  if (to) parts.push(`to_${to}`);
+  parts.push(String(Date.now()));
+  return `${parts.join("-")}.csv`;
+}
+
 function csvEscape(v: unknown, delim: string = ",", quote: string = '"'): string {
   if (v == null) return "";
   const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
