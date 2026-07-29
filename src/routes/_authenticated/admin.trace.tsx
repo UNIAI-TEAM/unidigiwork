@@ -1629,15 +1629,20 @@ function TraceResultView({
                   csvOpts,
                 );
                 const rows = filteredTimeline.length;
+                const rawSize = csv.length + (csvOpts.includeMetadata && metaLine ? metaLine.length + 2 : 0);
+                const { opts: effOpts, auto: autoZipped } = maybeAutoZipOpts(csvOpts, rawSize);
+                if (autoZipped) {
+                  toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
+                }
                 setExportProgress({
                   active: true,
                   variant: "columns",
-                  phase: csvOpts.zip ? "compressing" : "saving",
-                  label: csvOpts.zip ? "Đang nén .zip…" : "Đang tạo file…",
+                  phase: effOpts.zip ? "compressing" : "saving",
+                  label: effOpts.zip ? (autoZipped ? "Tự động nén .zip…" : "Đang nén .zip…") : "Đang tạo file…",
                   percent: 70,
                   rows,
                 });
-                void downloadCsvOrZip(csv, csvFilename, csvOpts, metaLine)
+                void downloadCsvOrZip(csv, csvFilename, effOpts, metaLine)
                   .then(() => {
                     setExportProgress({
                       active: true, variant: "columns", phase: "done",
