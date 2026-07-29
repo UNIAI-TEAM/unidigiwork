@@ -1231,6 +1231,7 @@ export type Database = {
       }
       quota_export_jobs: {
         Row: {
+          columns: string[] | null
           completed_at: string | null
           correlation_id: string | null
           created_at: string
@@ -1253,6 +1254,7 @@ export type Database = {
           truncated: boolean
         }
         Insert: {
+          columns?: string[] | null
           completed_at?: string | null
           correlation_id?: string | null
           created_at?: string
@@ -1275,6 +1277,7 @@ export type Database = {
           truncated?: boolean
         }
         Update: {
+          columns?: string[] | null
           completed_at?: string | null
           correlation_id?: string | null
           created_at?: string
