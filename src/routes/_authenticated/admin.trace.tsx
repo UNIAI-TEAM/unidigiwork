@@ -966,6 +966,64 @@ function ColumnsMenu({
   );
 }
 
+function AutoRefreshControl({
+  value,
+  onChange,
+  onRefreshNow,
+  pending,
+  lastRefreshedAt,
+}: {
+  value: RefreshSec;
+  onChange: (v: RefreshSec) => void;
+  onRefreshNow: () => void;
+  pending: boolean;
+  lastRefreshedAt: number | null;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const secsAgo = lastRefreshedAt ? Math.max(0, Math.floor((now - lastRefreshedAt) / 1000)) : null;
+  const label = (v: RefreshSec) => (v === 0 ? "Tắt" : v < 60 ? `${v}s` : `${v / 60}m`);
+  const active = value > 0;
+  return (
+    <div
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${active ? "border-primary/40 bg-primary/5 text-foreground" : "border-border bg-surface-2 text-muted-foreground"}`}
+      title={active ? `Tự động làm mới mỗi ${label(value)}` : "Tự động làm mới đang tắt"}
+    >
+      <RefreshCw className={`h-3 w-3 ${pending ? "animate-spin" : ""}`} />
+      <span className="hidden sm:inline">Tự động</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value) as RefreshSec)}
+        className="rounded bg-transparent px-0.5 py-0 text-xs outline-none focus:ring-0"
+        aria-label="Chu kỳ tự động làm mới timeline"
+      >
+        {REFRESH_OPTIONS.map((v) => (
+          <option key={v} value={v} className="bg-surface text-foreground">
+            {label(v)}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={onRefreshNow}
+        disabled={pending}
+        className="ml-0.5 rounded px-1 text-muted-foreground hover:text-foreground disabled:opacity-40"
+        title="Làm mới ngay"
+        aria-label="Làm mới ngay"
+      >
+        ↻
+      </button>
+      {secsAgo !== null && (
+        <span className="hidden md:inline text-[10px] tabular-nums text-muted-foreground">
+          · {secsAgo < 60 ? `${secsAgo}s trước` : `${Math.floor(secsAgo / 60)}m trước`}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function KindBadge({ kind }: { kind: TimelineItem["kind"] }) {
   const map: Record<TimelineItem["kind"], { label: string; className: string }> = {
     quota_check: { label: "quota", className: "bg-emerald-500/10 text-emerald-400" },
