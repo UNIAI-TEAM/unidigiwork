@@ -651,6 +651,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         fromTs: z.string().datetime().optional(),
         toTs: z.string().datetime().optional(),
         sort: z.enum(["asc", "desc"]).default("asc"),
+        keyword: z.string().trim().max(200).optional(),
       })
       .parse(i),
   )
