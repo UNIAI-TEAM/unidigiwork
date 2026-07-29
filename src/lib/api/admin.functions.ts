@@ -652,6 +652,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         toTs: z.string().datetime().optional(),
         sort: z.enum(["asc", "desc"]).default("asc"),
         keyword: z.string().trim().max(200).optional(),
+        severities: z.array(z.enum(["info", "warn", "error"])).nonempty().optional(),
       })
       .parse(i),
   )
@@ -796,9 +797,20 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
           }
         })
       : rows;
-    const totalRows = matched.length;
+    const sevSet = data.severities ? new Set(data.severities) : null;
+    const severityOfRow = (r: Record<string, unknown>): "info" | "warn" | "error" => {
+      if (r.kind === "quota_check") return r.allowed ? "info" : "error";
+      if (r.kind === "outbox") {
+        if (r.last_error || r.status === "failed") return "error";
+        if (r.status === "pending" || r.status === "running") return "warn";
+        return "info";
+      }
+      return "info";
+    };
+    const sevFiltered = sevSet ? matched.filter((r) => sevSet.has(severityOfRow(r))) : matched;
+    const totalRows = sevFiltered.length;
     const truncated = totalRows > cap;
-    const capped = truncated ? matched.slice(0, cap) : matched;
+    const capped = truncated ? sevFiltered.slice(0, cap) : sevFiltered;
     const csv = toCsv(TRACE_CSV_HEADERS, capped);
 
     return {

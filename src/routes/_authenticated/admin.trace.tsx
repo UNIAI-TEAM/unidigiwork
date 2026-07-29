@@ -11,6 +11,24 @@ const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
 const ALL_KINDS = ["quota", "audit", "outbox"] as const;
 type Kind = (typeof ALL_KINDS)[number];
 
+const ALL_SEVERITIES = ["info", "warn", "error"] as const;
+type Severity = (typeof ALL_SEVERITIES)[number];
+const SEVERITY_META: Record<Severity, { label: string; className: string }> = {
+  info: { label: "INFO", className: "text-sky-400 border-sky-500/40" },
+  warn: { label: "WARN", className: "text-amber-400 border-amber-500/40" },
+  error: { label: "ERROR", className: "text-red-400 border-red-500/40" },
+};
+function severityOfItem(item: { kind: string; data: unknown }): Severity {
+  const d = (item.data ?? {}) as Record<string, unknown>;
+  if (item.kind === "quota_check") return d.allowed ? "info" : "error";
+  if (item.kind === "outbox") {
+    if (d.last_error || d.status === "failed") return "error";
+    if (d.status === "pending" || d.status === "running") return "warn";
+    return "info";
+  }
+  return "info";
+}
+
 const COLUMN_DEFS = [
   { key: "time", label: "Thời gian" },
   { key: "kind", label: "Loại" },
@@ -57,6 +75,16 @@ const searchSchema = z.object({
   from: z.string().trim().max(40).optional(),
   to: z.string().trim().max(40).optional(),
   sort: z.enum(["asc", "desc"]).default("asc"),
+  sev: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (!v) return undefined;
+      const set = new Set(
+        v.split(",").map((s) => s.trim()).filter((s): s is Severity => (ALL_SEVERITIES as readonly string[]).includes(s)),
+      );
+      return set.size === 0 || set.size === ALL_SEVERITIES.length ? undefined : (Array.from(set) as Severity[]);
+    }),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/trace")({
@@ -74,7 +102,7 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
-  const { cid, page, limit, kinds, from, to, sort } = Route.useSearch();
+  const { cid, page, limit, kinds, from, to, sort, sev } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
   const [fromInput, setFromInput] = useState<string>(from ?? "");
@@ -83,11 +111,12 @@ function AdminTracePage() {
   const currentPage = page ?? 1;
   const currentLimit = limit ?? 500;
   const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
+  const activeSeverities: Severity[] = sev ?? [...ALL_SEVERITIES];
   const currentSort = sort ?? "asc";
   const fromIso = localToIso(from);
   const toIso = localToIso(to);
 
-  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc" };
+  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc"; sev?: string };
 
   const traceMut = useMutation({
     mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string; sort: "asc" | "desc" }) =>
@@ -123,6 +152,10 @@ function AdminTracePage() {
           toTs: toIso,
           sort: currentSort,
           keyword: args.keyword?.trim() || undefined,
+          severities:
+            activeSeverities.length === ALL_SEVERITIES.length
+              ? undefined
+              : (activeSeverities as [Severity, ...Severity[]]),
         },
       }),
     onSuccess: (data) => {
@@ -197,6 +230,21 @@ function AdminTracePage() {
   };
   const resetKinds = () =>
     navigate({ search: (prev: SearchState) => ({ ...prev, kinds: undefined, page: 1 }) });
+
+  const toggleSeverity = (s: Severity) => {
+    const set = new Set(activeSeverities);
+    if (set.has(s)) set.delete(s);
+    else set.add(s);
+    if (set.size === 0) {
+      toast.error("Phải chọn ít nhất một mức severity");
+      return;
+    }
+    const next: Severity[] = ALL_SEVERITIES.filter((x) => set.has(x));
+    const encoded = next.length === ALL_SEVERITIES.length ? undefined : next.join(",");
+    navigate({ search: (prev: SearchState) => ({ ...prev, sev: encoded }) });
+  };
+  const resetSeverities = () =>
+    navigate({ search: (prev: SearchState) => ({ ...prev, sev: undefined }) });
 
   const toggleSort = () => {
     const next = currentSort === "asc" ? "desc" : "asc";
@@ -331,6 +379,9 @@ function AdminTracePage() {
           activeKinds={activeKinds}
           onToggleKind={toggleKind}
           onResetKinds={resetKinds}
+          activeSeverities={activeSeverities}
+          onToggleSeverity={toggleSeverity}
+          onResetSeverities={resetSeverities}
           sort={currentSort}
           onToggleSort={toggleSort}
           autoRefreshSec={autoRefreshSec}
@@ -361,6 +412,9 @@ function TraceResultView({
   activeKinds,
   onToggleKind,
   onResetKinds,
+  activeSeverities,
+  onToggleSeverity,
+  onResetSeverities,
   sort,
   onToggleSort,
   autoRefreshSec,
@@ -377,6 +431,9 @@ function TraceResultView({
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
   onResetKinds: () => void;
+  activeSeverities: Severity[];
+  onToggleSeverity: (s: Severity) => void;
+  onResetSeverities: () => void;
   sort: "asc" | "desc";
   onToggleSort: () => void;
   autoRefreshSec: RefreshSec;
@@ -409,16 +466,19 @@ function TraceResultView({
   const resetColumns = () => setColumns(DEFAULT_COLUMNS);
   const activeColumnCount = Object.values(columns).filter(Boolean).length;
   const kw = keyword.trim().toLowerCase();
+  const sevFiltered = activeSeverities.length < ALL_SEVERITIES.length;
+  const activeSevSet = useMemo(() => new Set(activeSeverities), [activeSeverities]);
   const filteredTimeline = useMemo(() => {
-    if (!kw) return timeline;
     return timeline.filter((item) => {
+      if (sevFiltered && !activeSevSet.has(severityOfItem(item))) return false;
+      if (!kw) return true;
       try {
         return JSON.stringify(item).toLowerCase().includes(kw);
       } catch {
         return false;
       }
     });
-  }, [timeline, kw]);
+  }, [timeline, kw, sevFiltered, activeSevSet]);
   const copyCid = () => {
     navigator.clipboard.writeText(correlationId).then(
       () => toast.success("Đã copy correlation_id"),
@@ -471,6 +531,42 @@ function TraceResultView({
           >
             Tất cả
           </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Lọc severity:</span>
+        {ALL_SEVERITIES.map((s) => {
+          const active = activeSevSet.has(s);
+          return (
+            <button
+              key={s}
+              onClick={() => onToggleSeverity(s)}
+              disabled={pending}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition ${
+                active
+                  ? `bg-surface-2 ${SEVERITY_META[s].className}`
+                  : "border-border bg-surface text-muted-foreground hover:text-foreground"
+              } disabled:opacity-50`}
+            >
+              {SEVERITY_META[s].label}
+            </button>
+          );
+        })}
+        {sevFiltered && (
+          <>
+            <button
+              onClick={onResetSeverities}
+              disabled={pending}
+              className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              Tất cả
+            </button>
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              Khớp {filteredTimeline.length.toLocaleString("vi-VN")} / {timeline.length.toLocaleString("vi-VN")}
+            </span>
+          </>
         )}
       </div>
 
