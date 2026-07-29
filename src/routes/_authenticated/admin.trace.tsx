@@ -445,12 +445,7 @@ function AdminTracePage() {
         },
       }),
     onSuccess: (data, vars) => {
-      const prefix = vars.csv.bom ? "\ufeff" : "";
-      const blob = new Blob([prefix + data.csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = buildCsvFilename({
+      const csvFilename = buildCsvFilename({
         correlationId: vars.correlationId,
         variant: "all",
         keyword: vars.keyword,
@@ -462,10 +457,9 @@ function AdminTracePage() {
         statuses: activeStatuses,
         kinds: activeKinds,
       });
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      void downloadCsvOrZip(data.csv, csvFilename, vars.csv).catch((e: unknown) => {
+        toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`);
+      });
       if (data.truncated) {
         toast.warning(`Đã export ${data.rowCount.toLocaleString("vi-VN")} / ${data.totalRows.toLocaleString("vi-VN")} dòng (đã cắt).`);
       } else {
