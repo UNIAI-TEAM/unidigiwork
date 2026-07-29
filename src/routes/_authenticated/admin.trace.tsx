@@ -723,7 +723,7 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
-          onExport={(kw, csv) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw, csv })}
+          onExport={(kw, csv, cols) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw, csv, columns: cols })}
           exporting={exportMut.isPending}
           keyword={keyword}
           onKeywordChange={setKeyword}
