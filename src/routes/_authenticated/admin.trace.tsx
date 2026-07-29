@@ -1441,7 +1441,7 @@ function TraceResultView({
             </button>
             <button
               onClick={() => onExport(keyword, csvOpts, activeExportCols)}
-              disabled={exporting || totals.total === 0 || activeExportCols.length === 0}
+              disabled={exporting || exportProgress.active || totals.total === 0 || activeExportCols.length === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
               title={
                 activeExportCols.length === 0
@@ -1451,8 +1451,10 @@ function TraceResultView({
                   : `Export ${activeExportCols.length} cột`
               }
             >
-              <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
-              {exporting ? "Đang export…" : `CSV (tất cả kết quả) · ${activeExportCols.length}/${exportCols.length} cột`}
+              <Download className={`h-3 w-3 ${exporting || exportProgress.active ? "animate-pulse" : ""}`} />
+              {exporting || (exportProgress.active && exportProgress.variant === "all")
+                ? exportProgress.label || "Đang export…"
+                : `CSV (tất cả kết quả) · ${activeExportCols.length}/${exportCols.length} cột`}
             </button>
             <TraceExportColumnsMenu
               cols={exportCols}
