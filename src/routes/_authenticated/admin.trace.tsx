@@ -233,6 +233,23 @@ async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvO
 }
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
+type ExportPhase = "idle" | "fetching" | "compressing" | "saving" | "done" | "error";
+type ExportProgress = {
+  active: boolean;
+  variant: "all" | "columns";
+  phase: ExportPhase;
+  label: string;
+  percent: number;
+  rows?: number;
+};
+const IDLE_EXPORT_PROGRESS: ExportProgress = {
+  active: false,
+  variant: "all",
+  phase: "idle",
+  label: "",
+  percent: 0,
+};
+
 const TRACE_EXPORT_COLUMN_DEFS = [
   { key: "occurred_at",     label: "Thời gian" },
   { key: "kind",            label: "Loại" },
