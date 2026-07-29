@@ -926,6 +926,28 @@ function TraceResultView({
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
               {exporting ? "Đang export…" : keyword.trim() ? "Export CSV (đã lọc)" : "Export CSV"}
             </button>
+            <button
+              onClick={() => {
+                const csv = buildTimelineCsv(filteredTimeline, columns);
+                if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
+                const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `trace-${correlationId}-columns-${Date.now()}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`);
+              }}
+              disabled={filteredTimeline.length === 0 || activeColumnCount === 0}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+              title="Export CSV chỉ gồm các cột đang bật trong timeline (đúng thứ tự và tiêu đề)"
+            >
+              <Download className="h-3 w-3" />
+              CSV (cột hiện tại)
+            </button>
             <AutoRefreshControl
               value={autoRefreshSec}
               onChange={onChangeAutoRefresh}
