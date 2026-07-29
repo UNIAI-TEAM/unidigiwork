@@ -1100,6 +1100,8 @@ function TraceResultView({
   toIso,
   csvOpts,
   onChangeCsvOpts,
+  exportProgress,
+  setExportProgress,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -1128,6 +1130,8 @@ function TraceResultView({
   toIso?: string;
   csvOpts: CsvOptions;
   onChangeCsvOpts: (v: CsvOptions) => void;
+  exportProgress: ExportProgress;
+  setExportProgress: (v: ExportProgress) => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
