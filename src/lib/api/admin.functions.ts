@@ -554,6 +554,7 @@ export type QuotaExportJob = {
   to_ts: string;
   max_rows: number;
   format: "csv" | "xlsx";
+  columns: string[] | null;
   status: "pending" | "running" | "succeeded" | "failed" | "canceled";
   row_count: number | null;
   file_path: string | null;
@@ -613,7 +614,7 @@ export const listQuotaExportJobs = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("quota_export_jobs")
-      .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format, status, row_count, file_path, file_size_bytes, truncated, error, created_at, started_at, completed_at, expires_at")
+      .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format, columns, status, row_count, file_path, file_size_bytes, truncated, error, created_at, started_at, completed_at, expires_at")
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
