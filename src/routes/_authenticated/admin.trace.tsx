@@ -1178,14 +1178,28 @@ function TraceResultView({
               {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
             </button>
             <button
-              onClick={() => onExport(keyword, csvOpts)}
-              disabled={exporting || totals.total === 0}
+              onClick={() => onExport(keyword, csvOpts, activeExportCols)}
+              disabled={exporting || totals.total === 0 || activeExportCols.length === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-              title={keyword.trim() ? "Export toàn bộ event khớp bộ lọc hiện tại (kèm keyword), không giới hạn theo trang" : "Export toàn bộ event khớp bộ lọc hiện tại, không giới hạn theo trang"}
+              title={
+                activeExportCols.length === 0
+                  ? "Chưa chọn cột nào để export"
+                  : keyword.trim()
+                  ? `Export ${activeExportCols.length} cột, kèm keyword`
+                  : `Export ${activeExportCols.length} cột`
+              }
             >
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
-              {exporting ? "Đang export…" : "CSV (tất cả kết quả)"}
+              {exporting ? "Đang export…" : `CSV (tất cả kết quả) · ${activeExportCols.length}/${exportCols.length} cột`}
             </button>
+            <TraceExportColumnsMenu
+              cols={exportCols}
+              onToggle={toggleExportCol}
+              onRelabel={relabelExportCol}
+              onMove={moveExportCol}
+              onReset={resetExportCols}
+              onToggleAll={toggleAllExportCols}
+            />
             <button
               onClick={() => {
                 const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
