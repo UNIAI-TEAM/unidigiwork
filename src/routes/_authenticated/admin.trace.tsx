@@ -622,16 +622,52 @@ function AdminTracePage() {
         },
         vars.csv,
       );
-      void downloadCsvOrZip(data.csv, csvFilename, vars.csv, metaLine).catch((e: unknown) => {
-        toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`);
+      setExportProgress({
+        active: true,
+        variant: "all",
+        phase: vars.csv.zip ? "compressing" : "saving",
+        label: vars.csv.zip ? "Đang nén .zip…" : "Đang tạo file…",
+        percent: 75,
+        rows: data.rowCount,
       });
+      void downloadCsvOrZip(data.csv, csvFilename, vars.csv, metaLine)
+        .then(() => {
+          setExportProgress({
+            active: true,
+            variant: "all",
+            phase: "done",
+            label: `Đã tải xuống ${data.rowCount.toLocaleString("vi-VN")} dòng`,
+            percent: 100,
+            rows: data.rowCount,
+          });
+          window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 1500);
+        })
+        .catch((e: unknown) => {
+          const msg = (e as Error)?.message ?? "unknown";
+          setExportProgress({ active: true, variant: "all", phase: "error", label: `Lỗi tạo file: ${msg}`, percent: 100 });
+          window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);
+          toast.error(`Không tạo được file: ${msg}`);
+        });
       if (data.truncated) {
         toast.warning(`Đã export ${data.rowCount.toLocaleString("vi-VN")} / ${data.totalRows.toLocaleString("vi-VN")} dòng (đã cắt).`);
       } else {
         toast.success(`Đã export ${data.rowCount.toLocaleString("vi-VN")} dòng.`);
       }
     },
-    onError: (e: Error) => toast.error(e.message ?? "Không export được"),
+    onMutate: (vars) => {
+      setExportProgress({
+        active: true,
+        variant: "all",
+        phase: "fetching",
+        label: "Đang truy vấn dữ liệu từ máy chủ…",
+        percent: 35,
+      });
+    },
+    onError: (e: Error) => {
+      setExportProgress({ active: true, variant: "all", phase: "error", label: e.message ?? "Không export được", percent: 100 });
+      window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);
+      toast.error(e.message ?? "Không export được");
+    },
   });
 
   // Auto-run when arriving with ?cid= (or page/limit/sort change)
