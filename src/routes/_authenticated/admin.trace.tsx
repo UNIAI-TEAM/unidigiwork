@@ -174,6 +174,11 @@ function AdminTracePage() {
   const resetKinds = () =>
     navigate({ search: (prev: SearchState) => ({ ...prev, kinds: undefined, page: 1 }) });
 
+  const toggleSort = () => {
+    const next = currentSort === "asc" ? "desc" : "asc";
+    navigate({ search: (prev: SearchState) => ({ ...prev, sort: next, page: 1 }) });
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 text-xs">
