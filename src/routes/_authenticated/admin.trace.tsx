@@ -541,8 +541,10 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
-          onExport={(keyword) => exportMut.mutate({ correlationId: result.correlationId, keyword })}
+          onExport={(kw) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw })}
           exporting={exportMut.isPending}
+          keyword={keyword}
+          onKeywordChange={setKeyword}
           activeKinds={activeKinds}
           onToggleKind={toggleKind}
           onResetKinds={resetKinds}
