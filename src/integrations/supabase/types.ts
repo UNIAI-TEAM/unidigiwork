@@ -1238,6 +1238,7 @@ export type Database = {
           expires_at: string
           file_path: string | null
           file_size_bytes: number | null
+          format: string
           from_ts: string
           id: string
           max_rows: number
@@ -1259,6 +1260,7 @@ export type Database = {
           expires_at?: string
           file_path?: string | null
           file_size_bytes?: number | null
+          format?: string
           from_ts: string
           id?: string
           max_rows?: number
@@ -1280,6 +1282,7 @@ export type Database = {
           expires_at?: string
           file_path?: string | null
           file_size_bytes?: number | null
+          format?: string
           from_ts?: string
           id?: string
           max_rows?: number
