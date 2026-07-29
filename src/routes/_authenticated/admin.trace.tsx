@@ -336,6 +336,28 @@ function TraceResultView({
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const [keyword, setKeyword] = useState("");
+  const [columns, setColumns] = useState<ColumnPrefs>(() => {
+    if (typeof window === "undefined") return DEFAULT_COLUMNS;
+    try {
+      const raw = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
+      if (!raw) return DEFAULT_COLUMNS;
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_COLUMNS, ...parsed };
+    } catch {
+      return DEFAULT_COLUMNS;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(columns));
+    } catch {
+      /* noop */
+    }
+  }, [columns]);
+  const toggleColumn = (k: ColumnKey) =>
+    setColumns((prev) => ({ ...prev, [k]: !prev[k] }));
+  const resetColumns = () => setColumns(DEFAULT_COLUMNS);
+  const activeColumnCount = Object.values(columns).filter(Boolean).length;
   const kw = keyword.trim().toLowerCase();
   const filteredTimeline = useMemo(() => {
     if (!kw) return timeline;
