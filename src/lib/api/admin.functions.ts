@@ -477,6 +477,7 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
           .optional(),
         fromTs: z.string().datetime().optional(),
         toTs: z.string().datetime().optional(),
+        sort: z.enum(["asc", "desc"]).default("asc"),
       })
       .parse(i),
   )
