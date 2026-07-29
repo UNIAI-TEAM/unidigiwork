@@ -362,6 +362,10 @@ function TraceResultView({
   onResetKinds,
   sort,
   onToggleSort,
+  autoRefreshSec,
+  onChangeAutoRefresh,
+  onRefreshNow,
+  lastRefreshedAt,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -374,6 +378,10 @@ function TraceResultView({
   onResetKinds: () => void;
   sort: "asc" | "desc";
   onToggleSort: () => void;
+  autoRefreshSec: RefreshSec;
+  onChangeAutoRefresh: (v: RefreshSec) => void;
+  onRefreshNow: () => void;
+  lastRefreshedAt: number | null;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const [keyword, setKeyword] = useState("");
