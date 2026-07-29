@@ -503,7 +503,22 @@ function AdminTracePage() {
         statuses: activeStatuses,
         kinds: activeKinds,
       });
-      void downloadCsvOrZip(data.csv, csvFilename, vars.csv).catch((e: unknown) => {
+      const metaLine = buildCsvMetadataLine(
+        {
+          correlationId: vars.correlationId,
+          variant: "all",
+          keyword: vars.keyword,
+          fromIso,
+          toIso,
+          sort: currentSort,
+          severities: activeSeverities,
+          statuses: activeStatuses,
+          kinds: activeKinds,
+          rowCount: data.rowCount,
+        },
+        vars.csv,
+      );
+      void downloadCsvOrZip(data.csv, csvFilename, vars.csv, metaLine).catch((e: unknown) => {
         toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`);
       });
       if (data.truncated) {
