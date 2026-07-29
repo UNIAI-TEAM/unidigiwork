@@ -580,6 +580,7 @@ const createJobSchema = z.object({
   meterKey: z.string().max(120).optional(),
   status: z.enum(["all", "pass", "fail"]).default("all"),
   maxRows: z.number().int().min(1).max(2_000_000).default(500_000),
+  format: z.enum(["csv", "xlsx"]).default("csv"),
 });
 
 /** Create a background export job. Admin only. Processed by cron or run-now. */
@@ -601,6 +602,7 @@ export const createQuotaExportJob = createServerFn({ method: "POST" })
         from_ts: fromIso,
         to_ts: toIso,
         max_rows: data.maxRows,
+        format: data.format,
       })
       .select("id")
       .single();
