@@ -226,10 +226,15 @@ async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvO
   if (opts.zip) {
     const { zipSync, strToU8 } = await import("fflate");
     const zipped = zipSync({ [csvFilename]: strToU8(body) }, { level: 6 });
-    triggerBlobDownload(new Blob([zipped as BlobPart], { type: "application/zip" }), csvFilename.replace(/\.csv$/i, "") + ".zip");
+    triggerBlobDownload(new Blob([zipped as BlobPart], { type: "application/zip" }), toZipFilename(csvFilename));
   } else {
     triggerBlobDownload(new Blob([body], { type: "text/csv;charset=utf-8;" }), csvFilename);
   }
+}
+
+/** Chuẩn hoá tên file .zip từ tên .csv tương ứng: giữ nguyên stem (bao gồm timezone, sort, severity, status, kinds, keyword, from/to). */
+function toZipFilename(csvFilename: string): string {
+  return csvFilename.replace(/\.csv$/i, "") + ".zip";
 }
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
@@ -2341,7 +2346,7 @@ function CsvOptionsMenu({
               kinds: preview.kinds,
               template: value.filenameTemplate,
             });
-            const display = (n: string) => value.zip ? n.replace(/\.csv$/i, "") + ".zip" : n;
+            const display = (n: string) => (value.zip ? toZipFilename(n) : n);
             return (
               <div className="mt-3 space-y-1.5 border-t border-border pt-2">
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
