@@ -21,13 +21,23 @@ trap 'rm -rf "$WORK"' EXIT
 
 JWT="json_build_object('sub','$OWNER','role','authenticated')::text"
 
+# Extract the last UUID-looking token from psql output (skips SET/set_config rows).
+extract_uuid() {
+  awk 'match($0, /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) {
+         v = substr($0, RSTART, RLENGTH)
+       } END { print v }'
+}
+
 # ---------- setup: tenant + workspace + entitlements + base document ---------
-read TENANT WS <<<"$(psql -tAX -F ' ' -v ON_ERROR_STOP=1 <<SQL
+PROV="$(psql -tAX -F ' ' -v ON_ERROR_STOP=1 <<SQL
 SELECT set_config('request.jwt.claims', $JWT, false);
-SELECT tenant_id, workspace_id
+SELECT tenant_id::text || ' ' || workspace_id::text
 FROM public.provision_tenant('itest_conc','$SLUG','$OWNER'::uuid,'WS-CONC');
 SQL
 )"
+# Keep only the line with two UUIDs separated by a space.
+PROV="$(echo "$PROV" | awk 'NF==2 && $1 ~ /^[0-9a-f-]{36}$/ && $2 ~ /^[0-9a-f-]{36}$/ { print }')"
+read TENANT WS <<<"$PROV"
 if [ -z "${TENANT:-}" ] || [ -z "${WS:-}" ]; then
   echo "FAIL setup: provision_tenant returned empty (tenant=$TENANT ws=$WS)"; exit 1
 fi
@@ -47,12 +57,12 @@ SELECT public._test_seed_entitlement('$TENANT'::uuid, 'tasks.active', true, $LIM
 SELECT public._test_seed_entitlement('$TENANT'::uuid, 'documents.storage_bytes', true, $LIMIT_BYTES);
 SQL
 
-DOC="$(psql -tAX -v ON_ERROR_STOP=1 <<SQL
+DOC="$(psql -tAX -v ON_ERROR_STOP=1 <<SQL | extract_uuid
 SELECT set_config('request.jwt.claims', $JWT, false);
 SELECT (public.create_document('$WS'::uuid,'conc-doc','My Documents',ARRAY[]::text[],NULL,NULL,0,'conc-doc-init','$SLUG')).id;
 SQL
 )"
-DOC="$(echo "$DOC" | tail -n1 | tr -d '[:space:]')"
+if [ -z "$DOC" ]; then echo "FAIL setup: create_document returned empty"; exit 1; fi
 
 # ---------- test A: concurrent create_task -----------------------------------
 for i in $(seq 1 $PARALLEL_TASKS); do
