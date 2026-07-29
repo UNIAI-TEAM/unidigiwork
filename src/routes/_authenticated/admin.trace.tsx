@@ -352,7 +352,13 @@ function AdminTracePage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = data.filename;
+      a.download = buildCsvFilename({
+        correlationId: vars.correlationId,
+        variant: "all",
+        keyword: vars.keyword,
+        fromIso,
+        toIso,
+      });
       document.body.appendChild(a);
       a.click();
       a.remove();
