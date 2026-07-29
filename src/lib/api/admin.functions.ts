@@ -583,6 +583,207 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
     };
   });
 
+// ---------- Trace CSV export ----------
+
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+function toCsv(headers: readonly string[], rows: Array<Record<string, unknown>>): string {
+  const head = headers.join(",");
+  const body = rows.map((r) => headers.map((h) => csvEscape(r[h])).join(",")).join("\n");
+  return body ? `${head}\n${body}\n` : `${head}\n`;
+}
+
+const TRACE_CSV_HEADERS = [
+  "occurred_at",
+  "kind",
+  "event_type",
+  "tenant_id",
+  "actor_id",
+  "meter_key",
+  "allowed",
+  "reason",
+  "quota_limit",
+  "current_usage",
+  "requested_delta",
+  "aggregate_type",
+  "aggregate_id",
+  "status",
+  "attempt_count",
+  "last_error",
+  "processed_at",
+  "resource_type",
+  "resource_id",
+  "payload",
+  "correlation_id",
+  "id",
+] as const;
+
+export const exportTraceCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        correlationId: z.string().min(1).max(200),
+        maxRows: z.number().int().min(1).max(200_000).default(50_000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const cid = data.correlationId;
+    const cap = data.maxRows;
+
+    type ChainNoLimit = {
+      from: (t: string) => {
+        select: (c: string) => {
+          eq: (c: string, v: string) => {
+            order: (
+              c: string,
+              o: { ascending: boolean },
+            ) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+    const sb = supabaseAdmin as unknown as ChainNoLimit;
+
+    const [quotaRes, auditRes, outboxRes] = await Promise.all([
+      sb
+        .from("quota_check_events")
+        .select(
+          "id, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id, occurred_at",
+        )
+        .eq("correlation_id", cid)
+        .order("occurred_at", { ascending: true }),
+      sb
+        .from("audit_events")
+        .select(
+          "id, tenant_id, actor_user_id, action, resource_type, resource_id, event_type, aggregate_type, aggregate_id, payload, correlation_id, occurred_at",
+        )
+        .eq("correlation_id", cid)
+        .order("occurred_at", { ascending: true }),
+      sb
+        .from("outbox_events")
+        .select(
+          "id, tenant_id, event_type, aggregate_type, aggregate_id, status, attempt_count, last_error, correlation_id, occurred_at, processed_at",
+        )
+        .eq("correlation_id", cid)
+        .order("occurred_at", { ascending: true }),
+    ]);
+    if (quotaRes.error) throw new Error(quotaRes.error.message);
+    if (auditRes.error) throw new Error(auditRes.error.message);
+    if (outboxRes.error) throw new Error(outboxRes.error.message);
+
+    const quota = (quotaRes.data ?? []) as Array<Record<string, unknown>>;
+    const audit = (auditRes.data ?? []) as Array<Record<string, unknown>>;
+    const outbox = (outboxRes.data ?? []) as Array<Record<string, unknown>>;
+
+    const rows: Array<Record<string, unknown>> = [];
+    for (const r of quota) {
+      rows.push({
+        occurred_at: r.occurred_at,
+        kind: "quota_check",
+        event_type: null,
+        tenant_id: r.tenant_id,
+        actor_id: r.actor_id,
+        meter_key: r.meter_key,
+        allowed: r.allowed,
+        reason: r.reason,
+        quota_limit: r.quota_limit,
+        current_usage: r.current_usage,
+        requested_delta: r.requested_delta,
+        aggregate_type: null,
+        aggregate_id: null,
+        status: null,
+        attempt_count: null,
+        last_error: null,
+        processed_at: null,
+        resource_type: null,
+        resource_id: null,
+        payload: null,
+        correlation_id: r.correlation_id,
+        id: r.id,
+      });
+    }
+    for (const r of audit) {
+      rows.push({
+        occurred_at: r.occurred_at,
+        kind: "audit",
+        event_type: r.event_type ?? r.action,
+        tenant_id: r.tenant_id,
+        actor_id: r.actor_user_id,
+        meter_key: null,
+        allowed: null,
+        reason: null,
+        quota_limit: null,
+        current_usage: null,
+        requested_delta: null,
+        aggregate_type: r.aggregate_type,
+        aggregate_id: r.aggregate_id,
+        status: null,
+        attempt_count: null,
+        last_error: null,
+        processed_at: null,
+        resource_type: r.resource_type,
+        resource_id: r.resource_id,
+        payload: r.payload,
+        correlation_id: r.correlation_id,
+        id: r.id,
+      });
+    }
+    for (const r of outbox) {
+      rows.push({
+        occurred_at: r.occurred_at,
+        kind: "outbox",
+        event_type: r.event_type,
+        tenant_id: r.tenant_id,
+        actor_id: null,
+        meter_key: null,
+        allowed: null,
+        reason: null,
+        quota_limit: null,
+        current_usage: null,
+        requested_delta: null,
+        aggregate_type: r.aggregate_type,
+        aggregate_id: r.aggregate_id,
+        status: r.status,
+        attempt_count: r.attempt_count,
+        last_error: r.last_error,
+        processed_at: r.processed_at,
+        resource_type: null,
+        resource_id: null,
+        payload: null,
+        correlation_id: r.correlation_id,
+        id: r.id,
+      });
+    }
+
+    rows.sort((a, b) => {
+      const av = String(a.occurred_at ?? "");
+      const bv = String(b.occurred_at ?? "");
+      return av < bv ? -1 : av > bv ? 1 : 0;
+    });
+
+    const totalRows = rows.length;
+    const truncated = totalRows > cap;
+    const capped = truncated ? rows.slice(0, cap) : rows;
+    const csv = toCsv(TRACE_CSV_HEADERS, capped);
+
+    return {
+      correlationId: cid,
+      csv,
+      rowCount: capped.length,
+      totalRows,
+      truncated,
+      filename: `trace_${cid.replace(/[^a-zA-Z0-9_.-]/g, "_")}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`,
+    };
+  });
+
 // ---------- Background export jobs ----------
 
 export type QuotaExportJob = {
