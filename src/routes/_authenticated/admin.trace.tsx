@@ -435,6 +435,19 @@ function AdminTracePage() {
             </span>
           )}
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">Chọn nhanh:</span>
+          {quickRangeOptions.map((opt) => (
+            <button
+              key={opt.minutes}
+              onClick={() => setQuickRange(opt.minutes)}
+              disabled={traceMut.isPending}
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/60 hover:text-foreground disabled:opacity-50"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       {result ? (
