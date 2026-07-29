@@ -1320,7 +1320,22 @@ function TraceResultView({
                   statuses: activeStatuses,
                   kinds: activeKinds,
                 });
-                void downloadCsvOrZip(csv, csvFilename, csvOpts)
+                const metaLine = buildCsvMetadataLine(
+                  {
+                    correlationId,
+                    variant: "columns",
+                    keyword,
+                    fromIso,
+                    toIso,
+                    sort,
+                    severities: activeSeverities,
+                    statuses: activeStatuses,
+                    kinds: activeKinds,
+                    rowCount: filteredTimeline.length,
+                  },
+                  csvOpts,
+                );
+                void downloadCsvOrZip(csv, csvFilename, csvOpts, metaLine)
                   .then(() => toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`))
                   .catch((e: unknown) => toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`));
               }}
