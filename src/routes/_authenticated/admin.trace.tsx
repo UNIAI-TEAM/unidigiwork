@@ -33,6 +33,7 @@ const searchSchema = z.object({
     }),
   from: z.string().trim().max(40).optional(),
   to: z.string().trim().max(40).optional(),
+  sort: z.enum(["asc", "desc"]).default("asc"),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/trace")({
