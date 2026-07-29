@@ -57,6 +57,7 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminTenantRouteImport } from './routes/_authenticated/admin.tenant'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminQuotaRouteImport } from './routes/_authenticated/admin.quota'
+import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/api/public/hooks/process-quota-exports'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
@@ -305,6 +306,12 @@ const AuthenticatedAdminQuotaRoute = AuthenticatedAdminQuotaRouteImport.update({
   path: '/quota',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const ApiPublicHooksProcessQuotaExportsRoute =
+  ApiPublicHooksProcessQuotaExportsRouteImport.update({
+    id: '/api/public/hooks/process-quota-exports',
+    path: '/api/public/hooks/process-quota-exports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminTraceCorrelationIdRoute =
   ApiAdminTraceCorrelationIdRouteImport.update({
     id: '/api/admin/trace/$correlationId',
@@ -368,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -417,6 +425,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -470,6 +479,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -523,6 +533,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/process-quota-exports'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -572,6 +583,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/process-quota-exports'
   id:
     | '__root__'
     | '/'
@@ -624,6 +636,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/process-quota-exports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -647,6 +660,7 @@ export interface RootRouteChildren {
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
+  ApiPublicHooksProcessQuotaExportsRoute: typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -987,6 +1001,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQuotaRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/public/hooks/process-quota-exports': {
+      id: '/api/public/hooks/process-quota-exports'
+      path: '/api/public/hooks/process-quota-exports'
+      fullPath: '/api/public/hooks/process-quota-exports'
+      preLoaderRoute: typeof ApiPublicHooksProcessQuotaExportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/trace/$correlationId': {
       id: '/api/admin/trace/$correlationId'
       path: '/api/admin/trace/$correlationId'
@@ -1219,6 +1240,8 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
+  ApiPublicHooksProcessQuotaExportsRoute:
+    ApiPublicHooksProcessQuotaExportsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

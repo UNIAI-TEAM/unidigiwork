@@ -1229,6 +1229,72 @@ export type Database = {
         }
         Relationships: []
       }
+      quota_export_jobs: {
+        Row: {
+          completed_at: string | null
+          correlation_id: string | null
+          created_at: string
+          error: string | null
+          expires_at: string
+          file_path: string | null
+          file_size_bytes: number | null
+          from_ts: string
+          id: string
+          max_rows: number
+          meter_key: string | null
+          requested_by: string
+          row_count: number | null
+          started_at: string | null
+          status: string
+          status_filter: string
+          tenant_id: string | null
+          to_ts: string
+          truncated: boolean
+        }
+        Insert: {
+          completed_at?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          file_path?: string | null
+          file_size_bytes?: number | null
+          from_ts: string
+          id?: string
+          max_rows?: number
+          meter_key?: string | null
+          requested_by: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: string
+          status_filter?: string
+          tenant_id?: string | null
+          to_ts: string
+          truncated?: boolean
+        }
+        Update: {
+          completed_at?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          file_path?: string | null
+          file_size_bytes?: number | null
+          from_ts?: string
+          id?: string
+          max_rows?: number
+          meter_key?: string | null
+          requested_by?: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: string
+          status_filter?: string
+          tenant_id?: string | null
+          to_ts?: string
+          truncated?: boolean
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null
