@@ -69,7 +69,16 @@ function AdminTracePage() {
 
   const exportMut = useMutation({
     mutationFn: (correlationId: string) =>
-      exportTraceCsv({ data: { correlationId, maxRows: 50_000 } }),
+      exportTraceCsv({
+        data: {
+          correlationId,
+          maxRows: 50_000,
+          kinds:
+            activeKinds.length === ALL_KINDS.length
+              ? undefined
+              : (activeKinds as [Kind, ...Kind[]]),
+        },
+      }),
     onSuccess: (data) => {
       const blob = new Blob(["\ufeff" + data.csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
