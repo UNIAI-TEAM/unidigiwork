@@ -1657,6 +1657,7 @@ function TraceResultView({
             />
             <button
               onClick={() => {
+                const startedAt = performance.now();
                 const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
                 const csvFilename = buildCsvFilename({
@@ -1693,6 +1694,19 @@ function TraceResultView({
                 if (autoZipped) {
                   toast.info(`Tự động bật ZIP: CSV ~${formatBytes(rawSize)} vượt ${formatBytes(EXPORT_SIZE_WARN_BYTES)}.`);
                 }
+                const severityCounts = { info: 0, warn: 0, error: 0 } as { info: number; warn: number; error: number };
+                for (const it of filteredTimeline) {
+                  severityCounts[severityOfItem(it)]++;
+                }
+                const footerLine = buildCsvFooterLine(
+                  {
+                    variant: "columns",
+                    totalRows: rows,
+                    severityCounts,
+                    durationMs: performance.now() - startedAt,
+                  },
+                  csvOpts,
+                );
                 setExportProgress({
                   active: true,
                   variant: "columns",
@@ -1701,7 +1715,7 @@ function TraceResultView({
                   percent: 70,
                   rows,
                 });
-                void downloadCsvOrZip(csv, csvFilename, effOpts, metaLine)
+                void downloadCsvOrZipWithFooter(csv, csvFilename, effOpts, metaLine, footerLine)
                   .then(() => {
                     setExportProgress({
                       active: true, variant: "columns", phase: "done",
