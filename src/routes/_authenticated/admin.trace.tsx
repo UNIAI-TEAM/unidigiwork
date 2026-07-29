@@ -1396,7 +1396,6 @@ function ColumnsMenu({
   onReset: () => void;
   activeCount: number;
 }) {
-  // (defined below alongside CsvOptionsMenu)
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
