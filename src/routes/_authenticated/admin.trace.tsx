@@ -1866,6 +1866,19 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
             </div>
             <p className="mt-1 text-[11px] text-muted-foreground">Hậu tố Z = UTC, L = local time.</p>
           </div>
+          <div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={value.includeMetadata}
+                onChange={(e) => onChange({ ...value, includeMetadata: e.target.checked })}
+              />
+              <span>Thêm dòng metadata đầu file</span>
+            </label>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Ghi 1 dòng comment (bắt đầu bằng <code># </code>) ghi rõ keyword, from/to, sort, severities, statuses, kinds, timezone và thời gian tạo file.
+            </p>
+          </div>
         </div>
       )}
     </div>
