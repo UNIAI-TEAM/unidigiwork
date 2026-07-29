@@ -412,6 +412,9 @@ function TraceResultView({
   activeKinds,
   onToggleKind,
   onResetKinds,
+  activeSeverities,
+  onToggleSeverity,
+  onResetSeverities,
   sort,
   onToggleSort,
   autoRefreshSec,
@@ -428,6 +431,9 @@ function TraceResultView({
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
   onResetKinds: () => void;
+  activeSeverities: Severity[];
+  onToggleSeverity: (s: Severity) => void;
+  onResetSeverities: () => void;
   sort: "asc" | "desc";
   onToggleSort: () => void;
   autoRefreshSec: RefreshSec;
