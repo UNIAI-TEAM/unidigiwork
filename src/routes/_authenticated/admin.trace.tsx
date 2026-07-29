@@ -1765,6 +1765,15 @@ function CsvOptionsMenu({ value, onChange }: { value: CsvOptions; onChange: (v: 
             />
             <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
           </label>
+          <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 hover:bg-surface-2">
+            <input
+              type="checkbox"
+              checked={value.zip}
+              onChange={(e) => onChange({ ...value, zip: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className="text-foreground">Nén file thành .zip (khuyến nghị khi &gt;10k dòng)</span>
+          </label>
           <div className="mt-3">
             <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
             <div className="flex gap-1">
