@@ -222,7 +222,18 @@ function buildCsvMetadataLine(
 }
 async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions, metadataLine?: string): Promise<void> {
   const header = opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
-  const body = (opts.bom ? "\ufeff" : "") + header + csvText;
+  return downloadCsvOrZipWithFooter(csvText, csvFilename, opts, metadataLine, undefined);
+}
+async function downloadCsvOrZipWithFooter(
+  csvText: string,
+  csvFilename: string,
+  opts: CsvOptions,
+  metadataLine?: string,
+  footerLine?: string,
+): Promise<void> {
+  const header = opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
+  const footer = footerLine ? (csvText.endsWith("\n") ? "" : "\r\n") + footerLine + "\r\n" : "";
+  const body = (opts.bom ? "\ufeff" : "") + header + csvText + footer;
   if (opts.zip) {
     const { zipSync, strToU8 } = await import("fflate");
     const zipped = zipSync({ [csvFilename]: strToU8(body) }, { level: 6 });
@@ -230,6 +241,36 @@ async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvO
   } else {
     triggerBlobDownload(new Blob([body], { type: "text/csv;charset=utf-8;" }), csvFilename);
   }
+}
+
+/** Build a single-line CSV footer với tổng rows, số record theo severity, và thời gian xử lý. */
+function buildCsvFooterLine(
+  info: {
+    variant: "all" | "columns";
+    totalRows: number;
+    severityCounts: { info: number; warn: number; error: number };
+    durationMs: number;
+    truncated?: boolean;
+    exportedRows?: number;
+  },
+  csv: CsvOptions,
+): string {
+  const fields: Array<[string, string]> = [
+    ["summary", info.variant === "all" ? "all-results" : "current-cols"],
+    ["total_rows", String(info.totalRows)],
+  ];
+  if (typeof info.exportedRows === "number" && info.exportedRows !== info.totalRows) {
+    fields.push(["exported_rows", String(info.exportedRows)]);
+  }
+  if (info.truncated) fields.push(["truncated", "true"]);
+  fields.push(
+    ["severity_info", String(info.severityCounts.info)],
+    ["severity_warn", String(info.severityCounts.warn)],
+    ["severity_error", String(info.severityCounts.error)],
+    ["processing_ms", String(Math.max(0, Math.round(info.durationMs)))],
+  );
+  const line = "# " + fields.map(([k, v]) => `${k}=${v}`).join(" | ");
+  return csvEscape(line, csv.delimiter, csv.quoteChar);
 }
 
 /** Chuẩn hoá tên file .zip từ tên .csv tương ứng: giữ nguyên stem (bao gồm timezone, sort, severity, status, kinds, keyword, from/to). */
