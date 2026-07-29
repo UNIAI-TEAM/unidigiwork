@@ -65,11 +65,17 @@ const DEFAULT_COLUMNS: ColumnPrefs = {
   meta: true, tenant: true, actor: true, target: true, payload: true,
 };
 const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
+const CSV_OPTIONS_STORAGE_KEY = "uniwork.admin.trace.csv.v1";
 
-function csvEscape(v: unknown): string {
+type CsvOptions = { delimiter: "," | ";" | "\t"; quoteChar: '"' | "'"; bom: boolean };
+const DEFAULT_CSV_OPTIONS: CsvOptions = { delimiter: ",", quoteChar: '"', bom: true };
+
+function csvEscape(v: unknown, delim: string = ",", quote: string = '"'): string {
   if (v == null) return "";
   const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  const needs = s.includes(quote) || s.includes(delim) || /[\r\n]/.test(s);
+  if (!needs) return s;
+  return `${quote}${s.split(quote).join(quote + quote)}${quote}`;
 }
 
 function timelineCellValue(item: TimelineItem, key: ColumnKey): string {
@@ -114,11 +120,13 @@ function timelineCellValue(item: TimelineItem, key: ColumnKey): string {
   }
 }
 
-function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs): string {
+function buildTimelineCsv(items: TimelineItem[], columns: ColumnPrefs, opts: CsvOptions = DEFAULT_CSV_OPTIONS): string {
   const active = COLUMN_DEFS.filter((c) => columns[c.key]);
   if (active.length === 0) return "";
-  const header = active.map((c) => csvEscape(c.label)).join(",");
-  const rows = items.map((it) => active.map((c) => csvEscape(timelineCellValue(it, c.key))).join(","));
+  const d = opts.delimiter;
+  const q = opts.quoteChar;
+  const header = active.map((c) => csvEscape(c.label, d, q)).join(d);
+  const rows = items.map((it) => active.map((c) => csvEscape(timelineCellValue(it, c.key), d, q)).join(d));
   return [header, ...rows].join("\r\n");
 }
 
