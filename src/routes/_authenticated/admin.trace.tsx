@@ -767,6 +767,20 @@ function TraceResultView({
     setColumns((prev) => ({ ...prev, [k]: !prev[k] }));
   const resetColumns = () => setColumns(DEFAULT_COLUMNS);
   const activeColumnCount = Object.values(columns).filter(Boolean).length;
+  const [csvOpts, setCsvOpts] = useState<CsvOptions>(() => {
+    if (typeof window === "undefined") return DEFAULT_CSV_OPTIONS;
+    try {
+      const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);
+      if (!raw) return DEFAULT_CSV_OPTIONS;
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_CSV_OPTIONS, ...parsed } as CsvOptions;
+    } catch {
+      return DEFAULT_CSV_OPTIONS;
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
+  }, [csvOpts]);
   const kw = keyword.trim().toLowerCase();
   const sevFiltered = activeSeverities.length < ALL_SEVERITIES.length;
   const activeSevSet = useMemo(() => new Set(activeSeverities), [activeSeverities]);
