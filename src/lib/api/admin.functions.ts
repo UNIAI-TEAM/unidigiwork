@@ -653,6 +653,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         sort: z.enum(["asc", "desc"]).default("asc"),
         keyword: z.string().trim().max(200).optional(),
         severities: z.array(z.enum(["info", "warn", "error"])).nonempty().optional(),
+        statuses: z.array(z.enum(["success", "failure", "pending"])).nonempty().optional(),
       })
       .parse(i),
   )
@@ -808,9 +809,20 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
       return "info";
     };
     const sevFiltered = sevSet ? matched.filter((r) => sevSet.has(severityOfRow(r))) : matched;
-    const totalRows = sevFiltered.length;
+    const stSet = data.statuses ? new Set(data.statuses) : null;
+    const statusOfRow = (r: Record<string, unknown>): "success" | "failure" | "pending" => {
+      if (r.kind === "quota_check") return r.allowed ? "success" : "failure";
+      if (r.kind === "outbox") {
+        if (r.last_error || r.status === "failed") return "failure";
+        if (r.status === "pending" || r.status === "running") return "pending";
+        return "success";
+      }
+      return "success";
+    };
+    const stFiltered = stSet ? sevFiltered.filter((r) => stSet.has(statusOfRow(r))) : sevFiltered;
+    const totalRows = stFiltered.length;
     const truncated = totalRows > cap;
-    const capped = truncated ? sevFiltered.slice(0, cap) : sevFiltered;
+    const capped = truncated ? stFiltered.slice(0, cap) : stFiltered;
     const csv = toCsv(TRACE_CSV_HEADERS, capped);
 
     return {
