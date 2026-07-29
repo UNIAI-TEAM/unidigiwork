@@ -466,6 +466,9 @@ function TraceResultView({
   activeSeverities,
   onToggleSeverity,
   onResetSeverities,
+  activeStatuses,
+  onToggleStatus,
+  onResetStatuses,
   sort,
   onToggleSort,
   autoRefreshSec,
@@ -485,6 +488,9 @@ function TraceResultView({
   activeSeverities: Severity[];
   onToggleSeverity: (s: Severity) => void;
   onResetSeverities: () => void;
+  activeStatuses: Status[];
+  onToggleStatus: (s: Status) => void;
+  onResetStatuses: () => void;
   sort: "asc" | "desc";
   onToggleSort: () => void;
   autoRefreshSec: RefreshSec;
@@ -519,9 +525,12 @@ function TraceResultView({
   const kw = keyword.trim().toLowerCase();
   const sevFiltered = activeSeverities.length < ALL_SEVERITIES.length;
   const activeSevSet = useMemo(() => new Set(activeSeverities), [activeSeverities]);
+  const stFiltered = activeStatuses.length < ALL_STATUSES.length;
+  const activeStSet = useMemo(() => new Set(activeStatuses), [activeStatuses]);
   const filteredTimeline = useMemo(() => {
     return timeline.filter((item) => {
       if (sevFiltered && !activeSevSet.has(severityOfItem(item))) return false;
+      if (stFiltered && !activeStSet.has(statusOfItem(item))) return false;
       if (!kw) return true;
       try {
         return JSON.stringify(item).toLowerCase().includes(kw);
@@ -529,7 +538,7 @@ function TraceResultView({
         return false;
       }
     });
-  }, [timeline, kw, sevFiltered, activeSevSet]);
+  }, [timeline, kw, sevFiltered, activeSevSet, stFiltered, activeStSet]);
   const copyCid = () => {
     navigator.clipboard.writeText(correlationId).then(
       () => toast.success("Đã copy correlation_id"),
