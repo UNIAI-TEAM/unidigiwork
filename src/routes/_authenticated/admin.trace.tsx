@@ -52,7 +52,7 @@ function AdminTracePage() {
       toast.error("Nhập correlation_id trước");
       return;
     }
-    navigate({ search: (prev) => ({ ...prev, cid: v }) });
+    navigate({ search: (prev: { cid?: string }) => ({ ...prev, cid: v }) });
     traceMut.mutate(v);
   };
 
@@ -173,11 +173,11 @@ function TimelineRow({ item }: { item: TimelineItem }) {
       </div>
       <div className="flex-1 min-w-0">
         {item.kind === "quota_check" ? (
-          <QuotaEventRow data={item.data as QuotaEvent} />
+          <QuotaEventRow data={item.data as unknown as QuotaEvent} />
         ) : item.kind === "audit" ? (
-          <AuditEventRow data={item.data as AuditEvent} />
+          <AuditEventRow data={item.data as unknown as AuditEvent} />
         ) : (
-          <OutboxEventRow data={item.data as OutboxEvent} />
+          <OutboxEventRow data={item.data as unknown as OutboxEvent} />
         )}
       </div>
     </li>
