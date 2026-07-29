@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { traceByCorrelationId, exportTraceCsv } from "@/lib/api/admin.functions";
@@ -300,6 +300,18 @@ function TraceResultView({
   onResetKinds: () => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
+  const [keyword, setKeyword] = useState("");
+  const kw = keyword.trim().toLowerCase();
+  const filteredTimeline = useMemo(() => {
+    if (!kw) return timeline;
+    return timeline.filter((item) => {
+      try {
+        return JSON.stringify(item).toLowerCase().includes(kw);
+      } catch {
+        return false;
+      }
+    });
+  }, [timeline, kw]);
   const copyCid = () => {
     navigator.clipboard.writeText(correlationId).then(
       () => toast.success("Đã copy correlation_id"),
@@ -391,11 +403,39 @@ function TraceResultView({
           onPage={onPage}
           onLimit={onLimit}
         />
-        {timeline.length === 0 ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">Không có event nào.</div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-2/20 px-4 py-2">
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Tìm keyword trong nội dung event (meter, actor, aggregate_id, payload…)"
+              className="w-full rounded-md border border-border bg-surface px-7 py-1.5 text-xs outline-none focus:border-primary/60"
+              maxLength={200}
+            />
+            {keyword && (
+              <button
+                onClick={() => setKeyword("")}
+                aria-label="Xóa từ khóa"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          {kw && (
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              Khớp {filteredTimeline.length.toLocaleString("vi-VN")} / {timeline.length.toLocaleString("vi-VN")}
+            </span>
+          )}
+        </div>
+        {filteredTimeline.length === 0 ? (
+          <div className="py-10 text-center text-sm text-muted-foreground">
+            {kw ? "Không có event khớp từ khóa." : "Không có event nào."}
+          </div>
         ) : (
           <ol className="divide-y divide-border">
-            {timeline.map((item, idx) => (
+            {filteredTimeline.map((item, idx) => (
               <TimelineRow key={`${item.kind}-${idx}`} item={item} />
             ))}
           </ol>
