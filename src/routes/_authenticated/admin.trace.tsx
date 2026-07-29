@@ -436,6 +436,10 @@ function AdminTracePage() {
         fromIso,
         toIso,
         filenameTz: vars.csv.filenameTz,
+        sort: currentSort,
+        severities: activeSeverities,
+        statuses: activeStatuses,
+        kinds: activeKinds,
       });
       document.body.appendChild(a);
       a.click();
