@@ -525,6 +525,13 @@ function AdminTracePage() {
               {opt.label}
             </button>
           ))}
+          <span className="mx-1 text-border">|</span>
+          <PresetsMenu
+            presets={presets}
+            onSave={savePreset}
+            onApply={applyPreset}
+            onDelete={deletePreset}
+          />
         </div>
       </section>
 
