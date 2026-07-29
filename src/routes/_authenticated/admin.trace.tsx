@@ -519,6 +519,7 @@ function AdminTracePage() {
   useEffect(() => {
     try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
   }, [csvOpts]);
+  const [exportProgress, setExportProgress] = useState<ExportProgress>(IDLE_EXPORT_PROGRESS);
   const [presets, setPresets] = useState<FilterPreset[]>(() => {
     if (typeof window === "undefined") return [];
     try {
