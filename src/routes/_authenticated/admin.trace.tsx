@@ -1346,7 +1346,20 @@ function TraceResultView({
               <Download className="h-3 w-3" />
               CSV (cột hiện tại)
             </button>
-            <CsvOptionsMenu value={csvOpts} onChange={setCsvOpts} />
+            <CsvOptionsMenu
+              value={csvOpts}
+              onChange={setCsvOpts}
+              preview={{
+                correlationId,
+                keyword,
+                fromIso,
+                toIso,
+                sort,
+                severities: activeSeverities,
+                statuses: activeStatuses,
+                kinds: activeKinds,
+              }}
+            />
             <AutoRefreshControl
               value={autoRefreshSec}
               onChange={onChangeAutoRefresh}
