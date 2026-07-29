@@ -775,7 +775,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-8">
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Từ ngày</span>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
@@ -816,6 +816,14 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
           <input type="number" min={1} max={2000000} step={10000} value={maxRows}
             onChange={(e) => setMaxRows(Math.max(1, Math.min(2_000_000, Number(e.target.value) || 1)))}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-right tabular-nums" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Định dạng</span>
+          <select value={format} onChange={(e) => setFormat(e.target.value as "csv" | "xlsx")}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5">
+            <option value="csv">CSV</option>
+            <option value="xlsx">XLSX</option>
+          </select>
         </label>
         <div className="flex flex-col justify-end">
           <button
