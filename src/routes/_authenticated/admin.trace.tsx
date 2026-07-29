@@ -1247,12 +1247,7 @@ function TraceResultView({
               onClick={() => {
                 const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
                 if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
-                const prefix = csvOpts.bom ? "\ufeff" : "";
-                const blob = new Blob([prefix + csv], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = buildCsvFilename({
+                const csvFilename = buildCsvFilename({
                   correlationId,
                   variant: "columns",
                   keyword,
@@ -1264,11 +1259,9 @@ function TraceResultView({
                   statuses: activeStatuses,
                   kinds: activeKinds,
                 });
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-                toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`);
+                void downloadCsvOrZip(csv, csvFilename, csvOpts)
+                  .then(() => toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`))
+                  .catch((e: unknown) => toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`));
               }}
               disabled={filteredTimeline.length === 0 || activeColumnCount === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
