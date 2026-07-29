@@ -1453,6 +1453,7 @@ function ColumnsMenu({
 function AutoRefreshControl({
   value,
   onChange,
+// (kept above)
   onRefreshNow,
   pending,
   lastRefreshedAt,
