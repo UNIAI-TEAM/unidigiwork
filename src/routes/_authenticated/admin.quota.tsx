@@ -526,3 +526,141 @@ function NumInput({ label, value, onChange }: { label: string; value: number; on
     </label>
   );
 }
+
+function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]; tenantOptions: string[] }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400_000).toISOString().slice(0, 10);
+  const [from, setFrom] = useState<string>(yesterday);
+  const [to, setTo] = useState<string>(today);
+  const [tenantId, setTenantId] = useState<string>("");
+  const [meterKey, setMeterKey] = useState<string>("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [busy, setBusy] = useState(false);
+
+  const run = async () => {
+    if (!from || !to) {
+      toast.error("Chọn khoảng ngày trước khi export");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await exportQuotaCheckEvents({
+        data: {
+          from,
+          to,
+          tenantId: tenantId || undefined,
+          meterKey: meterKey || undefined,
+          status,
+          maxRows: 20000,
+        },
+      });
+      if (res.count === 0) {
+        toast.info("Không có sự kiện nào khớp bộ lọc");
+        return;
+      }
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const suffix = [
+        from,
+        to,
+        tenantId ? tenantId.slice(0, 8) : "all",
+        meterKey || "all",
+        status,
+      ].join("_");
+      a.href = url;
+      a.download = `quota_check_events_${suffix}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Đã export ${res.count} sự kiện${res.truncated ? " (bị cắt ở 20.000 dòng)" : ""}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export thất bại");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="rounded-2xl border border-border bg-surface">
+      <div className="flex items-center gap-2 border-b border-border p-4">
+        <Download className="h-4 w-4 text-primary" />
+        <div>
+          <h2 className="text-sm font-semibold">Export quota_check_events (CSV)</h2>
+          <p className="text-xs text-muted-foreground">
+            Đối soát production theo khoảng ngày, tenant và meter. Tối đa 20.000 dòng/lần.
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-6">
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Từ ngày</span>
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Đến ngày</span>
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Tenant</span>
+          <select
+            value={tenantId}
+            onChange={(e) => setTenantId(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
+          >
+            <option value="">Mọi tenant</option>
+            {tenantOptions.map((t) => (
+              <option key={t} value={t}>{t.slice(0, 8)}…</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Meter</span>
+          <select
+            value={meterKey}
+            onChange={(e) => setMeterKey(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
+          >
+            <option value="">Mọi meter</option>
+            {meterOptions.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Trạng thái</span>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as StatusFilter)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5"
+          >
+            <option value="all">Tất cả</option>
+            <option value="pass">PASS</option>
+            <option value="fail">FAIL</option>
+          </select>
+        </label>
+        <div className="flex flex-col justify-end">
+          <button
+            onClick={run}
+            disabled={busy}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            <Download className={`h-3.5 w-3.5 ${busy ? "animate-pulse" : ""}`} />
+            {busy ? "Đang export…" : "Export CSV"}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
