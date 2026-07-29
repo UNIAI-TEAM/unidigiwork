@@ -475,6 +475,8 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
           .array(z.enum(["quota", "audit", "outbox"]))
           .nonempty()
           .optional(),
+        fromTs: z.string().datetime().optional(),
+        toTs: z.string().datetime().optional(),
       })
       .parse(i),
   )
@@ -513,36 +515,39 @@ export const traceByCorrelationId = createServerFn({ method: "GET" })
       };
     };
     const sb = supabaseAdmin as unknown as RangeBuilder;
+    const applyRange = (
+      table: string,
+      cols: string,
+    ) => {
+      // Loose chain to allow optional gte/lte between eq and order.
+      // deno-lint-ignore no-explicit-any
+      let q: any = (sb as unknown as { from: (t: string) => { select: (c: string, o?: unknown) => unknown } })
+        .from(table)
+        .select(cols, { count: "exact" });
+      q = q.eq("correlation_id", cid);
+      if (data.fromTs) q = q.gte("occurred_at", data.fromTs);
+      if (data.toTs) q = q.lte("occurred_at", data.toTs);
+      return q.order("occurred_at", { ascending: true }).range(from, to) as Promise<{
+        data: unknown[] | null;
+        count: number | null;
+        error: { message: string } | null;
+      }>;
+    };
 
     const emptyRes = Promise.resolve({ data: [] as unknown[], count: 0, error: null });
     const [quotaRes, auditRes, outboxRes] = await Promise.all([
-      wantQuota ? sb
-        .from("quota_check_events")
-        .select(
+      wantQuota ? applyRange(
+        "quota_check_events",
           "id, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id, occurred_at",
-          { count: "exact" },
-        )
-        .eq("correlation_id", cid)
-        .order("occurred_at", { ascending: true })
-        .range(from, to) : emptyRes,
-      wantAudit ? sb
-        .from("audit_events")
-        .select(
+      ) : emptyRes,
+      wantAudit ? applyRange(
+        "audit_events",
           "id, tenant_id, actor_user_id, action, resource_type, resource_id, event_type, aggregate_type, aggregate_id, payload, correlation_id, occurred_at",
-          { count: "exact" },
-        )
-        .eq("correlation_id", cid)
-        .order("occurred_at", { ascending: true })
-        .range(from, to) : emptyRes,
-      wantOutbox ? sb
-        .from("outbox_events")
-        .select(
+      ) : emptyRes,
+      wantOutbox ? applyRange(
+        "outbox_events",
           "id, tenant_id, event_type, aggregate_type, aggregate_id, status, attempt_count, last_error, correlation_id, occurred_at, processed_at",
-          { count: "exact" },
-        )
-        .eq("correlation_id", cid)
-        .order("occurred_at", { ascending: true })
-        .range(from, to) : emptyRes,
+      ) : emptyRes,
     ]);
 
     if (quotaRes.error) throw new Error(quotaRes.error.message);
