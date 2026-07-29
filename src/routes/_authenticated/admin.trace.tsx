@@ -243,6 +243,23 @@ function AdminTracePage() {
     navigate({ search: (prev: SearchState) => ({ ...prev, from: undefined, to: undefined, page: 1 }) });
   };
 
+  const setQuickRange = (minutes: number) => {
+    const to = new Date();
+    const from = new Date(to.getTime() - minutes * 60 * 1000);
+    const toStr = toToLocalDatetime(to);
+    const fromStr = toToLocalDatetime(from);
+    setFromInput(fromStr);
+    setToInput(toStr);
+    navigate({ search: (prev: SearchState) => ({ ...prev, from: fromStr, to: toStr, page: 1 }) });
+  };
+
+  const quickRangeOptions = [
+    { label: "15 phút", minutes: 15 },
+    { label: "1 giờ", minutes: 60 },
+    { label: "24 giờ", minutes: 24 * 60 },
+    { label: "7 ngày", minutes: 7 * 24 * 60 },
+  ] as const;
+
   const goToPage = (nextPage: number) => {
     navigate({ search: (prev: SearchState) => ({ ...prev, page: nextPage }) });
   };
