@@ -199,28 +199,51 @@ function buildCsvMetadataLine(
   };
   const kw = info.keyword?.trim();
   const genTz = csv.filenameTz;
-  const now = new Date();
-  const generatedAt =
-    genTz === "utc"
-      ? now.toISOString()
-      : `${now.toLocaleString("sv-SE")} ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+  const localTzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const formatTs = (d: Date): string => {
+    if (genTz === "utc") return d.toISOString().replace(/\.\d{3}Z$/, "Z");
+    // Local: YYYY-MM-DDTHH:mm:ss±HH:MM
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const y = d.getFullYear();
+    const mo = pad(d.getMonth() + 1);
+    const da = pad(d.getDate());
+    const h = pad(d.getHours());
+    const mi = pad(d.getMinutes());
+    const s = pad(d.getSeconds());
+    const off = -d.getTimezoneOffset();
+    const sign = off >= 0 ? "+" : "-";
+    const abs = Math.abs(off);
+    return `${y}-${mo}-${da}T${h}:${mi}:${s}${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+  };
+  const formatIso = (iso: string | undefined): string => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return formatTs(d);
+  };
+  const generatedAt = formatTs(new Date());
   const fields: Array<[string, string]> = [
     ["source", "UNIWORK /admin/trace"],
     ["variant", info.variant === "all" ? "all-results (CSV tất cả kết quả)" : "current-cols (CSV cột hiện tại)"],
     ["correlation_id", info.correlationId],
     ["keyword", kw ?? ""],
-    ["from", info.fromIso ?? ""],
-    ["to", info.toIso ?? ""],
+    ["from", formatIso(info.fromIso)],
+    ["to", formatIso(info.toIso)],
     ["sort", info.sort ?? ""],
     ["severities", setStr(info.severities, ALL_SEVERITIES.length)],
     ["statuses", setStr(info.statuses, ALL_STATUSES.length)],
     ["kinds", setStr(info.kinds, ALL_KINDS.length)],
-    ["timezone", genTz === "utc" ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone],
+    ["timezone", genTz === "utc" ? "UTC" : localTzName],
     ["generated_at", generatedAt],
   ];
   if (typeof info.rowCount === "number") fields.push(["rows", String(info.rowCount)]);
-  const summary = "# " + fields.map(([k, v]) => `${k}=${v}`).join(" | ");
-  return csvEscape(summary, csv.delimiter, csv.quoteChar);
+  // Sử dụng đúng delimiter/quote đang chọn: mỗi cặp key=value được csvEscape
+  // riêng, rồi join bằng delimiter hiện tại (giữ prefix "# " ở đầu tiên).
+  const tokens = fields.map(([k, v], i) => {
+    const token = `${i === 0 ? "# " : ""}${k}=${v}`;
+    return csvEscape(token, csv.delimiter, csv.quoteChar);
+  });
+  return tokens.join(csv.delimiter);
 }
 async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvOptions, metadataLine?: string): Promise<void> {
   return downloadCsvOrZipWithFooter(csvText, csvFilename, opts, metadataLine, undefined);
