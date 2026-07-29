@@ -672,3 +672,200 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
     </section>
   );
 }
+
+function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]; tenantOptions: string[] }) {
+  const qc = useQueryClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
+  const [from, setFrom] = useState<string>(weekAgo);
+  const [to, setTo] = useState<string>(today);
+  const [tenantId, setTenantId] = useState<string>("");
+  const [meterKey, setMeterKey] = useState<string>("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [maxRows, setMaxRows] = useState<number>(200000);
+
+  const jobsQ = useQuery({
+    queryKey: ["admin", "quota", "export-jobs"],
+    queryFn: () => listQuotaExportJobs(),
+    refetchInterval: (query) => {
+      const jobs = (query.state.data ?? []) as QuotaExportJob[];
+      return jobs.some((j) => j.status === "pending" || j.status === "running") ? 5000 : 30000;
+    },
+  });
+
+  const createMut = useMutation({
+    mutationFn: () =>
+      createQuotaExportJob({
+        data: {
+          from,
+          to,
+          tenantId: tenantId || undefined,
+          meterKey: meterKey || undefined,
+          status,
+          maxRows,
+        },
+      }),
+    onSuccess: async () => {
+      toast.success("Đã tạo job export nền");
+      await qc.invalidateQueries({ queryKey: ["admin", "quota", "export-jobs"] });
+      // Kick off immediate processing so admin doesn't wait for cron
+      runPendingQuotaExports().then(() => {
+        qc.invalidateQueries({ queryKey: ["admin", "quota", "export-jobs"] });
+      }).catch(() => {});
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Không tạo được job"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteQuotaExportJob({ data: { id } }),
+    onSuccess: async () => {
+      toast.success("Đã xóa job");
+      await qc.invalidateQueries({ queryKey: ["admin", "quota", "export-jobs"] });
+    },
+  });
+
+  const download = async (job: QuotaExportJob) => {
+    try {
+      const { url } = await getQuotaExportDownloadUrl({ data: { id: job.id } });
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `quota_check_events_${job.id}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không tải được file");
+    }
+  };
+
+  const jobs = jobsQ.data ?? [];
+
+  return (
+    <section className="rounded-2xl border border-border bg-surface">
+      <div className="flex items-center gap-2 border-b border-border p-4">
+        <Download className="h-4 w-4 text-primary" />
+        <div>
+          <h2 className="text-sm font-semibold">Export nền (&gt;20.000 dòng)</h2>
+          <p className="text-xs text-muted-foreground">
+            Job chạy nền qua pg_cron, tối đa 2.000.000 dòng/lần. File CSV lưu trong bucket riêng, tự hết hạn sau 7 ngày.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-7">
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Từ ngày</span>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Đến ngày</span>
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Tenant</span>
+          <select value={tenantId} onChange={(e) => setTenantId(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono">
+            <option value="">Mọi tenant</option>
+            {tenantOptions.map((t) => <option key={t} value={t}>{t.slice(0, 8)}…</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Meter</span>
+          <select value={meterKey} onChange={(e) => setMeterKey(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono">
+            <option value="">Mọi meter</option>
+            {meterOptions.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Trạng thái</span>
+          <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5">
+            <option value="all">Tất cả</option>
+            <option value="pass">PASS</option>
+            <option value="fail">FAIL</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Max rows</span>
+          <input type="number" min={1} max={2000000} step={10000} value={maxRows}
+            onChange={(e) => setMaxRows(Math.max(1, Math.min(2_000_000, Number(e.target.value) || 1)))}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-right tabular-nums" />
+        </label>
+        <div className="flex flex-col justify-end">
+          <button
+            onClick={() => createMut.mutate()}
+            disabled={createMut.isPending || !from || !to}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {createMut.isPending ? "Đang tạo…" : "Tạo job"}
+          </button>
+        </div>
+      </div>
+
+      <div className="border-t border-border">
+        {jobsQ.isLoading ? (
+          <div className="py-8 text-center text-xs text-muted-foreground">Đang tải…</div>
+        ) : jobs.length === 0 ? (
+          <div className="py-8 text-center text-xs text-muted-foreground">Chưa có job nào.</div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {jobs.map((j) => (
+              <li key={j.id} className="flex flex-col gap-1 p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2 font-mono">
+                    <JobStatusBadge status={j.status} />
+                    <span className="text-muted-foreground">{j.id.slice(0, 8)}…</span>
+                    <span className="text-foreground">{j.meter_key ?? "mọi meter"}</span>
+                    <span className="text-muted-foreground">· {j.tenant_id ? `${j.tenant_id.slice(0, 8)}…` : "mọi tenant"}</span>
+                    <span className="text-muted-foreground">· {j.status_filter}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+                    <span>{new Date(j.from_ts).toLocaleDateString("vi-VN")} → {new Date(j.to_ts).toLocaleDateString("vi-VN")}</span>
+                    <span>Max: {j.max_rows.toLocaleString("vi-VN")}</span>
+                    {j.row_count !== null && <span className="text-foreground tabular-nums">{j.row_count.toLocaleString("vi-VN")} dòng{j.truncated ? " (cắt)" : ""}</span>}
+                    {j.file_size_bytes !== null && <span>{(j.file_size_bytes / 1024).toFixed(1)} KB</span>}
+                    <span>Tạo {new Date(j.created_at).toLocaleString("vi-VN")}</span>
+                    {j.error && <span className="text-rose-400">Lỗi: {j.error}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {j.status === "succeeded" && (
+                    <button
+                      onClick={() => download(j)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-2 px-2 py-1 hover:text-foreground"
+                    >
+                      <Download className="h-3 w-3" /> Tải
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteMut.mutate(j.id)}
+                    disabled={deleteMut.isPending}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-2 px-2 py-1 text-muted-foreground hover:text-rose-400"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function JobStatusBadge({ status }: { status: QuotaExportJob["status"] }) {
+  const map: Record<QuotaExportJob["status"], { label: string; className: string }> = {
+    pending: { label: "Đang chờ", className: "bg-surface-2 text-muted-foreground" },
+    running: { label: "Đang chạy", className: "bg-amber-500/15 text-amber-400" },
+    succeeded: { label: "Hoàn tất", className: "bg-emerald-500/15 text-emerald-400" },
+    failed: { label: "Lỗi", className: "bg-rose-500/15 text-rose-400" },
+    canceled: { label: "Đã hủy", className: "bg-surface-2 text-muted-foreground" },
+  };
+  const m = map[status];
+  return <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${m.className}`}>{m.label}</span>;
+}
