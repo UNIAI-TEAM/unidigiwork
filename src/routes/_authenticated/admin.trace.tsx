@@ -332,7 +332,7 @@ function buildCsvFilename(opts: {
   const values: Record<FilenamePartKey, string | null> = {
     prefix: "trace",
     correlationId: sanitizeFilenamePart(opts.correlationId) || "cid",
-    variant: opts.variant,
+    variant: opts.variant === "all" ? "all-results" : "current-cols",
     keyword: kw ? `kw_${sanitizeFilenamePart(kw)}` : null,
     from: from ? `from_${from}` : null,
     to: to ? `to_${to}` : null,
