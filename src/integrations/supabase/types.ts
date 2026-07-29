@@ -1086,6 +1086,107 @@ export type Database = {
         }
         Relationships: []
       }
+      quota_alert_events: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          exceeded_count: number
+          id: string
+          meter_key: string
+          notified_user_ids: string[]
+          rule_id: string | null
+          tenant_id: string
+          threshold_count: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          exceeded_count: number
+          id?: string
+          meter_key: string
+          notified_user_ids?: string[]
+          rule_id?: string | null
+          tenant_id: string
+          threshold_count: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          exceeded_count?: number
+          id?: string
+          meter_key?: string
+          notified_user_ids?: string[]
+          rule_id?: string | null
+          tenant_id?: string
+          threshold_count?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quota_alert_events_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "quota_alert_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quota_alert_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quota_alert_rules: {
+        Row: {
+          cooldown_minutes: number
+          created_at: string
+          enabled: boolean
+          id: string
+          meter_key: string | null
+          tenant_id: string | null
+          threshold_count: number
+          updated_at: string
+          window_minutes: number
+        }
+        Insert: {
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          meter_key?: string | null
+          tenant_id?: string | null
+          threshold_count?: number
+          updated_at?: string
+          window_minutes?: number
+        }
+        Update: {
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          meter_key?: string | null
+          tenant_id?: string | null
+          threshold_count?: number
+          updated_at?: string
+          window_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quota_alert_rules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quota_check_events: {
         Row: {
           actor_id: string | null
@@ -2629,6 +2730,14 @@ export type Database = {
         Returns: Record<string, unknown>[]
       }
       dblink_is_busy: { Args: { "": string }; Returns: number }
+      evaluate_quota_alert: {
+        Args: {
+          _correlation_id: string
+          _meter_key: string
+          _tenant_id: string
+        }
+        Returns: undefined
+      }
       extend_outbox_lease: {
         Args: { _id: string; _seconds: number; _worker: string }
         Returns: boolean
