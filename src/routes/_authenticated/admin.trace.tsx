@@ -153,6 +153,7 @@ type CsvOptions = {
   filenameTz: FilenameTz;
   zip: boolean;
   includeMetadata: boolean;
+  separateMetadata: boolean;
   filenameTemplate: FilenamePart[];
 };
 const DEFAULT_CSV_OPTIONS: CsvOptions = {
@@ -162,6 +163,7 @@ const DEFAULT_CSV_OPTIONS: CsvOptions = {
   filenameTz: "utc",
   zip: false,
   includeMetadata: true,
+  separateMetadata: false,
   filenameTemplate: DEFAULT_FILENAME_TEMPLATE,
 };
 
