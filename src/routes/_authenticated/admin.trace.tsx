@@ -316,27 +316,40 @@ function buildCsvFilename(opts: {
   severities?: readonly Severity[];
   statuses?: readonly Status[];
   kinds?: readonly Kind[];
+  template?: FilenamePart[];
 }): string {
-  const parts: string[] = ["trace", sanitizeFilenamePart(opts.correlationId) || "cid", opts.variant];
-  const kw = opts.keyword?.trim();
-  if (kw) parts.push(`kw_${sanitizeFilenamePart(kw)}`);
   const tz = opts.filenameTz ?? "utc";
-  const from = isoToStamp(opts.fromIso, tz);
-  const to = isoToStamp(opts.toIso, tz);
-  if (from) parts.push(`from_${from}`);
-  if (to) parts.push(`to_${to}`);
-  if (opts.sort) parts.push(`sort_${opts.sort}`);
   const encSet = (vals: readonly string[] | undefined, total: number, prefix: string) => {
     if (!vals || vals.length === 0 || vals.length === total) return null;
     return `${prefix}_${vals.map((v) => sanitizeFilenamePart(v)).join(".")}`;
   };
+  const kw = opts.keyword?.trim();
+  const from = isoToStamp(opts.fromIso, tz);
+  const to = isoToStamp(opts.toIso, tz);
   const sev = encSet(opts.severities, ALL_SEVERITIES.length, "sev");
   const st = encSet(opts.statuses, ALL_STATUSES.length, "st");
   const kd = encSet(opts.kinds, ALL_KINDS.length, "kd");
-  if (sev) parts.push(sev);
-  if (st) parts.push(st);
-  if (kd) parts.push(kd);
-  parts.push(String(Date.now()));
+  const values: Record<FilenamePartKey, string | null> = {
+    prefix: "trace",
+    correlationId: sanitizeFilenamePart(opts.correlationId) || "cid",
+    variant: opts.variant,
+    keyword: kw ? `kw_${sanitizeFilenamePart(kw)}` : null,
+    from: from ? `from_${from}` : null,
+    to: to ? `to_${to}` : null,
+    sort: opts.sort ? `sort_${opts.sort}` : null,
+    severities: sev,
+    statuses: st,
+    kinds: kd,
+    timestamp: String(Date.now()),
+  };
+  const template = normalizeFilenameTemplate(opts.template ?? DEFAULT_FILENAME_TEMPLATE);
+  const parts: string[] = [];
+  for (const p of template) {
+    if (!p.enabled) continue;
+    const v = values[p.key];
+    if (v) parts.push(v);
+  }
+  if (parts.length === 0) parts.push("trace", String(Date.now()));
   return `${parts.join("-")}.csv`;
 }
 
