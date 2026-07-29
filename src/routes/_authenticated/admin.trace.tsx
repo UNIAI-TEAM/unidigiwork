@@ -835,7 +835,7 @@ function TraceResultView({
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
   pending: boolean;
-  onExport: (keyword: string | undefined, csv: CsvOptions) => void;
+  onExport: (keyword: string | undefined, csv: CsvOptions, columns?: Array<{ key: TraceExportKey; label: string }>) => void;
   exporting: boolean;
   keyword: string;
   onKeywordChange: (v: string) => void;
