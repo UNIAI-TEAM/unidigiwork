@@ -650,6 +650,7 @@ export const exportTraceCsv = createServerFn({ method: "GET" })
         kinds: z.array(z.enum(["quota", "audit", "outbox"])).nonempty().optional(),
         fromTs: z.string().datetime().optional(),
         toTs: z.string().datetime().optional(),
+        sort: z.enum(["asc", "desc"]).default("asc"),
       })
       .parse(i),
   )
