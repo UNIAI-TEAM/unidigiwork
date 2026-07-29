@@ -413,12 +413,15 @@ export const exportQuotaCheckEvents = createServerFn({ method: "POST" })
         meterKey: z.string().max(120).optional(),
         status: z.enum(["all", "pass", "fail"]).default("all"),
         maxRows: z.number().int().min(1).max(50000).default(20000),
+        columns: z.array(z.string().max(64)).optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { resolveExportColumns } = await import("./quota-export-processor.server");
+    const header = resolveExportColumns(data.columns ?? null);
     // Normalize inclusive day range
     const fromIso = /T/.test(data.from) ? data.from : `${data.from}T00:00:00.000Z`;
     const toIso = /T/.test(data.to) ? data.to : `${data.to}T23:59:59.999Z`;
@@ -440,18 +443,6 @@ export const exportQuotaCheckEvents = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    const header = [
-      "occurred_at",
-      "tenant_id",
-      "meter_key",
-      "quota_limit",
-      "current_usage",
-      "requested_delta",
-      "allowed",
-      "reason",
-      "actor_id",
-      "correlation_id",
-    ];
     const lines: string[] = [header.join(",")];
     for (const r of rows ?? []) {
       lines.push(header.map((h) => csvEscape((r as Record<string, unknown>)[h])).join(","));
@@ -462,6 +453,7 @@ export const exportQuotaCheckEvents = createServerFn({ method: "POST" })
       truncated: (rows?.length ?? 0) >= data.maxRows,
       from: fromIso,
       to: toIso,
+      columns: header,
     };
   });
 
