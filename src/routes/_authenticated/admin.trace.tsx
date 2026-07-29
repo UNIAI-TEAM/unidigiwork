@@ -504,6 +504,13 @@ function TraceResultView({
               <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
               {exporting ? "Đang export…" : "Export CSV"}
             </button>
+            <AutoRefreshControl
+              value={autoRefreshSec}
+              onChange={onChangeAutoRefresh}
+              onRefreshNow={onRefreshNow}
+              pending={pending}
+              lastRefreshedAt={lastRefreshedAt}
+            />
             <ColumnsMenu columns={columns} onToggle={toggleColumn} onReset={resetColumns} activeCount={activeColumnCount} />
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
