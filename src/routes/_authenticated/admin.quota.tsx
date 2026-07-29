@@ -11,6 +11,7 @@ import {
   deleteQuotaAlertRule,
   listQuotaAlertEvents,
   exportQuotaCheckEvents,
+  exportQuotaCheckEventsXlsx,
   type QuotaAlertRule,
   createQuotaExportJob,
   listQuotaExportJobs,
