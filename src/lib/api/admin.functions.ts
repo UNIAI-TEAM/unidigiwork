@@ -561,6 +561,7 @@ export type QuotaExportJob = {
   from_ts: string;
   to_ts: string;
   max_rows: number;
+  format: "csv" | "xlsx";
   status: "pending" | "running" | "succeeded" | "failed" | "canceled";
   row_count: number | null;
   file_path: string | null;
@@ -580,6 +581,7 @@ const createJobSchema = z.object({
   meterKey: z.string().max(120).optional(),
   status: z.enum(["all", "pass", "fail"]).default("all"),
   maxRows: z.number().int().min(1).max(2_000_000).default(500_000),
+  format: z.enum(["csv", "xlsx"]).default("csv"),
 });
 
 /** Create a background export job. Admin only. Processed by cron or run-now. */
@@ -601,6 +603,7 @@ export const createQuotaExportJob = createServerFn({ method: "POST" })
         from_ts: fromIso,
         to_ts: toIso,
         max_rows: data.maxRows,
+        format: data.format,
       })
       .select("id")
       .single();
@@ -616,7 +619,7 @@ export const listQuotaExportJobs = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("quota_export_jobs")
-      .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, status, row_count, file_path, file_size_bytes, truncated, error, created_at, started_at, completed_at, expires_at")
+      .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format, status, row_count, file_path, file_size_bytes, truncated, error, created_at, started_at, completed_at, expires_at")
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
@@ -675,4 +678,66 @@ export const runPendingQuotaExports = createServerFn({ method: "POST" })
     const { claimAndProcessPending } = await import("./quota-export-processor.server");
     const processed = await claimAndProcessPending(supabaseAdmin as never, 3);
     return { processed };
+  });
+
+// ---------- Foreground XLSX export (small batches) ----------
+
+export const exportQuotaCheckEventsXlsx = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        from: z.string().min(1),
+        to: z.string().min(1),
+        tenantId: z.string().uuid().optional(),
+        meterKey: z.string().max(120).optional(),
+        status: z.enum(["all", "pass", "fail"]).default("all"),
+        maxRows: z.number().int().min(1).max(20000).default(20000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const XLSX = await import("xlsx");
+    const fromIso = /T/.test(data.from) ? data.from : `${data.from}T00:00:00.000Z`;
+    const toIso = /T/.test(data.to) ? data.to : `${data.to}T23:59:59.999Z`;
+    let q = supabaseAdmin
+      .from("quota_check_events")
+      .select(
+        "occurred_at, tenant_id, meter_key, quota_limit, current_usage, requested_delta, allowed, reason, actor_id, correlation_id",
+      )
+      .gte("occurred_at", fromIso)
+      .lte("occurred_at", toIso)
+      .order("occurred_at", { ascending: true })
+      .limit(data.maxRows);
+    if (data.tenantId) q = q.eq("tenant_id", data.tenantId);
+    if (data.meterKey) q = q.eq("meter_key", data.meterKey);
+    if (data.status === "pass") q = q.eq("allowed", true);
+    if (data.status === "fail") q = q.eq("allowed", false);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const header = [
+      "occurred_at",
+      "tenant_id",
+      "meter_key",
+      "quota_limit",
+      "current_usage",
+      "requested_delta",
+      "allowed",
+      "reason",
+      "actor_id",
+      "correlation_id",
+    ];
+    const ws = XLSX.utils.json_to_sheet(rows ?? [], { header });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "quota_check_events");
+    const buf = XLSX.write(wb, { type: "base64", bookType: "xlsx" }) as string;
+    return {
+      base64: buf,
+      count: rows?.length ?? 0,
+      truncated: (rows?.length ?? 0) >= data.maxRows,
+      from: fromIso,
+      to: toIso,
+    };
   });

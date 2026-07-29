@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import * as XLSX from "xlsx";
 
 export type ExportJob = {
   id: string;
@@ -9,6 +10,7 @@ export type ExportJob = {
   from_ts: string;
   to_ts: string;
   max_rows: number;
+  format?: "csv" | "xlsx";
 };
 
 const HEADER = [
@@ -48,7 +50,9 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
 
   try {
     const pageSize = 5000;
-    const lines: string[] = [HEADER.join(",")];
+    const format = job.format ?? "csv";
+    const lines: string[] = format === "csv" ? [HEADER.join(",")] : [];
+    const rows: Record<string, unknown>[] = [];
     let fetched = 0;
     let truncated = false;
 
@@ -74,7 +78,11 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
       if (!data || data.length === 0) break;
 
       for (const r of data) {
-        lines.push(HEADER.map((h) => csvEscape((r as Record<string, unknown>)[h])).join(","));
+        if (format === "csv") {
+          lines.push(HEADER.map((h) => csvEscape((r as Record<string, unknown>)[h])).join(","));
+        } else {
+          rows.push(r as Record<string, unknown>);
+        }
       }
       fetched += data.length;
       if (data.length < take) break;
@@ -90,14 +98,29 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
       }
     }
 
-    const csv = lines.join("\n");
-    const path = `${job.requested_by}/${job.id}.csv`;
+    let body: Blob;
+    let contentType: string;
+    let path: string;
+    let byteSize: number;
+    if (format === "xlsx") {
+      const ws = XLSX.utils.json_to_sheet(rows, { header: HEADER });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "quota_check_events");
+      const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+      contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      body = new Blob([buf], { type: contentType });
+      byteSize = buf.byteLength;
+      path = `${job.requested_by}/${job.id}.xlsx`;
+    } else {
+      const csv = lines.join("\n");
+      contentType = "text/csv;charset=utf-8";
+      body = new Blob([csv], { type: contentType });
+      byteSize = csv.length;
+      path = `${job.requested_by}/${job.id}.csv`;
+    }
     const upload = await admin.storage
       .from("quota-exports")
-      .upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), {
-        upsert: true,
-        contentType: "text/csv;charset=utf-8",
-      });
+      .upload(path, body, { upsert: true, contentType });
     if (upload.error) throw new Error(upload.error.message);
 
     await admin
@@ -106,7 +129,7 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
         status: "succeeded",
         row_count: fetched,
         file_path: path,
-        file_size_bytes: csv.length,
+        file_size_bytes: byteSize,
         truncated,
         completed_at: new Date().toISOString(),
       })
@@ -130,7 +153,7 @@ export async function processQuotaExportJob(admin: SupabaseClient, job: ExportJo
 export async function claimAndProcessPending(admin: SupabaseClient, max = 3) {
   const { data: pending, error } = await admin
     .from("quota_export_jobs")
-    .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows")
+    .select("id, requested_by, tenant_id, meter_key, status_filter, from_ts, to_ts, max_rows, format")
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .limit(max);
