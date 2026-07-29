@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -69,6 +69,19 @@ const COLUMNS_STORAGE_KEY = "uniwork.admin.trace.columns.v1";
 const REFRESH_OPTIONS = [0, 5, 15, 30, 60, 120] as const;
 type RefreshSec = (typeof REFRESH_OPTIONS)[number];
 const REFRESH_STORAGE_KEY = "uniwork.admin.trace.autorefresh.v1";
+const PRESETS_STORAGE_KEY = "uniwork.admin.trace.presets.v1";
+
+type FilterPreset = {
+  id: string;
+  name: string;
+  kinds?: string;
+  from?: string;
+  to?: string;
+  sort?: "asc" | "desc";
+  sev?: string;
+  st?: string;
+  kw?: string;
+};
 
 // datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
 function localToIso(v: string | undefined): string | undefined {
@@ -140,6 +153,23 @@ function AdminTracePage() {
   const [fromInput, setFromInput] = useState<string>(from ?? "");
   const [toInput, setToInput] = useState<string>(to ?? "");
   const [result, setResult] = useState<TraceResult | null>(null);
+  const [keyword, setKeyword] = useState<string>("");
+  const [presets, setPresets] = useState<FilterPreset[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(PRESETS_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as FilterPreset[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
+    } catch { /* noop */ }
+  }, [presets]);
   const currentPage = page ?? 1;
   const currentLimit = limit ?? 500;
   const activeKinds: Kind[] = kinds ?? [...ALL_KINDS];
@@ -320,6 +350,54 @@ function AdminTracePage() {
     navigate({ search: (prev: SearchState) => ({ ...prev, sort: next, page: 1 }) });
   };
 
+  const savePreset = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error("Nhập tên preset");
+      return;
+    }
+    const encodedKinds = activeKinds.length === ALL_KINDS.length ? undefined : activeKinds.join(",");
+    const encodedSev = activeSeverities.length === ALL_SEVERITIES.length ? undefined : activeSeverities.join(",");
+    const encodedSt = activeStatuses.length === ALL_STATUSES.length ? undefined : activeStatuses.join(",");
+    const preset: FilterPreset = {
+      id: (typeof crypto !== "undefined" && "randomUUID" in crypto) ? crypto.randomUUID() : String(Date.now()),
+      name: trimmed,
+      kinds: encodedKinds,
+      from,
+      to,
+      sort: currentSort,
+      sev: encodedSev,
+      st: encodedSt,
+      kw: keyword.trim() || undefined,
+    };
+    setPresets((prev) => {
+      const withoutDup = prev.filter((p) => p.name !== trimmed);
+      return [preset, ...withoutDup].slice(0, 20);
+    });
+    toast.success(`Đã lưu preset "${trimmed}"`);
+  };
+  const applyPreset = (p: FilterPreset) => {
+    setFromInput(p.from ?? "");
+    setToInput(p.to ?? "");
+    setKeyword(p.kw ?? "");
+    navigate({
+      search: (prev: SearchState) => ({
+        ...prev,
+        kinds: p.kinds,
+        from: p.from,
+        to: p.to,
+        sort: p.sort ?? "asc",
+        sev: p.sev,
+        st: p.st,
+        page: 1,
+      }),
+    });
+    toast.success(`Đã áp dụng preset "${p.name}"`);
+  };
+  const deletePreset = (id: string) => {
+    setPresets((prev) => prev.filter((p) => p.id !== id));
+  };
+
   const [autoRefreshSec, setAutoRefreshSec] = useState<RefreshSec>(() => {
     if (typeof window === "undefined") return 0;
     const raw = Number(window.localStorage.getItem(REFRESH_STORAGE_KEY));
@@ -447,6 +525,13 @@ function AdminTracePage() {
               {opt.label}
             </button>
           ))}
+          <span className="mx-1 text-border">|</span>
+          <PresetsMenu
+            presets={presets}
+            onSave={savePreset}
+            onApply={applyPreset}
+            onDelete={deletePreset}
+          />
         </div>
       </section>
 
@@ -456,8 +541,10 @@ function AdminTracePage() {
           onPage={goToPage}
           onLimit={changeLimit}
           pending={traceMut.isPending}
-          onExport={(keyword) => exportMut.mutate({ correlationId: result.correlationId, keyword })}
+          onExport={(kw) => exportMut.mutate({ correlationId: result.correlationId, keyword: kw })}
           exporting={exportMut.isPending}
+          keyword={keyword}
+          onKeywordChange={setKeyword}
           activeKinds={activeKinds}
           onToggleKind={toggleKind}
           onResetKinds={resetKinds}
@@ -494,6 +581,8 @@ function TraceResultView({
   pending,
   onExport,
   exporting,
+  keyword,
+  onKeywordChange,
   activeKinds,
   onToggleKind,
   onResetKinds,
@@ -516,6 +605,8 @@ function TraceResultView({
   pending: boolean;
   onExport: (keyword?: string) => void;
   exporting: boolean;
+  keyword: string;
+  onKeywordChange: (v: string) => void;
   activeKinds: Kind[];
   onToggleKind: (k: Kind) => void;
   onResetKinds: () => void;
@@ -533,7 +624,7 @@ function TraceResultView({
   lastRefreshedAt: number | null;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
-  const [keyword, setKeyword] = useState("");
+  const setKeyword = onKeywordChange;
   const [columns, setColumns] = useState<ColumnPrefs>(() => {
     if (typeof window === "undefined") return DEFAULT_COLUMNS;
     try {
@@ -1280,6 +1371,110 @@ function CountCard({
       </div>
       <div className={`mt-1 text-xl font-semibold tabular-nums ${tint}`}>{value.toLocaleString("vi-VN")}</div>
       {hint && <div className="mt-0.5 text-[10px] text-muted-foreground">{hint}</div>}
+    </div>
+  );
+}
+function PresetsMenu({
+  presets,
+  onSave,
+  onApply,
+  onDelete,
+}: {
+  presets: FilterPreset[];
+  onSave: (name: string) => void;
+  onApply: (p: FilterPreset) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-presets-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const handleSave = () => {
+    onSave(name);
+    setName("");
+  };
+  return (
+    <div className="relative" data-presets-menu>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/60 hover:text-foreground"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Lưu và tải nhanh preset bộ lọc"
+      >
+        <Bookmark className="h-3 w-3" />
+        Preset ({presets.length})
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-lg border border-border bg-surface p-2 shadow-lg">
+          <div className="px-1 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            Lưu bộ lọc hiện tại
+          </div>
+          <div className="flex items-center gap-1 px-1 pb-2">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+              placeholder="Tên preset…"
+              maxLength={60}
+              className="flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs outline-none focus:border-primary/60"
+            />
+            <button
+              onClick={handleSave}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Lưu
+            </button>
+          </div>
+          <div className="mb-1 border-t border-border px-1 pt-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+            Đã lưu
+          </div>
+          {presets.length === 0 ? (
+            <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              Chưa có preset. Đặt bộ lọc mong muốn rồi bấm Lưu.
+            </div>
+          ) : (
+            <ul className="flex max-h-64 flex-col overflow-y-auto">
+              {presets.map((p) => {
+                const bits: string[] = [];
+                if (p.kinds) bits.push(p.kinds);
+                if (p.sev) bits.push(`sev:${p.sev}`);
+                if (p.st) bits.push(`st:${p.st}`);
+                if (p.from || p.to) bits.push(`${p.from ?? "…"}→${p.to ?? "…"}`);
+                if (p.sort) bits.push(p.sort);
+                if (p.kw) bits.push(`"${p.kw}"`);
+                return (
+                  <li key={p.id} className="group flex items-center gap-1 rounded px-1 py-1 hover:bg-surface-2">
+                    <button
+                      onClick={() => { onApply(p); setOpen(false); }}
+                      className="flex flex-1 flex-col items-start text-left"
+                    >
+                      <span className="text-xs font-medium text-foreground">{p.name}</span>
+                      {bits.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground line-clamp-1">{bits.join(" · ")}</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => onDelete(p.id)}
+                      aria-label={`Xóa preset ${p.name}`}
+                      className="rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
