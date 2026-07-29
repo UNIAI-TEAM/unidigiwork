@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
 import { traceByCorrelationId, exportTraceCsv } from "@/lib/api/admin.functions";
@@ -403,6 +404,7 @@ function TraceResultView({
           onPage={onPage}
           onLimit={onLimit}
         />
+        <FrequencyChart items={filteredTimeline} />
         <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-2/20 px-4 py-2">
           <div className="relative min-w-[220px] flex-1">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
@@ -455,6 +457,83 @@ function TraceResultView({
         )}
       </section>
     </>
+  );
+}
+
+function FrequencyChart({ items }: { items: TimelineItem[] }) {
+  const { data, bucketLabel } = useMemo(() => {
+    if (items.length === 0) return { data: [] as Array<{ t: string; quota: number; audit: number; outbox: number }>, bucketLabel: "phút" };
+    const times = items.map((i) => new Date(i.at).getTime());
+    const min = Math.min(...times);
+    const max = Math.max(...times);
+    const spanMs = Math.max(max - min, 1);
+    // Choose bucket: <=2h -> minute, <=2d -> hour, else day
+    const MIN = 60_000, HOUR = 3_600_000, DAY = 86_400_000;
+    const bucketMs = spanMs <= 2 * HOUR ? MIN : spanMs <= 2 * DAY ? HOUR : DAY;
+    const label = bucketMs === MIN ? "phút" : bucketMs === HOUR ? "giờ" : "ngày";
+    const map = new Map<number, { quota: number; audit: number; outbox: number }>();
+    for (const it of items) {
+      const ts = new Date(it.at).getTime();
+      const bucket = Math.floor(ts / bucketMs) * bucketMs;
+      const cur = map.get(bucket) ?? { quota: 0, audit: 0, outbox: 0 };
+      if (it.kind === "quota_check") cur.quota += 1;
+      else if (it.kind === "audit") cur.audit += 1;
+      else cur.outbox += 1;
+      map.set(bucket, cur);
+    }
+    // Fill gaps
+    const firstBucket = Math.floor(min / bucketMs) * bucketMs;
+    const lastBucket = Math.floor(max / bucketMs) * bucketMs;
+    const rows: Array<{ t: string; ts: number; quota: number; audit: number; outbox: number }> = [];
+    const maxBuckets = 200;
+    const step = Math.max(bucketMs, Math.ceil((lastBucket - firstBucket) / maxBuckets / bucketMs) * bucketMs);
+    for (let b = firstBucket; b <= lastBucket; b += step) {
+      const agg = { quota: 0, audit: 0, outbox: 0 };
+      for (let sb = b; sb < b + step; sb += bucketMs) {
+        const v = map.get(sb);
+        if (v) { agg.quota += v.quota; agg.audit += v.audit; agg.outbox += v.outbox; }
+      }
+      const d = new Date(b);
+      const t = bucketMs === DAY
+        ? d.toLocaleDateString("vi-VN")
+        : d.toLocaleTimeString("vi-VN", { hour12: false, hour: "2-digit", minute: "2-digit" });
+      rows.push({ t, ts: b, ...agg });
+    }
+    return { data: rows, bucketLabel: label };
+  }, [items]);
+
+  if (data.length === 0) return null;
+
+  return (
+    <div className="border-b border-border bg-surface-2/10 px-4 py-3">
+      <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>Tần suất events theo {bucketLabel} · {data.length} cột</span>
+        <span className="tabular-nums">{items.length.toLocaleString("vi-VN")} events</span>
+      </div>
+      <div className="h-40 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis dataKey="t" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd" minTickGap={24} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={32} />
+            <Tooltip
+              cursor={{ fill: "hsl(var(--muted) / 0.3)" }}
+              contentStyle={{
+                background: "hsl(var(--surface))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: 8,
+                fontSize: 11,
+              }}
+              labelStyle={{ color: "hsl(var(--foreground))" }}
+            />
+            <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
+            <Bar dataKey="quota" name="Quota" stackId="a" fill="hsl(142 71% 45%)" />
+            <Bar dataKey="audit" name="Audit" stackId="a" fill="hsl(199 89% 55%)" />
+            <Bar dataKey="outbox" name="Outbox" stackId="a" fill="hsl(38 92% 55%)" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
 
