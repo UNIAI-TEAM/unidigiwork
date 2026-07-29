@@ -1685,6 +1685,26 @@ function TraceResultView({
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
         </div>
+        <div className="flex flex-col gap-1 border-b border-border bg-surface-2/30 px-4 py-2">
+          <ExportSizeHint
+            label="CSV · tất cả kết quả"
+            rows={totals.total}
+            cols={activeExportCols.length}
+            zip={csvOpts.zip}
+            includeMetadata={csvOpts.includeMetadata}
+            onEnableZip={() => onChangeCsvOpts({ ...csvOpts, zip: true })}
+            disabled={totals.total === 0 || activeExportCols.length === 0}
+          />
+          <ExportSizeHint
+            label="CSV · cột hiện tại"
+            rows={filteredTimeline.length}
+            cols={activeColumnCount}
+            zip={csvOpts.zip}
+            includeMetadata={csvOpts.includeMetadata}
+            onEnableZip={() => onChangeCsvOpts({ ...csvOpts, zip: true })}
+            disabled={filteredTimeline.length === 0 || activeColumnCount === 0}
+          />
+        </div>
         <ExportProgressBar progress={exportProgress} />
         <PaginationBar
           page={page}
