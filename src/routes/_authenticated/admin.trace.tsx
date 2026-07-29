@@ -743,6 +743,7 @@ function AdminTracePage() {
       sev: encodedSev,
       st: encodedSt,
       kw: keyword.trim() || undefined,
+      tz: csvOpts.filenameTz,
     };
     setPresets((prev) => {
       const withoutDup = prev.filter((p) => p.name !== trimmed);
