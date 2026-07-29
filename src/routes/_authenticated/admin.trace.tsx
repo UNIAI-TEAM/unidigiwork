@@ -953,6 +953,8 @@ function AdminTracePage() {
           lastRefreshedAt={lastRefreshedAt}
           fromIso={fromIso}
           toIso={toIso}
+          csvOpts={csvOpts}
+          onChangeCsvOpts={setCsvOpts}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -1039,6 +1041,8 @@ function TraceResultView({
   lastRefreshedAt,
   fromIso,
   toIso,
+  csvOpts,
+  onChangeCsvOpts,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -1065,6 +1069,8 @@ function TraceResultView({
   lastRefreshedAt: number | null;
   fromIso?: string;
   toIso?: string;
+  csvOpts: CsvOptions;
+  onChangeCsvOpts: (v: CsvOptions) => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
