@@ -774,6 +774,8 @@ function TraceResultView({
   onChangeAutoRefresh,
   onRefreshNow,
   lastRefreshedAt,
+  fromIso,
+  toIso,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -798,6 +800,8 @@ function TraceResultView({
   onChangeAutoRefresh: (v: RefreshSec) => void;
   onRefreshNow: () => void;
   lastRefreshedAt: number | null;
+  fromIso?: string;
+  toIso?: string;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
