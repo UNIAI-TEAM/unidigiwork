@@ -266,7 +266,7 @@ function AdminTracePage() {
   });
 
   const exportMut = useMutation({
-    mutationFn: (args: { correlationId: string; keyword?: string }) =>
+    mutationFn: (args: { correlationId: string; keyword?: string; csv: CsvOptions }) =>
       exportTraceCsv({
         data: {
           correlationId: args.correlationId,
@@ -287,10 +287,13 @@ function AdminTracePage() {
             activeStatuses.length === ALL_STATUSES.length
               ? undefined
               : (activeStatuses as [Status, ...Status[]]),
+          delimiter: args.csv.delimiter,
+          quoteChar: args.csv.quoteChar,
         },
       }),
-    onSuccess: (data) => {
-      const blob = new Blob(["\ufeff" + data.csv], { type: "text/csv;charset=utf-8;" });
+    onSuccess: (data, vars) => {
+      const prefix = vars.csv.bom ? "\ufeff" : "";
+      const blob = new Blob([prefix + data.csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
