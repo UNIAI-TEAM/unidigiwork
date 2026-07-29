@@ -880,7 +880,13 @@ function TraceResultView({
         ) : (
           <ol className="divide-y divide-border">
             {filteredTimeline.map((item, idx) => (
-              <TimelineRow key={`${item.kind}-${idx}`} item={item} columns={columns} />
+              <TimelineRow
+                key={`${item.kind}-${idx}`}
+                item={item}
+                columns={columns}
+                onSelect={() => setSelected(item)}
+                selected={selected === item}
+              />
             ))}
           </ol>
         )}
@@ -898,6 +904,7 @@ function TraceResultView({
           />
         )}
       </section>
+      <EventDetailPanel item={selected} onClose={() => setSelected(null)} />
     </>
   );
 }
