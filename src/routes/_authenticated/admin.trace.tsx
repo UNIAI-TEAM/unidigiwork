@@ -429,6 +429,7 @@ type FilterPreset = {
   sev?: string;
   st?: string;
   kw?: string;
+  tz?: FilenameTz;
 };
 
 // datetime-local value (YYYY-MM-DDTHH:mm) -> ISO string in UTC
