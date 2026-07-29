@@ -233,6 +233,23 @@ async function downloadCsvOrZip(csvText: string, csvFilename: string, opts: CsvO
 }
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
+type ExportPhase = "idle" | "fetching" | "compressing" | "saving" | "done" | "error";
+type ExportProgress = {
+  active: boolean;
+  variant: "all" | "columns";
+  phase: ExportPhase;
+  label: string;
+  percent: number;
+  rows?: number;
+};
+const IDLE_EXPORT_PROGRESS: ExportProgress = {
+  active: false,
+  variant: "all",
+  phase: "idle",
+  label: "",
+  percent: 0,
+};
+
 const TRACE_EXPORT_COLUMN_DEFS = [
   { key: "occurred_at",     label: "Thời gian" },
   { key: "kind",            label: "Loại" },
@@ -519,6 +536,7 @@ function AdminTracePage() {
   useEffect(() => {
     try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
   }, [csvOpts]);
+  const [exportProgress, setExportProgress] = useState<ExportProgress>(IDLE_EXPORT_PROGRESS);
   const [presets, setPresets] = useState<FilterPreset[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -622,16 +640,52 @@ function AdminTracePage() {
         },
         vars.csv,
       );
-      void downloadCsvOrZip(data.csv, csvFilename, vars.csv, metaLine).catch((e: unknown) => {
-        toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`);
+      setExportProgress({
+        active: true,
+        variant: "all",
+        phase: vars.csv.zip ? "compressing" : "saving",
+        label: vars.csv.zip ? "Đang nén .zip…" : "Đang tạo file…",
+        percent: 75,
+        rows: data.rowCount,
       });
+      void downloadCsvOrZip(data.csv, csvFilename, vars.csv, metaLine)
+        .then(() => {
+          setExportProgress({
+            active: true,
+            variant: "all",
+            phase: "done",
+            label: `Đã tải xuống ${data.rowCount.toLocaleString("vi-VN")} dòng`,
+            percent: 100,
+            rows: data.rowCount,
+          });
+          window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 1500);
+        })
+        .catch((e: unknown) => {
+          const msg = (e as Error)?.message ?? "unknown";
+          setExportProgress({ active: true, variant: "all", phase: "error", label: `Lỗi tạo file: ${msg}`, percent: 100 });
+          window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);
+          toast.error(`Không tạo được file: ${msg}`);
+        });
       if (data.truncated) {
         toast.warning(`Đã export ${data.rowCount.toLocaleString("vi-VN")} / ${data.totalRows.toLocaleString("vi-VN")} dòng (đã cắt).`);
       } else {
         toast.success(`Đã export ${data.rowCount.toLocaleString("vi-VN")} dòng.`);
       }
     },
-    onError: (e: Error) => toast.error(e.message ?? "Không export được"),
+    onMutate: (vars) => {
+      setExportProgress({
+        active: true,
+        variant: "all",
+        phase: "fetching",
+        label: "Đang truy vấn dữ liệu từ máy chủ…",
+        percent: 35,
+      });
+    },
+    onError: (e: Error) => {
+      setExportProgress({ active: true, variant: "all", phase: "error", label: e.message ?? "Không export được", percent: 100 });
+      window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);
+      toast.error(e.message ?? "Không export được");
+    },
   });
 
   // Auto-run when arriving with ?cid= (or page/limit/sort change)
@@ -956,6 +1010,8 @@ function AdminTracePage() {
           toIso={toIso}
           csvOpts={csvOpts}
           onChangeCsvOpts={setCsvOpts}
+          exportProgress={exportProgress}
+          setExportProgress={setExportProgress}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -1016,6 +1072,44 @@ function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClos
   );
 }
 
+function ExportProgressBar({ progress }: { progress: ExportProgress }) {
+  if (!progress.active) return null;
+  const variantLabel = progress.variant === "all" ? "CSV · tất cả kết quả" : "CSV · cột hiện tại";
+  const isError = progress.phase === "error";
+  const isDone = progress.phase === "done";
+  const barTone = isError
+    ? "bg-destructive"
+    : isDone
+    ? "bg-emerald-500"
+    : "bg-primary";
+  const indeterminate = !isDone && !isError && progress.percent < 100;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex flex-col gap-1.5 border-b border-border bg-surface-2/40 px-4 py-2"
+    >
+      <div className="flex items-center justify-between gap-2 text-[11px] tabular-nums">
+        <div className="flex items-center gap-2 text-foreground">
+          <Download className={`h-3 w-3 ${indeterminate ? "animate-pulse" : ""}`} />
+          <span className="font-medium">{variantLabel}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className={isError ? "text-destructive" : "text-muted-foreground"}>{progress.label}</span>
+        </div>
+        <span className="text-muted-foreground">
+          {isError ? "Lỗi" : isDone ? "Hoàn tất" : `${Math.round(progress.percent)}%`}
+        </span>
+      </div>
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+        <div
+          className={`h-full ${barTone} transition-[width] duration-300 ease-out`}
+          style={{ width: `${Math.max(4, Math.min(100, progress.percent))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function TraceResultView({
   result,
   onPage,
@@ -1044,6 +1138,8 @@ function TraceResultView({
   toIso,
   csvOpts,
   onChangeCsvOpts,
+  exportProgress,
+  setExportProgress,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -1072,6 +1168,8 @@ function TraceResultView({
   toIso?: string;
   csvOpts: CsvOptions;
   onChangeCsvOpts: (v: CsvOptions) => void;
+  exportProgress: ExportProgress;
+  setExportProgress: (v: ExportProgress) => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
@@ -1381,7 +1479,7 @@ function TraceResultView({
             </button>
             <button
               onClick={() => onExport(keyword, csvOpts, activeExportCols)}
-              disabled={exporting || totals.total === 0 || activeExportCols.length === 0}
+              disabled={exporting || exportProgress.active || totals.total === 0 || activeExportCols.length === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
               title={
                 activeExportCols.length === 0
@@ -1391,8 +1489,10 @@ function TraceResultView({
                   : `Export ${activeExportCols.length} cột`
               }
             >
-              <Download className={`h-3 w-3 ${exporting ? "animate-pulse" : ""}`} />
-              {exporting ? "Đang export…" : `CSV (tất cả kết quả) · ${activeExportCols.length}/${exportCols.length} cột`}
+              <Download className={`h-3 w-3 ${exporting || exportProgress.active ? "animate-pulse" : ""}`} />
+              {exporting || (exportProgress.active && exportProgress.variant === "all")
+                ? exportProgress.label || "Đang export…"
+                : `CSV (tất cả kết quả) · ${activeExportCols.length}/${exportCols.length} cột`}
             </button>
             <TraceExportColumnsMenu
               cols={exportCols}
@@ -1434,11 +1534,33 @@ function TraceResultView({
                   },
                   csvOpts,
                 );
+                const rows = filteredTimeline.length;
+                setExportProgress({
+                  active: true,
+                  variant: "columns",
+                  phase: csvOpts.zip ? "compressing" : "saving",
+                  label: csvOpts.zip ? "Đang nén .zip…" : "Đang tạo file…",
+                  percent: 70,
+                  rows,
+                });
                 void downloadCsvOrZip(csv, csvFilename, csvOpts, metaLine)
-                  .then(() => toast.success(`Đã export ${filteredTimeline.length.toLocaleString("vi-VN")} dòng theo cột hiện tại.`))
-                  .catch((e: unknown) => toast.error(`Không tạo được file: ${(e as Error)?.message ?? "unknown"}`));
+                  .then(() => {
+                    setExportProgress({
+                      active: true, variant: "columns", phase: "done",
+                      label: `Đã tải xuống ${rows.toLocaleString("vi-VN")} dòng`,
+                      percent: 100, rows,
+                    });
+                    window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 1500);
+                    toast.success(`Đã export ${rows.toLocaleString("vi-VN")} dòng theo cột hiện tại.`);
+                  })
+                  .catch((e: unknown) => {
+                    const msg = (e as Error)?.message ?? "unknown";
+                    setExportProgress({ active: true, variant: "columns", phase: "error", label: `Lỗi tạo file: ${msg}`, percent: 100 });
+                    window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);
+                    toast.error(`Không tạo được file: ${msg}`);
+                  });
               }}
-              disabled={filteredTimeline.length === 0 || activeColumnCount === 0}
+              disabled={filteredTimeline.length === 0 || activeColumnCount === 0 || exportProgress.active}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
               title="Export CSV chỉ gồm các cột đang bật trong timeline (đúng thứ tự và tiêu đề)"
             >
@@ -1481,6 +1603,7 @@ function TraceResultView({
             <h2 className="text-sm font-semibold">Timeline</h2>
           </div>
         </div>
+        <ExportProgressBar progress={exportProgress} />
         <PaginationBar
           page={page}
           pageCount={pageCount}
