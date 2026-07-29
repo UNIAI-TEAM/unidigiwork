@@ -1072,6 +1072,44 @@ function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClos
   );
 }
 
+function ExportProgressBar({ progress }: { progress: ExportProgress }) {
+  if (!progress.active) return null;
+  const variantLabel = progress.variant === "all" ? "CSV · tất cả kết quả" : "CSV · cột hiện tại";
+  const isError = progress.phase === "error";
+  const isDone = progress.phase === "done";
+  const barTone = isError
+    ? "bg-destructive"
+    : isDone
+    ? "bg-emerald-500"
+    : "bg-primary";
+  const indeterminate = !isDone && !isError && progress.percent < 100;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex flex-col gap-1.5 border-b border-border bg-surface-2/40 px-4 py-2"
+    >
+      <div className="flex items-center justify-between gap-2 text-[11px] tabular-nums">
+        <div className="flex items-center gap-2 text-foreground">
+          <Download className={`h-3 w-3 ${indeterminate ? "animate-pulse" : ""}`} />
+          <span className="font-medium">{variantLabel}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className={isError ? "text-destructive" : "text-muted-foreground"}>{progress.label}</span>
+        </div>
+        <span className="text-muted-foreground">
+          {isError ? "Lỗi" : isDone ? "Hoàn tất" : `${Math.round(progress.percent)}%`}
+        </span>
+      </div>
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+        <div
+          className={`h-full ${barTone} transition-[width] duration-300 ease-out`}
+          style={{ width: `${Math.max(4, Math.min(100, progress.percent))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function TraceResultView({
   result,
   onPage,
