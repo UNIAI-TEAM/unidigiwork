@@ -592,6 +592,105 @@ function resolveMetadataLine(
 
 /** Badge hiển thị kết quả xác thực parse dòng metadata theo delimiter/quote đang chọn. */
 function MetadataValidationBadge({ line, csv }: { line: string; csv: CsvOptions }) {
+  return <MetadataValidationBadgeInner line={line} csv={csv} />;
+}
+
+type ExcelField = { index: number; start: number; quoted: boolean; value: string; note?: string };
+
+/**
+ * Parse 1 dòng theo cách Excel diễn giải CSV (lenient):
+ * - Field chỉ được coi là "quoted" khi bắt đầu bằng ký tự bao chuỗi.
+ * - Trong field quoted, 2 ký tự bao chuỗi liên tiếp = 1 ký tự literal.
+ * - Ký tự bao chuỗi ở giữa field không quoted được giữ nguyên (không lỗi).
+ * - Quote chưa đóng: Excel lấy hết phần còn lại của dòng.
+ */
+function parseCsvLineExcel(line: string, delim: string, quote: string): ExcelField[] {
+  const out: ExcelField[] = [];
+  let i = 0;
+  let idx = 0;
+  while (i <= line.length) {
+    const start = i;
+    let value = "";
+    let note: string | undefined;
+    let quoted = false;
+    if (line[i] === quote) {
+      quoted = true;
+      i++;
+      let closed = false;
+      while (i < line.length) {
+        if (line[i] === quote) {
+          if (line[i + 1] === quote) { value += quote; i += 2; continue; }
+          i++; closed = true; break;
+        }
+        value += line[i]; i++;
+      }
+      if (!closed) note = "Quote chưa đóng — Excel lấy hết phần còn lại của dòng";
+      // phần thừa sau dấu đóng, trước delimiter
+      let tail = "";
+      while (i < line.length && line[i] !== delim) { tail += line[i]; i++; }
+      if (tail) { value += tail; note = note ?? `Có ký tự thừa sau dấu đóng: "${tail}"`; }
+    } else {
+      while (i < line.length && line[i] !== delim) { value += line[i]; i++; }
+      if (value.includes(quote)) note = "Có ký tự bao chuỗi trong field không quoted (Excel giữ nguyên)";
+    }
+    out.push({ index: idx++, start: start + 1, quoted, value, note });
+    if (i >= line.length) break;
+    i++; // bỏ delimiter
+    if (i === line.length) { out.push({ index: idx++, start: i + 1, quoted: false, value: "" }); break; }
+  }
+  return out;
+}
+
+function ExcelParseCheck({ line, csv }: { line: string; csv: CsvOptions }) {
+  const [result, setResult] = useState<ExcelField[] | null>(null);
+  const problems = result?.filter((f) => f.note) ?? [];
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => {
+          const r = parseCsvLineExcel(line, csv.delimiter, csv.quoteChar);
+          setResult(r);
+          const bad = r.filter((f) => f.note).length;
+          if (bad === 0) toast.success(`Excel parse OK — ${r.length} cột`, { duration: 2500 });
+          else toast.warning(`Excel parse: ${r.length} cột, ${bad} cảnh báo`, { duration: 4000 });
+        }}
+        className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        title="Parse dòng metadata theo cách Excel diễn giải, dùng delimiter/quote đang chọn"
+      >
+        <CheckCircle2 className="h-3 w-3" />
+        Kiểm tra kiểu Excel
+      </button>
+      {result && (
+        <div className="mt-1 rounded border border-border bg-surface-2 p-1.5">
+          <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>
+              Excel đọc thành <span className="text-foreground">{result.length}</span> cột
+              {problems.length > 0 ? ` · ${problems.length} cảnh báo` : " · không cảnh báo"}
+            </span>
+            <button type="button" onClick={() => setResult(null)} className="rounded p-0.5 hover:text-foreground">
+              <XCircle className="h-3 w-3" />
+            </button>
+          </div>
+          <ul className="max-h-40 space-y-0.5 overflow-auto font-mono text-[11px]">
+            {result.map((f) => (
+              <li key={f.index} className="leading-snug">
+                <span className="text-muted-foreground">
+                  #{f.index + 1} · vị trí {f.start} · {f.quoted ? "quoted" : "plain"}
+                </span>
+                {": "}
+                <span className="text-foreground">{f.value || "(rỗng)"}</span>
+                {f.note && <div className="text-amber-400">⚠ {f.note}</div>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MetadataValidationBadgeInner({ line, csv }: { line: string; csv: CsvOptions }) {
   const v = validateMetadataLine(line, csv);
   if (!v.ok && csv.autoFixMetadata) {
     const r = resolveMetadataLine(line, csv);
@@ -2978,6 +3077,7 @@ function CsvOptionsMenu({
                           {metaAll}
                         </code>
                         <MetadataValidationBadge line={metaAll} csv={value} />
+                        <ExcelParseCheck line={metaAll} csv={value} />
                       </div>
                     )}
                     {metaCols && (
@@ -3006,6 +3106,7 @@ function CsvOptionsMenu({
                           {metaCols}
                         </code>
                         <MetadataValidationBadge line={metaCols} csv={value} />
+                        <ExcelParseCheck line={metaCols} csv={value} />
                       </div>
                     )}
                     <p className="text-[11px] text-muted-foreground">
