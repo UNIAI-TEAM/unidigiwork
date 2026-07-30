@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
@@ -689,12 +689,22 @@ function normalizeErrorSignature(message: string) {
     .trim();
 }
 
-function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
+function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
   const [query, setQuery] = useState("");
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">("all");
   const [delimFilter, setDelimFilter] = useState<string>("all");
   const [quoteFilter, setQuoteFilter] = useState<string>("all");
+  const lastFailAtRef = useRef<string | null>(null);
+
+  const lastFail = useMemo(() => [...entries].reverse().find((e) => !e.ok) ?? null, [entries]);
+  useEffect(() => {
+    if (!lastFail) return;
+    if (lastFail.at === lastFailAtRef.current) return;
+    lastFailAtRef.current = lastFail.at;
+    onFailDetected?.();
+  }, [lastFail, onFailDetected]);
+
 
   const delimiters = useMemo(
     () => Array.from(new Set(entries.map((e) => (e.delimiter === "\t" ? "\\t" : e.delimiter)))),
@@ -3497,7 +3507,7 @@ function CsvOptionsMenu({
                     <p className="text-[11px] text-muted-foreground">
                       Dòng này sẽ được ghi ở đầu CSV (hoặc trong <code>.meta.txt</code> nếu bật tách metadata trong ZIP). <code>rows</code> được thêm khi export.
                     </p>
-                    <MetadataCheckLogPanel csv={value} />
+                    <MetadataCheckLogPanel csv={value} onFailDetected={() => setOpen(true)} />
                   </div>
                 )}
               </div>
