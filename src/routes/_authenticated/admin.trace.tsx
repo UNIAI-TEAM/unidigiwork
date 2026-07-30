@@ -725,7 +725,7 @@ function parseCsvLineExcel(line: string, delim: string, quote: string): ExcelFie
   return out;
 }
 
-function ExcelParseCheck({ line, csv }: { line: string; csv: CsvOptions }) {
+function ExcelParseCheck({ line, csv, variant = "metadata" }: { line: string; csv: CsvOptions; variant?: string }) {
   const [result, setResult] = useState<ExcelField[] | null>(null);
   const problems = result?.filter((f) => f.note) ?? [];
   return (
@@ -736,6 +736,10 @@ function ExcelParseCheck({ line, csv }: { line: string; csv: CsvOptions }) {
           const r = parseCsvLineExcel(line, csv.delimiter, csv.quoteChar);
           setResult(r);
           const bad = r.filter((f) => f.note).length;
+          const at = new Date().toISOString();
+          const strict = validateMetadataLine(line, csv);
+          recordMetadataCheck({ at, variant, mode: "strict", ok: strict.ok, fieldCount: strict.fieldCount, delimiter: csv.delimiter, quoteChar: csv.quoteChar, message: strict.message, line });
+          recordMetadataCheck({ at, variant, mode: "excel", ok: bad === 0, fieldCount: r.length, delimiter: csv.delimiter, quoteChar: csv.quoteChar, message: bad === 0 ? `Excel parse OK — ${r.length} cột` : `${bad} cảnh báo: ${r.filter((f) => f.note).map((f) => `#${f.index + 1} ${f.note}`).join("; ")}`, line });
           if (bad === 0) toast.success(`Excel parse OK — ${r.length} cột`, { duration: 2500 });
           else toast.warning(`Excel parse: ${r.length} cột, ${bad} cảnh báo`, { duration: 4000 });
         }}
