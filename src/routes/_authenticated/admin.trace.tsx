@@ -3507,7 +3507,7 @@ function CsvOptionsMenu({
                     <p className="text-[11px] text-muted-foreground">
                       Dòng này sẽ được ghi ở đầu CSV (hoặc trong <code>.meta.txt</code> nếu bật tách metadata trong ZIP). <code>rows</code> được thêm khi export.
                     </p>
-                    <MetadataCheckLogPanel csv={value} />
+                    <MetadataCheckLogPanel csv={value} onFailDetected={() => setOpen(true)} />
                   </div>
                 )}
               </div>
