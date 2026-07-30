@@ -1187,28 +1187,42 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
         ) : (
           <ul className="divide-y divide-border">
             {pageItems.map((e, i) => (
-              <li key={i}>
+              <li key={i} className="group flex items-start gap-2 px-2 py-1.5 hover:bg-surface-2">
                 <button
                   type="button"
                   onClick={() => setDetail(e)}
                   title="Xem đầy đủ nội dung log"
-                  className="flex w-full items-start gap-2 px-2 py-1.5 text-left hover:bg-surface-2"
+                  className="flex flex-1 items-start gap-2 text-left"
                 >
-                <span
-                  className={
-                    "mt-0.5 inline-flex h-4 min-w-8 items-center justify-center rounded border px-1 text-[10px] font-medium " +
-                    (e.ok ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400")
-                  }
-                >
-                  {e.ok ? "PASS" : "FAIL"}
-                </span>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-foreground">
-                    {e.at} · {e.variant} · {e.mode} · {e.fieldCount} trường
+                  <span
+                    className={
+                      "mt-0.5 inline-flex h-4 min-w-8 items-center justify-center rounded border px-1 text-[10px] font-medium " +
+                      (e.ok ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400")
+                    }
+                  >
+                    {e.ok ? "PASS" : "FAIL"}
                   </span>
-                  <span className="line-clamp-1">{e.message}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground line-clamp-1">{e.line}</span>
-                </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-foreground">
+                      {e.at} · {e.variant} · {e.mode} · {e.fieldCount} trường
+                    </span>
+                    <span className="line-clamp-1">{e.message}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground line-clamp-1">{e.line}</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  title="Sao chép stack trace"
+                  onClick={(evt) => {
+                    evt.stopPropagation();
+                    navigator.clipboard
+                      .writeText(e.message)
+                      .then(() => toast.success("Đã sao chép stack trace"))
+                      .catch(() => toast.error("Không sao chép được"));
+                  }}
+                  className="mt-0.5 shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-surface-2 hover:text-foreground group-hover:opacity-100"
+                >
+                  <Copy className="h-3.5 w-3.5" />
                 </button>
               </li>
             ))}
@@ -1249,7 +1263,23 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                 ))}
               </dl>
               <div>
-                <div className="mb-1 text-muted-foreground">Thông điệp / stack trace</div>
+                <div className="mb-1 flex items-center justify-between text-muted-foreground">
+                  <span>Thông điệp / stack trace</span>
+                  <button
+                    type="button"
+                    title="Sao chép stack trace"
+                    onClick={() => {
+                      navigator.clipboard
+                        .writeText(detail.message)
+                        .then(() => toast.success("Đã sao chép stack trace"))
+                        .catch(() => toast.error("Không sao chép được"));
+                    }}
+                    className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] hover:bg-surface-2 hover:text-foreground"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Sao chép
+                  </button>
+                </div>
                 <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border border-border bg-surface-1 p-2 font-mono text-[11px] text-foreground">
                   {detail.message}
                 </pre>
