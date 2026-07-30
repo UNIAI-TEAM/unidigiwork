@@ -733,14 +733,24 @@ function writeMetadataLogFilters(filters: MetadataLogFilters) {
 
 function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
-  const [persisted] = useState(readMetadataLogFilters);
-  const [query, setQuery] = useState(persisted.query);
-  const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(persisted.resultFilter);
-  const [delimFilter, setDelimFilter] = useState<string>(persisted.delimFilter);
-  const [quoteFilter, setQuoteFilter] = useState<string>(persisted.quoteFilter);
+  const [query, setQuery] = useState(DEFAULT_METADATA_LOG_FILTERS.query);
+  const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(DEFAULT_METADATA_LOG_FILTERS.resultFilter);
+  const [delimFilter, setDelimFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.delimFilter);
+  const [quoteFilter, setQuoteFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.quoteFilter);
   const [exportOpen, setExportOpen] = useState(false);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
+    const saved = readMetadataLogFilters();
+    setQuery(saved.query);
+    setResultFilter(saved.resultFilter);
+    setDelimFilter(saved.delimFilter);
+    setQuoteFilter(saved.quoteFilter);
+    hydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
     writeMetadataLogFilters({ query, resultFilter, delimFilter, quoteFilter });
   }, [query, resultFilter, delimFilter, quoteFilter]);
 
