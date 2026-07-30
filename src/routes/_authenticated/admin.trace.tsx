@@ -1459,7 +1459,7 @@ function AdminTracePage() {
   const fromIso = localToIso(from);
   const toIso = localToIso(to);
 
-  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc"; sev?: string; st?: string };
+  type SearchState = z.infer<typeof searchSchema>;
 
   const traceMut = useMutation({
     mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string; sort: "asc" | "desc" }) =>
