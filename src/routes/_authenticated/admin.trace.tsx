@@ -1187,7 +1187,13 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
         ) : (
           <ul className="divide-y divide-border">
             {pageItems.map((e, i) => (
-              <li key={i} className="flex items-start gap-2 px-2 py-1.5">
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => setDetail(e)}
+                  title="Xem đầy đủ nội dung log"
+                  className="flex w-full items-start gap-2 px-2 py-1.5 text-left hover:bg-surface-2"
+                >
                 <span
                   className={
                     "mt-0.5 inline-flex h-4 min-w-8 items-center justify-center rounded border px-1 text-[10px] font-medium " +
@@ -1203,11 +1209,76 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                   <span className="line-clamp-1">{e.message}</span>
                   <span className="font-mono text-[10px] text-muted-foreground line-clamp-1">{e.line}</span>
                 </div>
+                </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <span
+                className={
+                  "inline-flex h-5 items-center rounded border px-1.5 text-[10px] font-medium " +
+                  (detail?.ok ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400")
+                }
+              >
+                {detail?.ok ? "PASS" : "FAIL"}
+              </span>
+              Chi tiết log kiểm tra
+            </DialogTitle>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-3 text-xs">
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
+                {[
+                  ["Thời điểm", detail.at],
+                  ["Biến thể", detail.variant],
+                  ["Chế độ", detail.mode],
+                  ["Số trường", String(detail.fieldCount)],
+                  ["Delimiter", detail.delimiter === "\t" ? "\\t" : detail.delimiter],
+                  ["Quote", detail.quoteChar],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="text-muted-foreground">{k}</dt>
+                    <dd className="font-mono text-foreground break-all">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div>
+                <div className="mb-1 text-muted-foreground">Thông điệp / stack trace</div>
+                <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border border-border bg-surface-1 p-2 font-mono text-[11px] text-foreground">
+                  {detail.message}
+                </pre>
+              </div>
+              <div>
+                <div className="mb-1 text-muted-foreground">Dòng metadata</div>
+                <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-all rounded border border-border bg-surface-1 p-2 font-mono text-[11px] text-foreground">
+                  {detail.line}
+                </pre>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard
+                      .writeText(buildMetadataCheckLogText([detail]))
+                      .then(() => toast.success("Đã sao chép nội dung log"))
+                      .catch(() => toast.error("Không sao chép được"));
+                  }}
+                  className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 hover:bg-surface-2 hover:text-foreground"
+                >
+                  <Copy className="h-3 w-3" />
+                  Sao chép log này
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {ordered.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2">
