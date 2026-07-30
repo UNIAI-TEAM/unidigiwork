@@ -266,7 +266,15 @@ async function downloadCsvOrZipWithFooter(
     if (r.fixed) {
       toast.info("Đã tự động sửa dòng metadata để parse OK trước khi export.");
     } else if (!r.ok) {
-      toast.warning(`Metadata không parse được với delimiter/quote đang chọn: ${r.message}`, { duration: 6000 });
+      const v = validateMetadataLine(metaLine ?? "", opts);
+      const detail = v.issues
+        .slice(0, 3)
+        .map((i) => `• ${i.index >= 0 ? `Trường #${i.index + 1}` : "Dòng"} (ký tự ${i.position})${i.key ? ` key="${i.key}"` : ""}: ${i.message}`)
+        .join("\n");
+      toast.warning(`Metadata không parse được với delimiter/quote đang chọn: ${r.message}`, {
+        description: detail || undefined,
+        duration: 8000,
+      });
     }
   }
   const useSeparate = opts.zip && opts.separateMetadata && (!!metaLine || !!footerLine);
