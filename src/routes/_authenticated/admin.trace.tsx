@@ -366,6 +366,22 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Badge hiển thị kết quả xác thực parse dòng metadata theo delimiter/quote đang chọn. */
+function MetadataValidationBadge({ line, csv }: { line: string; csv: CsvOptions }) {
+  const v = validateMetadataLine(line, csv);
+  return (
+    <div
+      className={`mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ${
+        v.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+      }`}
+      title={v.message}
+    >
+      {v.ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+      {v.message}
+    </div>
+  );
+}
+
 // ---- "CSV (tất cả kết quả)" — server export columns ----
 type ExportPhase = "idle" | "fetching" | "compressing" | "saving" | "done" | "error";
 type ExportProgress = {
@@ -2646,6 +2662,7 @@ function CsvOptionsMenu({
                         >
                           {metaCols}
                         </code>
+                        <MetadataValidationBadge line={metaCols} csv={value} />
                       </div>
                     )}
                     <p className="text-[11px] text-muted-foreground">
