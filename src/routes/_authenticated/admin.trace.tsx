@@ -263,6 +263,17 @@ async function downloadCsvOrZipWithFooter(
   if (opts.includeMetadata && metadataLine) {
     const r = resolveMetadataLine(metadataLine, opts);
     metaLine = r.line;
+    recordMetadataCheck({
+      at: new Date().toISOString(),
+      variant: "export",
+      mode: "strict",
+      ok: r.ok,
+      fieldCount: validateMetadataLine(metaLine, opts).fieldCount,
+      delimiter: opts.delimiter,
+      quoteChar: opts.quoteChar,
+      message: (r.fixed ? "Auto-fixed · " : "") + r.message,
+      line: metaLine,
+    });
     if (r.fixed) {
       toast.info("Đã tự động sửa dòng metadata để parse OK trước khi export.");
     } else if (!r.ok) {
@@ -595,6 +606,90 @@ function MetadataValidationBadge({ line, csv }: { line: string; csv: CsvOptions 
   return <MetadataValidationBadgeInner line={line} csv={csv} />;
 }
 
+// ---- Log kiểm tra metadata ----
+type MetadataCheckLogEntry = {
+  at: string;
+  variant: string;
+  mode: "strict" | "excel";
+  ok: boolean;
+  fieldCount: number;
+  delimiter: string;
+  quoteChar: string;
+  message: string;
+  line: string;
+};
+
+const metadataCheckLog: MetadataCheckLogEntry[] = [];
+const metadataLogListeners = new Set<() => void>();
+
+function recordMetadataCheck(e: MetadataCheckLogEntry) {
+  metadataCheckLog.push(e);
+  if (metadataCheckLog.length > 200) metadataCheckLog.shift();
+  metadataLogListeners.forEach((fn) => fn());
+}
+
+function useMetadataCheckLog() {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    metadataLogListeners.add(fn);
+    return () => { metadataLogListeners.delete(fn); };
+  }, []);
+  return metadataCheckLog;
+}
+
+function buildMetadataCheckLogText(entries: MetadataCheckLogEntry[]): string {
+  const head = [
+    "# UNIWORK — Log kiểm tra metadata CSV",
+    `# generated_at=${new Date().toISOString()}`,
+    `# total_checks=${entries.length}`,
+    "",
+    "timestamp\tvariant\tmode\tresult\tfields\tdelimiter\tquote\tmessage",
+  ];
+  const rows = entries.map((e) =>
+    [
+      e.at,
+      e.variant,
+      e.mode,
+      e.ok ? "PASS" : "FAIL",
+      String(e.fieldCount),
+      e.delimiter === "\t" ? "\\t" : e.delimiter,
+      e.quoteChar,
+      e.message.replace(/\s+/g, " "),
+    ].join("\t"),
+  );
+  const detail = entries.map((e, i) => `\n[${i + 1}] ${e.at} · ${e.variant} · ${e.mode}\n${e.line}`);
+  return [...head, ...rows, "", "# Chi tiết dòng metadata đã kiểm tra", ...detail, ""].join("\n");
+}
+
+function MetadataCheckLogPanel() {
+  const entries = useMetadataCheckLog();
+  const last = entries[entries.length - 1];
+  return (
+    <div className="mt-2 flex items-center justify-between gap-2 rounded border border-border bg-surface-2 px-1.5 py-1 text-[11px] text-muted-foreground">
+      <span>
+        Log kiểm tra: <span className="text-foreground">{entries.length}</span> lượt
+        {last ? ` · gần nhất ${last.ok ? "PASS" : "FAIL"} (${last.fieldCount} trường)` : " · chưa có"}
+      </span>
+      <button
+        type="button"
+        disabled={entries.length === 0}
+        onClick={() => {
+          const text = buildMetadataCheckLogText(entries);
+          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+          triggerBlobDownload(new Blob([text], { type: "text/plain;charset=utf-8" }), `metadata-check-log_${stamp}.log`);
+          toast.success(`Đã tải log kiểm tra metadata (${entries.length} lượt)`, { duration: 2500 });
+        }}
+        className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
+        title="Tải xuống log kiểm tra metadata (.log)"
+      >
+        <Download className="h-3 w-3" />
+        Tải log
+      </button>
+    </div>
+  );
+}
+
 type ExcelField = { index: number; start: number; quoted: boolean; value: string; note?: string };
 
 /**
@@ -641,7 +736,7 @@ function parseCsvLineExcel(line: string, delim: string, quote: string): ExcelFie
   return out;
 }
 
-function ExcelParseCheck({ line, csv }: { line: string; csv: CsvOptions }) {
+function ExcelParseCheck({ line, csv, variant = "metadata" }: { line: string; csv: CsvOptions; variant?: string }) {
   const [result, setResult] = useState<ExcelField[] | null>(null);
   const problems = result?.filter((f) => f.note) ?? [];
   return (
@@ -652,6 +747,10 @@ function ExcelParseCheck({ line, csv }: { line: string; csv: CsvOptions }) {
           const r = parseCsvLineExcel(line, csv.delimiter, csv.quoteChar);
           setResult(r);
           const bad = r.filter((f) => f.note).length;
+          const at = new Date().toISOString();
+          const strict = validateMetadataLine(line, csv);
+          recordMetadataCheck({ at, variant, mode: "strict", ok: strict.ok, fieldCount: strict.fieldCount, delimiter: csv.delimiter, quoteChar: csv.quoteChar, message: strict.message, line });
+          recordMetadataCheck({ at, variant, mode: "excel", ok: bad === 0, fieldCount: r.length, delimiter: csv.delimiter, quoteChar: csv.quoteChar, message: bad === 0 ? `Excel parse OK — ${r.length} cột` : `${bad} cảnh báo: ${r.filter((f) => f.note).map((f) => `#${f.index + 1} ${f.note}`).join("; ")}`, line });
           if (bad === 0) toast.success(`Excel parse OK — ${r.length} cột`, { duration: 2500 });
           else toast.warning(`Excel parse: ${r.length} cột, ${bad} cảnh báo`, { duration: 4000 });
         }}
@@ -3077,7 +3176,7 @@ function CsvOptionsMenu({
                           {metaAll}
                         </code>
                         <MetadataValidationBadge line={metaAll} csv={value} />
-                        <ExcelParseCheck line={metaAll} csv={value} />
+                        <ExcelParseCheck line={metaAll} csv={value} variant="all-results" />
                       </div>
                     )}
                     {metaCols && (
@@ -3106,12 +3205,13 @@ function CsvOptionsMenu({
                           {metaCols}
                         </code>
                         <MetadataValidationBadge line={metaCols} csv={value} />
-                        <ExcelParseCheck line={metaCols} csv={value} />
+                        <ExcelParseCheck line={metaCols} csv={value} variant="current-cols" />
                       </div>
                     )}
                     <p className="text-[11px] text-muted-foreground">
                       Dòng này sẽ được ghi ở đầu CSV (hoặc trong <code>.meta.txt</code> nếu bật tách metadata trong ZIP). <code>rows</code> được thêm khi export.
                     </p>
+                    <MetadataCheckLogPanel />
                   </div>
                 )}
               </div>
