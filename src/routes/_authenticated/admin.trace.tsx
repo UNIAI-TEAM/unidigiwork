@@ -413,7 +413,18 @@ function buildMetaJson(
 
 /** Parse 1 dòng CSV theo đúng delimiter/quote đang chọn (RFC4180-style). */
 function parseCsvLine(line: string, delim: string, quote: string): string[] | null {
+  const r = parseCsvLineDetailed(line, delim, quote);
+  return r.ok ? r.fields : null;
+}
+
+type CsvLineParse =
+  | { ok: true; fields: string[]; starts: number[] }
+  | { ok: false; position: number; reason: string };
+
+/** Parse 1 dòng CSV kèm vị trí ký tự bắt đầu từng field và vị trí lỗi nếu có. */
+function parseCsvLineDetailed(line: string, delim: string, quote: string): CsvLineParse {
   const out: string[] = [];
+  const starts: number[] = [0];
   let cur = "";
   let i = 0;
   let inQuotes = false;
@@ -427,34 +438,91 @@ function parseCsvLine(line: string, delim: string, quote: string): string[] | nu
       cur += ch; i++; continue;
     }
     if (ch === quote) {
-      if (cur.length > 0) return null; // quote giữa field không hợp lệ
+      if (cur.length > 0) {
+        return { ok: false, position: i, reason: `Dấu bao chuỗi ${quote} xuất hiện giữa field (phải nằm ở đầu field hoặc được nhân đôi)` };
+      }
       inQuotes = true; i++; continue;
     }
-    if (ch === delim) { out.push(cur); cur = ""; i++; continue; }
+    if (ch === delim) { out.push(cur); cur = ""; i++; starts.push(i); continue; }
     cur += ch; i++;
   }
-  if (inQuotes) return null; // quote chưa đóng
+  if (inQuotes) {
+    return { ok: false, position: line.length, reason: `Dấu bao chuỗi ${quote} chưa được đóng đến cuối dòng` };
+  }
   out.push(cur);
-  return out;
+  return { ok: true, fields: out, starts };
 }
 
-type MetadataValidation = { ok: boolean; fieldCount: number; message: string };
+type MetadataIssue = {
+  index: number;
+  position: number;
+  key: string;
+  value: string;
+  raw: string;
+  message: string;
+};
+type MetadataValidation = { ok: boolean; fieldCount: number; message: string; issues: MetadataIssue[] };
 
 /** Xác thực dòng metadata: parse ngược bằng chính delimiter/quote đang chọn. */
 function validateMetadataLine(line: string, csv: CsvOptions): MetadataValidation {
-  const fields = parseCsvLine(line, csv.delimiter, csv.quoteChar);
-  if (!fields) {
-    return { ok: false, fieldCount: 0, message: "Không parse được: dấu bao chuỗi không hợp lệ hoặc chưa đóng." };
+  const parsed = parseCsvLineDetailed(line, csv.delimiter, csv.quoteChar);
+  if (!parsed.ok) {
+    const near = line.slice(Math.max(0, parsed.position - 12), parsed.position + 12);
+    return {
+      ok: false,
+      fieldCount: 0,
+      message: `Không parse được tại ký tự ${parsed.position + 1}: ${parsed.reason}.`,
+      issues: [
+        {
+          index: -1,
+          position: parsed.position + 1,
+          key: "",
+          value: "",
+          raw: near,
+          message: parsed.reason,
+        },
+      ],
+    };
   }
+  const { fields, starts } = parsed;
   const cleaned = fields.map((f, i) => (i === 0 ? f.replace(/^#\s*/, "") : f));
-  const bad = cleaned.filter((f) => !/^[a-z_]+=/.test(f));
-  if (bad.length > 0) {
-    return { ok: false, fieldCount: fields.length, message: `Có ${bad.length} trường không đúng dạng key=value.` };
+  const issues: MetadataIssue[] = [];
+  cleaned.forEach((f, i) => {
+    if (/^[a-z_]+=/.test(f)) return;
+    const eq = f.indexOf("=");
+    const key = eq > 0 ? f.slice(0, eq) : f;
+    const value = eq > 0 ? f.slice(eq + 1) : "";
+    issues.push({
+      index: i,
+      position: (starts[i] ?? 0) + 1,
+      key,
+      value,
+      raw: fields[i],
+      message:
+        eq <= 0
+          ? "Thiếu dấu '=' — trường phải có dạng key=value"
+          : `Key "${key}" chứa ký tự không hợp lệ (chỉ cho phép a-z và _)`,
+    });
+  });
+  if (issues.length > 0) {
+    return {
+      ok: false,
+      fieldCount: fields.length,
+      message: `Có ${issues.length}/${fields.length} trường không đúng dạng key=value.`,
+      issues,
+    };
   }
   if (!/^#/.test(line.replace(new RegExp(`^${escapeRegExp(csv.quoteChar)}`), ""))) {
-    return { ok: false, fieldCount: fields.length, message: "Dòng metadata phải bắt đầu bằng ký tự '#'." };
+    return {
+      ok: false,
+      fieldCount: fields.length,
+      message: "Dòng metadata phải bắt đầu bằng ký tự '#'.",
+      issues: [
+        { index: 0, position: 1, key: cleaned[0]?.split("=")[0] ?? "", value: "", raw: fields[0] ?? "", message: "Thiếu tiền tố '#' ở đầu dòng" },
+      ],
+    };
   }
-  return { ok: true, fieldCount: fields.length, message: `Parse OK — ${fields.length} trường key=value.` };
+  return { ok: true, fieldCount: fields.length, message: `Parse OK — ${fields.length} trường key=value.`, issues: [] };
 }
 
 function escapeRegExp(s: string): string {
