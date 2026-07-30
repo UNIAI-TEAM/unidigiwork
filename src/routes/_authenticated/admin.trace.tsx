@@ -814,6 +814,24 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
             <Download className="h-3 w-3" />
             CSV
           </button>
+          <button
+            type="button"
+            disabled={filtered.length === 0}
+            onClick={async () => {
+              const text = buildMetadataCheckLogText(filtered);
+              try {
+                await navigator.clipboard.writeText(text);
+                toast.success(`Đã sao chép ${filtered.length} lượt log vào clipboard`, { duration: 2500 });
+              } catch {
+                toast.error("Sao chép thất bại. Trình duyệt có thể chặn quyền clipboard.", { duration: 3000 });
+              }
+            }}
+            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
+            title="Sao chép nội dung log vào clipboard để dán vào ticket/chat"
+          >
+            <Copy className="h-3 w-3" />
+            Copy
+          </button>
         </div>
       </div>
 
