@@ -739,6 +739,8 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
   const [quoteFilter, setQuoteFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.quoteFilter);
   const [exportOpen, setExportOpen] = useState(false);
   const [sigFilter, setSigFilter] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const hydratedRef = useRef(false);
 
   useEffect(() => {
