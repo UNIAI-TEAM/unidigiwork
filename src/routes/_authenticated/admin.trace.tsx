@@ -1748,12 +1748,12 @@ function AdminTracePage() {
     navigate({
       search: (prev: SearchState) => ({
         ...prev,
-        kinds: p.kinds,
+        kinds: p.kinds ? searchSchema.shape.kinds.parse(p.kinds) : undefined,
         from: p.from,
         to: p.to,
         sort: p.sort ?? "asc",
-        sev: p.sev,
-        st: p.st,
+        sev: p.sev ? searchSchema.shape.sev.parse(p.sev) : undefined,
+        st: p.st ? searchSchema.shape.st.parse(p.st) : undefined,
         page: 1,
       }),
     });
