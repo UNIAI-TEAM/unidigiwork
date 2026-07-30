@@ -923,10 +923,11 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               setResultFilter("all");
               setDelimFilter("all");
               setQuoteFilter("all");
+              setSort(DEFAULT_METADATA_LOG_SORT);
               setSigFilter(null);
             }}
             className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-            title="Đặt lại bộ lọc"
+            title="Đặt lại bộ lọc và sắp xếp"
           >
             <RefreshCw className="h-3 w-3" />
             Reset
