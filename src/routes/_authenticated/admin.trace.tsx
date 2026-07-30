@@ -2529,17 +2529,39 @@ function CsvOptionsMenu({
                         type="button"
                         onClick={() => {
                           const text = [metaAll, metaCols].filter(Boolean).join("\n");
-                          if (text) void navigator.clipboard?.writeText(text);
+                          if (!text) return;
+                          void navigator.clipboard?.writeText(text).then(() => {
+                            toast.success("Đã sao chép toàn bộ dòng metadata", { duration: 2000 });
+                          }).catch(() => {
+                            toast.error("Không thể sao chép metadata");
+                          });
                         }}
-                        className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
-                        title="Sao chép dòng metadata"
+                        className="inline-flex items-center gap-1 rounded bg-surface-2 px-2 py-1 text-[11px] normal-case tracking-normal text-foreground hover:bg-surface-3"
+                        title="Sao chép toàn bộ dòng metadata đã chuẩn hóa"
                       >
+                        <Copy className="h-3 w-3" />
                         Copy
                       </button>
                     </div>
                     {metaAll && (
                       <div>
-                        <div className="text-[11px] text-muted-foreground">Metadata (tất cả kết quả)</div>
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>Metadata (tất cả kết quả)</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard?.writeText(metaAll).then(() => {
+                                toast.success("Đã sao chép metadata (tất cả kết quả)", { duration: 2000 });
+                              }).catch(() => {
+                                toast.error("Không thể sao chép metadata");
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded p-1 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                            title="Sao chép dòng này"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
                         <code
                           className="mt-0.5 block max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
                           title={metaAll}
@@ -2550,7 +2572,23 @@ function CsvOptionsMenu({
                     )}
                     {metaCols && (
                       <div>
-                        <div className="text-[11px] text-muted-foreground">Metadata (cột hiện tại)</div>
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>Metadata (cột hiện tại)</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard?.writeText(metaCols).then(() => {
+                                toast.success("Đã sao chép metadata (cột hiện tại)", { duration: 2000 });
+                              }).catch(() => {
+                                toast.error("Không thể sao chép metadata");
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded p-1 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                            title="Sao chép dòng này"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
                         <code
                           className="mt-0.5 block max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
                           title={metaCols}
