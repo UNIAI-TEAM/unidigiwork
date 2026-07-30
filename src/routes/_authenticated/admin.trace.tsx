@@ -3077,6 +3077,7 @@ function CsvOptionsMenu({
                           {metaAll}
                         </code>
                         <MetadataValidationBadge line={metaAll} csv={value} />
+                        <ExcelParseCheck line={metaAll} csv={value} />
                       </div>
                     )}
                     {metaCols && (
@@ -3105,6 +3106,7 @@ function CsvOptionsMenu({
                           {metaCols}
                         </code>
                         <MetadataValidationBadge line={metaCols} csv={value} />
+                        <ExcelParseCheck line={metaCols} csv={value} />
                       </div>
                     )}
                     <p className="text-[11px] text-muted-foreground">
