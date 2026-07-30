@@ -689,12 +689,22 @@ function normalizeErrorSignature(message: string) {
     .trim();
 }
 
-function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
+function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
   const [query, setQuery] = useState("");
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">("all");
   const [delimFilter, setDelimFilter] = useState<string>("all");
   const [quoteFilter, setQuoteFilter] = useState<string>("all");
+  const lastFailAtRef = useRef<string | null>(null);
+
+  const lastFail = useMemo(() => [...entries].reverse().find((e) => !e.ok) ?? null, [entries]);
+  useEffect(() => {
+    if (!lastFail) return;
+    if (lastFail.at === lastFailAtRef.current) return;
+    lastFailAtRef.current = lastFail.at;
+    onFailDetected?.();
+  }, [lastFail, onFailDetected]);
+
 
   const delimiters = useMemo(
     () => Array.from(new Set(entries.map((e) => (e.delimiter === "\t" ? "\\t" : e.delimiter)))),
