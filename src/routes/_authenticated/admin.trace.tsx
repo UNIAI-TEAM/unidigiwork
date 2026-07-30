@@ -2618,6 +2618,7 @@ function CsvOptionsMenu({
                         >
                           {metaAll}
                         </code>
+                        <MetadataValidationBadge line={metaAll} csv={value} />
                       </div>
                     )}
                     {metaCols && (
