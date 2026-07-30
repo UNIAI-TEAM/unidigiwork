@@ -2583,6 +2583,7 @@ function CsvOptionsMenu({
                     severities: preview.severities,
                     statuses: preview.statuses,
                     kinds: preview.kinds,
+                    rowCount: preview.rowsAll,
                   },
                   value,
                 )
@@ -2599,12 +2600,37 @@ function CsvOptionsMenu({
                     severities: preview.severities,
                     statuses: preview.statuses,
                     kinds: preview.kinds,
+                    rowCount: preview.rowsCols,
                   },
                   value,
                 )
               : null;
             return (
               <div className="mt-3 space-y-1.5 border-t border-border pt-2">
+                <div className="rounded-md border border-border bg-surface-2 px-2 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span>Tổng số rows (tất cả kết quả)</span>
+                    <span className="font-mono text-foreground">{(preview.rowsAll ?? 0).toLocaleString("vi-VN")}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Rows theo cột hiện tại</span>
+                    <span className="font-mono text-foreground">{(preview.rowsCols ?? 0).toLocaleString("vi-VN")}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>processing_ms (lần export gần nhất)</span>
+                    <span className="font-mono text-foreground">
+                      {preview.lastExport
+                        ? `${preview.lastExport.processingMs.toLocaleString("vi-VN")} ms`
+                        : "—"}
+                    </span>
+                  </div>
+                  {preview.lastExport && (
+                    <div className="mt-0.5 text-[10px]">
+                      Lần trước: {preview.lastExport.variant === "all" ? "all-results" : "current-cols"} ·{" "}
+                      {preview.lastExport.rows.toLocaleString("vi-VN")} dòng
+                    </div>
+                  )}
+                </div>
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
                   Xem trước tên file
                 </div>
