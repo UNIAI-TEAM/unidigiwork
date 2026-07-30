@@ -689,13 +689,71 @@ function normalizeErrorSignature(message: string) {
     .trim();
 }
 
+type MetadataLogFilters = {
+  query: string;
+  resultFilter: "all" | "pass" | "fail";
+  delimFilter: string;
+  quoteFilter: string;
+};
+
+const METADATA_LOG_FILTERS_KEY = "uniwork.admin.trace.metadataLogFilters";
+const DEFAULT_METADATA_LOG_FILTERS: MetadataLogFilters = {
+  query: "",
+  resultFilter: "all",
+  delimFilter: "all",
+  quoteFilter: "all",
+};
+
+function readMetadataLogFilters(): MetadataLogFilters {
+  if (typeof window === "undefined") return DEFAULT_METADATA_LOG_FILTERS;
+  try {
+    const raw = window.localStorage.getItem(METADATA_LOG_FILTERS_KEY);
+    if (!raw) return DEFAULT_METADATA_LOG_FILTERS;
+    const parsed = JSON.parse(raw) as Partial<MetadataLogFilters>;
+    return {
+      query: typeof parsed.query === "string" ? parsed.query : "",
+      resultFilter:
+        parsed.resultFilter === "pass" || parsed.resultFilter === "fail" ? parsed.resultFilter : "all",
+      delimFilter: typeof parsed.delimFilter === "string" ? parsed.delimFilter : "all",
+      quoteFilter: typeof parsed.quoteFilter === "string" ? parsed.quoteFilter : "all",
+    };
+  } catch {
+    return DEFAULT_METADATA_LOG_FILTERS;
+  }
+}
+
+function writeMetadataLogFilters(filters: MetadataLogFilters) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(METADATA_LOG_FILTERS_KEY, JSON.stringify(filters));
+  } catch {
+    /* ignore quota/permission errors */
+  }
+}
+
 function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
-  const [query, setQuery] = useState("");
-  const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">("all");
-  const [delimFilter, setDelimFilter] = useState<string>("all");
-  const [quoteFilter, setQuoteFilter] = useState<string>("all");
+  const [query, setQuery] = useState(DEFAULT_METADATA_LOG_FILTERS.query);
+  const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(DEFAULT_METADATA_LOG_FILTERS.resultFilter);
+  const [delimFilter, setDelimFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.delimFilter);
+  const [quoteFilter, setQuoteFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.quoteFilter);
   const [exportOpen, setExportOpen] = useState(false);
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    const saved = readMetadataLogFilters();
+    setQuery(saved.query);
+    setResultFilter(saved.resultFilter);
+    setDelimFilter(saved.delimFilter);
+    setQuoteFilter(saved.quoteFilter);
+    hydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    writeMetadataLogFilters({ query, resultFilter, delimFilter, quoteFilter });
+  }, [query, resultFilter, delimFilter, quoteFilter]);
+
   const exportRef = useRef<HTMLDivElement>(null);
   const lastFailAtRef = useRef<string | null>(null);
 
