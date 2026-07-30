@@ -155,6 +155,7 @@ type CsvOptions = {
   includeMetadata: boolean;
   separateMetadata: boolean;
   metaJson: boolean;
+  autoFixMetadata: boolean;
   filenameTemplate: FilenamePart[];
 };
 const DEFAULT_CSV_OPTIONS: CsvOptions = {
@@ -166,6 +167,7 @@ const DEFAULT_CSV_OPTIONS: CsvOptions = {
   includeMetadata: true,
   separateMetadata: false,
   metaJson: false,
+  autoFixMetadata: true,
   filenameTemplate: DEFAULT_FILENAME_TEMPLATE,
 };
 
