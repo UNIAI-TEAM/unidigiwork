@@ -814,6 +814,24 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
             <Download className="h-3 w-3" />
             CSV
           </button>
+          <button
+            type="button"
+            disabled={filtered.length === 0}
+            onClick={async () => {
+              const text = buildMetadataCheckLogText(filtered);
+              try {
+                await navigator.clipboard.writeText(text);
+                toast.success(`Đã sao chép ${filtered.length} lượt log vào clipboard`, { duration: 2500 });
+              } catch {
+                toast.error("Sao chép thất bại. Trình duyệt có thể chặn quyền clipboard.", { duration: 3000 });
+              }
+            }}
+            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
+            title="Sao chép nội dung log vào clipboard để dán vào ticket/chat"
+          >
+            <Copy className="h-3 w-3" />
+            Copy
+          </button>
         </div>
       </div>
 
@@ -1441,7 +1459,7 @@ function AdminTracePage() {
   const fromIso = localToIso(from);
   const toIso = localToIso(to);
 
-  type SearchState = { cid?: string; page?: number; limit?: number; kinds?: string; from?: string; to?: string; sort?: "asc" | "desc"; sev?: string; st?: string };
+  type SearchState = z.infer<typeof searchSchema>;
 
   const traceMut = useMutation({
     mutationFn: (args: { correlationId: string; page: number; limit: number; kinds: Kind[]; fromTs?: string; toTs?: string; sort: "asc" | "desc" }) =>
@@ -1654,7 +1672,7 @@ function AdminTracePage() {
       return;
     }
     const next: Kind[] = ALL_KINDS.filter((x) => set.has(x));
-    const encoded = next.length === ALL_KINDS.length ? undefined : next.join(",");
+    const encoded = next.length === ALL_KINDS.length ? undefined : next;
     navigate({ search: (prev: SearchState) => ({ ...prev, kinds: encoded, page: 1 }) });
   };
   const resetKinds = () =>
@@ -1669,7 +1687,7 @@ function AdminTracePage() {
       return;
     }
     const next: Severity[] = ALL_SEVERITIES.filter((x) => set.has(x));
-    const encoded = next.length === ALL_SEVERITIES.length ? undefined : next.join(",");
+    const encoded = next.length === ALL_SEVERITIES.length ? undefined : next;
     navigate({ search: (prev: SearchState) => ({ ...prev, sev: encoded }) });
   };
   const resetSeverities = () =>
@@ -1684,7 +1702,7 @@ function AdminTracePage() {
       return;
     }
     const next: Status[] = ALL_STATUSES.filter((x) => set.has(x));
-    const encoded = next.length === ALL_STATUSES.length ? undefined : next.join(",");
+    const encoded = next.length === ALL_STATUSES.length ? undefined : next;
     navigate({ search: (prev: SearchState) => ({ ...prev, st: encoded }) });
   };
   const resetStatuses = () =>
@@ -1730,12 +1748,12 @@ function AdminTracePage() {
     navigate({
       search: (prev: SearchState) => ({
         ...prev,
-        kinds: p.kinds,
+        kinds: p.kinds ? searchSchema.shape.kinds.parse(p.kinds) : undefined,
         from: p.from,
         to: p.to,
         sort: p.sort ?? "asc",
-        sev: p.sev,
-        st: p.st,
+        sev: p.sev ? searchSchema.shape.sev.parse(p.sev) : undefined,
+        st: p.st ? searchSchema.shape.st.parse(p.st) : undefined,
         page: 1,
       }),
     });
