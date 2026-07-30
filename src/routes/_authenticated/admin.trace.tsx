@@ -600,14 +600,38 @@ function MetadataValidationBadge({ line, csv }: { line: string; csv: CsvOptions 
     }
   }
   return (
-    <div
-      className={`mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ${
-        v.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
-      }`}
-      title={v.message}
-    >
-      {v.ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-      {v.message}
+    <div className="mt-1 space-y-1">
+      <div
+        className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ${
+          v.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+        }`}
+        title={v.message}
+      >
+        {v.ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+        {v.message}
+      </div>
+      {!v.ok && v.issues.length > 0 && (
+        <ul className="space-y-1 rounded border border-amber-500/20 bg-amber-500/5 p-1.5 text-[11px] text-amber-300">
+          {v.issues.slice(0, 6).map((iss, k) => (
+            <li key={k} className="font-mono leading-snug">
+              <span className="text-muted-foreground">
+                {iss.index >= 0 ? `Trường #${iss.index + 1}` : "Dòng"} · vị trí ký tự {iss.position}
+              </span>
+              {": "}
+              {iss.message}
+              {iss.key && (
+                <>
+                  {" — key="}
+                  <span className="text-foreground">{iss.key}</span>
+                  {iss.value ? ` · value=${iss.value.slice(0, 40)}` : ""}
+                </>
+              )}
+              {iss.raw && <div className="text-muted-foreground">…{iss.raw.slice(0, 60)}…</div>}
+            </li>
+          ))}
+          {v.issues.length > 6 && <li className="text-muted-foreground">+{v.issues.length - 6} lỗi khác…</li>}
+        </ul>
+      )}
     </div>
   );
 }
