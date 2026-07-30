@@ -1108,6 +1108,20 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
             </option>
           ))}
         </select>
+        <select
+          value={`${sort.field}-${sort.direction}`}
+          onChange={(e) => {
+            const [field, direction] = e.target.value.split("-") as ["timestamp" | "severity", "asc" | "desc"];
+            setSort({ field, direction });
+          }}
+          className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          title="Sắp xếp log"
+        >
+          <option value="timestamp-desc">⏱️ Mới nhất</option>
+          <option value="timestamp-asc">⏱️ Cũ nhất</option>
+          <option value="severity-desc">⚠️ FAIL trước</option>
+          <option value="severity-asc">✅ PASS trước</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-3 gap-2 rounded border border-border bg-surface-1 p-2">
