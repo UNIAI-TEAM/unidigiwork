@@ -1100,11 +1100,11 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
       )}
 
       <div className="max-h-40 overflow-y-auto rounded border border-border bg-surface-1">
-        {filtered.length === 0 ? (
+        {displayed.length === 0 ? (
           <div className="px-2 py-3 text-center text-muted-foreground">Không có log phù hợp.</div>
         ) : (
           <ul className="divide-y divide-border">
-            {filtered.slice().reverse().map((e, i) => (
+            {displayed.slice().reverse().map((e, i) => (
               <li key={i} className="flex items-start gap-2 px-2 py-1.5">
                 <span
                   className={
