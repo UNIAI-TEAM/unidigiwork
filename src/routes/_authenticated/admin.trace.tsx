@@ -154,6 +154,7 @@ type CsvOptions = {
   zip: boolean;
   includeMetadata: boolean;
   separateMetadata: boolean;
+  metaJson: boolean;
   filenameTemplate: FilenamePart[];
 };
 const DEFAULT_CSV_OPTIONS: CsvOptions = {
@@ -164,6 +165,7 @@ const DEFAULT_CSV_OPTIONS: CsvOptions = {
   zip: false,
   includeMetadata: true,
   separateMetadata: false,
+  metaJson: false,
   filenameTemplate: DEFAULT_FILENAME_TEMPLATE,
 };
 
@@ -275,6 +277,11 @@ async function downloadCsvOrZipWithFooter(
       if (footerLine) parts.push(footerLine);
       files[metaName] = strToU8(parts.join("\r\n") + "\r\n");
     }
+    if (opts.metaJson && (metadataLine || footerLine)) {
+      files[toMetaJsonFilename(csvFilename)] = strToU8(
+        buildMetaJson(csvFilename, opts, opts.includeMetadata ? metadataLine : undefined, footerLine),
+      );
+    }
     const zipped = zipSync(files, { level: 6 });
     triggerBlobDownload(new Blob([zipped as BlobPart], { type: "application/zip" }), toZipFilename(csvFilename));
   } else {
@@ -328,6 +335,74 @@ function toZipFilename(csvFilename: string): string {
 /** Tên file metadata đi kèm khi tách khỏi CSV trong ZIP (giữ nguyên stem). */
 function toMetaFilename(csvFilename: string): string {
   return csvFilename.replace(/\.csv$/i, "") + ".meta.txt";
+}
+
+/** Tên file metadata JSON đi kèm trong ZIP (giữ nguyên stem). */
+function toMetaJsonFilename(csvFilename: string): string {
+  return csvFilename.replace(/\.csv$/i, "") + ".meta.json";
+}
+
+/** Tách chuỗi "k=v" thành cặp; giữ nguyên phần value có chứa "=". */
+function splitKeyValue(token: string): [string, string] | null {
+  const t = token.replace(/^#\s*/, "").trim();
+  const i = t.indexOf("=");
+  if (i <= 0) return null;
+  return [t.slice(0, i).trim(), t.slice(i + 1)];
+}
+
+/** Chuyển giá trị chuỗi sang số khi hợp lệ để JSON dễ import lại. */
+function coerceMetaValue(key: string, raw: string): string | number | boolean {
+  if (/^(rows|total_rows|exported_rows|processing_ms|severity_(info|warn|error))$/.test(key)) {
+    const n = Number(raw);
+    if (!Number.isNaN(n)) return n;
+  }
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  return raw;
+}
+
+/** Build nội dung `<stem>.meta.json` từ dòng metadata + footer đang dùng cho CSV. */
+function buildMetaJson(
+  csvFilename: string,
+  opts: CsvOptions,
+  metadataLine?: string,
+  footerLine?: string,
+): string {
+  const meta: Record<string, string | number | boolean> = {};
+  if (metadataLine) {
+    const tokens = parseCsvLine(metadataLine, opts.delimiter, opts.quoteChar);
+    for (const tk of tokens ?? []) {
+      const kv = splitKeyValue(tk);
+      if (kv) meta[kv[0]] = coerceMetaValue(kv[0], kv[1]);
+    }
+  }
+  const summary: Record<string, string | number | boolean> = {};
+  if (footerLine) {
+    const unquoted = parseCsvLine(footerLine, opts.delimiter, opts.quoteChar)?.[0] ?? footerLine;
+    for (const tk of unquoted.replace(/^#\s*/, "").split(" | ")) {
+      const kv = splitKeyValue(tk);
+      if (kv) summary[kv[0]] = coerceMetaValue(kv[0], kv[1]);
+    }
+  }
+  const payload = {
+    schema: "uniwork.trace.export.meta/v1",
+    file: {
+      csv: csvFilename,
+      zip: toZipFilename(csvFilename),
+      meta_json: toMetaJsonFilename(csvFilename),
+    },
+    csv_options: {
+      delimiter: opts.delimiter === "\t" ? "\\t" : opts.delimiter,
+      quote_char: opts.quoteChar,
+      bom: opts.bom,
+      timezone: opts.filenameTz === "utc" ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone,
+      zip: opts.zip,
+      separate_metadata: opts.separateMetadata,
+    },
+    metadata: meta,
+    summary,
+  };
+  return JSON.stringify(payload, null, 2) + "\n";
 }
 
 /** Parse 1 dòng CSV theo đúng delimiter/quote đang chọn (RFC4180-style). */
@@ -2453,6 +2528,21 @@ function CsvOptionsMenu({
           </label>
           <p className="pl-6 text-[11px] text-muted-foreground">
             Khi bật, CSV giữ nguyên dữ liệu; metadata và footer được lưu ở file riêng cùng ZIP để dễ đối chiếu. Chỉ áp dụng khi bật ZIP.
+          </p>
+          <label className={`mt-1 flex items-center gap-2 pl-6 ${value.zip ? "" : "opacity-50"}`}>
+            <input
+              type="checkbox"
+              checked={value.metaJson}
+              disabled={!value.zip}
+              onChange={(e) => onChange({ ...value, metaJson: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className={value.zip ? "text-foreground" : "text-muted-foreground"}>
+              Kèm file <code>.meta.json</code> trong ZIP (máy đọc được)
+            </span>
+          </label>
+          <p className="pl-6 text-[11px] text-muted-foreground">
+            Xuất thêm <code>&lt;stem&gt;.meta.json</code> gồm metadata (keyword, from/to, sort, filter, timezone, rows) và summary (total_rows, severity, processing_ms) dạng JSON để đối chiếu hoặc import lại.
           </p>
           <div className="mt-3">
             <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
