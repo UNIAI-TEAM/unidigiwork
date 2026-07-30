@@ -1672,7 +1672,7 @@ function AdminTracePage() {
       return;
     }
     const next: Kind[] = ALL_KINDS.filter((x) => set.has(x));
-    const encoded = next.length === ALL_KINDS.length ? undefined : next.join(",");
+    const encoded = next.length === ALL_KINDS.length ? undefined : next;
     navigate({ search: (prev: SearchState) => ({ ...prev, kinds: encoded, page: 1 }) });
   };
   const resetKinds = () =>
