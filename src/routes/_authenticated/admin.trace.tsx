@@ -1060,16 +1060,36 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
           <div className="mb-1 text-[10px] font-medium text-muted-foreground">Top lỗi phổ biến</div>
           <ul className="flex flex-col gap-1">
             {topErrors.map(([sig, count], i) => (
-              <li key={i} className="flex items-center justify-between gap-2 text-[11px]">
-                <span className="line-clamp-1 text-foreground" title={sig}>
-                  {i + 1}. {sig}
-                </span>
-                <span className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1 py-0.5 text-[10px] text-red-400">
-                  {count}
-                </span>
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => setSigFilter(sigFilter === sig ? null : sig)}
+                  className={
+                    "flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-left text-[11px] hover:bg-surface-2 " +
+                    (sigFilter === sig ? "bg-surface-2 ring-1 ring-ring" : "")
+                  }
+                  title={sigFilter === sig ? "Bỏ lọc theo lỗi này" : `Xem log chi tiết: ${sig}`}
+                >
+                  <span className="line-clamp-1 text-foreground">
+                    {i + 1}. {sig}
+                  </span>
+                  <span className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1 py-0.5 text-[10px] text-red-400">
+                    {count}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
+          {sigFilter && (
+            <button
+              type="button"
+              onClick={() => setSigFilter(null)}
+              className="mt-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] hover:bg-surface-2 hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+              Bỏ lọc theo lỗi
+            </button>
+          )}
         </div>
       )}
 
