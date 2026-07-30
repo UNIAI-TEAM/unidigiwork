@@ -1263,7 +1263,23 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                 ))}
               </dl>
               <div>
-                <div className="mb-1 text-muted-foreground">Thông điệp / stack trace</div>
+                <div className="mb-1 flex items-center justify-between text-muted-foreground">
+                  <span>Thông điệp / stack trace</span>
+                  <button
+                    type="button"
+                    title="Sao chép stack trace"
+                    onClick={() => {
+                      navigator.clipboard
+                        .writeText(detail.message)
+                        .then(() => toast.success("Đã sao chép stack trace"))
+                        .catch(() => toast.error("Không sao chép được"));
+                    }}
+                    className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] hover:bg-surface-2 hover:text-foreground"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Sao chép
+                  </button>
+                </div>
                 <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border border-border bg-surface-1 p-2 font-mono text-[11px] text-foreground">
                   {detail.message}
                 </pre>
