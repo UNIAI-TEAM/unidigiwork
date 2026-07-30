@@ -691,11 +691,17 @@ function normalizeErrorSignature(message: string) {
 
 function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
-  const [query, setQuery] = useState("");
-  const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">("all");
-  const [delimFilter, setDelimFilter] = useState<string>("all");
-  const [quoteFilter, setQuoteFilter] = useState<string>("all");
+  const persisted = readMetadataLogFilters();
+  const [query, setQuery] = useState(persisted.query);
+  const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(persisted.resultFilter);
+  const [delimFilter, setDelimFilter] = useState<string>(persisted.delimFilter);
+  const [quoteFilter, setQuoteFilter] = useState<string>(persisted.quoteFilter);
   const [exportOpen, setExportOpen] = useState(false);
+
+  useEffect(() => {
+    writeMetadataLogFilters({ query, resultFilter, delimFilter, quoteFilter });
+  }, [query, resultFilter, delimFilter, quoteFilter]);
+
   const exportRef = useRef<HTMLDivElement>(null);
   const lastFailAtRef = useRef<string | null>(null);
 
