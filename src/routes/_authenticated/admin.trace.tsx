@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, ChevronDown, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save, Filter } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, ChevronDown, Download, X, ArrowUp, ArrowDown, ArrowUpDown, Columns3, RefreshCw, Bookmark, Trash2, Save, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -696,13 +696,17 @@ type MetadataLogFilters = {
   quoteFilter: string;
 };
 
+type MetadataLogSort = { field: "timestamp" | "severity"; direction: "desc" | "asc" };
+
 const METADATA_LOG_FILTERS_KEY = "uniwork.admin.trace.metadataLogFilters";
+const METADATA_LOG_SORT_KEY = "uniwork.admin.trace.metadataLogSort";
 const DEFAULT_METADATA_LOG_FILTERS: MetadataLogFilters = {
   query: "",
   resultFilter: "all",
   delimFilter: "all",
   quoteFilter: "all",
 };
+const DEFAULT_METADATA_LOG_SORT: MetadataLogSort = { field: "timestamp", direction: "desc" };
 
 function readMetadataLogFilters(): MetadataLogFilters {
   if (typeof window === "undefined") return DEFAULT_METADATA_LOG_FILTERS;
@@ -731,12 +735,37 @@ function writeMetadataLogFilters(filters: MetadataLogFilters) {
   }
 }
 
+function readMetadataLogSort(): MetadataLogSort {
+  if (typeof window === "undefined") return DEFAULT_METADATA_LOG_SORT;
+  try {
+    const raw = window.localStorage.getItem(METADATA_LOG_SORT_KEY);
+    if (!raw) return DEFAULT_METADATA_LOG_SORT;
+    const parsed = JSON.parse(raw) as Partial<MetadataLogSort>;
+    return {
+      field: parsed.field === "severity" ? "severity" : "timestamp",
+      direction: parsed.direction === "asc" ? "asc" : "desc",
+    };
+  } catch {
+    return DEFAULT_METADATA_LOG_SORT;
+  }
+}
+
+function writeMetadataLogSort(sort: MetadataLogSort) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(METADATA_LOG_SORT_KEY, JSON.stringify(sort));
+  } catch {
+    /* ignore quota/permission errors */
+  }
+}
+
 function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
   const [query, setQuery] = useState(DEFAULT_METADATA_LOG_FILTERS.query);
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(DEFAULT_METADATA_LOG_FILTERS.resultFilter);
   const [delimFilter, setDelimFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.delimFilter);
   const [quoteFilter, setQuoteFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.quoteFilter);
+  const [sort, setSort] = useState<MetadataLogSort>(DEFAULT_METADATA_LOG_SORT);
   const [exportOpen, setExportOpen] = useState(false);
   const [sigFilter, setSigFilter] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -744,11 +773,12 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
   const hydratedRef = useRef(false);
 
   useEffect(() => {
-    const saved = readMetadataLogFilters();
-    setQuery(saved.query);
-    setResultFilter(saved.resultFilter);
-    setDelimFilter(saved.delimFilter);
-    setQuoteFilter(saved.quoteFilter);
+    const savedFilters = readMetadataLogFilters();
+    setQuery(savedFilters.query);
+    setResultFilter(savedFilters.resultFilter);
+    setDelimFilter(savedFilters.delimFilter);
+    setQuoteFilter(savedFilters.quoteFilter);
+    setSort(readMetadataLogSort());
     hydratedRef.current = true;
   }, []);
 
@@ -756,6 +786,11 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
     if (!hydratedRef.current) return;
     writeMetadataLogFilters({ query, resultFilter, delimFilter, quoteFilter });
   }, [query, resultFilter, delimFilter, quoteFilter]);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    writeMetadataLogSort(sort);
+  }, [sort]);
 
   const exportRef = useRef<HTMLDivElement>(null);
   const lastFailAtRef = useRef<string | null>(null);
@@ -832,7 +867,22 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
     [filtered, sigFilter],
   );
 
-  const ordered = useMemo(() => displayed.slice().reverse(), [displayed]);
+  const ordered = useMemo(() => {
+    const list = displayed.slice();
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sort.field === "timestamp") {
+        cmp = a.at.localeCompare(b.at);
+      } else if (sort.field === "severity") {
+        // FAIL (ok=false) có mức độ cao hơn PASS (ok=true)
+        cmp = Number(a.ok) - Number(b.ok);
+      }
+      if (cmp !== 0) return sort.direction === "asc" ? cmp : -cmp;
+      // tie-break by timestamp desc
+      return b.at.localeCompare(a.at);
+    });
+    return list;
+  }, [displayed, sort]);
   const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pageItems = useMemo(
@@ -873,10 +923,11 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               setResultFilter("all");
               setDelimFilter("all");
               setQuoteFilter("all");
+              setSort(DEFAULT_METADATA_LOG_SORT);
               setSigFilter(null);
             }}
             className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-            title="Đặt lại bộ lọc"
+            title="Đặt lại bộ lọc và sắp xếp"
           >
             <RefreshCw className="h-3 w-3" />
             Reset
@@ -1056,6 +1107,20 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               {`"${q}"`}
             </option>
           ))}
+        </select>
+        <select
+          value={`${sort.field}-${sort.direction}`}
+          onChange={(e) => {
+            const [field, direction] = e.target.value.split("-") as ["timestamp" | "severity", "asc" | "desc"];
+            setSort({ field, direction });
+          }}
+          className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          title="Sắp xếp log"
+        >
+          <option value="timestamp-desc">⏱️ Mới nhất</option>
+          <option value="timestamp-asc">⏱️ Cũ nhất</option>
+          <option value="severity-desc">⚠️ FAIL trước</option>
+          <option value="severity-asc">✅ PASS trước</option>
         </select>
       </div>
 
