@@ -765,6 +765,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(DEFAULT_METADATA_LOG_FILTERS.resultFilter);
   const [delimFilter, setDelimFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.delimFilter);
   const [quoteFilter, setQuoteFilter] = useState<string>(DEFAULT_METADATA_LOG_FILTERS.quoteFilter);
+  const [sort, setSort] = useState<MetadataLogSort>(DEFAULT_METADATA_LOG_SORT);
   const [exportOpen, setExportOpen] = useState(false);
   const [sigFilter, setSigFilter] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -772,11 +773,12 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
   const hydratedRef = useRef(false);
 
   useEffect(() => {
-    const saved = readMetadataLogFilters();
-    setQuery(saved.query);
-    setResultFilter(saved.resultFilter);
-    setDelimFilter(saved.delimFilter);
-    setQuoteFilter(saved.quoteFilter);
+    const savedFilters = readMetadataLogFilters();
+    setQuery(savedFilters.query);
+    setResultFilter(savedFilters.resultFilter);
+    setDelimFilter(savedFilters.delimFilter);
+    setQuoteFilter(savedFilters.quoteFilter);
+    setSort(readMetadataLogSort());
     hydratedRef.current = true;
   }, []);
 
@@ -784,6 +786,11 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
     if (!hydratedRef.current) return;
     writeMetadataLogFilters({ query, resultFilter, delimFilter, quoteFilter });
   }, [query, resultFilter, delimFilter, quoteFilter]);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    writeMetadataLogSort(sort);
+  }, [sort]);
 
   const exportRef = useRef<HTMLDivElement>(null);
   const lastFailAtRef = useRef<string | null>(null);
