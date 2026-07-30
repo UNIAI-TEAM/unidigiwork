@@ -696,13 +696,17 @@ type MetadataLogFilters = {
   quoteFilter: string;
 };
 
+type MetadataLogSort = { field: "timestamp" | "severity"; direction: "desc" | "asc" };
+
 const METADATA_LOG_FILTERS_KEY = "uniwork.admin.trace.metadataLogFilters";
+const METADATA_LOG_SORT_KEY = "uniwork.admin.trace.metadataLogSort";
 const DEFAULT_METADATA_LOG_FILTERS: MetadataLogFilters = {
   query: "",
   resultFilter: "all",
   delimFilter: "all",
   quoteFilter: "all",
 };
+const DEFAULT_METADATA_LOG_SORT: MetadataLogSort = { field: "timestamp", direction: "desc" };
 
 function readMetadataLogFilters(): MetadataLogFilters {
   if (typeof window === "undefined") return DEFAULT_METADATA_LOG_FILTERS;
@@ -726,6 +730,30 @@ function writeMetadataLogFilters(filters: MetadataLogFilters) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(METADATA_LOG_FILTERS_KEY, JSON.stringify(filters));
+  } catch {
+    /* ignore quota/permission errors */
+  }
+}
+
+function readMetadataLogSort(): MetadataLogSort {
+  if (typeof window === "undefined") return DEFAULT_METADATA_LOG_SORT;
+  try {
+    const raw = window.localStorage.getItem(METADATA_LOG_SORT_KEY);
+    if (!raw) return DEFAULT_METADATA_LOG_SORT;
+    const parsed = JSON.parse(raw) as Partial<MetadataLogSort>;
+    return {
+      field: parsed.field === "severity" ? "severity" : "timestamp",
+      direction: parsed.direction === "asc" ? "asc" : "desc",
+    };
+  } catch {
+    return DEFAULT_METADATA_LOG_SORT;
+  }
+}
+
+function writeMetadataLogSort(sort: MetadataLogSort) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(METADATA_LOG_SORT_KEY, JSON.stringify(sort));
   } catch {
     /* ignore quota/permission errors */
   }
