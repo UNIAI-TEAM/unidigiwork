@@ -313,6 +313,14 @@ function buildCsvFooterLine(
 }
 
 /** Chuẩn hoá tên file .zip từ tên .csv tương ứng: giữ nguyên stem (bao gồm timezone, sort, severity, status, kinds, keyword, from/to). */
+/** Thống kê của lần export gần nhất, dùng để xem trước processing_ms và tổng rows. */
+type LastExportStats = {
+  variant: "all" | "columns";
+  rows: number;
+  processingMs: number;
+  at: number;
+};
+
 function toZipFilename(csvFilename: string): string {
   return csvFilename.replace(/\.csv$/i, "") + ".zip";
 }
@@ -693,6 +701,7 @@ function AdminTracePage() {
     try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
   }, [csvOpts]);
   const [exportProgress, setExportProgress] = useState<ExportProgress>(IDLE_EXPORT_PROGRESS);
+  const [lastExportStats, setLastExportStats] = useState<LastExportStats | null>(null);
   const [presets, setPresets] = useState<FilterPreset[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -812,6 +821,12 @@ function AdminTracePage() {
         },
         vars.csv,
       );
+      setLastExportStats({
+        variant: "all",
+        rows: data.rowCount,
+        processingMs: Math.max(0, Math.round(data.processingMs ?? 0)),
+        at: Date.now(),
+      });
       setExportProgress({
         active: true,
         variant: "all",
@@ -1184,6 +1199,8 @@ function AdminTracePage() {
           onChangeCsvOpts={setCsvOpts}
           exportProgress={exportProgress}
           setExportProgress={setExportProgress}
+          lastExportStats={lastExportStats}
+          setLastExportStats={setLastExportStats}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -1404,6 +1421,8 @@ function TraceResultView({
   onChangeCsvOpts,
   exportProgress,
   setExportProgress,
+  lastExportStats,
+  setLastExportStats,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -1434,6 +1453,8 @@ function TraceResultView({
   onChangeCsvOpts: (v: CsvOptions) => void;
   exportProgress: ExportProgress;
   setExportProgress: (v: ExportProgress) => void;
+  lastExportStats: LastExportStats | null;
+  setLastExportStats: (v: LastExportStats) => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
@@ -1818,6 +1839,12 @@ function TraceResultView({
                   },
                   csvOpts,
                 );
+                setLastExportStats({
+                  variant: "columns",
+                  rows,
+                  processingMs: Math.max(0, Math.round(performance.now() - startedAt)),
+                  at: Date.now(),
+                });
                 setExportProgress({
                   active: true,
                   variant: "columns",
@@ -1862,6 +1889,9 @@ function TraceResultView({
                 severities: activeSeverities,
                 statuses: activeStatuses,
                 kinds: activeKinds,
+                rowsAll: totals.total,
+                rowsCols: filteredTimeline.length,
+                lastExport: lastExportStats,
               }}
             />
             <AutoRefreshControl
@@ -2315,6 +2345,9 @@ type CsvPreviewContext = {
   severities?: readonly Severity[];
   statuses?: readonly Status[];
   kinds?: readonly Kind[];
+  rowsAll?: number;
+  rowsCols?: number;
+  lastExport?: LastExportStats | null;
 };
 function CsvOptionsMenu({
   value,
@@ -2550,6 +2583,7 @@ function CsvOptionsMenu({
                     severities: preview.severities,
                     statuses: preview.statuses,
                     kinds: preview.kinds,
+                    rowCount: preview.rowsAll,
                   },
                   value,
                 )
@@ -2566,12 +2600,37 @@ function CsvOptionsMenu({
                     severities: preview.severities,
                     statuses: preview.statuses,
                     kinds: preview.kinds,
+                    rowCount: preview.rowsCols,
                   },
                   value,
                 )
               : null;
             return (
               <div className="mt-3 space-y-1.5 border-t border-border pt-2">
+                <div className="rounded-md border border-border bg-surface-2 px-2 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span>Tổng số rows (tất cả kết quả)</span>
+                    <span className="font-mono text-foreground">{(preview.rowsAll ?? 0).toLocaleString("vi-VN")}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Rows theo cột hiện tại</span>
+                    <span className="font-mono text-foreground">{(preview.rowsCols ?? 0).toLocaleString("vi-VN")}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>processing_ms (lần export gần nhất)</span>
+                    <span className="font-mono text-foreground">
+                      {preview.lastExport
+                        ? `${preview.lastExport.processingMs.toLocaleString("vi-VN")} ms`
+                        : "—"}
+                    </span>
+                  </div>
+                  {preview.lastExport && (
+                    <div className="mt-0.5 text-[10px]">
+                      Lần trước: {preview.lastExport.variant === "all" ? "all-results" : "current-cols"} ·{" "}
+                      {preview.lastExport.rows.toLocaleString("vi-VN")} dòng
+                    </div>
+                  )}
+                </div>
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
                   Xem trước tên file
                 </div>
