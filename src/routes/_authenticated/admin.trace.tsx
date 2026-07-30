@@ -316,6 +316,56 @@ function toMetaFilename(csvFilename: string): string {
   return csvFilename.replace(/\.csv$/i, "") + ".meta.txt";
 }
 
+/** Parse 1 dòng CSV theo đúng delimiter/quote đang chọn (RFC4180-style). */
+function parseCsvLine(line: string, delim: string, quote: string): string[] | null {
+  const out: string[] = [];
+  let cur = "";
+  let i = 0;
+  let inQuotes = false;
+  while (i < line.length) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === quote) {
+        if (line[i + 1] === quote) { cur += quote; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      cur += ch; i++; continue;
+    }
+    if (ch === quote) {
+      if (cur.length > 0) return null; // quote giữa field không hợp lệ
+      inQuotes = true; i++; continue;
+    }
+    if (ch === delim) { out.push(cur); cur = ""; i++; continue; }
+    cur += ch; i++;
+  }
+  if (inQuotes) return null; // quote chưa đóng
+  out.push(cur);
+  return out;
+}
+
+type MetadataValidation = { ok: boolean; fieldCount: number; message: string };
+
+/** Xác thực dòng metadata: parse ngược bằng chính delimiter/quote đang chọn. */
+function validateMetadataLine(line: string, csv: CsvOptions): MetadataValidation {
+  const fields = parseCsvLine(line, csv.delimiter, csv.quoteChar);
+  if (!fields) {
+    return { ok: false, fieldCount: 0, message: "Không parse được: dấu bao chuỗi không hợp lệ hoặc chưa đóng." };
+  }
+  const cleaned = fields.map((f, i) => (i === 0 ? f.replace(/^#\s*/, "") : f));
+  const bad = cleaned.filter((f) => !/^[a-z_]+=/.test(f));
+  if (bad.length > 0) {
+    return { ok: false, fieldCount: fields.length, message: `Có ${bad.length} trường không đúng dạng key=value.` };
+  }
+  if (!/^#/.test(line.replace(new RegExp(`^${escapeRegExp(csv.quoteChar)}`), ""))) {
+    return { ok: false, fieldCount: fields.length, message: "Dòng metadata phải bắt đầu bằng ký tự '#'." };
+  }
+  return { ok: true, fieldCount: fields.length, message: `Parse OK — ${fields.length} trường key=value.` };
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // ---- "CSV (tất cả kết quả)" — server export columns ----
 type ExportPhase = "idle" | "fetching" | "compressing" | "saving" | "done" | "error";
 type ExportProgress = {
