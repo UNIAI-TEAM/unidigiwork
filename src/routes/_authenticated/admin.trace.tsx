@@ -1687,7 +1687,7 @@ function AdminTracePage() {
       return;
     }
     const next: Severity[] = ALL_SEVERITIES.filter((x) => set.has(x));
-    const encoded = next.length === ALL_SEVERITIES.length ? undefined : next.join(",");
+    const encoded = next.length === ALL_SEVERITIES.length ? undefined : next;
     navigate({ search: (prev: SearchState) => ({ ...prev, sev: encoded }) });
   };
   const resetSeverities = () =>
