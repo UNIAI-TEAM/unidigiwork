@@ -2645,6 +2645,21 @@ function CsvOptionsMenu({
             <p className="mt-1 text-[11px] text-muted-foreground">
               Ghi 1 dòng comment (bắt đầu bằng <code># </code>) ghi rõ keyword, from/to, sort, severities, statuses, kinds, timezone và thời gian tạo file.
             </p>
+            <label className={`mt-2 flex items-center gap-2 ${value.includeMetadata ? "" : "opacity-50"}`}>
+              <input
+                type="checkbox"
+                checked={value.autoFixMetadata}
+                disabled={!value.includeMetadata}
+                onChange={(e) => onChange({ ...value, autoFixMetadata: e.target.checked })}
+                className="h-3.5 w-3.5 rounded border-border accent-primary"
+              />
+              <span className={value.includeMetadata ? "text-foreground" : "text-muted-foreground"}>
+                Tự động sửa metadata để parse OK trước khi export
+              </span>
+            </label>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Khi dòng metadata không parse được bằng delimiter/quote đang chọn, hệ thống sẽ chuẩn hoá lại key=value và bao chuỗi đúng chuẩn trước khi ghi file.
+            </p>
           </div>
           <div className="mt-3 space-y-1.5 border-t border-border pt-2">
             <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
