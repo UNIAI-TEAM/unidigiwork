@@ -821,6 +821,12 @@ function AdminTracePage() {
         },
         vars.csv,
       );
+      setLastExportStats({
+        variant: "all",
+        rows: data.rowCount,
+        processingMs: Math.max(0, Math.round(data.processingMs ?? 0)),
+        at: Date.now(),
+      });
       setExportProgress({
         active: true,
         variant: "all",
@@ -1833,6 +1839,12 @@ function TraceResultView({
                   },
                   csvOpts,
                 );
+                setLastExportStats({
+                  variant: "columns",
+                  rows,
+                  processingMs: Math.max(0, Math.round(performance.now() - startedAt)),
+                  at: Date.now(),
+                });
                 setExportProgress({
                   active: true,
                   variant: "columns",
@@ -1877,6 +1889,9 @@ function TraceResultView({
                 severities: activeSeverities,
                 statuses: activeStatuses,
                 kinds: activeKinds,
+                rowsAll: totals.total,
+                rowsCols: filteredTimeline.length,
+                lastExport: lastExportStats,
               }}
             />
             <AutoRefreshControl
