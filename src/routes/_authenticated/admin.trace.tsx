@@ -313,6 +313,14 @@ function buildCsvFooterLine(
 }
 
 /** Chuẩn hoá tên file .zip từ tên .csv tương ứng: giữ nguyên stem (bao gồm timezone, sort, severity, status, kinds, keyword, from/to). */
+/** Thống kê của lần export gần nhất, dùng để xem trước processing_ms và tổng rows. */
+type LastExportStats = {
+  variant: "all" | "columns";
+  rows: number;
+  processingMs: number;
+  at: number;
+};
+
 function toZipFilename(csvFilename: string): string {
   return csvFilename.replace(/\.csv$/i, "") + ".zip";
 }
@@ -693,6 +701,7 @@ function AdminTracePage() {
     try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }
   }, [csvOpts]);
   const [exportProgress, setExportProgress] = useState<ExportProgress>(IDLE_EXPORT_PROGRESS);
+  const [lastExportStats, setLastExportStats] = useState<LastExportStats | null>(null);
   const [presets, setPresets] = useState<FilterPreset[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -1184,6 +1193,8 @@ function AdminTracePage() {
           onChangeCsvOpts={setCsvOpts}
           exportProgress={exportProgress}
           setExportProgress={setExportProgress}
+          lastExportStats={lastExportStats}
+          setLastExportStats={setLastExportStats}
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -1404,6 +1415,8 @@ function TraceResultView({
   onChangeCsvOpts,
   exportProgress,
   setExportProgress,
+  lastExportStats,
+  setLastExportStats,
 }: {
   result: TraceResult;
   onPage: (p: number) => void;
@@ -1434,6 +1447,8 @@ function TraceResultView({
   onChangeCsvOpts: (v: CsvOptions) => void;
   exportProgress: ExportProgress;
   setExportProgress: (v: ExportProgress) => void;
+  lastExportStats: LastExportStats | null;
+  setLastExportStats: (v: LastExportStats) => void;
 }) {
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
