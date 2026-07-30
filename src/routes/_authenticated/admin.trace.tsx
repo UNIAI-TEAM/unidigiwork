@@ -263,6 +263,17 @@ async function downloadCsvOrZipWithFooter(
   if (opts.includeMetadata && metadataLine) {
     const r = resolveMetadataLine(metadataLine, opts);
     metaLine = r.line;
+    recordMetadataCheck({
+      at: new Date().toISOString(),
+      variant: "export",
+      mode: "strict",
+      ok: r.ok,
+      fieldCount: validateMetadataLine(metaLine, opts).fieldCount,
+      delimiter: opts.delimiter,
+      quoteChar: opts.quoteChar,
+      message: (r.fixed ? "Auto-fixed · " : "") + r.message,
+      line: metaLine,
+    });
     if (r.fixed) {
       toast.info("Đã tự động sửa dòng metadata để parse OK trước khi export.");
     } else if (!r.ok) {
