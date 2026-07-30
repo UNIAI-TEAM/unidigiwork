@@ -692,6 +692,7 @@ function normalizeErrorSignature(message: string) {
 function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
   const persisted = readMetadataLogFilters();
+  // eslint-disable-next-line no-empty
   const [query, setQuery] = useState(persisted.query);
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(persisted.resultFilter);
   const [delimFilter, setDelimFilter] = useState<string>(persisted.delimFilter);
