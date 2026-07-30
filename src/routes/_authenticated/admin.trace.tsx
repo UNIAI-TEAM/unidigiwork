@@ -3165,7 +3165,7 @@ function CsvOptionsMenu({
                           {metaAll}
                         </code>
                         <MetadataValidationBadge line={metaAll} csv={value} />
-                        <ExcelParseCheck line={metaAll} csv={value} />
+                        <ExcelParseCheck line={metaAll} csv={value} variant="all-results" />
                       </div>
                     )}
                     {metaCols && (
@@ -3194,12 +3194,13 @@ function CsvOptionsMenu({
                           {metaCols}
                         </code>
                         <MetadataValidationBadge line={metaCols} csv={value} />
-                        <ExcelParseCheck line={metaCols} csv={value} />
+                        <ExcelParseCheck line={metaCols} csv={value} variant="current-cols" />
                       </div>
                     )}
                     <p className="text-[11px] text-muted-foreground">
                       Dòng này sẽ được ghi ở đầu CSV (hoặc trong <code>.meta.txt</code> nếu bật tách metadata trong ZIP). <code>rows</code> được thêm khi export.
                     </p>
+                    <MetadataCheckLogPanel />
                   </div>
                 )}
               </div>
