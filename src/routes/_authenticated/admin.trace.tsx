@@ -890,6 +890,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
     () => ordered.slice((safePage - 1) * pageSize, safePage * pageSize),
     [ordered, safePage, pageSize],
   );
+  const [detail, setDetail] = useState<MetadataCheckLogEntry | null>(null);
 
   useEffect(() => {
     setPage(1);
