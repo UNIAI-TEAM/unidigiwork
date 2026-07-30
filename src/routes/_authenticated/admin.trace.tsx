@@ -681,6 +681,14 @@ function buildMetadataCheckLogCsv(entries: MetadataCheckLogEntry[], csv: CsvOpti
   return lines.join("\n");
 }
 
+function normalizeErrorSignature(message: string) {
+  return message
+    .replace(/\d+/g, "N")
+    .replace(/"([^"]{2,})"/g, '"..."')
+    .replace(/'([^']{2,})'/g, "'...'")
+    .trim();
+}
+
 function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
   const entries = useMetadataCheckLog();
   const [query, setQuery] = useState("");
@@ -718,6 +726,24 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
       return hay.includes(q);
     });
   }, [entries, query, resultFilter, delimFilter, quoteFilter]);
+
+  const summary = useMemo(() => {
+    const total = filtered.length;
+    const fail = filtered.filter((e) => !e.ok).length;
+    const pass = total - fail;
+    const failRate = total > 0 ? Math.round((fail / total) * 100) : 0;
+    return { total, fail, pass, failRate };
+  }, [filtered]);
+
+  const topErrors = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of filtered) {
+      if (e.ok) continue;
+      const sig = normalizeErrorSignature(e.message);
+      counts.set(sig, (counts.get(sig) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  }, [filtered]);
 
   const last = filtered[filtered.length - 1] ?? entries[entries.length - 1];
 
@@ -863,231 +889,72 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
         </select>
       </div>
 
-      const summary = useMemo(() => {
-        const total = filtered.length;
-        const fail = filtered.filter((e) => !e.ok).length;
-        const pass = total - fail;
-        const failRate = total > 0 ? Math.round((fail / total) * 100) : 0;
-        return { total, fail, pass, failRate };
-      }, [filtered]);
-
-      const topErrors = useMemo(() => {
-        const counts = new Map<string, number>();
-        for (const e of filtered) {
-          if (e.ok) continue;
-          const sig = normalizeErrorSignature(e.message);
-          counts.set(sig, (counts.get(sig) ?? 0) + 1);
-        }
-        return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
-      }, [filtered]);
-
-      return (
-        <div
-          className="mt-2 flex flex-col gap-2 rounded border border-border bg-surface-2 px-2 py-2 text-[11px] text-muted-foreground"
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-1">
-              <Filter className="h-3 w-3" />
-              Log kiểm tra: <span className="text-foreground">{entries.length}</span> lượt
-              {filtered.length !== entries.length && (
-                <span>
-                  {" "}
-                  · lọc <span className="text-foreground">{filtered.length}</span>
-                </span>
-              )}
-              {last ? ` · gần nhất ${last.ok ? "PASS" : "FAIL"} (${last.fieldCount} trường)` : " · chưa có"}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={entries.length === 0}
-                onClick={() => {
-                  setQuery("");
-                  setResultFilter("all");
-                  setDelimFilter("all");
-                  setQuoteFilter("all");
-                }}
-                className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-                title="Đặt lại bộ lọc"
-              >
-                <RefreshCw className="h-3 w-3" />
-                Reset
-              </button>
-              <button
-                type="button"
-                disabled={filtered.length === 0}
-                onClick={() => {
-                  const text = buildMetadataCheckLogText(filtered);
-                  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-                  triggerBlobDownload(new Blob([text], { type: "text/plain;charset=utf-8" }), `metadata-check-log_${stamp}.log`);
-                  toast.success(`Đã tải log kiểm tra metadata (${filtered.length} lượt)`, { duration: 2500 });
-                }}
-                className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-                title="Tải xuống log kiểm tra metadata (.log)"
-              >
-                <Download className="h-3 w-3" />
-                .log
-              </button>
-              <button
-                type="button"
-                disabled={filtered.length === 0}
-                onClick={() => {
-                  const text = buildMetadataCheckLogCsv(filtered, csv);
-                  const bom = csv.bom ? "\uFEFF" : "";
-                  const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
-                  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-                  const ext = csv.delimiter === ";" ? "scsv" : "csv";
-                  triggerBlobDownload(blob, `metadata-check-log_${stamp}.${ext}`);
-                  toast.success(`Đã tải log kiểm tra metadata dạng CSV (${filtered.length} lượt)`, { duration: 2500 });
-                }}
-                className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-                title="Tải xuống log kiểm tra metadata (CSV)"
-              >
-                <Download className="h-3 w-3" />
-                CSV
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <div className="relative flex items-center">
-              <Search className="absolute left-1.5 h-3 w-3 text-muted-foreground" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Tìm theo nội dung, thời gian, mode..."
-                className="h-6 w-40 rounded border border-border bg-surface-1 pl-5 pr-5 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring sm:w-56"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery("")}
-                  className="absolute right-1 rounded p-0.5 hover:bg-surface-2"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            {(["all", "pass", "fail"] as const).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setResultFilter(k)}
-                className={
-                  "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 capitalize " +
-                  (resultFilter === k
-                    ? k === "pass"
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                      : k === "fail"
-                        ? "border-red-500/40 bg-red-500/10 text-red-400"
-                        : "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:bg-surface-1 hover:text-foreground")
-                }
-              >
-                {k === "all" ? "Tất cả" : k === "pass" ? "PASS" : "FAIL"}
-                <span className="text-muted-foreground">
-                  (
-                  {k === "all"
-                    ? entries.length
-                    : entries.filter((e) => (k === "pass" ? e.ok : !e.ok)).length}
-                  )
-                </span>
-              </button>
-            ))}
-            <select
-              value={delimFilter}
-              onChange={(e) => setDelimFilter(e.target.value)}
-              className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="all">Delimiter: tất cả</option>
-              {delimiters.map((d) => (
-                <option key={d} value={d}>
-                  {`"${d}"`}
-                </option>
-              ))}
-            </select>
-            <select
-              value={quoteFilter}
-              onChange={(e) => setQuoteFilter(e.target.value)}
-              className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="all">Quote: tất cả</option>
-              {quotes.map((q) => (
-                <option key={q} value={q}>
-                  {`"${q}"`}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 rounded border border-border bg-surface-1 p-2">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-muted-foreground">Tổng kiểm tra</span>
-              <span className="text-lg font-semibold leading-tight text-foreground">{summary.total}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-muted-foreground">FAIL</span>
-              <span className="text-lg font-semibold leading-tight text-red-400">
-                {summary.fail} <span className="text-[10px] font-normal">({summary.failRate}%)</span>
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-muted-foreground">PASS</span>
-              <span className="text-lg font-semibold leading-tight text-emerald-400">{summary.pass}</span>
-            </div>
-          </div>
-
-          {topErrors.length > 0 && (
-            <div className="rounded border border-border bg-surface-1 p-2">
-              <div className="mb-1 text-[10px] font-medium text-muted-foreground">Top lỗi phổ biến</div>
-              <ul className="flex flex-col gap-1">
-                {topErrors.map(([sig, count], i) => (
-                  <li key={i} className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="line-clamp-1 text-foreground" title={sig}>
-                      {i + 1}. {sig}
-                    </span>
-                    <span className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1 py-0.5 text-[10px] text-red-400">
-                      {count}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="max-h-40 overflow-y-auto rounded border border-border bg-surface-1">
-            {filtered.length === 0 ? (
-              <div className="px-2 py-3 text-center text-muted-foreground">Không có log phù hợp.</div>
-            ) : (
-              <ul className="divide-y divide-border">
-                {filtered.slice().reverse().map((e, i) => (
-                  <li key={i} className="flex items-start gap-2 px-2 py-1.5">
-                    <span
-                      className={
-                        "mt-0.5 inline-flex h-4 min-w-8 items-center justify-center rounded border px-1 text-[10px] font-medium " +
-                        (e.ok ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400")
-                      }
-                    >
-                      {e.ok ? "PASS" : "FAIL"}
-                    </span>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground">
-                        {e.at} · {e.variant} · {e.mode} · {e.fieldCount} trường
-                      </span>
-                      <span className="line-clamp-1">{e.message}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground line-clamp-1">{e.line}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      <div className="grid grid-cols-3 gap-2 rounded border border-border bg-surface-1 p-2">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-muted-foreground">Tổng kiểm tra</span>
+          <span className="text-lg font-semibold leading-tight text-foreground">{summary.total}</span>
         </div>
-      );
-    }
+        <div className="flex flex-col">
+          <span className="text-[10px] text-muted-foreground">FAIL</span>
+          <span className="text-lg font-semibold leading-tight text-red-400">
+            {summary.fail} <span className="text-[10px] font-normal">({summary.failRate}%)</span>
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-muted-foreground">PASS</span>
+          <span className="text-lg font-semibold leading-tight text-emerald-400">{summary.pass}</span>
+        </div>
+      </div>
+
+      {topErrors.length > 0 && (
+        <div className="rounded border border-border bg-surface-1 p-2">
+          <div className="mb-1 text-[10px] font-medium text-muted-foreground">Top lỗi phổ biến</div>
+          <ul className="flex flex-col gap-1">
+            {topErrors.map(([sig, count], i) => (
+              <li key={i} className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="line-clamp-1 text-foreground" title={sig}>
+                  {i + 1}. {sig}
+                </span>
+                <span className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1 py-0.5 text-[10px] text-red-400">
+                  {count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="max-h-40 overflow-y-auto rounded border border-border bg-surface-1">
+        {filtered.length === 0 ? (
+          <div className="px-2 py-3 text-center text-muted-foreground">Không có log phù hợp.</div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {filtered.slice().reverse().map((e, i) => (
+              <li key={i} className="flex items-start gap-2 px-2 py-1.5">
+                <span
+                  className={
+                    "mt-0.5 inline-flex h-4 min-w-8 items-center justify-center rounded border px-1 text-[10px] font-medium " +
+                    (e.ok ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400")
+                  }
+                >
+                  {e.ok ? "PASS" : "FAIL"}
+                </span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-foreground">
+                    {e.at} · {e.variant} · {e.mode} · {e.fieldCount} trường
+                  </span>
+                  <span className="line-clamp-1">{e.message}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground line-clamp-1">{e.line}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 
 
