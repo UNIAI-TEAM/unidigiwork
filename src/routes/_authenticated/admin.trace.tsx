@@ -681,6 +681,14 @@ function buildMetadataCheckLogCsv(entries: MetadataCheckLogEntry[], csv: CsvOpti
   return lines.join("\n");
 }
 
+function normalizeErrorSignature(message: string) {
+  return message
+    .replace(/\d+/g, "N")
+    .replace(/"([^"]{2,})"/g, '"..."')
+    .replace(/'([^']{2,})'/g, "'...'")
+    .trim();
+}
+
 function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
   const entries = useMetadataCheckLog();
   const [query, setQuery] = useState("");
@@ -718,6 +726,24 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
       return hay.includes(q);
     });
   }, [entries, query, resultFilter, delimFilter, quoteFilter]);
+
+  const summary = useMemo(() => {
+    const total = filtered.length;
+    const fail = filtered.filter((e) => !e.ok).length;
+    const pass = total - fail;
+    const failRate = total > 0 ? Math.round((fail / total) * 100) : 0;
+    return { total, fail, pass, failRate };
+  }, [filtered]);
+
+  const topErrors = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of filtered) {
+      if (e.ok) continue;
+      const sig = normalizeErrorSignature(e.message);
+      counts.set(sig, (counts.get(sig) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  }, [filtered]);
 
   const last = filtered[filtered.length - 1] ?? entries[entries.length - 1];
 
@@ -863,6 +889,41 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
         </select>
       </div>
 
+      <div className="grid grid-cols-3 gap-2 rounded border border-border bg-surface-1 p-2">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-muted-foreground">Tổng kiểm tra</span>
+          <span className="text-lg font-semibold leading-tight text-foreground">{summary.total}</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-muted-foreground">FAIL</span>
+          <span className="text-lg font-semibold leading-tight text-red-400">
+            {summary.fail} <span className="text-[10px] font-normal">({summary.failRate}%)</span>
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-muted-foreground">PASS</span>
+          <span className="text-lg font-semibold leading-tight text-emerald-400">{summary.pass}</span>
+        </div>
+      </div>
+
+      {topErrors.length > 0 && (
+        <div className="rounded border border-border bg-surface-1 p-2">
+          <div className="mb-1 text-[10px] font-medium text-muted-foreground">Top lỗi phổ biến</div>
+          <ul className="flex flex-col gap-1">
+            {topErrors.map(([sig, count], i) => (
+              <li key={i} className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="line-clamp-1 text-foreground" title={sig}>
+                  {i + 1}. {sig}
+                </span>
+                <span className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1 py-0.5 text-[10px] text-red-400">
+                  {count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="max-h-40 overflow-y-auto rounded border border-border bg-surface-1">
         {filtered.length === 0 ? (
           <div className="px-2 py-3 text-center text-muted-foreground">Không có log phù hợp.</div>
@@ -893,6 +954,8 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
     </div>
   );
 }
+
+
 
 
 type ExcelField = { index: number; start: number; quoted: boolean; value: string; note?: string };
