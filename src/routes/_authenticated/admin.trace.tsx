@@ -830,6 +830,18 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
     [filtered, sigFilter],
   );
 
+  const ordered = useMemo(() => displayed.slice().reverse(), [displayed]);
+  const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = useMemo(
+    () => ordered.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [ordered, safePage, pageSize],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, resultFilter, delimFilter, quoteFilter, sigFilter, pageSize]);
+
   const last = filtered[filtered.length - 1] ?? entries[entries.length - 1];
 
   return (
