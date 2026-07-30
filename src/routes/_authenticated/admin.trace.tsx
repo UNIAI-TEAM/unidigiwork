@@ -867,7 +867,22 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
     [filtered, sigFilter],
   );
 
-  const ordered = useMemo(() => displayed.slice().reverse(), [displayed]);
+  const ordered = useMemo(() => {
+    const list = displayed.slice();
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sort.field === "timestamp") {
+        cmp = a.at.localeCompare(b.at);
+      } else if (sort.field === "severity") {
+        // FAIL (ok=false) có mức độ cao hơn PASS (ok=true)
+        cmp = Number(a.ok) - Number(b.ok);
+      }
+      if (cmp !== 0) return sort.direction === "asc" ? cmp : -cmp;
+      // tie-break by timestamp desc
+      return b.at.localeCompare(a.at);
+    });
+    return list;
+  }, [displayed, sort]);
   const totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pageItems = useMemo(
