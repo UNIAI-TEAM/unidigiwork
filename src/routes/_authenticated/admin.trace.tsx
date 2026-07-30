@@ -662,33 +662,75 @@ function buildMetadataCheckLogText(entries: MetadataCheckLogEntry[]): string {
   return [...head, ...rows, "", "# Chi tiết dòng metadata đã kiểm tra", ...detail, ""].join("\n");
 }
 
-function MetadataCheckLogPanel() {
+function buildMetadataCheckLogCsv(entries: MetadataCheckLogEntry[], csv: CsvOptions): string {
+  const d = csv.delimiter;
+  const q = csv.quoteChar;
+  const header = ["timestamp", "variant", "mode", "result", "fields", "delimiter", "quote", "message", "line"];
+  const rows = entries.map((e) => [
+    e.at,
+    e.variant,
+    e.mode,
+    e.ok ? "PASS" : "FAIL",
+    String(e.fieldCount),
+    e.delimiter === "\t" ? "\\t" : e.delimiter,
+    e.quoteChar,
+    e.message.replace(/\s+/g, " "),
+    e.line,
+  ]);
+  const lines = [header, ...rows].map((row) => row.map((cell) => csvEscape(cell, d, q)).join(d));
+  return lines.join("\n");
+}
+
+function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
   const entries = useMetadataCheckLog();
   const last = entries[entries.length - 1];
   return (
-    <div className="mt-2 flex items-center justify-between gap-2 rounded border border-border bg-surface-2 px-1.5 py-1 text-[11px] text-muted-foreground">
-      <span>
-        Log kiểm tra: <span className="text-foreground">{entries.length}</span> lượt
-        {last ? ` · gần nhất ${last.ok ? "PASS" : "FAIL"} (${last.fieldCount} trường)` : " · chưa có"}
-      </span>
-      <button
-        type="button"
-        disabled={entries.length === 0}
-        onClick={() => {
-          const text = buildMetadataCheckLogText(entries);
-          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-          triggerBlobDownload(new Blob([text], { type: "text/plain;charset=utf-8" }), `metadata-check-log_${stamp}.log`);
-          toast.success(`Đã tải log kiểm tra metadata (${entries.length} lượt)`, { duration: 2500 });
-        }}
-        className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-        title="Tải xuống log kiểm tra metadata (.log)"
-      >
-        <Download className="h-3 w-3" />
-        Tải log
-      </button>
+    <div className="mt-2 flex flex-col gap-2 rounded border border-border bg-surface-2 px-1.5 py-1 text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-2">
+        <span>
+          Log kiểm tra: <span className="text-foreground">{entries.length}</span> lượt
+          {last ? ` · gần nhất ${last.ok ? "PASS" : "FAIL"} (${last.fieldCount} trường)` : " · chưa có"}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            disabled={entries.length === 0}
+            onClick={() => {
+              const text = buildMetadataCheckLogText(entries);
+              const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+              triggerBlobDownload(new Blob([text], { type: "text/plain;charset=utf-8" }), `metadata-check-log_${stamp}.log`);
+              toast.success(`Đã tải log kiểm tra metadata (${entries.length} lượt)`, { duration: 2500 });
+            }}
+            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
+            title="Tải xuống log kiểm tra metadata (.log)"
+          >
+            <Download className="h-3 w-3" />
+            .log
+          </button>
+          <button
+            type="button"
+            disabled={entries.length === 0}
+            onClick={() => {
+              const text = buildMetadataCheckLogCsv(entries, csv);
+              const bom = csv.bom ? "\uFEFF" : "";
+              const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
+              const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+              const ext = csv.delimiter === ";" ? "scsv" : "csv";
+              triggerBlobDownload(blob, `metadata-check-log_${stamp}.${ext}`);
+              toast.success(`Đã tải log kiểm tra metadata dạng CSV (${entries.length} lượt)`, { duration: 2500 });
+            }}
+            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
+            title="Tải xuống log kiểm tra metadata (CSV)"
+          >
+            <Download className="h-3 w-3" />
+            CSV
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
 
 type ExcelField = { index: number; start: number; quoted: boolean; value: string; note?: string };
 
