@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save, Filter } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, ChevronDown, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -695,7 +695,18 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">("all");
   const [delimFilter, setDelimFilter] = useState<string>("all");
   const [quoteFilter, setQuoteFilter] = useState<string>("all");
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
   const lastFailAtRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (!exportRef.current?.contains(e.target as Node)) setExportOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [exportOpen]);
 
   const lastFail = useMemo(() => [...entries].reverse().find((e) => !e.ok) ?? null, [entries]);
   useEffect(() => {
@@ -791,57 +802,75 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
             <RefreshCw className="h-3 w-3" />
             Reset
           </button>
-          <button
-            type="button"
-            disabled={filtered.length === 0}
-            onClick={() => {
-              const text = buildMetadataCheckLogText(filtered);
-              const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-              triggerBlobDownload(new Blob([text], { type: "text/plain;charset=utf-8" }), `metadata-check-log_${stamp}.log`);
-              toast.success(`Đã tải log kiểm tra metadata (${filtered.length} lượt)`, { duration: 2500 });
-            }}
-            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-            title="Tải xuống log kiểm tra metadata (.log)"
-          >
-            <Download className="h-3 w-3" />
-            .log
-          </button>
-          <button
-            type="button"
-            disabled={filtered.length === 0}
-            onClick={() => {
-              const text = buildMetadataCheckLogCsv(filtered, csv);
-              const bom = csv.bom ? "\uFEFF" : "";
-              const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
-              const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-              const ext = csv.delimiter === ";" ? "scsv" : "csv";
-              triggerBlobDownload(blob, `metadata-check-log_${stamp}.${ext}`);
-              toast.success(`Đã tải log kiểm tra metadata dạng CSV (${filtered.length} lượt)`, { duration: 2500 });
-            }}
-            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-            title="Tải xuống log kiểm tra metadata (CSV)"
-          >
-            <Download className="h-3 w-3" />
-            CSV
-          </button>
-          <button
-            type="button"
-            disabled={filtered.length === 0}
-            onClick={async () => {
-              const text = buildMetadataCheckLogText(filtered);
-              try {
-                await navigator.clipboard.writeText(text);
-                toast.success(`Đã sao chép ${filtered.length} lượt log vào clipboard`, { duration: 2500 });
-              } catch {
-                toast.error("Sao chép thất bại. Trình duyệt có thể chặn quyền clipboard.", { duration: 3000 });
-              }
-            }}
-            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-            title="Sao chép nội dung log vào clipboard để dán vào ticket/chat"
-          >
-            <Copy className="h-3 w-3" />
-            Copy
-          </button>
+          <div className="relative" ref={exportRef}>
+            <button
+              type="button"
+              disabled={filtered.length === 0}
+              onClick={() => setExportOpen((v) => !v)}
+              className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
+              title="Export chỉ các log đang được lọc"
+            >
+              <Download className="h-3 w-3" />
+              Export
+              <span className="rounded bg-surface-2 px-1 text-[10px] text-foreground">{filtered.length}</span>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+            {exportOpen && (
+              <div className="absolute right-0 top-full z-30 mt-1 min-w-[9rem] rounded border border-border bg-surface shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = buildMetadataCheckLogText(filtered);
+                    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+                    triggerBlobDownload(new Blob([text], { type: "text/plain;charset=utf-8" }), `metadata-check-log_${stamp}.log`);
+                    toast.success(`Đã tải log kiểm tra metadata (${filtered.length} lượt đã lọc)`, { duration: 2500 });
+                    setExportOpen(false);
+                  }}
+                  className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
+                  title="Tải log đã lọc dạng .log"
+                >
+                  <Download className="h-3 w-3" />
+                  Tải .log
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = buildMetadataCheckLogCsv(filtered, csv);
+                    const bom = csv.bom ? "\uFEFF" : "";
+                    const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
+                    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+                    const ext = csv.delimiter === ";" ? "scsv" : "csv";
+                    triggerBlobDownload(blob, `metadata-check-log_${stamp}.${ext}`);
+                    toast.success(`Đã tải log kiểm tra metadata dạng CSV (${filtered.length} lượt đã lọc)`, { duration: 2500 });
+                    setExportOpen(false);
+                  }}
+                  className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
+                  title="Tải log đã lọc dạng CSV"
+                >
+                  <Download className="h-3 w-3" />
+                  Tải CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const text = buildMetadataCheckLogText(filtered);
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      toast.success(`Đã sao chép ${filtered.length} lượt log đã lọc vào clipboard`, { duration: 2500 });
+                    } catch {
+                      toast.error("Sao chép thất bại. Trình duyệt có thể chặn quyền clipboard.", { duration: 3000 });
+                    }
+                    setExportOpen(false);
+                  }}
+                  className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
+                  title="Sao chép log đã lọc vào clipboard"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copy
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
