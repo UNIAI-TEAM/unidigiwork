@@ -457,6 +457,59 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/**
+ * Chuẩn hoá lại dòng metadata để chắc chắn parse OK với delimiter/quote đang chọn:
+ * tách token (fallback khi quote hỏng), gom mảnh không có "=" vào value trước đó,
+ * chuẩn hoá key về dạng [a-z_]+, rồi csvEscape và join lại bằng delimiter hiện tại.
+ */
+function sanitizeMetadataLine(line: string, csv: CsvOptions): string {
+  const parsed = parseCsvLine(line, csv.delimiter, csv.quoteChar);
+  const rawTokens =
+    parsed ??
+    line
+      .split(csv.quoteChar)
+      .join("")
+      .split(csv.delimiter);
+  const pairs: Array<[string, string]> = [];
+  for (let i = 0; i < rawTokens.length; i++) {
+    const token = (i === 0 ? rawTokens[i].replace(/^#\s*/, "") : rawTokens[i]).trim();
+    if (!token) continue;
+    const eq = token.indexOf("=");
+    if (eq <= 0) {
+      if (pairs.length > 0) pairs[pairs.length - 1][1] += ` ${token}`;
+      continue;
+    }
+    const key = token
+      .slice(0, eq)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z_]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!key) {
+      if (pairs.length > 0) pairs[pairs.length - 1][1] += ` ${token}`;
+      continue;
+    }
+    pairs.push([key, token.slice(eq + 1)]);
+  }
+  if (pairs.length === 0) return csvEscape("# metadata=", csv.delimiter, csv.quoteChar);
+  return pairs
+    .map(([k, v], i) => csvEscape(`${i === 0 ? "# " : ""}${k}=${v}`, csv.delimiter, csv.quoteChar))
+    .join(csv.delimiter);
+}
+
+/** Trả về dòng metadata đã sẵn sàng export: tự sửa nếu bật autoFixMetadata và dòng gốc không parse được. */
+function resolveMetadataLine(
+  line: string,
+  csv: CsvOptions,
+): { line: string; fixed: boolean; ok: boolean; message: string } {
+  const v = validateMetadataLine(line, csv);
+  if (v.ok) return { line, fixed: false, ok: true, message: v.message };
+  if (!csv.autoFixMetadata) return { line, fixed: false, ok: false, message: v.message };
+  const repaired = sanitizeMetadataLine(line, csv);
+  const after = validateMetadataLine(repaired, csv);
+  return { line: after.ok ? repaired : line, fixed: after.ok, ok: after.ok, message: after.message };
+}
+
 /** Badge hiển thị kết quả xác thực parse dòng metadata theo delimiter/quote đang chọn. */
 function MetadataValidationBadge({ line, csv }: { line: string; csv: CsvOptions }) {
   const v = validateMetadataLine(line, csv);
