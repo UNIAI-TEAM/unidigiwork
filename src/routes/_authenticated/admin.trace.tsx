@@ -165,6 +165,7 @@ const DEFAULT_CSV_OPTIONS: CsvOptions = {
   zip: false,
   includeMetadata: true,
   separateMetadata: false,
+  metaJson: false,
   filenameTemplate: DEFAULT_FILENAME_TEMPLATE,
 };
 
@@ -329,6 +330,74 @@ function toZipFilename(csvFilename: string): string {
 /** Tên file metadata đi kèm khi tách khỏi CSV trong ZIP (giữ nguyên stem). */
 function toMetaFilename(csvFilename: string): string {
   return csvFilename.replace(/\.csv$/i, "") + ".meta.txt";
+}
+
+/** Tên file metadata JSON đi kèm trong ZIP (giữ nguyên stem). */
+function toMetaJsonFilename(csvFilename: string): string {
+  return csvFilename.replace(/\.csv$/i, "") + ".meta.json";
+}
+
+/** Tách chuỗi "k=v" thành cặp; giữ nguyên phần value có chứa "=". */
+function splitKeyValue(token: string): [string, string] | null {
+  const t = token.replace(/^#\s*/, "").trim();
+  const i = t.indexOf("=");
+  if (i <= 0) return null;
+  return [t.slice(0, i).trim(), t.slice(i + 1)];
+}
+
+/** Chuyển giá trị chuỗi sang số khi hợp lệ để JSON dễ import lại. */
+function coerceMetaValue(key: string, raw: string): string | number | boolean {
+  if (/^(rows|total_rows|exported_rows|processing_ms|severity_(info|warn|error))$/.test(key)) {
+    const n = Number(raw);
+    if (!Number.isNaN(n)) return n;
+  }
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  return raw;
+}
+
+/** Build nội dung `<stem>.meta.json` từ dòng metadata + footer đang dùng cho CSV. */
+function buildMetaJson(
+  csvFilename: string,
+  opts: CsvOptions,
+  metadataLine?: string,
+  footerLine?: string,
+): string {
+  const meta: Record<string, string | number | boolean> = {};
+  if (metadataLine) {
+    const tokens = parseCsvLine(metadataLine, opts.delimiter, opts.quoteChar);
+    for (const tk of tokens ?? []) {
+      const kv = splitKeyValue(tk);
+      if (kv) meta[kv[0]] = coerceMetaValue(kv[0], kv[1]);
+    }
+  }
+  const summary: Record<string, string | number | boolean> = {};
+  if (footerLine) {
+    const unquoted = parseCsvLine(footerLine, opts.delimiter, opts.quoteChar)?.[0] ?? footerLine;
+    for (const tk of unquoted.replace(/^#\s*/, "").split(" | ")) {
+      const kv = splitKeyValue(tk);
+      if (kv) summary[kv[0]] = coerceMetaValue(kv[0], kv[1]);
+    }
+  }
+  const payload = {
+    schema: "uniwork.trace.export.meta/v1",
+    file: {
+      csv: csvFilename,
+      zip: toZipFilename(csvFilename),
+      meta_json: toMetaJsonFilename(csvFilename),
+    },
+    csv_options: {
+      delimiter: opts.delimiter === "\t" ? "\\t" : opts.delimiter,
+      quote_char: opts.quoteChar,
+      bom: opts.bom,
+      timezone: opts.filenameTz === "utc" ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone,
+      zip: opts.zip,
+      separate_metadata: opts.separateMetadata,
+    },
+    metadata: meta,
+    summary,
+  };
+  return JSON.stringify(payload, null, 2) + "\n";
 }
 
 /** Parse 1 dòng CSV theo đúng delimiter/quote đang chọn (RFC4180-style). */
