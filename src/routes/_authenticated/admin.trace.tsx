@@ -689,9 +689,51 @@ function normalizeErrorSignature(message: string) {
     .trim();
 }
 
+type MetadataLogFilters = {
+  query: string;
+  resultFilter: "all" | "pass" | "fail";
+  delimFilter: string;
+  quoteFilter: string;
+};
+
+const METADATA_LOG_FILTERS_KEY = "uniwork.admin.trace.metadataLogFilters";
+const DEFAULT_METADATA_LOG_FILTERS: MetadataLogFilters = {
+  query: "",
+  resultFilter: "all",
+  delimFilter: "all",
+  quoteFilter: "all",
+};
+
+function readMetadataLogFilters(): MetadataLogFilters {
+  if (typeof window === "undefined") return DEFAULT_METADATA_LOG_FILTERS;
+  try {
+    const raw = window.localStorage.getItem(METADATA_LOG_FILTERS_KEY);
+    if (!raw) return DEFAULT_METADATA_LOG_FILTERS;
+    const parsed = JSON.parse(raw) as Partial<MetadataLogFilters>;
+    return {
+      query: typeof parsed.query === "string" ? parsed.query : "",
+      resultFilter:
+        parsed.resultFilter === "pass" || parsed.resultFilter === "fail" ? parsed.resultFilter : "all",
+      delimFilter: typeof parsed.delimFilter === "string" ? parsed.delimFilter : "all",
+      quoteFilter: typeof parsed.quoteFilter === "string" ? parsed.quoteFilter : "all",
+    };
+  } catch {
+    return DEFAULT_METADATA_LOG_FILTERS;
+  }
+}
+
+function writeMetadataLogFilters(filters: MetadataLogFilters) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(METADATA_LOG_FILTERS_KEY, JSON.stringify(filters));
+  } catch {
+    /* ignore quota/permission errors */
+  }
+}
+
 function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
   const entries = useMetadataCheckLog();
-  const persisted = readMetadataLogFilters();
+  const [persisted] = useState(readMetadataLogFilters);
   const [query, setQuery] = useState(persisted.query);
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(persisted.resultFilter);
   const [delimFilter, setDelimFilter] = useState<string>(persisted.delimFilter);
