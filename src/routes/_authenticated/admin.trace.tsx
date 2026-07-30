@@ -5,6 +5,7 @@ import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft,
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { traceByCorrelationId, exportTraceCsv } from "@/lib/api/admin.functions";
 
 const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000] as const;
