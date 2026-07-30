@@ -2345,6 +2345,9 @@ type CsvPreviewContext = {
   severities?: readonly Severity[];
   statuses?: readonly Status[];
   kinds?: readonly Kind[];
+  rowsAll?: number;
+  rowsCols?: number;
+  lastExport?: LastExportStats | null;
 };
 function CsvOptionsMenu({
   value,
