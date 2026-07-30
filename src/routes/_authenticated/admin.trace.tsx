@@ -255,6 +255,12 @@ async function downloadCsvOrZipWithFooter(
   metadataLine?: string,
   footerLine?: string,
 ): Promise<void> {
+  if (opts.includeMetadata && metadataLine) {
+    const v = validateMetadataLine(metadataLine, opts);
+    if (!v.ok) {
+      toast.warning(`Metadata không parse được với delimiter/quote đang chọn: ${v.message}`, { duration: 6000 });
+    }
+  }
   const useSeparate = opts.zip && opts.separateMetadata && (!!metadataLine || !!footerLine);
   const header = !useSeparate && opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
   const footer = !useSeparate && footerLine ? (csvText.endsWith("\n") ? "" : "\r\n") + footerLine + "\r\n" : "";
@@ -314,6 +320,72 @@ function toZipFilename(csvFilename: string): string {
 /** Tên file metadata đi kèm khi tách khỏi CSV trong ZIP (giữ nguyên stem). */
 function toMetaFilename(csvFilename: string): string {
   return csvFilename.replace(/\.csv$/i, "") + ".meta.txt";
+}
+
+/** Parse 1 dòng CSV theo đúng delimiter/quote đang chọn (RFC4180-style). */
+function parseCsvLine(line: string, delim: string, quote: string): string[] | null {
+  const out: string[] = [];
+  let cur = "";
+  let i = 0;
+  let inQuotes = false;
+  while (i < line.length) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === quote) {
+        if (line[i + 1] === quote) { cur += quote; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      cur += ch; i++; continue;
+    }
+    if (ch === quote) {
+      if (cur.length > 0) return null; // quote giữa field không hợp lệ
+      inQuotes = true; i++; continue;
+    }
+    if (ch === delim) { out.push(cur); cur = ""; i++; continue; }
+    cur += ch; i++;
+  }
+  if (inQuotes) return null; // quote chưa đóng
+  out.push(cur);
+  return out;
+}
+
+type MetadataValidation = { ok: boolean; fieldCount: number; message: string };
+
+/** Xác thực dòng metadata: parse ngược bằng chính delimiter/quote đang chọn. */
+function validateMetadataLine(line: string, csv: CsvOptions): MetadataValidation {
+  const fields = parseCsvLine(line, csv.delimiter, csv.quoteChar);
+  if (!fields) {
+    return { ok: false, fieldCount: 0, message: "Không parse được: dấu bao chuỗi không hợp lệ hoặc chưa đóng." };
+  }
+  const cleaned = fields.map((f, i) => (i === 0 ? f.replace(/^#\s*/, "") : f));
+  const bad = cleaned.filter((f) => !/^[a-z_]+=/.test(f));
+  if (bad.length > 0) {
+    return { ok: false, fieldCount: fields.length, message: `Có ${bad.length} trường không đúng dạng key=value.` };
+  }
+  if (!/^#/.test(line.replace(new RegExp(`^${escapeRegExp(csv.quoteChar)}`), ""))) {
+    return { ok: false, fieldCount: fields.length, message: "Dòng metadata phải bắt đầu bằng ký tự '#'." };
+  }
+  return { ok: true, fieldCount: fields.length, message: `Parse OK — ${fields.length} trường key=value.` };
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Badge hiển thị kết quả xác thực parse dòng metadata theo delimiter/quote đang chọn. */
+function MetadataValidationBadge({ line, csv }: { line: string; csv: CsvOptions }) {
+  const v = validateMetadataLine(line, csv);
+  return (
+    <div
+      className={`mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ${
+        v.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+      }`}
+      title={v.message}
+    >
+      {v.ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+      {v.message}
+    </div>
+  );
 }
 
 // ---- "CSV (tất cả kết quả)" — server export columns ----
@@ -2568,6 +2640,7 @@ function CsvOptionsMenu({
                         >
                           {metaAll}
                         </code>
+                        <MetadataValidationBadge line={metaAll} csv={value} />
                       </div>
                     )}
                     {metaCols && (
@@ -2595,6 +2668,7 @@ function CsvOptionsMenu({
                         >
                           {metaCols}
                         </code>
+                        <MetadataValidationBadge line={metaCols} csv={value} />
                       </div>
                     )}
                     <p className="text-[11px] text-muted-foreground">
