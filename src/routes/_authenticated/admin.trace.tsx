@@ -154,6 +154,7 @@ type CsvOptions = {
   zip: boolean;
   includeMetadata: boolean;
   separateMetadata: boolean;
+  metaJson: boolean;
   filenameTemplate: FilenamePart[];
 };
 const DEFAULT_CSV_OPTIONS: CsvOptions = {
