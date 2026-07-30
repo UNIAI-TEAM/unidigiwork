@@ -1702,7 +1702,7 @@ function AdminTracePage() {
       return;
     }
     const next: Status[] = ALL_STATUSES.filter((x) => set.has(x));
-    const encoded = next.length === ALL_STATUSES.length ? undefined : next.join(",");
+    const encoded = next.length === ALL_STATUSES.length ? undefined : next;
     navigate({ search: (prev: SearchState) => ({ ...prev, st: encoded }) });
   };
   const resetStatuses = () =>
