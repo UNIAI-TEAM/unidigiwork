@@ -695,7 +695,18 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">("all");
   const [delimFilter, setDelimFilter] = useState<string>("all");
   const [quoteFilter, setQuoteFilter] = useState<string>("all");
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
   const lastFailAtRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (!exportRef.current?.contains(e.target as Node)) setExportOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [exportOpen]);
 
   const lastFail = useMemo(() => [...entries].reverse().find((e) => !e.ok) ?? null, [entries]);
   useEffect(() => {
