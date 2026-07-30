@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save } from "lucide-react";
+import { Search, Activity, ShieldCheck, Radio, CheckCircle2, XCircle, ArrowLeft, Copy, ChevronLeft, ChevronRight, Download, X, ArrowUp, ArrowDown, Columns3, RefreshCw, Bookmark, Trash2, Save, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -683,12 +683,60 @@ function buildMetadataCheckLogCsv(entries: MetadataCheckLogEntry[], csv: CsvOpti
 
 function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
   const entries = useMetadataCheckLog();
-  const last = entries[entries.length - 1];
+  const [query, setQuery] = useState("");
+  const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">("all");
+  const [delimFilter, setDelimFilter] = useState<string>("all");
+  const [quoteFilter, setQuoteFilter] = useState<string>("all");
+
+  const delimiters = useMemo(
+    () => Array.from(new Set(entries.map((e) => (e.delimiter === "\t" ? "\\t" : e.delimiter)))),
+    [entries],
+  );
+  const quotes = useMemo(() => Array.from(new Set(entries.map((e) => e.quoteChar))), [entries]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return entries.filter((e) => {
+      if (resultFilter === "pass" && !e.ok) return false;
+      if (resultFilter === "fail" && e.ok) return false;
+      const delimLabel = e.delimiter === "\t" ? "\\t" : e.delimiter;
+      if (delimFilter !== "all" && delimLabel !== delimFilter) return false;
+      if (quoteFilter !== "all" && e.quoteChar !== quoteFilter) return false;
+      if (!q) return true;
+      const hay = [
+        e.at,
+        e.message,
+        e.line,
+        e.variant,
+        e.mode,
+        delimLabel,
+        e.quoteChar,
+        e.ok ? "pass" : "fail",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [entries, query, resultFilter, delimFilter, quoteFilter]);
+
+  const last = filtered[filtered.length - 1] ?? entries[entries.length - 1];
+
   return (
-    <div className="mt-2 flex flex-col gap-2 rounded border border-border bg-surface-2 px-1.5 py-1 text-[11px] text-muted-foreground">
+    <div
+      className="mt-2 flex flex-col gap-2 rounded border border-border bg-surface-2 px-2 py-2 text-[11px] text-muted-foreground"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center justify-between gap-2">
-        <span>
+        <span className="flex items-center gap-1">
+          <Filter className="h-3 w-3" />
           Log kiểm tra: <span className="text-foreground">{entries.length}</span> lượt
+          {filtered.length !== entries.length && (
+            <span>
+              {" "}
+              · lọc <span className="text-foreground">{filtered.length}</span>
+            </span>
+          )}
           {last ? ` · gần nhất ${last.ok ? "PASS" : "FAIL"} (${last.fieldCount} trường)` : " · chưa có"}
         </span>
         <div className="flex items-center gap-1">
@@ -696,10 +744,25 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
             type="button"
             disabled={entries.length === 0}
             onClick={() => {
-              const text = buildMetadataCheckLogText(entries);
+              setQuery("");
+              setResultFilter("all");
+              setDelimFilter("all");
+              setQuoteFilter("all");
+            }}
+            className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
+            title="Đặt lại bộ lọc"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Reset
+          </button>
+          <button
+            type="button"
+            disabled={filtered.length === 0}
+            onClick={() => {
+              const text = buildMetadataCheckLogText(filtered);
               const stamp = new Date().toISOString().replace(/[:.]/g, "-");
               triggerBlobDownload(new Blob([text], { type: "text/plain;charset=utf-8" }), `metadata-check-log_${stamp}.log`);
-              toast.success(`Đã tải log kiểm tra metadata (${entries.length} lượt)`, { duration: 2500 });
+              toast.success(`Đã tải log kiểm tra metadata (${filtered.length} lượt)`, { duration: 2500 });
             }}
             className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
             title="Tải xuống log kiểm tra metadata (.log)"
@@ -709,15 +772,15 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
           </button>
           <button
             type="button"
-            disabled={entries.length === 0}
+            disabled={filtered.length === 0}
             onClick={() => {
-              const text = buildMetadataCheckLogCsv(entries, csv);
+              const text = buildMetadataCheckLogCsv(filtered, csv);
               const bom = csv.bom ? "\uFEFF" : "";
               const blob = new Blob([bom + text], { type: "text/csv;charset=utf-8" });
               const stamp = new Date().toISOString().replace(/[:.]/g, "-");
               const ext = csv.delimiter === ";" ? "scsv" : "csv";
               triggerBlobDownload(blob, `metadata-check-log_${stamp}.${ext}`);
-              toast.success(`Đã tải log kiểm tra metadata dạng CSV (${entries.length} lượt)`, { duration: 2500 });
+              toast.success(`Đã tải log kiểm tra metadata dạng CSV (${filtered.length} lượt)`, { duration: 2500 });
             }}
             className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
             title="Tải xuống log kiểm tra metadata (CSV)"
@@ -726,6 +789,106 @@ function MetadataCheckLogPanel({ csv }: { csv: CsvOptions }) {
             CSV
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div className="relative flex items-center">
+          <Search className="absolute left-1.5 h-3 w-3 text-muted-foreground" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tìm theo nội dung, thời gian, mode..."
+            className="h-6 w-40 rounded border border-border bg-surface-1 pl-5 pr-5 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring sm:w-56"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-1 rounded p-0.5 hover:bg-surface-2"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+        {(["all", "pass", "fail"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setResultFilter(k)}
+            className={
+              "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 capitalize " +
+              (resultFilter === k
+                ? k === "pass"
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                  : k === "fail"
+                    ? "border-red-500/40 bg-red-500/10 text-red-400"
+                    : "border-primary bg-primary/10 text-primary"
+                : "border-border hover:bg-surface-1 hover:text-foreground")
+            }
+          >
+            {k === "all" ? "Tất cả" : k === "pass" ? "PASS" : "FAIL"}
+            <span className="text-muted-foreground">
+              (
+              {k === "all"
+                ? entries.length
+                : entries.filter((e) => (k === "pass" ? e.ok : !e.ok)).length}
+              )
+            </span>
+          </button>
+        ))}
+        <select
+          value={delimFilter}
+          onChange={(e) => setDelimFilter(e.target.value)}
+          className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <option value="all">Delimiter: tất cả</option>
+          {delimiters.map((d) => (
+            <option key={d} value={d}>
+              {`"${d}"`}
+            </option>
+          ))}
+        </select>
+        <select
+          value={quoteFilter}
+          onChange={(e) => setQuoteFilter(e.target.value)}
+          className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <option value="all">Quote: tất cả</option>
+          {quotes.map((q) => (
+            <option key={q} value={q}>
+              {`"${q}"`}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="max-h-40 overflow-y-auto rounded border border-border bg-surface-1">
+        {filtered.length === 0 ? (
+          <div className="px-2 py-3 text-center text-muted-foreground">Không có log phù hợp.</div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {filtered.slice().reverse().map((e, i) => (
+              <li key={i} className="flex items-start gap-2 px-2 py-1.5">
+                <span
+                  className={
+                    "mt-0.5 inline-flex h-4 min-w-8 items-center justify-center rounded border px-1 text-[10px] font-medium " +
+                    (e.ok ? "border-emerald-500/40 text-emerald-400" : "border-red-500/40 text-red-400")
+                  }
+                >
+                  {e.ok ? "PASS" : "FAIL"}
+                </span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-foreground">
+                    {e.at} · {e.variant} · {e.mode} · {e.fieldCount} trường
+                  </span>
+                  <span className="line-clamp-1">{e.message}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground line-clamp-1">{e.line}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
