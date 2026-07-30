@@ -859,6 +859,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               setResultFilter("all");
               setDelimFilter("all");
               setQuoteFilter("all");
+              setSigFilter(null);
             }}
             className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
             title="Đặt lại bộ lọc"
