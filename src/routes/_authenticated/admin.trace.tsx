@@ -259,14 +259,18 @@ async function downloadCsvOrZipWithFooter(
   metadataLine?: string,
   footerLine?: string,
 ): Promise<void> {
+  let metaLine = metadataLine;
   if (opts.includeMetadata && metadataLine) {
-    const v = validateMetadataLine(metadataLine, opts);
-    if (!v.ok) {
-      toast.warning(`Metadata không parse được với delimiter/quote đang chọn: ${v.message}`, { duration: 6000 });
+    const r = resolveMetadataLine(metadataLine, opts);
+    metaLine = r.line;
+    if (r.fixed) {
+      toast.info("Đã tự động sửa dòng metadata để parse OK trước khi export.");
+    } else if (!r.ok) {
+      toast.warning(`Metadata không parse được với delimiter/quote đang chọn: ${r.message}`, { duration: 6000 });
     }
   }
-  const useSeparate = opts.zip && opts.separateMetadata && (!!metadataLine || !!footerLine);
-  const header = !useSeparate && opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
+  const useSeparate = opts.zip && opts.separateMetadata && (!!metaLine || !!footerLine);
+  const header = !useSeparate && opts.includeMetadata && metaLine ? metaLine + "\r\n" : "";
   const footer = !useSeparate && footerLine ? (csvText.endsWith("\n") ? "" : "\r\n") + footerLine + "\r\n" : "";
   const body = (opts.bom ? "\ufeff" : "") + header + csvText + footer;
   if (opts.zip) {
@@ -275,13 +279,13 @@ async function downloadCsvOrZipWithFooter(
     if (useSeparate) {
       const metaName = toMetaFilename(csvFilename);
       const parts: string[] = [];
-      if (opts.includeMetadata && metadataLine) parts.push(metadataLine);
+      if (opts.includeMetadata && metaLine) parts.push(metaLine);
       if (footerLine) parts.push(footerLine);
       files[metaName] = strToU8(parts.join("\r\n") + "\r\n");
     }
-    if (opts.metaJson && (metadataLine || footerLine)) {
+    if (opts.metaJson && (metaLine || footerLine)) {
       files[toMetaJsonFilename(csvFilename)] = strToU8(
-        buildMetaJson(csvFilename, opts, opts.includeMetadata ? metadataLine : undefined, footerLine),
+        buildMetaJson(csvFilename, opts, opts.includeMetadata ? metaLine : undefined, footerLine),
       );
     }
     const zipped = zipSync(files, { level: 6 });
@@ -513,6 +517,20 @@ function resolveMetadataLine(
 /** Badge hiển thị kết quả xác thực parse dòng metadata theo delimiter/quote đang chọn. */
 function MetadataValidationBadge({ line, csv }: { line: string; csv: CsvOptions }) {
   const v = validateMetadataLine(line, csv);
+  if (!v.ok && csv.autoFixMetadata) {
+    const r = resolveMetadataLine(line, csv);
+    if (r.fixed) {
+      return (
+        <div
+          className="mt-1 inline-flex items-center gap-1 rounded bg-sky-500/10 px-1.5 py-0.5 text-[11px] text-sky-400"
+          title={`Sẽ tự động sửa khi export — ${r.message}`}
+        >
+          <CheckCircle2 className="h-3 w-3" />
+          Sẽ tự động sửa khi export — {r.message}
+        </div>
+      );
+    }
+  }
   return (
     <div
       className={`mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ${
