@@ -277,6 +277,11 @@ async function downloadCsvOrZipWithFooter(
       if (footerLine) parts.push(footerLine);
       files[metaName] = strToU8(parts.join("\r\n") + "\r\n");
     }
+    if (opts.metaJson && (metadataLine || footerLine)) {
+      files[toMetaJsonFilename(csvFilename)] = strToU8(
+        buildMetaJson(csvFilename, opts, opts.includeMetadata ? metadataLine : undefined, footerLine),
+      );
+    }
     const zipped = zipSync(files, { level: 6 });
     triggerBlobDownload(new Blob([zipped as BlobPart], { type: "application/zip" }), toZipFilename(csvFilename));
   } else {
@@ -2523,6 +2528,21 @@ function CsvOptionsMenu({
           </label>
           <p className="pl-6 text-[11px] text-muted-foreground">
             Khi bật, CSV giữ nguyên dữ liệu; metadata và footer được lưu ở file riêng cùng ZIP để dễ đối chiếu. Chỉ áp dụng khi bật ZIP.
+          </p>
+          <label className={`mt-1 flex items-center gap-2 pl-6 ${value.zip ? "" : "opacity-50"}`}>
+            <input
+              type="checkbox"
+              checked={value.metaJson}
+              disabled={!value.zip}
+              onChange={(e) => onChange({ ...value, metaJson: e.target.checked })}
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
+            />
+            <span className={value.zip ? "text-foreground" : "text-muted-foreground"}>
+              Kèm file <code>.meta.json</code> trong ZIP (máy đọc được)
+            </span>
+          </label>
+          <p className="pl-6 text-[11px] text-muted-foreground">
+            Xuất thêm <code>&lt;stem&gt;.meta.json</code> gồm metadata (keyword, from/to, sort, filter, timezone, rows) và summary (total_rows, severity, processing_ms) dạng JSON để đối chiếu hoặc import lại.
           </p>
           <div className="mt-3">
             <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
