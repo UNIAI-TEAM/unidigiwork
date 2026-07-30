@@ -255,6 +255,12 @@ async function downloadCsvOrZipWithFooter(
   metadataLine?: string,
   footerLine?: string,
 ): Promise<void> {
+  if (opts.includeMetadata && metadataLine) {
+    const v = validateMetadataLine(metadataLine, opts);
+    if (!v.ok) {
+      toast.warning(`Metadata không parse được với delimiter/quote đang chọn: ${v.message}`, { duration: 6000 });
+    }
+  }
   const useSeparate = opts.zip && opts.separateMetadata && (!!metadataLine || !!footerLine);
   const header = !useSeparate && opts.includeMetadata && metadataLine ? metadataLine + "\r\n" : "";
   const footer = !useSeparate && footerLine ? (csvText.endsWith("\n") ? "" : "\r\n") + footerLine + "\r\n" : "";
