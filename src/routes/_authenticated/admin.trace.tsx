@@ -825,6 +825,11 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
   }, [filtered]);
 
+  const displayed = useMemo(
+    () => (sigFilter ? filtered.filter((e) => !e.ok && normalizeErrorSignature(e.message) === sigFilter) : filtered),
+    [filtered, sigFilter],
+  );
+
   const last = filtered[filtered.length - 1] ?? entries[entries.length - 1];
 
   return (
