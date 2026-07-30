@@ -852,6 +852,40 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    const payload = {
+                      exportedAt: new Date().toISOString(),
+                      totalEntries: entries.length,
+                      filteredEntries: filtered.length,
+                      entries: filtered.map((e) => ({
+                        at: e.at,
+                        ok: e.ok,
+                        result: e.ok ? "PASS" : "FAIL",
+                        fieldCount: e.fieldCount,
+                        variant: e.variant,
+                        mode: e.mode,
+                        delimiter: e.delimiter,
+                        quoteChar: e.quoteChar,
+                        message: e.message,
+                        line: e.line,
+                      })),
+                    };
+                    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+                    triggerBlobDownload(
+                      new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }),
+                      `metadata-check-log_${stamp}.json`,
+                    );
+                    toast.success(`Đã tải log kiểm tra metadata dạng JSON (${filtered.length} lượt đã lọc)`, { duration: 2500 });
+                    setExportOpen(false);
+                  }}
+                  className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
+                  title="Tải log đã lọc dạng JSON"
+                >
+                  <Download className="h-3 w-3" />
+                  Tải JSON
+                </button>
+                <button
+                  type="button"
                   onClick={async () => {
                     const text = buildMetadataCheckLogText(filtered);
                     try {
