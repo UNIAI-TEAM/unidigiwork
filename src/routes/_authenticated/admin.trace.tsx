@@ -1114,12 +1114,12 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
         </div>
       )}
 
-      <div className="max-h-40 overflow-y-auto rounded border border-border bg-surface-1">
-        {displayed.length === 0 ? (
+      <div className="max-h-56 overflow-y-auto rounded border border-border bg-surface-1">
+        {pageItems.length === 0 ? (
           <div className="px-2 py-3 text-center text-muted-foreground">Không có log phù hợp.</div>
         ) : (
           <ul className="divide-y divide-border">
-            {displayed.slice().reverse().map((e, i) => (
+            {pageItems.map((e, i) => (
               <li key={i} className="flex items-start gap-2 px-2 py-1.5">
                 <span
                   className={
@@ -1141,6 +1141,53 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
           </ul>
         )}
       </div>
+
+      {ordered.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Hiển thị{" "}
+            <span className="text-foreground">
+              {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, ordered.length)}
+            </span>{" "}
+            / <span className="text-foreground">{ordered.length}</span> log
+          </span>
+          <div className="flex items-center gap-1">
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              title="Số log mỗi trang"
+            >
+              {[10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}/trang
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="inline-flex items-center rounded border border-border px-1 py-0.5 hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+              title="Trang trước"
+            >
+              <ChevronLeft className="h-3 w-3" />
+            </button>
+            <span className="text-foreground">
+              {safePage}/{totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="inline-flex items-center rounded border border-border px-1 py-0.5 hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+              title="Trang sau"
+            >
+              <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
