@@ -81,7 +81,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.7.7",
+    "@lovable.dev/vite-tanstack-config": "2.8.5",
     "@testing-library/react": "^16.3.2",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/node": "^22.16.5",
