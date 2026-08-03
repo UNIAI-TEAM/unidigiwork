@@ -1,108 +1,63 @@
+## Thiết kế tích hợp LiveKit (chốt trước khi triển khai)
 
-# Batch 1C — Subscription · Entitlement · Quota
+Tuân theo Blueprint: §17 (token do server cấp), §25.15, §25.14 (không lưu URL cố định), §25.13 (entitlement, không hard-code plan), §25.7/§25.8 (tenant-scoped + command qua trusted boundary).
 
-Blueprint §18 (SSOT). Không hard-code plan name (Rule 13). Không dual-write. Không thêm dependency thanh toán thực (Stripe/Paddle) — provider adapter là stub, kích hoạt sau ở Batch riêng.
+### 1. Nguyên tắc bất biến
+- Client **không bao giờ** sinh token. Chỉ nhận `{ serverUrl, token, roomName, expiresAt }` từ server function.
+- `meetings.conference_provider = 'livekit'`; UI không hard-code provider, chọn adapter theo giá trị này.
+- API key/secret lưu bằng secret backend (`LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `LIVEKIT_URL`), không commit.
+- Ghi hình (nếu có) lưu qua `StorageObjectRef` (provider/bucket/object_key), không lưu URL public, không lưu binary trong Postgres.
 
-## Scope (in)
+### 2. Schema (Batch LK-DB)
+Không tạo bảng mới cho room; tái dùng `meetings` + `meeting_participants`.
+- `meetings.conference_ref jsonb` (đã có) chứa `{ provider: 'livekit', roomName, region? }`.
+- Bảng mới `meeting_join_tokens` (audit-only, tenant-scoped): `id, tenant_id, meeting_id, user_id, role, issued_at, expires_at, correlation_id, idempotency_key`. Không lưu chuỗi token, chỉ lưu hash prefix để truy vết.
+- Bảng mới `meeting_recordings` (tuỳ chọn, giai đoạn sau): `tenant_id, meeting_id, storage_provider, bucket, object_key, duration_s, size_bytes, status`.
+- Đủ cột chuẩn: `tenant_id, row_version, created_at, updated_at, created_by, updated_by` + RLS theo tenant/participant.
 
-1. **Schema nền tảng** (migration Batch 1C-DB):
-   - `plans`, `plan_features`, `features` (catalog)
-   - `subscriptions`, `subscription_items`
-   - `entitlements` (materialized view / bảng cache theo tenant)
-   - `usage_events` (append-only), `usage_counters` (rollup theo period)
-   - Không tạo `invoices`/`payments` ở batch này (thuộc Billing Batch sau).
-   - Tất cả tenant-scoped: `tenant_id`, `row_version`, `created_at/by`, `updated_at/by`, RLS + GRANT chuẩn.
-   - `usage_events` append-only (trigger chặn UPDATE/DELETE).
-   - Seed 3 plan mặc định: `free`, `pro`, `business` + feature catalog + quota limits (INSERT literal trong migration).
+### 3. Contract
+Đã có sẵn trong `src/contracts/meetings/meeting.ts`:
+`JoinMeetingTokenRequest` / `JoinMeetingTokenResponse` — giữ nguyên, không đổi contract.
+Bổ sung stable error codes:
+- `MEETING_NOT_JOINABLE` (status ≠ scheduled/live)
+- `MEETING_ACCESS_DENIED` (không phải participant)
+- `CONFERENCE_PROVIDER_UNAVAILABLE`
+- dùng lại `QUOTA_EXCEEDED`, `FEATURE_NOT_ENTITLED`
 
-2. **Contracts** (`src/contracts/billing/*`):
-   - `Plan`, `Feature`, `Subscription`, `Entitlement`, `QuotaLimit`, `UsageCounter` DTO neutral.
-   - Stable error codes bổ sung: `SUBSCRIPTION_NOT_FOUND`, `ENTITLEMENT_DENIED`, `QUOTA_EXCEEDED`, `PLAN_NOT_FOUND`.
-   - Event envelope: `subscription.activated.v1`, `subscription.changed.v1`, `subscription.canceled.v1`, `quota.exceeded.v1`.
+### 4. Trusted boundary
+`src/lib/api/meetings.functions.ts` thêm:
+- `requestJoinToken` (POST, `requireSupabaseAuth`): thứ tự kiểm tra
+  1. meeting tồn tại, chưa xoá, thuộc tenant hiện hành
+  2. caller là participant (hoặc host) → map role LiveKit
+  3. `entitlements.can('meetings.livekit')`
+  4. `check_quota('meeting_minutes' / 'meeting_participants')`
+  5. ký JWT LiveKit trong handler (đọc `process.env` trong handler), TTL ≤ 15 phút, `roomJoin` + grants theo role
+  6. ghi `meeting_join_tokens` + audit + outbox `meeting.join_token.issued`
+- `startMeeting` / `endMeeting`: chuyển `meetings.status` scheduled → live → ended, ghi usage `meeting_minutes`.
+- Webhook LiveKit: `src/routes/api/public/hooks/livekit.ts`, verify HMAC signature, cập nhật status/usage, idempotent theo `event id`.
 
-3. **Server functions** (trusted boundary):
-   - `getActiveSubscription(tenantId)` — read.
-   - `getEntitlements(tenantId)` — trả feature flags + quota limits + usage hiện tại.
-   - `assertEntitlement(tenantId, featureKey)` — dùng nội bộ trước command.
-   - `recordUsage({tenantId, meterKey, quantity, idempotencyKey})` — ghi `usage_events` + upsert `usage_counters` trong 1 transaction, phát outbox event khi vượt ngưỡng.
-   - `changeSubscription(tenantId, planCode, correlationId, idempotencyKey)` — admin-only (tenant_owner hoặc app admin), atomic + audit + outbox.
-   - Tất cả qua `requireSupabaseAuth`, RPC `SECURITY DEFINER` cho mutate, idempotency + row_version.
+Map role: host/moderator → `canPublish + canPublishData + roomAdmin`; participant → `canPublish`; viewer → subscribe-only.
 
-4. **SDK adapter** (`src/sdk/billing/*`):
-   - Interface neutral + Lovable adapter (dùng server functions).
-   - Java adapter = NOT_IMPLEMENTED fail-closed (theo pattern SDK cũ).
-   - Provider abstraction `BillingProvider` với `LovableInternalProvider` stub (chưa gọi Stripe).
+### 5. SDK & UI
+- `src/sdk/meetings/index.ts`: thay `notImplemented` bằng adapter gọi server fn (provider `lovable`).
+- `src/routes/meeting.$id.tsx`: phòng họp dùng `@livekit/components-react` + `livekit-client`, load động sau hydrate (`ClientOnly` + `React.lazy`) vì SDK là browser-only.
+- Trạng thái UI: chờ vào phòng → lấy token → join; lỗi hiển thị theo stable error code, i18n, không hard-code chuỗi.
 
-5. **Entitlement helper client-side**:
-   - Hook `useEntitlements()` + `entitlements.can(featureKey)` — đọc từ server function, cache theo `tenantId`.
-   - Không expose plan code cho check logic; UI chỉ dùng `can()` + quota display.
+### 6. Kiểm thử / DoD
+- Tenant isolation: user tenant B xin token cho meeting tenant A → `MEETING_ACCESS_DENIED`.
+- Non-participant → denied. Meeting `canceled`/`ended` → `MEETING_NOT_JOINABLE`.
+- Entitlement off → `FEATURE_NOT_ENTITLED`. Quota vượt → `QUOTA_EXCEEDED` với metadata.
+- Architecture test hiện có (`route components do not fabricate LiveKit tokens`) phải vẫn PASS.
+- Webhook replay 2 lần → chỉ 1 lần ghi usage.
 
-6. **UI Admin Console — tab "Subscription"** trong `admin.tenant.tsx`:
-   - Hiển thị plan hiện tại, feature list, quota + usage bar (member count, storage, workspaces, AI tokens…).
-   - Owner/admin có nút "Đổi plan" → chọn từ 3 plan seed (không thanh toán thực).
-   - Read-only cho member.
-   - Empty state khi chưa có subscription (auto-provision `free` khi tenant tạo — trigger DB).
+### 7. Thứ tự batch đề xuất
+1. **LK-0 (chốt)**: ADR-1E-001 + gỡ khoá dependency LiveKit trong rule Giai đoạn 0.
+2. **LK-DB**: migration + RLS + entitlement key + quota meter.
+3. **LK-API**: server fn cấp token, start/end, webhook.
+4. **LK-UI**: phòng họp trong `/meeting/$id`.
+5. **LK-TEST**: integration + isolation matrix.
 
-7. **Enforcement hook điểm nhạy cảm**:
-   - `provision_tenant` → auto tạo subscription `free`.
-   - Invitation `create_tenant_invitation` → check quota `member_count` trước.
-   - `handle_new_workspace` / create workspace path → check quota `workspace_count`.
-   - Ghi `usage_counters` khi member added / workspace created (rollup transactionally).
-   - Chưa hook AI tokens / storage / meeting minutes ở batch này — chỉ define meter và log NOT_IMPLEMENTED cho các tính năng chưa live.
-
-8. **Static architecture tests** (`src/lib/architecture/*.test.ts`):
-   - Cấm import `plan === "..."` hoặc `planCode ===` trong `src/routes/**`, `src/components/**`, `src/features/**` (dùng `can()`).
-   - Cấm client gọi trực tiếp `subscriptions`/`entitlements` table (phải qua server fn).
-   - Contract test: mọi feature key trong seed nằm trong enum `FeatureKey`.
-
-9. **Runtime tests** (`tests/runtime/subscription/`):
-   - Auto-provision `free` on tenant create.
-   - Change plan → entitlements + quota update, audit + outbox emit.
-   - Quota enforcement: invite thứ N+1 khi vượt limit → `QUOTA_EXCEEDED`.
-   - Idempotency `recordUsage`: 2 lần cùng key → 1 event.
-   - Concurrency `changeSubscription`: 2 winner → 1 success + 1 VERSION_CONFLICT.
-   - Cross-tenant isolation: entitlement/usage của tenant A không leak sang B.
-
-10. **Docs**:
-    - `docs/architecture/manifests/BILLING_MANIFEST.md` — plan/feature/quota catalog.
-    - Update Domain Ownership Manifest thêm bounded context `billing`.
-    - ADR `docs/architecture/adr/ADR-1C-001-billing-foundation.md`.
-    - Cập nhật `CI/QUALITY_GATES.md` thêm `test:subscription`.
-
-## Scope (out)
-
-- Stripe/Paddle live integration → Batch Billing sau (chỉ khi user duyệt).
-- Invoices/Payments UI + PDF.
-- Dunning/proration/tax.
-- Storage/AI/Meeting quota enforcement thật (mới define meter, chưa hook writer vì các module đó chưa live).
-
-## Non-goals của batch
-
-Không đổi UI hiện tại ngoài thêm tab Subscription. Không refactor các module Task/Meeting/Document (writer thật thuộc Giai đoạn 2).
-
-## Technical Details
-
-- Migration duy nhất `1c_billing_foundation.sql` — 4-step order cho mỗi table (CREATE → GRANT → RLS → POLICY).
-- `entitlements` là bảng cache (không materialized view) refresh qua trigger khi `subscriptions`/`plan_features` đổi → tránh phụ thuộc pg_cron.
-- `usage_events` partition by `tenant_id` không cần Phase 1; index `(tenant_id, meter_key, occurred_at)`.
-- Idempotency `recordUsage`: unique index `(tenant_id, meter_key, idempotency_key)` where `idempotency_key IS NOT NULL`.
-- RLS `entitlements`/`subscriptions`: SELECT cho `is_tenant_member`; mutate chỉ qua RPC `SECURITY DEFINER`.
-- Không dùng CHECK time-dependent — dùng trigger validate `period_end > period_start`.
-- `useEntitlements` cache key: `["entitlements", tenantId]`, invalidate on tenant switch (đã có `qc.clear()` ở SEC.5).
-
-## Deliverables & Gates
-
-- Migration duyệt + apply.
-- Typecheck + lint:changed + architecture tests PASS.
-- Runtime subscription suite PASS.
-- Regression Batch 1B (492/492) vẫn PASS.
-- Báo cáo đóng batch.
-
-## Rollout
-
-Chia 3 sub-batch tuần tự:
-- **1C-DB**: schema + seed + trigger + RLS.
-- **1C-API**: contracts + server fn + SDK + hooks + enforcement (invitation/workspace).
-- **1C-UI**: tab Subscription + entitlement guards ở UI (badge quota, disable feature khi denied) + runtime tests + docs.
-
-Sau khi user duyệt plan, tôi bắt đầu **1C-DB** ngay.
+### Cần anh xác nhận
+- LiveKit Cloud hay self-host (ảnh hưởng `LIVEKIT_URL` và nhánh on-prem)?
+- Có cần ghi hình (recording) ngay ở batch đầu không?
+- Quota tính theo `meeting_minutes` hay `meeting_participant_minutes`?

@@ -7,6 +7,7 @@ Toàn bộ tài liệu kiến trúc của UNIWORK được lưu ở đây. Bluep
 - [UNIWORK SaaS Architecture Blueprint v1.0](./UNIWORK_SAAS_ARCHITECTURE_BLUEPRINT_V1.0.md) — SSOT
 - [Project Architecture Rules](./PROJECT_ARCHITECTURE_RULES.md) — Core rules trích lược, dán vào memory
 - [ADR Template](./adr/ADR_TEMPLATE.md)
+- [ADR-1E-001 — LiveKit Conferencing](./adr/ADR-1E-001-livekit-conferencing.md)
 - [Data Dictionary](./data-dictionary/README.md)
 
 ## Manifests (Batch 0A)

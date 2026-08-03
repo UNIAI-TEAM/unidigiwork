@@ -20,6 +20,7 @@ Nguồn: [Blueprint v1.0](./UNIWORK_SAAS_ARCHITECTURE_BLUEPRINT_V1.0.md), Chươ
 13. **Không hard-code plan name.** Dùng `entitlements.can(feature)`.
 14. **Không lưu public storage URL cố định.** DB chỉ lưu `storage_provider`, `bucket`, `object_key`.
 15. **Không tự sinh LiveKit token ở client.** Server cấp token sau khi kiểm tra quyền và entitlement.
+    Thiết kế chi tiết: [ADR-1E-001](./adr/ADR-1E-001-livekit-conferencing.md).
 16. **Không lưu binary/video trong PostgreSQL.**
 17. **AI không dùng service-role unrestricted access.**
 18. **Không thay đổi API contract mà không version.**
@@ -32,7 +33,8 @@ Nguồn: [Blueprint v1.0](./UNIWORK_SAAS_ARCHITECTURE_BLUEPRINT_V1.0.md), Chươ
 - Thay đổi UI hiện tại (trừ khi bắt buộc để build pass).
 - Tạo bảng tenant / thay schema / backfill dữ liệu (thuộc Batch 0B).
 - Refactor toàn bộ Supabase caller (chỉ tạo manifest).
-- Thêm dependency LiveKit / Keycloak / MinIO / Redis / Java.
+- Thêm dependency Keycloak / MinIO / Redis / Java.
+- Thêm dependency LiveKit **ngoài** phạm vi batch LK-API/LK-UI đã được ADR-1E-001 phê duyệt.
 - Commit secret hoặc credential mẫu có giá trị thật.
 
 ## Definition of Done (mỗi module)
