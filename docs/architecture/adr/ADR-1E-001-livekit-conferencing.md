@@ -114,6 +114,26 @@ LiveKit là self-hostable ⇒ không tạo vendor lock-in mới. Nhánh Java tư
 cài lại `requestJoinToken` với cùng contract; `LIVEKIT_URL` là biến môi trường nên
 chuyển từ LiveKit Cloud sang self-host không cần đổi schema hay contract.
 
+### 2.8 Chế độ triển khai: self-host (đã chốt)
+
+Production chạy **LiveKit self-host**, không dùng LiveKit Cloud.
+
+- Thành phần: `livekit-server` (SFU, port signal 7880 + WebRTC UDP 50000–60000, hoặc
+  TURN/TLS 443 cho mạng chặn UDP), Redis chỉ khi chạy nhiều node; single-node không cần.
+- `LIVEKIT_URL` trỏ tới endpoint self-host qua `wss://` (bắt buộc TLS). Không hard-code
+  trong code; đọc trong `.handler()` như các secret khác.
+- `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` do cụm self-host phát hành; app chỉ ký JWT
+  bằng cặp key này, không gọi API quản trị của LiveKit Cloud.
+- Webhook LiveKit trỏ tới `/api/public/hooks/livekit` bằng URL public ổn định của app;
+  cụm self-host phải ra được Internet tới endpoint đó.
+- Recording (giai đoạn sau) dùng LiveKit Egress self-host, ghi ra object storage nội bộ
+  và tham chiếu qua `StorageObjectRef` — không dùng bản ghi lưu trên hạ tầng vendor.
+- Vận hành: cần theo dõi năng lực (CPU/băng thông) của SFU; quota
+  `meeting_participant_minutes` vẫn là nguồn kiểm soát ở tầng ứng dụng, không phụ thuộc
+  hạn mức vendor.
+- Rủi ro chấp nhận: tự chịu trách nhiệm HA, scale, TURN và vá bảo mật của cụm.
+  Rollback tính năng vẫn bằng cách tắt entitlement `meetings.conference`.
+
 ## 3. Phương án đã cân nhắc và loại
 
 - **Ký token ở client bằng key rút gọn** — vi phạm §25.15, loại.
