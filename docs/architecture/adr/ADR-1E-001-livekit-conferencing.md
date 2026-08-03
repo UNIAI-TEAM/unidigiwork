@@ -145,6 +145,6 @@ chuyển từ LiveKit Cloud sang self-host không cần đổi schema hay contra
 
 ## 6. Điểm còn mở (không chặn LK-DB)
 
-1. LiveKit Cloud hay self-host cho môi trường production đầu tiên.
+1. ~~LiveKit Cloud hay self-host~~ — **đã chốt: self-host** (xem §2.8).
 2. Có bật recording ngay ở LK-API hay hoãn sang batch riêng.
 3. Hạn mức mặc định của `meeting_participant_minutes` cho từng plan.
