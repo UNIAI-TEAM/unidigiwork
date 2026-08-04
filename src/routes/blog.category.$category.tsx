@@ -3,19 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import { PublicShell } from "@/components/public-shell";
 import { avatar } from "@/components/app-shell";
 import { posts, featured, categorySlug } from "./blog";
+import { decodeCategory } from "@/lib/blog-categories";
 
 const allPosts = [featured, ...posts];
-
-const slugToLabel: Record<string, string> = {
-  "san-pham": "Sản phẩm",
-  "huong-dan": "Hướng dẫn",
-  "case-study": "Case study",
-  "van-hoa": "Văn hoá",
-};
-
-function decodeCategory(slug: string) {
-  return slugToLabel[slug] || slug;
-}
 
 export const Route = createFileRoute("/blog/category/$category")({
   head: ({ params }) => {

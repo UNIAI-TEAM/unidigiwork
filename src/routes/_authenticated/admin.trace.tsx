@@ -2187,7 +2187,7 @@ function AdminTracePage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 text-xs">
         <Link
-          to="/_authenticated/admin/quota"
+          to="/admin/quota"
           className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-2 px-2 py-1 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3 w-3" /> Quota Observability
