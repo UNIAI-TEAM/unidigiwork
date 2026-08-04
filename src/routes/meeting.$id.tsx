@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
+import { Suspense, lazy, useState } from "react";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Mic,
@@ -16,8 +17,14 @@ import {
   Send,
   FileText,
   Clock,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { resolveMeetingApi } from "@/sdk/meetings";
+import { ApiError } from "@/contracts/errors";
+import type { MeetingId } from "@/contracts";
+
+const LiveKitStage = lazy(() => import("@/components/meeting/livekit-stage"));
 
 export const Route = createFileRoute("/meeting/$id")({
   head: ({ params }) => ({
@@ -32,6 +39,24 @@ function MeetingDetailPage() {
   const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
+  const [session, setSession] = useState<{ serverUrl: string; token: string } | null>(null);
+  const [joining, setJoining] = useState(false);
+
+  async function handleJoin() {
+    setJoining(true);
+    try {
+      const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
+        participantIdentity: "",
+        role: "participant",
+      });
+      setSession({ serverUrl: res.serverUrl, token: res.token });
+    } catch (e) {
+      const code = e instanceof ApiError ? e.code : "INTERNAL_ERROR";
+      toast.error(JOIN_ERRORS[code] ?? "Không thể vào phòng họp.");
+    } finally {
+      setJoining(false);
+    }
+  }
 
   const participants = [
     { name: "Minh Anh", seed: "minh-anh", speaking: true },
@@ -67,6 +92,19 @@ function MeetingDetailPage() {
               </div>
             </div>
 
+            {session ? (
+              <div className="flex-1 overflow-hidden rounded-xl bg-surface-2">
+                <ClientOnly fallback={<StageFallback />}>
+                  <Suspense fallback={<StageFallback />}>
+                    <LiveKitStage
+                      serverUrl={session.serverUrl}
+                      token={session.token}
+                      onDisconnected={() => setSession(null)}
+                    />
+                  </Suspense>
+                </ClientOnly>
+              </div>
+            ) : (
             <div className="grid flex-1 grid-cols-2 gap-2 overflow-hidden lg:grid-cols-3">
               {participants.map((p) => (
                 <div
@@ -81,16 +119,33 @@ function MeetingDetailPage() {
                 </div>
               ))}
             </div>
+            )}
 
             <div className="mt-4 flex items-center justify-center gap-2">
-              <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
-              <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
-              <CtrlBtn icon={ScreenShare} />
-              <CtrlBtn icon={Hand} />
-              <CtrlBtn icon={MoreHorizontal} />
-              <button className="ml-2 flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-white hover:bg-destructive/90">
-                <PhoneOff className="h-4 w-4" /> Rời phòng
-              </button>
+              {session ? (
+                <button
+                  onClick={() => setSession(null)}
+                  className="flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+                >
+                  <PhoneOff className="h-4 w-4" /> Rời phòng
+                </button>
+              ) : (
+                <>
+                  <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
+                  <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
+                  <CtrlBtn icon={ScreenShare} />
+                  <CtrlBtn icon={Hand} />
+                  <CtrlBtn icon={MoreHorizontal} />
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining}
+                    className="ml-2 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                  >
+                    {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
+                    Vào phòng họp
+                  </button>
+                </>
+              )}
             </div>
           </main>
 
