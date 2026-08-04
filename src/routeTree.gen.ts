@@ -32,7 +32,7 @@ import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as PeopleIdRouteImport } from './routes/people.$id'
-import { Route as MeetingIdRouteImport } from './routes/meeting.$id'
+import { Route as MeetingIdRouteImport } from './routes/meeting_.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ChatChannelIdRouteImport } from './routes/chat.$channelId'
@@ -179,9 +179,9 @@ const PeopleIdRoute = PeopleIdRouteImport.update({
   getParentRoute: () => PeopleRoute,
 } as any)
 const MeetingIdRoute = MeetingIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => MeetingRoute,
+  id: '/meeting_/$id',
+  path: '/meeting/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const KnowledgeSlugRoute = KnowledgeSlugRouteImport.update({
   id: '/$slug',
@@ -353,7 +353,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
-  '/meeting': typeof MeetingRouteWithChildren
+  '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
@@ -408,7 +408,7 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
-  '/meeting': typeof MeetingRouteWithChildren
+  '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
@@ -463,7 +463,7 @@ export interface FileRoutesById {
   '/chat': typeof ChatRouteWithChildren
   '/contact': typeof ContactRoute
   '/knowledge': typeof KnowledgeRouteWithChildren
-  '/meeting': typeof MeetingRouteWithChildren
+  '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
@@ -485,7 +485,7 @@ export interface FileRoutesById {
   '/chat/$channelId': typeof ChatChannelIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
-  '/meeting/$id': typeof MeetingIdRoute
+  '/meeting_/$id': typeof MeetingIdRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -651,7 +651,7 @@ export interface FileRouteTypes {
     | '/chat/$channelId'
     | '/invite/$token'
     | '/knowledge/$slug'
-    | '/meeting/$id'
+    | '/meeting_/$id'
     | '/people/$id'
     | '/reports/$type'
     | '/tasks/$id'
@@ -686,7 +686,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRouteWithChildren
   ContactRoute: typeof ContactRoute
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
-  MeetingRoute: typeof MeetingRouteWithChildren
+  MeetingRoute: typeof MeetingRoute
   OnboardingRoute: typeof OnboardingRoute
   PeopleRoute: typeof PeopleRouteWithChildren
   PricingRoute: typeof PricingRoute
@@ -696,6 +696,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
+  MeetingIdRoute: typeof MeetingIdRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
@@ -865,12 +866,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PeopleIdRouteImport
       parentRoute: typeof PeopleRoute
     }
-    '/meeting/$id': {
-      id: '/meeting/$id'
-      path: '/$id'
+    '/meeting_/$id': {
+      id: '/meeting_/$id'
+      path: '/meeting/$id'
       fullPath: '/meeting/$id'
       preLoaderRoute: typeof MeetingIdRouteImport
-      parentRoute: typeof MeetingRoute
+      parentRoute: typeof rootRouteImport
     }
     '/knowledge/$slug': {
       id: '/knowledge/$slug'
@@ -1224,17 +1225,6 @@ const KnowledgeRouteWithChildren = KnowledgeRoute._addFileChildren(
   KnowledgeRouteChildren,
 )
 
-interface MeetingRouteChildren {
-  MeetingIdRoute: typeof MeetingIdRoute
-}
-
-const MeetingRouteChildren: MeetingRouteChildren = {
-  MeetingIdRoute: MeetingIdRoute,
-}
-
-const MeetingRouteWithChildren =
-  MeetingRoute._addFileChildren(MeetingRouteChildren)
-
 interface PeopleRouteChildren {
   PeopleIdRoute: typeof PeopleIdRoute
 }
@@ -1291,7 +1281,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRouteWithChildren,
   ContactRoute: ContactRoute,
   KnowledgeRoute: KnowledgeRouteWithChildren,
-  MeetingRoute: MeetingRouteWithChildren,
+  MeetingRoute: MeetingRoute,
   OnboardingRoute: OnboardingRoute,
   PeopleRoute: PeopleRouteWithChildren,
   PricingRoute: PricingRoute,
@@ -1301,6 +1291,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
+  MeetingIdRoute: MeetingIdRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,

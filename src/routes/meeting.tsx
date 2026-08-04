@@ -1,6 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { createInstantMeeting, listMyMeetingRooms } from "@/lib/api/meeting-rooms.functions";
 import {
   ListChecks,
   Users,
@@ -201,6 +205,22 @@ function MeetingPage() {
   const [tab, setTab] = useState<Tab>("upcoming");
   const [q, setQ] = useState("");
   const [inRoom, setInRoom] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const rooms = useQuery({
+    queryKey: ["meeting-rooms"],
+    queryFn: () => listMyMeetingRooms(),
+  });
+
+  const createRoom = useMutation({
+    mutationFn: () => createInstantMeeting({ data: {} }),
+    onSuccess: (m) => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      void navigate({ to: "/meeting/$id", params: { id: m.id } });
+    },
+    onError: () => toast.error("Không tạo được phòng họp. Kiểm tra quyền và hạn mức của tổ chức."),
+  });
 
   if (inRoom) {
     return (
@@ -230,7 +250,7 @@ function MeetingPage() {
         <AppTopbar
           variant="documents"
           onOpenSidebar={() => setOpen(true)}
-          onNew={() => setInRoom(true)}
+          onNew={() => createRoom.mutate()}
         />
 
         {tab === "rooms" ? null : null}
@@ -249,10 +269,16 @@ function MeetingPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => setInRoom(true)}
-                    className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    onClick={() => createRoom.mutate()}
+                    disabled={createRoom.isPending}
+                    className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                   >
-                    <VideoIcon className="h-4 w-4" /> Bắt đầu họp ngay
+                    {createRoom.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <VideoIcon className="h-4 w-4" />
+                    )}
+                    Bắt đầu họp ngay
                   </button>
                   <button className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
                     <Calendar className="h-4 w-4" /> Lên lịch
@@ -297,6 +323,44 @@ function MeetingPage() {
             </div>
 
             {/* Tabs + search */}
+            {/* Phòng họp thật (LiveKit) */}
+            <div className="border-b border-border px-6 py-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Phòng họp trực tuyến</h2>
+                <span className="text-xs text-muted-foreground">
+                  Cần bật camera/micro khi trình duyệt hỏi quyền
+                </span>
+              </div>
+              {rooms.isLoading ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
+                </div>
+              ) : (rooms.data?.length ?? 0) === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera.
+                </p>
+              ) : (
+                <ul className="grid gap-2 md:grid-cols-2">
+                  {rooms.data?.map((r) => (
+                    <li key={r.id}>
+                      <Link
+                        to="/meeting/$id"
+                        params={{ id: r.id }}
+                        className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
+                      >
+                        <span className="min-w-0 truncate">{r.title}</span>
+                        <span
+                          className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[11px] ${r.status === "live" ? "bg-destructive/20 text-destructive" : "bg-surface-2 text-muted-foreground"}`}
+                        >
+                          {r.status === "live" ? "Đang diễn ra" : "Sẵn sàng"}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-bg/95 px-6 py-3 backdrop-blur">
               <div className="flex gap-1 rounded-lg bg-surface p-1 text-sm">
                 {(
