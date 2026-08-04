@@ -147,3 +147,48 @@ export function meetingIdFromRoom(roomName: string | undefined): string | null {
   const id = roomName.slice(4);
   return /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 }
+
+/** Ký JWT quản trị ngắn hạn cho RoomService (grant `roomList`). */
+async function signAdminToken(config: LiveKitConfig, ttlSeconds = 60): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "HS256", typ: "JWT" };
+  const payload = {
+    iss: config.apiKey,
+    sub: "uniwork-reconciler",
+    nbf: now - 5,
+    iat: now,
+    exp: now + ttlSeconds,
+    video: { roomList: true, roomAdmin: true },
+  };
+  const signingInput = `${b64url(enc.encode(JSON.stringify(header)))}.${b64url(enc.encode(JSON.stringify(payload)))}`;
+  const sig = new Uint8Array(
+    await crypto.subtle.sign("HMAC", await hmacKey(config.apiSecret), enc.encode(signingInput)),
+  );
+  return `${signingInput}.${b64url(sig)}`;
+}
+
+function httpBase(url: string): string {
+  return url.replace(/^wss:\/\//i, "https://").replace(/^ws:\/\//i, "http://").replace(/\/+$/, "");
+}
+
+export interface LiveKitRoom {
+  sid?: string;
+  name?: string;
+  numParticipants?: number;
+  creationTime?: number | string;
+}
+
+/** Gọi RoomService.ListRooms để đối soát phòng đang tồn tại trên cụm. */
+export async function listRooms(config: LiveKitConfig): Promise<LiveKitRoom[]> {
+  const token = await signAdminToken(config);
+  const res = await fetch(`${httpBase(config.url)}/twirp/livekit.RoomService/ListRooms`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (!res.ok) {
+    throw new Error(`LiveKit ListRooms failed [${res.status}]: ${await res.text()}`);
+  }
+  const data = (await res.json()) as { rooms?: LiveKitRoom[] };
+  return data.rooms ?? [];
+}
