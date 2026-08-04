@@ -645,6 +645,63 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_join_tokens: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          idempotency_key: string | null
+          issued_at: string
+          meeting_id: string
+          role: string
+          tenant_id: string
+          token_fingerprint: string
+          user_id: string
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          idempotency_key?: string | null
+          issued_at?: string
+          meeting_id: string
+          role: string
+          tenant_id: string
+          token_fingerprint: string
+          user_id: string
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          idempotency_key?: string | null
+          issued_at?: string
+          meeting_id?: string
+          role?: string
+          tenant_id?: string
+          token_fingerprint?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_join_tokens_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_join_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_participants: {
         Row: {
           created_at: string
@@ -2802,6 +2859,41 @@ export type Database = {
         Returns: Record<string, unknown>[]
       }
       dblink_is_busy: { Args: { "": string }; Returns: number }
+      end_meeting: {
+        Args: {
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _meeting_id: string
+        }
+        Returns: {
+          agenda: string | null
+          conference_provider: string | null
+          conference_ref: Json | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          end_at: string
+          id: string
+          location: string | null
+          row_version: number
+          rrule: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       evaluate_quota_alert: {
         Args: {
           _correlation_id: string
@@ -2822,6 +2914,14 @@ export type Database = {
           _worker: string
         }
         Returns: boolean
+      }
+      finalize_meeting_from_provider: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key: string
+          _meeting_id: string
+        }
+        Returns: undefined
       }
       has_role: {
         Args: {
@@ -2846,6 +2946,16 @@ export type Database = {
       is_workspace_owner: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
+      }
+      issue_meeting_join_token: {
+        Args: {
+          _correlation_id?: string
+          _expires_at: string
+          _idempotency_key?: string
+          _meeting_id: string
+          _token_fingerprint: string
+        }
+        Returns: Json
       }
       provision_default_subscription: {
         Args: { _actor: string; _tenant_id: string }
@@ -2896,6 +3006,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_meeting_usage: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key: string
+          _meeting_id: string
+          _participant_minutes: number
+        }
+        Returns: undefined
       }
       record_tenant_invitation_rejection: {
         Args: {
@@ -3076,6 +3195,41 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "document_permissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      start_meeting: {
+        Args: {
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _meeting_id: string
+        }
+        Returns: {
+          agenda: string | null
+          conference_provider: string | null
+          conference_ref: Json | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          end_at: string
+          id: string
+          location: string | null
+          row_version: number
+          rrule: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
           isOneToOne: true
           isSetofReturn: false
         }
