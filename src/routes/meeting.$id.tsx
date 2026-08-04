@@ -1,5 +1,5 @@
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -53,14 +53,58 @@ export const Route = createFileRoute("/meeting/$id")({
 
 function MeetingDetailPage() {
   const { id } = Route.useParams();
+  const isRealRoom = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [session, setSession] = useState<{ serverUrl: string; token: string } | null>(null);
   const [joining, setJoining] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Xem trước camera trước khi vào phòng — giúp phát hiện sớm lỗi quyền thiết bị.
+  useEffect(() => {
+    let cancelled = false;
+    async function start() {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = s;
+        if (videoRef.current) videoRef.current.srcObject = s;
+      } catch (e) {
+        const name = e instanceof DOMException ? e.name : "Error";
+        toast.error(
+          name === "NotAllowedError"
+            ? "Trình duyệt đã chặn camera. Hãy cho phép quyền camera cho trang này."
+            : name === "NotFoundError"
+              ? "Không tìm thấy camera trên thiết bị."
+              : "Không mở được camera.",
+        );
+        setCamOff(true);
+      }
+    }
+    function stop() {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      if (videoRef.current) videoRef.current.srcObject = null;
+    }
+    if (!session && !camOff) void start();
+    else stop();
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [camOff, session]);
 
   async function handleJoin() {
+    if (!isRealRoom) {
+      toast.error("Đây là phòng demo. Hãy tạo phòng họp thật từ trang Họp.");
+      return;
+    }
     setJoining(true);
     try {
       const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
@@ -124,7 +168,23 @@ function MeetingDetailPage() {
               </div>
             ) : (
             <div className="grid flex-1 grid-cols-2 gap-2 overflow-hidden lg:grid-cols-3">
-              {participants.map((p) => (
+              <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-surface-2">
+                {camOff ? (
+                  <VideoOff className="h-8 w-8 text-muted-foreground" />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="h-full w-full object-cover"
+                  />
+                )}
+                <div className="absolute bottom-2 left-2 right-2 rounded-md bg-black/40 px-2 py-1 text-xs backdrop-blur">
+                  Bạn (xem trước)
+                </div>
+              </div>
+              {participants.slice(1).map((p) => (
                 <div
                   key={p.seed}
                   className={`relative flex items-center justify-center rounded-xl bg-surface-2 ${p.speaking ? "ring-2 ring-success" : ""}`}
@@ -137,6 +197,17 @@ function MeetingDetailPage() {
                 </div>
               ))}
             </div>
+            )}
+
+            {!session && !isRealRoom && (
+              <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
+                Phòng <span className="font-mono">{id}</span> là dữ liệu mẫu nên không kết nối được
+                máy chủ họp.{" "}
+                <Link to="/meeting" className="text-primary hover:underline">
+                  Tạo phòng họp thật
+                </Link>{" "}
+                để dùng camera và micro.
+              </p>
             )}
 
             <div className="mt-4 flex items-center justify-center gap-2">
