@@ -1,4 +1,5 @@
 // Browser-only LiveKit stage. Loaded via React.lazy inside <ClientOnly>.
+// Never fabricate LiveKit tokens here: the token prop is signed server-side.
 import "@livekit/components-styles";
 import {
   LiveKitRoom,
