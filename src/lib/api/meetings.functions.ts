@@ -241,7 +241,8 @@ export const requestJoinToken = createServerFn({ method: "POST" })
 
     // 3. Replace the placeholder fingerprint with the real one (never the token).
     const fp = await fingerprint(signed.token);
-    await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
       .from("meeting_join_tokens")
       .update({ token_fingerprint: fp })
       .eq("meeting_id", data.meetingId)
