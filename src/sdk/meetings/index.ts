@@ -7,6 +7,7 @@ import type {
 } from "@/contracts";
 import { ApiError } from "@/contracts/errors";
 import { assertJavaConfigured, resolveBackendProvider } from "../core/provider";
+import { requestJoinToken as requestJoinTokenFn } from "@/lib/api/meetings.functions";
 
 export interface MeetingApi {
   getById(id: MeetingId): Promise<MeetingDto>;
@@ -31,9 +32,11 @@ const lovableMeetingApi: MeetingApi = {
   async schedule() {
     return notImplemented();
   },
-  async requestJoinToken() {
-    // Never fabricate LiveKit tokens client-side.
-    return notImplemented();
+  async requestJoinToken(meetingId, input) {
+    // Never fabricate LiveKit tokens client-side — the server signs them.
+    return (await requestJoinTokenFn({
+      data: { meetingId, displayName: input.participantIdentity },
+    })) as JoinMeetingTokenResponse;
   },
 };
 

@@ -59,6 +59,7 @@ import { Route as AuthenticatedAdminTenantRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminQuotaRouteImport } from './routes/_authenticated/admin.quota'
 import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/api/public/hooks/process-quota-exports'
+import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 
@@ -318,6 +319,11 @@ const ApiPublicHooksProcessQuotaExportsRoute =
     path: '/api/public/hooks/process-quota-exports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksLivekitRoute = ApiPublicHooksLivekitRouteImport.update({
+  id: '/api/public/hooks/livekit',
+  path: '/api/public/hooks/livekit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminTraceCorrelationIdRoute =
   ApiAdminTraceCorrelationIdRouteImport.update({
     id: '/api/admin/trace/$correlationId',
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRoutesByTo {
@@ -433,6 +440,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRoutesById {
@@ -488,6 +496,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRouteTypes {
@@ -543,6 +552,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/livekit'
     | '/api/public/hooks/process-quota-exports'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -594,6 +604,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/livekit'
     | '/api/public/hooks/process-quota-exports'
   id:
     | '__root__'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/livekit'
     | '/api/public/hooks/process-quota-exports'
   fileRoutesById: FileRoutesById
 }
@@ -672,6 +684,7 @@ export interface RootRouteChildren {
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
+  ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksProcessQuotaExportsRoute: typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 
@@ -1027,6 +1040,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksProcessQuotaExportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/livekit': {
+      id: '/api/public/hooks/livekit'
+      path: '/api/public/hooks/livekit'
+      fullPath: '/api/public/hooks/livekit'
+      preLoaderRoute: typeof ApiPublicHooksLivekitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/trace/$correlationId': {
       id: '/api/admin/trace/$correlationId'
       path: '/api/admin/trace/$correlationId'
@@ -1261,19 +1281,10 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
+  ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksProcessQuotaExportsRoute:
     ApiPublicHooksProcessQuotaExportsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

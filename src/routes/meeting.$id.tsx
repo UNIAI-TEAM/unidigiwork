@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
+import { Suspense, lazy, useState } from "react";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Mic,
@@ -16,8 +17,32 @@ import {
   Send,
   FileText,
   Clock,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { resolveMeetingApi } from "@/sdk/meetings";
+import { ApiError } from "@/contracts/errors";
+import type { MeetingId } from "@/contracts";
+
+const LiveKitStage = lazy(() => import("@/components/meeting/livekit-stage"));
+
+const JOIN_ERRORS: Record<string, string> = {
+  MEETING_ACCESS_DENIED: "Bạn không có quyền tham gia cuộc họp này.",
+  MEETING_NOT_FOUND: "Không tìm thấy cuộc họp.",
+  MEETING_NOT_JOINABLE: "Cuộc họp đã kết thúc hoặc bị hủy.",
+  ENTITLEMENT_DENIED: "Gói dịch vụ hiện tại chưa bật hội nghị trực tuyến.",
+  QUOTA_EXCEEDED: "Đã vượt hạn mức phút họp của tổ chức.",
+  CONFERENCE_PROVIDER_UNAVAILABLE: "Hệ thống hội nghị chưa được cấu hình.",
+  MEETING_TOKEN_ISSUE_FAILED: "Không cấp được vé vào phòng. Vui lòng thử lại.",
+};
+
+function StageFallback() {
+  return (
+    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang kết nối phòng họp…
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/meeting/$id")({
   head: ({ params }) => ({
@@ -32,6 +57,24 @@ function MeetingDetailPage() {
   const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
+  const [session, setSession] = useState<{ serverUrl: string; token: string } | null>(null);
+  const [joining, setJoining] = useState(false);
+
+  async function handleJoin() {
+    setJoining(true);
+    try {
+      const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
+        participantIdentity: "",
+        role: "participant",
+      });
+      setSession({ serverUrl: res.serverUrl, token: res.token });
+    } catch (e) {
+      const code = e instanceof ApiError ? e.code : "INTERNAL_ERROR";
+      toast.error(JOIN_ERRORS[code] ?? "Không thể vào phòng họp.");
+    } finally {
+      setJoining(false);
+    }
+  }
 
   const participants = [
     { name: "Minh Anh", seed: "minh-anh", speaking: true },
@@ -67,6 +110,19 @@ function MeetingDetailPage() {
               </div>
             </div>
 
+            {session ? (
+              <div className="flex-1 overflow-hidden rounded-xl bg-surface-2">
+                <ClientOnly fallback={<StageFallback />}>
+                  <Suspense fallback={<StageFallback />}>
+                    <LiveKitStage
+                      serverUrl={session.serverUrl}
+                      token={session.token}
+                      onDisconnected={() => setSession(null)}
+                    />
+                  </Suspense>
+                </ClientOnly>
+              </div>
+            ) : (
             <div className="grid flex-1 grid-cols-2 gap-2 overflow-hidden lg:grid-cols-3">
               {participants.map((p) => (
                 <div
@@ -81,16 +137,33 @@ function MeetingDetailPage() {
                 </div>
               ))}
             </div>
+            )}
 
             <div className="mt-4 flex items-center justify-center gap-2">
-              <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
-              <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
-              <CtrlBtn icon={ScreenShare} />
-              <CtrlBtn icon={Hand} />
-              <CtrlBtn icon={MoreHorizontal} />
-              <button className="ml-2 flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-white hover:bg-destructive/90">
-                <PhoneOff className="h-4 w-4" /> Rời phòng
-              </button>
+              {session ? (
+                <button
+                  onClick={() => setSession(null)}
+                  className="flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+                >
+                  <PhoneOff className="h-4 w-4" /> Rời phòng
+                </button>
+              ) : (
+                <>
+                  <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
+                  <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
+                  <CtrlBtn icon={ScreenShare} />
+                  <CtrlBtn icon={Hand} />
+                  <CtrlBtn icon={MoreHorizontal} />
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining}
+                    className="ml-2 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                  >
+                    {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
+                    Vào phòng họp
+                  </button>
+                </>
+              )}
             </div>
           </main>
 
