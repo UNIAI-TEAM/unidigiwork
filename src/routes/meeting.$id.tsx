@@ -26,6 +26,24 @@ import type { MeetingId } from "@/contracts";
 
 const LiveKitStage = lazy(() => import("@/components/meeting/livekit-stage"));
 
+const JOIN_ERRORS: Record<string, string> = {
+  MEETING_ACCESS_DENIED: "Bạn không có quyền tham gia cuộc họp này.",
+  MEETING_NOT_FOUND: "Không tìm thấy cuộc họp.",
+  MEETING_NOT_JOINABLE: "Cuộc họp đã kết thúc hoặc bị hủy.",
+  ENTITLEMENT_DENIED: "Gói dịch vụ hiện tại chưa bật hội nghị trực tuyến.",
+  QUOTA_EXCEEDED: "Đã vượt hạn mức phút họp của tổ chức.",
+  CONFERENCE_PROVIDER_UNAVAILABLE: "Hệ thống hội nghị chưa được cấu hình.",
+  MEETING_TOKEN_ISSUE_FAILED: "Không cấp được vé vào phòng. Vui lòng thử lại.",
+};
+
+function StageFallback() {
+  return (
+    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang kết nối phòng họp…
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/meeting/$id")({
   head: ({ params }) => ({
     meta: [{ title: `Phòng họp ${params.id} · UNIWORK` }],
