@@ -4,8 +4,24 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { commandMetadataSchema } from "@/contracts/common/base";
 import { mapPgError, ensureOk } from "./business.server";
+import { ApiError } from "@/contracts/errors";
 
 const rsvpSchema = z.enum(["pending", "accepted", "declined", "tentative"]);
+
+export const getMeeting = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("meetings")
+      .select("*, meeting_participants(user_id, role, rsvp)")
+      .eq("id", data.meetingId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    if (!row) throw new ApiError({ code: "MEETING_NOT_FOUND", message: "MEETING_NOT_FOUND" });
+    return row;
+  });
 
 export const listMeetings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
