@@ -10,6 +10,10 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  // Ngoài sandbox Lovable (ví dụ build Docker self-host) build ra Node server
+  // để chạy được bằng `node dist/server/index.mjs`. Trong sandbox Lovable
+  // preset luôn bị ép về cloudflare-module nên dòng này không ảnh hưởng preview.
+  nitro: { preset: "node-server" },
   vite: {
     server: {
       host: true,

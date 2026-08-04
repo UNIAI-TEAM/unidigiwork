@@ -2,21 +2,23 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json .npmrc ./
 RUN npm install
 
 COPY . .
+# Ngoài sandbox Lovable, vite.config.ts dùng nitro preset `node-server`,
+# nên build sinh ra server Node độc lập tại .output/
 RUN npm run build
-RUN if [ ! -f dist/server/server.js ] && [ -f dist/server/index.js ]; then cp dist/server/index.js dist/server/server.js; fi
 
 FROM node:22-alpine AS runtime
 
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=3000
 
-# vite preview is defined in package.json and serves the built app.
-COPY --from=build /app ./
+COPY --from=build /app/.output ./.output
 
 EXPOSE 3000
 
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["node", ".output/server/index.mjs"]
