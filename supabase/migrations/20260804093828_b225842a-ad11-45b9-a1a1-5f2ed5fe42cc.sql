@@ -1,0 +1,1 @@
+update public.meetings set deleted_at = now() where title = 'Phòng họp nhanh' and deleted_at is null and id <> (select id from public.meetings where title='Phòng họp nhanh' and deleted_at is null order by created_at desc limit 1);
