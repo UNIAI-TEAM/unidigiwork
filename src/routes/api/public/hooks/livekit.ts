@@ -10,6 +10,8 @@ interface LiveKitEvent {
   participant?: { identity?: string };
 }
 
+const HANDLED = new Set(["room_started", "participant_joined", "participant_left", "room_finished"]);
+
 export const Route = createFileRoute("/api/public/hooks/livekit")({
   server: {
     handlers: {
@@ -34,29 +36,26 @@ export const Route = createFileRoute("/api/public/hooks/livekit")({
         if (!meetingId) return Response.json({ ok: true, ignored: true });
 
         const eventId = event.id ?? `${event.event ?? "unknown"}:${event.room?.sid ?? ""}:${event.createdAt ?? ""}`;
-        const idempotencyKey = `livekit:${eventId}`;
         const correlationId = `livekit:${event.room?.sid ?? meetingId}`;
+        const eventType = event.event ?? "unknown";
+        if (!HANDLED.has(eventType)) return Response.json({ ok: true, ignored: true });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         try {
-          if (event.event === "room_finished") {
-            const minutes = Math.ceil((event.room?.duration ?? 0) / 60);
-            if (minutes > 0) {
-              await supabaseAdmin.rpc("record_meeting_usage", {
-                _meeting_id: meetingId,
-                _participant_minutes: minutes,
-                _idempotency_key: idempotencyKey,
-                _correlation_id: correlationId,
-              });
-            }
-            await supabaseAdmin.rpc("finalize_meeting_from_provider", {
-              _meeting_id: meetingId,
-              _idempotency_key: idempotencyKey,
-              _correlation_id: correlationId,
-            });
-          }
-          return Response.json({ ok: true });
+          const { data, error } = await supabaseAdmin.rpc("ingest_meeting_provider_event", {
+            _meeting_id: meetingId,
+            _event_id: eventId,
+            _event_type: eventType,
+            _room_sid: event.room?.sid ?? undefined,
+            _participant_identity: event.participant?.identity ?? undefined,
+            _duration_seconds: event.room?.duration ?? 0,
+            _occurred_at: new Date((event.createdAt ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+            _payload: { numParticipants: event.room?.numParticipants ?? null },
+            _correlation_id: correlationId,
+          });
+          if (error) throw new Error(error.message);
+          return Response.json({ ok: true, result: data });
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
           return Response.json({ ok: false, error: message }, { status: 500 });

@@ -750,6 +750,51 @@ export type Database = {
           },
         ]
       }
+      meeting_provider_events: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          event_id: string
+          event_type: string
+          id: string
+          meeting_id: string
+          occurred_at: string | null
+          participant_identity: string | null
+          payload: Json
+          provider: string
+          room_sid: string | null
+          tenant_id: string
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          event_id: string
+          event_type: string
+          id?: string
+          meeting_id: string
+          occurred_at?: string | null
+          participant_identity?: string | null
+          payload?: Json
+          provider?: string
+          room_sid?: string | null
+          tenant_id: string
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          event_id?: string
+          event_type?: string
+          id?: string
+          meeting_id?: string
+          occurred_at?: string | null
+          participant_identity?: string | null
+          payload?: Json
+          provider?: string
+          room_sid?: string | null
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           agenda: string | null
@@ -2936,6 +2981,20 @@ export type Database = {
           _tenant_id: string
         }
         Returns: boolean
+      }
+      ingest_meeting_provider_event: {
+        Args: {
+          _correlation_id?: string
+          _duration_seconds?: number
+          _event_id: string
+          _event_type: string
+          _meeting_id: string
+          _occurred_at?: string
+          _participant_identity?: string
+          _payload?: Json
+          _room_sid?: string
+        }
+        Returns: Json
       }
       is_reserved_slug: { Args: { _slug: string }; Returns: boolean }
       is_tenant_member: { Args: { _tenant_id: string }; Returns: boolean }
