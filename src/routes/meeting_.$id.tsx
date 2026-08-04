@@ -44,7 +44,7 @@ function StageFallback() {
   );
 }
 
-export const Route = createFileRoute("/meeting/$id")({
+export const Route = createFileRoute("/meeting_/$id")({
   head: ({ params }) => ({
     meta: [{ title: `Phòng họp ${params.id} · UNIWORK` }],
   }),
