@@ -110,12 +110,17 @@ export async function verifyWebhook(
   const parts = jwt.split(".");
   if (parts.length !== 3) return false;
   const [h, p, s] = parts as [string, string, string];
-  const valid = await crypto.subtle.verify(
-    "HMAC",
-    await hmacKey(secret),
-    b64urlDecode(s) as unknown as ArrayBuffer,
-    enc.encode(`${h}.${p}`),
-  );
+  let valid = false;
+  try {
+    valid = await crypto.subtle.verify(
+      "HMAC",
+      await hmacKey(secret),
+      b64urlDecode(s) as unknown as ArrayBuffer,
+      enc.encode(`${h}.${p}`),
+    );
+  } catch {
+    return false; // chữ ký/base64 hỏng ⇒ coi như không hợp lệ, không ném lỗi 500
+  }
   if (!valid) return false;
 
   let claims: LiveKitWebhookClaims;
