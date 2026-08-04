@@ -89,6 +89,30 @@ Bổ sung stable error codes (đã thêm vào `STABLE_ERROR_CODES`):
   `LIVEKIT_WEBHOOK_SECRET` (so sánh timing-safe trên raw body) **trước** khi parse;
   idempotent theo `event.id` qua `idempotency_key` của outbox.
 
+#### 2.5.1 Webhook: UNIWORK nhận trực tiếp (đã chốt)
+
+Cụm LiveKit self-host gửi webhook **thẳng** tới UNIWORK, không qua service trung gian
+(`lms-core`) và không fan-out qua proxy.
+
+- Endpoint: `POST https://<public-url-uniwork>/api/public/hooks/livekit`
+  (dùng URL ổn định `project--<project-id>.lovable.app` để không vỡ khi đổi tên).
+- Cấu hình phía cụm: thêm URL trên vào `webhook.urls`, ký bằng **api-key riêng của
+  UNIWORK** (`uniwork-key`); mỗi consumer có key/secret riêng, không dùng chung với
+  `lms-core`.
+- Xác thực: đọc header `Authorization`, verify JWT LiveKit bằng secret của
+  `uniwork-key`, so khớp `sha256` của **raw body** với claim `sha256` (timing-safe),
+  từ chối nếu lệch hoặc quá `WEBHOOK_MAX_SKEW` (mặc định 300s) ⇒ 401.
+- Lọc phạm vi: chỉ xử lý sự kiện có `room.name` khớp tiền tố `mtg_`; sự kiện của
+  ứng dụng khác trên cùng cụm ⇒ trả 200 và bỏ qua (không log payload).
+- Idempotency: `idempotency_key = livekit:<event.id>`; replay ⇒ no-op, usage chỉ ghi
+  một lần.
+- Sự kiện xử lý: `room_started`, `room_finished`, `participant_joined`,
+  `participant_left`, `egress_ended` (giai đoạn recording).
+- Vẫn giữ nguyên tắc một writer: handler chỉ gọi cùng tập RPC của bounded context
+  `meetings`, không ghi bảng trực tiếp.
+- Rủi ro chấp nhận: endpoint nằm dưới `/api/public/*` nên bỏ qua site auth; toàn bộ
+  bảo mật dựa vào verify chữ ký trước khi parse.
+
 Ánh xạ quyền:
 
 | Role ứng dụng | Grants LiveKit |
@@ -126,6 +150,7 @@ Production chạy **LiveKit self-host**, không dùng LiveKit Cloud.
   bằng cặp key này, không gọi API quản trị của LiveKit Cloud.
 - Webhook LiveKit trỏ tới `/api/public/hooks/livekit` bằng URL public ổn định của app;
   cụm self-host phải ra được Internet tới endpoint đó.
+  Cụ thể theo §2.5.1: gửi trực tiếp tới UNIWORK, không qua `lms-core`.
 - Recording (giai đoạn sau) dùng LiveKit Egress self-host, ghi ra object storage nội bộ
   và tham chiếu qua `StorageObjectRef` — không dùng bản ghi lưu trên hạ tầng vendor.
 - Vận hành: cần theo dõi năng lực (CPU/băng thông) của SFU; quota
@@ -166,5 +191,7 @@ Production chạy **LiveKit self-host**, không dùng LiveKit Cloud.
 ## 6. Điểm còn mở (không chặn LK-DB)
 
 1. ~~LiveKit Cloud hay self-host~~ — **đã chốt: self-host** (xem §2.8).
-2. Có bật recording ngay ở LK-API hay hoãn sang batch riêng.
-3. Hạn mức mặc định của `meeting_participant_minutes` cho từng plan.
+2. ~~Webhook qua service trung gian hay nhận trực tiếp~~ — **đã chốt: nhận trực tiếp**
+   (xem §2.5.1).
+3. Có bật recording ngay ở LK-API hay hoãn sang batch riêng.
+4. Hạn mức mặc định của `meeting_participant_minutes` cho từng plan.
