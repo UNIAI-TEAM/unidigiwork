@@ -113,6 +113,18 @@ Cụm LiveKit self-host gửi webhook **thẳng** tới UNIWORK, không qua serv
 - Rủi ro chấp nhận: endpoint nằm dưới `/api/public/*` nên bỏ qua site auth; toàn bộ
   bảo mật dựa vào verify chữ ký trước khi parse.
 
+#### 2.5.2 Đối soát định kỳ (đã chốt: 2 phút / grace 5 phút)
+
+`room_finished` có thể mất (mạng đứt, deploy, 5xx) ⇒ meeting treo ở `live`, quota không chốt.
+Job `livekit-reconcile-2min` (pg_cron, mỗi 2 phút) gọi
+`POST /api/public/hooks/livekit-reconcile` (xác thực bằng header `apikey`):
+
+1. Lấy meeting `status = 'live'` có `updated_at` cũ hơn **grace 5 phút**.
+2. Gọi `RoomService.ListRooms` trên cụm; nếu cụm lỗi ⇒ dừng, không finalize (tránh cắt nhầm).
+3. Phòng `mtg_<id>` không còn tồn tại ⇒ phát `room_finished` tổng hợp qua đúng RPC
+   `ingest_meeting_provider_event` với `event_id = reconcile:<meeting_id>` ⇒ idempotent,
+   không tạo writer thứ hai. Duration tính từ event đầu → event cuối của meeting.
+
 Ánh xạ quyền:
 
 | Role ứng dụng | Grants LiveKit |
