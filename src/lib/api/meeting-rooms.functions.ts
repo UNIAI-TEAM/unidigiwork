@@ -9,9 +9,20 @@ import { ApiError } from "@/contracts/errors";
 export const listMyWorkspaces = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    // Chỉ workspace mà người dùng thực sự là thành viên (không phải mọi workspace trong tenant).
+    const { data: memberships, error: memErr } = await context.supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", context.userId)
+      .limit(200);
+    if (memErr) mapPgError(memErr);
+    const ids = (memberships ?? []).map((m) => (m as { workspace_id: string }).workspace_id);
+    if (ids.length === 0) return [] as Array<{ id: string; name: string; tenant_id: string }>;
+
     const { data, error } = await context.supabase
       .from("workspaces")
       .select("id, name, tenant_id")
+      .in("id", ids)
       .is("deleted_at", null)
       .order("created_at", { ascending: true })
       .limit(100);
@@ -33,6 +44,36 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
+    // Quyền xem: workspace mình là thành viên, hoặc cuộc họp mình được mời/tham gia.
+    const { data: memberships, error: memErr } = await context.supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", context.userId)
+      .limit(200);
+    if (memErr) mapPgError(memErr);
+    const memberWorkspaceIds = (memberships ?? []).map(
+      (m) => (m as { workspace_id: string }).workspace_id,
+    );
+
+    const { data: parts, error: partErr } = await context.supabase
+      .from("meeting_participants")
+      .select("meeting_id")
+      .eq("user_id", context.userId)
+      .limit(500);
+    if (partErr) mapPgError(partErr);
+    const participantMeetingIds = (parts ?? []).map(
+      (p) => (p as { meeting_id: string }).meeting_id,
+    );
+
+    // Workspace được yêu cầu nhưng không có quyền → danh sách rỗng, không lộ dữ liệu tenant khác.
+    if (data.workspaceId && !memberWorkspaceIds.includes(data.workspaceId)) {
+      const onlyInvited = participantMeetingIds.length > 0;
+      if (!onlyInvited) return { items: [], total: 0 };
+    }
+    if (memberWorkspaceIds.length === 0 && participantMeetingIds.length === 0) {
+      return { items: [], total: 0 };
+    }
+
     const nowIso = new Date().toISOString();
     let q = context.supabase
       .from("meetings")
@@ -50,6 +91,14 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
     }
     if (data.workspaceId) q = q.eq("workspace_id", data.workspaceId);
     if (data.search) q = q.ilike("title", `%${data.search}%`);
+
+    const allowedWs = data.workspaceId
+      ? memberWorkspaceIds.filter((id) => id === data.workspaceId)
+      : memberWorkspaceIds;
+    const orParts: string[] = [];
+    if (allowedWs.length > 0) orParts.push(`workspace_id.in.(${allowedWs.join(",")})`);
+    if (participantMeetingIds.length > 0) orParts.push(`id.in.(${participantMeetingIds.join(",")})`);
+    q = q.or(orParts.join(","));
 
     const { data: rows, error, count } = await q;
     if (error) mapPgError(error);
