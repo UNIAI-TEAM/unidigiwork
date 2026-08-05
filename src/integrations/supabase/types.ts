@@ -3075,6 +3075,10 @@ export type Database = {
         }
         Returns: Json
       }
+      invite_meeting_participant: {
+        Args: { _correlation_id?: string; _email: string; _meeting_id: string }
+        Returns: Json
+      }
       is_reserved_slug: { Args: { _slug: string }; Returns: boolean }
       is_tenant_member: { Args: { _tenant_id: string }; Returns: boolean }
       is_workspace_member: {

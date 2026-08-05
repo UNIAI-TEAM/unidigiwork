@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
   createInstantMeeting,
+  inviteMeetingParticipant,
   listMyMeetingRooms,
   listMyWorkspaces,
 } from "@/lib/api/meeting-rooms.functions";
@@ -53,6 +54,9 @@ import {
   MoreVertical,
   ShieldCheck,
   Eye,
+  XCircle,
+  MailQuestion,
+  Mail,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 
@@ -821,6 +825,24 @@ function QuickRoomModal({
   const [startAt, setStartAt] = useState(() => toLocalInput(new Date(Date.now() + 15 * 60_000)));
   const [duration, setDuration] = useState(60);
   const [invitees, setInvitees] = useState("");
+  // Tiến trình & kết quả gửi lời mời theo từng email.
+  type InviteResult = {
+    email: string;
+    state: "pending" | "sending" | "invited" | "already" | "not_found" | "failed";
+    detail?: string;
+  };
+  const [inviteResults, setInviteResults] = useState<InviteResult[] | null>(null);
+  const [inviteRunning, setInviteRunning] = useState(false);
+
+  const inviteDone = (inviteResults ?? []).filter(
+    (r) => r.state !== "pending" && r.state !== "sending",
+  ).length;
+  const inviteSummary = {
+    // Người chưa thực sự nhận được lời mời trong hệ thống → gợi ý gửi email link.
+    mailable: (inviteResults ?? [])
+      .filter((r) => r.state === "not_found" || r.state === "failed")
+      .map((r) => r.email),
+  };
 
   // Phân tích danh sách email: kiểm tra định dạng + phát hiện trùng lặp.
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
@@ -863,7 +885,7 @@ function QuickRoomModal({
     }
   };
 
-  const sendInvites = () => {
+  const sendInvites = async () => {
     const { valid, invalid, duplicates } = parsedInvitees;
     if (invalid.length) {
       toast.error(`Email không hợp lệ: ${invalid.join(", ")}`);
@@ -876,11 +898,48 @@ function QuickRoomModal({
     if (duplicates.length) {
       toast.warning(`Đã bỏ ${duplicates.length} email trùng: ${duplicates.join(", ")}`);
     }
+    if (!created) return;
+
+    setInviteRunning(true);
+    setInviteResults(valid.map((email) => ({ email, state: "pending" as const })));
+
+    for (let i = 0; i < valid.length; i++) {
+      const email = valid[i]!;
+      setInviteResults((prev) =>
+        (prev ?? []).map((r, idx) => (idx === i ? { ...r, state: "sending" } : r)),
+      );
+      try {
+        const res = await inviteMeetingParticipant({
+          data: { meetingId: created.id, email },
+        });
+        setInviteResults((prev) =>
+          (prev ?? []).map((r, idx) =>
+            idx === i ? { ...r, state: res.status as InviteResult["state"] } : r,
+          ),
+        );
+      } catch (err) {
+        setInviteResults((prev) =>
+          (prev ?? []).map((r, idx) =>
+            idx === i
+              ? {
+                  ...r,
+                  state: "failed",
+                  detail: err instanceof Error ? err.message : "Lỗi không xác định",
+                }
+              : r,
+          ),
+        );
+      }
+    }
+    setInviteRunning(false);
+  };
+
+  const mailtoFallback = (emails: string[]) => {
     const subject = encodeURIComponent(`Mời họp: ${created?.title ?? "Phòng họp"}`);
     const body = encodeURIComponent(
       `Bạn được mời tham gia phòng họp "${created?.title ?? ""}".\n\nLink: ${inviteLink}`,
     );
-    window.location.href = `mailto:${valid.join(",")}?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
   };
 
   const submit = (e: React.FormEvent) => {
@@ -962,6 +1021,81 @@ function QuickRoomModal({
             </div>
           )}
 
+          {inviteResults && (
+            <div className="mt-4 rounded-lg border border-border bg-bg p-3" aria-live="polite">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">
+                  {inviteRunning ? "Đang gửi lời mời…" : "Kết quả gửi lời mời"}
+                </span>
+                <span className="text-muted-foreground">
+                  {inviteDone}/{inviteResults.length}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{
+                    width: `${inviteResults.length ? (inviteDone / inviteResults.length) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+              <ul className="mt-3 max-h-40 space-y-1.5 overflow-y-auto text-xs">
+                {inviteResults.map((r) => (
+                  <li key={r.email} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{r.email}</span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      {r.state === "pending" && (
+                        <span className="text-muted-foreground">Chờ gửi</span>
+                      )}
+                      {r.state === "sending" && (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                          <span className="text-muted-foreground">Đang gửi</span>
+                        </>
+                      )}
+                      {r.state === "invited" && (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                          <span className="text-emerald-600">Đã mời</span>
+                        </>
+                      )}
+                      {r.state === "already" && (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-muted-foreground">Đã có trong phòng</span>
+                        </>
+                      )}
+                      {r.state === "not_found" && (
+                        <>
+                          <MailQuestion className="h-3.5 w-3.5 text-amber-500" />
+                          <span className="text-amber-600">Chưa có tài khoản</span>
+                        </>
+                      )}
+                      {r.state === "failed" && (
+                        <>
+                          <XCircle className="h-3.5 w-3.5 text-destructive" />
+                          <span className="text-destructive" title={r.detail}>
+                            Thất bại
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {!inviteRunning && inviteSummary.mailable.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => mailtoFallback(inviteSummary.mailable)}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-xs hover:border-primary/40"
+                >
+                  <Mail className="h-3.5 w-3.5" /> Gửi email link mời cho{" "}
+                  {inviteSummary.mailable.length} người chưa nhận được
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <button
               type="button"
@@ -972,11 +1106,20 @@ function QuickRoomModal({
             </button>
             <button
               type="button"
-              onClick={sendInvites}
-              disabled={parsedInvitees.invalid.length > 0 || parsedInvitees.valid.length === 0}
+              onClick={() => void sendInvites()}
+              disabled={
+                inviteRunning ||
+                parsedInvitees.invalid.length > 0 ||
+                parsedInvitees.valid.length === 0
+              }
               className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Send className="h-4 w-4" /> Gửi lời mời
+              {inviteRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {inviteRunning ? "Đang gửi…" : "Gửi lời mời"}
             </button>
             <button
               type="button"

@@ -115,6 +115,31 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
     };
   });
 
+// Mời một người tham gia phòng họp theo email (gọi tuần tự để UI hiện tiến trình).
+export const inviteMeetingParticipant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        meetingId: z.string().uuid(),
+        email: z.string().email(),
+        correlationId: z.string().max(120).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("invite_meeting_participant", {
+      _meeting_id: data.meetingId,
+      _email: data.email,
+      _correlation_id: data.correlationId,
+    });
+    return ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
+      email: string;
+      status: "invited" | "already" | "not_found";
+      user_id?: string;
+    };
+  });
+
 export const createInstantMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
