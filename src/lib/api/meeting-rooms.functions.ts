@@ -282,3 +282,52 @@ export const redeemMeetingInviteLink = createServerFn({ method: "POST" })
     };
     return { status: out.status, meetingId: out.meeting_id ?? null };
   });
+
+// Danh sách người đã được mời + trạng thái tham gia của một phòng họp.
+export const listMeetingParticipants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("meeting_participants")
+      .select("user_id, role, rsvp, rsvp_at, created_at")
+      .eq("meeting_id", data.meetingId)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (error) mapPgError(error);
+
+    const ids = (rows ?? []).map((r) => (r as { user_id: string }).user_id);
+    let people: Record<string, { name: string | null; email: string | null }> = {};
+    if (ids.length > 0) {
+      const { data: users, error: uErr } = await context.supabase
+        .from("users")
+        .select("id, display_name, primary_email")
+        .in("id", ids);
+      if (uErr) mapPgError(uErr);
+      people = Object.fromEntries(
+        (users ?? []).map((u) => {
+          const row = u as { id: string; display_name: string | null; primary_email: string | null };
+          return [row.id, { name: row.display_name, email: row.primary_email }];
+        }),
+      );
+    }
+
+    return (rows ?? []).map((r) => {
+      const row = r as unknown as {
+        user_id: string;
+        role: string;
+        rsvp: string;
+        rsvp_at: string | null;
+        created_at: string;
+      };
+      return {
+        userId: row.user_id,
+        role: row.role,
+        rsvp: row.rsvp,
+        rsvpAt: row.rsvp_at,
+        invitedAt: row.created_at,
+        name: people[row.user_id]?.name ?? null,
+        email: people[row.user_id]?.email ?? null,
+      };
+    });
+  });
