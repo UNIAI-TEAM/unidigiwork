@@ -288,6 +288,7 @@ function MeetingPage() {
   };
 
   const rooms = useQuery({
+    // eslint-disable-next-line
     queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
     enabled: !!activeWs,
     placeholderData: keepPreviousData,
