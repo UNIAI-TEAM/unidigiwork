@@ -271,7 +271,14 @@ function MeetingPage() {
     }
   }, [activeWs, roomQuery]);
 
-  const setRoomFilter = (next: { ws?: string; q?: string; page?: number }) => {
+  const roomState = search.state ?? "all";
+
+  const setRoomFilter = (next: {
+    ws?: string;
+    q?: string;
+    page?: number;
+    state?: "all" | "live" | "upcoming";
+  }) => {
     setRestoredFilter(null);
     void navigate({
       to: "/meeting",
@@ -281,7 +288,7 @@ function MeetingPage() {
   };
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, currentPage],
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
     enabled: !!activeWs,
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -289,6 +296,7 @@ function MeetingPage() {
         data: {
           workspaceId: activeWs,
           search: roomQuery || undefined,
+          state: roomState,
           limit: ROOM_PAGE_SIZE,
           offset: (currentPage - 1) * ROOM_PAGE_SIZE,
         },
