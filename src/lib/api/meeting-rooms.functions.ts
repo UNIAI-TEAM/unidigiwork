@@ -251,9 +251,9 @@ export const createMeetingInviteLink = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("create_meeting_invite_link", {
       _meeting_id: data.meetingId,
-      _expires_in_minutes: data.expiresInMinutes ?? null,
-      _max_uses: data.maxUses ?? null,
-      _label: data.label ?? null,
+      _expires_in_minutes: data.expiresInMinutes ?? undefined,
+      _max_uses: data.maxUses ?? undefined,
+      _label: data.label ?? undefined,
     });
     const out = ensureOk(res, "MEETING_ACCESS_DENIED") as unknown as {
       id: string;
