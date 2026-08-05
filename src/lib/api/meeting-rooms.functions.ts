@@ -234,3 +234,51 @@ export const listMeetingHistory = createServerFn({ method: "GET" })
     return { items, total: count ?? items.length };
   });
 
+
+// Link mời có kiểm soát: thời hạn + số lần sử dụng.
+export const createMeetingInviteLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        meetingId: z.string().uuid(),
+        expiresInMinutes: z.number().int().min(1).max(60 * 24 * 30).nullable().optional(),
+        maxUses: z.number().int().min(1).max(1000).nullable().optional(),
+        label: z.string().max(120).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("create_meeting_invite_link", {
+      _meeting_id: data.meetingId,
+      _expires_in_minutes: data.expiresInMinutes ?? null,
+      _max_uses: data.maxUses ?? null,
+      _label: data.label ?? null,
+    });
+    const out = ensureOk(res, "MEETING_ACCESS_DENIED") as unknown as {
+      id: string;
+      token: string;
+      expires_at: string | null;
+      max_uses: number | null;
+      used_count: number;
+    };
+    return {
+      id: out.id,
+      token: out.token,
+      expiresAt: out.expires_at,
+      maxUses: out.max_uses,
+      usedCount: out.used_count,
+    };
+  });
+
+export const redeemMeetingInviteLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ token: z.string().min(10).max(128) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("redeem_meeting_invite_link", { _token: data.token });
+    const out = ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
+      status: "joined" | "already" | "expired" | "exhausted" | "revoked" | "invalid";
+      meeting_id?: string;
+    };
+    return { status: out.status, meetingId: out.meeting_id ?? null };
+  });
