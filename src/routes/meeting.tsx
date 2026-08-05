@@ -317,8 +317,7 @@ function MeetingPage() {
       }),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
-      setCreateOpen(false);
-      void navigate({ to: "/meeting/$id", params: { id: m.id } });
+      setCreated({ id: m.id, title: m.title });
     },
     onError: () => toast.error("Không tạo được phòng họp. Kiểm tra quyền và hạn mức của tổ chức."),
   });
