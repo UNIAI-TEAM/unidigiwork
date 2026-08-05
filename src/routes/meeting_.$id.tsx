@@ -1,5 +1,5 @@
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -71,11 +71,22 @@ function MeetingDetailPage() {
   const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
-  const [session, setSession] = useState<{ serverUrl: string; token: string } | null>(null);
+  const [session, setSession] = useState<{
+    serverUrl: string;
+    token: string;
+    expiresAt: string;
+  } | null>(null);
   const [joining, setJoining] = useState(false);
+  const [autoStatus, setAutoStatus] = useState<null | "refreshing" | "rejoining">(null);
   const [joinError, setJoinError] = useState<{ code: string; message: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Rời phòng chủ động thì KHÔNG auto rejoin.
+  const manualLeaveRef = useRef(false);
+  const inRoomRef = useRef(false);
+  const attemptsRef = useRef(0);
+  const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Xem trước camera trước khi vào phòng — giúp phát hiện sớm lỗi quyền thiết bị.
   useEffect(() => {
@@ -114,6 +125,18 @@ function MeetingDetailPage() {
     };
   }, [camOff, session]);
 
+  const fetchSession = useCallback(async () => {
+    const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
+      participantIdentity: "",
+      role: "participant",
+    });
+    return {
+      serverUrl: res.serverUrl,
+      token: res.token,
+      expiresAt: res.expiresAt ?? new Date(Date.now() + 15 * 60_000).toISOString(),
+    };
+  }, [id]);
+
   async function handleJoin() {
     if (!isRealRoom) {
       toast.error("Đây là phòng demo. Hãy tạo phòng họp thật từ trang Họp.");
@@ -121,12 +144,10 @@ function MeetingDetailPage() {
     }
     setJoining(true);
     setJoinError(null);
+    manualLeaveRef.current = false;
+    attemptsRef.current = 0;
     try {
-      const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
-        participantIdentity: "",
-        role: "participant",
-      });
-      setSession({ serverUrl: res.serverUrl, token: res.token });
+      setSession(await fetchSession());
     } catch (e) {
       const code = e instanceof ApiError ? e.code : "INTERNAL_ERROR";
       const message = JOIN_ERRORS[code] ?? "Không thể vào phòng họp.";
@@ -136,6 +157,81 @@ function MeetingDetailPage() {
       setJoining(false);
     }
   }
+
+  function leaveRoom() {
+    manualLeaveRef.current = true;
+    setAutoStatus(null);
+    setSession(null);
+  }
+
+  // Tự động xin token mới trước khi hết hạn (2 phút đệm) để không bị rớt phòng.
+  useEffect(() => {
+    if (!session) return;
+    const ms = Math.max(new Date(session.expiresAt).getTime() - Date.now() - 120_000, 5_000);
+    refreshTimerRef.current = setTimeout(async () => {
+      try {
+        setAutoStatus("refreshing");
+        const next = await fetchSession();
+        setSession(next);
+      } catch {
+        toast.error("Không gia hạn được vé phòng họp — sẽ thử kết nối lại khi mất kết nối.");
+      } finally {
+        setAutoStatus(null);
+      }
+    }, ms);
+    return () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    };
+  }, [session, fetchSession]);
+
+  // Tự động vào lại phòng khi rớt kết nối ngoài ý muốn (backoff tối đa 5 lần).
+  const scheduleRejoin = useCallback(() => {
+    if (manualLeaveRef.current) return;
+    if (attemptsRef.current >= 5) {
+      setAutoStatus(null);
+      toast.error("Không thể tự kết nối lại. Vui lòng bấm Vào phòng họp để thử lại.");
+      return;
+    }
+    const delay = Math.min(1000 * 2 ** attemptsRef.current, 15_000);
+    attemptsRef.current += 1;
+    setAutoStatus("rejoining");
+    rejoinTimerRef.current = setTimeout(async () => {
+      try {
+        const next = await fetchSession();
+        setSession(next);
+        setAutoStatus(null);
+        attemptsRef.current = 0;
+        toast.success("Đã tự động vào lại phòng họp.");
+      } catch {
+        scheduleRejoin();
+      }
+    }, delay);
+  }, [fetchSession]);
+
+  function handleStageDisconnected() {
+    inRoomRef.current = false;
+    setSession(null);
+    if (!manualLeaveRef.current) scheduleRejoin();
+  }
+
+  // Mạng trở lại: thử ngay thay vì chờ hết backoff.
+  useEffect(() => {
+    function onOnline() {
+      if (manualLeaveRef.current || session) return;
+      if (rejoinTimerRef.current) clearTimeout(rejoinTimerRef.current);
+      attemptsRef.current = 0;
+      scheduleRejoin();
+    }
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [session, scheduleRejoin]);
+
+  useEffect(
+    () => () => {
+      if (rejoinTimerRef.current) clearTimeout(rejoinTimerRef.current);
+    },
+    [],
+  );
 
   async function handleRequestInvite() {
     const link = typeof window !== "undefined" ? window.location.href : `/meeting/${id}`;
@@ -189,7 +285,14 @@ function MeetingDetailPage() {
                     <LiveKitStage
                       serverUrl={session.serverUrl}
                       token={session.token}
-                      onDisconnected={() => setSession(null)}
+                      onDisconnected={handleStageDisconnected}
+                      onConnectionStateChange={(s) => {
+                        if (s === "connected") {
+                          inRoomRef.current = true;
+                          attemptsRef.current = 0;
+                          setAutoStatus(null);
+                        }
+                      }}
                     />
                   </Suspense>
                 </ClientOnly>
@@ -260,6 +363,15 @@ function MeetingDetailPage() {
               </div>
             )}
 
+            {autoStatus && (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {autoStatus === "refreshing"
+                  ? "Đang gia hạn vé phòng họp…"
+                  : "Mất kết nối — đang tự động vào lại phòng họp…"}
+              </p>
+            )}
+
             {!session && !isRealRoom && (
               <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
                 Phòng <span className="font-mono">{id}</span> là dữ liệu mẫu nên không kết nối được
@@ -274,7 +386,7 @@ function MeetingDetailPage() {
             <div className="mt-4 flex items-center justify-center gap-2">
               {session ? (
                 <button
-                  onClick={() => setSession(null)}
+                  onClick={leaveRoom}
                   className="flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
                 >
                   <PhoneOff className="h-4 w-4" /> Rời phòng
