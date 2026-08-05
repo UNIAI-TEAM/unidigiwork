@@ -73,6 +73,7 @@ function MeetingDetailPage() {
   const [camOff, setCamOff] = useState(false);
   const [session, setSession] = useState<{ serverUrl: string; token: string } | null>(null);
   const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<{ code: string; message: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -119,6 +120,7 @@ function MeetingDetailPage() {
       return;
     }
     setJoining(true);
+    setJoinError(null);
     try {
       const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
         participantIdentity: "",
@@ -127,9 +129,22 @@ function MeetingDetailPage() {
       setSession({ serverUrl: res.serverUrl, token: res.token });
     } catch (e) {
       const code = e instanceof ApiError ? e.code : "INTERNAL_ERROR";
-      toast.error(JOIN_ERRORS[code] ?? "Không thể vào phòng họp.");
+      const message = JOIN_ERRORS[code] ?? "Không thể vào phòng họp.";
+      setJoinError({ code, message });
+      toast.error(message);
     } finally {
       setJoining(false);
+    }
+  }
+
+  async function handleRequestInvite() {
+    const link = typeof window !== "undefined" ? window.location.href : `/meeting/${id}`;
+    const text = `Xin quyền tham gia phòng họp UNIWORK: ${link} (mã phòng ${id})`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Đã sao chép lời nhắn xin mời — gửi cho người tổ chức để được thêm vào phòng.");
+    } catch {
+      toast.error("Không sao chép được. Hãy gửi mã phòng cho người tổ chức: " + id);
     }
   }
 
