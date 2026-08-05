@@ -286,6 +286,12 @@ function MeetingPage() {
                   <button className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
                     <Link2 className="h-4 w-4" /> Tham gia bằng mã
                   </button>
+                  <Link
+                    to="/meeting/history"
+                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
+                  >
+                    <Clock className="h-4 w-4" /> Lịch sử họp
+                  </Link>
                 </div>
               </div>
 

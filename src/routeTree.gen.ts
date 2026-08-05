@@ -32,6 +32,7 @@ import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as PeopleIdRouteImport } from './routes/people.$id'
+import { Route as MeetingHistoryRouteImport } from './routes/meeting_.history'
 import { Route as MeetingIdRouteImport } from './routes/meeting_.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
@@ -177,6 +178,11 @@ const PeopleIdRoute = PeopleIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => PeopleRoute,
+} as any)
+const MeetingHistoryRoute = MeetingHistoryRouteImport.update({
+  id: '/meeting_/history',
+  path: '/meeting/history',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MeetingIdRoute = MeetingIdRouteImport.update({
   id: '/meeting_/$id',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
+  '/meeting/history': typeof MeetingHistoryRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
+  '/meeting/history': typeof MeetingHistoryRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -486,6 +494,7 @@ export interface FileRoutesById {
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting_/$id': typeof MeetingIdRoute
+  '/meeting_/history': typeof MeetingHistoryRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -543,6 +552,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting/$id'
+    | '/meeting/history'
     | '/people/$id'
     | '/reports/$type'
     | '/tasks/$id'
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting/$id'
+    | '/meeting/history'
     | '/people/$id'
     | '/reports/$type'
     | '/tasks/$id'
@@ -652,6 +663,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting_/$id'
+    | '/meeting_/history'
     | '/people/$id'
     | '/reports/$type'
     | '/tasks/$id'
@@ -697,6 +709,7 @@ export interface RootRouteChildren {
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
+  MeetingHistoryRoute: typeof MeetingHistoryRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
@@ -865,6 +878,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/people/$id'
       preLoaderRoute: typeof PeopleIdRouteImport
       parentRoute: typeof PeopleRoute
+    }
+    '/meeting_/history': {
+      id: '/meeting_/history'
+      path: '/meeting/history'
+      fullPath: '/meeting/history'
+      preLoaderRoute: typeof MeetingHistoryRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/meeting_/$id': {
       id: '/meeting_/$id'
@@ -1292,6 +1312,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
+  MeetingHistoryRoute: MeetingHistoryRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,
