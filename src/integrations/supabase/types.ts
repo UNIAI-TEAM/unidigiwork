@@ -754,9 +754,11 @@ export type Database = {
         Row: {
           correlation_id: string | null
           created_at: string
+          duplicate_count: number
           event_id: string
           event_type: string
           id: string
+          last_duplicate_at: string | null
           meeting_id: string
           occurred_at: string | null
           participant_identity: string | null
@@ -768,9 +770,11 @@ export type Database = {
         Insert: {
           correlation_id?: string | null
           created_at?: string
+          duplicate_count?: number
           event_id: string
           event_type: string
           id?: string
+          last_duplicate_at?: string | null
           meeting_id: string
           occurred_at?: string | null
           participant_identity?: string | null
@@ -782,9 +786,11 @@ export type Database = {
         Update: {
           correlation_id?: string | null
           created_at?: string
+          duplicate_count?: number
           event_id?: string
           event_type?: string
           id?: string
+          last_duplicate_at?: string | null
           meeting_id?: string
           occurred_at?: string | null
           participant_identity?: string | null
