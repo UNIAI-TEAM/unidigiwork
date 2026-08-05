@@ -108,28 +108,3 @@ export const listMeetingHistory = createServerFn({ method: "GET" })
     return { items, total: count ?? items.length };
   });
 
-const _legacyCreateInstantMeeting = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ title: z.string().min(1).max(200).optional() }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { data: ws, error: wsErr } = await context.supabase
-      .from("workspaces")
-      .select("id")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (wsErr) mapPgError(wsErr);
-    if (!ws) throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "NO_WORKSPACE" });
-
-    const now = Date.now();
-    const res = await context.supabase.rpc("schedule_meeting", {
-      _workspace_id: (ws as { id: string }).id,
-      _title: data.title ?? "Phòng họp nhanh",
-      _start_at: new Date(now - 60_000).toISOString(),
-      _end_at: new Date(now + 60 * 60_000).toISOString(),
-      _timezone: "Asia/Ho_Chi_Minh",
-      _idempotency_key: `instant:${now}:${context.userId.slice(0, 8)}`,
-    });
-    return ensureOk(res, "MEETING_NOT_FOUND") as unknown as { id: string; title: string };
-  });
