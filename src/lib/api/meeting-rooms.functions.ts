@@ -26,20 +26,28 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
       .object({
         workspaceId: z.string().uuid().optional(),
         search: z.string().max(200).optional(),
+        state: z.enum(["all", "live", "upcoming"]).default("all"),
         limit: z.number().int().min(1).max(50).default(20),
         offset: z.number().int().min(0).default(0),
       })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
+    const nowIso = new Date().toISOString();
     let q = context.supabase
       .from("meetings")
       .select("id, title, status, start_at, end_at, workspace_id", { count: "exact" })
       .is("deleted_at", null)
-      .in("status", ["scheduled", "live"])
       .order("start_at", { ascending: true })
       .range(data.offset, data.offset + data.limit - 1)
       .limit(data.limit);
+    if (data.state === "live") {
+      q = q.eq("status", "live");
+    } else if (data.state === "upcoming") {
+      q = q.eq("status", "scheduled").gte("start_at", nowIso);
+    } else {
+      q = q.in("status", ["scheduled", "live"]);
+    }
     if (data.workspaceId) q = q.eq("workspace_id", data.workspaceId);
     if (data.search) q = q.ilike("title", `%${data.search}%`);
 

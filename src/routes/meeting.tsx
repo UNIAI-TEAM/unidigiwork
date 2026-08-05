@@ -61,6 +61,10 @@ export const Route = createFileRoute("/meeting")({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
+    state:
+      search["state"] === "live" || search["state"] === "upcoming"
+        ? (search["state"] as "live" | "upcoming")
+        : ("all" as const),
     page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
       ? Number(search["page"])
       : 1,
@@ -267,7 +271,14 @@ function MeetingPage() {
     }
   }, [activeWs, roomQuery]);
 
-  const setRoomFilter = (next: { ws?: string; q?: string; page?: number }) => {
+  const roomState = search.state ?? "all";
+
+  const setRoomFilter = (next: {
+    ws?: string;
+    q?: string;
+    page?: number;
+    state?: "all" | "live" | "upcoming";
+  }) => {
     setRestoredFilter(null);
     void navigate({
       to: "/meeting",
@@ -277,7 +288,7 @@ function MeetingPage() {
   };
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, currentPage],
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
     enabled: !!activeWs,
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -285,6 +296,7 @@ function MeetingPage() {
         data: {
           workspaceId: activeWs,
           search: roomQuery || undefined,
+          state: roomState,
           limit: ROOM_PAGE_SIZE,
           offset: (currentPage - 1) * ROOM_PAGE_SIZE,
         },
@@ -454,6 +466,32 @@ function MeetingPage() {
                     </button>
                   )}
                 </div>
+                <div
+                  className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1"
+                  role="group"
+                  aria-label="Lọc trạng thái phòng"
+                >
+                  {(
+                    [
+                      { key: "all", label: "Tất cả" },
+                      { key: "live", label: "Đang diễn ra" },
+                      { key: "upcoming", label: "Sắp diễn ra" },
+                    ] as const
+                  ).map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() => setRoomFilter({ state: s.key, page: 1 })}
+                      aria-pressed={roomState === s.key}
+                      className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                        roomState === s.key
+                          ? "bg-primary/15 text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {rooms.isLoading ? (
@@ -462,7 +500,11 @@ function MeetingPage() {
                 </div>
               ) : (rooms.data?.items.length ?? 0) === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  {roomQuery
+                  {roomState === "live"
+                    ? "Không có phòng nào đang diễn ra trong workspace này."
+                    : roomState === "upcoming"
+                      ? "Không có phòng nào sắp diễn ra trong workspace này."
+                      : roomQuery
                     ? "Không có phòng nào khớp từ khóa trong workspace này."
                     : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
                 </p>
