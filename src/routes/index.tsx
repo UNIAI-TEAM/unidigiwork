@@ -349,6 +349,90 @@ function Landing() {
         </div>
       </section>
 
+      {/* Không gian tương tác Human + AI */}
+      <section
+        id="hybrid"
+        className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
+        aria-labelledby="hybrid-title"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> {t("land.hybrid.badge")}
+            </span>
+            <h2 id="hybrid-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              {t("land.hybrid.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.hybrid.sub")}</p>
+          </div>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { icon: Users, t: "land.hybrid.c1.t", d: "land.hybrid.c1.d" },
+              { icon: ListChecks, t: "land.hybrid.c2.t", d: "land.hybrid.c2.d" },
+              { icon: MessageSquare, t: "land.hybrid.c3.t", d: "land.hybrid.c3.d" },
+              { icon: ShieldCheck, t: "land.hybrid.c4.t", d: "land.hybrid.c4.d" },
+            ].map((c) => (
+              <div
+                key={c.t}
+                className="rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <c.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-base font-semibold">{t(c.t)}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t(c.d)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 grid gap-4 rounded-2xl border border-border bg-card p-6 md:grid-cols-3 md:p-8">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Users className="h-4 w-4" />
+              </span>
+              <div>
+                <div className="text-sm font-semibold">Human</div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("land.hybrid.c1.d")}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Zap className="h-4 w-4" />
+              </span>
+              <div>
+                <div className="text-sm font-semibold">Workflow</div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("land.hybrid.c4.d")}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Bot className="h-4 w-4" />
+              </span>
+              <div>
+                <div className="text-sm font-semibold">AI Agent</div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("land.hybrid.c2.d")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex justify-center">
+            <Link
+              to="/ai"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {t("land.hybrid.cta")} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t border-border/60 bg-gradient-to-br from-primary/15 via-violet-500/10 to-transparent py-16">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 text-center sm:px-6">
