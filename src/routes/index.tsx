@@ -367,12 +367,12 @@ function Landing() {
           </div>
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
+            {([
               { icon: Users, t: "land.hybrid.c1.t", d: "land.hybrid.c1.d" },
               { icon: ListChecks, t: "land.hybrid.c2.t", d: "land.hybrid.c2.d" },
               { icon: MessageSquare, t: "land.hybrid.c3.t", d: "land.hybrid.c3.d" },
               { icon: ShieldCheck, t: "land.hybrid.c4.t", d: "land.hybrid.c4.d" },
-            ].map((c) => (
+            ] as const).map((c) => (
               <div
                 key={c.t}
                 className="rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
