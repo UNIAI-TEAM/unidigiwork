@@ -273,6 +273,8 @@ function MeetingPage() {
 
   const roomState = search.state ?? "all";
 
+  const [createOpen, setCreateOpen] = useState(false);
+
   const setRoomFilter = (next: {
     ws?: string;
     q?: string;
@@ -288,7 +290,6 @@ function MeetingPage() {
   };
 
   const rooms = useQuery({
-    // eslint-disable-next-line
     queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
     enabled: !!activeWs,
     placeholderData: keepPreviousData,
