@@ -466,6 +466,32 @@ function MeetingPage() {
                     </button>
                   )}
                 </div>
+                <div
+                  className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1"
+                  role="group"
+                  aria-label="Lọc trạng thái phòng"
+                >
+                  {(
+                    [
+                      { key: "all", label: "Tất cả" },
+                      { key: "live", label: "Đang diễn ra" },
+                      { key: "upcoming", label: "Sắp diễn ra" },
+                    ] as const
+                  ).map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() => setRoomFilter({ state: s.key, page: 1 })}
+                      aria-pressed={roomState === s.key}
+                      className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                        roomState === s.key
+                          ? "bg-primary/15 text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {rooms.isLoading ? (
@@ -474,7 +500,11 @@ function MeetingPage() {
                 </div>
               ) : (rooms.data?.items.length ?? 0) === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  {roomQuery
+                  {roomState === "live"
+                    ? "Không có phòng nào đang diễn ra trong workspace này."
+                    : roomState === "upcoming"
+                      ? "Không có phòng nào sắp diễn ra trong workspace này."
+                      : roomQuery
                     ? "Không có phòng nào khớp từ khóa trong workspace này."
                     : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
                 </p>
