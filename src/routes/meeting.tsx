@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
   createInstantMeeting,
+  createMeetingInviteLink,
   inviteMeetingParticipant,
   listMyMeetingRooms,
   listMyWorkspaces,
@@ -876,9 +877,45 @@ function QuickRoomModal({
       ? `${window.location.origin}/meeting/${created.id}`
       : "";
 
+  // Link mời có kiểm soát: thời hạn + số lượt sử dụng.
+  const [linkExpiry, setLinkExpiry] = useState<string>("1440");
+  const [linkUses, setLinkUses] = useState<string>("unlimited");
+  const [controlledLink, setControlledLink] = useState<{
+    url: string;
+    expiresAt: string | null;
+    maxUses: number | null;
+  } | null>(null);
+  const [creatingLink, setCreatingLink] = useState(false);
+
+  const shareLink = controlledLink?.url ?? inviteLink;
+
+  const generateControlledLink = async () => {
+    if (!created) return;
+    setCreatingLink(true);
+    try {
+      const res = await createMeetingInviteLink({
+        data: {
+          meetingId: created.id,
+          expiresInMinutes: linkExpiry === "never" ? null : Number(linkExpiry),
+          maxUses: linkUses === "unlimited" ? null : Number(linkUses),
+        },
+      });
+      setControlledLink({
+        url: `${window.location.origin}/meeting/${created.id}?invite=${res.token}`,
+        expiresAt: res.expiresAt,
+        maxUses: res.maxUses,
+      });
+      toast.success("Đã tạo link mời có kiểm soát");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không tạo được link mời");
+    } finally {
+      setCreatingLink(false);
+    }
+  };
+
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(inviteLink);
+      await navigator.clipboard.writeText(shareLink);
       toast.success("Đã copy link mời");
     } catch {
       toast.error("Không copy được link, hãy chọn và copy thủ công");
@@ -937,7 +974,7 @@ function QuickRoomModal({
   const mailtoFallback = (emails: string[]) => {
     const subject = encodeURIComponent(`Mời họp: ${created?.title ?? "Phòng họp"}`);
     const body = encodeURIComponent(
-      `Bạn được mời tham gia phòng họp "${created?.title ?? ""}".\n\nLink: ${inviteLink}`,
+      `Bạn được mời tham gia phòng họp "${created?.title ?? ""}".\n\nLink: ${shareLink}`,
     );
     window.location.href = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
   };
@@ -974,7 +1011,7 @@ function QuickRoomModal({
             <input
               id="qr-link"
               readOnly
-              value={inviteLink}
+              value={shareLink}
               onFocus={(e) => e.currentTarget.select()}
               className="min-w-0 flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm"
             />
@@ -985,6 +1022,61 @@ function QuickRoomModal({
             >
               Copy
             </button>
+          </div>
+
+          <div className="mt-3 rounded-lg border border-border bg-bg p-3">
+            <p className="text-xs font-medium">Kiểm soát quyền truy cập của link</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="block text-xs text-muted-foreground">
+                Hết hạn sau
+                <select
+                  value={linkExpiry}
+                  onChange={(e) => setLinkExpiry(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground"
+                >
+                  <option value="60">1 giờ</option>
+                  <option value="360">6 giờ</option>
+                  <option value="1440">1 ngày</option>
+                  <option value="10080">7 ngày</option>
+                  <option value="43200">30 ngày</option>
+                  <option value="never">Không giới hạn</option>
+                </select>
+              </label>
+              <label className="block text-xs text-muted-foreground">
+                Số lần sử dụng
+                <select
+                  value={linkUses}
+                  onChange={(e) => setLinkUses(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground"
+                >
+                  <option value="1">1 lượt</option>
+                  <option value="5">5 lượt</option>
+                  <option value="10">10 lượt</option>
+                  <option value="50">50 lượt</option>
+                  <option value="unlimited">Không giới hạn</option>
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              disabled={creatingLink}
+              onClick={() => void generateControlledLink()}
+              className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40 disabled:opacity-60"
+            >
+              {creatingLink ? "Đang tạo link…" : "Tạo link mời có kiểm soát"}
+            </button>
+            {controlledLink && (
+              <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
+                Link hiện tại:{" "}
+                {controlledLink.expiresAt
+                  ? `hết hạn ${new Date(controlledLink.expiresAt).toLocaleString("vi-VN")}`
+                  : "không hết hạn"}{" "}
+                ·{" "}
+                {controlledLink.maxUses
+                  ? `tối đa ${controlledLink.maxUses} lượt dùng`
+                  : "không giới hạn lượt dùng"}
+              </p>
+            )}
           </div>
 
           <label className="mt-4 block text-sm font-medium" htmlFor="qr-invitees">

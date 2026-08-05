@@ -59,6 +59,9 @@ function StageFallback() {
 }
 
 export const Route = createFileRoute("/meeting_/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    invite: typeof search['invite'] === "string" ? (search['invite'] as string) : undefined,
+  }),
   head: ({ params }) => ({
     meta: [{ title: `Phòng họp ${params.id} · UNIWORK` }],
   }),
@@ -67,6 +70,7 @@ export const Route = createFileRoute("/meeting_/$id")({
 
 function MeetingDetailPage() {
   const { id } = Route.useParams();
+  const { invite } = Route.useSearch();
   const isRealRoom = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
@@ -125,6 +129,38 @@ function MeetingDetailPage() {
       stop();
     };
   }, [camOff, session]);
+
+  // Link mời có kiểm soát: đổi token thành quyền tham gia trước khi xin vé vào phòng.
+  const [redeeming, setRedeeming] = useState(Boolean(invite));
+  useEffect(() => {
+    if (!invite) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { redeemMeetingInviteLink } = await import("@/lib/api/meeting-rooms.functions");
+        const res = await redeemMeetingInviteLink({ data: { token: invite } });
+        if (cancelled) return;
+        const messages: Record<string, string> = {
+          joined: "Đã dùng link mời — bạn có thể vào phòng.",
+          already: "Bạn đã có quyền tham gia phòng này.",
+          expired: "Link mời đã hết hạn. Hãy xin link mới từ người tổ chức.",
+          exhausted: "Link mời đã hết số lượt sử dụng.",
+          revoked: "Link mời đã bị thu hồi.",
+          invalid: "Link mời không hợp lệ.",
+        };
+        const msg = messages[res.status] ?? "Không xử lý được link mời.";
+        if (res.status === "joined" || res.status === "already") toast.success(msg);
+        else toast.error(msg);
+      } catch (err) {
+        if (!cancelled) toast.error(err instanceof Error ? err.message : "Link mời không hợp lệ.");
+      } finally {
+        if (!cancelled) setRedeeming(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [invite]);
 
   const fetchSession = useCallback(async () => {
     const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
@@ -332,7 +368,7 @@ function MeetingDetailPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button
                     onClick={handleJoin}
-                    disabled={joining}
+                    disabled={joining || redeeming}
                     className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2 disabled:opacity-50"
                   >
                     Thử vào lại
@@ -390,11 +426,15 @@ function MeetingDetailPage() {
                   <CtrlBtn icon={MoreHorizontal} />
                   <button
                     onClick={handleJoin}
-                    disabled={joining}
+                    disabled={joining || redeeming}
                     className="ml-2 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                   >
-                    {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
-                    Vào phòng họp
+                    {joining || redeeming ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Video className="h-4 w-4" />
+                    )}
+                    {redeeming ? "Đang xử lý link mời…" : "Vào phòng họp"}
                   </button>
                 </>
               )}
