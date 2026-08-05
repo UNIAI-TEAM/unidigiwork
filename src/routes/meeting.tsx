@@ -821,6 +821,14 @@ function QuickRoomModal({
   const [startAt, setStartAt] = useState(() => toLocalInput(new Date(Date.now() + 15 * 60_000)));
   const [duration, setDuration] = useState(60);
   const [invitees, setInvitees] = useState("");
+  // Tiến trình & kết quả gửi lời mời theo từng email.
+  type InviteResult = {
+    email: string;
+    state: "pending" | "sending" | "invited" | "already" | "not_found" | "failed";
+    detail?: string;
+  };
+  const [inviteResults, setInviteResults] = useState<InviteResult[] | null>(null);
+  const [inviteRunning, setInviteRunning] = useState(false);
 
   // Phân tích danh sách email: kiểm tra định dạng + phát hiện trùng lặp.
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
@@ -863,7 +871,7 @@ function QuickRoomModal({
     }
   };
 
-  const sendInvites = () => {
+  const sendInvites = async () => {
     const { valid, invalid, duplicates } = parsedInvitees;
     if (invalid.length) {
       toast.error(`Email không hợp lệ: ${invalid.join(", ")}`);
@@ -876,11 +884,48 @@ function QuickRoomModal({
     if (duplicates.length) {
       toast.warning(`Đã bỏ ${duplicates.length} email trùng: ${duplicates.join(", ")}`);
     }
+    if (!created) return;
+
+    setInviteRunning(true);
+    setInviteResults(valid.map((email) => ({ email, state: "pending" as const })));
+
+    for (let i = 0; i < valid.length; i++) {
+      const email = valid[i]!;
+      setInviteResults((prev) =>
+        (prev ?? []).map((r, idx) => (idx === i ? { ...r, state: "sending" } : r)),
+      );
+      try {
+        const res = await inviteMeetingParticipant({
+          data: { meetingId: created.id, email },
+        });
+        setInviteResults((prev) =>
+          (prev ?? []).map((r, idx) =>
+            idx === i ? { ...r, state: res.status as InviteResult["state"] } : r,
+          ),
+        );
+      } catch (err) {
+        setInviteResults((prev) =>
+          (prev ?? []).map((r, idx) =>
+            idx === i
+              ? {
+                  ...r,
+                  state: "failed",
+                  detail: err instanceof Error ? err.message : "Lỗi không xác định",
+                }
+              : r,
+          ),
+        );
+      }
+    }
+    setInviteRunning(false);
+  };
+
+  const mailtoFallback = (emails: string[]) => {
     const subject = encodeURIComponent(`Mời họp: ${created?.title ?? "Phòng họp"}`);
     const body = encodeURIComponent(
       `Bạn được mời tham gia phòng họp "${created?.title ?? ""}".\n\nLink: ${inviteLink}`,
     );
-    window.location.href = `mailto:${valid.join(",")}?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
   };
 
   const submit = (e: React.FormEvent) => {
