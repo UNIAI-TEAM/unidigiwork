@@ -122,6 +122,8 @@ export const createInstantMeeting = createServerFn({ method: "POST" })
       .object({
         title: z.string().min(1).max(200).optional(),
         workspaceId: z.string().uuid().optional(),
+        startAt: z.string().datetime().optional(),
+        durationMinutes: z.number().int().min(5).max(480).optional(),
       })
       .parse(i ?? {}),
   )
@@ -138,11 +140,13 @@ export const createInstantMeeting = createServerFn({ method: "POST" })
     if (!ws) throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "NO_WORKSPACE" });
 
     const now = Date.now();
+    const start = data.startAt ? new Date(data.startAt).getTime() : now - 60_000;
+    const duration = (data.durationMinutes ?? 60) * 60_000;
     const res = await context.supabase.rpc("schedule_meeting", {
       _workspace_id: (ws as { id: string }).id,
       _title: data.title ?? "Phòng họp nhanh",
-      _start_at: new Date(now - 60_000).toISOString(),
-      _end_at: new Date(now + 60 * 60_000).toISOString(),
+      _start_at: new Date(start).toISOString(),
+      _end_at: new Date(start + duration).toISOString(),
       _timezone: "Asia/Ho_Chi_Minh",
       _idempotency_key: `instant:${now}:${context.userId.slice(0, 8)}`,
     });
