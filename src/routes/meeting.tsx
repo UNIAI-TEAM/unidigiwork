@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -61,6 +61,9 @@ export const Route = createFileRoute("/meeting")({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
+    page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
+      ? Number(search["page"])
+      : 1,
   }),
   head: () => ({
     meta: [
@@ -226,8 +229,10 @@ function MeetingPage() {
   // Workspace đang xem: ưu tiên tham số URL, mặc định workspace đầu tiên.
   const activeWs = search.ws ?? workspaces.data?.[0]?.id;
   const roomQuery = search.q ?? "";
+  const currentPage = search.page ?? 1;
+  const ROOM_PAGE_SIZE = 20;
 
-  const setRoomFilter = (next: { ws?: string; q?: string }) =>
+  const setRoomFilter = (next: { ws?: string; q?: string; page?: number }) =>
     void navigate({
       to: "/meeting",
       search: { ...search, ...next },
@@ -235,11 +240,17 @@ function MeetingPage() {
     });
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery],
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, currentPage],
     enabled: !!activeWs,
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listMyMeetingRooms({
-        data: { workspaceId: activeWs, search: roomQuery || undefined },
+        data: {
+          workspaceId: activeWs,
+          search: roomQuery || undefined,
+          limit: ROOM_PAGE_SIZE,
+          offset: (currentPage - 1) * ROOM_PAGE_SIZE,
+        },
       }),
   });
 
@@ -374,7 +385,7 @@ function MeetingPage() {
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <select
                   value={activeWs ?? ""}
-                  onChange={(e) => setRoomFilter({ ws: e.target.value })}
+                  onChange={(e) => setRoomFilter({ ws: e.target.value, page: 1 })}
                   disabled={workspaces.isLoading}
                   className="rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
                   aria-label="Chọn workspace"
@@ -393,13 +404,13 @@ function MeetingPage() {
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <input
                     value={roomQuery}
-                    onChange={(e) => setRoomFilter({ q: e.target.value })}
+                    onChange={(e) => setRoomFilter({ q: e.target.value, page: 1 })}
                     placeholder="Tìm phòng theo tên…"
                     className="w-52 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
                   {roomQuery && (
                     <button
-                      onClick={() => setRoomFilter({ q: "" })}
+                      onClick={() => setRoomFilter({ q: "", page: 1 })}
                       className="text-xs text-muted-foreground hover:text-foreground"
                     >
                       Xóa
@@ -412,31 +423,58 @@ function MeetingPage() {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
                 </div>
-              ) : (rooms.data?.length ?? 0) === 0 ? (
+              ) : (rooms.data?.items.length ?? 0) === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   {roomQuery
                     ? "Không có phòng nào khớp từ khóa trong workspace này."
                     : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
                 </p>
               ) : (
-                <ul className="grid gap-2 md:grid-cols-2">
-                  {rooms.data?.map((r) => (
-                    <li key={r.id}>
-                      <Link
-                        to="/meeting/$id"
-                        params={{ id: r.id }}
-                        className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
-                      >
-                        <span className="min-w-0 truncate">{r.title}</span>
-                        <span
-                          className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[11px] ${r.status === "live" ? "bg-destructive/20 text-destructive" : "bg-surface-2 text-muted-foreground"}`}
+                <>
+                  <ul className="grid gap-2 md:grid-cols-2">
+                    {rooms.data?.items.map((r) => (
+                      <li key={r.id}>
+                        <Link
+                          to="/meeting/$id"
+                          params={{ id: r.id }}
+                          className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
                         >
-                          {r.status === "live" ? "Đang diễn ra" : "Sẵn sàng"}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                          <span className="min-w-0 truncate">{r.title}</span>
+                          <span
+                            className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[11px] ${r.status === "live" ? "bg-destructive/20 text-destructive" : "bg-surface-2 text-muted-foreground"}`}
+                          >
+                            {r.status === "live" ? "Đang diễn ra" : "Sẵn sàng"}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {rooms.data && rooms.data.total > ROOM_PAGE_SIZE && (
+                    <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                      <span className="text-muted-foreground">
+                        Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
+                        {Math.min(currentPage * ROOM_PAGE_SIZE, rooms.data.total)} /{" "}
+                        {rooms.data.total} phòng
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setRoomFilter({ page: currentPage - 1 })}
+                          disabled={currentPage <= 1 || rooms.isFetching}
+                          className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                        >
+                          Trước
+                        </button>
+                        <button
+                          onClick={() => setRoomFilter({ page: currentPage + 1 })}
+                          disabled={currentPage * ROOM_PAGE_SIZE >= rooms.data.total || rooms.isFetching}
+                          className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                        >
+                          Sau
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

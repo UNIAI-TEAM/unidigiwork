@@ -27,30 +27,35 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid().optional(),
         search: z.string().max(200).optional(),
         limit: z.number().int().min(1).max(50).default(20),
+        offset: z.number().int().min(0).default(0),
       })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("meetings")
-      .select("id, title, status, start_at, end_at, workspace_id")
+      .select("id, title, status, start_at, end_at, workspace_id", { count: "exact" })
       .is("deleted_at", null)
       .in("status", ["scheduled", "live"])
       .order("start_at", { ascending: true })
+      .range(data.offset, data.offset + data.limit - 1)
       .limit(data.limit);
     if (data.workspaceId) q = q.eq("workspace_id", data.workspaceId);
     if (data.search) q = q.ilike("title", `%${data.search}%`);
 
-    const { data: rows, error } = await q;
+    const { data: rows, error, count } = await q;
     if (error) mapPgError(error);
-    return (rows ?? []) as Array<{
-      id: string;
-      title: string;
-      status: string;
-      start_at: string;
-      end_at: string;
-      workspace_id: string;
-    }>;
+    return {
+      items: (rows ?? []) as Array<{
+        id: string;
+        title: string;
+        status: string;
+        start_at: string;
+        end_at: string;
+        workspace_id: string;
+      }>,
+      total: count ?? rows?.length ?? 0,
+    };
   });
 
 export const createInstantMeeting = createServerFn({ method: "POST" })
