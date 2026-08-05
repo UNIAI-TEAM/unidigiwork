@@ -717,6 +717,137 @@ function MeetingPage() {
           </aside>
         </div>
       </main>
+      {createOpen ? (
+        <QuickRoomModal
+          pending={createRoom.isPending}
+          onClose={() => setCreateOpen(false)}
+          onSubmit={(v) => createRoom.mutate(v)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function toLocalInput(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function QuickRoomModal({
+  pending,
+  onClose,
+  onSubmit,
+}: {
+  pending: boolean;
+  onClose: () => void;
+  onSubmit: (v: { title?: string; startAt?: string; durationMinutes?: number }) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [startNow, setStartNow] = useState(true);
+  const [startAt, setStartAt] = useState(() => toLocalInput(new Date(Date.now() + 15 * 60_000)));
+  const [duration, setDuration] = useState(60);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      title: title.trim() || undefined,
+      startAt: startNow ? undefined : new Date(startAt).toISOString(),
+      durationMinutes: duration,
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Tạo phòng nhanh"
+      onClick={onClose}
+    >
+      <form
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl"
+      >
+        <h2 className="text-base font-semibold">Tạo phòng nhanh</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Đặt tên và thời gian bắt đầu để tạo phòng chính xác.
+        </p>
+
+        <label className="mt-4 block text-sm font-medium" htmlFor="qr-title">
+          Tên phòng
+        </label>
+        <input
+          id="qr-title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Phòng họp nhanh"
+          maxLength={200}
+          className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+        />
+
+        <div className="mt-4 flex items-center gap-2">
+          <input
+            id="qr-now"
+            type="checkbox"
+            checked={startNow}
+            onChange={(e) => setStartNow(e.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          <label htmlFor="qr-now" className="text-sm">
+            Bắt đầu ngay
+          </label>
+        </div>
+
+        {!startNow ? (
+          <>
+            <label className="mt-3 block text-sm font-medium" htmlFor="qr-start">
+              Thời gian bắt đầu
+            </label>
+            <input
+              id="qr-start"
+              type="datetime-local"
+              value={startAt}
+              onChange={(e) => setStartAt(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+            />
+          </>
+        ) : null}
+
+        <label className="mt-4 block text-sm font-medium" htmlFor="qr-duration">
+          Thời lượng (phút)
+        </label>
+        <select
+          id="qr-duration"
+          value={duration}
+          onChange={(e) => setDuration(Number(e.target.value))}
+          className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+        >
+          {[15, 30, 45, 60, 90, 120].map((m) => (
+            <option key={m} value={m}>
+              {m} phút
+            </option>
+          ))}
+        </select>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            disabled={pending}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Tạo và vào phòng
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
