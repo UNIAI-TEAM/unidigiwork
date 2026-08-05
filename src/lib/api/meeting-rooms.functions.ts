@@ -115,7 +115,6 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
     };
   });
 
-export const createInstantMeeting = createServerFn({ method: "POST" })
 // Mời một người tham gia phòng họp theo email (gọi tuần tự để UI hiện tiến trình).
 export const inviteMeetingParticipant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -141,6 +140,7 @@ export const inviteMeetingParticipant = createServerFn({ method: "POST" })
     };
   });
 
+export const createInstantMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
