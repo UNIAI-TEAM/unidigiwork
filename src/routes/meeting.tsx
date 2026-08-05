@@ -351,7 +351,7 @@ function MeetingPage() {
         <AppTopbar
           variant="documents"
           onOpenSidebar={() => setOpen(true)}
-          onNew={() => createRoom.mutate()}
+          onNew={() => setCreateOpen(true)}
         />
 
         {tab === "rooms" ? null : null}
@@ -370,7 +370,7 @@ function MeetingPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => createRoom.mutate()}
+                    onClick={() => setCreateOpen(true)}
                     disabled={createRoom.isPending}
                     className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                   >
@@ -442,7 +442,7 @@ function MeetingPage() {
                     Cần bật camera/micro khi trình duyệt hỏi quyền
                   </span>
                   <button
-                    onClick={() => createRoom.mutate()}
+                    onClick={() => setCreateOpen(true)}
                     disabled={createRoom.isPending || !activeWs}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
