@@ -34,6 +34,19 @@ const JOIN_ERRORS: Record<string, string> = {
   QUOTA_EXCEEDED: "Đã vượt hạn mức phút họp của tổ chức.",
   CONFERENCE_PROVIDER_UNAVAILABLE: "Hệ thống hội nghị chưa được cấu hình.",
   MEETING_TOKEN_ISSUE_FAILED: "Không cấp được vé vào phòng. Vui lòng thử lại.",
+  TENANT_ACCESS_DENIED: "Phòng họp này thuộc tổ chức khác với tổ chức bạn đang chọn.",
+};
+
+// Lý do chi tiết + gợi ý xử lý, hiển thị ngay trên trang thay vì chỉ toast.
+const JOIN_ERROR_HINTS: Record<string, string> = {
+  MEETING_ACCESS_DENIED:
+    "Bạn chưa nằm trong danh sách người tham gia của phòng này, hoặc phòng thuộc workspace khác với workspace bạn đang mở. Hãy yêu cầu người tổ chức mời bạn, hoặc đổi sang đúng workspace rồi thử lại.",
+  TENANT_ACCESS_DENIED:
+    "Hãy dùng bộ chọn tổ chức ở thanh trên cùng để chuyển sang đúng tổ chức chứa phòng họp này, sau đó thử lại.",
+  MEETING_NOT_FOUND: "Phòng có thể đã bị xóa. Kiểm tra lại đường dẫn hoặc mở danh sách phòng họp.",
+  MEETING_NOT_JOINABLE: "Bạn có thể xem lại thông tin cuộc họp trong lịch sử cuộc họp.",
+  ENTITLEMENT_DENIED: "Liên hệ quản trị tổ chức để nâng cấp gói có hội nghị trực tuyến.",
+  QUOTA_EXCEEDED: "Liên hệ quản trị tổ chức để tăng hạn mức phút họp hoặc chờ chu kỳ kế tiếp.",
 };
 
 function StageFallback() {
@@ -60,6 +73,7 @@ function MeetingDetailPage() {
   const [camOff, setCamOff] = useState(false);
   const [session, setSession] = useState<{ serverUrl: string; token: string } | null>(null);
   const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<{ code: string; message: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -106,6 +120,7 @@ function MeetingDetailPage() {
       return;
     }
     setJoining(true);
+    setJoinError(null);
     try {
       const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
         participantIdentity: "",
@@ -114,9 +129,22 @@ function MeetingDetailPage() {
       setSession({ serverUrl: res.serverUrl, token: res.token });
     } catch (e) {
       const code = e instanceof ApiError ? e.code : "INTERNAL_ERROR";
-      toast.error(JOIN_ERRORS[code] ?? "Không thể vào phòng họp.");
+      const message = JOIN_ERRORS[code] ?? "Không thể vào phòng họp.";
+      setJoinError({ code, message });
+      toast.error(message);
     } finally {
       setJoining(false);
+    }
+  }
+
+  async function handleRequestInvite() {
+    const link = typeof window !== "undefined" ? window.location.href : `/meeting/${id}`;
+    const text = `Xin quyền tham gia phòng họp UNIWORK: ${link} (mã phòng ${id})`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Đã sao chép lời nhắn xin mời — gửi cho người tổ chức để được thêm vào phòng.");
+    } catch {
+      toast.error("Không sao chép được. Hãy gửi mã phòng cho người tổ chức: " + id);
     }
   }
 
@@ -197,6 +225,39 @@ function MeetingDetailPage() {
                 </div>
               ))}
             </div>
+            )}
+
+            {!session && joinError && (
+              <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3">
+                <p className="text-sm font-medium text-destructive">{joinError.message}</p>
+                {JOIN_ERROR_HINTS[joinError.code] && (
+                  <p className="mt-1 text-xs text-muted-foreground">{JOIN_ERROR_HINTS[joinError.code]}</p>
+                )}
+                <p className="mt-1 text-[11px] font-mono text-muted-foreground">
+                  Mã lỗi: {joinError.code} · Phòng: {id}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleRequestInvite}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Yêu cầu mời vào phòng
+                  </button>
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining}
+                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    Thử vào lại
+                  </button>
+                  <Link
+                    to="/meeting"
+                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
+                  >
+                    Phòng họp của workspace này
+                  </Link>
+                </div>
+              </div>
             )}
 
             {!session && !isRealRoom && (
