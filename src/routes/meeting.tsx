@@ -230,7 +230,7 @@ function MeetingPage() {
   const setRoomFilter = (next: { ws?: string; q?: string }) =>
     void navigate({
       to: "/meeting",
-      search: (prev) => ({ ...prev, ...next }),
+      search: { ...search, ...next },
       replace: true,
     });
 
