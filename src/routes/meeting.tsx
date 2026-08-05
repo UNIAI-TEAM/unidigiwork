@@ -249,7 +249,13 @@ function MeetingPage() {
       setRestoredFilter(saved);
       void navigate({
         to: "/meeting",
-        search: { ...search, ws: saved.ws, q: saved.q, state: saved.state, page: 1 },
+        search: {
+          ...search,
+          ws: saved.ws,
+          q: saved.q,
+          state: saved.state === "all" ? undefined : saved.state,
+          page: 1,
+        },
         replace: true,
       });
     } catch {
@@ -290,7 +296,14 @@ function MeetingPage() {
     setRestoredFilter(null);
     void navigate({
       to: "/meeting",
-      search: { ...search, ws: activeWs, q: roomQuery, state: roomState, ...next },
+      search: {
+        ...search,
+        ws: activeWs,
+        q: roomQuery,
+        state: roomState === "all" ? undefined : roomState,
+        ...next,
+        ...(next.state !== undefined ? { state: next.state === "all" ? undefined : next.state } : {}),
+      },
       replace: true,
     });
   };
