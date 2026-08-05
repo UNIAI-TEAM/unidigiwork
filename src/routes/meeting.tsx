@@ -834,6 +834,16 @@ function QuickRoomModal({
   const [inviteResults, setInviteResults] = useState<InviteResult[] | null>(null);
   const [inviteRunning, setInviteRunning] = useState(false);
 
+  const inviteDone = (inviteResults ?? []).filter(
+    (r) => r.state !== "pending" && r.state !== "sending",
+  ).length;
+  const inviteSummary = {
+    // Người chưa thực sự nhận được lời mời trong hệ thống → gợi ý gửi email link.
+    mailable: (inviteResults ?? [])
+      .filter((r) => r.state === "not_found" || r.state === "failed")
+      .map((r) => r.email),
+  };
+
   // Phân tích danh sách email: kiểm tra định dạng + phát hiện trùng lặp.
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
   const parsedInvitees = useMemo(() => {
