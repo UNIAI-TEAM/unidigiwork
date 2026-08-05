@@ -274,6 +274,7 @@ function MeetingPage() {
   const roomState = search.state ?? "all";
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
 
   const setRoomFilter = (next: {
     ws?: string;
