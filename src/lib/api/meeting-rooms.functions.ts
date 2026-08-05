@@ -5,18 +5,45 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ensureOk, mapPgError } from "./business.server";
 import { ApiError } from "@/contracts/errors";
 
-export const listMyMeetingRooms = createServerFn({ method: "GET" })
+// Danh sách workspace mà người dùng thấy được (RLS lọc theo tenant/thành viên).
+export const listMyWorkspaces = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
+      .from("workspaces")
+      .select("id, name, tenant_id")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(100);
+    if (error) mapPgError(error);
+    return (data ?? []) as Array<{ id: string; name: string; tenant_id: string }>;
+  });
+
+export const listMyMeetingRooms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspaceId: z.string().uuid().optional(),
+        search: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(50).default(20),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
       .from("meetings")
       .select("id, title, status, start_at, end_at, workspace_id")
       .is("deleted_at", null)
       .in("status", ["scheduled", "live"])
       .order("start_at", { ascending: true })
-      .limit(20);
+      .limit(data.limit);
+    if (data.workspaceId) q = q.eq("workspace_id", data.workspaceId);
+    if (data.search) q = q.ilike("title", `%${data.search}%`);
+
+    const { data: rows, error } = await q;
     if (error) mapPgError(error);
-    return (data ?? []) as Array<{
+    return (rows ?? []) as Array<{
       id: string;
       title: string;
       status: string;
@@ -28,15 +55,23 @@ export const listMyMeetingRooms = createServerFn({ method: "GET" })
 
 export const createInstantMeeting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ title: z.string().min(1).max(200).optional() }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        title: z.string().min(1).max(200).optional(),
+        workspaceId: z.string().uuid().optional(),
+      })
+      .parse(i ?? {}),
+  )
   .handler(async ({ data, context }) => {
-    const { data: ws, error: wsErr } = await context.supabase
+    let wsQuery = context.supabase
       .from("workspaces")
       .select("id")
       .is("deleted_at", null)
       .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+    if (data.workspaceId) wsQuery = wsQuery.eq("id", data.workspaceId);
+    const { data: ws, error: wsErr } = await wsQuery.maybeSingle();
     if (wsErr) mapPgError(wsErr);
     if (!ws) throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "NO_WORKSPACE" });
 
