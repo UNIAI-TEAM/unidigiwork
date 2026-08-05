@@ -82,6 +82,23 @@ const dict = {
     "land.feat.ai.d": "Trợ lý AI bảo mật, đặt nền trên dữ liệu doanh nghiệp.",
     "land.feat.email.t": "Email Hub",
     "land.feat.email.d": "Tất cả email Microsoft 365 & Gmail tại một nơi, kèm AI tóm tắt và đề xuất hành động.",
+    "land.hybrid.badge": "Không gian tương tác Human + AI",
+    "land.hybrid.title": "Nơi nhân sự con người và nhân sự AI cùng cộng tác",
+    "land.hybrid.sub":
+      "Một không gian làm việc chung: con người giao việc, AI agent nhận nhiệm vụ, cùng thảo luận và thực thi trên cùng một dòng ngữ cảnh.",
+    "land.hybrid.c1.t": "Đội hình lai",
+    "land.hybrid.c1.d":
+      "Mỗi workspace có nhân sự con người và AI agent với vai trò, quyền hạn và trách nhiệm rõ ràng.",
+    "land.hybrid.c2.t": "Giao việc cho AI",
+    "land.hybrid.c2.d":
+      "Gán task cho AI agent như gán cho đồng nghiệp: có deadline, tiêu chí nghiệm thu và báo cáo tiến độ.",
+    "land.hybrid.c3.t": "Cộng tác thời gian thực",
+    "land.hybrid.c3.d":
+      "Thảo luận, họp và bình luận tài liệu cùng AI agent trong cùng luồng ngữ cảnh, không rời nền tảng.",
+    "land.hybrid.c4.t": "Thực thi có kiểm soát",
+    "land.hybrid.c4.d":
+      "AI thực thi quy trình theo workflow, mọi hành động đều được ghi nhật ký và cần phê duyệt khi cần.",
+    "land.hybrid.cta": "Khám phá không gian tương tác",
     "land.cta2.h": "Sẵn sàng cho doanh nghiệp của bạn",
     "land.cta2.p": "Hạ tầng bảo mật, phân quyền theo workspace, dữ liệu lưu tại Việt Nam.",
     "land.cta2.btn": "Đăng nhập & dùng thử",
@@ -506,6 +523,23 @@ const dict = {
     "land.feat.ai.d": "Secure AI assistant grounded on your company data.",
     "land.feat.email.t": "Email Hub",
     "land.feat.email.d": "All Microsoft 365 & Gmail mail in one place with AI summaries and action suggestions.",
+    "land.hybrid.badge": "Human + AI collaboration space",
+    "land.hybrid.title": "Where human and AI teammates work together",
+    "land.hybrid.sub":
+      "One shared workspace: people assign work, AI agents pick it up, and both discuss and execute on the same context.",
+    "land.hybrid.c1.t": "Hybrid team",
+    "land.hybrid.c1.d":
+      "Every workspace has human staff and AI agents with clear roles, permissions and accountability.",
+    "land.hybrid.c2.t": "Delegate to AI",
+    "land.hybrid.c2.d":
+      "Assign tasks to AI agents like colleagues: deadlines, acceptance criteria and progress reports.",
+    "land.hybrid.c3.t": "Real-time collaboration",
+    "land.hybrid.c3.d":
+      "Chat, meet and comment on documents alongside AI agents in one continuous context.",
+    "land.hybrid.c4.t": "Governed execution",
+    "land.hybrid.c4.d":
+      "AI executes workflows with full audit logs and approval gates whenever they are required.",
+    "land.hybrid.cta": "Explore the collaboration space",
     "land.cta2.h": "Ready for your enterprise",
     "land.cta2.p": "Secure infrastructure, workspace-scoped permissions, data hosted in Vietnam.",
     "land.cta2.btn": "Sign in & try it",
