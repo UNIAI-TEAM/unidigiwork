@@ -58,7 +58,6 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 
 export const Route = createFileRoute("/meeting")({
   validateSearch: (search: Record<string, unknown>) => ({
-  validateSearch: (search: Record<string, unknown>) => ({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
@@ -78,6 +77,46 @@ export const Route = createFileRoute("/meeting")({
   }),
   component: MeetingPage,
 });
+
+type RoomChipState = "live" | "upcoming" | "ended";
+
+function resolveRoomState(status: string, startAt?: string, endAt?: string): RoomChipState {
+  if (status === "live") return "live";
+  if (status === "ended" || status === "canceled") return "ended";
+  const now = Date.now();
+  if (endAt && new Date(endAt).getTime() < now) return "ended";
+  if (startAt && new Date(startAt).getTime() <= now) return "live";
+  return "upcoming";
+}
+
+const ROOM_CHIP: Record<RoomChipState, { label: string; className: string }> = {
+  live: { label: "Đang diễn ra", className: "bg-destructive/15 text-destructive" },
+  upcoming: { label: "Sắp diễn ra", className: "bg-primary/10 text-primary" },
+  ended: { label: "Đã kết thúc", className: "bg-surface-2 text-muted-foreground" },
+};
+
+function RoomStatusChip({
+  status,
+  startAt,
+  endAt,
+}: {
+  status: string;
+  startAt?: string;
+  endAt?: string;
+}) {
+  const state = resolveRoomState(status, startAt, endAt);
+  const chip = ROOM_CHIP[state];
+  return (
+    <span
+      className={`ml-3 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.className}`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full bg-current ${state === "live" ? "animate-pulse" : ""}`}
+      />
+      {chip.label}
+    </span>
+  );
+}
 
 const participants = [
   { name: "Nguyễn Văn A", seed: "nguyen-van-a-1" },
