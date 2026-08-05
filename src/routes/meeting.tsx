@@ -304,9 +304,18 @@ function MeetingPage() {
   });
 
   const createRoom = useMutation({
-    mutationFn: () => createInstantMeeting({ data: activeWs ? { workspaceId: activeWs } : {} }),
+    mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
+      createInstantMeeting({
+        data: {
+          ...(activeWs ? { workspaceId: activeWs } : {}),
+          ...(vars?.title ? { title: vars.title } : {}),
+          ...(vars?.startAt ? { startAt: vars.startAt } : {}),
+          ...(vars?.durationMinutes ? { durationMinutes: vars.durationMinutes } : {}),
+        },
+      }),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      setCreateOpen(false);
       void navigate({ to: "/meeting/$id", params: { id: m.id } });
     },
     onError: () => toast.error("Không tạo được phòng họp. Kiểm tra quyền và hạn mức của tổ chức."),
