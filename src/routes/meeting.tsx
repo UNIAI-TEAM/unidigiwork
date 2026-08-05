@@ -1011,6 +1011,81 @@ function QuickRoomModal({
             </div>
           )}
 
+          {inviteResults && (
+            <div className="mt-4 rounded-lg border border-border bg-bg p-3" aria-live="polite">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">
+                  {inviteRunning ? "Đang gửi lời mời…" : "Kết quả gửi lời mời"}
+                </span>
+                <span className="text-muted-foreground">
+                  {inviteDone}/{inviteResults.length}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{
+                    width: `${inviteResults.length ? (inviteDone / inviteResults.length) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+              <ul className="mt-3 max-h-40 space-y-1.5 overflow-y-auto text-xs">
+                {inviteResults.map((r) => (
+                  <li key={r.email} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{r.email}</span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      {r.state === "pending" && (
+                        <span className="text-muted-foreground">Chờ gửi</span>
+                      )}
+                      {r.state === "sending" && (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                          <span className="text-muted-foreground">Đang gửi</span>
+                        </>
+                      )}
+                      {r.state === "invited" && (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                          <span className="text-emerald-600">Đã mời</span>
+                        </>
+                      )}
+                      {r.state === "already" && (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-muted-foreground">Đã có trong phòng</span>
+                        </>
+                      )}
+                      {r.state === "not_found" && (
+                        <>
+                          <MailQuestion className="h-3.5 w-3.5 text-amber-500" />
+                          <span className="text-amber-600">Chưa có tài khoản</span>
+                        </>
+                      )}
+                      {r.state === "failed" && (
+                        <>
+                          <XCircle className="h-3.5 w-3.5 text-destructive" />
+                          <span className="text-destructive" title={r.detail}>
+                            Thất bại
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {!inviteRunning && inviteSummary.mailable.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => mailtoFallback(inviteSummary.mailable)}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-xs hover:border-primary/40"
+                >
+                  <Mail className="h-3.5 w-3.5" /> Gửi email link mời cho{" "}
+                  {inviteSummary.mailable.length} người chưa nhận được
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <button
               type="button"
@@ -1021,11 +1096,20 @@ function QuickRoomModal({
             </button>
             <button
               type="button"
-              onClick={sendInvites}
-              disabled={parsedInvitees.invalid.length > 0 || parsedInvitees.valid.length === 0}
+              onClick={() => void sendInvites()}
+              disabled={
+                inviteRunning ||
+                parsedInvitees.invalid.length > 0 ||
+                parsedInvitees.valid.length === 0
+              }
               className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Send className="h-4 w-4" /> Gửi lời mời
+              {inviteRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {inviteRunning ? "Đang gửi…" : "Gửi lời mời"}
             </button>
             <button
               type="button"
