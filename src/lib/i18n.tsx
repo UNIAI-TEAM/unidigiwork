@@ -523,6 +523,23 @@ const dict = {
     "land.feat.ai.d": "Secure AI assistant grounded on your company data.",
     "land.feat.email.t": "Email Hub",
     "land.feat.email.d": "All Microsoft 365 & Gmail mail in one place with AI summaries and action suggestions.",
+    "land.hybrid.badge": "Human + AI collaboration space",
+    "land.hybrid.title": "Where human and AI teammates work together",
+    "land.hybrid.sub":
+      "One shared workspace: people assign work, AI agents pick it up, and both discuss and execute on the same context.",
+    "land.hybrid.c1.t": "Hybrid team",
+    "land.hybrid.c1.d":
+      "Every workspace has human staff and AI agents with clear roles, permissions and accountability.",
+    "land.hybrid.c2.t": "Delegate to AI",
+    "land.hybrid.c2.d":
+      "Assign tasks to AI agents like colleagues: deadlines, acceptance criteria and progress reports.",
+    "land.hybrid.c3.t": "Real-time collaboration",
+    "land.hybrid.c3.d":
+      "Chat, meet and comment on documents alongside AI agents in one continuous context.",
+    "land.hybrid.c4.t": "Governed execution",
+    "land.hybrid.c4.d":
+      "AI executes workflows with full audit logs and approval gates whenever they are required.",
+    "land.hybrid.cta": "Explore the collaboration space",
     "land.cta2.h": "Ready for your enterprise",
     "land.cta2.p": "Secure infrastructure, workspace-scoped permissions, data hosted in Vietnam.",
     "land.cta2.btn": "Sign in & try it",
