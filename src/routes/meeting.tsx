@@ -274,6 +274,7 @@ function MeetingPage() {
   const roomState = search.state ?? "all";
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
 
   const setRoomFilter = (next: {
     ws?: string;
@@ -317,8 +318,7 @@ function MeetingPage() {
       }),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
-      setCreateOpen(false);
-      void navigate({ to: "/meeting/$id", params: { id: m.id } });
+      setCreated({ id: m.id, title: m.title });
     },
     onError: () => toast.error("Không tạo được phòng họp. Kiểm tra quyền và hạn mức của tổ chức."),
   });
@@ -720,7 +720,18 @@ function MeetingPage() {
       {createOpen ? (
         <QuickRoomModal
           pending={createRoom.isPending}
-          onClose={() => setCreateOpen(false)}
+          created={created}
+          onEnter={() => {
+            if (!created) return;
+            const id = created.id;
+            setCreateOpen(false);
+            setCreated(null);
+            void navigate({ to: "/meeting/$id", params: { id } });
+          }}
+          onClose={() => {
+            setCreateOpen(false);
+            setCreated(null);
+          }}
           onSubmit={(v) => createRoom.mutate(v)}
         />
       ) : null}
@@ -735,17 +746,52 @@ function toLocalInput(d: Date) {
 
 function QuickRoomModal({
   pending,
+  created,
   onClose,
+  onEnter,
   onSubmit,
 }: {
   pending: boolean;
+  created: { id: string; title: string } | null;
   onClose: () => void;
+  onEnter: () => void;
   onSubmit: (v: { title?: string; startAt?: string; durationMinutes?: number }) => void;
 }) {
   const [title, setTitle] = useState("");
   const [startNow, setStartNow] = useState(true);
   const [startAt, setStartAt] = useState(() => toLocalInput(new Date(Date.now() + 15 * 60_000)));
   const [duration, setDuration] = useState(60);
+  const [invitees, setInvitees] = useState("");
+
+  const inviteLink =
+    created && typeof window !== "undefined"
+      ? `${window.location.origin}/meeting/${created.id}`
+      : "";
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      toast.success("Đã copy link mời");
+    } catch {
+      toast.error("Không copy được link, hãy chọn và copy thủ công");
+    }
+  };
+
+  const sendInvites = () => {
+    const emails = invitees
+      .split(/[\s,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!emails.length) {
+      toast.error("Nhập ít nhất một email người tham gia");
+      return;
+    }
+    const subject = encodeURIComponent(`Mời họp: ${created?.title ?? "Phòng họp"}`);
+    const body = encodeURIComponent(
+      `Bạn được mời tham gia phòng họp "${created?.title ?? ""}".\n\nLink: ${inviteLink}`,
+    );
+    window.location.href = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -764,6 +810,71 @@ function QuickRoomModal({
       aria-label="Tạo phòng nhanh"
       onClick={onClose}
     >
+      {created ? (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl"
+        >
+          <h2 className="text-base font-semibold">Đã tạo phòng · Mời người tham gia</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{created.title}</p>
+
+          <label className="mt-4 block text-sm font-medium" htmlFor="qr-link">
+            Link mời
+          </label>
+          <div className="mt-1 flex gap-2">
+            <input
+              id="qr-link"
+              readOnly
+              value={inviteLink}
+              onFocus={(e) => e.currentTarget.select()}
+              className="min-w-0 flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => void copyLink()}
+              className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
+            >
+              Copy
+            </button>
+          </div>
+
+          <label className="mt-4 block text-sm font-medium" htmlFor="qr-invitees">
+            Danh sách người tham gia (email, cách nhau bằng dấu phẩy)
+          </label>
+          <textarea
+            id="qr-invitees"
+            rows={3}
+            value={invitees}
+            onChange={(e) => setInvitees(e.target.value)}
+            placeholder="an@uniwork.vn, binh@uniwork.vn"
+            className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+          />
+
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
+            >
+              Để sau
+            </button>
+            <button
+              type="button"
+              onClick={sendInvites}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
+            >
+              <Send className="h-4 w-4" /> Gửi lời mời
+            </button>
+            <button
+              type="button"
+              onClick={onEnter}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              <VideoIcon className="h-4 w-4" /> Vào phòng
+            </button>
+          </div>
+        </div>
+      ) : (
       <form
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
@@ -848,6 +959,7 @@ function QuickRoomModal({
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }
