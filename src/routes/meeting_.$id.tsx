@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-request-panel";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
@@ -233,17 +234,6 @@ function MeetingDetailPage() {
     [],
   );
 
-  async function handleRequestInvite() {
-    const link = typeof window !== "undefined" ? window.location.href : `/meeting/${id}`;
-    const text = `Xin quyền tham gia phòng họp UNIWORK: ${link} (mã phòng ${id})`;
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Đã sao chép lời nhắn xin mời — gửi cho người tổ chức để được thêm vào phòng.");
-    } catch {
-      toast.error("Không sao chép được. Hãy gửi mã phòng cho người tổ chức: " + id);
-    }
-  }
-
   const participants = [
     { name: "Minh Anh", seed: "minh-anh", speaking: true },
     { name: "Tuấn Nam", seed: "tuan-nam-ba", speaking: false },
@@ -341,12 +331,6 @@ function MeetingDetailPage() {
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button
-                    onClick={handleRequestInvite}
-                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    Yêu cầu mời vào phòng
-                  </button>
-                  <button
                     onClick={handleJoin}
                     disabled={joining}
                     className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2 disabled:opacity-50"
@@ -360,8 +344,13 @@ function MeetingDetailPage() {
                     Phòng họp của workspace này
                   </Link>
                 </div>
+                {isRealRoom && (joinError.code === "MEETING_ACCESS_DENIED" || joinError.code === "TENANT_ACCESS_DENIED") && (
+                  <JoinRequestPanel meetingId={id} onApproved={() => void handleJoin()} />
+                )}
               </div>
             )}
+
+            {!session && isRealRoom && <JoinRequestInbox meetingId={id} />}
 
             {autoStatus && (
               <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">

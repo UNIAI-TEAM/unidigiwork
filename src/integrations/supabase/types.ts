@@ -645,6 +645,66 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_join_requests: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          id: string
+          meeting_id: string
+          message: string | null
+          requester_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          meeting_id: string
+          message?: string | null
+          requester_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          meeting_id?: string
+          message?: string | null
+          requester_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_join_requests_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_join_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_join_tokens: {
         Row: {
           correlation_id: string | null
@@ -2463,6 +2523,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      can_manage_meeting_access: {
+        Args: { _meeting_id: string; _user_id: string }
+        Returns: boolean
+      }
       cancel_meeting: {
         Args: {
           _correlation_id?: string
@@ -2910,6 +2974,15 @@ export type Database = {
         Returns: Record<string, unknown>[]
       }
       dblink_is_busy: { Args: { "": string }; Returns: number }
+      decide_meeting_join_request: {
+        Args: {
+          _approve: boolean
+          _correlation_id?: string
+          _note?: string
+          _request_id: string
+        }
+        Returns: Json
+      }
       end_meeting: {
         Args: {
           _correlation_id?: string
@@ -3103,6 +3176,14 @@ export type Database = {
         Returns: string
       }
       refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
+      request_meeting_join: {
+        Args: {
+          _correlation_id?: string
+          _meeting_id: string
+          _message?: string
+        }
+        Returns: Json
+      }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }
         Returns: {
