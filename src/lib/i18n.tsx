@@ -82,6 +82,23 @@ const dict = {
     "land.feat.ai.d": "Trợ lý AI bảo mật, đặt nền trên dữ liệu doanh nghiệp.",
     "land.feat.email.t": "Email Hub",
     "land.feat.email.d": "Tất cả email Microsoft 365 & Gmail tại một nơi, kèm AI tóm tắt và đề xuất hành động.",
+    "land.hybrid.badge": "Không gian tương tác Human + AI",
+    "land.hybrid.title": "Nơi nhân sự con người và nhân sự AI cùng cộng tác",
+    "land.hybrid.sub":
+      "Một không gian làm việc chung: con người giao việc, AI agent nhận nhiệm vụ, cùng thảo luận và thực thi trên cùng một dòng ngữ cảnh.",
+    "land.hybrid.c1.t": "Đội hình lai",
+    "land.hybrid.c1.d":
+      "Mỗi workspace có nhân sự con người và AI agent với vai trò, quyền hạn và trách nhiệm rõ ràng.",
+    "land.hybrid.c2.t": "Giao việc cho AI",
+    "land.hybrid.c2.d":
+      "Gán task cho AI agent như gán cho đồng nghiệp: có deadline, tiêu chí nghiệm thu và báo cáo tiến độ.",
+    "land.hybrid.c3.t": "Cộng tác thời gian thực",
+    "land.hybrid.c3.d":
+      "Thảo luận, họp và bình luận tài liệu cùng AI agent trong cùng luồng ngữ cảnh, không rời nền tảng.",
+    "land.hybrid.c4.t": "Thực thi có kiểm soát",
+    "land.hybrid.c4.d":
+      "AI thực thi quy trình theo workflow, mọi hành động đều được ghi nhật ký và cần phê duyệt khi cần.",
+    "land.hybrid.cta": "Khám phá không gian tương tác",
     "land.cta2.h": "Sẵn sàng cho doanh nghiệp của bạn",
     "land.cta2.p": "Hạ tầng bảo mật, phân quyền theo workspace, dữ liệu lưu tại Việt Nam.",
     "land.cta2.btn": "Đăng nhập & dùng thử",
