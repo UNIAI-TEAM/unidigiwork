@@ -1220,6 +1220,60 @@ function QuickRoomModal({
             </div>
           )}
 
+          <div className="mt-4 rounded-lg border border-border bg-bg p-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-medium">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                Người đã mời ({participants?.length ?? 0})
+              </span>
+              <button
+                type="button"
+                onClick={() => void refreshParticipants()}
+                disabled={loadingParticipants}
+                className="rounded-md border border-border px-2 py-1 text-[11px] hover:border-primary/40 disabled:opacity-50"
+              >
+                {loadingParticipants ? "Đang tải…" : "Làm mới"}
+              </button>
+            </div>
+            {participants && participants.length > 0 ? (
+              <ul className="mt-2 max-h-44 space-y-1.5 overflow-y-auto text-xs">
+                {participants.map((p) => (
+                  <li key={p.userId} className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate">
+                      {p.name ?? p.email ?? p.userId}
+                      {p.role === "host" && (
+                        <span className="ml-1 text-muted-foreground">· Chủ phòng</span>
+                      )}
+                    </span>
+                    <span
+                      className={
+                        p.rsvp === "accepted"
+                          ? "shrink-0 text-emerald-600"
+                          : p.rsvp === "declined"
+                            ? "shrink-0 text-destructive"
+                            : p.rsvp === "tentative"
+                              ? "shrink-0 text-amber-600"
+                              : "shrink-0 text-muted-foreground"
+                      }
+                    >
+                      {p.rsvp === "accepted"
+                        ? "Đã nhận lời"
+                        : p.rsvp === "declined"
+                          ? "Từ chối"
+                          : p.rsvp === "tentative"
+                            ? "Có thể tham gia"
+                            : "Chờ phản hồi"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {loadingParticipants ? "Đang tải danh sách…" : "Chưa có ai được mời vào phòng này."}
+              </p>
+            )}
+          </div>
+
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <button
               type="button"
