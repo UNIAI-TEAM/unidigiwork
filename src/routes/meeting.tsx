@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -240,7 +240,7 @@ function MeetingPage() {
       setRestoredFilter(saved);
       void navigate({
         to: "/meeting",
-        search: (prev) => ({ ...prev, ws: saved.ws, q: saved.q, page: 1 }),
+        search: { ...search, ws: saved.ws, q: saved.q, page: 1 },
         replace: true,
       });
     } catch {
