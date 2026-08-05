@@ -360,20 +360,63 @@ function MeetingPage() {
 
             {/* Tabs + search */}
             {/* Phòng họp thật (LiveKit) */}
-            <div className="border-b border-border px-6 py-4">
-              <div className="mb-2 flex items-center justify-between">
+            <div
+              id="online-rooms"
+              className={`border-b border-border px-6 py-4 ${search.focus === "rooms" ? "bg-primary/5 ring-1 ring-inset ring-primary/30" : ""}`}
+            >
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold">Phòng họp trực tuyến</h2>
                 <span className="text-xs text-muted-foreground">
                   Cần bật camera/micro khi trình duyệt hỏi quyền
                 </span>
               </div>
+
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <select
+                  value={activeWs ?? ""}
+                  onChange={(e) => setRoomFilter({ ws: e.target.value })}
+                  disabled={workspaces.isLoading}
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+                  aria-label="Chọn workspace"
+                >
+                  {workspaces.data?.length ? (
+                    workspaces.data.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Chưa có workspace</option>
+                  )}
+                </select>
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <input
+                    value={roomQuery}
+                    onChange={(e) => setRoomFilter({ q: e.target.value })}
+                    placeholder="Tìm phòng theo tên…"
+                    className="w-52 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+                  />
+                  {roomQuery && (
+                    <button
+                      onClick={() => setRoomFilter({ q: "" })}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {rooms.isLoading ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
                 </div>
               ) : (rooms.data?.length ?? 0) === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  Chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera.
+                  {roomQuery
+                    ? "Không có phòng nào khớp từ khóa trong workspace này."
+                    : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
                 </p>
               ) : (
                 <ul className="grid gap-2 md:grid-cols-2">
