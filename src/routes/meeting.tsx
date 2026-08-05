@@ -230,21 +230,32 @@ function MeetingPage() {
     queryFn: () => listMyWorkspaces(),
   });
 
-  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa) giữa các lần truy cập.
+  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa + trạng thái) giữa các lần truy cập.
   const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
-  const [restoredFilter, setRestoredFilter] = useState<{ ws?: string; q?: string } | null>(null);
+  type RoomFilterState = "all" | "live" | "upcoming";
+  const [restoredFilter, setRestoredFilter] = useState<{
+    ws?: string;
+    q?: string;
+    state?: RoomFilterState;
+  } | null>(null);
 
   useEffect(() => {
-    if (search.ws !== undefined || search.q !== undefined) return;
+    if (search.ws !== undefined || search.q !== undefined || search.state !== undefined) return;
     try {
       const raw = window.localStorage.getItem(ROOM_FILTER_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { ws?: string; q?: string };
-      if (!saved || (!saved.ws && !saved.q)) return;
+      const saved = JSON.parse(raw) as { ws?: string; q?: string; state?: RoomFilterState };
+      if (!saved || (!saved.ws && !saved.q && !saved.state)) return;
       setRestoredFilter(saved);
       void navigate({
         to: "/meeting",
-        search: { ...search, ws: saved.ws, q: saved.q, page: 1 },
+        search: {
+          ...search,
+          ws: saved.ws,
+          q: saved.q,
+          state: saved.state === "all" ? undefined : saved.state,
+          page: 1,
+        },
         replace: true,
       });
     } catch {
@@ -260,18 +271,18 @@ function MeetingPage() {
   const currentPage = search.page ?? 1;
   const ROOM_PAGE_SIZE = 20;
 
+  const roomState: RoomFilterState = search.state ?? restoredFilter?.state ?? "all";
+
   useEffect(() => {
     try {
       window.localStorage.setItem(
         ROOM_FILTER_KEY,
-        JSON.stringify({ ws: activeWs, q: roomQuery }),
+        JSON.stringify({ ws: activeWs, q: roomQuery, state: roomState }),
       );
     } catch {
       /* storage không khả dụng */
     }
-  }, [activeWs, roomQuery]);
-
-  const roomState = search.state ?? "all";
+  }, [activeWs, roomQuery, roomState]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
@@ -280,12 +291,19 @@ function MeetingPage() {
     ws?: string;
     q?: string;
     page?: number;
-    state?: "all" | "live" | "upcoming";
+    state?: RoomFilterState;
   }) => {
     setRestoredFilter(null);
     void navigate({
       to: "/meeting",
-      search: { ...search, ...next },
+      search: {
+        ...search,
+        ws: activeWs,
+        q: roomQuery,
+        state: roomState === "all" ? undefined : roomState,
+        ...next,
+        ...(next.state !== undefined ? { state: next.state === "all" ? undefined : next.state } : {}),
+      },
       replace: true,
     });
   };
