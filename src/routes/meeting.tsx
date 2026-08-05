@@ -10,6 +10,7 @@ import {
   inviteMeetingParticipant,
   listMyMeetingRooms,
   listMyWorkspaces,
+  listMeetingParticipants,
 } from "@/lib/api/meeting-rooms.functions";
 import {
   ListChecks,
