@@ -230,7 +230,7 @@ function MeetingPage() {
   const activeWs = search.ws ?? workspaces.data?.[0]?.id;
   const roomQuery = search.q ?? "";
   const currentPage = search.page ?? 1;
-  const ROOM_PAGE_SIZE = 20;
+  const ROOM_PAGE_SIZE = 2;
 
   const setRoomFilter = (next: { ws?: string; q?: string; page?: number }) =>
     void navigate({
