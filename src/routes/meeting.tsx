@@ -334,15 +334,16 @@ function MeetingPage() {
     state?: RoomFilterState;
   }) => {
     setRestoredFilter(null);
+    const effectiveState = next.state ?? roomState;
+    const { state: _ignored, ...rest } = next;
     void navigate({
       to: "/meeting",
       search: {
         ...search,
         ws: activeWs,
         q: roomQuery,
-        state: roomState === "all" ? undefined : roomState,
-        ...next,
-        ...(next.state !== undefined ? { state: next.state === "all" ? undefined : next.state } : {}),
+        ...rest,
+        state: effectiveState === "all" ? undefined : effectiveState,
       },
       replace: true,
     });
