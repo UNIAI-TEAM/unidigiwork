@@ -51,7 +51,7 @@ export function JoinRequestPanel({
 
   if (request?.status === "pending") {
     return (
-      <div className="mt-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+      <div className="mt-3 rounded-lg border border-primary/40 bg-primary/10 px-4 py-3">
         <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
           <Clock className="h-4 w-4 animate-pulse" /> Đang chờ chủ phòng duyệt yêu cầu
         </p>
