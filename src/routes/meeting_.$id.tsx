@@ -59,6 +59,9 @@ function StageFallback() {
 }
 
 export const Route = createFileRoute("/meeting_/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    invite: typeof search['invite'] === "string" ? (search['invite'] as string) : undefined,
+  }),
   head: ({ params }) => ({
     meta: [{ title: `Phòng họp ${params.id} · UNIWORK` }],
   }),
@@ -67,6 +70,7 @@ export const Route = createFileRoute("/meeting_/$id")({
 
 function MeetingDetailPage() {
   const { id } = Route.useParams();
+  const { invite } = Route.useSearch();
   const isRealRoom = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
