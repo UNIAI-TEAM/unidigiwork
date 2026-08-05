@@ -363,6 +363,15 @@ function MeetingDetailPage() {
               </div>
             )}
 
+            {autoStatus && (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {autoStatus === "refreshing"
+                  ? "Đang gia hạn vé phòng họp…"
+                  : "Mất kết nối — đang tự động vào lại phòng họp…"}
+              </p>
+            )}
+
             {!session && !isRealRoom && (
               <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
                 Phòng <span className="font-mono">{id}</span> là dữ liệu mẫu nên không kết nối được
