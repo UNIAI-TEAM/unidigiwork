@@ -130,6 +130,38 @@ function MeetingDetailPage() {
     };
   }, [camOff, session]);
 
+  // Link mời có kiểm soát: đổi token thành quyền tham gia trước khi xin vé vào phòng.
+  const [redeeming, setRedeeming] = useState(Boolean(invite));
+  useEffect(() => {
+    if (!invite) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { redeemMeetingInviteLink } = await import("@/lib/api/meeting-rooms.functions");
+        const res = await redeemMeetingInviteLink({ data: { token: invite } });
+        if (cancelled) return;
+        const messages: Record<string, string> = {
+          joined: "Đã dùng link mời — bạn có thể vào phòng.",
+          already: "Bạn đã có quyền tham gia phòng này.",
+          expired: "Link mời đã hết hạn. Hãy xin link mới từ người tổ chức.",
+          exhausted: "Link mời đã hết số lượt sử dụng.",
+          revoked: "Link mời đã bị thu hồi.",
+          invalid: "Link mời không hợp lệ.",
+        };
+        const msg = messages[res.status] ?? "Không xử lý được link mời.";
+        if (res.status === "joined" || res.status === "already") toast.success(msg);
+        else toast.error(msg);
+      } catch (err) {
+        if (!cancelled) toast.error(err instanceof Error ? err.message : "Link mời không hợp lệ.");
+      } finally {
+        if (!cancelled) setRedeeming(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [invite]);
+
   const fetchSession = useCallback(async () => {
     const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
       participantIdentity: "",
