@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { createInstantMeeting, listMyMeetingRooms } from "@/lib/api/meeting-rooms.functions";
+import {
+  createInstantMeeting,
+  listMyMeetingRooms,
+  listMyWorkspaces,
+} from "@/lib/api/meeting-rooms.functions";
 import {
   ListChecks,
   Users,
@@ -53,6 +57,11 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 
 export const Route = createFileRoute("/meeting")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
+    q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
+    focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Họp · UNIWORK" },
@@ -207,14 +216,35 @@ function MeetingPage() {
   const [inRoom, setInRoom] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const search = Route.useSearch();
+
+  const workspaces = useQuery({
+    queryKey: ["my-workspaces"],
+    queryFn: () => listMyWorkspaces(),
+  });
+
+  // Workspace đang xem: ưu tiên tham số URL, mặc định workspace đầu tiên.
+  const activeWs = search.ws ?? workspaces.data?.[0]?.id;
+  const roomQuery = search.q ?? "";
+
+  const setRoomFilter = (next: { ws?: string; q?: string }) =>
+    void navigate({
+      to: "/meeting",
+      search: { ...search, ...next },
+      replace: true,
+    });
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms"],
-    queryFn: () => listMyMeetingRooms(),
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery],
+    enabled: !!activeWs,
+    queryFn: () =>
+      listMyMeetingRooms({
+        data: { workspaceId: activeWs, search: roomQuery || undefined },
+      }),
   });
 
   const createRoom = useMutation({
-    mutationFn: () => createInstantMeeting({ data: {} }),
+    mutationFn: () => createInstantMeeting({ data: activeWs ? { workspaceId: activeWs } : {} }),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
       void navigate({ to: "/meeting/$id", params: { id: m.id } });
@@ -330,20 +360,63 @@ function MeetingPage() {
 
             {/* Tabs + search */}
             {/* Phòng họp thật (LiveKit) */}
-            <div className="border-b border-border px-6 py-4">
-              <div className="mb-2 flex items-center justify-between">
+            <div
+              id="online-rooms"
+              className={`border-b border-border px-6 py-4 ${search.focus === "rooms" ? "bg-primary/5 ring-1 ring-inset ring-primary/30" : ""}`}
+            >
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold">Phòng họp trực tuyến</h2>
                 <span className="text-xs text-muted-foreground">
                   Cần bật camera/micro khi trình duyệt hỏi quyền
                 </span>
               </div>
+
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <select
+                  value={activeWs ?? ""}
+                  onChange={(e) => setRoomFilter({ ws: e.target.value })}
+                  disabled={workspaces.isLoading}
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+                  aria-label="Chọn workspace"
+                >
+                  {workspaces.data?.length ? (
+                    workspaces.data.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Chưa có workspace</option>
+                  )}
+                </select>
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <input
+                    value={roomQuery}
+                    onChange={(e) => setRoomFilter({ q: e.target.value })}
+                    placeholder="Tìm phòng theo tên…"
+                    className="w-52 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+                  />
+                  {roomQuery && (
+                    <button
+                      onClick={() => setRoomFilter({ q: "" })}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {rooms.isLoading ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
                 </div>
               ) : (rooms.data?.length ?? 0) === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  Chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera.
+                  {roomQuery
+                    ? "Không có phòng nào khớp từ khóa trong workspace này."
+                    : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
                 </p>
               ) : (
                 <ul className="grid gap-2 md:grid-cols-2">

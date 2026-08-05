@@ -339,6 +339,7 @@ function MeetingDetailPage() {
                   </button>
                   <Link
                     to="/meeting"
+                    search={{ focus: "rooms" }}
                     className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
                   >
                     Phòng họp của workspace này
