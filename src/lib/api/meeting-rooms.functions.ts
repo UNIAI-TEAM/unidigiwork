@@ -131,7 +131,7 @@ export const inviteMeetingParticipant = createServerFn({ method: "POST" })
     const res = await context.supabase.rpc("invite_meeting_participant", {
       _meeting_id: data.meetingId,
       _email: data.email,
-      _correlation_id: data.correlationId ?? null,
+      _correlation_id: data.correlationId,
     });
     return ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
       email: string;
