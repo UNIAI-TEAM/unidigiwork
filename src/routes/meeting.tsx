@@ -64,7 +64,7 @@ export const Route = createFileRoute("/meeting")({
     state:
       search["state"] === "live" || search["state"] === "upcoming"
         ? (search["state"] as "live" | "upcoming")
-        : ("all" as const),
+        : undefined,
     page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
       ? Number(search["page"])
       : 1,
