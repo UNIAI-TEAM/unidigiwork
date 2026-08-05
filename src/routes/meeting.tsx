@@ -836,6 +836,36 @@ function QuickRoomModal({
   const [inviteResults, setInviteResults] = useState<InviteResult[] | null>(null);
   const [inviteRunning, setInviteRunning] = useState(false);
 
+  // Danh sách người đã được mời + trạng thái tham gia của phòng vừa tạo.
+  type Participant = {
+    userId: string;
+    role: string;
+    rsvp: string;
+    rsvpAt: string | null;
+    invitedAt: string;
+    name: string | null;
+    email: string | null;
+  };
+  const [participants, setParticipants] = useState<Participant[] | null>(null);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+
+  const refreshParticipants = useCallback(async () => {
+    if (!created) return;
+    setLoadingParticipants(true);
+    try {
+      const rows = await listMeetingParticipants({ data: { meetingId: created.id } });
+      setParticipants(rows as Participant[]);
+    } catch {
+      toast.error("Không tải được danh sách người tham gia");
+    } finally {
+      setLoadingParticipants(false);
+    }
+  }, [created]);
+
+  useEffect(() => {
+    if (created) void refreshParticipants();
+  }, [created, refreshParticipants]);
+
   const inviteDone = (inviteResults ?? []).filter(
     (r) => r.state !== "pending" && r.state !== "sending",
   ).length;
@@ -970,6 +1000,7 @@ function QuickRoomModal({
       }
     }
     setInviteRunning(false);
+    void refreshParticipants();
   };
 
   const mailtoFallback = (emails: string[]) => {
