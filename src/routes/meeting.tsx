@@ -61,6 +61,10 @@ export const Route = createFileRoute("/meeting")({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
+    state:
+      search["state"] === "live" || search["state"] === "upcoming"
+        ? (search["state"] as "live" | "upcoming")
+        : ("all" as const),
     page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
       ? Number(search["page"])
       : 1,
