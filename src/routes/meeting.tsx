@@ -426,9 +426,23 @@ function MeetingPage() {
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold">Phòng họp trực tuyến</h2>
-                <span className="text-xs text-muted-foreground">
-                  Cần bật camera/micro khi trình duyệt hỏi quyền
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    Cần bật camera/micro khi trình duyệt hỏi quyền
+                  </span>
+                  <button
+                    onClick={() => createRoom.mutate()}
+                    disabled={createRoom.isPending || !activeWs}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {createRoom.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
+                    Tạo phòng nhanh
+                  </button>
+                </div>
               </div>
 
               <div className="mb-3 flex flex-wrap items-center gap-2">
