@@ -645,6 +645,66 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_invite_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          label: string | null
+          max_uses: number | null
+          meeting_id: string
+          revoked_at: string | null
+          tenant_id: string
+          token_hash: string
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          max_uses?: number | null
+          meeting_id: string
+          revoked_at?: string | null
+          tenant_id: string
+          token_hash: string
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          max_uses?: number | null
+          meeting_id?: string
+          revoked_at?: string | null
+          tenant_id?: string
+          token_hash?: string
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_invite_links_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_invite_links_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_join_requests: {
         Row: {
           correlation_id: string | null
@@ -2803,6 +2863,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_meeting_invite_link: {
+        Args: {
+          _expires_in_minutes?: number
+          _label?: string
+          _max_uses?: number
+          _meeting_id: string
+        }
+        Returns: Json
+      }
       create_task: {
         Args: {
           _assignee_id?: string
@@ -3179,6 +3248,7 @@ export type Database = {
         }
         Returns: string
       }
+      redeem_meeting_invite_link: { Args: { _token: string }; Returns: Json }
       refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
       request_meeting_join: {
         Args: {
