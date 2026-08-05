@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
   createInstantMeeting,
+  inviteMeetingParticipant,
   listMyMeetingRooms,
   listMyWorkspaces,
 } from "@/lib/api/meeting-rooms.functions";
@@ -53,6 +54,9 @@ import {
   MoreVertical,
   ShieldCheck,
   Eye,
+  XCircle,
+  MailQuestion,
+  Mail,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 
