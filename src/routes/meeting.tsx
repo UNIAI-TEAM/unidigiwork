@@ -216,14 +216,35 @@ function MeetingPage() {
   const [inRoom, setInRoom] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const search = Route.useSearch();
+
+  const workspaces = useQuery({
+    queryKey: ["my-workspaces"],
+    queryFn: () => listMyWorkspaces(),
+  });
+
+  // Workspace đang xem: ưu tiên tham số URL, mặc định workspace đầu tiên.
+  const activeWs = search.ws ?? workspaces.data?.[0]?.id;
+  const roomQuery = search.q ?? "";
+
+  const setRoomFilter = (next: { ws?: string; q?: string }) =>
+    void navigate({
+      to: "/meeting",
+      search: (prev) => ({ ...prev, ...next }),
+      replace: true,
+    });
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms"],
-    queryFn: () => listMyMeetingRooms(),
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery],
+    enabled: !!activeWs,
+    queryFn: () =>
+      listMyMeetingRooms({
+        data: { workspaceId: activeWs, search: roomQuery || undefined },
+      }),
   });
 
   const createRoom = useMutation({
-    mutationFn: () => createInstantMeeting({ data: {} }),
+    mutationFn: () => createInstantMeeting({ data: activeWs ? { workspaceId: activeWs } : {} }),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
       void navigate({ to: "/meeting/$id", params: { id: m.id } });
