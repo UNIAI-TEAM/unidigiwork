@@ -423,31 +423,58 @@ function MeetingPage() {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
                 </div>
-              ) : (rooms.data?.length ?? 0) === 0 ? (
+              ) : (rooms.data?.items.length ?? 0) === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   {roomQuery
                     ? "Không có phòng nào khớp từ khóa trong workspace này."
                     : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
                 </p>
               ) : (
-                <ul className="grid gap-2 md:grid-cols-2">
-                  {rooms.data?.map((r) => (
-                    <li key={r.id}>
-                      <Link
-                        to="/meeting/$id"
-                        params={{ id: r.id }}
-                        className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
-                      >
-                        <span className="min-w-0 truncate">{r.title}</span>
-                        <span
-                          className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[11px] ${r.status === "live" ? "bg-destructive/20 text-destructive" : "bg-surface-2 text-muted-foreground"}`}
+                <>
+                  <ul className="grid gap-2 md:grid-cols-2">
+                    {rooms.data?.items.map((r) => (
+                      <li key={r.id}>
+                        <Link
+                          to="/meeting/$id"
+                          params={{ id: r.id }}
+                          className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
                         >
-                          {r.status === "live" ? "Đang diễn ra" : "Sẵn sàng"}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                          <span className="min-w-0 truncate">{r.title}</span>
+                          <span
+                            className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[11px] ${r.status === "live" ? "bg-destructive/20 text-destructive" : "bg-surface-2 text-muted-foreground"}`}
+                          >
+                            {r.status === "live" ? "Đang diễn ra" : "Sẵn sàng"}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {rooms.data && rooms.data.total > ROOM_PAGE_SIZE && (
+                    <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                      <span className="text-muted-foreground">
+                        Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
+                        {Math.min(currentPage * ROOM_PAGE_SIZE, rooms.data.total)} /{" "}
+                        {rooms.data.total} phòng
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setRoomFilter({ page: currentPage - 1 })}
+                          disabled={currentPage <= 1 || rooms.isFetching}
+                          className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                        >
+                          Trước
+                        </button>
+                        <button
+                          onClick={() => setRoomFilter({ page: currentPage + 1 })}
+                          disabled={currentPage * ROOM_PAGE_SIZE >= rooms.data.total || rooms.isFetching}
+                          className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                        >
+                          Sau
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
