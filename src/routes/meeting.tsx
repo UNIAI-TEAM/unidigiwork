@@ -78,6 +78,46 @@ export const Route = createFileRoute("/meeting")({
   component: MeetingPage,
 });
 
+type RoomChipState = "live" | "upcoming" | "ended";
+
+function resolveRoomState(status: string, startAt?: string, endAt?: string): RoomChipState {
+  if (status === "live") return "live";
+  if (status === "ended" || status === "canceled") return "ended";
+  const now = Date.now();
+  if (endAt && new Date(endAt).getTime() < now) return "ended";
+  if (startAt && new Date(startAt).getTime() <= now) return "live";
+  return "upcoming";
+}
+
+const ROOM_CHIP: Record<RoomChipState, { label: string; className: string }> = {
+  live: { label: "Đang diễn ra", className: "bg-destructive/15 text-destructive" },
+  upcoming: { label: "Sắp diễn ra", className: "bg-primary/10 text-primary" },
+  ended: { label: "Đã kết thúc", className: "bg-surface-2 text-muted-foreground" },
+};
+
+function RoomStatusChip({
+  status,
+  startAt,
+  endAt,
+}: {
+  status: string;
+  startAt?: string;
+  endAt?: string;
+}) {
+  const state = resolveRoomState(status, startAt, endAt);
+  const chip = ROOM_CHIP[state];
+  return (
+    <span
+      className={`ml-3 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.className}`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full bg-current ${state === "live" ? "animate-pulse" : ""}`}
+      />
+      {chip.label}
+    </span>
+  );
+}
+
 const participants = [
   { name: "Nguyễn Văn A", seed: "nguyen-van-a-1" },
   { name: "Trần Thị B", seed: "tran-thi-b" },
@@ -561,12 +601,12 @@ function MeetingPage() {
                           params={{ id: r.id }}
                           className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
                         >
-                          <span className="min-w-0 truncate">{r.title}</span>
-                          <span
-                            className={`ml-3 shrink-0 rounded-full px-2 py-0.5 text-[11px] ${r.status === "live" ? "bg-destructive/20 text-destructive" : "bg-surface-2 text-muted-foreground"}`}
-                          >
-                            {r.status === "live" ? "Đang diễn ra" : "Sẵn sàng"}
-                          </span>
+                          <span className="min-w-0 flex-1 truncate">{r.title}</span>
+                          <RoomStatusChip
+                            status={r.status}
+                            startAt={r.start_at}
+                            endAt={r.end_at}
+                          />
                         </Link>
                       </li>
                     ))}
