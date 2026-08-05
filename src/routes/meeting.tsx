@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -821,6 +821,33 @@ function QuickRoomModal({
   const [duration, setDuration] = useState(60);
   const [invitees, setInvitees] = useState("");
 
+  // Phân tích danh sách email: kiểm tra định dạng + phát hiện trùng lặp.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+  const parsedInvitees = useMemo(() => {
+    const raw = invitees
+      .split(/[\s,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const valid: string[] = [];
+    const invalid: string[] = [];
+    const duplicates: string[] = [];
+    const seen = new Set<string>();
+    for (const item of raw) {
+      if (!EMAIL_RE.test(item)) {
+        if (!invalid.includes(item)) invalid.push(item);
+        continue;
+      }
+      const key = item.toLowerCase();
+      if (seen.has(key)) {
+        if (!duplicates.includes(key)) duplicates.push(key);
+        continue;
+      }
+      seen.add(key);
+      valid.push(item);
+    }
+    return { valid, invalid, duplicates };
+  }, [invitees]);
+
   const inviteLink =
     created && typeof window !== "undefined"
       ? `${window.location.origin}/meeting/${created.id}`
@@ -836,19 +863,23 @@ function QuickRoomModal({
   };
 
   const sendInvites = () => {
-    const emails = invitees
-      .split(/[\s,;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (!emails.length) {
+    const { valid, invalid, duplicates } = parsedInvitees;
+    if (invalid.length) {
+      toast.error(`Email không hợp lệ: ${invalid.join(", ")}`);
+      return;
+    }
+    if (!valid.length) {
       toast.error("Nhập ít nhất một email người tham gia");
       return;
+    }
+    if (duplicates.length) {
+      toast.warning(`Đã bỏ ${duplicates.length} email trùng: ${duplicates.join(", ")}`);
     }
     const subject = encodeURIComponent(`Mời họp: ${created?.title ?? "Phòng họp"}`);
     const body = encodeURIComponent(
       `Bạn được mời tham gia phòng họp "${created?.title ?? ""}".\n\nLink: ${inviteLink}`,
     );
-    window.location.href = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${valid.join(",")}?subject=${subject}&body=${body}`;
   };
 
   const submit = (e: React.FormEvent) => {
@@ -905,8 +936,30 @@ function QuickRoomModal({
             value={invitees}
             onChange={(e) => setInvitees(e.target.value)}
             placeholder="an@uniwork.vn, binh@uniwork.vn"
-            className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+            aria-invalid={parsedInvitees.invalid.length > 0}
+            className={`mt-1 w-full rounded-lg border bg-bg px-3 py-2 text-sm focus:outline-none ${
+              parsedInvitees.invalid.length
+                ? "border-destructive focus:border-destructive"
+                : "border-border focus:border-primary/40"
+            }`}
           />
+          {invitees.trim() && (
+            <div className="mt-2 space-y-1 text-xs" aria-live="polite">
+              <p className="text-muted-foreground">
+                {parsedInvitees.valid.length} email hợp lệ sẽ được mời.
+              </p>
+              {parsedInvitees.invalid.length > 0 && (
+                <p className="text-destructive">
+                  Sai định dạng: {parsedInvitees.invalid.join(", ")}
+                </p>
+              )}
+              {parsedInvitees.duplicates.length > 0 && (
+                <p className="text-amber-600">
+                  Trùng lặp (sẽ chỉ gửi một lần): {parsedInvitees.duplicates.join(", ")}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <button
@@ -919,7 +972,8 @@ function QuickRoomModal({
             <button
               type="button"
               onClick={sendInvites}
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
+              disabled={parsedInvitees.invalid.length > 0 || parsedInvitees.valid.length === 0}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> Gửi lời mời
             </button>
