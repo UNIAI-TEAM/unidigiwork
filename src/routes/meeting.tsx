@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -226,18 +226,55 @@ function MeetingPage() {
     queryFn: () => listMyWorkspaces(),
   });
 
+  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa) giữa các lần truy cập.
+  const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
+  const [restoredFilter, setRestoredFilter] = useState<{ ws?: string; q?: string } | null>(null);
+
+  useEffect(() => {
+    if (search.ws !== undefined || search.q !== undefined) return;
+    try {
+      const raw = window.localStorage.getItem(ROOM_FILTER_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { ws?: string; q?: string };
+      if (!saved || (!saved.ws && !saved.q)) return;
+      setRestoredFilter(saved);
+      void navigate({
+        to: "/meeting",
+        search: { ...search, ws: saved.ws, q: saved.q, page: 1 },
+        replace: true,
+      });
+    } catch {
+      /* bỏ qua dữ liệu hỏng */
+    }
+    // chỉ chạy một lần khi vào trang
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Workspace đang xem: ưu tiên tham số URL, mặc định workspace đầu tiên.
-  const activeWs = search.ws ?? workspaces.data?.[0]?.id;
-  const roomQuery = search.q ?? "";
+  const activeWs = search.ws ?? restoredFilter?.ws ?? workspaces.data?.[0]?.id;
+  const roomQuery = search.q ?? restoredFilter?.q ?? "";
   const currentPage = search.page ?? 1;
   const ROOM_PAGE_SIZE = 20;
 
-  const setRoomFilter = (next: { ws?: string; q?: string; page?: number }) =>
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        ROOM_FILTER_KEY,
+        JSON.stringify({ ws: activeWs, q: roomQuery }),
+      );
+    } catch {
+      /* storage không khả dụng */
+    }
+  }, [activeWs, roomQuery]);
+
+  const setRoomFilter = (next: { ws?: string; q?: string; page?: number }) => {
+    setRestoredFilter(null);
     void navigate({
       to: "/meeting",
       search: { ...search, ...next },
       replace: true,
     });
+  };
 
   const rooms = useQuery({
     queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, currentPage],
