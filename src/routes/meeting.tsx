@@ -877,9 +877,45 @@ function QuickRoomModal({
       ? `${window.location.origin}/meeting/${created.id}`
       : "";
 
+  // Link mời có kiểm soát: thời hạn + số lượt sử dụng.
+  const [linkExpiry, setLinkExpiry] = useState<string>("1440");
+  const [linkUses, setLinkUses] = useState<string>("unlimited");
+  const [controlledLink, setControlledLink] = useState<{
+    url: string;
+    expiresAt: string | null;
+    maxUses: number | null;
+  } | null>(null);
+  const [creatingLink, setCreatingLink] = useState(false);
+
+  const shareLink = controlledLink?.url ?? inviteLink;
+
+  const generateControlledLink = async () => {
+    if (!created) return;
+    setCreatingLink(true);
+    try {
+      const res = await createMeetingInviteLink({
+        data: {
+          meetingId: created.id,
+          expiresInMinutes: linkExpiry === "never" ? null : Number(linkExpiry),
+          maxUses: linkUses === "unlimited" ? null : Number(linkUses),
+        },
+      });
+      setControlledLink({
+        url: `${window.location.origin}/meeting/${created.id}?invite=${res.token}`,
+        expiresAt: res.expiresAt,
+        maxUses: res.maxUses,
+      });
+      toast.success("Đã tạo link mời có kiểm soát");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không tạo được link mời");
+    } finally {
+      setCreatingLink(false);
+    }
+  };
+
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(inviteLink);
+      await navigator.clipboard.writeText(shareLink);
       toast.success("Đã copy link mời");
     } catch {
       toast.error("Không copy được link, hãy chọn và copy thủ công");
