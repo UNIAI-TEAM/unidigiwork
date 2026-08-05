@@ -229,8 +229,10 @@ function MeetingPage() {
   // Workspace đang xem: ưu tiên tham số URL, mặc định workspace đầu tiên.
   const activeWs = search.ws ?? workspaces.data?.[0]?.id;
   const roomQuery = search.q ?? "";
+  const currentPage = search.page ?? 1;
+  const ROOM_PAGE_SIZE = 20;
 
-  const setRoomFilter = (next: { ws?: string; q?: string }) =>
+  const setRoomFilter = (next: { ws?: string; q?: string; page?: number }) =>
     void navigate({
       to: "/meeting",
       search: { ...search, ...next },
@@ -238,11 +240,17 @@ function MeetingPage() {
     });
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery],
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, currentPage],
     enabled: !!activeWs,
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listMyMeetingRooms({
-        data: { workspaceId: activeWs, search: roomQuery || undefined },
+        data: {
+          workspaceId: activeWs,
+          search: roomQuery || undefined,
+          limit: ROOM_PAGE_SIZE,
+          offset: (currentPage - 1) * ROOM_PAGE_SIZE,
+        },
       }),
   });
 
