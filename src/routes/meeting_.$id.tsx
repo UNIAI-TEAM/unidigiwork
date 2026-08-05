@@ -227,6 +227,39 @@ function MeetingDetailPage() {
             </div>
             )}
 
+            {!session && joinError && (
+              <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3">
+                <p className="text-sm font-medium text-destructive">{joinError.message}</p>
+                {JOIN_ERROR_HINTS[joinError.code] && (
+                  <p className="mt-1 text-xs text-muted-foreground">{JOIN_ERROR_HINTS[joinError.code]}</p>
+                )}
+                <p className="mt-1 text-[11px] font-mono text-muted-foreground">
+                  Mã lỗi: {joinError.code} · Phòng: {id}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleRequestInvite}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Yêu cầu mời vào phòng
+                  </button>
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining}
+                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    Thử vào lại
+                  </button>
+                  <Link
+                    to="/meeting"
+                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
+                  >
+                    Phòng họp của workspace này
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {!session && !isRealRoom && (
               <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
                 Phòng <span className="font-mono">{id}</span> là dữ liệu mẫu nên không kết nối được
