@@ -377,7 +377,7 @@ function MeetingDetailPage() {
             <div className="mt-4 flex items-center justify-center gap-2">
               {session ? (
                 <button
-                  onClick={() => setSession(null)}
+                  onClick={leaveRoom}
                   className="flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
                 >
                   <PhoneOff className="h-4 w-4" /> Rời phòng
