@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { createInstantMeeting, listMyMeetingRooms } from "@/lib/api/meeting-rooms.functions";
+import {
+  createInstantMeeting,
+  listMyMeetingRooms,
+  listMyWorkspaces,
+} from "@/lib/api/meeting-rooms.functions";
 import {
   ListChecks,
   Users,
@@ -53,6 +57,11 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 
 export const Route = createFileRoute("/meeting")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
+    q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
+    focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Họp · UNIWORK" },
