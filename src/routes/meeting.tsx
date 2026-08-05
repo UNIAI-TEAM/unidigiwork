@@ -385,7 +385,7 @@ function MeetingPage() {
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <select
                   value={activeWs ?? ""}
-                  onChange={(e) => setRoomFilter({ ws: e.target.value })}
+                  onChange={(e) => setRoomFilter({ ws: e.target.value, page: 1 })}
                   disabled={workspaces.isLoading}
                   className="rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
                   aria-label="Chọn workspace"
@@ -404,13 +404,13 @@ function MeetingPage() {
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <input
                     value={roomQuery}
-                    onChange={(e) => setRoomFilter({ q: e.target.value })}
+                    onChange={(e) => setRoomFilter({ q: e.target.value, page: 1 })}
                     placeholder="Tìm phòng theo tên…"
                     className="w-52 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
                   {roomQuery && (
                     <button
-                      onClick={() => setRoomFilter({ q: "" })}
+                      onClick={() => setRoomFilter({ q: "", page: 1 })}
                       className="text-xs text-muted-foreground hover:text-foreground"
                     >
                       Xóa
