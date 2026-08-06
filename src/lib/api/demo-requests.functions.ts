@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { getSupabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const submitDemoRequestSchema = z.object({
   name: z.string().trim().min(1, { message: "Tên không được để trống" }).max(100, { message: "Tên không quá 100 ký tự" }),
