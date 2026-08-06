@@ -441,6 +441,10 @@ function Landing() {
               <Calendar className="h-4 w-4" /> {t("land.hybrid.demo")}
             </Link>
           </div>
+
+          <div className="mx-auto mt-10 w-full max-w-md">
+            <DemoLeadForm />
+          </div>
         </div>
       </section>
 
