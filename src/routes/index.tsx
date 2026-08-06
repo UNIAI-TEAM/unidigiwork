@@ -18,8 +18,8 @@ import {
   Users,
   Zap,
   ListChecks,
-  Calendar, 
-import { supabase } from "@/integrations/supabase/client";
+  Calendar,
+} from "lucide-react";
 import { toast } from "sonner";
 import shotMeeting from "@/assets/shot-meeting.png.asset.json";
 import shotKnowledge from "@/assets/shot-knowledge.png.asset.json";
