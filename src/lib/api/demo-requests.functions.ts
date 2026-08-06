@@ -12,7 +12,6 @@ const submitDemoRequestSchema = z.object({
 export const submitDemoRequest = createServerFn({ method: "POST" })
   .inputValidator(submitDemoRequestSchema)
   .handler(async ({ data }) => {
-    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin.from("demo_requests").insert({
       name: data.name,
       email: data.email,
