@@ -19,7 +19,11 @@ import {
   Zap,
   ListChecks,
   Calendar,
+  Send,
+  CheckCircle2,
 } from "lucide-react";
+import { z } from "zod";
+import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import shotMeeting from "@/assets/shot-meeting.png.asset.json";
@@ -437,6 +441,10 @@ function Landing() {
               <Calendar className="h-4 w-4" /> {t("land.hybrid.demo")}
             </Link>
           </div>
+
+          <div className="mx-auto mt-10 w-full max-w-md">
+            <DemoLeadForm />
+          </div>
         </div>
       </section>
 
@@ -471,3 +479,122 @@ function Landing() {
     </div>
   );
 }
+
+function DemoLeadForm() {
+  const { t } = useI18n();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const schema = z.object({
+    name: z.string().trim().min(1, { message: t("land.demo.form.required") }).max(100),
+    email: z.string().trim().email({ message: t("land.demo.form.email.invalid") }).max(255),
+    role: z.string().trim().min(1, { message: t("land.demo.form.required") }).max(100),
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    const result = schema.safeParse({ name, email, role });
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const path = issue.path[0];
+        if (typeof path === "string") fieldErrors[path] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+    setLoading(true);
+    try {
+      await submitDemoRequest({ data: result.data });
+      setSuccess(true);
+      setName("");
+      setEmail("");
+      setRole("");
+    } catch (err) {
+      toast.error(t("land.demo.form.error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
+        <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
+        <h3 className="mt-3 text-base font-semibold">{t("land.demo.form.success")}</h3>
+        <button
+          onClick={() => setSuccess(false)}
+          className="mt-3 text-sm text-primary hover:underline"
+        >
+          {t("land.demo.form.submit")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-name">
+            {t("land.demo.form.name")}
+          </label>
+          <input
+            id="demo-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t("land.demo.form.name.placeholder")}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+            disabled={loading}
+          />
+          {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-role">
+            {t("land.demo.form.role")}
+          </label>
+          <input
+            id="demo-role"
+            type="text"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            placeholder={t("land.demo.form.role.placeholder")}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+            disabled={loading}
+          />
+          {errors.role && <p className="mt-1 text-xs text-destructive">{errors.role}</p>}
+        </div>
+      </div>
+      <div className="mt-4">
+        <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-email">
+          {t("land.demo.form.email")}
+        </label>
+        <input
+          id="demo-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={t("land.demo.form.email.placeholder")}
+          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+          disabled={loading}
+        />
+        {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+      >
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        {t("land.demo.form.submit")}
+      </button>
+    </form>
+  );
+}
+
