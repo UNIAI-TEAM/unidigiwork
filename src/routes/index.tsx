@@ -18,6 +18,7 @@ import {
   Users,
   Zap,
   ListChecks,
+  Calendar,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -422,12 +423,18 @@ function Landing() {
             </div>
           </div>
 
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               to="/ai"
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {t("land.hybrid.cta")} <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
+            >
+              <Calendar className="h-4 w-4" /> {t("land.hybrid.demo")}
             </Link>
           </div>
         </div>

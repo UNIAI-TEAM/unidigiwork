@@ -99,6 +99,7 @@ const dict = {
     "land.hybrid.c4.d":
       "AI thực thi quy trình theo workflow, mọi hành động đều được ghi nhật ký và cần phê duyệt khi cần.",
     "land.hybrid.cta": "Khám phá không gian tương tác",
+    "land.hybrid.demo": "Đặt lịch demo",
     "land.cta2.h": "Sẵn sàng cho doanh nghiệp của bạn",
     "land.cta2.p": "Hạ tầng bảo mật, phân quyền theo workspace, dữ liệu lưu tại Việt Nam.",
     "land.cta2.btn": "Đăng nhập & dùng thử",
@@ -540,6 +541,7 @@ const dict = {
     "land.hybrid.c4.d":
       "AI executes workflows with full audit logs and approval gates whenever they are required.",
     "land.hybrid.cta": "Explore the collaboration space",
+    "land.hybrid.demo": "Book a demo",
     "land.cta2.h": "Ready for your enterprise",
     "land.cta2.p": "Secure infrastructure, workspace-scoped permissions, data hosted in Vietnam.",
     "land.cta2.btn": "Sign in & try it",
