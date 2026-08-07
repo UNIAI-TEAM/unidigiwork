@@ -792,6 +792,7 @@ function WorkflowCalendarPage() {
         <RunDetailModal
           runId={runId}
           tz={tz}
+          autoRepairRetry={autoRepairRetry}
           onClose={() => setRunId(null)}
           onRerun={(dayIso) => {
             if (dayIso < from) setFrom(dayIso);
@@ -824,11 +825,13 @@ function fmt(ts: string | null | undefined, tz: string) {
 function RunDetailModal({
   runId,
   tz,
+  autoRepairRetry,
   onClose,
   onRerun,
 }: {
   runId: string;
   tz: string;
+  autoRepairRetry?: boolean;
   onClose: () => void;
   onRerun?: (dayIso: string) => void;
 }) {
@@ -857,19 +860,33 @@ function RunDetailModal({
   });
 
   const retryMut = useMutation({
-    mutationFn: async () =>
+    mutationFn: async () => {
+      let repaired = 0;
+      if (autoRepairRetry && data && timestampIssues(data.run).length > 0) {
+        try {
+          const res = await repairWorkflowRunTimestamps({ data: { runIds: [runId] } });
+          repaired = res.fixed;
+        } catch {
+          toast.warning("Không thể chuẩn hoá thời gian lần chạy cũ, vẫn tiếp tục chạy lại.");
+        }
+      }
       await startWorkflowRun({
         data: {
           workflowId: data!.run.workflow_id,
           context: (data!.run.context ?? {}) as Record<string, unknown>,
           idempotencyKey: crypto.randomUUID(),
         },
-      }),
-    onSuccess: () => {
+      });
+      return { repaired };
+    },
+    onSuccess: ({ repaired }) => {
       const now = new Date();
       onRerun?.(isoTz(now, tz));
       toast.success(`Đã chạy lại quy trình lúc ${dateTimeTz(now.toISOString(), tz)}`, {
-        description: `Múi giờ ${tzOffsetLabel(tz)}`,
+        description:
+          repaired > 0
+            ? `Đã chuẩn hoá thời gian lần chạy cũ · Múi giờ ${tzOffsetLabel(tz)}`
+            : `Múi giờ ${tzOffsetLabel(tz)}`,
       });
       refresh();
       onClose();
