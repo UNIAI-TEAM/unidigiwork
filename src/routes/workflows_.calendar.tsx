@@ -1,0 +1,301 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, CalendarRange, Loader2 } from "lucide-react";
+import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
+import { listWorkflows, listWorkflowRuns } from "@/lib/api/workflows.functions";
+
+export const Route = createFileRoute("/workflows_/calendar")({
+  head: () => ({
+    meta: [
+      { title: "Lịch chạy quy trình · UNIWORK" },
+      {
+        name: "description",
+        content: "Xem lịch các lần chạy workflow theo khoảng thời gian tuỳ chọn trên UNIWORK.",
+      },
+      { property: "og:title", content: "Lịch chạy quy trình · UNIWORK" },
+      {
+        property: "og:description",
+        content: "Theo dõi lịch sử và tiến độ các phiên chạy quy trình theo ngày.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: WorkflowCalendarPage,
+});
+
+type WF = { id: string; name: string };
+type RunStatus = "pending" | "running" | "succeeded" | "failed" | "canceled";
+type Run = {
+  id: string;
+  workflow_id: string;
+  status: RunStatus;
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+};
+
+const STATUS_META: Record<RunStatus, { label: string; dot: string; chip: string }> = {
+  pending: { label: "Chờ chạy", dot: "bg-muted-foreground", chip: "bg-muted text-muted-foreground" },
+  running: { label: "Đang chạy", dot: "bg-sky-500", chip: "bg-sky-500/15 text-sky-500" },
+  succeeded: {
+    label: "Thành công",
+    dot: "bg-emerald-500",
+    chip: "bg-emerald-500/15 text-emerald-500",
+  },
+  failed: { label: "Thất bại", dot: "bg-destructive", chip: "bg-destructive/15 text-destructive" },
+  canceled: { label: "Đã huỷ", dot: "bg-amber-500", chip: "bg-amber-500/15 text-amber-500" },
+};
+
+function iso(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function addDays(d: Date, n: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+function startOfWeek(d: Date) {
+  const x = new Date(d);
+  const wd = (x.getDay() + 6) % 7; // thứ 2 đầu tuần
+  return addDays(x, -wd);
+}
+
+const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+
+function WorkflowCalendarPage() {
+  const [open, setOpen] = useSidebarState();
+  const today = new Date();
+  const [from, setFrom] = useState(iso(addDays(today, -29)));
+  const [to, setTo] = useState(iso(today));
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const workspaces = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
+  const [wsId, setWsId] = useState<string | undefined>(undefined);
+  const activeWs = wsId ?? workspaces.data?.[0]?.id;
+
+  const wfQuery = useQuery({
+    queryKey: ["workflows", activeWs],
+    enabled: Boolean(activeWs),
+    queryFn: async () =>
+      (await listWorkflows({ data: { workspaceId: activeWs!, limit: 200 } })) as unknown as WF[],
+  });
+  const workflows = useMemo(() => wfQuery.data ?? [], [wfQuery.data]);
+  const ids = useMemo(() => workflows.map((w) => w.id), [workflows]);
+  const nameById = useMemo(
+    () => new Map(workflows.map((w) => [w.id, w.name] as const)),
+    [workflows],
+  );
+
+  const runsQuery = useQuery({
+    queryKey: ["workflow-runs", ids],
+    enabled: ids.length > 0,
+    queryFn: async () =>
+      (await listWorkflowRuns({ data: { workflowIds: ids, limit: 500 } })) as unknown as Run[],
+  });
+
+  const runsByDay = useMemo(() => {
+    const m = new Map<string, Run[]>();
+    for (const r of runsQuery.data ?? []) {
+      const key = iso(new Date(r.started_at ?? r.created_at));
+      if (key < from || key > to) continue;
+      m.set(key, [...(m.get(key) ?? []), r]);
+    }
+    return m;
+  }, [runsQuery.data, from, to]);
+
+  const days = useMemo(() => {
+    const start = startOfWeek(new Date(`${from}T00:00:00`));
+    const end = new Date(`${to}T00:00:00`);
+    const out: Date[] = [];
+    let cur = start;
+    let guard = 0;
+    while (cur <= end && guard < 400) {
+      out.push(cur);
+      cur = addDays(cur, 1);
+      guard++;
+    }
+    while (out.length % 7 !== 0) {
+      out.push(cur);
+      cur = addDays(cur, 1);
+    }
+    return out;
+  }, [from, to]);
+
+  const inRange = (d: Date) => iso(d) >= from && iso(d) <= to;
+  const total = useMemo(
+    () => [...runsByDay.values()].reduce((s, r) => s + r.length, 0),
+    [runsByDay],
+  );
+  const selectedRuns = selected ? (runsByDay.get(selected) ?? []) : [];
+
+  const preset = (n: number) => {
+    setFrom(iso(addDays(new Date(), -(n - 1))));
+    setTo(iso(new Date()));
+    setSelected(null);
+  };
+
+  return (
+    <div className="flex min-h-screen bg-bg text-foreground">
+      <AppSidebar active="workflows" open={open} onClose={() => setOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
+
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <Link
+            to="/workflows"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Quy trình
+          </Link>
+
+          <div className="mt-2 mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="flex items-center gap-2 text-2xl font-bold">
+                <CalendarRange className="h-6 w-6 text-primary" /> Lịch chạy quy trình
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {total} lần chạy trong khoảng {from} → {to}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {workspaces.data && workspaces.data.length > 0 && (
+                <select
+                  value={activeWs ?? ""}
+                  onChange={(e) => setWsId(e.target.value)}
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                >
+                  {workspaces.data.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <input
+                type="date"
+                value={from}
+                max={to}
+                onChange={(e) => setFrom(e.target.value)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              />
+              <span className="text-sm text-muted-foreground">→</span>
+              <input
+                type="date"
+                value={to}
+                min={from}
+                onChange={(e) => setTo(e.target.value)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              />
+              {[7, 30, 90].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => preset(n)}
+                  className="rounded-lg border border-border px-2.5 py-2 text-xs hover:bg-surface"
+                >
+                  {n} ngày
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {runsQuery.isLoading || wfQuery.isLoading ? (
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface p-12 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Đang tải…
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+              <div className="overflow-hidden rounded-xl border border-border bg-surface">
+                <div className="grid grid-cols-7 border-b border-border text-center text-xs font-medium text-muted-foreground">
+                  {WEEKDAYS.map((d) => (
+                    <div key={d} className="py-2">
+                      {d}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7">
+                  {days.map((d) => {
+                    const key = iso(d);
+                    const runs = runsByDay.get(key) ?? [];
+                    const active = inRange(d);
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setSelected(key)}
+                        className={`min-h-[92px] border-b border-r border-border p-2 text-left align-top transition-colors ${
+                          active ? "hover:bg-muted/40" : "opacity-40"
+                        } ${selected === key ? "ring-2 ring-inset ring-primary/60" : ""}`}
+                      >
+                        <div className="text-xs font-medium">{d.getDate()}</div>
+                        <div className="mt-1 space-y-1">
+                          {runs.slice(0, 3).map((r) => (
+                            <div key={r.id} className="flex items-center gap-1.5 text-[11px]">
+                              <span
+                                className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_META[r.status].dot}`}
+                              />
+                              <span className="truncate text-muted-foreground">
+                                {nameById.get(r.workflow_id) ?? r.workflow_id.slice(0, 8)}
+                              </span>
+                            </div>
+                          ))}
+                          {runs.length > 3 && (
+                            <div className="text-[11px] text-muted-foreground">
+                              +{runs.length - 3} khác
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <aside className="rounded-xl border border-border bg-surface p-4">
+                <h2 className="text-sm font-semibold">
+                  {selected ? `Chi tiết ngày ${selected}` : "Chọn một ngày"}
+                </h2>
+                {!selected ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Bấm vào một ô ngày để xem các lần chạy trong ngày đó.
+                  </p>
+                ) : selectedRuns.length === 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Không có lần chạy nào trong ngày này.
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-2">
+                    {selectedRuns.map((r) => (
+                      <li key={r.id} className="rounded-lg border border-border p-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-sm font-medium">
+                            {nameById.get(r.workflow_id) ?? r.workflow_id.slice(0, 8)}
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${STATUS_META[r.status].chip}`}
+                          >
+                            {STATUS_META[r.status].label}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {new Date(r.started_at ?? r.created_at).toLocaleTimeString("vi-VN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {r.ended_at
+                            ? ` → ${new Date(r.ended_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`
+                            : ""}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </aside>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
