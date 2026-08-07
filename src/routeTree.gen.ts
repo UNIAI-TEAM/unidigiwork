@@ -29,6 +29,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as WorkflowsRunsRouteImport } from './routes/workflows_.runs'
+import { Route as WorkflowsPermissionsRouteImport } from './routes/workflows_.permissions'
 import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calendar'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
@@ -168,6 +169,11 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
 const WorkflowsRunsRoute = WorkflowsRunsRouteImport.update({
   id: '/workflows_/runs',
   path: '/workflows/runs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowsPermissionsRoute = WorkflowsPermissionsRouteImport.update({
+  id: '/workflows_/permissions',
+  path: '/workflows/permissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowsCalendarRoute = WorkflowsCalendarRouteImport.update({
@@ -427,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
+  '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -487,6 +494,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
+  '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports': typeof ReportsIndexRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -551,6 +559,7 @@ export interface FileRoutesById {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows_/calendar': typeof WorkflowsCalendarRoute
+  '/workflows_/permissions': typeof WorkflowsPermissionsRoute
   '/workflows_/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -615,6 +624,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows/calendar'
+    | '/workflows/permissions'
     | '/workflows/runs'
     | '/reports/'
     | '/admin/leads'
@@ -675,6 +685,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows/calendar'
+    | '/workflows/permissions'
     | '/workflows/runs'
     | '/reports'
     | '/admin/leads'
@@ -738,6 +749,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows_/calendar'
+    | '/workflows_/permissions'
     | '/workflows_/runs'
     | '/reports/'
     | '/_authenticated/admin/leads'
@@ -784,6 +796,7 @@ export interface RootRouteChildren {
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
+  WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
@@ -931,6 +944,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows/runs'
       fullPath: '/workflows/runs'
       preLoaderRoute: typeof WorkflowsRunsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows_/permissions': {
+      id: '/workflows_/permissions'
+      path: '/workflows/permissions'
+      fullPath: '/workflows/permissions'
+      preLoaderRoute: typeof WorkflowsPermissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workflows_/calendar': {
@@ -1439,6 +1459,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
+  WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
