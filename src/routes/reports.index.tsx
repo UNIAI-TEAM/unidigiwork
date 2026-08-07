@@ -58,15 +58,20 @@ type Tab = (typeof TABS)[number];
 function ReportsPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
-    navigate({ to: "/reports/detail", search: { days, status: s, workspaceId: wsId } });
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("overview");
-  const [days, setDays] = useState(30);
+  const [range, setRange] = useState(() => ({ from: shiftDay(todayKey(), -29), to: todayKey() }));
+  const [compare, setCompare] = useState(true);
+  const days = dayCount(range.from, range.to);
+  const fromISO = new Date(`${range.from}T00:00:00`).toISOString();
+  const toISO = new Date(`${range.to}T23:59:59.999`).toISOString();
+  const prev = { from: shiftDay(range.from, -days), to: shiftDay(range.to, -days) };
+  const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
+    navigate({ to: "/reports/detail", search: { from: fromISO, to: toISO, status: s, workspaceId: wsId } });
   const fetchOverview = useServerFn(getReportOverview);
   const { data: report, isPending } = useQuery({
-    queryKey: ["report-overview", days],
-    queryFn: () => fetchOverview({ data: { days } }),
+    queryKey: ["report-overview", fromISO, toISO],
+    queryFn: () => fetchOverview({ data: { from: fromISO, to: toISO } }),
     staleTime: 60_000,
   });
   const k = report?.kpis;
@@ -74,6 +79,7 @@ function ReportsPage() {
   const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
   const delta = (cur = 0, prev = 0) =>
     prev === 0 ? (cur > 0 ? "+100%" : "0%") : `${cur - prev >= 0 ? "+" : ""}${Math.round(((cur - prev) / prev) * 100)}%`;
+  const cmp = (cur = 0, previous = 0) => (compare ? delta(cur, previous) : "—");
   const nf = (n?: number) => (n ?? 0).toLocaleString("vi-VN");
   const wsRows = report?.workspaces ?? [];
   const health = {
