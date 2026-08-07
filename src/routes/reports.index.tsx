@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
 import { useState } from "react";
@@ -57,6 +57,9 @@ type Tab = (typeof TABS)[number];
 
 function ReportsPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
+    navigate({ to: "/reports/detail", search: { days, status: s, workspaceId: wsId } });
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("overview");
   const [days, setDays] = useState(30);
