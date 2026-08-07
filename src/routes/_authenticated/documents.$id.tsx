@@ -42,6 +42,22 @@ export const Route = createFileRoute("/_authenticated/documents/$id")({
 });
 
 function fmtTime(v: string | null | undefined) {
+  return fmtTimeImpl(v);
+}
+
+type DocVersion = {
+  id: string;
+  version: number;
+  mime_type: string | null;
+  size_bytes: number | null;
+  comment: string | null;
+  author_id: string | null;
+  author_name: string | null;
+  created_at: string;
+  storage_ref: unknown;
+};
+
+function fmtTimeImpl(v: string | null | undefined) {
   if (!v) return "—";
   return new Date(v).toLocaleString("vi-VN", {
     day: "2-digit",
