@@ -911,7 +911,7 @@ function WorkspaceTimezoneCell({
     try {
       await save({ data: { workspaceId, timezone: next } });
       toast.success(`Đã đổi múi giờ sang ${next}`);
-      await qc.invalidateQueries({ queryKey: ["tenant-workspaces"] });
+      await qc.invalidateQueries({ queryKey: ["admin", "workspaces"] });
       await qc.invalidateQueries({ queryKey: ["my-workspaces"] });
     } catch (err) {
       setTz(prev);
