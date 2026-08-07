@@ -3346,6 +3346,10 @@ export type Database = {
       }
       redeem_meeting_invite_link: { Args: { _token: string }; Returns: Json }
       refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
+      report_overview: {
+        Args: { _days?: number; _workspace_id?: string }
+        Returns: Json
+      }
       request_meeting_join: {
         Args: {
           _correlation_id?: string
