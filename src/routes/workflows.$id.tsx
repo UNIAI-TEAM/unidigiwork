@@ -159,22 +159,25 @@ function WorkflowBuilderPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => save.mutate()}
-              disabled={save.isPending || !dirty}
+              onClick={() => { if (guardWorkflowAction(perms, "edit")) save.mutate(); }}
+              disabled={save.isPending || !dirty || !perms.can_edit}
+              title={perms.can_edit ? undefined : denialReason("edit")}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-surface-2 px-3 text-sm hover:bg-surface-3 disabled:opacity-50"
             >
               {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Lưu
             </button>
             <button
-              onClick={() => publish.mutate()}
-              disabled={publish.isPending || published}
+              onClick={() => { if (guardWorkflowAction(perms, "publish")) publish.mutate(); }}
+              disabled={publish.isPending || published || !perms.can_publish}
+              title={perms.can_publish ? undefined : denialReason("publish")}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-surface-2 px-3 text-sm hover:bg-surface-3 disabled:opacity-50"
             >
               <Rocket className="h-4 w-4" /> Phát hành
             </button>
             <button
-              onClick={() => runNow.mutate()}
-              disabled={runNow.isPending || !published}
+              onClick={() => { if (guardWorkflowAction(perms, "run")) runNow.mutate(); }}
+              disabled={runNow.isPending || !published || !perms.can_run}
+              title={perms.can_run ? undefined : denialReason("run")}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               <Play className="h-4 w-4" /> Chạy ngay
