@@ -196,7 +196,7 @@ function BillingPage() {
                         Kỳ hiện tại: {fmtDate(sub.periodStart)} → {sub.periodEnd ? fmtDate(sub.periodEnd) : "không giới hạn"}
                       </p>
                       {sub.cancelAt && (
-                        <p className="text-sm text-warning-foreground">
+                        <p className="text-sm text-destructive">
                           Đã hẹn hủy vào {fmtDate(sub.cancelAt)}. Bạn vẫn dùng đầy đủ tính năng đến ngày này.
                         </p>
                       )}
