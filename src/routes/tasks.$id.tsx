@@ -1,36 +1,159 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
-  ArrowLeft,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Flag,
-  Link2,
-  MessageSquare,
-  MoreHorizontal,
-  Paperclip,
-  Plus,
-  Send,
-  Tag,
-  User,
+  ArrowLeft, Calendar, CheckCircle2, Clock, Download, Flag, Link2,
+  Loader2, Paperclip, Plus, Send, Trash2, User,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import {
+  getTaskDetail, commentTask, createSubtask, transitionTask,
+  addTaskAttachment, deleteTaskAttachment,
+} from "@/lib/api/tasks.functions";
+import {
+  uploadTaskAttachment, getTaskAttachmentUrl, removeTaskAttachmentObject, formatBytes,
+} from "@/lib/tasks-storage";
 
 export const Route = createFileRoute("/tasks/$id")({
-  head: ({ params }) => ({
+  head: () => ({
     meta: [
-      { title: `Task ${params.id} · UNIWORK` },
-      { name: "description", content: `Chi tiết công việc ${params.id}` },
+      { title: "Chi tiết công việc · UNIWORK" },
+      { name: "description", content: "Quản lý bình luận, tệp đính kèm, công việc con và hạn chót của công việc." },
+      { property: "og:title", content: "Chi tiết công việc · UNIWORK" },
+      { property: "og:description", content: "Bình luận, tệp đính kèm, subtask và nhắc hạn cho từng công việc." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TaskDetailPage,
 });
 
+type Status = "todo" | "in_progress" | "blocked" | "done" | "canceled";
+
+const STATUS_LABEL: Record<Status, string> = {
+  todo: "Cần làm", in_progress: "Đang thực hiện", blocked: "Bị chặn",
+  done: "Hoàn thành", canceled: "Đã huỷ",
+};
+const PRIORITY_LABEL: Record<string, string> = {
+  low: "Thấp", normal: "Bình thường", high: "Cao", urgent: "Khẩn cấp",
+};
+
+function fmtDate(v: string | null | undefined) {
+  if (!v) return "—";
+  return new Date(v).toLocaleString("vi-VN", { dateStyle: "medium", timeStyle: "short" });
+}
+function relative(v: string) {
+  const diff = Date.now() - new Date(v).getTime();
+  const m = Math.round(diff / 60000);
+  if (m < 1) return "vừa xong";
+  if (m < 60) return `${m} phút trước`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} giờ trước`;
+  return fmtDate(v);
+}
+
 function TaskDetailPage() {
   const { id } = Route.useParams();
   const [open, setOpen] = useSidebarState();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [comment, setComment] = useState("");
+  const [subtaskTitle, setSubtaskTitle] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const detail = useQuery({
+    queryKey: ["task-detail", id],
+    queryFn: () => getTaskDetail({ data: { taskId: id } }),
+    retry: false,
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["task-detail", id] });
+
+  const addComment = useMutation({
+    mutationFn: (body: string) =>
+      commentTask({ data: { taskId: id, body, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => { setComment(""); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const addSubtask = useMutation({
+    mutationFn: (title: string) =>
+      createSubtask({ data: { parentTaskId: id, title, priority: "normal", idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => { setSubtaskTitle(""); invalidate(); toast.success("Đã thêm công việc con"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const setStatus = useMutation({
+    mutationFn: (toStatus: Status) =>
+      transitionTask({ data: { taskId: id, toStatus, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => invalidate(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleSubtask = useMutation({
+    mutationFn: (p: { taskId: string; toStatus: Status }) =>
+      transitionTask({ data: { taskId: p.taskId, toStatus: p.toStatus, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => invalidate(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeAttachment = useMutation({
+    mutationFn: async (p: { attachmentId: string; storagePath: string }) => {
+      await deleteTaskAttachment({ data: { attachmentId: p.attachmentId } });
+      await removeTaskAttachmentObject(p.storagePath);
+    },
+    onSuccess: () => { invalidate(); toast.success("Đã xoá tệp"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const task = detail.data?.task as
+    | { id: string; title: string; description: string | null; status: Status; priority: string; due_at: string | null; workspace_id: string; created_at: string }
+    | undefined;
+  const subtasks = (detail.data?.subtasks ?? []) as Array<{ id: string; title: string; status: Status }>;
+  const comments = (detail.data?.comments ?? []) as Array<{ id: string; body: string; created_at: string; author_id: string | null; author_name: string | null }>;
+  const attachments = (detail.data?.attachments ?? []) as Array<{ id: string; file_name: string; storage_path: string; size_bytes: number | null }>;
+  const parent = detail.data?.parent as { id: string; title: string } | null | undefined;
+
+  const dueState = useMemo(() => {
+    if (!task?.due_at || task.status === "done" || task.status === "canceled") return null;
+    const diff = new Date(task.due_at).getTime() - Date.now();
+    if (diff < 0) return { tone: "text-destructive", text: "Đã quá hạn" };
+    if (diff < 24 * 3600 * 1000) return { tone: "text-amber-500", text: "Sắp đến hạn (dưới 24 giờ)" };
+    return null;
+  }, [task?.due_at, task?.status]);
+
+  async function onPickFile(file: File) {
+    if (!task) return;
+    setUploading(true);
+    try {
+      const up = await uploadTaskAttachment({ workspaceId: task.workspace_id, taskId: task.id, file });
+      await addTaskAttachment({
+        data: {
+          taskId: task.id, fileName: file.name, storagePath: up.storagePath,
+          mimeType: up.mimeType, sizeBytes: up.sizeBytes,
+        },
+      });
+      invalidate();
+      toast.success("Đã tải tệp lên");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Tải tệp thất bại");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function download(path: string) {
+    try {
+      window.open(await getTaskAttachmentUrl(path, true), "_blank");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không tải được tệp");
+    }
+  }
+
+  const doneSubtasks = subtasks.filter((s) => s.status === "done").length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -39,148 +162,205 @@ function TaskDetailPage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-            <Link
-              to="/tasks"
-              className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-            >
+            <Link to="/tasks" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Quay lại Bảng công việc
             </Link>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-              <div className="space-y-6">
-                <div>
-                  <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono">{id}</span>
-                    <span>·</span>
-                    <span>Dự án STOS Platform</span>
-                  </div>
-                  <h1 className="text-2xl font-bold tracking-tight">
-                    Thiết kế giao diện Dashboard tổng quan
-                  </h1>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Badge color="sky">Đang thực hiện</Badge>
-                    <Badge color="amber">Ưu tiên cao</Badge>
-                    <span className="rounded-full bg-pink-500/20 px-2.5 py-0.5 text-xs text-pink-300 border border-pink-500/30">
-                      Design
-                    </span>
-                  </div>
-                </div>
-
-                <Section title="Mô tả">
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Thiết kế lại giao diện Dashboard với các widget KPI, biểu đồ tiến độ
-                    sprint, danh sách hoạt động gần đây và panel AI Copilot. Tuân thủ
-                    design system, hỗ trợ mobile và dark mode.
-                  </p>
-                </Section>
-
-                <Section title="Tiêu chí hoàn thành">
-                  <ul className="space-y-2 text-sm">
-                    {[
-                      "Wireframe cho desktop và mobile",
-                      "High-fidelity mockup trong Figma",
-                      "Prototype tương tác cho stakeholder review",
-                      "Tài liệu design tokens & spacing",
-                      "Handoff sang đội Frontend",
-                    ].map((s, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          defaultChecked={i < 2}
-                          className="h-4 w-4 rounded border-border bg-surface-2"
-                        />
-                        <span className={i < 2 ? "text-muted-foreground line-through" : ""}>
-                          {s}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </Section>
-
-                <Section title="Tệp đính kèm">
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {["Dashboard-v3.fig", "User-research.pdf", "Color-tokens.png"].map((f) => (
-                      <div
-                        key={f}
-                        className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 text-sm hover:bg-surface-2"
-                      >
-                        <Paperclip className="h-4 w-4 text-muted-foreground" />
-                        <span className="flex-1 truncate">{f}</span>
-                        <span className="text-xs text-muted-foreground">2.4 MB</span>
-                      </div>
-                    ))}
-                    <button className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground hover:bg-surface-2">
-                      <Plus className="h-3.5 w-3.5" /> Thêm tệp
-                    </button>
-                  </div>
-                </Section>
-
-                <Section title="Bình luận (4)">
-                  <div className="space-y-4">
-                    {[
-                      { who: "Minh Anh", seed: "minh-anh", time: "2 giờ trước", text: "Mình đã đẩy bản v3 lên Figma, mọi người review giúp nhé." },
-                      { who: "Tuấn Nam", seed: "tuan-nam-ba", time: "1 giờ trước", text: "Phần header trông gọn hơn rồi. Có thể tăng contrast cho KPI numbers không?" },
-                      { who: "Bảo Ngọc", seed: "bao-ngoc", time: "30 phút trước", text: "Mobile breakpoint hiển thị đẹp. 👍" },
-                    ].map((c, i) => (
-                      <div key={i} className="flex gap-3">
-                        <img src={avatar(c.seed)} alt="" className="h-8 w-8 rounded-full" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="font-medium text-foreground">{c.who}</span>
-                            <span>{c.time}</span>
-                          </div>
-                          <p className="mt-1 text-sm">{c.text}</p>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="flex gap-3">
-                      <img src={avatar("me")} alt="" className="h-8 w-8 rounded-full" />
-                      <div className="flex flex-1 items-end gap-2 rounded-lg border border-border bg-surface p-2">
-                        <textarea
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          rows={2}
-                          placeholder="Viết bình luận…"
-                          className="flex-1 resize-none bg-transparent text-sm focus:outline-none"
-                        />
-                        <button className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                          <Send className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
+            {detail.isLoading ? (
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-surface p-8 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Đang tải công việc…
+              </div>
+            ) : detail.isError || !task ? (
+              <div className="rounded-xl border border-border bg-surface p-8 text-center">
+                <p className="text-sm text-muted-foreground">Không tìm thấy công việc hoặc bạn không có quyền xem.</p>
+                <button onClick={() => navigate({ to: "/tasks" })} className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+                  Về bảng công việc
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+                <div className="space-y-6">
+                  <div>
+                    <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono">{task.id.slice(0, 8)}</span>
+                      {parent ? (
+                        <>
+                          <span>·</span>
+                          <Link to="/tasks/$id" params={{ id: parent.id }} className="text-primary hover:underline">
+                            {parent.title}
+                          </Link>
+                        </>
+                      ) : null}
+                    </div>
+                    <h1 className="text-2xl font-bold tracking-tight">{task.title}</h1>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Badge>{STATUS_LABEL[task.status]}</Badge>
+                      <Badge>Ưu tiên: {PRIORITY_LABEL[task.priority] ?? task.priority}</Badge>
+                      {dueState ? <span className={`text-xs font-medium ${dueState.tone}`}>{dueState.text}</span> : null}
                     </div>
                   </div>
-                </Section>
-              </div>
 
-              <aside className="space-y-4">
-                <Field icon={User} label="Người thực hiện">
-                  <div className="flex items-center gap-2">
-                    <img src={avatar("minh-anh")} className="h-6 w-6 rounded-full" alt="" />
-                    <span className="text-sm">Minh Anh</span>
-                  </div>
-                </Field>
-                <Field icon={Flag} label="Mức ưu tiên">
-                  <span className="text-sm text-amber-400">Cao</span>
-                </Field>
-                <Field icon={Calendar} label="Hạn chót">
-                  <span className="text-sm">30/05/2026</span>
-                </Field>
-                <Field icon={Clock} label="Thời gian ước tính">
-                  <span className="text-sm">16 giờ</span>
-                </Field>
-                <Field icon={Tag} label="Sprint">
-                  <span className="text-sm">Sprint 14</span>
-                </Field>
-                <Field icon={Link2} label="Liên kết">
-                  <Link to="/tasks" className="text-sm text-primary hover:underline">
-                    STOS-127 (cha)
-                  </Link>
-                </Field>
-                <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-success/20 px-3 py-2 text-sm font-medium text-success hover:bg-success/30">
-                  <CheckCircle2 className="h-4 w-4" /> Đánh dấu hoàn thành
-                </button>
-              </aside>
-            </div>
+                  <Section title="Mô tả">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                      {task.description || "Chưa có mô tả."}
+                    </p>
+                  </Section>
+
+                  <Section title={`Công việc con (${doneSubtasks}/${subtasks.length})`}>
+                    <ul className="space-y-2 text-sm">
+                      {subtasks.map((s) => (
+                        <li key={s.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={s.status === "done"}
+                            onChange={() => toggleSubtask.mutate({ taskId: s.id, toStatus: s.status === "done" ? "todo" : "done" })}
+                            className="h-4 w-4 rounded border-border bg-surface-2"
+                          />
+                          <Link
+                            to="/tasks/$id" params={{ id: s.id }}
+                            className={s.status === "done" ? "text-muted-foreground line-through" : "hover:underline"}
+                          >
+                            {s.title}
+                          </Link>
+                        </li>
+                      ))}
+                      {subtasks.length === 0 ? (
+                        <li className="text-sm text-muted-foreground">Chưa có công việc con.</li>
+                      ) : null}
+                    </ul>
+                    <form
+                      onSubmit={(e) => { e.preventDefault(); if (subtaskTitle.trim()) addSubtask.mutate(subtaskTitle.trim()); }}
+                      className="mt-3 flex gap-2"
+                    >
+                      <input
+                        value={subtaskTitle}
+                        onChange={(e) => setSubtaskTitle(e.target.value)}
+                        placeholder="Thêm công việc con…"
+                        className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <button
+                        type="submit"
+                        disabled={addSubtask.isPending || !subtaskTitle.trim()}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                      >
+                        {addSubtask.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Thêm
+                      </button>
+                    </form>
+                  </Section>
+
+                  <Section title={`Tệp đính kèm (${attachments.length})`}>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {attachments.map((a) => (
+                        <div key={a.id} className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 text-sm hover:bg-surface-2">
+                          <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="flex-1 truncate">{a.file_name}</span>
+                          <span className="text-xs text-muted-foreground">{formatBytes(a.size_bytes)}</span>
+                          <button onClick={() => download(a.storage_path)} aria-label="Tải xuống" className="text-muted-foreground hover:text-foreground">
+                            <Download className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => removeAttachment.mutate({ attachmentId: a.id, storagePath: a.storage_path })}
+                            aria-label="Xoá tệp"
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => fileRef.current?.click()}
+                        disabled={uploading}
+                        className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
+                      >
+                        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                        {uploading ? "Đang tải…" : "Thêm tệp"}
+                      </button>
+                      <input
+                        ref={fileRef} type="file" className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickFile(f); }}
+                      />
+                    </div>
+                  </Section>
+
+                  <Section title={`Bình luận (${comments.length})`}>
+                    <div className="space-y-4">
+                      {comments.map((c) => (
+                        <div key={c.id} className="flex gap-3">
+                          <img src={avatar(c.author_id ?? "user")} alt="" className="h-8 w-8 rounded-full" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">{c.author_name ?? "Thành viên"}</span>
+                              <span>{relative(c.created_at)}</span>
+                            </div>
+                            <p className="mt-1 whitespace-pre-wrap text-sm">{c.body}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {comments.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Chưa có bình luận nào.</p>
+                      ) : null}
+                      <div className="flex gap-3">
+                        <img src={avatar("me")} alt="" className="h-8 w-8 rounded-full" />
+                        <div className="flex flex-1 items-end gap-2 rounded-lg border border-border bg-surface p-2">
+                          <textarea
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            rows={2}
+                            placeholder="Viết bình luận…"
+                            className="flex-1 resize-none bg-transparent text-sm focus:outline-none"
+                          />
+                          <button
+                            onClick={() => comment.trim() && addComment.mutate(comment.trim())}
+                            disabled={addComment.isPending || !comment.trim()}
+                            aria-label="Gửi bình luận"
+                            className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {addComment.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Section>
+                </div>
+
+                <aside className="space-y-4">
+                  <Field icon={User} label="Người thực hiện">
+                    <span className="text-sm">
+                      {(detail.data?.assignees ?? []).length > 0
+                        ? `${(detail.data?.assignees ?? []).length} người`
+                        : "Chưa giao"}
+                    </span>
+                  </Field>
+                  <Field icon={Flag} label="Mức ưu tiên">
+                    <span className="text-sm">{PRIORITY_LABEL[task.priority] ?? task.priority}</span>
+                  </Field>
+                  <Field icon={Calendar} label="Hạn chót">
+                    <span className={`text-sm ${dueState?.tone ?? ""}`}>{fmtDate(task.due_at)}</span>
+                  </Field>
+                  <Field icon={Clock} label="Tạo lúc">
+                    <span className="text-sm">{fmtDate(task.created_at)}</span>
+                  </Field>
+                  {parent ? (
+                    <Field icon={Link2} label="Công việc cha">
+                      <Link to="/tasks/$id" params={{ id: parent.id }} className="text-sm text-primary hover:underline">
+                        {parent.title}
+                      </Link>
+                    </Field>
+                  ) : null}
+                  <p className="rounded-lg border border-border bg-surface p-3 text-xs text-muted-foreground">
+                    Hệ thống tự gửi thông báo nhắc hạn trước 24 giờ và khi công việc quá hạn.
+                  </p>
+                  <button
+                    onClick={() => setStatus.mutate(task.status === "done" ? "in_progress" : "done")}
+                    disabled={setStatus.isPending}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-success/20 px-3 py-2 text-sm font-medium text-success hover:bg-success/30 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {task.status === "done" ? "Mở lại công việc" : "Đánh dấu hoàn thành"}
+                  </button>
+                </aside>
+              </div>
+            )}
           </div>
         </main>
       </div>
@@ -193,42 +373,27 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <section className="rounded-xl border border-border bg-surface p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">{title}</h2>
-        <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
       </div>
       {children}
     </section>
   );
 }
 
-function Field({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  children: React.ReactNode;
-}) {
+function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-3">
-      <div className="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
+    <span className="rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-xs text-muted-foreground">
       {children}
-    </div>
+    </span>
   );
 }
 
-function Badge({ color, children }: { color: "sky" | "amber" | "emerald"; children: React.ReactNode }) {
-  const map = {
-    sky: "bg-sky-500/20 text-sky-300 border-sky-500/30",
-    amber: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    emerald: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-  } as const;
+function Field({ icon: Icon, label, children }: { icon: React.ElementType; label: string; children: React.ReactNode }) {
   return (
-    <span className={`rounded-full border px-2.5 py-0.5 text-xs ${map[color]}`}>{children}</span>
+    <div className="rounded-lg border border-border bg-surface p-3">
+      <div className="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
+      {children}
+    </div>
   );
 }
