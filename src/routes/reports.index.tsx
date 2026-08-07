@@ -316,6 +316,11 @@ function ReportsPage() {
                 {t("rp.range.compareOn")}: {fmtDay(prev.from)} – {fmtDay(prev.to)} ({days} {t("rp.dd.days")})
               </p>
             )}
+            {dataUpdatedAt > 0 && (
+              <p className="mb-2 text-xs text-muted-foreground">
+                {t("rp.refresh.at")}: {new Date(dataUpdatedAt).toLocaleTimeString("vi-VN")}
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
               <Kpi
                 icon={UsersIcon}
