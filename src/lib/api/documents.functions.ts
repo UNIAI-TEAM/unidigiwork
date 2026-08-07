@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { commandMetadataSchema } from "@/contracts/common/base";
 import { mapPgError, ensureOk } from "./business.server";
+import { withAuthorNames } from "./documents.server";
 
 const storageRefSchema = z.object({
   provider: z.string().min(1),
@@ -89,7 +90,7 @@ export const getDocument = createServerFn({ method: "GET" })
 
     return {
       document: doc,
-      versions: versionsRes.data ?? [],
+      versions: await withAuthorNames(context.supabase, versionsRes.data ?? []),
       workspace: workspaceRes.data ?? null,
       permissions: permsRes.data ?? [],
     };
