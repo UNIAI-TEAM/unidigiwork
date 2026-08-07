@@ -326,8 +326,8 @@ function WorkflowBuilderPage() {
 
               {/* Triggers + runs */}
               <section className="space-y-4">
-                <TriggersPanel workflowId={id} triggers={data.triggers} published={published} onChanged={refresh} canEdit={perms.can_edit} />
-                <DryRunPanel workflowId={id} steps={steps} dirty={dirty} canRun={perms.can_run} />
+                <TriggersPanel workflowId={id} workspaceId={workspaceId} triggers={data.triggers} published={published} onChanged={refresh} canEdit={perms.can_edit} />
+                <DryRunPanel workflowId={id} workspaceId={workspaceId} steps={steps} dirty={dirty} canRun={perms.can_run} />
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
                   <h2 className="text-sm font-semibold">Lượt chạy gần đây</h2>
                   {data.runs.length === 0 ? (
@@ -363,8 +363,8 @@ type TriggerRow = {
 };
 
 function TriggersPanel({
-  workflowId, triggers, published, onChanged, canEdit,
-}: { workflowId: string; triggers: TriggerRow[]; published: boolean; onChanged: () => void; canEdit: boolean }) {
+  workflowId, workspaceId, triggers, published, onChanged, canEdit,
+}: { workflowId: string; workspaceId: string | null; triggers: TriggerRow[]; published: boolean; onChanged: () => void; canEdit: boolean }) {
   const [kind, setKind] = useState<"schedule" | "event">("schedule");
   const [frequency, setFrequency] = useState<"minutes" | "hourly" | "daily" | "weekly">("daily");
   const [intervalMinutes, setIntervalMinutes] = useState(15);
@@ -431,7 +431,12 @@ function TriggersPanel({
     <div className="rounded-xl border border-border bg-card p-4 md:p-6">
       <h2 className="text-sm font-semibold">Trigger &amp; Lịch chạy</h2>
       {hint && <p className="mt-1 text-xs text-warning">{hint}</p>}
-      {!canEdit && <p className="mt-1 text-xs text-warning">{denialReason("edit")}</p>}
+      {!canEdit && (
+        <p className="mt-1 flex items-center gap-1 text-xs text-warning">
+          {denialReason("edit")}
+          <PermissionHint workspaceId={workspaceId} action="edit" workflowId={workflowId} />
+        </p>
+      )}
 
       <div className="mt-3 space-y-2">
         {triggers.length === 0 && <p className="text-xs text-muted-foreground">Chưa có trigger nào.</p>}
@@ -517,6 +522,7 @@ function TriggersPanel({
           </label>
         )}
 
+        {!canEdit && <PermissionHint workspaceId={workspaceId} action="edit" workflowId={workflowId} />}
         <button onClick={() => { if (canEdit) save.mutate(); else guardWorkflowAction(null, "edit"); }}
           disabled={save.isPending || !canEdit}
           title={canEdit ? undefined : denialReason("edit")}
@@ -546,7 +552,7 @@ const DRY_STATUS: Record<string, { label: string; cls: string; icon: React.Compo
   not_reached: { label: "Không chạy tới", cls: "text-muted-foreground", icon: MinusCircle },
 };
 
-function DryRunPanel({ workflowId, steps, dirty, canRun }: { workflowId: string; steps: Step[]; dirty: boolean; canRun: boolean }) {
+function DryRunPanel({ workflowId, workspaceId, steps, dirty, canRun }: { workflowId: string; workspaceId: string | null; steps: Step[]; dirty: boolean; canRun: boolean }) {
   const [source, setSource] = useState<"manual" | "schedule" | "event">("manual");
   const [payload, setPayload] = useState('{\n  "example": "value"\n}');
   const [failKey, setFailKey] = useState("");
@@ -621,6 +627,7 @@ function DryRunPanel({ workflowId, steps, dirty, canRun }: { workflowId: string;
           </select>
         </div>
 
+        {!canRun && <PermissionHint workspaceId={workspaceId} action="run" workflowId={workflowId} />}
         <button onClick={() => { if (canRun) sim.mutate(); else guardWorkflowAction(null, "run"); }}
           disabled={sim.isPending || !canRun}
           title={canRun ? undefined : denialReason("run")}
