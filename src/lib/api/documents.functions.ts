@@ -94,34 +94,6 @@ export const getDocument = createServerFn({ method: "GET" })
       permissions: permsRes.data ?? [],
     };
   });
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      workspaceId: z.string().uuid(),
-      title: z.string().min(1).max(500),
-      folder: z.string().max(200).default("My Documents"),
-      tags: z.array(z.string().max(50)).max(50).default([]),
-      storageRef: storageRefSchema.optional(),
-      mimeType: z.string().max(200).optional(),
-      sizeBytes: z.number().int().nonnegative().default(0),
-    }).parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const res = await context.supabase.rpc("create_document", {
-      _workspace_id: data.workspaceId,
-      _title: data.title,
-      _folder: data.folder,
-      _tags: data.tags,
-      _storage_ref: data.storageRef ?? undefined,
-      _mime_type: data.mimeType ?? undefined,
-      _size_bytes: data.sizeBytes,
-      _idempotency_key: data.idempotencyKey,
-      _correlation_id: data.correlationId ?? undefined,
-    });
-    return ensureOk(res, "DOCUMENT_NOT_FOUND");
-  });
-
 export const updateDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
