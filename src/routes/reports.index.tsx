@@ -32,6 +32,9 @@ import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functions";
+import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
+import { toast } from "sonner";
+import { FileText, Table2 } from "lucide-react";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
@@ -237,6 +240,28 @@ function ReportsPage() {
                 />
                 <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
+                </button>
+                <button
+                  disabled={!report}
+                  onClick={() => {
+                    if (!report) return;
+                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    toast.success(t("rp.export.done"));
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  <Table2 className="h-4 w-4" /> {t("rp.export.csv")}
+                </button>
+                <button
+                  disabled={!report}
+                  onClick={() => {
+                    if (!report) return;
+                    const ok = exportReportPdf(report, { ...range, title: t("rp.title"), compare, prev });
+                    if (!ok) toast.error(t("rp.export.blocked"));
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  <FileText className="h-4 w-4" /> {t("rp.export.pdf")}
                 </button>
                 <Link
                   to="/reports/$type"
