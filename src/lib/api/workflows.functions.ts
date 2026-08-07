@@ -427,7 +427,66 @@ export const listWorkflowPermissionAudit = createServerFn({ method: "GET" })
       actor_name: string | null;
       target_user_id: string | null;
       target_name: string | null;
+      target_role: string | null;
       before_state: Record<string, boolean | string | null> | null;
       after_state: Record<string, boolean | string | null> | null;
     }[];
+  });
+
+// Batch 1F-PERM-ROLE — role/group based permissions.
+export const listWorkflowRolePermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("list_workflow_role_permissions", {
+      _workspace_id: data.workspaceId,
+    });
+    if (error) mapPgError(error);
+    return (rows ?? []) as unknown as {
+      role: string;
+      can_edit: boolean;
+      can_publish: boolean;
+      can_run: boolean;
+      member_count: number;
+      is_configured: boolean;
+      updated_at: string | null;
+    }[];
+  });
+
+const TENANT_ROLE = z.enum(["tenant_owner", "tenant_admin", "manager", "member", "guest"]);
+
+export const setWorkflowRolePermission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workspaceId: z.string().uuid(),
+      role: TENANT_ROLE,
+      canEdit: z.boolean(),
+      canPublish: z.boolean(),
+      canRun: z.boolean(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("set_workflow_role_permission", {
+      _workspace_id: data.workspaceId,
+      _role: data.role,
+      _can_edit: data.canEdit,
+      _can_publish: data.canPublish,
+      _can_run: data.canRun,
+    });
+    return { id: ensureOk(res, "WORKSPACE_ACCESS_DENIED") };
+  });
+
+export const resetWorkflowRolePermission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ workspaceId: z.string().uuid(), role: TENANT_ROLE }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: ok, error } = await context.supabase.rpc("reset_workflow_role_permission", {
+      _workspace_id: data.workspaceId,
+      _role: data.role,
+    });
+    if (error) mapPgError(error);
+    return { reset: !!ok };
   });
