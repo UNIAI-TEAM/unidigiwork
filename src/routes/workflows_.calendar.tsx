@@ -508,7 +508,18 @@ function WorkflowCalendarPage() {
           )}
         </main>
       </div>
-      {runId && <RunDetailModal runId={runId} tz={tz} onClose={() => setRunId(null)} />}
+      {runId && (
+        <RunDetailModal
+          runId={runId}
+          tz={tz}
+          onClose={() => setRunId(null)}
+          onRerun={(dayIso) => {
+            if (dayIso < from) setFrom(dayIso);
+            if (dayIso > to) setTo(dayIso);
+            setSelected(dayIso);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -525,23 +536,21 @@ const STEP_META: Record<string, { label: string; chip: string; dot: string }> = 
   skipped: { label: "Bỏ qua", chip: "bg-amber-500/15 text-amber-500", dot: "bg-amber-500" },
 };
 
-function fmt(ts: string | null | undefined, tz?: string) {
+function fmt(ts: string | null | undefined, tz: string) {
   if (!ts) return "—";
-  try {
-    return new Date(ts).toLocaleString("vi-VN", tz ? { timeZone: tz } : undefined);
-  } catch {
-    return new Date(ts).toLocaleString("vi-VN");
-  }
+  return dateTimeTz(ts, tz);
 }
 
 function RunDetailModal({
   runId,
   tz,
   onClose,
+  onRerun,
 }: {
   runId: string;
   tz: string;
   onClose: () => void;
+  onRerun?: (dayIso: string) => void;
 }) {
   const qc = useQueryClient();
   const q = useQuery({
@@ -577,7 +586,11 @@ function RunDetailModal({
         },
       }),
     onSuccess: () => {
-      toast.success("Đã chạy lại quy trình");
+      const now = new Date();
+      onRerun?.(isoTz(now, tz));
+      toast.success(`Đã chạy lại quy trình lúc ${dateTimeTz(now.toISOString(), tz)}`, {
+        description: `Múi giờ ${tzOffsetLabel(tz)}`,
+      });
       refresh();
       onClose();
     },
