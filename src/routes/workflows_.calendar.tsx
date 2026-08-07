@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarRange, Loader2 } from "lucide-react";
+import { ArrowLeft, CalendarRange, Check, ChevronDown, Loader2, X } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listWorkflows, listWorkflowRuns } from "@/lib/api/workflows.functions";
@@ -71,6 +71,9 @@ function WorkflowCalendarPage() {
   const [from, setFrom] = useState(iso(addDays(today, -29)));
   const [to, setTo] = useState(iso(today));
   const [selected, setSelected] = useState<string | null>(null);
+  const [wfIds, setWfIds] = useState<string[]>([]); // rỗng = tất cả quy trình
+  const [wfMenu, setWfMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const workspaces = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const [wsId, setWsId] = useState<string | undefined>(undefined);
@@ -96,15 +99,32 @@ function WorkflowCalendarPage() {
       (await listWorkflowRuns({ data: { workflowIds: ids, limit: 500 } })) as unknown as Run[],
   });
 
+  // Đổi workspace thì bỏ lọc quy trình cũ.
+  useEffect(() => {
+    setWfIds([]);
+    setSelected(null);
+  }, [activeWs]);
+
+  useEffect(() => {
+    if (!wfMenu) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setWfMenu(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [wfMenu]);
+
   const runsByDay = useMemo(() => {
     const m = new Map<string, Run[]>();
+    const allow = wfIds.length ? new Set(wfIds) : null;
     for (const r of runsQuery.data ?? []) {
+      if (allow && !allow.has(r.workflow_id)) continue;
       const key = iso(new Date(r.started_at ?? r.created_at));
       if (key < from || key > to) continue;
       m.set(key, [...(m.get(key) ?? []), r]);
     }
     return m;
-  }, [runsQuery.data, from, to]);
+  }, [runsQuery.data, from, to, wfIds]);
 
   const days = useMemo(() => {
     const start = startOfWeek(new Date(`${from}T00:00:00`));
