@@ -1679,6 +1679,60 @@ export type Database = {
           },
         ]
       }
+      task_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          task_id: string
+          tenant_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          task_id: string
+          tenant_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          task_id?: string
+          tenant_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_attachments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_comments: {
         Row: {
           author_id: string
@@ -1726,6 +1780,48 @@ export type Database = {
           },
           {
             foreignKeyName: "task_comments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_due_reminders: {
+        Row: {
+          due_at: string
+          id: string
+          kind: string
+          sent_at: string
+          task_id: string
+          tenant_id: string | null
+        }
+        Insert: {
+          due_at: string
+          id?: string
+          kind: string
+          sent_at?: string
+          task_id: string
+          tenant_id?: string | null
+        }
+        Update: {
+          due_at?: string
+          id?: string
+          kind?: string
+          sent_at?: string
+          task_id?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_due_reminders_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_due_reminders_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2944,6 +3040,41 @@ export type Database = {
         }
         Returns: Json
       }
+      create_subtask: {
+        Args: {
+          _correlation_id?: string
+          _due_at?: string
+          _idempotency_key?: string
+          _parent_task_id: string
+          _priority?: Database["public"]["Enums"]["task_priority"]
+          _title: string
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_task: {
         Args: {
           _assignee_id?: string
@@ -3124,6 +3255,7 @@ export type Database = {
         }
         Returns: Json
       }
+      dispatch_task_due_reminders: { Args: never; Returns: number }
       end_meeting: {
         Args: {
           _correlation_id?: string
