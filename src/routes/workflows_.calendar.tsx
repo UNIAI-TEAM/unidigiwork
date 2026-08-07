@@ -508,7 +508,18 @@ function WorkflowCalendarPage() {
           )}
         </main>
       </div>
-      {runId && <RunDetailModal runId={runId} tz={tz} onClose={() => setRunId(null)} />}
+      {runId && (
+        <RunDetailModal
+          runId={runId}
+          tz={tz}
+          onClose={() => setRunId(null)}
+          onRerun={(dayIso) => {
+            if (dayIso < from) setFrom(dayIso);
+            if (dayIso > to) setTo(dayIso);
+            setSelected(dayIso);
+          }}
+        />
+      )}
     </div>
   );
 }
