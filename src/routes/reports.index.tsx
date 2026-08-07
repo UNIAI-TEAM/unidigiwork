@@ -759,7 +759,7 @@ function LineChart({ data }: { data: ReportOverview["activity"] }) {
   const max = step * 5;
   const gridValues = [0, 1, 2, 3, 4, 5].map((i) => i * step);
   const labelEvery = Math.ceil(days.length / 7);
-  const x = (i: number) => (i / (days.length - 1)) * (W - 40) + 30;
+  const x = (i: number) => (days.length > 1 ? (i / (days.length - 1)) * (W - 40) + 30 : 30);
   const y = (v: number) => H - 30 - (v / max) * (H - 50);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-44 w-full">
@@ -794,7 +794,7 @@ function LineChart({ data }: { data: ReportOverview["activity"] }) {
       {days.map((d, i) => (
         i % labelEvery !== 0 ? null : (
         <text
-          key={d}
+          key={i}
           x={x(i)}
           y={H - 8}
           fontSize="9"
