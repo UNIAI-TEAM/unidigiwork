@@ -597,7 +597,9 @@ function DryRunPanel({ workflowId, steps, dirty, canRun }: { workflowId: string;
           </select>
         </div>
 
-        <button onClick={() => sim.mutate()} disabled={sim.isPending}
+        <button onClick={() => { if (canRun) sim.mutate(); else guardWorkflowAction(null, "run"); }}
+          disabled={sim.isPending || !canRun}
+          title={canRun ? undefined : denialReason("run")}
           className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {sim.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />} Chạy thử
         </button>
