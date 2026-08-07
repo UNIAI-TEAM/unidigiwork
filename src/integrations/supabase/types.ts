@@ -2596,6 +2596,67 @@ export type Database = {
           },
         ]
       }
+      workspace_invitation_defaults: {
+        Row: {
+          can_edit: boolean
+          can_publish: boolean
+          can_run: boolean
+          created_at: string
+          created_by: string | null
+          invitation_id: string
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+          workspace_role: string
+        }
+        Insert: {
+          can_edit?: boolean
+          can_publish?: boolean
+          can_run?: boolean
+          created_at?: string
+          created_by?: string | null
+          invitation_id: string
+          tenant_id: string
+          updated_at?: string
+          workspace_id: string
+          workspace_role?: string
+        }
+        Update: {
+          can_edit?: boolean
+          can_publish?: boolean
+          can_run?: boolean
+          created_at?: string
+          created_by?: string | null
+          invitation_id?: string
+          tenant_id?: string
+          updated_at?: string
+          workspace_id?: string
+          workspace_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitation_defaults_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: true
+            referencedRelation: "tenant_invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_invitation_defaults_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_invitation_defaults_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           created_at: string
