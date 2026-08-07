@@ -195,7 +195,6 @@ function DocumentsPage() {
 
   const updateSelected = async (patch: Partial<Pick<Doc, "title" | "content">>) => {
     if (!selected) return;
-    if (!selected) return;
     const next = { ...selected, ...patch };
     setSelected(next);
     setDocs((d) => d.map((x) => (x.id === next.id ? next : x)));
@@ -213,6 +212,44 @@ function DocumentsPage() {
     setDocs((d) => d.filter((x) => x.id !== id));
     if (selected?.id === id) setSelected(null);
     toast.success("Đã xoá");
+  };
+
+  // Tải tệp thật lên storage rồi tạo tài liệu qua server function (có RLS + quota).
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    if (!currentWs) {
+      toast.error("Chọn workspace trước khi tải tệp");
+      return;
+    }
+    setUploading(true);
+    const created: Doc[] = [];
+    for (const file of Array.from(files)) {
+      try {
+        const up = await uploadDocumentFile({ workspaceId: currentWs.id, file });
+        await createDocument({
+          data: {
+            workspaceId: currentWs.id,
+            title: file.name,
+            folder: newFolder.trim() || "My Documents",
+            tags: [],
+            storageRef: up.storageRef,
+            mimeType: up.mimeType,
+            sizeBytes: up.sizeBytes,
+            idempotencyKey: crypto.randomUUID(),
+          },
+        });
+      } catch (e) {
+        toast.error(`${file.name}: ${(e as Error).message}`);
+      }
+    }
+    const { data: refreshed } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("workspace_id", currentWs.id)
+      .order("updated_at", { ascending: false });
+    if (refreshed) setDocs(refreshed as Doc[]);
+    setUploading(false);
+    if (created.length === 0) toast.success("Đã tải tệp lên tài liệu");
   };
 
   const addMember = async () => {
