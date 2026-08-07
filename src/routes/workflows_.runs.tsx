@@ -428,10 +428,105 @@ type StepRow = {
   step_key: string;
   status: string;
   error: string | null;
+  input?: unknown;
+  output?: unknown;
   started_at: string | null;
   ended_at: string | null;
   created_at: string;
 };
+
+function stepDuration(s: StepRow) {
+  const start = s.started_at ?? s.created_at;
+  if (!start || !s.ended_at) return "—";
+  const ms = new Date(s.ended_at).getTime() - new Date(start).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "—";
+  if (ms < 1000) return `${ms} ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)} s`;
+  const m = Math.floor(ms / 60000);
+  const sec = Math.round((ms % 60000) / 1000);
+  return `${m}m ${sec}s`;
+}
+
+function isEmptyPayload(v: unknown) {
+  if (v === null || v === undefined) return true;
+  if (typeof v === "object" && !Array.isArray(v)) return Object.keys(v as object).length === 0;
+  if (Array.isArray(v)) return v.length === 0;
+  return false;
+}
+
+function JsonBlock({ label, value }: { label: string; value: unknown }) {
+  const text = isEmptyPayload(value) ? "" : JSON.stringify(value, null, 2);
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        {text && (
+          <button
+            onClick={() => {
+              void navigator.clipboard.writeText(text);
+              toast.success(`Đã sao chép ${label.toLowerCase()}`);
+            }}
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-surface"
+          >
+            <Copy className="h-3 w-3" /> Sao chép
+          </button>
+        )}
+      </div>
+      <pre className="max-h-52 overflow-auto rounded-lg bg-surface p-2 font-mono text-[11px] leading-relaxed">
+        {text || "—"}
+      </pre>
+    </div>
+  );
+}
+
+function StepLogItem({ step, tz }: { step: StepRow; tz?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className="rounded-lg border border-border text-sm">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start justify-between gap-2 p-3 text-left hover:bg-surface"
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <ChevronRight
+              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
+            />
+            <span className="truncate font-medium">{step.step_key}</span>
+          </div>
+          <div className="mt-1 pl-6 text-xs text-muted-foreground">
+            {fmt(step.started_at ?? step.created_at, tz)} → {fmt(step.ended_at, tz)}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className="text-xs text-muted-foreground">{step.status}</span>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" /> {stepDuration(step)}
+          </span>
+        </div>
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-border p-3">
+          <JsonBlock label="Input" value={step.input} />
+          <JsonBlock label="Output" value={step.output} />
+          {step.error && (
+            <div>
+              <span className="text-xs font-medium text-destructive">Lỗi</span>
+              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-destructive/10 p-2 font-mono text-[11px] text-destructive">
+                {step.error}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+      {!open && step.error && (
+        <p className="mx-3 mb-3 truncate rounded bg-destructive/10 p-2 text-xs text-destructive">
+          {step.error}
+        </p>
+      )}
+    </li>
+  );
+}
 
 function RunDetailModal({
   runId,
@@ -539,23 +634,7 @@ function RunDetailModal({
               ) : (
                 <ol className="space-y-2">
                   {steps.map((s) => (
-                    <li
-                      key={s.id}
-                      className="rounded-lg border border-border p-3 text-sm"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium">{s.step_key}</span>
-                        <span className="text-xs text-muted-foreground">{s.status}</span>
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {fmt(s.started_at ?? s.created_at, tz)} → {fmt(s.ended_at, tz)}
-                      </div>
-                      {s.error && (
-                        <p className="mt-2 rounded bg-destructive/10 p-2 text-xs text-destructive">
-                          {s.error}
-                        </p>
-                      )}
-                    </li>
+                    <StepLogItem key={s.id} step={s} tz={tz} />
                   ))}
                 </ol>
               )}
