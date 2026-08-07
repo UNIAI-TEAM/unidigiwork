@@ -71,8 +71,8 @@ function ReportDrilldownPage() {
   const fmt = (v: string | null) =>
     v ? new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : "—";
 
-  const setSearch = (patch: Record<string, unknown>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch }) });
+  const setSearch = (patch: { status?: undefined; workspaceId?: undefined }) =>
+    navigate({ search: { days, status, workspaceId, ...patch } });
 
   return (
     <div className="flex min-h-screen bg-bg text-foreground">
