@@ -9,11 +9,18 @@ import {
   CalendarRange,
   Check,
   ChevronDown,
+  Download,
+  FileText,
   Loader2,
   RotateCw,
   X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import {
+  exportAnomaliesCsv,
+  exportAnomaliesPdf,
+  type AnomalyRow,
+} from "@/lib/timestamp-anomaly-export";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
   cancelWorkflowRun,
@@ -166,6 +173,22 @@ function timestampIssues(r: {
     out.push("Thời lượng bất thường (>30 ngày)");
   return out;
 }
+
+/** Timestamp kỳ vọng sau khi chuẩn hoá (dùng cho báo cáo đối soát). */
+function expectedTimestamps(r: {
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+}) {
+  const now = new Date();
+  const clampFuture = (d: Date) => (d.getTime() > now.getTime() ? now : d);
+  const started = clampFuture(new Date(r.started_at ?? r.created_at));
+  const createdD = new Date(r.created_at);
+  const startFixed = started < createdD ? createdD : started;
+  let endFixed: Date | null = r.ended_at ? clampFuture(new Date(r.ended_at)) : null;
+  if (endFixed && endFixed < startFixed) endFixed = startFixed;
+  return { started: startFixed.toISOString(), ended: endFixed ? endFixed.toISOString() : null };
+}
 function tzOffsetLabel(tz: string) {
   try {
     const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
@@ -292,6 +315,29 @@ function WorkflowCalendarPage() {
     }
     return out;
   }, [runsByDay]);
+
+  const anomalyRows = (): AnomalyRow[] =>
+    anomalies.map(({ day, run, issues }) => {
+      const exp = expectedTimestamps(run);
+      return {
+        runId: run.id,
+        workflow: nameById.get(run.workflow_id) ?? run.workflow_id,
+        status: STATUS_META[run.status]?.label ?? run.status,
+        day,
+        originalStarted: run.started_at ? dateTimeTz(run.started_at, tz) : "—",
+        originalEnded: run.ended_at ? dateTimeTz(run.ended_at, tz) : "—",
+        originalCreated: dateTimeTz(run.created_at, tz),
+        expectedStarted: dateTimeTz(exp.started, tz),
+        expectedEnded: exp.ended ? dateTimeTz(exp.ended, tz) : "—",
+        reasons: issues.join("; "),
+      };
+    });
+  const exportMeta = () => ({
+    title: "Báo cáo sự kiện lệch thời gian · Lịch chạy quy trình",
+    from,
+    to,
+    tzLabel: tzOffsetLabel(tz),
+  });
 
   const preset = (n: number) => {
     setFrom(isoTz(addDays(new Date(), -(n - 1)), tz));
@@ -446,10 +492,34 @@ function WorkflowCalendarPage() {
             <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
               {anomalies.length > 0 && (
                 <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm lg:col-span-2">
-                  <div className="flex items-center gap-2 font-medium text-amber-600">
-                    <AlertTriangle className="h-4 w-4" />
-                    {anomalies.length} lần chạy có thời gian bất thường (dữ liệu cũ hoặc lệch múi
-                    giờ)
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 font-medium text-amber-600">
+                      <AlertTriangle className="h-4 w-4" />
+                      {anomalies.length} lần chạy có thời gian bất thường (dữ liệu cũ hoặc lệch múi
+                      giờ)
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          exportAnomaliesCsv(anomalyRows(), exportMeta());
+                          toast.success("Đã tải báo cáo CSV");
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-muted/40"
+                      >
+                        <Download className="h-3.5 w-3.5" /> Xuất CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const ok = exportAnomaliesPdf(anomalyRows(), exportMeta());
+                          if (!ok) toast.error("Trình duyệt đã chặn cửa sổ in. Hãy cho phép pop-up.");
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-muted/40"
+                      >
+                        <FileText className="h-3.5 w-3.5" /> Xuất PDF
+                      </button>
+                    </div>
                   </div>
                   <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                     {anomalies.slice(0, 5).map(({ day, run, issues }) => (
