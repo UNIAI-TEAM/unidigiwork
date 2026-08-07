@@ -197,6 +197,110 @@ function RolePermissions({ workspaceId, canManage }: { workspaceId: string; canM
 }
 
 function AuditTimeline({ workspaceId }: { workspaceId: string }) {
+  return <AuditTimelineInner workspaceId={workspaceId} />;
+}
+
+type DenialRow = {
+  id: string;
+  occurred_at: string;
+  action: "edit" | "publish" | "run";
+  user_id: string;
+  user_name: string | null;
+  workflow_id: string | null;
+  workflow_name: string | null;
+  error_code: string | null;
+  source: string;
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  edit: "Chỉnh sửa",
+  publish: "Phát hành",
+  run: "Chạy",
+};
+
+function DenialLog({ workspaceId, canManage }: { workspaceId: string; canManage: boolean }) {
+  const [action, setAction] = useState<"" | "edit" | "publish" | "run">("");
+  const q = useQuery({
+    queryKey: ["workflow-denials", workspaceId, action],
+    enabled: canManage,
+    queryFn: async () =>
+      (await listWorkflowDenials({
+        data: { workspaceId, action: action || null, limit: 100 },
+      })) as unknown as DenialRow[],
+  });
+  const rows = q.data ?? [];
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <ShieldAlert className="h-4 w-4 text-destructive" />
+        <h2 className="text-sm font-semibold">Nhật ký từ chối quyền</h2>
+        <select
+          value={action}
+          onChange={(e) => setAction(e.target.value as typeof action)}
+          disabled={!canManage}
+          aria-label="Lọc theo thao tác"
+          className="ml-auto h-8 rounded-lg border border-border bg-surface-2 px-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+        >
+          <option value="">Tất cả thao tác</option>
+          <option value="edit">Chỉnh sửa</option>
+          <option value="publish">Phát hành</option>
+          <option value="run">Chạy</option>
+        </select>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Ghi nhận ai bị chặn, thời điểm, thao tác và quy trình liên quan để quản trị viên tra cứu.
+      </p>
+
+      {!canManage ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Chỉ chủ không gian làm việc hoặc quản trị tổ chức mới xem được nhật ký này.
+        </p>
+      ) : q.isLoading ? (
+        <p className="mt-4 text-sm text-muted-foreground">Đang tải…</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">Chưa có lượt từ chối quyền nào được ghi nhận.</p>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <th className="pb-2 font-medium">Thời gian</th>
+                <th className="pb-2 font-medium">Người dùng</th>
+                <th className="pb-2 font-medium">Thao tác</th>
+                <th className="pb-2 font-medium">Quy trình</th>
+                <th className="pb-2 text-right font-medium">Nguồn</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-b border-border/60 last:border-0">
+                  <td className="py-3 pr-3 text-xs text-muted-foreground">
+                    {new Date(r.occurred_at).toLocaleString("vi-VN")}
+                  </td>
+                  <td className="py-3 pr-3 font-medium">{r.user_name || r.user_id.slice(0, 8)}</td>
+                  <td className="py-3 pr-3">
+                    <span className="inline-flex rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                      {ACTION_LABELS[r.action] ?? r.action}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-3 text-muted-foreground">
+                    {r.workflow_name || (r.workflow_id ? r.workflow_id.slice(0, 8) : "—")}
+                  </td>
+                  <td className="py-3 text-right text-xs text-muted-foreground">
+                    {r.source === "client" ? "Giao diện" : "Máy chủ"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AuditTimelineInner({ workspaceId }: { workspaceId: string }) {
   const q = useQuery({
     queryKey: ["workflow-permission-audit", workspaceId],
     queryFn: async () =>
@@ -414,6 +518,7 @@ function WorkflowPermissionsPage() {
             </div>
 
             {activeWs && <RolePermissions workspaceId={activeWs} canManage={canManage} />}
+            {activeWs && <DenialLog workspaceId={activeWs} canManage={canManage} />}
             {activeWs && <AuditTimeline workspaceId={activeWs} />}
           </div>
         </div>
