@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
@@ -16,6 +16,7 @@ import {
   Loader2,
   Rocket,
   Workflow as WorkflowIcon,
+  CalendarRange,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -224,6 +225,12 @@ function WorkflowsPage() {
                 >
                   <Plus className="h-4 w-4" /> {t("wf.new")}
                 </button>
+                <Link
+                  to="/workflows/calendar"
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface"
+                >
+                  <CalendarRange className="h-4 w-4" /> Lịch chạy
+                </Link>
               </div>
             </div>
 

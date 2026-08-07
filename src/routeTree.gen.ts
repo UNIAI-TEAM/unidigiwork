@@ -28,6 +28,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calendar'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
@@ -162,6 +163,11 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ReportsRoute,
+} as any)
+const WorkflowsCalendarRoute = WorkflowsCalendarRouteImport.update({
+  id: '/workflows_/calendar',
+  path: '/workflows/calendar',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowsIdRoute = WorkflowsIdRouteImport.update({
   id: '/$id',
@@ -414,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
+  '/workflows/calendar': typeof WorkflowsCalendarRoute
   '/reports/': typeof ReportsIndexRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
@@ -472,6 +479,7 @@ export interface FileRoutesByTo {
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
+  '/workflows/calendar': typeof WorkflowsCalendarRoute
   '/reports': typeof ReportsIndexRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
@@ -534,6 +542,7 @@ export interface FileRoutesById {
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
+  '/workflows_/calendar': typeof WorkflowsCalendarRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/quota': typeof AuthenticatedAdminQuotaRoute
@@ -596,6 +605,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
+    | '/workflows/calendar'
     | '/reports/'
     | '/admin/leads'
     | '/admin/quota'
@@ -654,6 +664,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
+    | '/workflows/calendar'
     | '/reports'
     | '/admin/leads'
     | '/admin/quota'
@@ -715,6 +726,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
+    | '/workflows_/calendar'
     | '/reports/'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/quota'
@@ -759,6 +771,7 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
+  WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
@@ -899,6 +912,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/'
       preLoaderRoute: typeof ReportsIndexRouteImport
       parentRoute: typeof ReportsRoute
+    }
+    '/workflows_/calendar': {
+      id: '/workflows_/calendar'
+      path: '/workflows/calendar'
+      fullPath: '/workflows/calendar'
+      preLoaderRoute: typeof WorkflowsCalendarRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/workflows/$id': {
       id: '/workflows/$id'
@@ -1398,6 +1418,7 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
+  WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,
@@ -1407,3 +1428,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
