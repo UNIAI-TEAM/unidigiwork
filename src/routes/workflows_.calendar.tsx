@@ -292,6 +292,13 @@ function WorkflowCalendarPage() {
   const activeWs = wsId ?? workspaces.data?.[0]?.id;
   // Múi giờ chuẩn hoá theo cấu hình workspace đang chọn.
   const [tzMode, setTzMode] = useState<"workspace" | "browser">("workspace");
+  const [autoRepairRetry, setAutoRepairRetry] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem("wf.autoRepairRetry") !== "0";
+  });
+  useEffect(() => {
+    window.localStorage.setItem("wf.autoRepairRetry", autoRepairRetry ? "1" : "0");
+  }, [autoRepairRetry]);
   const workspaceTz =
     (workspaces.data ?? []).find((w) => w.id === activeWs)?.timezone?.trim() || browserTz();
   const tz = tzMode === "browser" ? browserTz() : workspaceTz;
@@ -467,6 +474,15 @@ function WorkflowCalendarPage() {
                   </button>
                 </div>
               </div>
+              <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={autoRepairRetry}
+                  onChange={(e) => setAutoRepairRetry(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-border accent-[hsl(var(--primary))]"
+                />
+                Khi chạy lại lần chạy có cảnh báo thời gian, tự chuẩn hoá theo múi giờ workspace
+              </label>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {workspaces.data && workspaces.data.length > 0 && (
