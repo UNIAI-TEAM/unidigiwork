@@ -11,10 +11,22 @@ import {
   MoreHorizontal,
   Share2,
   Star,
+  Upload,
   Users,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
-import { getDocument, updateDocument } from "@/lib/api/documents.functions";
+import {
+  getDocument,
+  updateDocument,
+  uploadDocumentVersion,
+} from "@/lib/api/documents.functions";
+import {
+  fileNameOf,
+  formatBytes,
+  getDocumentFileUrl,
+  isStorageRef,
+  uploadDocumentFile,
+} from "@/lib/documents-storage";
 
 export const Route = createFileRoute("/_authenticated/documents/$id")({
   head: ({ params }) => ({
@@ -75,6 +87,46 @@ function DocumentDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [uploading, setUploading] = useState(false);
+
+  const openFile = async (ref: unknown, download = false) => {
+    try {
+      const url = await getDocumentFileUrl(ref, { download });
+      window.open(url, "_blank", "noopener");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  // Tải phiên bản mới: upload lên storage rồi ghi nhận version qua server fn.
+  const uploadVersion = async (file: File | undefined) => {
+    if (!file || !doc) return;
+    setUploading(true);
+    try {
+      const up = await uploadDocumentFile({
+        workspaceId: doc.workspace_id,
+        documentKey: doc.id,
+        file,
+      });
+      await uploadDocumentVersion({
+        data: {
+          documentId: doc.id,
+          storageRef: up.storageRef,
+          mimeType: up.mimeType,
+          sizeBytes: up.sizeBytes,
+          comment: file.name,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["document", id] });
+      toast.success("Đã tải lên phiên bản mới");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="documents" open={open} onClose={() => setOpen(false)} />
@@ -122,7 +174,35 @@ function DocumentDetailPage() {
                     <div className="flex items-center gap-1">
                       <IconBtn icon={Star} />
                       <IconBtn icon={Share2} />
-                      <IconBtn icon={Download} />
+                      <button
+                        type="button"
+                        title="Tải tệp xuống"
+                        disabled={!isStorageRef(doc.storage_ref)}
+                        onClick={() => void openFile(doc.storage_ref, true)}
+                        className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+                      <label
+                        title="Tải phiên bản mới"
+                        className={`flex cursor-pointer items-center rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground ${uploading ? "pointer-events-none opacity-40" : ""}`}
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+                        <input
+                          type="file"
+                          className="hidden"
+                          aria-label="Tải phiên bản mới"
+                          disabled={uploading}
+                          onChange={(e) => {
+                            void uploadVersion(e.target.files?.[0]);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
                       <IconBtn icon={MoreHorizontal} />
                     </div>
                   </div>
@@ -152,6 +232,18 @@ function DocumentDetailPage() {
                     <span>{docQuery.data?.permissions.length ?? 0} chia sẻ</span>
                     <span>·</span>
                     <span>Phiên bản {doc.current_version}</span>
+                    {isStorageRef(doc.storage_ref) ? (
+                      <>
+                        <span>·</span>
+                        <button
+                          type="button"
+                          onClick={() => void openFile(doc.storage_ref)}
+                          className="underline decoration-dotted hover:text-foreground"
+                        >
+                          {fileNameOf(doc.storage_ref)} ({formatBytes(doc.size_bytes)})
+                        </button>
+                      </>
+                    ) : null}
                     {doc.tags?.length ? (
                       <span className="flex flex-wrap gap-1">
                         {doc.tags.map((tg) => (
@@ -179,8 +271,25 @@ function DocumentDetailPage() {
               <ul className="space-y-2 text-sm">
                 {docQuery.data.versions.map((v) => (
                   <li key={v.id} className="rounded-lg border border-border bg-surface p-2.5">
-                    <div className="text-xs font-medium">v{v.version}</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium">v{v.version}</span>
+                      {isStorageRef(v.storage_ref) ? (
+                        <button
+                          type="button"
+                          title="Tải xuống"
+                          onClick={() => void openFile(v.storage_ref, true)}
+                          className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                    </div>
                     <div className="text-[11px] text-muted-foreground">{fmtTime(v.created_at)}</div>
+                    {v.size_bytes ? (
+                      <div className="text-[11px] text-muted-foreground">
+                        {formatBytes(v.size_bytes)}
+                      </div>
+                    ) : null}
                     {v.comment ? (
                       <div className="mt-1 text-[11px] text-muted-foreground">{v.comment}</div>
                     ) : null}
