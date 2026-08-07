@@ -13,6 +13,7 @@ import {
   FileText,
   Loader2,
   RotateCw,
+  Wrench,
   X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
@@ -27,6 +28,7 @@ import {
   getWorkflowRun,
   listWorkflows,
   listWorkflowRuns,
+  repairWorkflowRunTimestamps,
   startWorkflowRun,
 } from "@/lib/api/workflows.functions";
 
@@ -337,6 +339,20 @@ function WorkflowCalendarPage() {
     from,
     to,
     tzLabel: tzOffsetLabel(tz),
+  });
+
+  const repairMutation = useMutation({
+    mutationFn: (runIds: string[]) => repairWorkflowRunTimestamps({ data: { runIds } }),
+    onSuccess: (res) => {
+      toast.success(
+        res.fixed > 0
+          ? `Đã chuẩn hoá ${res.fixed} lần chạy theo múi giờ ${tzOffsetLabel(tz)}`
+          : "Không có bản ghi nào cần chuẩn hoá",
+      );
+      qc.invalidateQueries({ queryKey: ["workflow-runs"] });
+      qc.invalidateQueries({ queryKey: ["workflow-run"] });
+    },
+    onError: () => toast.error("Không thể chuẩn hoá thời gian. Vui lòng thử lại."),
   });
 
   const preset = (n: number) => {
