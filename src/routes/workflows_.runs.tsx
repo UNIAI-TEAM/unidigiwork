@@ -25,6 +25,7 @@ import {
   getWorkflowRun,
   listWorkflows,
   listWorkflowRuns,
+  retryWorkflowRun,
   startWorkflowRun,
 } from "@/lib/api/workflows.functions";
 
@@ -563,14 +564,19 @@ function RunDetailModal({
   const wfTitle = detail.data?.workflow?.name ?? "Quy trình";
 
   const retryM = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (mode: "all" | "failed_step" | "new") => {
       if (!run) throw new Error("Không tìm thấy lần chạy");
-      return await startWorkflowRun({
-        data: {
-          workflowId: run.workflow_id,
-          context: (run.context ?? {}) as Record<string, unknown>,
-          idempotencyKey: crypto.randomUUID(),
-        },
+      if (mode === "new") {
+        return await startWorkflowRun({
+          data: {
+            workflowId: run.workflow_id,
+            context: (run.context ?? {}) as Record<string, unknown>,
+            idempotencyKey: crypto.randomUUID(),
+          },
+        });
+      }
+      return await retryWorkflowRun({
+        data: { runId, mode, idempotencyKey: crypto.randomUUID() },
       });
     },
     onSuccess: () => {
@@ -582,6 +588,8 @@ function RunDetailModal({
   });
 
   const canCancel = run?.status === "pending" || run?.status === "running";
+  const canRetry = run?.status === "failed" || run?.status === "canceled";
+  const hasFailedStep = steps.some((s) => s.status === "failed");
 
   return (
     <div
@@ -657,8 +665,17 @@ function RunDetailModal({
                   <Ban className="h-4 w-4" /> Huỷ run
                 </button>
               )}
+              {canRetry && hasFailedStep && (
+                <button
+                  onClick={() => retryM.mutate("failed_step")}
+                  disabled={retryM.isPending}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface disabled:opacity-50"
+                >
+                  <RotateCw className="h-4 w-4" /> Chạy lại từ bước lỗi
+                </button>
+              )}
               <button
-                onClick={() => retryM.mutate()}
+                onClick={() => retryM.mutate(canRetry ? "all" : "new")}
                 disabled={retryM.isPending}
                 className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
@@ -667,7 +684,7 @@ function RunDetailModal({
                 ) : (
                   <RotateCw className="h-4 w-4" />
                 )}
-                Chạy lại
+                {canRetry ? "Chạy lại toàn bộ" : "Chạy lại"}
               </button>
             </div>
           </div>
