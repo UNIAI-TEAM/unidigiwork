@@ -42,7 +42,9 @@ export const getWorkflowRun = createServerFn({ method: "GET" })
 
     const { data: steps, error: stepErr } = await context.supabase
       .from("workflow_steps")
-      .select("id, step_key, status, error, started_at, ended_at, created_at, updated_at")
+      .select(
+        "id, step_key, status, error, input, output, started_at, ended_at, created_at, updated_at",
+      )
       .eq("run_id", data.runId)
       .order("created_at", { ascending: true });
     if (stepErr) mapPgError(stepErr);
