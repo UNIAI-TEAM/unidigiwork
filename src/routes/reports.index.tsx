@@ -95,9 +95,18 @@ function ReportsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{t("rp.sub")}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
-                  <Calendar className="h-4 w-4" /> 12/05/2025 – 18/05/2025
-                </button>
+                <div className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <select
+                    value={days}
+                    onChange={(e) => setDays(Number(e.target.value))}
+                    className="bg-transparent text-sm outline-none"
+                  >
+                    <option value={7}>7 ngày</option>
+                    <option value={30}>30 ngày</option>
+                    <option value={90}>90 ngày</option>
+                  </select>
+                </div>
                 <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
                 </button>
@@ -135,40 +144,40 @@ function ReportsPage() {
               <Kpi
                 icon={UsersIcon}
                 label={t("rp.kpi.users")}
-                value="1,248"
-                delta="+12.5%"
+                value={isPending ? "…" : nf(k?.users)}
+                delta="—"
                 tone="text-primary"
                 t={t}
               />
               <Kpi
                 icon={Activity}
                 label={t("rp.kpi.active")}
-                value="856"
-                delta="+8.3%"
+                value={isPending ? "…" : nf(k?.active_users)}
+                delta="—"
                 tone="text-emerald-300"
                 t={t}
               />
               <Kpi
                 icon={Folder}
                 label={t("rp.kpi.projects")}
-                value="72"
-                delta="+9.7%"
+                value={isPending ? "…" : nf(k?.workspaces)}
+                delta={delta(k?.ws_cur, k?.ws_prev)}
                 tone="text-sky-300"
                 t={t}
               />
               <Kpi
                 icon={CheckCircle2}
                 label={t("rp.kpi.tasks")}
-                value="1,026"
-                delta="+15.2%"
+                value={isPending ? "…" : nf(st?.done)}
+                delta={delta(k?.tasks_cur, k?.tasks_prev)}
                 tone="text-amber-300"
                 t={t}
               />
               <Kpi
                 icon={Video}
                 label={t("rp.kpi.meetings")}
-                value="48"
-                delta="+6.1%"
+                value={isPending ? "…" : nf(k?.meetings)}
+                delta={delta(k?.meetings_cur, k?.meetings_prev)}
                 tone="text-violet-300"
                 t={t}
               />
