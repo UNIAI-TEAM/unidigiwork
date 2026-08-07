@@ -30,6 +30,9 @@ import {
   useTenantAuditEvents,
 } from "@/features/tenants/hooks";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { setWorkspaceTimezone } from "@/lib/api/workspaces-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/tenant")({
   head: () => ({
@@ -849,6 +852,96 @@ function AuditTab({ tenantId, canManage }: { tenantId: string; canManage: boolea
       <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground">
         Audit log là append-only. Nội dung nhạy cảm (before/after state, token, secret) không được hiển thị theo chính sách redaction.
       </p>
+    </div>
+  );
+}
+// ---------------------------------------------------------------------------
+// Ô chỉnh múi giờ hiển thị của workspace (áp dụng cho Calendar).
+// ---------------------------------------------------------------------------
+const TIMEZONE_OPTIONS = [
+  "Asia/Ho_Chi_Minh",
+  "Asia/Bangkok",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Asia/Seoul",
+  "Asia/Shanghai",
+  "Asia/Kolkata",
+  "Asia/Dubai",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "America/New_York",
+  "America/Chicago",
+  "America/Los_Angeles",
+  "Australia/Sydney",
+  "UTC",
+];
+
+function tzOffset(tz: string) {
+  try {
+    return (
+      new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+        .formatToParts(new Date())
+        .find((p) => p.type === "timeZoneName")?.value ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+function WorkspaceTimezoneCell({
+  workspaceId,
+  value,
+  disabled,
+}: {
+  workspaceId: string;
+  value: string;
+  disabled?: boolean;
+}) {
+  const qc = useQueryClient();
+  const save = useServerFn(setWorkspaceTimezone);
+  const [tz, setTz] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const options = TIMEZONE_OPTIONS.includes(tz) ? TIMEZONE_OPTIONS : [tz, ...TIMEZONE_OPTIONS];
+
+  const onChange = async (next: string) => {
+    const prev = tz;
+    setTz(next);
+    setSaving(true);
+    try {
+      await save({ data: { workspaceId, timezone: next } });
+      toast.success(`Đã đổi múi giờ sang ${next}`);
+      await qc.invalidateQueries({ queryKey: ["tenant-workspaces"] });
+      await qc.invalidateQueries({ queryKey: ["my-workspaces"] });
+    } catch (err) {
+      setTz(prev);
+      const msg = err instanceof Error ? err.message : "";
+      toast.error(
+        msg.includes("PERMISSION_DENIED")
+          ? "Bạn không có quyền đổi múi giờ workspace này."
+          : "Không thể cập nhật múi giờ. Vui lòng thử lại.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <select
+        value={tz}
+        disabled={disabled || saving}
+        onChange={(e) => void onChange(e.target.value)}
+        className="rounded-md border border-border bg-surface-2 px-2 py-1 text-xs disabled:opacity-50"
+        aria-label="Múi giờ hiển thị của workspace"
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o} {tzOffset(o)}
+          </option>
+        ))}
+      </select>
+      {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
     </div>
   );
 }
