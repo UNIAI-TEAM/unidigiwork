@@ -368,16 +368,22 @@ function KpiCard({
   );
 }
 
-type QuickAddPayload = { title: string; tag: string; assigneeSeed: string; assigneeName: string };
+type QuickAddPayload = { title: string; priority: Priority };
 
 function BoardColumn({
   col,
+  count,
   tasks,
+  disabled,
   onAdd,
+  onMove,
 }: {
   col: (typeof columns)[number];
+  count: number;
   tasks: Task[];
+  disabled: boolean;
   onAdd: (p: QuickAddPayload) => void;
+  onMove: (taskId: string, toStatus: Status) => void;
 }) {
   const { t } = useI18n();
   const [adding, setAdding] = useState(false);
@@ -385,19 +391,20 @@ function BoardColumn({
     <div className="flex flex-col gap-3 rounded-xl bg-surface/40 p-3">
       <div className="flex items-center gap-2 px-1">
         <span className={`h-2 w-2 rounded-full ${col.barColor}`} />
-        <span className="text-sm font-semibold">{t(col.key as Key)}</span>
+        <span className="text-sm font-semibold">{t(col.key)}</span>
         <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-muted-foreground">
-          {col.count}
+          {count}
         </span>
         <button
           onClick={() => setAdding(true)}
+          disabled={disabled}
           className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
       </div>
       {tasks.map((tk) => (
-        <TaskCard key={tk.id} task={tk} />
+        <TaskCard key={tk.id} task={tk} onMove={onMove} />
       ))}
       {adding ? (
         <QuickAddForm
@@ -410,6 +417,7 @@ function BoardColumn({
       ) : (
         <button
           onClick={() => setAdding(true)}
+          disabled={disabled}
           className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2"
         >
           <Plus className="h-3.5 w-3.5" /> {t("tasks.add")}
@@ -419,18 +427,7 @@ function BoardColumn({
   );
 }
 
-const assigneeOptions = [
-  { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-  { name: "Minh Anh", seed: "minh-anh" },
-  { name: "Hương Trần", seed: "huong-tran" },
-  { name: "Phương Linh", seed: "phuong-linh" },
-  { name: "Duy Anh", seed: "duy-anh" },
-  { name: "Bảo Ngọc", seed: "bao-ngoc" },
-  { name: "Quang Minh", seed: "quang-minh" },
-  { name: "Hoàng Long", seed: "hoang-long" },
-];
-
-const tagOptions = Object.keys(tagColors);
+const priorityOptions: Priority[] = ["low", "normal", "high", "urgent"];
 
 function QuickAddForm({
   onCancel,
