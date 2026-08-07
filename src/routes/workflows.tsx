@@ -18,6 +18,7 @@ import {
   Workflow as WorkflowIcon,
   CalendarRange,
   History,
+  ShieldCheck,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
