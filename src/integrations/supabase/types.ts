@@ -3185,6 +3185,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      global_search: {
+        Args: {
+          _assignee_id?: string
+          _from?: string
+          _kinds?: string[]
+          _limit?: number
+          _offset?: number
+          _q?: string
+          _sort?: string
+          _to?: string
+          _workspace_id?: string
+        }
+        Returns: {
+          id: string
+          kind: string
+          kind_counts: Json
+          occurred_at: string
+          owner_id: string
+          owner_name: string
+          score: number
+          snippet: string
+          title: string
+          total_count: number
+          workspace_id: string
+          workspace_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3515,6 +3542,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       start_meeting: {
         Args: {
           _correlation_id?: string

@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Search as SearchIcon,
   Video,
@@ -18,14 +20,15 @@ import {
   Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { searchAll, getSearchFacets } from "@/lib/api/search.functions";
 
 type ResultType = "meeting" | "task" | "deadline" | "document" | "person";
 
 type SearchParams = {
   q?: string;
   type?: ResultType | "all";
-  project?: string;
-  assignee?: string;
+  project?: string; // workspace id
+  assignee?: string; // user id
   from?: string; // YYYY-MM-DD
   to?: string; // YYYY-MM-DD
   sort?: "relevance" | "time";
@@ -57,180 +60,29 @@ export const Route = createFileRoute("/_authenticated/search")({
         content:
           "Tìm kiếm toàn workspace với bộ lọc nâng cao: thời gian, dự án, người phụ trách.",
       },
+      { property: "og:title", content: "Tìm kiếm — UNIWORK" },
+      {
+        property: "og:description",
+        content: "Tìm meeting, công việc, hạn chót, tài liệu và nhân sự trong UNIWORK.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SearchPage,
 });
 
-type Person = { name: string; seed: string };
-
-type Result = {
+type SearchItem = {
   id: string;
-  type: ResultType;
+  kind: string;
   title: string;
   snippet: string;
-  meta: string;
-  to: string;
-  search?: Record<string, unknown>;
-  owner?: Person;
-  iso?: string; // YYYY-MM-DD when applicable
-  project?: string;
+  occurredAt: string | null;
+  workspaceId: string | null;
+  workspaceName: string | null;
+  ownerId: string | null;
+  ownerName: string | null;
 };
-
-const DATA: Result[] = [
-  {
-    id: "m1",
-    type: "meeting",
-    title: "Standup Engineering",
-    snippet: "Daily sync 9:00 — cập nhật tiến độ sprint, blockers và mục tiêu trong ngày.",
-    meta: "21/06 · 09:00 · Meet Room A",
-    to: "/meeting",
-    owner: { name: "Minh", seed: "minh" },
-    iso: "2026-06-21",
-    project: "UNIWORK Core",
-  },
-  {
-    id: "m2",
-    type: "meeting",
-    title: "Demo khách hàng VPBank",
-    snippet: "Trình bày phiên bản beta cho khối Khách hàng doanh nghiệp.",
-    meta: "25/06 · 14:00 · Zoom",
-    to: "/meeting",
-    owner: { name: "Phong", seed: "phong" },
-    iso: "2026-06-25",
-    project: "UNIWORK Core",
-  },
-  {
-    id: "m3",
-    type: "meeting",
-    title: "Sprint Review Q3",
-    snippet: "Tổng kết sprint, retro và lên kế hoạch sprint tiếp theo cùng PO.",
-    meta: "26/06 · 15:30",
-    to: "/meeting",
-    owner: { name: "Linh", seed: "linh" },
-    iso: "2026-06-26",
-    project: "Redesign",
-  },
-  {
-    id: "t1",
-    type: "task",
-    title: "Hoàn thiện wireframe Dashboard",
-    snippet: "Cập nhật wireframe cho trang Dashboard mới theo feedback của Linh.",
-    meta: "Dự án Redesign · Ưu tiên cao",
-    to: "/tasks",
-    owner: { name: "Linh", seed: "linh" },
-    iso: "2026-06-22",
-    project: "Redesign",
-  },
-  {
-    id: "t2",
-    type: "task",
-    title: "Viết tài liệu API v2",
-    snippet: "Mô tả endpoint, payload, error code cho UNIWORK Public API v2.",
-    meta: "Dự án Core · Trung bình",
-    to: "/tasks",
-    owner: { name: "An", seed: "an" },
-    iso: "2026-06-24",
-    project: "UNIWORK Core",
-  },
-  {
-    id: "t3",
-    type: "task",
-    title: "Setup CI/CD cho service báo cáo",
-    snippet: "Build pipeline GitHub Actions, deploy lên môi trường staging.",
-    meta: "DevOps · Đang làm",
-    to: "/tasks",
-    owner: { name: "Bảo", seed: "bao" },
-    iso: "2026-06-27",
-    project: "DevOps",
-  },
-  {
-    id: "d1",
-    type: "deadline",
-    title: "Nộp đề xuất Q3",
-    snippet: "Đề xuất ngân sách và roadmap Q3 cho ban giám đốc.",
-    meta: "Hạn 21/06 · 17:00",
-    to: "/calendar",
-    owner: { name: "Hà", seed: "ha" },
-    iso: "2026-06-21",
-    project: "HR",
-  },
-  {
-    id: "d2",
-    type: "deadline",
-    title: "Phát hành phiên bản 1.4",
-    snippet: "Release UNIWORK 1.4 cho khách hàng pilot.",
-    meta: "Hạn 30/06",
-    to: "/calendar",
-    owner: { name: "Phong", seed: "phong" },
-    iso: "2026-06-30",
-    project: "UNIWORK Core",
-  },
-  {
-    id: "doc1",
-    type: "document",
-    title: "Kiến trúc hệ thống UNIWORK",
-    snippet:
-      "Tài liệu mô tả tổng quan kiến trúc microservices, message bus và data layer.",
-    meta: "Kho tri thức · cập nhật 2 giờ trước",
-    to: "/knowledge",
-    owner: { name: "Khang", seed: "khang" },
-    iso: "2026-06-21",
-    project: "UNIWORK Core",
-  },
-  {
-    id: "doc2",
-    type: "document",
-    title: "Quy trình onboarding nhân sự",
-    snippet: "Checklist 30/60/90 ngày dành cho nhân sự mới.",
-    meta: "Tài liệu · HR",
-    to: "/documents",
-    owner: { name: "Hà", seed: "ha" },
-    iso: "2026-06-10",
-    project: "HR",
-  },
-  {
-    id: "doc3",
-    type: "document",
-    title: "Brand guideline UNIWORK 2026",
-    snippet: "Bộ nhận diện thương hiệu mới, màu sắc, typography và iconography.",
-    meta: "Tài liệu · Brand",
-    to: "/documents",
-    owner: { name: "Trang", seed: "trang" },
-    iso: "2026-05-28",
-    project: "Brand",
-  },
-  {
-    id: "p1",
-    type: "person",
-    title: "Nguyễn Mỹ Linh",
-    snippet: "Product Designer · Team Design · linh@uniwork.vn",
-    meta: "Online · TP.HCM",
-    to: "/people",
-    owner: { name: "Linh", seed: "linh" },
-    project: "Redesign",
-  },
-  {
-    id: "p2",
-    type: "person",
-    title: "Trần Quốc Bảo",
-    snippet: "Senior DevOps Engineer · Platform · bao@uniwork.vn",
-    meta: "Đang họp · Hà Nội",
-    to: "/people",
-    owner: { name: "Bảo", seed: "bao" },
-    project: "DevOps",
-  },
-  {
-    id: "p3",
-    type: "person",
-    title: "Phạm Hoàng Phong",
-    snippet: "Engineering Manager · Core · phong@uniwork.vn",
-    meta: "Vắng đến 16:00",
-    to: "/people",
-    owner: { name: "Phong", seed: "phong" },
-    project: "UNIWORK Core",
-  },
-];
 
 const TYPE_META: Record<
   ResultType,
@@ -277,60 +129,19 @@ const TYPE_ORDER: (ResultType | "all")[] = [
   "person",
 ];
 
-const PROJECTS = Array.from(
-  new Set(DATA.map((d) => d.project).filter((p): p is string => Boolean(p))),
-).sort();
-
-const ASSIGNEES = Array.from(
-  new Map(DATA.filter((d) => d.owner).map((d) => [d.owner!.seed, d.owner!])).values(),
-).sort((a, b) => a.name.localeCompare(b.name));
-
-// Precomputed search index: lowercased fields are computed ONCE at module load
-// instead of on every keystroke. Each entry carries a direct reference to the
-// original Result, so filtering/sorting never re-touches the source object's
-// strings. This is what an actual backend index would do — we just do it
-// client-side because the dataset is in memory.
-type IndexedResult = {
-  r: Result;
-  titleLc: string;
-  snippetLc: string;
-  metaLc: string;
-  hay: string;
-};
-const INDEX: IndexedResult[] = DATA.map((r) => {
-  const titleLc = r.title.toLowerCase();
-  const snippetLc = r.snippet.toLowerCase();
-  const metaLc = r.meta.toLowerCase();
-  return { r, titleLc, snippetLc, metaLc, hay: titleLc + " " + snippetLc + " " + metaLc };
-});
-
 const DATE_PRESETS: { id: string; label: string; range: () => [string, string] }[] = [
-  {
-    id: "today",
-    label: "Hôm nay",
-    range: () => {
-      const t = isoToday();
-      return [t, t];
-    },
-  },
-  {
-    id: "7d",
-    label: "7 ngày tới",
-    range: () => [isoToday(), isoAdd(isoToday(), 7)],
-  },
-  {
-    id: "30d",
-    label: "30 ngày tới",
-    range: () => [isoToday(), isoAdd(isoToday(), 30)],
-  },
+  { id: "today", label: "Hôm nay", range: () => [isoToday(), isoToday()] },
+  { id: "7d", label: "7 ngày tới", range: () => [isoToday(), isoAdd(isoToday(), 7)] },
+  { id: "30d", label: "30 ngày tới", range: () => [isoToday(), isoAdd(isoToday(), 30)] },
   {
     id: "month",
     label: "Tháng này",
     range: () => {
       const d = new Date();
-      const first = new Date(d.getFullYear(), d.getMonth(), 1);
-      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      return [toIso(first), toIso(last)];
+      return [
+        toIso(new Date(d.getFullYear(), d.getMonth(), 1)),
+        toIso(new Date(d.getFullYear(), d.getMonth() + 1, 0)),
+      ];
     },
   },
 ];
@@ -350,6 +161,11 @@ function isoAdd(iso: string, days: number) {
   x.setDate(x.getDate() + days);
   return toIso(x);
 }
+function fmtDate(iso: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function highlight(text: string, q: string) {
   if (!q.trim()) return text;
@@ -367,6 +183,49 @@ function highlight(text: string, q: string) {
 function esc(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+function ResultLink({
+  item,
+  children,
+  className,
+}: {
+  item: SearchItem;
+  children: React.ReactNode;
+  className: string;
+}) {
+  const params = { id: item.id };
+  switch (item.kind) {
+    case "document":
+      return (
+        <Link to="/documents/$id" params={params} className={className}>
+          {children}
+        </Link>
+      );
+    case "meeting":
+      return (
+        <Link to="/meeting/$id" params={params} className={className}>
+          {children}
+        </Link>
+      );
+    case "task":
+    case "deadline":
+      return (
+        <Link to="/tasks/$id" params={params} className={className}>
+          {children}
+        </Link>
+      );
+    case "person":
+      return (
+        <Link to="/people/$id" params={params} className={className}>
+          {children}
+        </Link>
+      );
+    default:
+      return <span className={className}>{children}</span>;
+  }
+}
+
+const PAGE_SIZE = 20;
 
 function SearchPage() {
   const params = Route.useSearch();
@@ -386,7 +245,6 @@ function SearchPage() {
 
   const update = (patch: Partial<SearchParams>) => {
     const next: SearchParams = { ...params, ...patch };
-    // strip empty / defaults
     const clean: Record<string, unknown> = {};
     (Object.keys(next) as (keyof SearchParams)[]).forEach((k) => {
       const v = next[k];
@@ -396,103 +254,69 @@ function SearchPage() {
     navigate({ to: "/search", search: clean });
   };
 
-  // Step 1: apply filters that don't depend on the type tab. Cached separately
-  // so switching tabs (Tất cả → Họp → Tài liệu…) doesn't redo the expensive
-  // text/date/project/assignee scan or rebuild scores.
-  const all = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    const hasDate = Boolean(from || to);
-    const out: { r: Result; score: number }[] = [];
-    for (let i = 0; i < INDEX.length; i++) {
-      const e = INDEX[i];
-      const r = e.r;
-      if (needle && !e.hay.includes(needle)) continue;
-      if (project && r.project !== project) continue;
-      if (assignee && r.owner?.seed !== assignee) continue;
-      if (hasDate && !r.iso) continue;
-      if (from && r.iso && r.iso < from) continue;
-      if (to && r.iso && r.iso > to) continue;
-      // Score once during filter; reused by relevance sort below.
-      let score = 0;
-      if (needle) {
-        if (e.titleLc.includes(needle)) score += 3;
-        if (e.snippetLc.includes(needle)) score += 2;
-        if (e.metaLc.includes(needle)) score += 1;
-      }
-      out.push({ r, score });
-    }
-    return out;
-  }, [q, project, assignee, from, to]);
+  const fetchFacets = useServerFn(getSearchFacets);
+  const { data: facets } = useQuery({
+    queryKey: ["search-facets"],
+    queryFn: () => fetchFacets(),
+    staleTime: 5 * 60_000,
+  });
 
-  // Step 2: cheap tab filter + sort. No string work here.
-  const filtered = useMemo<Result[]>(() => {
-    const scoped = type === "all" ? all : all.filter((x) => x.r.type === type);
-    if (sort === "time") {
-      const sorted = scoped.slice().sort((a, b) => {
-        const ai = a.r.iso, bi = b.r.iso;
-        if (ai && bi) return bi.localeCompare(ai);
-        if (ai) return -1;
-        if (bi) return 1;
-        return 0;
-      });
-      return sorted.map((x) => x.r);
-    }
-    if (sort === "relevance" && q.trim()) {
-      const sorted = scoped.slice().sort((a, b) => b.score - a.score);
-      return sorted.map((x) => x.r);
-    }
-    return scoped.map((x) => x.r);
-  }, [all, type, sort, q]);
+  const runSearch = useServerFn(searchAll);
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["global-search", q, type, project, assignee, from, to, sort],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      runSearch({
+        data: {
+          q: q.trim() || undefined,
+          kind: type,
+          workspaceId: project,
+          assigneeId: assignee,
+          from,
+          to,
+          sort,
+          limit: PAGE_SIZE,
+          offset: pageParam as number,
+        },
+      }),
+    getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
+    staleTime: 30_000,
+  });
 
-  const counts = useMemo(() => {
-    const c: Record<ResultType | "all", number> = {
-      all: all.length,
-      meeting: 0,
-      task: 0,
-      deadline: 0,
-      document: 0,
-      person: 0,
-    };
-    all.forEach((x) => {
-      c[x.r.type] += 1;
-    });
-    return c;
-  }, [all]);
+  const items = useMemo<SearchItem[]>(
+    () => (data?.pages ?? []).flatMap((p) => p.items as SearchItem[]),
+    [data],
+  );
+  const total = data?.pages?.[0]?.total ?? 0;
+  const counts = (data?.pages?.[0]?.counts ?? {}) as Record<string, number>;
 
   const activeFilterCount =
     (project ? 1 : 0) + (assignee ? 1 : 0) + (from || to ? 1 : 0);
-
-  const assigneeName = ASSIGNEES.find((a) => a.seed === assignee)?.name;
-
-  // Infinite scroll: reset visible count whenever filters / query / tab / sort change
-  const PAGE_SIZE = 8;
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [q, type, project, assignee, from, to, sort]);
-
-  const visible = useMemo(
-    () => filtered.slice(0, visibleCount),
-    [filtered, visibleCount],
-  );
-  const hasMore = visibleCount < filtered.length;
+  const projectName = facets?.workspaces.find((w) => w.id === project)?.name;
+  const assigneeName = facets?.assignees.find((a) => a.id === assignee)?.name;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!hasMore) return;
+    if (!hasNextPage) return;
     const el = sentinelRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+        if (entries.some((e) => e.isIntersecting) && !isFetchingNextPage) {
+          void fetchNextPage();
         }
       },
       { rootMargin: "300px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [hasMore, filtered.length]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -501,7 +325,6 @@ function SearchPage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
         <div className="mx-auto w-full max-w-[1100px] flex-1 px-4 py-8 sm:px-6">
-          {/* Header */}
           <div className="mb-6">
             <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <SearchIcon className="h-3.5 w-3.5" />
@@ -510,8 +333,7 @@ function SearchPage() {
             <h1 className="text-3xl font-semibold tracking-tight">
               {q ? (
                 <>
-                  Kết quả cho{" "}
-                  <span className="text-primary">&ldquo;{q}&rdquo;</span>
+                  Kết quả cho <span className="text-primary">&ldquo;{q}&rdquo;</span>
                 </>
               ) : (
                 "Tìm mọi thứ trong UNIWORK"
@@ -522,7 +344,6 @@ function SearchPage() {
             </p>
           </div>
 
-          {/* Search box */}
           <form
             role="search"
             onSubmit={(e) => {
@@ -547,7 +368,6 @@ function SearchPage() {
             </button>
           </form>
 
-          {/* Filter toolbar */}
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -569,11 +389,10 @@ function SearchPage() {
               )}
             </button>
 
-            {/* Active filter chips */}
             {project && (
               <FilterChip
                 icon={Briefcase}
-                label={`Dự án: ${project}`}
+                label={`Workspace: ${projectName ?? project}`}
                 onClear={() => update({ project: undefined })}
               />
             )}
@@ -609,26 +428,23 @@ function SearchPage() {
             )}
           </div>
 
-          {/* Filter panel */}
           {filtersOpen && (
             <div className="mb-5 grid gap-4 rounded-2xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Project */}
-              <FilterField icon={Briefcase} label="Dự án">
+              <FilterField icon={Briefcase} label="Workspace">
                 <select
                   value={project ?? ""}
                   onChange={(e) => update({ project: e.target.value || undefined })}
                   className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
-                  <option value="">Tất cả dự án</option>
-                  {PROJECTS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
+                  <option value="">Tất cả workspace</option>
+                  {(facets?.workspaces ?? []).map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
                     </option>
                   ))}
                 </select>
               </FilterField>
 
-              {/* Assignee */}
               <FilterField icon={UserIcon} label="Người phụ trách">
                 <select
                   value={assignee ?? ""}
@@ -636,15 +452,14 @@ function SearchPage() {
                   className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   <option value="">Tất cả nhân sự</option>
-                  {ASSIGNEES.map((a) => (
-                    <option key={a.seed} value={a.seed}>
+                  {(facets?.assignees ?? []).map((a) => (
+                    <option key={a.id} value={a.id}>
                       {a.name}
                     </option>
                   ))}
                 </select>
               </FilterField>
 
-              {/* Date range */}
               <FilterField icon={CalendarIcon} label="Khoảng thời gian">
                 <div className="flex items-center gap-2">
                   <input
@@ -688,12 +503,12 @@ function SearchPage() {
             </div>
           )}
 
-          {/* Type tabs */}
           <div className="mb-5 flex flex-wrap gap-2">
             {TYPE_ORDER.map((t) => {
               const active = type === t;
               const label = t === "all" ? "Tất cả" : TYPE_META[t].label;
               const Icon = t === "all" ? Sparkles : TYPE_META[t].icon;
+              const count = counts[t] ?? 0;
               return (
                 <button
                   key={t}
@@ -714,19 +529,20 @@ function SearchPage() {
                       (active ? "bg-primary/25 text-primary" : "bg-surface-2")
                     }
                   >
-                    {counts[t]}
+                    {count}
                   </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Sort bar */}
           <div className="mb-3 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {filtered.length === 0
-                ? "0 kết quả"
-                : `Hiển thị ${visible.length} / ${filtered.length} kết quả`}
+              {isLoading
+                ? "Đang tìm…"
+                : total === 0
+                  ? "0 kết quả"
+                  : `Hiển thị ${items.length} / ${total} kết quả`}
             </span>
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -759,103 +575,108 @@ function SearchPage() {
             </div>
           </div>
 
-          {/* Results */}
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <li key={i} className="flex items-start gap-4 px-5 py-4">
+                  <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-surface-2" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3.5 w-1/3 animate-pulse rounded bg-surface-2" />
+                    <div className="h-3 w-2/3 animate-pulse rounded bg-surface-2" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : items.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-16 text-center">
               <SearchIcon className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
               <h2 className="text-base font-medium">Không tìm thấy kết quả nào</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Thử thay đổi bộ lọc thời gian, dự án hoặc người phụ trách
+                Thử thay đổi từ khoá, bộ lọc thời gian, workspace hoặc người phụ trách
               </p>
             </div>
           ) : (
             <>
-            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
-              {visible.map((r) => {
-                const meta = TYPE_META[r.type];
-                const Icon = meta.icon;
-                return (
-                  <li key={r.id}>
-                    <Link
-                      to={r.to}
-                      search={r.search}
-                      className="group flex items-start gap-4 px-5 py-4 transition-colors hover:bg-surface-2"
-                    >
-                      <div
-                        className={
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " +
-                          meta.iconBg
-                        }
+              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
+                {items.map((r) => {
+                  const meta = TYPE_META[(r.kind as ResultType)] ?? TYPE_META.document;
+                  const Icon = meta.icon;
+                  return (
+                    <li key={`${r.kind}-${r.id}`}>
+                      <ResultLink
+                        item={r}
+                        className="group flex items-start gap-4 px-5 py-4 transition-colors hover:bg-surface-2"
                       >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={
-                              "rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide " +
-                              meta.chip
-                            }
-                          >
-                            {meta.label}
-                          </span>
-                          <h3 className="truncate text-sm font-semibold text-foreground">
-                            {highlight(r.title, q)}
-                          </h3>
+                        <div
+                          className={
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " +
+                            meta.iconBg
+                          }
+                        >
+                          <Icon className="h-5 w-5" />
                         </div>
-                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                          {highlight(r.snippet, q)}
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          {r.owner && (
-                            <span className="flex items-center gap-1.5">
-                              <img
-                                src={avatar(r.owner.seed)}
-                                alt=""
-                                className="h-5 w-5 rounded-full"
-                              />
-                              {r.owner.name}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={
+                                "rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide " +
+                                meta.chip
+                              }
+                            >
+                              {meta.label}
                             </span>
-                          )}
-                          {r.project && (
+                            <h3 className="truncate text-sm font-semibold text-foreground">
+                              {highlight(r.title, q)}
+                            </h3>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                            {highlight(r.snippet, q)}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            {r.ownerName && (
+                              <span className="flex items-center gap-1.5">
+                                <img
+                                  src={avatar(r.ownerId ?? r.ownerName)}
+                                  alt=""
+                                  className="h-5 w-5 rounded-full"
+                                />
+                                {r.ownerName}
+                              </span>
+                            )}
+                            {r.workspaceName && (
+                              <span className="flex items-center gap-1.5">
+                                <Briefcase className="h-3.5 w-3.5" /> {r.workspaceName}
+                              </span>
+                            )}
                             <span className="flex items-center gap-1.5">
-                              <Briefcase className="h-3.5 w-3.5" /> {r.project}
+                              <CalendarIcon className="h-3.5 w-3.5" /> {fmtDate(r.occurredAt)}
                             </span>
-                          )}
-                          <span className="flex items-center gap-1.5">
-                            <CalendarIcon className="h-3.5 w-3.5" /> {r.meta}
-                          </span>
+                          </div>
                         </div>
-                      </div>
-                      <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-            {hasMore && (
-              <div
-                ref={sentinelRef}
-                className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground"
-              >
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Đang tải thêm kết quả…
-                <button
-                  type="button"
-                  onClick={() =>
-                    setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length))
-                  }
-                  className="ml-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-foreground hover:bg-surface-2"
-                >
-                  Tải thêm
-                </button>
-              </div>
-            )}
-            {!hasMore && filtered.length > PAGE_SIZE && (
-              <div className="py-6 text-center text-xs text-muted-foreground">
-                Đã hiển thị tất cả {filtered.length} kết quả.
-              </div>
-            )}
+                        <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                      </ResultLink>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {hasNextPage && (
+                <div ref={sentinelRef} className="flex justify-center py-6">
+                  {isFetchingNextPage ? (
+                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Đang tải thêm…
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void fetchNextPage()}
+                      className="rounded-full border border-border bg-surface px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Tải thêm
+                    </button>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
