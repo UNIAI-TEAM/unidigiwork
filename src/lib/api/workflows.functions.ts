@@ -163,6 +163,26 @@ export const cancelWorkflowRun = createServerFn({ method: "POST" })
     });
     return ensureOk(res, "WORKFLOW_RUN_NOT_FOUND");
   });
+
+export const retryWorkflowRun = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      ...commandMetadataSchema.shape,
+      runId: z.string().uuid(),
+      mode: z.enum(["all", "failed_step"]).default("all"),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("retry_workflow_run", {
+      _run_id: data.runId,
+      _mode: data.mode,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    return ensureOk(res, "WORKFLOW_RUN_NOT_FOUND");
+  });
+
 export const listWorkflowRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
