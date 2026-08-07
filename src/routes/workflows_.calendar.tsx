@@ -444,6 +444,33 @@ function WorkflowCalendarPage() {
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+              {anomalies.length > 0 && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm lg:col-span-2">
+                  <div className="flex items-center gap-2 font-medium text-amber-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    {anomalies.length} lần chạy có thời gian bất thường (dữ liệu cũ hoặc lệch múi
+                    giờ)
+                  </div>
+                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {anomalies.slice(0, 5).map(({ day, run, issues }) => (
+                      <li key={run.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelected(day);
+                            setRunId(run.id);
+                          }}
+                          className="underline-offset-2 hover:underline"
+                        >
+                          {nameById.get(run.workflow_id) ?? run.workflow_id.slice(0, 8)} ·{" "}
+                          {dateTimeTz(run.started_at ?? run.created_at, tz)} — {issues.join(", ")}
+                        </button>
+                      </li>
+                    ))}
+                    {anomalies.length > 5 && <li>+{anomalies.length - 5} mục khác</li>}
+                  </ul>
+                </div>
+              )}
               <div className="overflow-hidden rounded-xl border border-border bg-surface">
                 <div className="grid grid-cols-7 border-b border-border text-center text-xs font-medium text-muted-foreground">
                   {WEEKDAYS.map((d) => (
