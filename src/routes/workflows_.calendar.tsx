@@ -314,6 +314,29 @@ function WorkflowCalendarPage() {
     return out;
   }, [runsByDay]);
 
+  const anomalyRows = (): AnomalyRow[] =>
+    anomalies.map(({ day, run, issues }) => {
+      const exp = expectedTimestamps(run);
+      return {
+        runId: run.id,
+        workflow: nameById.get(run.workflow_id) ?? run.workflow_id,
+        status: STATUS_META[run.status]?.label ?? run.status,
+        day,
+        originalStarted: run.started_at ? dateTimeTz(run.started_at, tz) : "—",
+        originalEnded: run.ended_at ? dateTimeTz(run.ended_at, tz) : "—",
+        originalCreated: dateTimeTz(run.created_at, tz),
+        expectedStarted: dateTimeTz(exp.started, tz),
+        expectedEnded: exp.ended ? dateTimeTz(exp.ended, tz) : "—",
+        reasons: issues.join("; "),
+      };
+    });
+  const exportMeta = () => ({
+    title: "Báo cáo sự kiện lệch thời gian · Lịch chạy quy trình",
+    from,
+    to,
+    tzLabel: tzOffsetLabel(tz),
+  });
+
   const preset = (n: number) => {
     setFrom(isoTz(addDays(new Date(), -(n - 1)), tz));
     setTo(isoTz(new Date(), tz));
