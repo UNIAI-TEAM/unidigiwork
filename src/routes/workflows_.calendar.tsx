@@ -250,6 +250,8 @@ function TimestampWarningPanel({ run, tz }: { run: Run; tz: string }) {
     </div>
   );
 }
+
+function tzOffsetLabel(tz: string) {
   try {
     const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
       .formatToParts(new Date())
