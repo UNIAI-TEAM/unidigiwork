@@ -222,7 +222,7 @@ function DocumentsPage() {
       return;
     }
     setUploading(true);
-    const created: Doc[] = [];
+    let ok = 0;
     for (const file of Array.from(files)) {
       try {
         const up = await uploadDocumentFile({ workspaceId: currentWs.id, file });
@@ -238,6 +238,7 @@ function DocumentsPage() {
             idempotencyKey: crypto.randomUUID(),
           },
         });
+        ok += 1;
       } catch (e) {
         toast.error(`${file.name}: ${(e as Error).message}`);
       }
@@ -249,7 +250,7 @@ function DocumentsPage() {
       .order("updated_at", { ascending: false });
     if (refreshed) setDocs(refreshed as Doc[]);
     setUploading(false);
-    if (created.length === 0) toast.success("Đã tải tệp lên tài liệu");
+    if (ok > 0) toast.success(`Đã tải lên ${ok} tệp`);
   };
 
   const addMember = async () => {
