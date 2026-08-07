@@ -136,6 +136,35 @@ function durationLabel(startTs: string, endTs: string) {
   if (m < 60) return `${m} phút ${s % 60}s`;
   return `${Math.floor(m / 60)} giờ ${m % 60} phút`;
 }
+
+/** Phát hiện timestamp bất thường do dữ liệu cũ / lệch múi giờ. */
+function timestampIssues(r: {
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+  status: string;
+}): string[] {
+  const out: string[] = [];
+  const now = Date.now();
+  const t = (v: string | null) => (v ? new Date(v).getTime() : NaN);
+  const started = t(r.started_at);
+  const ended = t(r.ended_at);
+  const created = t(r.created_at);
+  if (!r.started_at && r.status !== "pending") out.push("Thiếu thời điểm bắt đầu");
+  if (Number.isFinite(started) && Number.isFinite(ended) && ended < started)
+    out.push("Kết thúc trước khi bắt đầu");
+  if (Number.isFinite(started) && Number.isFinite(created) && started < created - 60_000)
+    out.push("Bắt đầu trước thời điểm tạo");
+  const future = [started, ended].filter((v) => Number.isFinite(v) && v > now + 5 * 60_000);
+  if (future.length) out.push("Thời gian nằm ở tương lai");
+  if (
+    Number.isFinite(started) &&
+    Number.isFinite(ended) &&
+    ended - started > 30 * 24 * 3600_000
+  )
+    out.push("Thời lượng bất thường (>30 ngày)");
+  return out;
+}
 function tzOffsetLabel(tz: string) {
   try {
     const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
