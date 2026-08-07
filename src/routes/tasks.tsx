@@ -438,14 +438,12 @@ function QuickAddForm({
 }) {
   const { t } = useI18n();
   const [title, setTitle] = useState("");
-  const [tag, setTag] = useState(tagOptions[0]);
-  const [assigneeSeed, setAssigneeSeed] = useState(assigneeOptions[0].seed);
+  const [priority, setPriority] = useState<Priority>("normal");
 
   const submit = () => {
     const v = title.trim();
     if (!v) return;
-    const a = assigneeOptions.find((x) => x.seed === assigneeSeed) ?? assigneeOptions[0];
-    onSubmit({ title: v, tag, assigneeSeed: a.seed, assigneeName: a.name });
+    onSubmit({ title: v, priority });
     setTitle("");
   };
 
@@ -467,26 +465,14 @@ function QuickAddForm({
       />
       <div className="flex items-center gap-2">
         <select
-          value={tag}
-          onChange={(e) => setTag(e.target.value)}
-          className="rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as Priority)}
+          className="flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
           aria-label={t("tasks.quick.tag")}
         >
-          {tagOptions.map((tg) => (
-            <option key={tg} value={tg}>
-              {tg}
-            </option>
-          ))}
-        </select>
-        <select
-          value={assigneeSeed}
-          onChange={(e) => setAssigneeSeed(e.target.value)}
-          className="flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
-          aria-label={t("tasks.quick.assignee")}
-        >
-          {assigneeOptions.map((a) => (
-            <option key={a.seed} value={a.seed}>
-              {a.name}
+          {priorityOptions.map((p) => (
+            <option key={p} value={p}>
+              {p}
             </option>
           ))}
         </select>
