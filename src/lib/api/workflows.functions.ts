@@ -193,3 +193,113 @@ export const repairWorkflowRunTimestamps = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { fixed: (rows ?? []).length };
   });
+
+// Batch 1F — Workflow builder: edit definition + triggers/schedules.
+export const getWorkflow = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workflowId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: wf, error } = await context.supabase
+      .from("workflows").select("*").eq("id", data.workflowId).maybeSingle();
+    if (error) mapPgError(error);
+    if (!wf) return null;
+    const { data: triggers } = await context.supabase
+      .from("workflow_triggers").select("*")
+      .eq("workflow_id", data.workflowId).order("created_at", { ascending: true });
+    const { data: runs } = await context.supabase
+      .from("workflow_runs")
+      .select("id, status, started_at, ended_at, created_at, context")
+      .eq("workflow_id", data.workflowId)
+      .order("created_at", { ascending: false }).limit(20);
+    return { workflow: wf, triggers: triggers ?? [], runs: runs ?? [] };
+  });
+
+export const updateWorkflow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      ...commandMetadataSchema.shape,
+      workflowId: z.string().uuid(),
+      name: z.string().min(1).max(200).optional(),
+      description: z.string().max(2000).optional(),
+      definition: z.record(z.string(), z.unknown()).optional(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("update_workflow", {
+      _workflow_id: data.workflowId,
+      _name: data.name ?? undefined,
+      _description: data.description ?? undefined,
+      _definition: (data.definition ?? undefined) as never,
+      _expected_row_version: data.expectedRowVersion ?? undefined,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    return ensureOk(res, "WORKFLOW_NOT_FOUND");
+  });
+
+export const upsertWorkflowTrigger = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workflowId: z.string().uuid(),
+      triggerId: z.string().uuid().optional(),
+      kind: z.enum(["schedule", "event"]),
+      frequency: z.enum(["minutes", "hourly", "daily", "weekly"]).optional(),
+      intervalMinutes: z.number().int().min(1).max(1440).optional(),
+      atHour: z.number().int().min(0).max(23).optional(),
+      atMinute: z.number().int().min(0).max(59).optional(),
+      weekday: z.number().int().min(0).max(6).optional(),
+      timezone: z.string().max(64).optional(),
+      eventType: z.string().max(120).optional(),
+      payload: z.record(z.string(), z.unknown()).default({}),
+      isEnabled: z.boolean().default(true),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("upsert_workflow_trigger", {
+      _workflow_id: data.workflowId,
+      _kind: data.kind,
+      _trigger_id: data.triggerId ?? undefined,
+      _frequency: data.frequency ?? undefined,
+      _interval_minutes: data.intervalMinutes ?? undefined,
+      _at_hour: data.atHour ?? undefined,
+      _at_minute: data.atMinute ?? undefined,
+      _weekday: data.weekday ?? undefined,
+      _timezone: data.timezone ?? undefined,
+      _event_type: data.eventType ?? undefined,
+      _payload: data.payload as never,
+      _is_enabled: data.isEnabled,
+    });
+    return ensureOk(res, "WORKFLOW_NOT_FOUND");
+  });
+
+export const deleteWorkflowTrigger = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ triggerId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: ok, error } = await context.supabase.rpc("delete_workflow_trigger", {
+      _trigger_id: data.triggerId,
+    });
+    if (error) mapPgError(error);
+    return { deleted: !!ok };
+  });
+
+export const fireWorkflowEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workspaceId: z.string().uuid(),
+      eventType: z.string().min(1).max(120),
+      payload: z.record(z.string(), z.unknown()).default({}),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: count, error } = await context.supabase.rpc("fire_workflow_event", {
+      _workspace_id: data.workspaceId,
+      _event_type: data.eventType,
+      _payload: data.payload as never,
+    });
+    if (error) mapPgError(error);
+    return { started: count ?? 0 };
+  });
