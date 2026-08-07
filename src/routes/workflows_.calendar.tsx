@@ -724,10 +724,17 @@ function WorkflowCalendarPage() {
                   <ul className="mt-3 space-y-2">
                     {selectedRuns.map((r) => (
                       <li key={r.id}>
-                        <button
-                          type="button"
+                        <div
+                          role="button"
+                          tabIndex={0}
                           onClick={() => setRunId(r.id)}
-                          className="w-full rounded-lg border border-border p-2.5 text-left transition-colors hover:bg-muted/40"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setRunId(r.id);
+                            }
+                          }}
+                          className="w-full cursor-pointer rounded-lg border border-border p-2.5 text-left transition-colors hover:bg-muted/40"
                         >
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-sm font-medium">
@@ -753,14 +760,9 @@ function WorkflowCalendarPage() {
                               {durationLabel(r.started_at ?? r.created_at, r.ended_at)}
                             </div>
                           )}
-                          {timestampIssues(r).length > 0 && (
-                            <div className="flex items-start gap-1 text-amber-600">
-                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                              <span>{timestampIssues(r).join(", ")}</span>
-                            </div>
-                          )}
+                          <TimestampWarningPanel run={r} tz={tz} />
                         </div>
-                        </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
