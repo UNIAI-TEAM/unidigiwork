@@ -1,6 +1,35 @@
 import { toast } from "sonner";
+import { logWorkflowDenial } from "@/lib/api/workflows.functions";
 
 export type WorkflowAction = "edit" | "publish" | "run";
+
+/** Ngữ cảnh dùng để ghi nhật ký từ chối quyền. */
+export interface DenialContext {
+  workspaceId?: string | null;
+  workflowId?: string | null;
+  source?: "client" | "server";
+}
+
+const ACTION_BY_CODE: Record<string, WorkflowAction> = {
+  WORKFLOW_EDIT_DENIED: "edit",
+  WORKFLOW_PUBLISH_DENIED: "publish",
+  WORKFLOW_RUN_DENIED: "run",
+};
+
+/** Ghi lại một lần bị từ chối quyền (không chặn luồng UI nếu ghi lỗi). */
+function recordDenial(action: WorkflowAction, code: string, ctx?: DenialContext) {
+  const workspaceId = ctx?.workspaceId;
+  if (!workspaceId) return;
+  void logWorkflowDenial({
+    data: {
+      workspaceId,
+      action,
+      workflowId: ctx?.workflowId ?? null,
+      errorCode: code,
+      source: ctx?.source ?? "client",
+    },
+  }).catch(() => undefined);
+}
 
 export interface WorkflowPerms {
   workspace_id: string;
@@ -40,9 +69,15 @@ export function workflowDenialCode(err: unknown): string | null {
 }
 
 /** Hiển thị toast lỗi rõ ràng; ưu tiên thông điệp quyền. */
-export function toastWorkflowError(err: unknown, fallback = "Thao tác không thành công") {
+export function toastWorkflowError(
+  err: unknown,
+  fallback = "Thao tác không thành công",
+  ctx?: DenialContext,
+) {
   const code = workflowDenialCode(err);
   if (code) {
+    const action = ACTION_BY_CODE[code];
+    if (action) recordDenial(action, code, { ...ctx, source: "server" });
     toast.error(DENIAL_MESSAGES[code]!, {
       description: code.endsWith("_DENIED") ? DESCRIPTION : undefined,
     });
@@ -62,10 +97,22 @@ export function denialReason(action: WorkflowAction): string {
 export function guardWorkflowAction(
   perms: WorkflowPerms | null | undefined,
   action: WorkflowAction,
+  ctx?: DenialContext,
 ): boolean {
   const allowed =
     action === "edit" ? perms?.can_edit : action === "publish" ? perms?.can_publish : perms?.can_run;
   if (allowed) return true;
+  const code =
+    action === "edit"
+      ? "WORKFLOW_EDIT_DENIED"
+      : action === "publish"
+        ? "WORKFLOW_PUBLISH_DENIED"
+        : "WORKFLOW_RUN_DENIED";
+  recordDenial(action, code, {
+    ...ctx,
+    workspaceId: ctx?.workspaceId ?? perms?.workspace_id ?? null,
+    source: "client",
+  });
   toast.error(
     action === "edit"
       ? DENIAL_MESSAGES.WORKFLOW_EDIT_DENIED!

@@ -451,6 +451,62 @@ export const listWorkflowPermissionAudit = createServerFn({ method: "GET" })
   });
 
 // Batch 1F-PERM-ROLE — role/group based permissions.
+// Batch 1F-PERM-DENY — nhật ký từ chối quyền.
+export const logWorkflowDenial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workspaceId: z.string().uuid(),
+      action: z.enum(["edit", "publish", "run"]),
+      workflowId: z.string().uuid().nullable().optional(),
+      errorCode: z.string().max(64).nullable().optional(),
+      correlationId: z.string().max(128).nullable().optional(),
+      source: z.enum(["client", "server"]).default("server"),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: id, error } = await context.supabase.rpc("log_workflow_denial", {
+      _workspace_id: data.workspaceId,
+      _action: data.action,
+      _workflow_id: data.workflowId ?? undefined,
+      _error_code: data.errorCode ?? undefined,
+      _correlation_id: data.correlationId ?? undefined,
+      _source: data.source,
+    });
+    if (error) mapPgError(error);
+    return { id: id as unknown as string | null };
+  });
+
+export const listWorkflowDenials = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workspaceId: z.string().uuid(),
+      action: z.enum(["edit", "publish", "run"]).nullable().optional(),
+      limit: z.number().int().min(1).max(200).optional(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("list_workflow_denials", {
+      _workspace_id: data.workspaceId,
+      _action: data.action ?? undefined,
+      _limit: data.limit ?? 50,
+    });
+    if (error) mapPgError(error);
+    return (rows ?? []) as unknown as {
+      id: string;
+      occurred_at: string;
+      action: "edit" | "publish" | "run";
+      user_id: string;
+      user_name: string | null;
+      workflow_id: string | null;
+      workflow_name: string | null;
+      error_code: string | null;
+      source: string;
+      correlation_id: string | null;
+    }[];
+  });
+
 export const listWorkflowRolePermissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))

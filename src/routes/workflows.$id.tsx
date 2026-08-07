@@ -105,19 +105,19 @@ function WorkflowBuilderPage() {
         },
       }),
     onSuccess: () => { toast.success("Đã lưu quy trình"); setDirty(false); refresh(); },
-    onError: (e: Error) => toastWorkflowError(e, "Không lưu được quy trình"),
+    onError: (e: Error) => toastWorkflowError(e, "Không lưu được quy trình", { workspaceId, workflowId: id }),
   });
 
   const publish = useMutation({
     mutationFn: () => publishWorkflow({ data: { idempotencyKey: uid(), workflowId: id } }),
     onSuccess: () => { toast.success("Đã phát hành quy trình"); refresh(); },
-    onError: (e: Error) => toastWorkflowError(e, "Không phát hành được quy trình"),
+    onError: (e: Error) => toastWorkflowError(e, "Không phát hành được quy trình", { workspaceId, workflowId: id }),
   });
 
   const runNow = useMutation({
     mutationFn: () => startWorkflowRun({ data: { idempotencyKey: uid(), workflowId: id, context: { source: "manual" } } }),
     onSuccess: () => { toast.success("Đã tạo lượt chạy"); refresh(); },
-    onError: (e: Error) => toastWorkflowError(e, "Không chạy được quy trình"),
+    onError: (e: Error) => toastWorkflowError(e, "Không chạy được quy trình", { workspaceId, workflowId: id }),
   });
 
   const mutateSteps = (next: Step[]) => { setSteps(next); setDirty(true); };

@@ -2259,6 +2259,66 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_permission_denials: {
+        Row: {
+          action: string
+          correlation_id: string | null
+          created_at: string
+          error_code: string | null
+          id: string
+          occurred_at: string
+          source: string
+          tenant_id: string | null
+          user_id: string
+          workflow_id: string | null
+          workflow_name: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          correlation_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          occurred_at?: string
+          source?: string
+          tenant_id?: string | null
+          user_id: string
+          workflow_id?: string | null
+          workflow_name?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          correlation_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          occurred_at?: string
+          source?: string
+          tenant_id?: string | null
+          user_id?: string
+          workflow_id?: string | null
+          workflow_name?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_permission_denials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_permission_denials_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_permissions: {
         Row: {
           can_edit: boolean
@@ -3698,6 +3758,21 @@ export type Database = {
         }
         Returns: Json
       }
+      list_workflow_denials: {
+        Args: { _action?: string; _limit?: number; _workspace_id: string }
+        Returns: {
+          action: string
+          correlation_id: string
+          error_code: string
+          id: string
+          occurred_at: string
+          source: string
+          user_id: string
+          user_name: string
+          workflow_id: string
+          workflow_name: string
+        }[]
+      }
       list_workflow_permission_audit: {
         Args: { _limit?: number; _workspace_id: string }
         Returns: {
@@ -3740,6 +3815,17 @@ export type Database = {
           role: string
           updated_at: string
         }[]
+      }
+      log_workflow_denial: {
+        Args: {
+          _action: string
+          _correlation_id?: string
+          _error_code?: string
+          _source?: string
+          _workflow_id?: string
+          _workspace_id: string
+        }
+        Returns: string
       }
       provision_default_subscription: {
         Args: { _actor: string; _tenant_id: string }
