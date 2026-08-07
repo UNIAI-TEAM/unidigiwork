@@ -68,6 +68,48 @@ const STATUS_META: Record<RunStatus, { label: string; dot: string; chip: string 
 function iso(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+// Múi giờ hiển thị: lấy theo cấu hình workspace, fallback múi giờ trình duyệt.
+const browserTz = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Ho_Chi_Minh";
+  } catch {
+    return "Asia/Ho_Chi_Minh";
+  }
+};
+function isoTz(d: Date, tz: string) {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  } catch {
+    return iso(d);
+  }
+}
+function timeTz(ts: string, tz: string) {
+  try {
+    return new Date(ts).toLocaleTimeString("vi-VN", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return new Date(ts).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  }
+}
+function tzOffsetLabel(tz: string) {
+  try {
+    const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+      .formatToParts(new Date())
+      .find((p) => p.type === "timeZoneName")?.value;
+    return s ? `${tz} (${s})` : tz;
+  } catch {
+    return tz;
+  }
+}
 function addDays(d: Date, n: number) {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
@@ -95,6 +137,9 @@ function WorkflowCalendarPage() {
   const workspaces = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const [wsId, setWsId] = useState<string | undefined>(undefined);
   const activeWs = wsId ?? workspaces.data?.[0]?.id;
+  // Múi giờ chuẩn hoá theo cấu hình workspace đang chọn.
+  const tz =
+    (workspaces.data ?? []).find((w) => w.id === activeWs)?.timezone?.trim() || browserTz();
 
   const wfQuery = useQuery({
     queryKey: ["workflows", activeWs],
@@ -136,12 +181,12 @@ function WorkflowCalendarPage() {
     const allow = wfIds.length ? new Set(wfIds) : null;
     for (const r of runsQuery.data ?? []) {
       if (allow && !allow.has(r.workflow_id)) continue;
-      const key = iso(new Date(r.started_at ?? r.created_at));
+      const key = isoTz(new Date(r.started_at ?? r.created_at), tz);
       if (key < from || key > to) continue;
       m.set(key, [...(m.get(key) ?? []), r]);
     }
     return m;
-  }, [runsQuery.data, from, to, wfIds]);
+  }, [runsQuery.data, from, to, wfIds, tz]);
 
   const days = useMemo(() => {
     const start = startOfWeek(new Date(`${from}T00:00:00`));
@@ -169,8 +214,8 @@ function WorkflowCalendarPage() {
   const selectedRuns = selected ? (runsByDay.get(selected) ?? []) : [];
 
   const preset = (n: number) => {
-    setFrom(iso(addDays(new Date(), -(n - 1))));
-    setTo(iso(new Date()));
+    setFrom(isoTz(addDays(new Date(), -(n - 1)), tz));
+    setTo(isoTz(new Date(), tz));
     setSelected(null);
   };
 
@@ -195,6 +240,9 @@ function WorkflowCalendarPage() {
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {total} lần chạy trong khoảng {from} → {to}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Múi giờ hiển thị: {tzOffsetLabel(tz)}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -377,13 +425,8 @@ function WorkflowCalendarPage() {
                           </span>
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {new Date(r.started_at ?? r.created_at).toLocaleTimeString("vi-VN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                          {r.ended_at
-                            ? ` → ${new Date(r.ended_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`
-                            : ""}
+                          {timeTz(r.started_at ?? r.created_at, tz)}
+                          {r.ended_at ? ` → ${timeTz(r.ended_at, tz)}` : ""}
                         </div>
                         </button>
                       </li>
@@ -395,7 +438,7 @@ function WorkflowCalendarPage() {
           )}
         </main>
       </div>
-      {runId && <RunDetailModal runId={runId} onClose={() => setRunId(null)} />}
+      {runId && <RunDetailModal runId={runId} tz={tz} onClose={() => setRunId(null)} />}
     </div>
   );
 }
@@ -412,11 +455,24 @@ const STEP_META: Record<string, { label: string; chip: string; dot: string }> = 
   skipped: { label: "Bỏ qua", chip: "bg-amber-500/15 text-amber-500", dot: "bg-amber-500" },
 };
 
-function fmt(ts: string | null | undefined) {
-  return ts ? new Date(ts).toLocaleString("vi-VN") : "—";
+function fmt(ts: string | null | undefined, tz?: string) {
+  if (!ts) return "—";
+  try {
+    return new Date(ts).toLocaleString("vi-VN", tz ? { timeZone: tz } : undefined);
+  } catch {
+    return new Date(ts).toLocaleString("vi-VN");
+  }
 }
 
-function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void }) {
+function RunDetailModal({
+  runId,
+  tz,
+  onClose,
+}: {
+  runId: string;
+  tz: string;
+  onClose: () => void;
+}) {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["workflow-run", runId],
@@ -515,10 +571,10 @@ function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void
                 </span>
               </Field>
               <Field label="Phiên bản quy trình">v{data.run.workflow_version}</Field>
-              <Field label="Bắt đầu">{fmt(data.run.started_at)}</Field>
-              <Field label="Kết thúc">{fmt(data.run.ended_at)}</Field>
-              <Field label="Tạo lúc">{fmt(data.run.created_at)}</Field>
-              <Field label="Cập nhật">{fmt(data.run.updated_at)}</Field>
+              <Field label="Bắt đầu">{fmt(data.run.started_at, tz)}</Field>
+              <Field label="Kết thúc">{fmt(data.run.ended_at, tz)}</Field>
+              <Field label="Tạo lúc">{fmt(data.run.created_at, tz)}</Field>
+              <Field label="Cập nhật">{fmt(data.run.updated_at, tz)}</Field>
               <div className="col-span-2">
                 <Field label="Correlation ID">
                   <span className="break-all font-mono text-xs">
@@ -547,8 +603,8 @@ function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {fmt(s.started_at ?? s.created_at)}
-                        {s.ended_at ? ` → ${fmt(s.ended_at)}` : ""}
+                        {fmt(s.started_at ?? s.created_at, tz)}
+                        {s.ended_at ? ` → ${fmt(s.ended_at, tz)}` : ""}
                       </div>
                       {s.error && (
                         <p className="mt-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">

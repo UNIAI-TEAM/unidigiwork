@@ -2399,6 +2399,7 @@ export type Database = {
           owner_id: string
           row_version: number
           tenant_id: string
+          timezone: string
           updated_at: string
           updated_by: string | null
         }
@@ -2410,6 +2411,7 @@ export type Database = {
           owner_id: string
           row_version?: number
           tenant_id: string
+          timezone?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -2421,6 +2423,7 @@ export type Database = {
           owner_id?: string
           row_version?: number
           tenant_id?: string
+          timezone?: string
           updated_at?: string
           updated_by?: string | null
         }

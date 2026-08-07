@@ -17,17 +17,23 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
       .limit(200);
     if (memErr) mapPgError(memErr);
     const ids = (memberships ?? []).map((m) => (m as { workspace_id: string }).workspace_id);
-    if (ids.length === 0) return [] as Array<{ id: string; name: string; tenant_id: string }>;
+    if (ids.length === 0)
+      return [] as Array<{ id: string; name: string; tenant_id: string; timezone: string }>;
 
     const { data, error } = await context.supabase
       .from("workspaces")
-      .select("id, name, tenant_id")
+      .select("id, name, tenant_id, timezone")
       .in("id", ids)
       .is("deleted_at", null)
       .order("created_at", { ascending: true })
       .limit(100);
     if (error) mapPgError(error);
-    return (data ?? []) as Array<{ id: string; name: string; tenant_id: string }>;
+    return (data ?? []) as Array<{
+      id: string;
+      name: string;
+      tenant_id: string;
+      timezone: string;
+    }>;
   });
 
 export const listMyMeetingRooms = createServerFn({ method: "POST" })
