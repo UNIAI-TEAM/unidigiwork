@@ -12,7 +12,8 @@ import {
 } from "@/lib/api/reports.functions";
 
 const searchSchema = z.object({
-  days: z.coerce.number().int().min(1).max(365).catch(30),
+  from: z.string().optional().catch(undefined),
+  to: z.string().optional().catch(undefined),
   status: z.enum(["todo", "in_progress", "blocked", "done", "canceled"]).optional().catch(undefined),
   workspaceId: z.string().uuid().optional().catch(undefined),
 });
@@ -50,19 +51,21 @@ function ReportDrilldownPage() {
   const { t } = useI18n();
   const [open, setOpen] = useSidebarState();
   const navigate = useNavigate({ from: "/reports/detail" });
-  const { days, status, workspaceId } = Route.useSearch();
+  const { from, to, status, workspaceId } = Route.useSearch();
+  const fmtRange = (v?: string) =>
+    v ? new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
 
   const fetchTasks = useServerFn(listReportTasks);
   const fetchOverview = useServerFn(getReportOverview);
 
   const { data: rows, isPending } = useQuery({
-    queryKey: ["report-tasks", days, status ?? null, workspaceId ?? null],
-    queryFn: () => fetchTasks({ data: { days, status, workspaceId } }),
+    queryKey: ["report-tasks", from ?? null, to ?? null, status ?? null, workspaceId ?? null],
+    queryFn: () => fetchTasks({ data: { from, to, status, workspaceId } }),
     staleTime: 30_000,
   });
   const { data: report } = useQuery({
-    queryKey: ["report-overview", days],
-    queryFn: () => fetchOverview({ data: { days } }),
+    queryKey: ["report-overview", from ?? null, to ?? null],
+    queryFn: () => fetchOverview({ data: { from, to } }),
     staleTime: 60_000,
   });
 
@@ -72,7 +75,7 @@ function ReportDrilldownPage() {
     v ? new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : "—";
 
   const setSearch = (patch: { status?: undefined; workspaceId?: undefined }) =>
-    navigate({ search: { days, status, workspaceId, ...patch } });
+    navigate({ search: { from, to, status, workspaceId, ...patch } });
 
   return (
     <div className="flex min-h-screen bg-bg text-foreground">
@@ -95,7 +98,7 @@ function ReportDrilldownPage() {
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
               {t("rp.dd.filters")}
             </span>
-            <Chip label={`${t("rp.dd.range")}: ${days} ${t("rp.dd.days")}`} />
+            <Chip label={`${t("rp.dd.range")}: ${fmtRange(from)} – ${fmtRange(to)}`} />
             {status && (
               <Chip
                 label={`${t("rp.dd.status")}: ${t(STATUS_KEY[status] ?? "rp.dd.all")}`}
