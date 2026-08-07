@@ -29,7 +29,15 @@ import {
   createWorkflow,
   publishWorkflow,
   startWorkflowRun,
+  getMyWorkflowPermissions,
 } from "@/lib/api/workflows.functions";
+import {
+  DEFAULT_WORKFLOW_PERMS,
+  denialReason,
+  guardWorkflowAction,
+  toastWorkflowError,
+  type WorkflowPerms,
+} from "@/lib/workflow-access";
 
 export const Route = createFileRoute("/workflows")({
   head: () => ({
@@ -165,7 +173,7 @@ function WorkflowsPage() {
       await qc.invalidateQueries({ queryKey: ["workflows", activeWs] });
       toast.success(t("wf.create"));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không tạo được quy trình"),
   });
 
   const publishMut = useMutation({
@@ -180,7 +188,7 @@ function WorkflowsPage() {
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["workflows", activeWs] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không phát hành được quy trình"),
   });
 
   const runMut = useMutation({
@@ -192,7 +200,7 @@ function WorkflowsPage() {
       await qc.invalidateQueries({ queryKey: ["workflow-runs", ids] });
       toast.success(t("wf.panel.run"));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không chạy được quy trình"),
   });
 
   return (
