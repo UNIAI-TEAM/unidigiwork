@@ -2,13 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldCheck, Loader2, RotateCcw, Crown, Lock, History, Users } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Loader2, RotateCcw, Crown, Lock, History, Users, ShieldAlert } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
   listWorkflowPermissions, setWorkflowPermission, resetWorkflowPermission,
   listWorkflowPermissionAudit, listWorkflowRolePermissions,
   setWorkflowRolePermission, resetWorkflowRolePermission,
+  listWorkflowDenials,
 } from "@/lib/api/workflows.functions";
 
 export const Route = createFileRoute("/workflows_/permissions")({
