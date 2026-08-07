@@ -54,6 +54,7 @@ import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
+import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
@@ -297,6 +298,12 @@ const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   path: '/category/$category',
   getParentRoute: () => BlogRoute,
 } as any)
+const AuthenticatedWorkspaceInviteRoute =
+  AuthenticatedWorkspaceInviteRouteImport.update({
+    id: '/workspace/invite',
+    path: '/workspace/invite',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWorkspaceIdRoute =
   AuthenticatedWorkspaceIdRouteImport.update({
     id: '/workspace/$id',
@@ -448,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -509,6 +517,7 @@ export interface FileRoutesByTo {
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -574,6 +583,7 @@ export interface FileRoutesById {
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -639,6 +649,7 @@ export interface FileRouteTypes {
     | '/email/compose'
     | '/notifications/$id'
     | '/workspace/$id'
+    | '/workspace/invite'
     | '/blog/category/$category'
     | '/admin/'
     | '/workspace/$id/stos'
@@ -700,6 +711,7 @@ export interface FileRouteTypes {
     | '/email/compose'
     | '/notifications/$id'
     | '/workspace/$id'
+    | '/workspace/invite'
     | '/blog/category/$category'
     | '/admin'
     | '/workspace/$id/stos'
@@ -764,6 +776,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email/compose'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/workspace/$id'
+    | '/_authenticated/workspace/invite'
     | '/blog/category/$category'
     | '/_authenticated/admin/'
     | '/_authenticated/workspace/$id/stos'
@@ -1121,6 +1134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogCategoryCategoryRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/_authenticated/workspace/invite': {
+      id: '/_authenticated/workspace/invite'
+      path: '/workspace/invite'
+      fullPath: '/workspace/invite'
+      preLoaderRoute: typeof AuthenticatedWorkspaceInviteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/workspace/$id': {
       id: '/_authenticated/workspace/$id'
       path: '/workspace/$id'
@@ -1335,6 +1355,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
+  AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1349,6 +1370,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
+  AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
