@@ -195,6 +195,17 @@ function WorkflowBuilderPage() {
             </div>
           ) : (
             <div className="mx-auto grid max-w-7xl gap-6 p-4 sm:p-6 xl:grid-cols-3">
+              {!permsQuery.isLoading && !perms.can_edit && (
+                <div className="xl:col-span-3 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs text-warning">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Bạn đang ở chế độ chỉ xem: không có quyền chỉnh sửa quy trình này.
+                    {!perms.can_publish && " Không có quyền phát hành."}
+                    {!perms.can_run && " Không có quyền chạy."}
+                    {" "}Liên hệ chủ sở hữu không gian làm việc tại mục Quy trình → Phân quyền.
+                  </span>
+                </div>
+              )}
               {/* Steps */}
               <section className="space-y-4 xl:col-span-2">
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
@@ -291,8 +302,8 @@ function WorkflowBuilderPage() {
 
               {/* Triggers + runs */}
               <section className="space-y-4">
-                <TriggersPanel workflowId={id} triggers={data.triggers} published={published} onChanged={refresh} />
-                <DryRunPanel workflowId={id} steps={steps} dirty={dirty} />
+                <TriggersPanel workflowId={id} triggers={data.triggers} published={published} onChanged={refresh} canEdit={perms.can_edit} />
+                <DryRunPanel workflowId={id} steps={steps} dirty={dirty} canRun={perms.can_run} />
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
                   <h2 className="text-sm font-semibold">Lượt chạy gần đây</h2>
                   {data.runs.length === 0 ? (
