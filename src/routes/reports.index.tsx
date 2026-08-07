@@ -292,60 +292,12 @@ function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      {
-                        name: "STOS Platform",
-                        letter: "S",
-                        color: "bg-emerald-500",
-                        progress: 72,
-                        tasks: 128,
-                        members: 8,
-                        status: "ontrack",
-                      },
-                      {
-                        name: "Smart University Portal",
-                        letter: "U",
-                        color: "bg-sky-500",
-                        progress: 66,
-                        tasks: 96,
-                        members: 6,
-                        status: "ontrack",
-                      },
-                      {
-                        name: "Y tế xã",
-                        letter: "Y",
-                        color: "bg-rose-500",
-                        progress: 48,
-                        tasks: 64,
-                        members: 4,
-                        status: "risk",
-                      },
-                      {
-                        name: "UNI-HRM System",
-                        letter: "M",
-                        color: "bg-violet-500",
-                        progress: 81,
-                        tasks: 112,
-                        members: 7,
-                        status: "ontrack",
-                      },
-                      {
-                        name: "DevOps Infrastructure",
-                        letter: "D",
-                        color: "bg-orange-500",
-                        progress: 35,
-                        tasks: 45,
-                        members: 3,
-                        status: "risk",
-                      },
-                    ].map((p) => (
-                      <tr key={p.name} className="border-t border-border">
+                    {wsRows.slice(0, 6).map((p) => (
+                      <tr key={p.id} className="border-t border-border">
                         <td className="py-2.5">
                           <div className="flex items-center gap-2">
-                            <span
-                              className={`flex h-6 w-6 items-center justify-center rounded text-[11px] font-semibold text-white ${p.color}`}
-                            >
-                              {p.letter}
+                            <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[11px] font-semibold text-primary-foreground">
+                              {p.name.charAt(0).toUpperCase()}
                             </span>
                             <span className="whitespace-nowrap font-medium">{p.name}</span>
                           </div>
@@ -364,24 +316,28 @@ function ReportsPage() {
                         <td className="py-2.5">{p.tasks}</td>
                         <td className="py-2.5">
                           <div className="flex items-center -space-x-1.5">
-                            {[0, 1, 2].map((i) => (
+                            {Array.from({ length: Math.min(3, p.members) }).map((_, i) => (
                               <img
                                 key={i}
-                                src={avatar(`${p.name}-${i}`)}
+                                src={avatar(`${p.id}-${i}`)}
                                 className="h-6 w-6 rounded-full border-2 border-surface object-cover"
                                 alt=""
                               />
                             ))}
-                            <span className="ml-2 text-[10px] text-muted-foreground">
-                              +{p.members - 3}
-                            </span>
+                            {p.members > 3 && (
+                              <span className="ml-2 text-[10px] text-muted-foreground">
+                                +{p.members - 3}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-2.5">
                           <span
                             className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${p.status === "ontrack" ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/15 text-amber-300 border border-amber-500/30"}`}
                           >
-                            {t(`rp.status.${p.status}` as Key)}
+                            {p.status === "not_started"
+                              ? t("rp.health.not")
+                              : t(`rp.status.${p.status}` as Key)}
                           </span>
                         </td>
                       </tr>
