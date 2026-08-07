@@ -518,6 +518,19 @@ function WorkflowCalendarPage() {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
+                        disabled={repairMutation.isPending}
+                        onClick={() => repairMutation.mutate(anomalies.map((a) => a.run.id))}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+                      >
+                        {repairMutation.isPending ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Wrench className="h-3.5 w-3.5" />
+                        )}
+                        Sửa thời gian
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
                           exportAnomaliesCsv(anomalyRows(), exportMeta());
                           toast.success("Đã tải báo cáo CSV");
