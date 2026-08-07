@@ -613,6 +613,7 @@ function WorkspacesTab({ tenantId, canManage }: { tenantId: string; canManage: b
               <tr>
                 <th className="px-4 py-3">Tên workspace</th>
                 <th className="px-4 py-3">Trạng thái</th>
+                <th className="px-4 py-3">Múi giờ</th>
                 <th className="px-4 py-3">Tạo lúc</th>
                 <th className="px-4 py-3">Cập nhật</th>
               </tr>
@@ -635,6 +636,13 @@ function WorkspacesTab({ tenantId, canManage }: { tenantId: string; canManage: b
                       {w.status}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <WorkspaceTimezoneCell
+                      workspaceId={w.id}
+                      value={w.timezone}
+                      disabled={w.status !== "active"}
+                    />
+                  </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {new Date(w.createdAt).toLocaleString("vi-VN")}
                   </td>
@@ -645,7 +653,7 @@ function WorkspacesTab({ tenantId, canManage }: { tenantId: string; canManage: b
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
                     Chưa có workspace nào phù hợp bộ lọc.
                   </td>
                 </tr>
