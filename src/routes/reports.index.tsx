@@ -289,7 +289,7 @@ function ReportsPage() {
                 icon={Folder}
                 label={t("rp.kpi.projects")}
                 value={isPending ? "…" : nf(k?.workspaces)}
-                delta={delta(k?.ws_cur, k?.ws_prev)}
+                delta={cmp(k?.ws_cur, k?.ws_prev)}
                 tone="text-sky-300"
                 t={t}
               />
@@ -297,7 +297,7 @@ function ReportsPage() {
                 icon={CheckCircle2}
                 label={t("rp.kpi.tasks")}
                 value={isPending ? "…" : nf(st?.done)}
-                delta={delta(k?.tasks_cur, k?.tasks_prev)}
+                delta={cmp(k?.tasks_cur, k?.tasks_prev)}
                 tone="text-amber-300"
                 t={t}
               />
@@ -305,7 +305,7 @@ function ReportsPage() {
                 icon={Video}
                 label={t("rp.kpi.meetings")}
                 value={isPending ? "…" : nf(k?.meetings)}
-                delta={delta(k?.meetings_cur, k?.meetings_prev)}
+                delta={cmp(k?.meetings_cur, k?.meetings_prev)}
                 tone="text-violet-300"
                 t={t}
               />
