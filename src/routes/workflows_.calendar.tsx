@@ -68,6 +68,48 @@ const STATUS_META: Record<RunStatus, { label: string; dot: string; chip: string 
 function iso(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+// Múi giờ hiển thị: lấy theo cấu hình workspace, fallback múi giờ trình duyệt.
+const browserTz = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Ho_Chi_Minh";
+  } catch {
+    return "Asia/Ho_Chi_Minh";
+  }
+};
+function isoTz(d: Date, tz: string) {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  } catch {
+    return iso(d);
+  }
+}
+function timeTz(ts: string, tz: string) {
+  try {
+    return new Date(ts).toLocaleTimeString("vi-VN", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return new Date(ts).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  }
+}
+function tzOffsetLabel(tz: string) {
+  try {
+    const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+      .formatToParts(new Date())
+      .find((p) => p.type === "timeZoneName")?.value;
+    return s ? `${tz} (${s})` : tz;
+  } catch {
+    return tz;
+  }
+}
 function addDays(d: Date, n: number) {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
