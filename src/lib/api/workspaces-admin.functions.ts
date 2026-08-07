@@ -13,6 +13,7 @@ export interface TenantWorkspaceDto {
   status: "active" | "archived";
   ownerId: string | null;
   memberCount: number | null;
+  timezone: string;
   createdAt: string;
   updatedAt: string;
   rowVersion: number;
@@ -56,7 +57,10 @@ export const listTenantWorkspaces = createServerFn({ method: "POST" })
 
     let q = supabase
       .from("workspaces")
-      .select("id, tenant_id, name, owner_id, created_at, updated_at, row_version, deleted_at", { count: "exact" })
+      .select(
+        "id, tenant_id, name, owner_id, timezone, created_at, updated_at, row_version, deleted_at",
+        { count: "exact" },
+      )
       .eq("tenant_id", data.tenantId);
 
     if (data.status === "active") q = q.is("deleted_at", null);
@@ -81,6 +85,7 @@ export const listTenantWorkspaces = createServerFn({ method: "POST" })
       tenant_id: string;
       name: string;
       owner_id: string | null;
+      timezone: string | null;
       created_at: string;
       updated_at: string;
       row_version: number;
@@ -95,10 +100,40 @@ export const listTenantWorkspaces = createServerFn({ method: "POST" })
         status: w.deleted_at ? ("archived" as const) : ("active" as const),
         ownerId: w.owner_id,
         memberCount: null, // RLS-scoped; deferred to Collaboration Core.
+        timezone: w.timezone ?? "Asia/Ho_Chi_Minh",
         createdAt: w.created_at,
         updatedAt: w.updated_at,
         rowVersion: w.row_version,
       })),
       total: count ?? list.length,
     };
+  });
+
+// Đổi múi giờ hiển thị của workspace (owner workspace hoặc quản trị tenant).
+const TimezoneInput = z.object({
+  workspaceId: z.string().uuid(),
+  timezone: z.string().min(1).max(64),
+});
+
+export const setWorkspaceTimezone = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => TimezoneInput.parse(d))
+  .handler(async ({ data, context }): Promise<{ id: string; timezone: string }> => {
+    const { data: rows, error } = await context.supabase.rpc("set_workspace_timezone", {
+      _workspace_id: data.workspaceId,
+      _timezone: data.timezone,
+    });
+    if (error) {
+      const msg = error.message ?? "";
+      if (msg.includes("PERMISSION_DENIED")) {
+        throw new ApiError({ code: "PERMISSION_DENIED", message: "PERMISSION_DENIED" });
+      }
+      if (msg.includes("INVALID_TIMEZONE")) {
+        throw new ApiError({ code: "VALIDATION_ERROR", message: "INVALID_TIMEZONE" });
+      }
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "WORKSPACE_TIMEZONE_UPDATE_FAILED" });
+    }
+    const row = (rows as Array<{ id: string; timezone: string }> | null)?.[0];
+    if (!row) throw new ApiError({ code: "NOT_FOUND", message: "WORKSPACE_NOT_FOUND" });
+    return row;
   });
