@@ -1724,6 +1724,13 @@ export function AppTopbar({
                 search={{ tab: "security" }}
               />
               <MenuItem
+                icon={CreditCard}
+                label="Gói dịch vụ"
+                desc="Xem, nâng cấp hoặc hủy gói"
+                onClick={() => setUserOpen(false)}
+                to="/billing"
+              />
+              <MenuItem
                 icon={HelpCircle}
                 label="Trợ giúp & hỗ trợ"
                 desc="Tài liệu, hotline 1900 6996"
