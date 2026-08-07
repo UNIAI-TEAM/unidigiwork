@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -683,11 +684,11 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
             <span className="text-muted-foreground">{tk.id}</span>
             <span className="flex-1 truncate text-foreground">{tk.title}</span>
             <span
-              className={`hidden rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline ${tk.tag.color}`}
+              className={`hidden rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline ${priorityColors[tk.priority]}`}
             >
-              {tk.tag.label}
+              {tk.priority}
             </span>
-            <span className="hidden text-muted-foreground md:inline">{tk.date}</span>
+            <span className="hidden text-muted-foreground md:inline">{fmtDate(tk.due_at)}</span>
           </div>
         ))}
       </div>
