@@ -631,17 +631,17 @@ function Landing() {
 }
 
 function DemoLeadForm() {
-  const { t } = useI18n();
-  return <LeadForm t={t} variant="demo" />;
+  return <LeadForm variant="demo" />;
 }
 
 function HireConsultForm() {
-  const { t } = useI18n();
-  return <LeadForm t={t} variant="hire" />;
+  return <LeadForm variant="hire" />;
 }
 
-function LeadFormLegacy() {
+function LeadForm({ variant }: { variant: "demo" | "hire" }) {
   const { t } = useI18n();
+  const isHire = variant === "hire";
+  const idp = isHire ? "hire" : "demo";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
@@ -691,7 +691,7 @@ function LeadFormLegacy() {
           onClick={() => setSuccess(false)}
           className="mt-3 text-sm text-primary hover:underline"
         >
-          {t("land.demo.form.submit")}
+          {isHire ? t("land.hireform.submit") : t("land.demo.form.submit")}
         </button>
       </div>
     );
@@ -701,11 +701,11 @@ function LeadFormLegacy() {
     <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-name">
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-name`}>
             {t("land.demo.form.name")}
           </label>
           <input
-            id="demo-name"
+            id={`${idp}-name`}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -716,15 +716,18 @@ function LeadFormLegacy() {
           {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-role">
-            {t("land.demo.form.role")}
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-role`}>
+            {isHire ? t("land.hireform.need") : t("land.demo.form.role")}
           </label>
           <input
-            id="demo-role"
+            id={`${idp}-role`}
             type="text"
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            placeholder={t("land.demo.form.role.placeholder")}
+            maxLength={100}
+            placeholder={
+              isHire ? t("land.hireform.need.placeholder") : t("land.demo.form.role.placeholder")
+            }
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
             disabled={loading}
           />
@@ -732,11 +735,11 @@ function LeadFormLegacy() {
         </div>
       </div>
       <div className="mt-4">
-        <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-email">
+        <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-email`}>
           {t("land.demo.form.email")}
         </label>
         <input
-          id="demo-email"
+          id={`${idp}-email`}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -752,7 +755,7 @@ function LeadFormLegacy() {
         className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {t("land.demo.form.submit")}
+        {isHire ? t("land.hireform.submit") : t("land.demo.form.submit")}
       </button>
     </form>
   );
