@@ -131,3 +131,21 @@ export const cancelWorkflowRun = createServerFn({ method: "POST" })
     });
     return ensureOk(res, "WORKFLOW_RUN_NOT_FOUND");
   });
+export const listWorkflowRuns = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workflowIds: z.array(z.string().uuid()).min(1).max(100),
+      limit: z.number().int().min(1).max(500).default(200),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("workflow_runs")
+      .select("id, workflow_id, status, started_at, ended_at, created_at, row_version")
+      .in("workflow_id", data.workflowIds)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (error) mapPgError(error);
+    return rows ?? [];
+  });
