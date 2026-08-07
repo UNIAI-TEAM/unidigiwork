@@ -204,7 +204,6 @@ function DocumentsPage() {
 
   const deleteDoc = async (id: string) => {
     if (!confirm("Xoá tài liệu này?")) return;
-    if (!confirm("Xoá tài liệu này?")) return;
     const { error } = await supabase.from("documents").delete().eq("id", id);
     if (error) {
       toast.error("Xoá thất bại: " + error.message);
@@ -216,6 +215,7 @@ function DocumentsPage() {
   };
 
   const addMember = async () => {
+    // (giữ nguyên)
     if (!currentWs || !inviteEmail.trim()) return;
     const { data: p, error: pe } = await supabase
       .from("profiles")
