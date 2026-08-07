@@ -5,11 +5,12 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Plus, Save, Play, Rocket, Trash2, ArrowUp, ArrowDown,
   Zap, Sparkles, GitBranch, Mail, Database, CheckCircle2, Clock, Loader2,
+  FlaskConical, AlertTriangle, MinusCircle, XCircle,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getWorkflow, updateWorkflow, publishWorkflow, startWorkflowRun,
-  upsertWorkflowTrigger, deleteWorkflowTrigger,
+  upsertWorkflowTrigger, deleteWorkflowTrigger, simulateWorkflowRun,
 } from "@/lib/api/workflows.functions";
 
 export const Route = createFileRoute("/workflows/$id")({
@@ -274,6 +275,7 @@ function WorkflowBuilderPage() {
               {/* Triggers + runs */}
               <section className="space-y-4">
                 <TriggersPanel workflowId={id} triggers={data.triggers} published={published} onChanged={refresh} />
+                <DryRunPanel workflowId={id} steps={steps} dirty={dirty} />
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
                   <h2 className="text-sm font-semibold">Lượt chạy gần đây</h2>
                   {data.runs.length === 0 ? (
@@ -462,6 +464,150 @@ function TriggersPanel({
           {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Thêm trigger
         </button>
       </div>
+    </div>
+  );
+}
+
+type DryStep = {
+  order: number; key: string; title: string; type: string;
+  on_error: string; status: string; input: unknown;
+};
+
+const DRY_SOURCES: { value: "manual" | "schedule" | "event"; label: string }[] = [
+  { value: "manual", label: "Thủ công" },
+  { value: "schedule", label: "Theo lịch" },
+  { value: "event", label: "Theo sự kiện" },
+];
+
+const DRY_STATUS: Record<string, { label: string; cls: string; icon: React.ComponentType<{ className?: string }> }> = {
+  succeeded: { label: "Thành công", cls: "text-success", icon: CheckCircle2 },
+  failed: { label: "Lỗi", cls: "text-destructive", icon: XCircle },
+  skipped: { label: "Bỏ qua", cls: "text-warning", icon: MinusCircle },
+  not_reached: { label: "Không chạy tới", cls: "text-muted-foreground", icon: MinusCircle },
+};
+
+function DryRunPanel({ workflowId, steps, dirty }: { workflowId: string; steps: Step[]; dirty: boolean }) {
+  const [source, setSource] = useState<"manual" | "schedule" | "event">("manual");
+  const [payload, setPayload] = useState('{\n  "example": "value"\n}');
+  const [failKey, setFailKey] = useState("");
+  const [result, setResult] = useState<{
+    run_status: string; step_count: number; warnings: string[]; steps: DryStep[];
+  } | null>(null);
+
+  const sim = useMutation({
+    mutationFn: async () => {
+      let parsed: Record<string, unknown> = {};
+      if (payload.trim()) {
+        try {
+          const v = JSON.parse(payload) as unknown;
+          if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error("not object");
+          parsed = v as Record<string, unknown>;
+        } catch {
+          throw new Error("Payload phải là JSON dạng đối tượng hợp lệ.");
+        }
+      }
+      return simulateWorkflowRun({
+        data: { workflowId, triggerSource: source, payload: parsed, failStepKey: failKey || null },
+      });
+    },
+    onSuccess: (r) => {
+      setResult(r as never);
+      toast.success("Đã chạy thử (không tạo lượt chạy thật)");
+    },
+    onError: (e: Error) => toast.error(e.message || "Không chạy thử được"),
+  });
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+      <div className="flex items-center gap-2">
+        <FlaskConical className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold">Chạy thử (payload giả lập)</h2>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Mô phỏng luồng các bước trước khi phát hành. Không tạo lượt chạy thật, không tính hạn mức.
+      </p>
+      {dirty && (
+        <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-warning/10 px-2.5 py-2 text-xs text-warning">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          Bạn có thay đổi chưa lưu — hãy lưu để chạy thử đúng cấu hình mới nhất.
+        </p>
+      )}
+
+      <div className="mt-3 space-y-3">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">Nguồn kích hoạt</label>
+          <div className="mt-1.5 flex gap-1.5">
+            {DRY_SOURCES.map((s) => (
+              <button key={s.value} onClick={() => setSource(s.value)}
+                className={`h-8 flex-1 rounded-lg border px-2 text-xs ${source === s.value ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-surface-2"}`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">Payload giả lập (JSON)</label>
+          <textarea value={payload} onChange={(e) => setPayload(e.target.value)} rows={5} spellCheck={false}
+            className="mt-1.5 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">Giả lập lỗi tại bước</label>
+          <select value={failKey} onChange={(e) => setFailKey(e.target.value)}
+            className="mt-1.5 h-9 w-full rounded-lg border border-border bg-surface-2 px-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring">
+            <option value="">Không giả lập lỗi</option>
+            {steps.map((s) => <option key={s.key} value={s.key}>{s.title}</option>)}
+          </select>
+        </div>
+
+        <button onClick={() => sim.mutate()} disabled={sim.isPending}
+          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          {sim.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />} Chạy thử
+        </button>
+      </div>
+
+      {result && (
+        <div className="mt-4 space-y-2 border-t border-border pt-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Kết quả mô phỏng ({result.step_count} bước)</span>
+            <span className={`rounded-full px-2 py-0.5 font-medium ${result.run_status === "failed" ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}>
+              {result.run_status === "failed" ? "Thất bại" : "Thành công"}
+            </span>
+          </div>
+          {result.warnings?.map((w) => (
+            <p key={w} className="flex items-start gap-1.5 rounded-lg bg-warning/10 px-2.5 py-2 text-xs text-warning">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{w}
+            </p>
+          ))}
+          <ol className="space-y-1.5">
+            {result.steps.map((s) => {
+              const meta = DRY_STATUS[s.status] ?? DRY_STATUS["not_reached"]!;
+              const Icon = meta.icon;
+              return (
+                <li key={`${s.order}-${s.key}`} className="rounded-lg border border-border bg-surface-2 px-3 py-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{s.order}.</span>
+                    <span className="flex-1 truncate font-medium">{s.title}</span>
+                    <span className={`flex items-center gap-1 ${meta.cls}`}>
+                      <Icon className="h-3.5 w-3.5" />{meta.label}
+                    </span>
+                  </div>
+                  {s.status === "failed" && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Chính sách khi lỗi: {s.on_error === "skip" ? "Bỏ qua bước" : "Dừng toàn bộ"}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+          <details className="rounded-lg border border-border bg-surface-2 px-3 py-2">
+            <summary className="cursor-pointer text-xs text-muted-foreground">Xem input đã truyền</summary>
+            <pre className="mt-2 overflow-x-auto font-mono text-[11px]">{JSON.stringify(result.steps[0]?.input ?? {}, null, 2)}</pre>
+          </details>
+        </div>
+      )}
     </div>
   );
 }

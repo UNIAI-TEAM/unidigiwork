@@ -3849,6 +3849,15 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      simulate_workflow_run: {
+        Args: {
+          _fail_step_key?: string
+          _payload?: Json
+          _trigger_source?: string
+          _workflow_id: string
+        }
+        Returns: Json
+      }
       start_meeting: {
         Args: {
           _correlation_id?: string

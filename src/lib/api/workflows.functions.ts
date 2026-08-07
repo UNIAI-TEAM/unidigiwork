@@ -1,3 +1,4 @@
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 // Batch 1D-API — Workflows server functions.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -324,4 +325,34 @@ export const fireWorkflowEvent = createServerFn({ method: "POST" })
     });
     if (error) mapPgError(error);
     return { started: count ?? 0 };
+  });
+
+export const simulateWorkflowRun = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workflowId: z.string().uuid(),
+      triggerSource: z.enum(["manual", "schedule", "event"]).default("manual"),
+      payload: z.record(z.string(), z.unknown()).default({}),
+      failStepKey: z.string().max(120).nullable().default(null),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("simulate_workflow_run", {
+      _workflow_id: data.workflowId,
+      _payload: data.payload as never,
+      _trigger_source: data.triggerSource,
+      _fail_step_key: data.failStepKey ?? undefined,
+    });
+    return ensureOk(res, "WORKFLOW_NOT_FOUND") as unknown as {
+      workflow_status: string;
+      trigger_source: string;
+      run_status: string;
+      step_count: number;
+      warnings: string[];
+      steps: {
+        order: number; key: string; title: string; type: string;
+        on_error: string; status: string; input: Json;
+      }[];
+    };
   });
