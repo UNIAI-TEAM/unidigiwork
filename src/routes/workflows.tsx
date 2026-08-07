@@ -356,6 +356,7 @@ function WorkflowsPage() {
                   >
                     <Plus className="h-4 w-4" /> {t("wf.create")}
                   </button>
+                  {!perms.can_edit && <PermissionHint workspaceId={activeWs ?? null} action="edit" />}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
