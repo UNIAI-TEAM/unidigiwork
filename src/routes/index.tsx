@@ -632,6 +632,16 @@ function Landing() {
 
 function DemoLeadForm() {
   const { t } = useI18n();
+  return <LeadForm t={t} variant="demo" />;
+}
+
+function HireConsultForm() {
+  const { t } = useI18n();
+  return <LeadForm t={t} variant="hire" />;
+}
+
+function LeadFormLegacy() {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
