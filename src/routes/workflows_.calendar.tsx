@@ -478,6 +478,29 @@ function WorkflowCalendarPage() {
                   <X className="h-3.5 w-3.5" /> Xoá lọc
                 </button>
               )}
+              <div className="inline-flex overflow-hidden rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setWarningFilter("all")}
+                  className={`px-2.5 py-2 text-xs ${warningFilter === "all" ? "bg-primary text-primary-foreground" : "hover:bg-surface"}`}
+                >
+                  Tất cả
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWarningFilter("warning")}
+                  className={`border-l border-border px-2.5 py-2 text-xs ${warningFilter === "warning" ? "bg-amber-600 text-white" : "hover:bg-surface"}`}
+                >
+                  Có cảnh báo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWarningFilter("clean")}
+                  className={`border-l border-border px-2.5 py-2 text-xs ${warningFilter === "clean" ? "bg-emerald-600 text-white" : "hover:bg-surface"}`}
+                >
+                  Không cảnh báo
+                </button>
+              </div>
               <input
                 type="date"
                 value={from}
