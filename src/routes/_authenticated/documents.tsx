@@ -225,19 +225,41 @@ function DocumentsPage() {
     let ok = 0;
     for (const file of Array.from(files)) {
       try {
-        const up = await uploadDocumentFile({ workspaceId: currentWs.id, file });
-        await createDocument({
-          data: {
-            workspaceId: currentWs.id,
-            title: file.name,
-            folder: newFolder.trim() || "My Documents",
-            tags: [],
-            storageRef: up.storageRef,
-            mimeType: up.mimeType,
-            sizeBytes: up.sizeBytes,
-            idempotencyKey: crypto.randomUUID(),
-          },
+        // Trùng tên trong workspace ⇒ tạo phiên bản mới thay vì tài liệu mới.
+        const existing = docs.find(
+          (d) => d.title.trim().toLowerCase() === file.name.trim().toLowerCase(),
+        );
+        const up = await uploadDocumentFile({
+          workspaceId: currentWs.id,
+          documentKey: existing?.id,
+          file,
         });
+        if (existing) {
+          await uploadDocumentVersion({
+            data: {
+              documentId: existing.id,
+              storageRef: up.storageRef,
+              mimeType: up.mimeType,
+              sizeBytes: up.sizeBytes,
+              comment: file.name,
+              idempotencyKey: crypto.randomUUID(),
+            },
+          });
+          toast.success(`${file.name}: đã tạo phiên bản mới`);
+        } else {
+          await createDocument({
+            data: {
+              workspaceId: currentWs.id,
+              title: file.name,
+              folder: newFolder.trim() || "My Documents",
+              tags: [],
+              storageRef: up.storageRef,
+              mimeType: up.mimeType,
+              sizeBytes: up.sizeBytes,
+              idempotencyKey: crypto.randomUUID(),
+            },
+          });
+        }
         ok += 1;
       } catch (e) {
         toast.error(`${file.name}: ${(e as Error).message}`);
