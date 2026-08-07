@@ -33,10 +33,14 @@ import {
   Users,
   LogOut,
   Trash2,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createDocument } from "@/lib/api/documents.functions";
+import { uploadDocumentFile } from "@/lib/documents-storage";
 
 type Doc = {
   id: string;
@@ -89,6 +93,7 @@ function DocumentsPage() {
   const [newWsName, setNewWsName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const isOwner = useMemo(
     () => !!currentWs && !!userId && currentWs.owner_id === userId,
@@ -209,7 +214,47 @@ function DocumentsPage() {
     toast.success("Đã xoá");
   };
 
+  // Tải tệp thật lên storage rồi tạo tài liệu qua server function (có RLS + quota).
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    if (!currentWs) {
+      toast.error("Chọn workspace trước khi tải tệp");
+      return;
+    }
+    setUploading(true);
+    let ok = 0;
+    for (const file of Array.from(files)) {
+      try {
+        const up = await uploadDocumentFile({ workspaceId: currentWs.id, file });
+        await createDocument({
+          data: {
+            workspaceId: currentWs.id,
+            title: file.name,
+            folder: newFolder.trim() || "My Documents",
+            tags: [],
+            storageRef: up.storageRef,
+            mimeType: up.mimeType,
+            sizeBytes: up.sizeBytes,
+            idempotencyKey: crypto.randomUUID(),
+          },
+        });
+        ok += 1;
+      } catch (e) {
+        toast.error(`${file.name}: ${(e as Error).message}`);
+      }
+    }
+    const { data: refreshed } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("workspace_id", currentWs.id)
+      .order("updated_at", { ascending: false });
+    if (refreshed) setDocs(refreshed as Doc[]);
+    setUploading(false);
+    if (ok > 0) toast.success(`Đã tải lên ${ok} tệp`);
+  };
+
   const addMember = async () => {
+    // (giữ nguyên)
     if (!currentWs || !inviteEmail.trim()) return;
     const { data: p, error: pe } = await supabase
       .from("profiles")
@@ -341,6 +386,27 @@ function DocumentsPage() {
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
+              <label
+                title="Tải tệp lên"
+                className={`flex cursor-pointer items-center rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70 ${!currentWs || uploading ? "pointer-events-none opacity-50" : ""}`}
+              >
+                {uploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5" />
+                )}
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  aria-label="Tải tệp lên"
+                  disabled={!currentWs || uploading}
+                  onChange={(e) => {
+                    void uploadFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
             </div>
             <div className="flex-1 overflow-y-auto px-2 pb-3">
               {docs.length === 0 ? (

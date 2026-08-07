@@ -76,7 +76,7 @@ export const getDocument = createServerFn({ method: "GET" })
     const [versionsRes, workspaceRes, permsRes] = await Promise.all([
       context.supabase
         .from("document_versions")
-        .select("id, version, mime_type, size_bytes, comment, author_id, created_at")
+        .select("id, version, mime_type, size_bytes, comment, author_id, created_at, storage_ref")
         .eq("document_id", data.documentId)
         .order("version", { ascending: false })
         .limit(20),
