@@ -772,7 +772,7 @@ function Donut({
 }: {
   total: number;
   totalLabel: string;
-  segments: { color: string; pct: number }[];
+  segments: { color: string; pct: number; onClick?: () => void; title?: string }[];
 }) {
   let acc = 0;
   const stops = segments
@@ -782,11 +782,36 @@ function Donut({
       return `${s.color} ${start}% ${acc}%`;
     })
     .join(", ");
+  let acc2 = 0;
   return (
     <div
       className="relative h-36 w-36 shrink-0 rounded-full"
       style={{ background: `conic-gradient(${stops})` }}
     >
+      {segments.map((s, i) => {
+        const start = acc2;
+        acc2 += s.pct;
+        if (!s.onClick || s.pct <= 0) return null;
+        const end = acc2;
+        const pt = (p: number) => {
+          const a = (p / 100) * 2 * Math.PI - Math.PI / 2;
+          return `${50 + 50 * Math.cos(a)}% ${50 + 50 * Math.sin(a)}%`;
+        };
+        const steps = Math.max(2, Math.ceil((end - start) / 5));
+        const pts = Array.from({ length: steps + 1 }, (_, j) =>
+          pt(start + ((end - start) * j) / steps),
+        );
+        return (
+          <button
+            key={i}
+            onClick={s.onClick}
+            title={s.title}
+            aria-label={s.title}
+            className="absolute inset-0 rounded-full transition-opacity hover:opacity-80"
+            style={{ clipPath: `polygon(50% 50%, ${pts.join(", ")})` }}
+          />
+        );
+      })}
       <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-surface text-center">
         <div className="text-xl font-bold">{total.toLocaleString()}</div>
         <div className="text-[10px] text-muted-foreground">{totalLabel}</div>
@@ -795,7 +820,31 @@ function Donut({
   );
 }
 
-function DonutRow({ color, label, value }: { color: string; label: string; value: string }) {
+function DonutRow({
+  color,
+  label,
+  value,
+  onClick,
+}: {
+  color: string;
+  label: string;
+  value: string;
+  onClick?: () => void;
+}) {
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="flex w-full items-center justify-between rounded-md px-1 py-0.5 text-xs transition-colors hover:bg-surface-2"
+      >
+        <span className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${color}`} />
+          {label}
+        </span>
+        <span className="text-muted-foreground">{value}</span>
+      </button>
+    );
+  }
   return (
     <div className="flex items-center justify-between text-xs">
       <span className="flex items-center gap-2">

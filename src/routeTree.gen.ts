@@ -30,6 +30,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
+import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as PeopleIdRouteImport } from './routes/people.$id'
 import { Route as MeetingHistoryRouteImport } from './routes/meeting_.history'
@@ -171,6 +172,11 @@ const TasksIdRoute = TasksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => TasksRoute,
+} as any)
+const ReportsDetailRoute = ReportsDetailRouteImport.update({
+  id: '/detail',
+  path: '/detail',
+  getParentRoute: () => ReportsRoute,
 } as any)
 const ReportsTypeRoute = ReportsTypeRouteImport.update({
   id: '/$type',
@@ -405,6 +411,7 @@ export interface FileRoutesByFullPath {
   '/meeting/history': typeof MeetingHistoryRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
@@ -462,6 +469,7 @@ export interface FileRoutesByTo {
   '/meeting/history': typeof MeetingHistoryRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports': typeof ReportsIndexRoute
@@ -523,6 +531,7 @@ export interface FileRoutesById {
   '/meeting_/history': typeof MeetingHistoryRoute
   '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
+  '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/reports/': typeof ReportsIndexRoute
@@ -584,6 +593,7 @@ export interface FileRouteTypes {
     | '/meeting/history'
     | '/people/$id'
     | '/reports/$type'
+    | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
     | '/reports/'
@@ -641,6 +651,7 @@ export interface FileRouteTypes {
     | '/meeting/history'
     | '/people/$id'
     | '/reports/$type'
+    | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
     | '/reports'
@@ -701,6 +712,7 @@ export interface FileRouteTypes {
     | '/meeting_/history'
     | '/people/$id'
     | '/reports/$type'
+    | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
     | '/reports/'
@@ -901,6 +913,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks/$id'
       preLoaderRoute: typeof TasksIdRouteImport
       parentRoute: typeof TasksRoute
+    }
+    '/reports/detail': {
+      id: '/reports/detail'
+      path: '/detail'
+      fullPath: '/reports/detail'
+      preLoaderRoute: typeof ReportsDetailRouteImport
+      parentRoute: typeof ReportsRoute
     }
     '/reports/$type': {
       id: '/reports/$type'
@@ -1322,11 +1341,13 @@ const PeopleRouteWithChildren =
 
 interface ReportsRouteChildren {
   ReportsTypeRoute: typeof ReportsTypeRoute
+  ReportsDetailRoute: typeof ReportsDetailRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
 }
 
 const ReportsRouteChildren: ReportsRouteChildren = {
   ReportsTypeRoute: ReportsTypeRoute,
+  ReportsDetailRoute: ReportsDetailRoute,
   ReportsIndexRoute: ReportsIndexRoute,
 }
 
