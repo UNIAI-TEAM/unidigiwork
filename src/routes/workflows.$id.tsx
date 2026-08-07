@@ -11,7 +11,12 @@ import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getWorkflow, updateWorkflow, publishWorkflow, startWorkflowRun,
   upsertWorkflowTrigger, deleteWorkflowTrigger, simulateWorkflowRun,
+  getMyWorkflowPermissions,
 } from "@/lib/api/workflows.functions";
+import {
+  DEFAULT_WORKFLOW_PERMS, denialReason, guardWorkflowAction, toastWorkflowError,
+  type WorkflowPerms,
+} from "@/lib/workflow-access";
 
 export const Route = createFileRoute("/workflows/$id")({
   head: () => ({
@@ -79,6 +84,15 @@ function WorkflowBuilderPage() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["workflow", id] });
 
+  const workspaceId = data?.workflow?.workspace_id ?? null;
+  const permsQuery = useQuery({
+    queryKey: ["workflow-my-perms", workspaceId],
+    queryFn: () => getMyWorkflowPermissions({ data: { workspaceId: workspaceId! } }),
+    enabled: !!workspaceId,
+  });
+  const perms: WorkflowPerms =
+    (permsQuery.data as WorkflowPerms | null) ?? { ...DEFAULT_WORKFLOW_PERMS, workspace_id: workspaceId ?? "" };
+
   const save = useMutation({
     mutationFn: () =>
       updateWorkflow({
@@ -91,19 +105,19 @@ function WorkflowBuilderPage() {
         },
       }),
     onSuccess: () => { toast.success("Đã lưu quy trình"); setDirty(false); refresh(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không lưu được quy trình"),
   });
 
   const publish = useMutation({
     mutationFn: () => publishWorkflow({ data: { idempotencyKey: uid(), workflowId: id } }),
     onSuccess: () => { toast.success("Đã phát hành quy trình"); refresh(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không phát hành được quy trình"),
   });
 
   const runNow = useMutation({
     mutationFn: () => startWorkflowRun({ data: { idempotencyKey: uid(), workflowId: id, context: { source: "manual" } } }),
     onSuccess: () => { toast.success("Đã tạo lượt chạy"); refresh(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không chạy được quy trình"),
   });
 
   const mutateSteps = (next: Step[]) => { setSteps(next); setDirty(true); };
