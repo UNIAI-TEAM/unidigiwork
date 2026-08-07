@@ -14,6 +14,11 @@ import {
   X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import {
+  exportAnomaliesCsv,
+  exportAnomaliesPdf,
+  type AnomalyRow,
+} from "@/lib/timestamp-anomaly-export";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
   cancelWorkflowRun,
@@ -165,6 +170,22 @@ function timestampIssues(r: {
   )
     out.push("Thời lượng bất thường (>30 ngày)");
   return out;
+}
+
+/** Timestamp kỳ vọng sau khi chuẩn hoá (dùng cho báo cáo đối soát). */
+function expectedTimestamps(r: {
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+}) {
+  const now = new Date();
+  const clampFuture = (d: Date) => (d.getTime() > now.getTime() ? now : d);
+  const started = clampFuture(new Date(r.started_at ?? r.created_at));
+  const createdD = new Date(r.created_at);
+  const startFixed = started < createdD ? createdD : started;
+  let endFixed: Date | null = r.ended_at ? clampFuture(new Date(r.ended_at)) : null;
+  if (endFixed && endFixed < startFixed) endFixed = startFixed;
+  return { started: startFixed.toISOString(), ended: endFixed ? endFixed.toISOString() : null };
 }
 function tzOffsetLabel(tz: string) {
   try {
