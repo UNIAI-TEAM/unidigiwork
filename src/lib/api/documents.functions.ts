@@ -59,6 +59,41 @@ export const createDocument = createServerFn({ method: "POST" })
     return ensureOk(res, "DOCUMENT_NOT_FOUND");
   });
 
+// Chi tiết một tài liệu: RLS đảm bảo chỉ thành viên workspace/tenant đọc được.
+export const getDocument = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ documentId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: doc, error } = await context.supabase
+      .from("documents")
+      .select("*")
+      .eq("id", data.documentId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    if (!doc) throw new Error("DOCUMENT_NOT_FOUND");
+
+    const [versionsRes, workspaceRes, permsRes] = await Promise.all([
+      context.supabase
+        .from("document_versions")
+        .select("id, version, mime_type, size_bytes, comment, author_id, created_at")
+        .eq("document_id", data.documentId)
+        .order("version", { ascending: false })
+        .limit(20),
+      context.supabase.from("workspaces").select("id, name").eq("id", doc.workspace_id).maybeSingle(),
+      context.supabase
+        .from("document_permissions")
+        .select("principal_type, principal_id, level")
+        .eq("document_id", data.documentId),
+    ]);
+
+    return {
+      document: doc,
+      versions: versionsRes.data ?? [],
+      workspace: workspaceRes.data ?? null,
+      permissions: permsRes.data ?? [],
+    };
+  });
 export const updateDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
