@@ -1,13 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarRange, Check, ChevronDown, Loader2, X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  Ban,
+  CalendarRange,
+  Check,
+  ChevronDown,
+  Loader2,
+  RotateCw,
+  X,
+} from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
+  cancelWorkflowRun,
   getWorkflowRun,
   listWorkflows,
   listWorkflowRuns,
+  startWorkflowRun,
 } from "@/lib/api/workflows.functions";
 
 export const Route = createFileRoute("/workflows_/calendar")({
@@ -405,11 +417,51 @@ function fmt(ts: string | null | undefined) {
 }
 
 function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void }) {
+  const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["workflow-run", runId],
     queryFn: async () => await getWorkflowRun({ data: { runId } }),
   });
   const data = q.data;
+
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["workflow-run", runId] });
+    void qc.invalidateQueries({ queryKey: ["workflow-runs"] });
+  };
+
+  const cancelMut = useMutation({
+    mutationFn: async () =>
+      await cancelWorkflowRun({
+        data: { runId, reason: "Huỷ từ lịch chạy", idempotencyKey: crypto.randomUUID() },
+      }),
+    onSuccess: () => {
+      toast.success("Đã huỷ lần chạy");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const retryMut = useMutation({
+    mutationFn: async () =>
+      await startWorkflowRun({
+        data: {
+          workflowId: data!.run.workflow_id,
+          context: (data!.run.context ?? {}) as Record<string, unknown>,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Đã chạy lại quy trình");
+      refresh();
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const status = data?.run.status as RunStatus | undefined;
+  const canCancel = status === "pending" || status === "running";
+  const canRetry = status === "failed" || status === "canceled";
+  const busy = cancelMut.isPending || retryMut.isPending;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -507,6 +559,41 @@ function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void
                   );
                 })}
               </ol>
+            )}
+
+            {(canCancel || canRetry) && (
+              <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
+                {canCancel && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => cancelMut.mutate()}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    {cancelMut.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Ban className="h-4 w-4" />
+                    )}
+                    Huỷ lần chạy
+                  </button>
+                )}
+                {canRetry && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => retryMut.mutate()}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    {retryMut.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RotateCw className="h-4 w-4" />
+                    )}
+                    Chạy lại
+                  </button>
+                )}
+              </div>
             )}
           </>
         )}
