@@ -21,6 +21,11 @@ import {
   Calendar,
   Send,
   CheckCircle2,
+  BriefcaseBusiness,
+  BarChart3,
+  Headphones,
+  Settings2,
+  Plug,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
@@ -114,6 +119,12 @@ function Landing() {
             </a>
             <a href="#preview" className="hover:text-foreground">
               {t("land.nav.preview")}
+            </a>
+            <a href="#hire-ai" className="hover:text-foreground">
+              {t("land.hire.badge")}
+            </a>
+            <a href="#ai-skills" className="hover:text-foreground">
+              {t("land.skill.badge")}
             </a>
             <a href="#login" className="hover:text-foreground">
               {t("land.nav.login")}
@@ -444,6 +455,121 @@ function Landing() {
 
           <div className="mx-auto mt-10 w-full max-w-md">
             <DemoLeadForm />
+          </div>
+        </div>
+      </section>
+
+      {/* Thuê nhân sự AI */}
+      <section
+        id="hire-ai"
+        className="border-t border-border/60 py-16 sm:py-24"
+        aria-labelledby="hire-ai-title"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <BriefcaseBusiness className="h-3.5 w-3.5" /> {t("land.hire.badge")}
+            </span>
+            <h2 id="hire-ai-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              {t("land.hire.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.hire.sub")}</p>
+          </div>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {([
+              { icon: Calendar, t: "land.hire.r1.t", d: "land.hire.r1.d", price: "1.900.000đ" },
+              { icon: BarChart3, t: "land.hire.r2.t", d: "land.hire.r2.d", price: "2.900.000đ" },
+              { icon: Headphones, t: "land.hire.r3.t", d: "land.hire.r3.d", price: "2.400.000đ" },
+              { icon: Settings2, t: "land.hire.r4.t", d: "land.hire.r4.d", price: "3.500.000đ" },
+            ] as const).map((r) => (
+              <article
+                key={r.t}
+                className="flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <r.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-base font-semibold">{t(r.t)}</h3>
+                <p className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">{t(r.d)}</p>
+                <div className="mt-4 border-t border-border pt-4">
+                  <div className="text-xs text-muted-foreground">{t("land.hire.price")}</div>
+                  <div className="text-lg font-semibold tracking-tight">
+                    {r.price}
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">
+                      {t("land.hire.unit")}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/pricing"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {t("land.hire.cta")} <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
+            >
+              <MessageSquare className="h-4 w-4" /> {t("land.hire.contact")}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Skill cho nhân sự AI */}
+      <section
+        id="ai-skills"
+        className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
+        aria-labelledby="ai-skills-title"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Plug className="h-3.5 w-3.5" /> {t("land.skill.badge")}
+            </span>
+            <h2 id="ai-skills-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              {t("land.skill.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.skill.sub")}</p>
+          </div>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {([
+              { icon: Video, t: "land.skill.s1.t", d: "land.skill.s1.d" },
+              { icon: BookOpen, t: "land.skill.s2.t", d: "land.skill.s2.d" },
+              { icon: Mail, t: "land.skill.s3.t", d: "land.skill.s3.d" },
+              { icon: Workflow, t: "land.skill.s4.t", d: "land.skill.s4.d" },
+              { icon: BarChart3, t: "land.skill.s5.t", d: "land.skill.s5.d" },
+              { icon: ShieldCheck, t: "land.skill.s6.t", d: "land.skill.s6.d" },
+            ] as const).map((s) => (
+              <div
+                key={s.t}
+                className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <s.icon className="h-4 w-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold">{t(s.t)}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t(s.d)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex justify-center">
+            <Link
+              to="/ai"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
+            >
+              <Bot className="h-4 w-4" /> {t("land.skill.cta")}
+            </Link>
           </div>
         </div>
       </section>
