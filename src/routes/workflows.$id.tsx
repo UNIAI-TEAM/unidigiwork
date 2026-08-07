@@ -19,6 +19,7 @@ import {
 } from "@/lib/workflow-access";
 import { RequestAccessButton } from "@/components/workflow/request-access-button";
 import { MyEffectivePermissions } from "@/components/workflow/my-effective-permissions";
+import { PermissionHint } from "@/components/workflow/permission-hint";
 
 export const Route = createFileRoute("/workflows/$id")({
   head: () => ({
@@ -168,6 +169,9 @@ function WorkflowBuilderPage() {
             >
               {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Lưu
             </button>
+            {!permsQuery.isLoading && !perms.can_edit && (
+              <PermissionHint workspaceId={workspaceId} action="edit" workflowId={id} />
+            )}
             <button
               onClick={() => { if (guardWorkflowAction(perms, "publish")) publish.mutate(); }}
               disabled={publish.isPending || published || !perms.can_publish}
@@ -176,6 +180,9 @@ function WorkflowBuilderPage() {
             >
               <Rocket className="h-4 w-4" /> Phát hành
             </button>
+            {!permsQuery.isLoading && !perms.can_publish && (
+              <PermissionHint workspaceId={workspaceId} action="publish" workflowId={id} />
+            )}
             <button
               onClick={() => { if (guardWorkflowAction(perms, "run")) runNow.mutate(); }}
               disabled={runNow.isPending || !published || !perms.can_run}
@@ -184,6 +191,9 @@ function WorkflowBuilderPage() {
             >
               <Play className="h-4 w-4" /> Chạy ngay
             </button>
+            {!permsQuery.isLoading && !perms.can_run && (
+              <PermissionHint workspaceId={workspaceId} action="run" workflowId={id} />
+            )}
           </div>
         </div>
 
