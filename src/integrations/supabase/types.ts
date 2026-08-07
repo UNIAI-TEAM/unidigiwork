@@ -3636,6 +3636,20 @@ export type Database = {
         }
         Returns: Json
       }
+      list_workflow_permission_audit: {
+        Args: { _limit?: number; _workspace_id: string }
+        Returns: {
+          action: string
+          actor_id: string
+          actor_name: string
+          after_state: Json
+          before_state: Json
+          id: string
+          occurred_at: string
+          target_name: string
+          target_user_id: string
+        }[]
+      }
       list_workflow_permissions: {
         Args: { _workspace_id: string }
         Returns: {
