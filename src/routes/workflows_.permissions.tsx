@@ -377,6 +377,10 @@ function WorkflowPermissionsPage() {
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">{m.email ?? m.workspace_role}</span>
+                            <span className="ml-0 mt-1 inline-flex rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted-foreground">
+                              {SOURCE_LABELS[m.source] ?? m.source}
+                              {m.tenant_role ? ` · ${ROLE_LABELS[m.tenant_role] ?? m.tenant_role}` : ""}
+                            </span>
                           </td>
                           {PERMS.map((p) => (
                             <td key={p.key} className="py-3 text-center">
@@ -393,7 +397,7 @@ function WorkflowPermissionsPage() {
                           <td className="py-3 text-right">
                             <button
                               onClick={() => reset.mutate(m.user_id)}
-                              disabled={!canManage || m.is_owner || !m.updated_at || reset.isPending}
+                              disabled={!canManage || m.is_owner || m.source !== "individual" || reset.isPending}
                               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2 text-xs hover:bg-surface-2 disabled:opacity-40"
                             >
                               {reset.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
@@ -408,6 +412,7 @@ function WorkflowPermissionsPage() {
               )}
             </div>
 
+            {activeWs && <RolePermissions workspaceId={activeWs} canManage={canManage} />}
             {activeWs && <AuditTimeline workspaceId={activeWs} />}
           </div>
         </div>
