@@ -194,6 +194,62 @@ function WorkflowCalendarPage() {
                   ))}
                 </select>
               )}
+              <div ref={menuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setWfMenu((v) => !v)}
+                  disabled={workflows.length === 0}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm disabled:opacity-50"
+                >
+                  {wfIds.length === 0
+                    ? "Tất cả quy trình"
+                    : wfIds.length === 1
+                      ? (nameById.get(wfIds[0]!) ?? "1 quy trình")
+                      : `${wfIds.length} quy trình`}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+                {wfMenu && (
+                  <div className="absolute right-0 z-20 mt-1 max-h-72 w-64 overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => setWfIds([])}
+                      className="flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm hover:bg-bg"
+                    >
+                      Tất cả quy trình
+                      {wfIds.length === 0 && <Check className="h-4 w-4 text-primary" />}
+                    </button>
+                    {workflows.map((w) => {
+                      const on = wfIds.includes(w.id);
+                      return (
+                        <button
+                          key={w.id}
+                          type="button"
+                          onClick={() =>
+                            setWfIds((prev) =>
+                              prev.includes(w.id)
+                                ? prev.filter((x) => x !== w.id)
+                                : [...prev, w.id],
+                            )
+                          }
+                          className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm hover:bg-bg"
+                        >
+                          <span className="truncate">{w.name}</span>
+                          {on && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {wfIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setWfIds([])}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-2 text-xs text-muted-foreground hover:bg-surface"
+                >
+                  <X className="h-3.5 w-3.5" /> Xoá lọc
+                </button>
+              )}
               <input
                 type="date"
                 value={from}
