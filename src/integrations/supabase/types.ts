@@ -3350,6 +3350,10 @@ export type Database = {
         Args: { _days?: number; _workspace_id?: string }
         Returns: Json
       }
+      report_overview_range: {
+        Args: { _from?: string; _to?: string; _workspace_id?: string }
+        Returns: Json
+      }
       request_meeting_join: {
         Args: {
           _correlation_id?: string
