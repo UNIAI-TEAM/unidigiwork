@@ -191,6 +191,66 @@ function expectedTimestamps(r: {
   if (endFixed && endFixed < startFixed) endFixed = startFixed;
   return { started: startFixed.toISOString(), ended: endFixed ? endFixed.toISOString() : null };
 }
+
+/** Panel hover/click hiển thị lý do cảnh báo và thời gian kỳ vọng. */
+function TimestampWarningPanel({ run, tz }: { run: Run; tz: string }) {
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const issues = timestampIssues(run);
+  if (issues.length === 0) return null;
+  const exp = expectedTimestamps(run);
+  const show = hover || pinned;
+
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={(e) => e.stopPropagation()}
+      role="group"
+      aria-label="Cảnh báo thời gian"
+      className="relative"
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setPinned((p) => !p);
+        }}
+        className="flex items-start gap-1 text-amber-600 hover:text-amber-700"
+      >
+        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>{issues.join(", ")}</span>
+      </button>
+      {show && (
+        <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs">
+          <div className="font-medium text-amber-700">Quy tắc không hợp lệ</div>
+          <ul className="mt-1 space-y-0.5 text-muted-foreground">
+            {issues.map((issue) => (
+              <li key={issue} className="flex items-start gap-1.5">
+                <span className="text-amber-600">•</span>
+                <span>{issue}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 border-t border-amber-500/20 pt-2">
+            <div className="mb-1 font-medium text-amber-700">Thời gian kỳ vọng</div>
+            <div className="space-y-0.5 text-muted-foreground">
+              <div className="flex justify-between gap-2">
+                <span>Bắt đầu:</span>
+                <span>{dateTimeTz(exp.started, tz)}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span>Kết thúc:</span>
+                <span>{exp.ended ? dateTimeTz(exp.ended, tz) : "—"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function tzOffsetLabel(tz: string) {
   try {
     const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
@@ -664,10 +724,17 @@ function WorkflowCalendarPage() {
                   <ul className="mt-3 space-y-2">
                     {selectedRuns.map((r) => (
                       <li key={r.id}>
-                        <button
-                          type="button"
+                        <div
+                          role="button"
+                          tabIndex={0}
                           onClick={() => setRunId(r.id)}
-                          className="w-full rounded-lg border border-border p-2.5 text-left transition-colors hover:bg-muted/40"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setRunId(r.id);
+                            }
+                          }}
+                          className="w-full cursor-pointer rounded-lg border border-border p-2.5 text-left transition-colors hover:bg-muted/40"
                         >
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-sm font-medium">
@@ -693,14 +760,9 @@ function WorkflowCalendarPage() {
                               {durationLabel(r.started_at ?? r.created_at, r.ended_at)}
                             </div>
                           )}
-                          {timestampIssues(r).length > 0 && (
-                            <div className="flex items-start gap-1 text-amber-600">
-                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                              <span>{timestampIssues(r).join(", ")}</span>
-                            </div>
-                          )}
+                          <TimestampWarningPanel run={r} tz={tz} />
                         </div>
-                        </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
