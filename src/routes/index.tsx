@@ -523,6 +523,7 @@ function Landing() {
       </section>
 
       {/* Skill cho nhân sự AI */}
+
       <section
         id="ai-skills"
         className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
