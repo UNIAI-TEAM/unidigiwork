@@ -28,6 +28,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as WorkflowsRunsRouteImport } from './routes/workflows_.runs'
 import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calendar'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
@@ -163,6 +164,11 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ReportsRoute,
+} as any)
+const WorkflowsRunsRoute = WorkflowsRunsRouteImport.update({
+  id: '/workflows_/runs',
+  path: '/workflows/runs',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowsCalendarRoute = WorkflowsCalendarRouteImport.update({
   id: '/workflows_/calendar',
@@ -421,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
+  '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
@@ -480,6 +487,7 @@ export interface FileRoutesByTo {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
+  '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports': typeof ReportsIndexRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
@@ -543,6 +551,7 @@ export interface FileRoutesById {
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows_/calendar': typeof WorkflowsCalendarRoute
+  '/workflows_/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/quota': typeof AuthenticatedAdminQuotaRoute
@@ -606,6 +615,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows/calendar'
+    | '/workflows/runs'
     | '/reports/'
     | '/admin/leads'
     | '/admin/quota'
@@ -665,6 +675,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows/calendar'
+    | '/workflows/runs'
     | '/reports'
     | '/admin/leads'
     | '/admin/quota'
@@ -727,6 +738,7 @@ export interface FileRouteTypes {
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows_/calendar'
+    | '/workflows_/runs'
     | '/reports/'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/quota'
@@ -772,6 +784,7 @@ export interface RootRouteChildren {
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
+  WorkflowsRunsRoute: typeof WorkflowsRunsRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
@@ -912,6 +925,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/'
       preLoaderRoute: typeof ReportsIndexRouteImport
       parentRoute: typeof ReportsRoute
+    }
+    '/workflows_/runs': {
+      id: '/workflows_/runs'
+      path: '/workflows/runs'
+      fullPath: '/workflows/runs'
+      preLoaderRoute: typeof WorkflowsRunsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/workflows_/calendar': {
       id: '/workflows_/calendar'
@@ -1419,6 +1439,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
+  WorkflowsRunsRoute: WorkflowsRunsRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,
