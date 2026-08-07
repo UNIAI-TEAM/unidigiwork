@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { toastWorkflowError } from "@/lib/workflow-access";
 import {
   ArrowLeft,
   Ban,
@@ -554,7 +555,7 @@ function RunDetailModal({
       void qc.invalidateQueries({ queryKey: ["workflow-run", runId] });
       void qc.invalidateQueries({ queryKey: ["workflow-runs"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e),
   });
 
   const run = detail.data?.run as
@@ -584,7 +585,7 @@ function RunDetailModal({
       void qc.invalidateQueries({ queryKey: ["workflow-runs"] });
       onClose();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e),
   });
 
   const canCancel = run?.status === "pending" || run?.status === "running";

@@ -358,6 +358,23 @@ export const simulateWorkflowRun = createServerFn({ method: "POST" })
   });
 
 // Batch 1F-PERM — Workflow permissions (workspace scope).
+export const getMyWorkflowPermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: perms, error } = await context.supabase.rpc("get_my_workflow_permissions", {
+      _workspace_id: data.workspaceId,
+    });
+    if (error) mapPgError(error);
+    return (perms ?? null) as unknown as {
+      workspace_id: string;
+      is_owner: boolean;
+      can_edit: boolean;
+      can_publish: boolean;
+      can_run: boolean;
+    } | null;
+  });
+
 export const listWorkflowPermissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))

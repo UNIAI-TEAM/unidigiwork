@@ -11,7 +11,12 @@ import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getWorkflow, updateWorkflow, publishWorkflow, startWorkflowRun,
   upsertWorkflowTrigger, deleteWorkflowTrigger, simulateWorkflowRun,
+  getMyWorkflowPermissions,
 } from "@/lib/api/workflows.functions";
+import {
+  DEFAULT_WORKFLOW_PERMS, denialReason, guardWorkflowAction, toastWorkflowError,
+  type WorkflowPerms,
+} from "@/lib/workflow-access";
 
 export const Route = createFileRoute("/workflows/$id")({
   head: () => ({
@@ -79,6 +84,15 @@ function WorkflowBuilderPage() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["workflow", id] });
 
+  const workspaceId = data?.workflow?.workspace_id ?? null;
+  const permsQuery = useQuery({
+    queryKey: ["workflow-my-perms", workspaceId],
+    queryFn: () => getMyWorkflowPermissions({ data: { workspaceId: workspaceId! } }),
+    enabled: !!workspaceId,
+  });
+  const perms: WorkflowPerms =
+    (permsQuery.data as WorkflowPerms | null) ?? { ...DEFAULT_WORKFLOW_PERMS, workspace_id: workspaceId ?? "" };
+
   const save = useMutation({
     mutationFn: () =>
       updateWorkflow({
@@ -91,19 +105,19 @@ function WorkflowBuilderPage() {
         },
       }),
     onSuccess: () => { toast.success("Đã lưu quy trình"); setDirty(false); refresh(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không lưu được quy trình"),
   });
 
   const publish = useMutation({
     mutationFn: () => publishWorkflow({ data: { idempotencyKey: uid(), workflowId: id } }),
     onSuccess: () => { toast.success("Đã phát hành quy trình"); refresh(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không phát hành được quy trình"),
   });
 
   const runNow = useMutation({
     mutationFn: () => startWorkflowRun({ data: { idempotencyKey: uid(), workflowId: id, context: { source: "manual" } } }),
     onSuccess: () => { toast.success("Đã tạo lượt chạy"); refresh(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không chạy được quy trình"),
   });
 
   const mutateSteps = (next: Step[]) => { setSteps(next); setDirty(true); };
@@ -145,22 +159,25 @@ function WorkflowBuilderPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => save.mutate()}
-              disabled={save.isPending || !dirty}
+              onClick={() => { if (guardWorkflowAction(perms, "edit")) save.mutate(); }}
+              disabled={save.isPending || !dirty || !perms.can_edit}
+              title={perms.can_edit ? undefined : denialReason("edit")}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-surface-2 px-3 text-sm hover:bg-surface-3 disabled:opacity-50"
             >
               {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Lưu
             </button>
             <button
-              onClick={() => publish.mutate()}
-              disabled={publish.isPending || published}
+              onClick={() => { if (guardWorkflowAction(perms, "publish")) publish.mutate(); }}
+              disabled={publish.isPending || published || !perms.can_publish}
+              title={perms.can_publish ? undefined : denialReason("publish")}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-surface-2 px-3 text-sm hover:bg-surface-3 disabled:opacity-50"
             >
               <Rocket className="h-4 w-4" /> Phát hành
             </button>
             <button
-              onClick={() => runNow.mutate()}
-              disabled={runNow.isPending || !published}
+              onClick={() => { if (guardWorkflowAction(perms, "run")) runNow.mutate(); }}
+              disabled={runNow.isPending || !published || !perms.can_run}
+              title={perms.can_run ? undefined : denialReason("run")}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               <Play className="h-4 w-4" /> Chạy ngay
@@ -178,6 +195,17 @@ function WorkflowBuilderPage() {
             </div>
           ) : (
             <div className="mx-auto grid max-w-7xl gap-6 p-4 sm:p-6 xl:grid-cols-3">
+              {!permsQuery.isLoading && !perms.can_edit && (
+                <div className="xl:col-span-3 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs text-warning">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Bạn đang ở chế độ chỉ xem: không có quyền chỉnh sửa quy trình này.
+                    {!perms.can_publish && " Không có quyền phát hành."}
+                    {!perms.can_run && " Không có quyền chạy."}
+                    {" "}Liên hệ chủ sở hữu không gian làm việc tại mục Quy trình → Phân quyền.
+                  </span>
+                </div>
+              )}
               {/* Steps */}
               <section className="space-y-4 xl:col-span-2">
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
@@ -274,8 +302,8 @@ function WorkflowBuilderPage() {
 
               {/* Triggers + runs */}
               <section className="space-y-4">
-                <TriggersPanel workflowId={id} triggers={data.triggers} published={published} onChanged={refresh} />
-                <DryRunPanel workflowId={id} steps={steps} dirty={dirty} />
+                <TriggersPanel workflowId={id} triggers={data.triggers} published={published} onChanged={refresh} canEdit={perms.can_edit} />
+                <DryRunPanel workflowId={id} steps={steps} dirty={dirty} canRun={perms.can_run} />
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
                   <h2 className="text-sm font-semibold">Lượt chạy gần đây</h2>
                   {data.runs.length === 0 ? (
@@ -311,8 +339,8 @@ type TriggerRow = {
 };
 
 function TriggersPanel({
-  workflowId, triggers, published, onChanged,
-}: { workflowId: string; triggers: TriggerRow[]; published: boolean; onChanged: () => void }) {
+  workflowId, triggers, published, onChanged, canEdit,
+}: { workflowId: string; triggers: TriggerRow[]; published: boolean; onChanged: () => void; canEdit: boolean }) {
   const [kind, setKind] = useState<"schedule" | "event">("schedule");
   const [frequency, setFrequency] = useState<"minutes" | "hourly" | "daily" | "weekly">("daily");
   const [intervalMinutes, setIntervalMinutes] = useState(15);
@@ -336,7 +364,7 @@ function TriggersPanel({
         },
       }),
     onSuccess: () => { toast.success("Đã lưu trigger"); onChanged(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không lưu được trigger"),
   });
 
   const toggle = useMutation({
@@ -352,13 +380,13 @@ function TriggersPanel({
         },
       }),
     onSuccess: onChanged,
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không đổi được trạng thái trigger"),
   });
 
   const remove = useMutation({
     mutationFn: (triggerId: string) => deleteWorkflowTrigger({ data: { triggerId } }),
     onSuccess: () => { toast.success("Đã xoá trigger"); onChanged(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không xoá được trigger"),
   });
 
   const describe = (t: TriggerRow) => {
@@ -379,6 +407,7 @@ function TriggersPanel({
     <div className="rounded-xl border border-border bg-card p-4 md:p-6">
       <h2 className="text-sm font-semibold">Trigger &amp; Lịch chạy</h2>
       {hint && <p className="mt-1 text-xs text-warning">{hint}</p>}
+      {!canEdit && <p className="mt-1 text-xs text-warning">{denialReason("edit")}</p>}
 
       <div className="mt-3 space-y-2">
         {triggers.length === 0 && <p className="text-xs text-muted-foreground">Chưa có trigger nào.</p>}
@@ -387,11 +416,16 @@ function TriggersPanel({
             <div className="flex items-center justify-between gap-2">
               <p className="truncate text-sm">{describe(t)}</p>
               <div className="flex shrink-0 items-center gap-1">
-                <button onClick={() => toggle.mutate(t)}
+                <button onClick={() => { if (canEdit) toggle.mutate(t); else guardWorkflowAction(null, "edit"); }}
+                  disabled={!canEdit}
+                  title={canEdit ? undefined : denialReason("edit")}
                   className={`rounded-full px-2 py-0.5 text-[10px] ${t.is_enabled ? "bg-success/15 text-success" : "bg-card text-muted-foreground"}`}>
                   {t.is_enabled ? "Đang bật" : "Đã tắt"}
                 </button>
-                <button aria-label="Xoá trigger" onClick={() => remove.mutate(t.id)} className="rounded-lg p-1.5 text-destructive hover:bg-surface-3">
+                <button aria-label="Xoá trigger" disabled={!canEdit}
+                  title={canEdit ? undefined : denialReason("edit")}
+                  onClick={() => { if (canEdit) remove.mutate(t.id); else guardWorkflowAction(null, "edit"); }}
+                  className="rounded-lg p-1.5 text-destructive hover:bg-surface-3 disabled:opacity-50">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -459,7 +493,9 @@ function TriggersPanel({
           </label>
         )}
 
-        <button onClick={() => save.mutate()} disabled={save.isPending}
+        <button onClick={() => { if (canEdit) save.mutate(); else guardWorkflowAction(null, "edit"); }}
+          disabled={save.isPending || !canEdit}
+          title={canEdit ? undefined : denialReason("edit")}
           className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Thêm trigger
         </button>
@@ -486,7 +522,7 @@ const DRY_STATUS: Record<string, { label: string; cls: string; icon: React.Compo
   not_reached: { label: "Không chạy tới", cls: "text-muted-foreground", icon: MinusCircle },
 };
 
-function DryRunPanel({ workflowId, steps, dirty }: { workflowId: string; steps: Step[]; dirty: boolean }) {
+function DryRunPanel({ workflowId, steps, dirty, canRun }: { workflowId: string; steps: Step[]; dirty: boolean; canRun: boolean }) {
   const [source, setSource] = useState<"manual" | "schedule" | "event">("manual");
   const [payload, setPayload] = useState('{\n  "example": "value"\n}');
   const [failKey, setFailKey] = useState("");
@@ -514,7 +550,7 @@ function DryRunPanel({ workflowId, steps, dirty }: { workflowId: string; steps: 
       setResult(r as never);
       toast.success("Đã chạy thử (không tạo lượt chạy thật)");
     },
-    onError: (e: Error) => toast.error(e.message || "Không chạy thử được"),
+    onError: (e: Error) => toastWorkflowError(e, "Không chạy thử được"),
   });
 
   return (
@@ -561,7 +597,9 @@ function DryRunPanel({ workflowId, steps, dirty }: { workflowId: string; steps: 
           </select>
         </div>
 
-        <button onClick={() => sim.mutate()} disabled={sim.isPending}
+        <button onClick={() => { if (canRun) sim.mutate(); else guardWorkflowAction(null, "run"); }}
+          disabled={sim.isPending || !canRun}
+          title={canRun ? undefined : denialReason("run")}
           className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {sim.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />} Chạy thử
         </button>

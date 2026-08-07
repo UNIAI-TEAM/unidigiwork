@@ -39,6 +39,9 @@ const KNOWN_CODES: readonly StableErrorCode[] = [
   "WORKFLOW_RUN_NOT_FOUND",
   "WORKFLOW_RUN_INVALID_TRANSITION",
   "WORKFLOW_STEP_INVALID_TRANSITION",
+  "WORKFLOW_EDIT_DENIED",
+  "WORKFLOW_PUBLISH_DENIED",
+  "WORKFLOW_RUN_DENIED",
 ];
 
 export function mapPgError(err: PostgrestError | Error | null, fallback: StableErrorCode = "INTERNAL_ERROR"): never {

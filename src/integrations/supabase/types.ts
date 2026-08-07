@@ -3611,6 +3611,10 @@ export type Database = {
         Args: { _event_type: string; _payload?: Json; _workspace_id: string }
         Returns: number
       }
+      get_my_workflow_permissions: {
+        Args: { _workspace_id: string }
+        Returns: Json
+      }
       global_search: {
         Args: {
           _assignee_id?: string
@@ -3650,6 +3654,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["tenant_role"]
           _tenant_id: string
         }
+        Returns: boolean
+      }
+      has_workflow_permission: {
+        Args: { _action: string; _user_id: string; _workspace_id: string }
         Returns: boolean
       }
       ingest_meeting_provider_event: {
