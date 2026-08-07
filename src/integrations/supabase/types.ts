@@ -2259,6 +2259,60 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_permissions: {
+        Row: {
+          can_edit: boolean
+          can_publish: boolean
+          can_run: boolean
+          created_at: string
+          granted_by: string | null
+          id: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          can_edit?: boolean
+          can_publish?: boolean
+          can_run?: boolean
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          can_edit?: boolean
+          can_publish?: boolean
+          can_run?: boolean
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_permissions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_runs: {
         Row: {
           context: Json
@@ -2829,6 +2883,10 @@ export type Database = {
       }
       can_manage_meeting_access: {
         Args: { _meeting_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_manage_workflow_permissions: {
+        Args: { _workspace_id: string }
         Returns: boolean
       }
       cancel_meeting: {
@@ -3517,6 +3575,20 @@ export type Database = {
         }
         Returns: Json
       }
+      list_workflow_permissions: {
+        Args: { _workspace_id: string }
+        Returns: {
+          can_edit: boolean
+          can_publish: boolean
+          can_run: boolean
+          display_name: string
+          email: string
+          is_owner: boolean
+          updated_at: string
+          user_id: string
+          workspace_role: string
+        }[]
+      }
       provision_default_subscription: {
         Args: { _actor: string; _tenant_id: string }
         Returns: string
@@ -3622,6 +3694,10 @@ export type Database = {
           _message?: string
         }
         Returns: Json
+      }
+      reset_workflow_permission: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
       }
       resume_subscription: {
         Args: { _correlation_id?: string; _tenant_id: string }
@@ -3812,6 +3888,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_workflow_permission: {
+        Args: {
+          _can_edit: boolean
+          _can_publish: boolean
+          _can_run: boolean
+          _user_id: string
+          _workspace_id: string
+        }
+        Returns: string
       }
       set_workspace_timezone: {
         Args: { _timezone: string; _workspace_id: string }

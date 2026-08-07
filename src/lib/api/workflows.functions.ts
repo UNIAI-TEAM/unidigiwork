@@ -356,3 +356,54 @@ export const simulateWorkflowRun = createServerFn({ method: "POST" })
       }[];
     };
   });
+
+// Batch 1F-PERM — Workflow permissions (workspace scope).
+export const listWorkflowPermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("list_workflow_permissions", {
+      _workspace_id: data.workspaceId,
+    });
+    if (error) mapPgError(error);
+    const { data: canManage } = await context.supabase.rpc("can_manage_workflow_permissions", {
+      _workspace_id: data.workspaceId,
+    });
+    return { canManage: !!canManage, members: rows ?? [] };
+  });
+
+export const setWorkflowPermission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workspaceId: z.string().uuid(),
+      userId: z.string().uuid(),
+      canEdit: z.boolean(),
+      canPublish: z.boolean(),
+      canRun: z.boolean(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("set_workflow_permission", {
+      _workspace_id: data.workspaceId,
+      _user_id: data.userId,
+      _can_edit: data.canEdit,
+      _can_publish: data.canPublish,
+      _can_run: data.canRun,
+    });
+    return { id: ensureOk(res, "WORKSPACE_ACCESS_DENIED") };
+  });
+
+export const resetWorkflowPermission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ workspaceId: z.string().uuid(), userId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: ok, error } = await context.supabase.rpc("reset_workflow_permission", {
+      _workspace_id: data.workspaceId,
+      _user_id: data.userId,
+    });
+    if (error) mapPgError(error);
+    return { reset: !!ok };
+  });
