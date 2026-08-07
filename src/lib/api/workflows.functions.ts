@@ -26,6 +26,36 @@ export const listWorkflows = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
+export const getWorkflowRun = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ runId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: run, error } = await context.supabase
+      .from("workflow_runs")
+      .select(
+        "id, workflow_id, status, started_at, ended_at, created_at, updated_at, correlation_id, triggered_by, workflow_version, context",
+      )
+      .eq("id", data.runId)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    if (!run) return null;
+
+    const { data: steps, error: stepErr } = await context.supabase
+      .from("workflow_steps")
+      .select("id, step_key, status, error, started_at, ended_at, created_at, updated_at")
+      .eq("run_id", data.runId)
+      .order("created_at", { ascending: true });
+    if (stepErr) mapPgError(stepErr);
+
+    const { data: workflow } = await context.supabase
+      .from("workflows")
+      .select("id, name")
+      .eq("id", run.workflow_id)
+      .maybeSingle();
+
+    return { run, steps: steps ?? [], workflow: workflow ?? null };
+  });
+
 export const createWorkflow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
