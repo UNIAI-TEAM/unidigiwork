@@ -222,6 +222,7 @@ function WorkflowCalendarPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [wfIds, setWfIds] = useState<string[]>([]); // rỗng = tất cả quy trình
   const [wfMenu, setWfMenu] = useState(false);
+  const [warningFilter, setWarningFilter] = useState<"all" | "warning" | "clean">("all");
   const [runId, setRunId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -275,12 +276,15 @@ function WorkflowCalendarPage() {
     const allow = wfIds.length ? new Set(wfIds) : null;
     for (const r of runsQuery.data ?? []) {
       if (allow && !allow.has(r.workflow_id)) continue;
+      const hasWarning = timestampIssues(r).length > 0;
+      if (warningFilter === "warning" && !hasWarning) continue;
+      if (warningFilter === "clean" && hasWarning) continue;
       const key = isoTz(new Date(r.started_at ?? r.created_at), tz);
       if (key < from || key > to) continue;
       m.set(key, [...(m.get(key) ?? []), r]);
     }
     return m;
-  }, [runsQuery.data, from, to, wfIds, tz]);
+  }, [runsQuery.data, from, to, wfIds, tz, warningFilter]);
 
   const days = useMemo(() => {
     const start = startOfWeek(new Date(`${from}T00:00:00`));
@@ -474,6 +478,29 @@ function WorkflowCalendarPage() {
                   <X className="h-3.5 w-3.5" /> Xoá lọc
                 </button>
               )}
+              <div className="inline-flex overflow-hidden rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setWarningFilter("all")}
+                  className={`px-2.5 py-2 text-xs ${warningFilter === "all" ? "bg-primary text-primary-foreground" : "hover:bg-surface"}`}
+                >
+                  Tất cả
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWarningFilter("warning")}
+                  className={`border-l border-border px-2.5 py-2 text-xs ${warningFilter === "warning" ? "bg-amber-600 text-white" : "hover:bg-surface"}`}
+                >
+                  Có cảnh báo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWarningFilter("clean")}
+                  className={`border-l border-border px-2.5 py-2 text-xs ${warningFilter === "clean" ? "bg-emerald-600 text-white" : "hover:bg-surface"}`}
+                >
+                  Không cảnh báo
+                </button>
+              </div>
               <input
                 type="date"
                 value={from}
