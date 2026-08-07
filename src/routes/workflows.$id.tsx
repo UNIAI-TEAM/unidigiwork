@@ -339,8 +339,8 @@ type TriggerRow = {
 };
 
 function TriggersPanel({
-  workflowId, triggers, published, onChanged,
-}: { workflowId: string; triggers: TriggerRow[]; published: boolean; onChanged: () => void }) {
+  workflowId, triggers, published, onChanged, canEdit,
+}: { workflowId: string; triggers: TriggerRow[]; published: boolean; onChanged: () => void; canEdit: boolean }) {
   const [kind, setKind] = useState<"schedule" | "event">("schedule");
   const [frequency, setFrequency] = useState<"minutes" | "hourly" | "daily" | "weekly">("daily");
   const [intervalMinutes, setIntervalMinutes] = useState(15);
@@ -364,7 +364,7 @@ function TriggersPanel({
         },
       }),
     onSuccess: () => { toast.success("Đã lưu trigger"); onChanged(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không lưu được trigger"),
   });
 
   const toggle = useMutation({
@@ -380,13 +380,13 @@ function TriggersPanel({
         },
       }),
     onSuccess: onChanged,
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không đổi được trạng thái trigger"),
   });
 
   const remove = useMutation({
     mutationFn: (triggerId: string) => deleteWorkflowTrigger({ data: { triggerId } }),
     onSuccess: () => { toast.success("Đã xoá trigger"); onChanged(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toastWorkflowError(e, "Không xoá được trigger"),
   });
 
   const describe = (t: TriggerRow) => {
@@ -407,6 +407,7 @@ function TriggersPanel({
     <div className="rounded-xl border border-border bg-card p-4 md:p-6">
       <h2 className="text-sm font-semibold">Trigger &amp; Lịch chạy</h2>
       {hint && <p className="mt-1 text-xs text-warning">{hint}</p>}
+      {!canEdit && <p className="mt-1 text-xs text-warning">{denialReason("edit")}</p>}
 
       <div className="mt-3 space-y-2">
         {triggers.length === 0 && <p className="text-xs text-muted-foreground">Chưa có trigger nào.</p>}
@@ -415,11 +416,16 @@ function TriggersPanel({
             <div className="flex items-center justify-between gap-2">
               <p className="truncate text-sm">{describe(t)}</p>
               <div className="flex shrink-0 items-center gap-1">
-                <button onClick={() => toggle.mutate(t)}
+                <button onClick={() => { if (canEdit) toggle.mutate(t); else guardWorkflowAction(null, "edit"); }}
+                  disabled={!canEdit}
+                  title={canEdit ? undefined : denialReason("edit")}
                   className={`rounded-full px-2 py-0.5 text-[10px] ${t.is_enabled ? "bg-success/15 text-success" : "bg-card text-muted-foreground"}`}>
                   {t.is_enabled ? "Đang bật" : "Đã tắt"}
                 </button>
-                <button aria-label="Xoá trigger" onClick={() => remove.mutate(t.id)} className="rounded-lg p-1.5 text-destructive hover:bg-surface-3">
+                <button aria-label="Xoá trigger" disabled={!canEdit}
+                  title={canEdit ? undefined : denialReason("edit")}
+                  onClick={() => { if (canEdit) remove.mutate(t.id); else guardWorkflowAction(null, "edit"); }}
+                  className="rounded-lg p-1.5 text-destructive hover:bg-surface-3 disabled:opacity-50">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -487,7 +493,9 @@ function TriggersPanel({
           </label>
         )}
 
-        <button onClick={() => save.mutate()} disabled={save.isPending}
+        <button onClick={() => { if (canEdit) save.mutate(); else guardWorkflowAction(null, "edit"); }}
+          disabled={save.isPending || !canEdit}
+          title={canEdit ? undefined : denialReason("edit")}
           className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Thêm trigger
         </button>
@@ -514,7 +522,7 @@ const DRY_STATUS: Record<string, { label: string; cls: string; icon: React.Compo
   not_reached: { label: "Không chạy tới", cls: "text-muted-foreground", icon: MinusCircle },
 };
 
-function DryRunPanel({ workflowId, steps, dirty }: { workflowId: string; steps: Step[]; dirty: boolean }) {
+function DryRunPanel({ workflowId, steps, dirty, canRun }: { workflowId: string; steps: Step[]; dirty: boolean; canRun: boolean }) {
   const [source, setSource] = useState<"manual" | "schedule" | "event">("manual");
   const [payload, setPayload] = useState('{\n  "example": "value"\n}');
   const [failKey, setFailKey] = useState("");
@@ -542,7 +550,7 @@ function DryRunPanel({ workflowId, steps, dirty }: { workflowId: string; steps: 
       setResult(r as never);
       toast.success("Đã chạy thử (không tạo lượt chạy thật)");
     },
-    onError: (e: Error) => toast.error(e.message || "Không chạy thử được"),
+    onError: (e: Error) => toastWorkflowError(e, "Không chạy thử được"),
   });
 
   return (
