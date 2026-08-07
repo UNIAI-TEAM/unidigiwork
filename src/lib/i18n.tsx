@@ -644,6 +644,13 @@ const dict = {
     "land.hire.unit": "/ staff / month",
     "land.hire.cta": "Hire AI staff",
     "land.hire.contact": "Talk to us about your AI team",
+    "land.hireform.badge": "Request a consultation",
+    "land.hireform.title": "Tell us what you need",
+    "land.hireform.sub":
+      "Leave your details and our team will get back within 24 business hours with an AI team setup.",
+    "land.hireform.need": "What do you need?",
+    "land.hireform.need.placeholder": "e.g. 2 AI scheduling assistants and 1 AI support agent…",
+    "land.hireform.submit": "Send my request",
     "land.skill.badge": "Skill library",
     "land.skill.title": "Skills for your AI staff",
     "land.skill.sub":
