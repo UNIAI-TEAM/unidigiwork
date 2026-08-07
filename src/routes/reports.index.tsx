@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
 import { useState } from "react";
@@ -57,6 +57,9 @@ type Tab = (typeof TABS)[number];
 
 function ReportsPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
+    navigate({ to: "/reports/detail", search: { days, status: s, workspaceId: wsId } });
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("overview");
   const [days, setDays] = useState(30);
@@ -212,31 +215,35 @@ function ReportsPage() {
                     total={st?.total ?? 0}
                     totalLabel={t("rp.tasks.total")}
                     segments={[
-                      { color: "#22c55e", pct: pct(st?.done ?? 0, st?.total ?? 0) },
-                      { color: "#3b82f6", pct: pct(st?.in_progress ?? 0, st?.total ?? 0) },
-                      { color: "#f59e0b", pct: pct(st?.todo ?? 0, st?.total ?? 0) },
-                      { color: "#ef4444", pct: pct(st?.blocked ?? 0, st?.total ?? 0) },
+                      { color: "#22c55e", pct: pct(st?.done ?? 0, st?.total ?? 0), title: t("rp.tasks.completed"), onClick: () => drill("done") },
+                      { color: "#3b82f6", pct: pct(st?.in_progress ?? 0, st?.total ?? 0), title: t("rp.tasks.progress"), onClick: () => drill("in_progress") },
+                      { color: "#f59e0b", pct: pct(st?.todo ?? 0, st?.total ?? 0), title: t("rp.tasks.todo"), onClick: () => drill("todo") },
+                      { color: "#ef4444", pct: pct(st?.blocked ?? 0, st?.total ?? 0), title: t("rp.tasks.blocked"), onClick: () => drill("blocked") },
                     ]}
                   />
                   <div className="flex-1 space-y-2 text-sm">
                     <DonutRow
                       color="bg-emerald-500"
                       label={t("rp.tasks.completed")}
+                      onClick={() => drill("done")}
                       value={`${pct(st?.done ?? 0, st?.total ?? 0)}% (${st?.done ?? 0})`}
                     />
                     <DonutRow
                       color="bg-sky-500"
                       label={t("rp.tasks.progress")}
+                      onClick={() => drill("in_progress")}
                       value={`${pct(st?.in_progress ?? 0, st?.total ?? 0)}% (${st?.in_progress ?? 0})`}
                     />
                     <DonutRow
                       color="bg-amber-500"
                       label={t("rp.tasks.todo")}
+                      onClick={() => drill("todo")}
                       value={`${pct(st?.todo ?? 0, st?.total ?? 0)}% (${st?.todo ?? 0})`}
                     />
                     <DonutRow
                       color="bg-rose-500"
                       label={t("rp.tasks.blocked")}
+                      onClick={() => drill("blocked")}
                       value={`${pct(st?.blocked ?? 0, st?.total ?? 0)}% (${st?.blocked ?? 0})`}
                     />
                   </div>
@@ -293,7 +300,11 @@ function ReportsPage() {
                   </thead>
                   <tbody>
                     {wsRows.slice(0, 6).map((p) => (
-                      <tr key={p.id} className="border-t border-border">
+                      <tr
+                        key={p.id}
+                        onClick={() => drill(undefined, p.id)}
+                        className="cursor-pointer border-t border-border transition-colors hover:bg-surface-2"
+                      >
                         <td className="py-2.5">
                           <div className="flex items-center gap-2">
                             <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[11px] font-semibold text-primary-foreground">
@@ -344,7 +355,10 @@ function ReportsPage() {
                     ))}
                   </tbody>
                 </table>
-                <button className="mt-3 text-xs text-primary hover:underline">
+                <button
+                  onClick={() => drill()}
+                  className="mt-3 text-xs text-primary hover:underline"
+                >
                   {t("rp.top.viewall")}
                 </button>
               </Card>
@@ -772,7 +786,7 @@ function Donut({
 }: {
   total: number;
   totalLabel: string;
-  segments: { color: string; pct: number }[];
+  segments: { color: string; pct: number; onClick?: () => void; title?: string }[];
 }) {
   let acc = 0;
   const stops = segments
@@ -782,11 +796,36 @@ function Donut({
       return `${s.color} ${start}% ${acc}%`;
     })
     .join(", ");
+  let acc2 = 0;
   return (
     <div
       className="relative h-36 w-36 shrink-0 rounded-full"
       style={{ background: `conic-gradient(${stops})` }}
     >
+      {segments.map((s, i) => {
+        const start = acc2;
+        acc2 += s.pct;
+        if (!s.onClick || s.pct <= 0) return null;
+        const end = acc2;
+        const pt = (p: number) => {
+          const a = (p / 100) * 2 * Math.PI - Math.PI / 2;
+          return `${50 + 50 * Math.cos(a)}% ${50 + 50 * Math.sin(a)}%`;
+        };
+        const steps = Math.max(2, Math.ceil((end - start) / 5));
+        const pts = Array.from({ length: steps + 1 }, (_, j) =>
+          pt(start + ((end - start) * j) / steps),
+        );
+        return (
+          <button
+            key={i}
+            onClick={s.onClick}
+            title={s.title}
+            aria-label={s.title}
+            className="absolute inset-0 rounded-full transition-opacity hover:opacity-80"
+            style={{ clipPath: `polygon(50% 50%, ${pts.join(", ")})` }}
+          />
+        );
+      })}
       <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-surface text-center">
         <div className="text-xl font-bold">{total.toLocaleString()}</div>
         <div className="text-[10px] text-muted-foreground">{totalLabel}</div>
@@ -795,7 +834,31 @@ function Donut({
   );
 }
 
-function DonutRow({ color, label, value }: { color: string; label: string; value: string }) {
+function DonutRow({
+  color,
+  label,
+  value,
+  onClick,
+}: {
+  color: string;
+  label: string;
+  value: string;
+  onClick?: () => void;
+}) {
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="flex w-full items-center justify-between rounded-md px-1 py-0.5 text-xs transition-colors hover:bg-surface-2"
+      >
+        <span className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${color}`} />
+          {label}
+        </span>
+        <span className="text-muted-foreground">{value}</span>
+      </button>
+    );
+  }
   return (
     <div className="flex items-center justify-between text-xs">
       <span className="flex items-center gap-2">
