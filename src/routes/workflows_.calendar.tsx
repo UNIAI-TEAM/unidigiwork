@@ -225,6 +225,7 @@ function WorkflowCalendarPage() {
   const [runId, setRunId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
+  const queryClient = useQueryClient();
   const workspaces = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const [wsId, setWsId] = useState<string | undefined>(undefined);
   const activeWs = wsId ?? workspaces.data?.[0]?.id;
