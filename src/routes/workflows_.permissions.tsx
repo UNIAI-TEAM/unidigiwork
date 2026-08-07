@@ -2,12 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldCheck, Loader2, RotateCcw, Crown, Lock, History } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Loader2, RotateCcw, Crown, Lock, History, Users } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
   listWorkflowPermissions, setWorkflowPermission, resetWorkflowPermission,
-  listWorkflowPermissionAudit,
+  listWorkflowPermissionAudit, listWorkflowRolePermissions,
+  setWorkflowRolePermission, resetWorkflowRolePermission,
 } from "@/lib/api/workflows.functions";
 
 export const Route = createFileRoute("/workflows_/permissions")({
@@ -29,11 +30,38 @@ type Member = {
   display_name: string | null;
   email: string | null;
   workspace_role: string;
+  tenant_role: string | null;
   is_owner: boolean;
   can_edit: boolean;
   can_publish: boolean;
   can_run: boolean;
+  source: string;
   updated_at: string | null;
+};
+
+type RoleRow = {
+  role: string;
+  can_edit: boolean;
+  can_publish: boolean;
+  can_run: boolean;
+  member_count: number;
+  is_configured: boolean;
+  updated_at: string | null;
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  tenant_owner: "Chủ tổ chức",
+  tenant_admin: "Quản trị tổ chức",
+  manager: "Quản lý",
+  member: "Thành viên",
+  guest: "Khách",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  owner: "Chủ sở hữu",
+  individual: "Riêng",
+  role: "Theo vai trò",
+  default: "Mặc định",
 };
 
 const PERMS = [
@@ -42,7 +70,10 @@ const PERMS = [
   { key: "can_run" as const, label: "Chạy", hint: "Khởi chạy hoặc chạy thử quy trình" },
 ];
 
-type PermState = { can_edit?: boolean | null; can_publish?: boolean | null; can_run?: boolean | null; is_default?: boolean | null } | null;
+type PermState = {
+  can_edit?: boolean | null; can_publish?: boolean | null; can_run?: boolean | null;
+  is_default?: boolean | null; role?: string | null;
+} | null;
 type AuditRow = {
   id: string;
   occurred_at: string;
@@ -58,6 +89,110 @@ function permSummary(s: PermState) {
   const on = PERMS.filter((p) => s[p.key]).map((p) => p.label);
   const base = on.length ? on.join(" · ") : "Không có quyền";
   return s.is_default ? `${base} (mặc định)` : base;
+}
+
+function RolePermissions({ workspaceId, canManage }: { workspaceId: string; canManage: boolean }) {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["workflow-role-permissions", workspaceId],
+    queryFn: async () =>
+      (await listWorkflowRolePermissions({ data: { workspaceId } })) as unknown as RoleRow[],
+  });
+
+  const refresh = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["workflow-role-permissions", workspaceId] }),
+      qc.invalidateQueries({ queryKey: ["workflow-permissions", workspaceId] }),
+      qc.invalidateQueries({ queryKey: ["workflow-permission-audit", workspaceId] }),
+    ]);
+  };
+
+  const save = useMutation({
+    mutationFn: (r: RoleRow) =>
+      setWorkflowRolePermission({
+        data: {
+          workspaceId,
+          role: r.role as "tenant_owner" | "tenant_admin" | "manager" | "member" | "guest",
+          canEdit: r.can_edit, canPublish: r.can_publish, canRun: r.can_run,
+        },
+      }),
+    onSuccess: async () => { await refresh(); toast.success("Đã cập nhật quyền theo vai trò"); },
+    onError: (e: Error) => toast.error(e.message || "Không cập nhật được quyền"),
+  });
+
+  const reset = useMutation({
+    mutationFn: (role: string) =>
+      resetWorkflowRolePermission({
+        data: { workspaceId, role: role as "tenant_owner" | "tenant_admin" | "manager" | "member" | "guest" },
+      }),
+    onSuccess: async () => { await refresh(); toast.success("Đã bỏ quy tắc theo vai trò"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rows = q.data ?? [];
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+      <div className="flex items-center gap-2">
+        <Users className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold">Quyền theo nhóm / vai trò</h2>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Áp dụng cho tất cả thành viên thuộc vai trò đó. Quyền riêng của từng người (nếu có) sẽ được ưu tiên hơn quy tắc nhóm.
+      </p>
+
+      {q.isLoading ? (
+        <p className="mt-4 text-sm text-muted-foreground">Đang tải…</p>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <th className="pb-2 font-medium">Vai trò</th>
+                {PERMS.map((p) => (
+                  <th key={p.key} className="pb-2 text-center font-medium">{p.label}</th>
+                ))}
+                <th className="pb-2 text-right font-medium">Quy tắc</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.role} className="border-b border-border/60 last:border-0">
+                  <td className="py-3 pr-3">
+                    <span className="font-medium">{ROLE_LABELS[r.role] ?? r.role}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {r.member_count} thành viên · {r.is_configured ? "đã cấu hình" : "chưa cấu hình"}
+                    </span>
+                  </td>
+                  {PERMS.map((p) => (
+                    <td key={p.key} className="py-3 text-center">
+                      <input
+                        type="checkbox"
+                        aria-label={`${p.label} — ${ROLE_LABELS[r.role] ?? r.role}`}
+                        checked={r[p.key]}
+                        disabled={!canManage || save.isPending}
+                        onChange={() => save.mutate({ ...r, [p.key]: !r[p.key] })}
+                        className="h-4 w-4 cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                    </td>
+                  ))}
+                  <td className="py-3 text-right">
+                    <button
+                      onClick={() => reset.mutate(r.role)}
+                      disabled={!canManage || !r.is_configured || reset.isPending}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2 text-xs hover:bg-surface-2 disabled:opacity-40"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" /> Bỏ quy tắc
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AuditTimeline({ workspaceId }: { workspaceId: string }) {
@@ -89,9 +224,13 @@ function AuditTimeline({ workspaceId }: { workspaceId: string }) {
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-medium">{r.actor_name || "Hệ thống"}</span>
                 <span className="text-muted-foreground">
-                  {r.action === "workflow_permission.reset" ? "đặt lại quyền của" : "cập nhật quyền của"}
+                  {r.action.endsWith("reset") ? "đặt lại quyền của" : "cập nhật quyền của"}
                 </span>
-                <span className="font-medium">{r.target_name || "thành viên"}</span>
+                <span className="font-medium">
+                  {r.action.startsWith("workflow_permission.role")
+                    ? `nhóm ${ROLE_LABELS[String(r.after_state?.role ?? "")] ?? r.after_state?.role ?? ""}`
+                    : r.target_name || "thành viên"}
+                </span>
                 <span className="ml-auto text-xs text-muted-foreground">
                   {new Date(r.occurred_at).toLocaleString("vi-VN")}
                 </span>
@@ -238,6 +377,10 @@ function WorkflowPermissionsPage() {
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">{m.email ?? m.workspace_role}</span>
+                            <span className="ml-0 mt-1 inline-flex rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted-foreground">
+                              {SOURCE_LABELS[m.source] ?? m.source}
+                              {m.tenant_role ? ` · ${ROLE_LABELS[m.tenant_role] ?? m.tenant_role}` : ""}
+                            </span>
                           </td>
                           {PERMS.map((p) => (
                             <td key={p.key} className="py-3 text-center">
@@ -254,7 +397,7 @@ function WorkflowPermissionsPage() {
                           <td className="py-3 text-right">
                             <button
                               onClick={() => reset.mutate(m.user_id)}
-                              disabled={!canManage || m.is_owner || !m.updated_at || reset.isPending}
+                              disabled={!canManage || m.is_owner || m.source !== "individual" || reset.isPending}
                               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2 text-xs hover:bg-surface-2 disabled:opacity-40"
                             >
                               {reset.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
@@ -269,6 +412,7 @@ function WorkflowPermissionsPage() {
               )}
             </div>
 
+            {activeWs && <RolePermissions workspaceId={activeWs} canManage={canManage} />}
             {activeWs && <AuditTimeline workspaceId={activeWs} />}
           </div>
         </div>

@@ -2313,6 +2313,60 @@ export type Database = {
           },
         ]
       }
+      workflow_role_permissions: {
+        Row: {
+          can_edit: boolean
+          can_publish: boolean
+          can_run: boolean
+          created_at: string
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          can_edit?: boolean
+          can_publish?: boolean
+          can_run?: boolean
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          tenant_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          can_edit?: boolean
+          can_publish?: boolean
+          can_run?: boolean
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["tenant_role"]
+          tenant_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_role_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_role_permissions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_runs: {
         Row: {
           context: Json
@@ -3647,6 +3701,7 @@ export type Database = {
           id: string
           occurred_at: string
           target_name: string
+          target_role: string
           target_user_id: string
         }[]
       }
@@ -3659,9 +3714,23 @@ export type Database = {
           display_name: string
           email: string
           is_owner: boolean
+          source: string
+          tenant_role: string
           updated_at: string
           user_id: string
           workspace_role: string
+        }[]
+      }
+      list_workflow_role_permissions: {
+        Args: { _workspace_id: string }
+        Returns: {
+          can_edit: boolean
+          can_publish: boolean
+          can_run: boolean
+          is_configured: boolean
+          member_count: number
+          role: string
+          updated_at: string
         }[]
       }
       provision_default_subscription: {
@@ -3772,6 +3841,13 @@ export type Database = {
       }
       reset_workflow_permission: {
         Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
+      }
+      reset_workflow_role_permission: {
+        Args: {
+          _role: Database["public"]["Enums"]["tenant_role"]
+          _workspace_id: string
+        }
         Returns: boolean
       }
       resume_subscription: {
@@ -3970,6 +4046,16 @@ export type Database = {
           _can_publish: boolean
           _can_run: boolean
           _user_id: string
+          _workspace_id: string
+        }
+        Returns: string
+      }
+      set_workflow_role_permission: {
+        Args: {
+          _can_edit: boolean
+          _can_publish: boolean
+          _can_run: boolean
+          _role: Database["public"]["Enums"]["tenant_role"]
           _workspace_id: string
         }
         Returns: string
