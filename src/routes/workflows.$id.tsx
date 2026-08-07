@@ -23,7 +23,16 @@ export const Route = createFileRoute("/workflows/$id")({
 });
 
 type StepType = "trigger" | "ai" | "branch" | "action" | "notify" | "end";
+type OnErrorPolicy = "stop" | "skip";
 type Step = { key: string; title: string; type: StepType; config: Record<string, unknown> };
+
+const ON_ERROR_OPTIONS: { value: OnErrorPolicy; label: string; hint: string }[] = [
+  { value: "stop", label: "Dừng toàn bộ", hint: "Bước lỗi sẽ kết thúc cả lượt chạy (trạng thái thất bại)." },
+  { value: "skip", label: "Bỏ qua bước", hint: "Bước lỗi được đánh dấu bỏ qua, lượt chạy tiếp tục." },
+];
+
+const stepOnError = (s: Step): OnErrorPolicy =>
+  (s.config?.["on_error"] === "skip" ? "skip" : "stop");
 
 const STEP_META: Record<StepType, { label: string; icon: React.ComponentType<{ className?: string }>; cls: string }> = {
   trigger: { label: "Khởi động", icon: Zap, cls: "bg-warning/15 text-warning border-warning/30" },
@@ -223,6 +232,29 @@ function WorkflowBuilderPage() {
                                     ))}
                                   </select>
                                   <span className="font-mono text-[10px] text-muted-foreground">{s.key}</span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <label className="text-xs text-muted-foreground">Khi lỗi</label>
+                                  <select
+                                    value={stepOnError(s)}
+                                    onChange={(e) =>
+                                      mutateSteps(
+                                        steps.map((x, k) =>
+                                          k === i
+                                            ? { ...x, config: { ...(x.config ?? {}), on_error: e.target.value as OnErrorPolicy } }
+                                            : x,
+                                        ),
+                                      )
+                                    }
+                                    className="h-8 rounded-lg border border-border bg-card px-2 text-xs"
+                                  >
+                                    {ON_ERROR_OPTIONS.map((o) => (
+                                      <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
+                                  </select>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {ON_ERROR_OPTIONS.find((o) => o.value === stepOnError(s))?.hint}
+                                  </span>
                                 </div>
                               </div>
                               <div className="flex shrink-0 items-center gap-1">
