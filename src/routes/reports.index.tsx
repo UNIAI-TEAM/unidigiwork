@@ -29,6 +29,9 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functions";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
@@ -56,6 +59,26 @@ function ReportsPage() {
   const { t } = useI18n();
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("overview");
+  const [days, setDays] = useState(30);
+  const fetchOverview = useServerFn(getReportOverview);
+  const { data: report, isPending } = useQuery({
+    queryKey: ["report-overview", days],
+    queryFn: () => fetchOverview({ data: { days } }),
+    staleTime: 60_000,
+  });
+  const k = report?.kpis;
+  const st = report?.tasks_by_status;
+  const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+  const delta = (cur = 0, prev = 0) =>
+    prev === 0 ? (cur > 0 ? "+100%" : "0%") : `${cur - prev >= 0 ? "+" : ""}${Math.round(((cur - prev) / prev) * 100)}%`;
+  const nf = (n?: number) => (n ?? 0).toLocaleString("vi-VN");
+  const wsRows = report?.workspaces ?? [];
+  const health = {
+    ontrack: wsRows.filter((w) => w.status === "ontrack").length,
+    risk: wsRows.filter((w) => w.status === "risk").length,
+    not: wsRows.filter((w) => w.status === "not_started").length,
+  };
+  const wsTotal = wsRows.length;
 
   return (
     <div className="flex min-h-screen bg-bg text-foreground">
@@ -72,9 +95,18 @@ function ReportsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{t("rp.sub")}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
-                  <Calendar className="h-4 w-4" /> 12/05/2025 – 18/05/2025
-                </button>
+                <div className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <select
+                    value={days}
+                    onChange={(e) => setDays(Number(e.target.value))}
+                    className="bg-transparent text-sm outline-none"
+                  >
+                    <option value={7}>7 ngày</option>
+                    <option value={30}>30 ngày</option>
+                    <option value={90}>90 ngày</option>
+                  </select>
+                </div>
                 <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
                 </button>
@@ -112,40 +144,40 @@ function ReportsPage() {
               <Kpi
                 icon={UsersIcon}
                 label={t("rp.kpi.users")}
-                value="1,248"
-                delta="+12.5%"
+                value={isPending ? "…" : nf(k?.users)}
+                delta="—"
                 tone="text-primary"
                 t={t}
               />
               <Kpi
                 icon={Activity}
                 label={t("rp.kpi.active")}
-                value="856"
-                delta="+8.3%"
+                value={isPending ? "…" : nf(k?.active_users)}
+                delta="—"
                 tone="text-emerald-300"
                 t={t}
               />
               <Kpi
                 icon={Folder}
                 label={t("rp.kpi.projects")}
-                value="72"
-                delta="+9.7%"
+                value={isPending ? "…" : nf(k?.workspaces)}
+                delta={delta(k?.ws_cur, k?.ws_prev)}
                 tone="text-sky-300"
                 t={t}
               />
               <Kpi
                 icon={CheckCircle2}
                 label={t("rp.kpi.tasks")}
-                value="1,026"
-                delta="+15.2%"
+                value={isPending ? "…" : nf(st?.done)}
+                delta={delta(k?.tasks_cur, k?.tasks_prev)}
                 tone="text-amber-300"
                 t={t}
               />
               <Kpi
                 icon={Video}
                 label={t("rp.kpi.meetings")}
-                value="48"
-                delta="+6.1%"
+                value={isPending ? "…" : nf(k?.meetings)}
+                delta={delta(k?.meetings_cur, k?.meetings_prev)}
                 tone="text-violet-300"
                 t={t}
               />
@@ -158,14 +190,14 @@ function ReportsPage() {
                   title={t("rp.act.title")}
                   right={
                     <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
-                      {t("rp.act.week")} <ChevronDown className="h-3 w-3" />
+                      {days} ngày <ChevronDown className="h-3 w-3" />
                     </button>
                   }
                 />
-                <LineChart />
+                <LineChart data={report?.activity ?? []} />
                 <Legend
                   items={[
-                    { c: "bg-violet-400", l: t("rp.act.msg") },
+                    { c: "bg-violet-400", l: t("rp.tasks.title") },
                     { c: "bg-emerald-400", l: t("rp.act.tasks") },
                     { c: "bg-sky-400", l: t("rp.act.meet") },
                     { c: "bg-amber-400", l: t("rp.act.files") },
@@ -177,24 +209,36 @@ function ReportsPage() {
                 <CardHeader title={t("rp.tasks.title")} />
                 <div className="flex items-center gap-4">
                   <Donut
-                    total={1026}
+                    total={st?.total ?? 0}
                     totalLabel={t("rp.tasks.total")}
                     segments={[
-                      { color: "#22c55e", pct: 52 },
-                      { color: "#3b82f6", pct: 28 },
-                      { color: "#f59e0b", pct: 15 },
-                      { color: "#ef4444", pct: 5 },
+                      { color: "#22c55e", pct: pct(st?.done ?? 0, st?.total ?? 0) },
+                      { color: "#3b82f6", pct: pct(st?.in_progress ?? 0, st?.total ?? 0) },
+                      { color: "#f59e0b", pct: pct(st?.todo ?? 0, st?.total ?? 0) },
+                      { color: "#ef4444", pct: pct(st?.blocked ?? 0, st?.total ?? 0) },
                     ]}
                   />
                   <div className="flex-1 space-y-2 text-sm">
                     <DonutRow
                       color="bg-emerald-500"
                       label={t("rp.tasks.completed")}
-                      value="52% (533)"
+                      value={`${pct(st?.done ?? 0, st?.total ?? 0)}% (${st?.done ?? 0})`}
                     />
-                    <DonutRow color="bg-sky-500" label={t("rp.tasks.progress")} value="28% (287)" />
-                    <DonutRow color="bg-amber-500" label={t("rp.tasks.todo")} value="15% (154)" />
-                    <DonutRow color="bg-rose-500" label={t("rp.tasks.blocked")} value="5% (52)" />
+                    <DonutRow
+                      color="bg-sky-500"
+                      label={t("rp.tasks.progress")}
+                      value={`${pct(st?.in_progress ?? 0, st?.total ?? 0)}% (${st?.in_progress ?? 0})`}
+                    />
+                    <DonutRow
+                      color="bg-amber-500"
+                      label={t("rp.tasks.todo")}
+                      value={`${pct(st?.todo ?? 0, st?.total ?? 0)}% (${st?.todo ?? 0})`}
+                    />
+                    <DonutRow
+                      color="bg-rose-500"
+                      label={t("rp.tasks.blocked")}
+                      value={`${pct(st?.blocked ?? 0, st?.total ?? 0)}% (${st?.blocked ?? 0})`}
+                    />
                   </div>
                 </div>
               </Card>
@@ -203,24 +247,31 @@ function ReportsPage() {
                 <CardHeader title={t("rp.health.title")} />
                 <div className="flex items-center gap-4">
                   <Donut
-                    total={72}
+                    total={wsTotal}
                     totalLabel={t("rp.health.total")}
                     segments={[
-                      { color: "#22c55e", pct: 38 },
-                      { color: "#f59e0b", pct: 36 },
-                      { color: "#ef4444", pct: 14 },
-                      { color: "#64748b", pct: 12 },
+                      { color: "#22c55e", pct: pct(health.ontrack, wsTotal) },
+                      { color: "#f59e0b", pct: pct(health.risk, wsTotal) },
+                      { color: "#ef4444", pct: 0 },
+                      { color: "#64748b", pct: pct(health.not, wsTotal) },
                     ]}
                   />
                   <div className="flex-1 space-y-2 text-sm">
                     <DonutRow
                       color="bg-emerald-500"
                       label={t("rp.health.ontrack")}
-                      value="38% (27)"
+                      value={`${pct(health.ontrack, wsTotal)}% (${health.ontrack})`}
                     />
-                    <DonutRow color="bg-amber-500" label={t("rp.health.risk")} value="36% (26)" />
-                    <DonutRow color="bg-rose-500" label={t("rp.health.off")} value="14% (10)" />
-                    <DonutRow color="bg-slate-500" label={t("rp.health.not")} value="12% (9)" />
+                    <DonutRow
+                      color="bg-amber-500"
+                      label={t("rp.health.risk")}
+                      value={`${pct(health.risk, wsTotal)}% (${health.risk})`}
+                    />
+                    <DonutRow
+                      color="bg-slate-500"
+                      label={t("rp.health.not")}
+                      value={`${pct(health.not, wsTotal)}% (${health.not})`}
+                    />
                   </div>
                 </div>
               </Card>
@@ -241,60 +292,12 @@ function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      {
-                        name: "STOS Platform",
-                        letter: "S",
-                        color: "bg-emerald-500",
-                        progress: 72,
-                        tasks: 128,
-                        members: 8,
-                        status: "ontrack",
-                      },
-                      {
-                        name: "Smart University Portal",
-                        letter: "U",
-                        color: "bg-sky-500",
-                        progress: 66,
-                        tasks: 96,
-                        members: 6,
-                        status: "ontrack",
-                      },
-                      {
-                        name: "Y tế xã",
-                        letter: "Y",
-                        color: "bg-rose-500",
-                        progress: 48,
-                        tasks: 64,
-                        members: 4,
-                        status: "risk",
-                      },
-                      {
-                        name: "UNI-HRM System",
-                        letter: "M",
-                        color: "bg-violet-500",
-                        progress: 81,
-                        tasks: 112,
-                        members: 7,
-                        status: "ontrack",
-                      },
-                      {
-                        name: "DevOps Infrastructure",
-                        letter: "D",
-                        color: "bg-orange-500",
-                        progress: 35,
-                        tasks: 45,
-                        members: 3,
-                        status: "risk",
-                      },
-                    ].map((p) => (
-                      <tr key={p.name} className="border-t border-border">
+                    {wsRows.slice(0, 6).map((p) => (
+                      <tr key={p.id} className="border-t border-border">
                         <td className="py-2.5">
                           <div className="flex items-center gap-2">
-                            <span
-                              className={`flex h-6 w-6 items-center justify-center rounded text-[11px] font-semibold text-white ${p.color}`}
-                            >
-                              {p.letter}
+                            <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[11px] font-semibold text-primary-foreground">
+                              {p.name.charAt(0).toUpperCase()}
                             </span>
                             <span className="whitespace-nowrap font-medium">{p.name}</span>
                           </div>
@@ -313,24 +316,28 @@ function ReportsPage() {
                         <td className="py-2.5">{p.tasks}</td>
                         <td className="py-2.5">
                           <div className="flex items-center -space-x-1.5">
-                            {[0, 1, 2].map((i) => (
+                            {Array.from({ length: Math.min(3, p.members) }).map((_, i) => (
                               <img
                                 key={i}
-                                src={avatar(`${p.name}-${i}`)}
+                                src={avatar(`${p.id}-${i}`)}
                                 className="h-6 w-6 rounded-full border-2 border-surface object-cover"
                                 alt=""
                               />
                             ))}
-                            <span className="ml-2 text-[10px] text-muted-foreground">
-                              +{p.members - 3}
-                            </span>
+                            {p.members > 3 && (
+                              <span className="ml-2 text-[10px] text-muted-foreground">
+                                +{p.members - 3}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-2.5">
                           <span
                             className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${p.status === "ontrack" ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/15 text-amber-300 border border-amber-500/30"}`}
                           >
-                            {t(`rp.status.${p.status}` as Key)}
+                            {p.status === "not_started"
+                              ? t("rp.health.not")
+                              : t(`rp.status.${p.status}` as Key)}
                           </span>
                         </td>
                       </tr>
@@ -692,22 +699,27 @@ function LegendDot({ c, l }: { c: string; l: string }) {
   );
 }
 
-function LineChart() {
-  const days = ["12 May", "13 May", "14 May", "15 May", "16 May", "17 May", "18 May"];
+function LineChart({ data }: { data: ReportOverview["activity"] }) {
+  const rows = data.length > 0 ? data : [{ day: "", tasks: 0, meetings: 0, documents: 0, completed: 0 }];
+  const days = rows.map((r) => (r.day ? new Date(r.day).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : ""));
   const series = [
-    { color: "#a78bfa", points: [380, 520, 480, 700, 820, 760, 820] },
-    { color: "#34d399", points: [220, 320, 420, 480, 540, 620, 700] },
-    { color: "#60a5fa", points: [180, 240, 300, 360, 380, 360, 420] },
-    { color: "#fbbf24", points: [80, 140, 200, 240, 220, 280, 320] },
+    { color: "#a78bfa", points: rows.map((r) => r.tasks) },
+    { color: "#34d399", points: rows.map((r) => r.completed) },
+    { color: "#60a5fa", points: rows.map((r) => r.meetings) },
+    { color: "#fbbf24", points: rows.map((r) => r.documents) },
   ];
   const W = 600,
-    H = 220,
-    max = 1000;
-  const x = (i: number) => (i / (days.length - 1)) * (W - 40) + 30;
+    H = 220;
+  const peak = Math.max(1, ...series.flatMap((s) => s.points));
+  const step = Math.max(1, Math.ceil(peak / 5));
+  const max = step * 5;
+  const gridValues = [0, 1, 2, 3, 4, 5].map((i) => i * step);
+  const labelEvery = Math.ceil(days.length / 7);
+  const x = (i: number) => (days.length > 1 ? (i / (days.length - 1)) * (W - 40) + 30 : 30);
   const y = (v: number) => H - 30 - (v / max) * (H - 50);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-44 w-full">
-      {[0, 200, 400, 600, 800, 1000].map((v) => (
+      {gridValues.map((v) => (
         <g key={v}>
           <line
             x1={30}
@@ -736,8 +748,9 @@ function LineChart() {
         </g>
       ))}
       {days.map((d, i) => (
+        i % labelEvery !== 0 ? null : (
         <text
-          key={d}
+          key={i}
           x={x(i)}
           y={H - 8}
           fontSize="9"
@@ -746,6 +759,7 @@ function LineChart() {
         >
           {d}
         </text>
+        )
       ))}
     </svg>
   );
