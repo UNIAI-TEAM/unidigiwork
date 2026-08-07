@@ -34,7 +34,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functions";
 import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
-import { FileText, Table2 } from "lucide-react";
+import { Table2 } from "lucide-react";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
