@@ -2259,6 +2259,72 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_access_requests: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          message: string | null
+          requester_id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_note: string | null
+          status: string
+          tenant_id: string | null
+          updated_at: string
+          workflow_id: string | null
+          workflow_name: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_id: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_note?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          workflow_id?: string | null
+          workflow_name?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_note?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          workflow_id?: string | null
+          workflow_name?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_access_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_access_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_permission_denials: {
         Row: {
           action: string
@@ -3758,6 +3824,24 @@ export type Database = {
         }
         Returns: Json
       }
+      list_workflow_access_requests: {
+        Args: { _limit?: number; _status?: string; _workspace_id: string }
+        Returns: {
+          action: string
+          created_at: string
+          id: string
+          message: string
+          requester_id: string
+          requester_name: string
+          reviewed_at: string
+          reviewer_id: string
+          reviewer_name: string
+          reviewer_note: string
+          status: string
+          workflow_id: string
+          workflow_name: string
+        }[]
+      }
       list_workflow_denials: {
         Args: { _action?: string; _limit?: number; _workspace_id: string }
         Returns: {
@@ -3933,6 +4017,15 @@ export type Database = {
         }
         Returns: Json
       }
+      request_workflow_access: {
+        Args: {
+          _action: string
+          _message?: string
+          _workflow_id?: string
+          _workspace_id: string
+        }
+        Returns: string
+      }
       reset_workflow_permission: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
@@ -3943,6 +4036,10 @@ export type Database = {
           _workspace_id: string
         }
         Returns: boolean
+      }
+      resolve_workflow_access_request: {
+        Args: { _approve: boolean; _note?: string; _request_id: string }
+        Returns: string
       }
       resume_subscription: {
         Args: { _correlation_id?: string; _tenant_id: string }
