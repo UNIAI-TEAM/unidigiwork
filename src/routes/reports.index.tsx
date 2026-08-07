@@ -226,18 +226,15 @@ function ReportsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{t("rp.sub")}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <select
-                    value={days}
-                    onChange={(e) => setDays(Number(e.target.value))}
-                    className="bg-transparent text-sm outline-none"
-                  >
-                    <option value={7}>7 ngày</option>
-                    <option value={30}>30 ngày</option>
-                    <option value={90}>90 ngày</option>
-                  </select>
-                </div>
+                <RangePicker
+                  range={range}
+                  onChange={setRange}
+                  compare={compare}
+                  onCompareChange={setCompare}
+                  prev={prev}
+                  days={days}
+                  t={t}
+                />
                 <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
                 </button>
