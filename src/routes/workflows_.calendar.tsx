@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  AlertTriangle,
   Ban,
   CalendarRange,
   Check,
@@ -136,6 +137,35 @@ function durationLabel(startTs: string, endTs: string) {
   if (m < 60) return `${m} phút ${s % 60}s`;
   return `${Math.floor(m / 60)} giờ ${m % 60} phút`;
 }
+
+/** Phát hiện timestamp bất thường do dữ liệu cũ / lệch múi giờ. */
+function timestampIssues(r: {
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+  status: string;
+}): string[] {
+  const out: string[] = [];
+  const now = Date.now();
+  const t = (v: string | null) => (v ? new Date(v).getTime() : NaN);
+  const started = t(r.started_at);
+  const ended = t(r.ended_at);
+  const created = t(r.created_at);
+  if (!r.started_at && r.status !== "pending") out.push("Thiếu thời điểm bắt đầu");
+  if (Number.isFinite(started) && Number.isFinite(ended) && ended < started)
+    out.push("Kết thúc trước khi bắt đầu");
+  if (Number.isFinite(started) && Number.isFinite(created) && started < created - 60_000)
+    out.push("Bắt đầu trước thời điểm tạo");
+  const future = [started, ended].filter((v) => Number.isFinite(v) && v > now + 5 * 60_000);
+  if (future.length) out.push("Thời gian nằm ở tương lai");
+  if (
+    Number.isFinite(started) &&
+    Number.isFinite(ended) &&
+    ended - started > 30 * 24 * 3600_000
+  )
+    out.push("Thời lượng bất thường (>30 ngày)");
+  return out;
+}
 function tzOffsetLabel(tz: string) {
   try {
     const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
@@ -250,6 +280,18 @@ function WorkflowCalendarPage() {
     [runsByDay],
   );
   const selectedRuns = selected ? (runsByDay.get(selected) ?? []) : [];
+
+  // Cảnh báo timestamp lệch do dữ liệu cũ.
+  const anomalies = useMemo(() => {
+    const out: { day: string; run: Run; issues: string[] }[] = [];
+    for (const [day, runs] of runsByDay) {
+      for (const r of runs) {
+        const issues = timestampIssues(r);
+        if (issues.length) out.push({ day, run: r, issues });
+      }
+    }
+    return out;
+  }, [runsByDay]);
 
   const preset = (n: number) => {
     setFrom(isoTz(addDays(new Date(), -(n - 1)), tz));
@@ -402,6 +444,33 @@ function WorkflowCalendarPage() {
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+              {anomalies.length > 0 && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm lg:col-span-2">
+                  <div className="flex items-center gap-2 font-medium text-amber-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    {anomalies.length} lần chạy có thời gian bất thường (dữ liệu cũ hoặc lệch múi
+                    giờ)
+                  </div>
+                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {anomalies.slice(0, 5).map(({ day, run, issues }) => (
+                      <li key={run.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelected(day);
+                            setRunId(run.id);
+                          }}
+                          className="underline-offset-2 hover:underline"
+                        >
+                          {nameById.get(run.workflow_id) ?? run.workflow_id.slice(0, 8)} ·{" "}
+                          {dateTimeTz(run.started_at ?? run.created_at, tz)} — {issues.join(", ")}
+                        </button>
+                      </li>
+                    ))}
+                    {anomalies.length > 5 && <li>+{anomalies.length - 5} mục khác</li>}
+                  </ul>
+                </div>
+              )}
               <div className="overflow-hidden rounded-xl border border-border bg-surface">
                 <div className="grid grid-cols-7 border-b border-border text-center text-xs font-medium text-muted-foreground">
                   {WEEKDAYS.map((d) => (
@@ -495,6 +564,12 @@ function WorkflowCalendarPage() {
                             <div>
                               Thời lượng:{" "}
                               {durationLabel(r.started_at ?? r.created_at, r.ended_at)}
+                            </div>
+                          )}
+                          {timestampIssues(r).length > 0 && (
+                            <div className="flex items-start gap-1 text-amber-600">
+                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                              <span>{timestampIssues(r).join(", ")}</span>
                             </div>
                           )}
                         </div>
