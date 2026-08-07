@@ -215,31 +215,35 @@ function ReportsPage() {
                     total={st?.total ?? 0}
                     totalLabel={t("rp.tasks.total")}
                     segments={[
-                      { color: "#22c55e", pct: pct(st?.done ?? 0, st?.total ?? 0) },
-                      { color: "#3b82f6", pct: pct(st?.in_progress ?? 0, st?.total ?? 0) },
-                      { color: "#f59e0b", pct: pct(st?.todo ?? 0, st?.total ?? 0) },
-                      { color: "#ef4444", pct: pct(st?.blocked ?? 0, st?.total ?? 0) },
+                      { color: "#22c55e", pct: pct(st?.done ?? 0, st?.total ?? 0), title: t("rp.tasks.completed"), onClick: () => drill("done") },
+                      { color: "#3b82f6", pct: pct(st?.in_progress ?? 0, st?.total ?? 0), title: t("rp.tasks.progress"), onClick: () => drill("in_progress") },
+                      { color: "#f59e0b", pct: pct(st?.todo ?? 0, st?.total ?? 0), title: t("rp.tasks.todo"), onClick: () => drill("todo") },
+                      { color: "#ef4444", pct: pct(st?.blocked ?? 0, st?.total ?? 0), title: t("rp.tasks.blocked"), onClick: () => drill("blocked") },
                     ]}
                   />
                   <div className="flex-1 space-y-2 text-sm">
                     <DonutRow
                       color="bg-emerald-500"
                       label={t("rp.tasks.completed")}
+                      onClick={() => drill("done")}
                       value={`${pct(st?.done ?? 0, st?.total ?? 0)}% (${st?.done ?? 0})`}
                     />
                     <DonutRow
                       color="bg-sky-500"
                       label={t("rp.tasks.progress")}
+                      onClick={() => drill("in_progress")}
                       value={`${pct(st?.in_progress ?? 0, st?.total ?? 0)}% (${st?.in_progress ?? 0})`}
                     />
                     <DonutRow
                       color="bg-amber-500"
                       label={t("rp.tasks.todo")}
+                      onClick={() => drill("todo")}
                       value={`${pct(st?.todo ?? 0, st?.total ?? 0)}% (${st?.todo ?? 0})`}
                     />
                     <DonutRow
                       color="bg-rose-500"
                       label={t("rp.tasks.blocked")}
+                      onClick={() => drill("blocked")}
                       value={`${pct(st?.blocked ?? 0, st?.total ?? 0)}% (${st?.blocked ?? 0})`}
                     />
                   </div>
@@ -296,7 +300,11 @@ function ReportsPage() {
                   </thead>
                   <tbody>
                     {wsRows.slice(0, 6).map((p) => (
-                      <tr key={p.id} className="border-t border-border">
+                      <tr
+                        key={p.id}
+                        onClick={() => drill(undefined, p.id)}
+                        className="cursor-pointer border-t border-border transition-colors hover:bg-surface-2"
+                      >
                         <td className="py-2.5">
                           <div className="flex items-center gap-2">
                             <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[11px] font-semibold text-primary-foreground">
