@@ -190,14 +190,14 @@ function ReportsPage() {
                   title={t("rp.act.title")}
                   right={
                     <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
-                      {t("rp.act.week")} <ChevronDown className="h-3 w-3" />
+                      {days} ngày <ChevronDown className="h-3 w-3" />
                     </button>
                   }
                 />
-                <LineChart />
+                <LineChart data={report?.activity ?? []} />
                 <Legend
                   items={[
-                    { c: "bg-violet-400", l: t("rp.act.msg") },
+                    { c: "bg-violet-400", l: t("rp.tasks.title") },
                     { c: "bg-emerald-400", l: t("rp.act.tasks") },
                     { c: "bg-sky-400", l: t("rp.act.meet") },
                     { c: "bg-amber-400", l: t("rp.act.files") },
@@ -209,24 +209,36 @@ function ReportsPage() {
                 <CardHeader title={t("rp.tasks.title")} />
                 <div className="flex items-center gap-4">
                   <Donut
-                    total={1026}
+                    total={st?.total ?? 0}
                     totalLabel={t("rp.tasks.total")}
                     segments={[
-                      { color: "#22c55e", pct: 52 },
-                      { color: "#3b82f6", pct: 28 },
-                      { color: "#f59e0b", pct: 15 },
-                      { color: "#ef4444", pct: 5 },
+                      { color: "#22c55e", pct: pct(st?.done ?? 0, st?.total ?? 0) },
+                      { color: "#3b82f6", pct: pct(st?.in_progress ?? 0, st?.total ?? 0) },
+                      { color: "#f59e0b", pct: pct(st?.todo ?? 0, st?.total ?? 0) },
+                      { color: "#ef4444", pct: pct(st?.blocked ?? 0, st?.total ?? 0) },
                     ]}
                   />
                   <div className="flex-1 space-y-2 text-sm">
                     <DonutRow
                       color="bg-emerald-500"
                       label={t("rp.tasks.completed")}
-                      value="52% (533)"
+                      value={`${pct(st?.done ?? 0, st?.total ?? 0)}% (${st?.done ?? 0})`}
                     />
-                    <DonutRow color="bg-sky-500" label={t("rp.tasks.progress")} value="28% (287)" />
-                    <DonutRow color="bg-amber-500" label={t("rp.tasks.todo")} value="15% (154)" />
-                    <DonutRow color="bg-rose-500" label={t("rp.tasks.blocked")} value="5% (52)" />
+                    <DonutRow
+                      color="bg-sky-500"
+                      label={t("rp.tasks.progress")}
+                      value={`${pct(st?.in_progress ?? 0, st?.total ?? 0)}% (${st?.in_progress ?? 0})`}
+                    />
+                    <DonutRow
+                      color="bg-amber-500"
+                      label={t("rp.tasks.todo")}
+                      value={`${pct(st?.todo ?? 0, st?.total ?? 0)}% (${st?.todo ?? 0})`}
+                    />
+                    <DonutRow
+                      color="bg-rose-500"
+                      label={t("rp.tasks.blocked")}
+                      value={`${pct(st?.blocked ?? 0, st?.total ?? 0)}% (${st?.blocked ?? 0})`}
+                    />
                   </div>
                 </div>
               </Card>
@@ -235,24 +247,31 @@ function ReportsPage() {
                 <CardHeader title={t("rp.health.title")} />
                 <div className="flex items-center gap-4">
                   <Donut
-                    total={72}
+                    total={wsTotal}
                     totalLabel={t("rp.health.total")}
                     segments={[
-                      { color: "#22c55e", pct: 38 },
-                      { color: "#f59e0b", pct: 36 },
-                      { color: "#ef4444", pct: 14 },
-                      { color: "#64748b", pct: 12 },
+                      { color: "#22c55e", pct: pct(health.ontrack, wsTotal) },
+                      { color: "#f59e0b", pct: pct(health.risk, wsTotal) },
+                      { color: "#ef4444", pct: 0 },
+                      { color: "#64748b", pct: pct(health.not, wsTotal) },
                     ]}
                   />
                   <div className="flex-1 space-y-2 text-sm">
                     <DonutRow
                       color="bg-emerald-500"
                       label={t("rp.health.ontrack")}
-                      value="38% (27)"
+                      value={`${pct(health.ontrack, wsTotal)}% (${health.ontrack})`}
                     />
-                    <DonutRow color="bg-amber-500" label={t("rp.health.risk")} value="36% (26)" />
-                    <DonutRow color="bg-rose-500" label={t("rp.health.off")} value="14% (10)" />
-                    <DonutRow color="bg-slate-500" label={t("rp.health.not")} value="12% (9)" />
+                    <DonutRow
+                      color="bg-amber-500"
+                      label={t("rp.health.risk")}
+                      value={`${pct(health.risk, wsTotal)}% (${health.risk})`}
+                    />
+                    <DonutRow
+                      color="bg-slate-500"
+                      label={t("rp.health.not")}
+                      value={`${pct(health.not, wsTotal)}% (${health.not})`}
+                    />
                   </div>
                 </div>
               </Card>
