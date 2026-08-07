@@ -249,6 +249,9 @@ function WorkflowsPage() {
                 >
                   <Plus className="h-4 w-4" /> {t("wf.new")}
                 </button>
+                {!permsQuery.isLoading && !perms.can_edit && (
+                  <RequestAccessButton workspaceId={activeWs} action="edit" className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface" />
+                )}
                 <Link
                   to="/workflows/calendar"
                   className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface"
