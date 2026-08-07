@@ -89,7 +89,7 @@ export const getDocument = createServerFn({ method: "GET" })
 
     return {
       document: doc,
-      versions: versionsRes.data ?? [],
+      versions: await withAuthorNames(context.supabase, versionsRes.data ?? []),
       workspace: workspaceRes.data ?? null,
       permissions: permsRes.data ?? [],
     };
