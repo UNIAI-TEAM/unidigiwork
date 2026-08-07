@@ -84,27 +84,81 @@ function TasksPage() {
   const [tab, setTab] = useState<
     "overview" | "board" | "list" | "timeline" | "calendar" | "reports" | "files"
   >("board");
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [counter, setCounter] = useState(200);
+  const queryClient = useQueryClient();
 
-  const addTask = (
-    status: Status,
-    payload: { title: string; tag: string; assigneeSeed: string; assigneeName: string },
-  ) => {
-    const id = `STOS-${counter}`;
-    setCounter((c) => c + 1);
-    setTasks((prev) => [
-      {
-        id,
-        title: payload.title,
-        status,
-        assignee: { name: payload.assigneeName, seed: payload.assigneeSeed },
-        tag: { label: payload.tag, color: tagColors[payload.tag] ?? tagColors.Backend },
-        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      },
-      ...prev,
-    ]);
-  };
+  const workspaces = useQuery({
+    queryKey: ["my-workspaces"],
+    queryFn: () => listMyWorkspaces(),
+  });
+  const [wsId, setWsId] = useState<string | undefined>(undefined);
+  const activeWs = wsId ?? workspaces.data?.[0]?.id;
+
+  const tasksQuery = useQuery({
+    queryKey: ["tasks", activeWs],
+    enabled: Boolean(activeWs),
+    queryFn: async () =>
+      (await listTasks({ data: { workspaceId: activeWs!, limit: 200 } })) as unknown as Task[],
+  });
+  const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
+
+  // Realtime: mọi thay đổi trên tasks của workspace đang xem sẽ làm mới bảng.
+  useEffect(() => {
+    if (!activeWs) return;
+    const channel = supabase
+      .channel(`tasks-board-${activeWs}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks", filter: `workspace_id=eq.${activeWs}` },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [activeWs, queryClient]);
+
+  const createMutation = useMutation({
+    mutationFn: (p: { status: Status; title: string; priority: Priority }) =>
+      createTask({
+        data: {
+          workspaceId: activeWs!,
+          title: p.title,
+          priority: p.priority,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: async (_r, vars) => {
+      await queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] });
+      if (vars.status !== "todo") return;
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const transitionMutation = useMutation({
+    mutationFn: (p: { taskId: string; toStatus: Status }) =>
+      transitionTask({
+        data: { taskId: p.taskId, toStatus: p.toStatus, idempotencyKey: crypto.randomUUID() },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const counts = useMemo(() => {
+    const c: Record<Status, number> = {
+      todo: 0,
+      in_progress: 0,
+      blocked: 0,
+      done: 0,
+      canceled: 0,
+    };
+    for (const tk of tasks) c[tk.status] += 1;
+    return c;
+  }, [tasks]);
+  const total = tasks.length;
+  const overdue = tasks.filter(
+    (tk) => tk.due_at && tk.status !== "done" && new Date(tk.due_at) < new Date(),
+  ).length;
+  const progress = total ? Math.round((counts.done / total) * 100) : 0;
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
