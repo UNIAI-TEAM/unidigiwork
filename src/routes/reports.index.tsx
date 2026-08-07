@@ -34,7 +34,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functions";
 import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
-import { Table2 } from "lucide-react";
+import { Table2, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
@@ -194,7 +194,13 @@ function ReportsPage() {
   const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
     navigate({ to: "/reports/detail", search: { from: fromISO, to: toISO, status: s, workspaceId: wsId } });
   const fetchOverview = useServerFn(getReportOverview);
-  const { data: report, isPending } = useQuery({
+  const {
+    data: report,
+    isPending,
+    isFetching,
+    refetch,
+    dataUpdatedAt,
+  } = useQuery({
     queryKey: ["report-overview", fromISO, toISO],
     queryFn: () => fetchOverview({ data: { from: fromISO, to: toISO } }),
     staleTime: 60_000,
@@ -240,6 +246,18 @@ function ReportsPage() {
                 />
                 <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
+                </button>
+                <button
+                  disabled={isFetching}
+                  onClick={async () => {
+                    const r = await refetch();
+                    if (r.error) toast.error(t("rp.refresh.error"));
+                    else toast.success(t("rp.refresh.done"));
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-60"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                  {isFetching ? t("rp.refresh.loading") : t("rp.refresh")}
                 </button>
                 <button
                   disabled={!report}
