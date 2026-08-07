@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { MyEffectivePermissions } from "@/components/workflow/my-effective-permissions";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
