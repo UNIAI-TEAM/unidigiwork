@@ -4,7 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, CalendarRange, Check, ChevronDown, Loader2, X } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
-import { listWorkflows, listWorkflowRuns } from "@/lib/api/workflows.functions";
+import {
+  getWorkflowRun,
+  listWorkflows,
+  listWorkflowRuns,
+} from "@/lib/api/workflows.functions";
 
 export const Route = createFileRoute("/workflows_/calendar")({
   head: () => ({
@@ -73,6 +77,7 @@ function WorkflowCalendarPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [wfIds, setWfIds] = useState<string[]>([]); // rỗng = tất cả quy trình
   const [wfMenu, setWfMenu] = useState(false);
+  const [runId, setRunId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const workspaces = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
@@ -343,7 +348,12 @@ function WorkflowCalendarPage() {
                 ) : (
                   <ul className="mt-3 space-y-2">
                     {selectedRuns.map((r) => (
-                      <li key={r.id} className="rounded-lg border border-border p-2.5">
+                      <li key={r.id}>
+                        <button
+                          type="button"
+                          onClick={() => setRunId(r.id)}
+                          className="w-full rounded-lg border border-border p-2.5 text-left transition-colors hover:bg-muted/40"
+                        >
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-sm font-medium">
                             {nameById.get(r.workflow_id) ?? r.workflow_id.slice(0, 8)}
@@ -363,6 +373,7 @@ function WorkflowCalendarPage() {
                             ? ` → ${new Date(r.ended_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`
                             : ""}
                         </div>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -372,6 +383,143 @@ function WorkflowCalendarPage() {
           )}
         </main>
       </div>
+      {runId && <RunDetailModal runId={runId} onClose={() => setRunId(null)} />}
+    </div>
+  );
+}
+
+const STEP_META: Record<string, { label: string; chip: string; dot: string }> = {
+  pending: { label: "Chờ", chip: "bg-muted text-muted-foreground", dot: "bg-muted-foreground" },
+  running: { label: "Đang chạy", chip: "bg-sky-500/15 text-sky-500", dot: "bg-sky-500" },
+  succeeded: {
+    label: "Thành công",
+    chip: "bg-emerald-500/15 text-emerald-500",
+    dot: "bg-emerald-500",
+  },
+  failed: { label: "Thất bại", chip: "bg-destructive/15 text-destructive", dot: "bg-destructive" },
+  skipped: { label: "Bỏ qua", chip: "bg-amber-500/15 text-amber-500", dot: "bg-amber-500" },
+};
+
+function fmt(ts: string | null | undefined) {
+  return ts ? new Date(ts).toLocaleString("vi-VN") : "—";
+}
+
+function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void }) {
+  const q = useQuery({
+    queryKey: ["workflow-run", runId],
+    queryFn: async () => await getWorkflowRun({ data: { runId } }),
+  });
+  const data = q.data;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Chi tiết lần chạy quy trình"
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-surface p-5 shadow-xl"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold">
+              {data?.workflow?.name ?? "Lần chạy quy trình"}
+            </h3>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">Run ID: {runId}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng"
+            className="rounded-lg border border-border p-1.5 hover:bg-bg"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {q.isLoading ? (
+          <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Đang tải…
+          </div>
+        ) : !data ? (
+          <p className="py-10 text-sm text-muted-foreground">Không tìm thấy lần chạy này.</p>
+        ) : (
+          <>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <Field label="Trạng thái">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[11px] ${STATUS_META[data.run.status as RunStatus]?.chip ?? "bg-muted"}`}
+                >
+                  {STATUS_META[data.run.status as RunStatus]?.label ?? data.run.status}
+                </span>
+              </Field>
+              <Field label="Phiên bản quy trình">v{data.run.workflow_version}</Field>
+              <Field label="Bắt đầu">{fmt(data.run.started_at)}</Field>
+              <Field label="Kết thúc">{fmt(data.run.ended_at)}</Field>
+              <Field label="Tạo lúc">{fmt(data.run.created_at)}</Field>
+              <Field label="Cập nhật">{fmt(data.run.updated_at)}</Field>
+              <div className="col-span-2">
+                <Field label="Correlation ID">
+                  <span className="break-all font-mono text-xs">
+                    {data.run.correlation_id ?? "—"}
+                  </span>
+                </Field>
+              </div>
+            </div>
+
+            <h4 className="mt-5 text-sm font-semibold">Lịch sử trạng thái các bước</h4>
+            {data.steps.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">Chưa có bước nào được ghi nhận.</p>
+            ) : (
+              <ol className="mt-3 space-y-3 border-l border-border pl-4">
+                {data.steps.map((s) => {
+                  const meta = STEP_META[s.status] ?? STEP_META["pending"]!;
+                  return (
+                    <li key={s.id} className="relative">
+                      <span
+                        className={`absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface ${meta.dot}`}
+                      />
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-sm font-medium">{s.step_key}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] ${meta.chip}`}>
+                          {meta.label}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {fmt(s.started_at ?? s.created_at)}
+                        {s.ended_at ? ` → ${fmt(s.ended_at)}` : ""}
+                      </div>
+                      {s.error && (
+                        <p className="mt-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
+                          {typeof s.error === "string" ? s.error : JSON.stringify(s.error)}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-0.5">{children}</div>
     </div>
   );
 }
