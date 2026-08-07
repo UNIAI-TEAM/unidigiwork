@@ -17,6 +17,7 @@ import {
   DEFAULT_WORKFLOW_PERMS, denialReason, guardWorkflowAction, toastWorkflowError,
   type WorkflowPerms,
 } from "@/lib/workflow-access";
+import { RequestAccessButton } from "@/components/workflow/request-access-button";
 
 export const Route = createFileRoute("/workflows/$id")({
   head: () => ({
