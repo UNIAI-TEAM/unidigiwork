@@ -228,3 +228,36 @@ export const changeSubscription = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true as const, subscriptionId: (row as { id?: string } | null)?.id ?? null };
   });
+const CancelInput = z.object({
+  tenantId: z.string().uuid(),
+  immediate: z.boolean().default(false),
+  idempotencyKey: z.string().min(8).max(128),
+  expectedRowVersion: z.number().int().optional(),
+});
+
+export const cancelSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CancelInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase.rpc("cancel_subscription", {
+      _tenant_id: data.tenantId,
+      _immediate: data.immediate,
+      _idempotency_key: data.idempotencyKey,
+      _expected_row_version: data.expectedRowVersion ?? undefined,
+    });
+    if (error) mapPgError(error);
+    return { ok: true as const, subscriptionId: (row as { id?: string } | null)?.id ?? null };
+  });
+
+export const resumeSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => TenantInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase.rpc("resume_subscription", {
+      _tenant_id: data.tenantId,
+    });
+    if (error) mapPgError(error);
+    return { ok: true as const, subscriptionId: (row as { id?: string } | null)?.id ?? null };
+  });

@@ -2659,6 +2659,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_subscription: {
+        Args: {
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _immediate?: boolean
+          _tenant_id: string
+        }
+        Returns: {
+          cancel_at: string | null
+          canceled_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          period_end: string | null
+          period_start: string
+          plan_id: string
+          provider: string
+          provider_ref: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       cancel_workflow_run: {
         Args: {
           _correlation_id?: string
@@ -3293,6 +3326,33 @@ export type Database = {
           _message?: string
         }
         Returns: Json
+      }
+      resume_subscription: {
+        Args: { _correlation_id?: string; _tenant_id: string }
+        Returns: {
+          cancel_at: string | null
+          canceled_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          period_end: string | null
+          period_start: string
+          plan_id: string
+          provider: string
+          provider_ref: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }

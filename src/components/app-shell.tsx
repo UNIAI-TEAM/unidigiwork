@@ -27,6 +27,7 @@ import {
   X,
   HelpCircle,
   Sparkles,
+  CreditCard,
   UserCircle2,
   KeyRound,
   LogOut,
@@ -1722,6 +1723,13 @@ export function AppTopbar({
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "security" }}
+              />
+              <MenuItem
+                icon={CreditCard}
+                label="Gói dịch vụ"
+                desc="Xem, nâng cấp hoặc hủy gói"
+                onClick={() => setUserOpen(false)}
+                to="/billing"
               />
               <MenuItem
                 icon={HelpCircle}
