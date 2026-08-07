@@ -200,25 +200,31 @@ function TasksPage() {
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight">STOS Platform Development</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">
+                    {workspaces.data?.find((w) => w.id === activeWs)?.name ?? t("tasks.project")}
+                  </h1>
                   <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">{t("tasks.sub")}</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {["tuan-nam-ba", "huong-tran", "minh-anh", "phuong-linh", "duy-anh"].map((s) => (
-                    <img
-                      key={s}
-                      src={avatar(s)}
-                      alt=""
-                      className="h-7 w-7 rounded-full border-2 border-bg object-cover"
-                    />
-                  ))}
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-bg bg-surface-2 text-[10px] text-muted-foreground">
-                    +8
-                  </span>
-                </div>
+                <select
+                  value={activeWs ?? ""}
+                  onChange={(e) => setWsId(e.target.value)}
+                  disabled={workspaces.isLoading}
+                  aria-label="Workspace"
+                  className="rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 focus:outline-none"
+                >
+                  {workspaces.data?.length ? (
+                    workspaces.data.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Chưa có workspace</option>
+                  )}
+                </select>
                 <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                   <Settings2 className="h-4 w-4" /> {t("tasks.settings")}{" "}
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -230,39 +236,80 @@ function TasksPage() {
             <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               <KpiCard
                 label={t("tasks.kpi.progress")}
-                value="72%"
+                value={`${progress}%`}
                 footer={
                   <div className="h-1.5 w-full rounded-full bg-surface-2">
-                    <div className="h-full w-[72%] rounded-full bg-primary" />
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${progress}%` }}
+                    />
                   </div>
                 }
               />
               <KpiCard
                 label={t("tasks.kpi.tasks")}
-                value="128"
-                footer={<span className="text-xs text-warning">18 {t("tasks.kpi.overdue")}</span>}
+                value={String(total)}
+                footer={
+                  <span className="text-xs text-warning">
+                    {overdue} {t("tasks.kpi.overdue")}
+                  </span>
+                }
               />
-              <KpiCard label={t("tasks.kpi.completed")} value="92" valueClass="text-success" />
-              <KpiCard label={t("tasks.kpi.inprogress")} value="28" valueClass="text-sky-400" />
-              <KpiCard label={t("tasks.kpi.todo")} value="26" />
-              <KpiCard label={t("tasks.kpi.blocked")} value="7" valueClass="text-destructive" />
+              <KpiCard
+                label={t("tasks.kpi.completed")}
+                value={String(counts.done)}
+                valueClass="text-success"
+              />
+              <KpiCard
+                label={t("tasks.kpi.inprogress")}
+                value={String(counts.in_progress)}
+                valueClass="text-sky-400"
+              />
+              <KpiCard label={t("tasks.kpi.todo")} value={String(counts.todo)} />
+              <KpiCard
+                label={t("tasks.kpi.blocked")}
+                value={String(counts.blocked)}
+                valueClass="text-destructive"
+              />
             </div>
 
             {/* Board */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {columns.map((col) => (
-                <BoardColumn
-                  key={col.status}
-                  col={col}
-                  tasks={tasks.filter((tk) => tk.status === col.status)}
-                  onAdd={(payload) => addTask(col.status, payload)}
-                />
-              ))}
-            </div>
+            {tasksQuery.isLoading ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface py-12 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Đang tải công việc…
+              </div>
+            ) : tasksQuery.isError ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                Không tải được danh sách công việc. Vui lòng thử lại.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                {columns.map((col) => (
+                  <BoardColumn
+                    key={col.status}
+                    col={col}
+                    count={counts[col.status]}
+                    tasks={tasks.filter((tk) => tk.status === col.status)}
+                    disabled={!activeWs || createMutation.isPending}
+                    onAdd={(payload) =>
+                      createMutation.mutate({ status: col.status, ...payload }, {
+                        onSuccess: (res: unknown) => {
+                          const id = (res as { task_id?: string } | null)?.task_id;
+                          if (id && col.status !== "todo") {
+                            transitionMutation.mutate({ taskId: id, toStatus: col.status });
+                          }
+                        },
+                      })
+                    }
+                    onMove={(taskId, toStatus) => transitionMutation.mutate({ taskId, toStatus })}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Bottom panels */}
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <ProjectOverview />
+              <ProjectOverview counts={counts} total={total} />
               <BurndownChart />
               <MyTasks tasks={tasks} />
             </div>
