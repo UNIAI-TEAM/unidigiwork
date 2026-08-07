@@ -3349,6 +3349,14 @@ export type Database = {
       }
       redeem_meeting_invite_link: { Args: { _token: string }; Returns: Json }
       refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
+      repair_workflow_run_timestamps: {
+        Args: { _run_ids: string[] }
+        Returns: {
+          ended_at: string
+          id: string
+          started_at: string
+        }[]
+      }
       report_overview: {
         Args: { _days?: number; _workspace_id?: string }
         Returns: Json
