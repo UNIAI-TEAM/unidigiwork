@@ -129,11 +129,11 @@ export const setWorkspaceTimezone = createServerFn({ method: "POST" })
         throw new ApiError({ code: "PERMISSION_DENIED", message: "PERMISSION_DENIED" });
       }
       if (msg.includes("INVALID_TIMEZONE")) {
-        throw new ApiError({ code: "VALIDATION_ERROR", message: "INVALID_TIMEZONE" });
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "INVALID_TIMEZONE" });
       }
       throw new ApiError({ code: "INTERNAL_ERROR", message: "WORKSPACE_TIMEZONE_UPDATE_FAILED" });
     }
     const row = (rows as Array<{ id: string; timezone: string }> | null)?.[0];
-    if (!row) throw new ApiError({ code: "NOT_FOUND", message: "WORKSPACE_NOT_FOUND" });
+    if (!row) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORKSPACE_NOT_FOUND" });
     return row;
   });
