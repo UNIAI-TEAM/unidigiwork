@@ -496,71 +496,84 @@ function QuickAddForm({
   );
 }
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({
+  task,
+  onMove,
+}: {
+  task: Task;
+  onMove: (taskId: string, toStatus: Status) => void;
+}) {
+  const { t } = useI18n();
+  const overdue = task.due_at && task.status !== "done" && new Date(task.due_at) < new Date();
   return (
-    <div className="cursor-grab rounded-lg border border-border bg-surface p-3 transition-colors hover:border-primary/40">
+    <div className="rounded-lg border border-border bg-surface p-3 transition-colors hover:border-primary/40">
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span>{task.id}</span>
-        <button className="rounded p-0.5 hover:bg-surface-2">
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </button>
+        <span className="font-mono">{task.id.slice(0, 8)}</span>
+        {task.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
       </div>
       <div className="mt-1 text-sm font-medium leading-snug">{task.title}</div>
-      <div className="mt-3 flex items-center gap-2">
-        <img
-          src={avatar(task.assignee.seed)}
-          alt={task.assignee.name}
-          className="h-6 w-6 rounded-full object-cover"
-        />
-        <span className="text-xs text-muted-foreground">{task.assignee.name}</span>
-        <span className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium ${task.tag.color}`}>
-          {task.tag.label}
-        </span>
-      </div>
-      <div className="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
-        {task.comments !== undefined && (
-          <span className="flex items-center gap-1">
-            <MessageSquare className="h-3 w-3" /> {task.comments}
-          </span>
-        )}
-        {task.attachments !== undefined && (
-          <span className="flex items-center gap-1">
-            <Paperclip className="h-3 w-3" /> {task.attachments}
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-1">
-          {task.date && (
-            <>
-              <Calendar className="h-3 w-3" /> {task.date}
-            </>
-          )}
-        </span>
-        {task.doneMark && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
-        {task.subtasks && (
-          <span className="text-foreground">
-            {task.subtasks.done}/{task.subtasks.total}
-          </span>
-        )}
-      </div>
-      {task.subtasks && (
-        <div className="mt-2 h-1 w-full rounded-full bg-surface-2">
-          <div
-            className="h-full rounded-full bg-primary"
-            style={{ width: `${(task.subtasks.done / task.subtasks.total) * 100}%` }}
-          />
-        </div>
+      {task.description && (
+        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
       )}
+      <div className="mt-3 flex items-center gap-2">
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
+        >
+          {task.priority}
+        </span>
+        {task.due_at && (
+          <span
+            className={`ml-auto flex items-center gap-1 text-[11px] ${overdue ? "text-warning" : "text-muted-foreground"}`}
+          >
+            <Calendar className="h-3 w-3" /> {fmtDate(task.due_at)}
+          </span>
+        )}
+      </div>
+      <select
+        value={task.status}
+        onChange={(e) => onMove(task.id, e.target.value as Status)}
+        aria-label="Chuyển trạng thái"
+        className="mt-2 w-full rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-3 focus:outline-none"
+      >
+        {columns.map((c) => (
+          <option key={c.status} value={c.status}>
+            {t(c.key)}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
 
-function ProjectOverview() {
+function ProjectOverview({
+  counts,
+  total,
+}: {
+  counts: Record<Status, number>;
+  total: number;
+}) {
   const { t } = useI18n();
+  const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
   const segs = [
-    { label: "Done", value: 92, pct: 72, color: "bg-success" },
-    { label: "In Progress", value: 28, pct: 22, color: "bg-sky-500" },
-    { label: "To Do", value: 26, pct: 20, color: "bg-muted-foreground" },
-    { label: "Blocked", value: 7, pct: 6, color: "bg-destructive" },
+    { label: t("tasks.col.done"), value: counts.done, pct: pct(counts.done), color: "bg-success" },
+    {
+      label: t("tasks.col.inprogress"),
+      value: counts.in_progress,
+      pct: pct(counts.in_progress),
+      color: "bg-sky-500",
+    },
+    {
+      label: t("tasks.col.todo"),
+      value: counts.todo,
+      pct: pct(counts.todo),
+      color: "bg-muted-foreground",
+    },
+    {
+      label: t("tasks.col.blocked"),
+      value: counts.blocked,
+      pct: pct(counts.blocked),
+      color: "bg-destructive",
+    },
   ];
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
