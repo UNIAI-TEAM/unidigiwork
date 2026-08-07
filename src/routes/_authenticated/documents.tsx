@@ -33,10 +33,14 @@ import {
   Users,
   LogOut,
   Trash2,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createDocument } from "@/lib/api/documents.functions";
+import { uploadDocumentFile } from "@/lib/documents-storage";
 
 type Doc = {
   id: string;
@@ -89,6 +93,7 @@ function DocumentsPage() {
   const [newWsName, setNewWsName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const isOwner = useMemo(
     () => !!currentWs && !!userId && currentWs.owner_id === userId,
@@ -198,6 +203,7 @@ function DocumentsPage() {
   };
 
   const deleteDoc = async (id: string) => {
+    if (!confirm("Xoá tài liệu này?")) return;
     if (!confirm("Xoá tài liệu này?")) return;
     const { error } = await supabase.from("documents").delete().eq("id", id);
     if (error) {
