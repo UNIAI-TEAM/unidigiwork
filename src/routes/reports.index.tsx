@@ -29,6 +29,9 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functions";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
@@ -56,6 +59,26 @@ function ReportsPage() {
   const { t } = useI18n();
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("overview");
+  const [days, setDays] = useState(30);
+  const fetchOverview = useServerFn(getReportOverview);
+  const { data: report, isPending } = useQuery({
+    queryKey: ["report-overview", days],
+    queryFn: () => fetchOverview({ data: { days } }),
+    staleTime: 60_000,
+  });
+  const k = report?.kpis;
+  const st = report?.tasks_by_status;
+  const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+  const delta = (cur = 0, prev = 0) =>
+    prev === 0 ? (cur > 0 ? "+100%" : "0%") : `${cur - prev >= 0 ? "+" : ""}${Math.round(((cur - prev) / prev) * 100)}%`;
+  const nf = (n?: number) => (n ?? 0).toLocaleString("vi-VN");
+  const wsRows = report?.workspaces ?? [];
+  const health = {
+    ontrack: wsRows.filter((w) => w.status === "ontrack").length,
+    risk: wsRows.filter((w) => w.status === "risk").length,
+    not: wsRows.filter((w) => w.status === "not_started").length,
+  };
+  const wsTotal = wsRows.length;
 
   return (
     <div className="flex min-h-screen bg-bg text-foreground">
