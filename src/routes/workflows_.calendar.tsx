@@ -174,8 +174,10 @@ function WorkflowCalendarPage() {
   const [wsId, setWsId] = useState<string | undefined>(undefined);
   const activeWs = wsId ?? workspaces.data?.[0]?.id;
   // Múi giờ chuẩn hoá theo cấu hình workspace đang chọn.
-  const tz =
+  const [tzMode, setTzMode] = useState<"workspace" | "browser">("workspace");
+  const workspaceTz =
     (workspaces.data ?? []).find((w) => w.id === activeWs)?.timezone?.trim() || browserTz();
+  const tz = tzMode === "browser" ? browserTz() : workspaceTz;
 
   const wfQuery = useQuery({
     queryKey: ["workflows", activeWs],
