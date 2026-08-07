@@ -120,6 +120,12 @@ function Landing() {
             <a href="#preview" className="hover:text-foreground">
               {t("land.nav.preview")}
             </a>
+            <a href="#hire-ai" className="hover:text-foreground">
+              {t("land.hire.badge")}
+            </a>
+            <a href="#ai-skills" className="hover:text-foreground">
+              {t("land.skill.badge")}
+            </a>
             <a href="#login" className="hover:text-foreground">
               {t("land.nav.login")}
             </a>
