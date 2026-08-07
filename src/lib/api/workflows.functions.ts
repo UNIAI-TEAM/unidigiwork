@@ -1,3 +1,4 @@
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 // Batch 1D-API — Workflows server functions.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -351,7 +352,7 @@ export const simulateWorkflowRun = createServerFn({ method: "POST" })
       warnings: string[];
       steps: {
         order: number; key: string; title: string; type: string;
-        on_error: string; status: string; input: Record<string, unknown>;
+        on_error: string; status: string; input: Json;
       }[];
     };
   });
