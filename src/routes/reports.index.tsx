@@ -743,22 +743,27 @@ function LegendDot({ c, l }: { c: string; l: string }) {
   );
 }
 
-function LineChart() {
-  const days = ["12 May", "13 May", "14 May", "15 May", "16 May", "17 May", "18 May"];
+function LineChart({ data }: { data: ReportOverview["activity"] }) {
+  const rows = data.length > 0 ? data : [{ day: "", tasks: 0, meetings: 0, documents: 0, completed: 0 }];
+  const days = rows.map((r) => (r.day ? new Date(r.day).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : ""));
   const series = [
-    { color: "#a78bfa", points: [380, 520, 480, 700, 820, 760, 820] },
-    { color: "#34d399", points: [220, 320, 420, 480, 540, 620, 700] },
-    { color: "#60a5fa", points: [180, 240, 300, 360, 380, 360, 420] },
-    { color: "#fbbf24", points: [80, 140, 200, 240, 220, 280, 320] },
+    { color: "#a78bfa", points: rows.map((r) => r.tasks) },
+    { color: "#34d399", points: rows.map((r) => r.completed) },
+    { color: "#60a5fa", points: rows.map((r) => r.meetings) },
+    { color: "#fbbf24", points: rows.map((r) => r.documents) },
   ];
   const W = 600,
-    H = 220,
-    max = 1000;
+    H = 220;
+  const peak = Math.max(1, ...series.flatMap((s) => s.points));
+  const step = Math.max(1, Math.ceil(peak / 5));
+  const max = step * 5;
+  const gridValues = [0, 1, 2, 3, 4, 5].map((i) => i * step);
+  const labelEvery = Math.ceil(days.length / 7);
   const x = (i: number) => (i / (days.length - 1)) * (W - 40) + 30;
   const y = (v: number) => H - 30 - (v / max) * (H - 50);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-44 w-full">
-      {[0, 200, 400, 600, 800, 1000].map((v) => (
+      {gridValues.map((v) => (
         <g key={v}>
           <line
             x1={30}
@@ -787,6 +792,7 @@ function LineChart() {
         </g>
       ))}
       {days.map((d, i) => (
+        i % labelEvery !== 0 ? null : (
         <text
           key={d}
           x={x(i)}
@@ -797,6 +803,7 @@ function LineChart() {
         >
           {d}
         </text>
+        )
       ))}
     </svg>
   );
