@@ -63,7 +63,7 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 
 export const Route = createFileRoute("/meeting")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Partial<Record<string, unknown>>) => ({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
