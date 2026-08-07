@@ -70,7 +70,10 @@ const PERMS = [
   { key: "can_run" as const, label: "Chạy", hint: "Khởi chạy hoặc chạy thử quy trình" },
 ];
 
-type PermState = { can_edit?: boolean | null; can_publish?: boolean | null; can_run?: boolean | null; is_default?: boolean | null } | null;
+type PermState = {
+  can_edit?: boolean | null; can_publish?: boolean | null; can_run?: boolean | null;
+  is_default?: boolean | null; role?: string | null;
+} | null;
 type AuditRow = {
   id: string;
   occurred_at: string;
