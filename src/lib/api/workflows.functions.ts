@@ -391,7 +391,7 @@ export const setWorkflowPermission = createServerFn({ method: "POST" })
       _can_publish: data.canPublish,
       _can_run: data.canRun,
     });
-    return { id: ensureOk(res, "WORKSPACE_NOT_FOUND") };
+    return { id: ensureOk(res, "WORKSPACE_ACCESS_DENIED") };
   });
 
 export const resetWorkflowPermission = createServerFn({ method: "POST" })

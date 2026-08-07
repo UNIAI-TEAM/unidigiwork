@@ -98,7 +98,7 @@ function WorkflowPermissionsPage() {
     <div className="flex min-h-screen bg-background">
       <AppSidebar open={open} onClose={() => setOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppTopbar onMenu={() => setOpen(true)} title="Phân quyền quy trình" />
+        <AppTopbar onOpenSidebar={() => setOpen(true)} />
 
         <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3 sm:px-6">
           <Link to="/workflows" className="flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-surface-2">
