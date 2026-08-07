@@ -490,10 +490,34 @@ function WorkflowCalendarPage() {
             <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
               {anomalies.length > 0 && (
                 <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm lg:col-span-2">
-                  <div className="flex items-center gap-2 font-medium text-amber-600">
-                    <AlertTriangle className="h-4 w-4" />
-                    {anomalies.length} lần chạy có thời gian bất thường (dữ liệu cũ hoặc lệch múi
-                    giờ)
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 font-medium text-amber-600">
+                      <AlertTriangle className="h-4 w-4" />
+                      {anomalies.length} lần chạy có thời gian bất thường (dữ liệu cũ hoặc lệch múi
+                      giờ)
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          exportAnomaliesCsv(anomalyRows(), exportMeta());
+                          toast.success("Đã tải báo cáo CSV");
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-muted/40"
+                      >
+                        <Download className="h-3.5 w-3.5" /> Xuất CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const ok = exportAnomaliesPdf(anomalyRows(), exportMeta());
+                          if (!ok) toast.error("Trình duyệt đã chặn cửa sổ in. Hãy cho phép pop-up.");
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-muted/40"
+                      >
+                        <FileText className="h-3.5 w-3.5" /> Xuất PDF
+                      </button>
+                    </div>
                   </div>
                   <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                     {anomalies.slice(0, 5).map(({ day, run, issues }) => (
