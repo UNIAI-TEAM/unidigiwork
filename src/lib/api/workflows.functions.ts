@@ -147,6 +147,7 @@ export const advanceWorkflowStep = createServerFn({ method: "POST" })
 
 export const cancelWorkflowRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z.object({
       ...commandMetadataSchema.shape,
