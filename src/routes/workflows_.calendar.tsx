@@ -281,6 +281,18 @@ function WorkflowCalendarPage() {
   );
   const selectedRuns = selected ? (runsByDay.get(selected) ?? []) : [];
 
+  // Cảnh báo timestamp lệch do dữ liệu cũ.
+  const anomalies = useMemo(() => {
+    const out: { day: string; run: Run; issues: string[] }[] = [];
+    for (const [day, runs] of runsByDay) {
+      for (const r of runs) {
+        const issues = timestampIssues(r);
+        if (issues.length) out.push({ day, run: r, issues });
+      }
+    }
+    return out;
+  }, [runsByDay]);
+
   const preset = (n: number) => {
     setFrom(isoTz(addDays(new Date(), -(n - 1)), tz));
     setTo(isoTz(new Date(), tz));
