@@ -566,6 +566,12 @@ function WorkflowCalendarPage() {
                               {durationLabel(r.started_at ?? r.created_at, r.ended_at)}
                             </div>
                           )}
+                          {timestampIssues(r).length > 0 && (
+                            <div className="flex items-start gap-1 text-amber-600">
+                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                              <span>{timestampIssues(r).join(", ")}</span>
+                            </div>
+                          )}
                         </div>
                         </button>
                       </li>
