@@ -127,6 +127,32 @@ function DocumentDetailPage() {
     }
   };
 
+  // Khôi phục: tạo phiên bản mới từ nội dung của một phiên bản cũ.
+  const [restoring, setRestoring] = useState<string | null>(null);
+  const restoreVersion = async (v: DocVersion) => {
+    if (!doc || !isStorageRef(v.storage_ref)) return;
+    if (!confirm(`Khôi phục nội dung phiên bản v${v.version} thành phiên bản mới?`)) return;
+    setRestoring(v.id);
+    try {
+      await uploadDocumentVersion({
+        data: {
+          documentId: doc.id,
+          storageRef: v.storage_ref,
+          mimeType: v.mime_type ?? undefined,
+          sizeBytes: v.size_bytes ?? 0,
+          comment: `Khôi phục từ v${v.version}`,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["document", id] });
+      toast.success(`Đã khôi phục từ v${v.version}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRestoring(null);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="documents" open={open} onClose={() => setOpen(false)} />
