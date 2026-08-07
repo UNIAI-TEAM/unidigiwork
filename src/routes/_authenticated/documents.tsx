@@ -39,7 +39,7 @@ import {
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { createDocument } from "@/lib/api/documents.functions";
+import { createDocument, uploadDocumentVersion } from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 
 type Doc = {
