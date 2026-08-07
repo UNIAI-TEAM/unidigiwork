@@ -7,6 +7,9 @@ import { mapPgError } from "./business.server";
 export type ReportOverview = {
   range_days: number;
   from: string;
+  to?: string;
+  prev_from?: string;
+  prev_to?: string;
   kpis: {
     users: number;
     active_users: number;
@@ -53,14 +56,16 @@ export const getReportOverview = createServerFn({ method: "GET" })
   .inputValidator((i) =>
     z
       .object({
-        days: z.number().int().min(1).max(365).default(30),
+        from: z.string().datetime().optional(),
+        to: z.string().datetime().optional(),
         workspaceId: z.string().uuid().optional(),
       })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase.rpc("report_overview", {
-      _days: data.days,
+    const { data: row, error } = await context.supabase.rpc("report_overview_range", {
+      _from: data.from ?? undefined,
+      _to: data.to ?? undefined,
       _workspace_id: data.workspaceId ?? undefined,
     });
     if (error) mapPgError(error);
@@ -84,7 +89,8 @@ export const listReportTasks = createServerFn({ method: "GET" })
   .inputValidator((i) =>
     z
       .object({
-        days: z.number().int().min(1).max(365).default(30),
+        from: z.string().datetime().optional(),
+        to: z.string().datetime().optional(),
         status: z.enum(["todo", "in_progress", "blocked", "done", "canceled"]).optional(),
         workspaceId: z.string().uuid().optional(),
         limit: z.number().int().min(1).max(200).default(100),
@@ -92,12 +98,14 @@ export const listReportTasks = createServerFn({ method: "GET" })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const from = new Date(Date.now() - data.days * 86400_000).toISOString();
+    const to = data.to ?? new Date().toISOString();
+    const from = data.from ?? new Date(Date.now() - 30 * 86400_000).toISOString();
     let q = context.supabase
       .from("tasks")
       .select("id, title, status, priority, workspace_id, due_at, updated_at, created_at")
       .is("deleted_at", null)
       .gte("created_at", from)
+      .lt("created_at", to)
       .order("updated_at", { ascending: false })
       .limit(data.limit);
     if (data.status) q = q.eq("status", data.status);

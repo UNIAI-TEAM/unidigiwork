@@ -55,18 +55,145 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number];
 
+const todayKey = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const shiftDay = (key: string, n: number) => {
+  const d = new Date(`${key}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const dayCount = (from: string, to: string) =>
+  Math.max(
+    1,
+    Math.round(
+      (new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86_400_000,
+    ) + 1,
+  );
+const fmtDay = (key: string) =>
+  new Date(`${key}T00:00:00`).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+function RangePicker({
+  range,
+  onChange,
+  compare,
+  onCompareChange,
+  prev,
+  days,
+  t,
+}: {
+  range: { from: string; to: string };
+  onChange: (r: { from: string; to: string }) => void;
+  compare: boolean;
+  onCompareChange: (v: boolean) => void;
+  prev: { from: string; to: string };
+  days: number;
+  t: (k: Key) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const presets = [7, 30, 90];
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <Calendar className="h-4 w-4" />
+        <span className="text-foreground">
+          {fmtDay(range.from)} – {fmtDay(range.to)}
+        </span>
+        <ChevronDown className="h-3.5 w-3.5" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-40 mt-2 w-72 rounded-xl border border-border bg-surface p-3 shadow-lg">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("rp.range.custom")}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-xs text-muted-foreground">
+                {t("rp.range.from")}
+                <input
+                  type="date"
+                  value={range.from}
+                  max={range.to}
+                  onChange={(e) => e.target.value && onChange({ ...range, from: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+                />
+              </label>
+              <label className="text-xs text-muted-foreground">
+                {t("rp.range.to")}
+                <input
+                  type="date"
+                  value={range.to}
+                  min={range.from}
+                  max={todayKey()}
+                  onChange={(e) => e.target.value && onChange({ ...range, to: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+                />
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">{t("rp.range.preset")}:</span>
+              {presets.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => onChange({ from: shiftDay(todayKey(), -(p - 1)), to: todayKey() })}
+                  className={`rounded-md px-2 py-1 text-xs ${
+                    days === p ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {p} {t("rp.dd.days")}
+                </button>
+              ))}
+            </div>
+            <label className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-sm">
+              <input
+                type="checkbox"
+                checked={compare}
+                onChange={(e) => onCompareChange(e.target.checked)}
+                className="h-4 w-4 accent-[hsl(var(--primary))]"
+              />
+              <span className="text-muted-foreground">{t("rp.range.compare")}</span>
+            </label>
+            {compare && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {fmtDay(prev.from)} – {fmtDay(prev.to)} ({days} {t("rp.dd.days")})
+              </p>
+            )}
+            <button
+              onClick={() => setOpen(false)}
+              className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+            >
+              {t("rp.range.apply")}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function ReportsPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
-    navigate({ to: "/reports/detail", search: { days, status: s, workspaceId: wsId } });
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("overview");
-  const [days, setDays] = useState(30);
+  const [range, setRange] = useState(() => ({ from: shiftDay(todayKey(), -29), to: todayKey() }));
+  const [compare, setCompare] = useState(true);
+  const days = dayCount(range.from, range.to);
+  const fromISO = new Date(`${range.from}T00:00:00`).toISOString();
+  const toISO = new Date(`${range.to}T23:59:59.999`).toISOString();
+  const prev = { from: shiftDay(range.from, -days), to: shiftDay(range.to, -days) };
+  const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
+    navigate({ to: "/reports/detail", search: { from: fromISO, to: toISO, status: s, workspaceId: wsId } });
   const fetchOverview = useServerFn(getReportOverview);
   const { data: report, isPending } = useQuery({
-    queryKey: ["report-overview", days],
-    queryFn: () => fetchOverview({ data: { days } }),
+    queryKey: ["report-overview", fromISO, toISO],
+    queryFn: () => fetchOverview({ data: { from: fromISO, to: toISO } }),
     staleTime: 60_000,
   });
   const k = report?.kpis;
@@ -74,6 +201,7 @@ function ReportsPage() {
   const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
   const delta = (cur = 0, prev = 0) =>
     prev === 0 ? (cur > 0 ? "+100%" : "0%") : `${cur - prev >= 0 ? "+" : ""}${Math.round(((cur - prev) / prev) * 100)}%`;
+  const cmp = (cur = 0, previous = 0) => (compare ? delta(cur, previous) : "—");
   const nf = (n?: number) => (n ?? 0).toLocaleString("vi-VN");
   const wsRows = report?.workspaces ?? [];
   const health = {
@@ -98,18 +226,15 @@ function ReportsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{t("rp.sub")}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <select
-                    value={days}
-                    onChange={(e) => setDays(Number(e.target.value))}
-                    className="bg-transparent text-sm outline-none"
-                  >
-                    <option value={7}>7 ngày</option>
-                    <option value={30}>30 ngày</option>
-                    <option value={90}>90 ngày</option>
-                  </select>
-                </div>
+                <RangePicker
+                  range={range}
+                  onChange={setRange}
+                  compare={compare}
+                  onCompareChange={setCompare}
+                  prev={prev}
+                  days={days}
+                  t={t}
+                />
                 <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
                 </button>
@@ -143,6 +268,11 @@ function ReportsPage() {
             </div>
 
             {/* KPI cards */}
+            {compare && (
+              <p className="mb-2 text-xs text-muted-foreground">
+                {t("rp.range.compareOn")}: {fmtDay(prev.from)} – {fmtDay(prev.to)} ({days} {t("rp.dd.days")})
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
               <Kpi
                 icon={UsersIcon}
@@ -164,7 +294,7 @@ function ReportsPage() {
                 icon={Folder}
                 label={t("rp.kpi.projects")}
                 value={isPending ? "…" : nf(k?.workspaces)}
-                delta={delta(k?.ws_cur, k?.ws_prev)}
+                delta={cmp(k?.ws_cur, k?.ws_prev)}
                 tone="text-sky-300"
                 t={t}
               />
@@ -172,7 +302,7 @@ function ReportsPage() {
                 icon={CheckCircle2}
                 label={t("rp.kpi.tasks")}
                 value={isPending ? "…" : nf(st?.done)}
-                delta={delta(k?.tasks_cur, k?.tasks_prev)}
+                delta={cmp(k?.tasks_cur, k?.tasks_prev)}
                 tone="text-amber-300"
                 t={t}
               />
@@ -180,7 +310,7 @@ function ReportsPage() {
                 icon={Video}
                 label={t("rp.kpi.meetings")}
                 value={isPending ? "…" : nf(k?.meetings)}
-                delta={delta(k?.meetings_cur, k?.meetings_prev)}
+                delta={cmp(k?.meetings_cur, k?.meetings_prev)}
                 tone="text-violet-300"
                 t={t}
               />
@@ -193,7 +323,7 @@ function ReportsPage() {
                   title={t("rp.act.title")}
                   right={
                     <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
-                      {days} ngày <ChevronDown className="h-3 w-3" />
+                      {days} {t("rp.dd.days")} <ChevronDown className="h-3 w-3" />
                     </button>
                   }
                 />
