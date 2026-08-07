@@ -5,11 +5,12 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Plus, Save, Play, Rocket, Trash2, ArrowUp, ArrowDown,
   Zap, Sparkles, GitBranch, Mail, Database, CheckCircle2, Clock, Loader2,
+  FlaskConical, AlertTriangle, MinusCircle, XCircle,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getWorkflow, updateWorkflow, publishWorkflow, startWorkflowRun,
-  upsertWorkflowTrigger, deleteWorkflowTrigger,
+  upsertWorkflowTrigger, deleteWorkflowTrigger, simulateWorkflowRun,
 } from "@/lib/api/workflows.functions";
 
 export const Route = createFileRoute("/workflows/$id")({
@@ -274,6 +275,7 @@ function WorkflowBuilderPage() {
               {/* Triggers + runs */}
               <section className="space-y-4">
                 <TriggersPanel workflowId={id} triggers={data.triggers} published={published} onChanged={refresh} />
+                <DryRunPanel workflowId={id} steps={steps} dirty={dirty} />
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
                   <h2 className="text-sm font-semibold">Lượt chạy gần đây</h2>
                   {data.runs.length === 0 ? (
