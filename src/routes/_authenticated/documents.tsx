@@ -195,6 +195,7 @@ function DocumentsPage() {
 
   const updateSelected = async (patch: Partial<Pick<Doc, "title" | "content">>) => {
     if (!selected) return;
+    if (!selected) return;
     const next = { ...selected, ...patch };
     setSelected(next);
     setDocs((d) => d.map((x) => (x.id === next.id ? next : x)));
