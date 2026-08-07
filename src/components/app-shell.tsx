@@ -27,6 +27,7 @@ import {
   X,
   HelpCircle,
   Sparkles,
+  CreditCard,
   UserCircle2,
   KeyRound,
   LogOut,
