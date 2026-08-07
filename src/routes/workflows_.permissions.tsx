@@ -11,6 +11,133 @@ import {
   setWorkflowRolePermission, resetWorkflowRolePermission,
   listWorkflowDenials,
 } from "@/lib/api/workflows.functions";
+import {
+  listWorkflowAccessRequests, resolveWorkflowAccessRequest,
+} from "@/lib/api/workflows.functions";
+
+type AccessRequestRow = {
+  id: string;
+  created_at: string;
+  action: "edit" | "publish" | "run";
+  status: "pending" | "approved" | "rejected";
+  requester_id: string;
+  requester_name: string | null;
+  workflow_id: string | null;
+  workflow_name: string | null;
+  message: string | null;
+  reviewer_name: string | null;
+  reviewer_note: string | null;
+  reviewed_at: string | null;
+};
+
+const REQ_ACTION_LABEL: Record<string, string> = {
+  edit: "Chỉnh sửa", publish: "Phát hành", run: "Chạy",
+};
+
+function AccessRequests({ workspaceId, canManage }: { workspaceId: string; canManage: boolean }) {
+  const qc = useQueryClient();
+  const [status, setStatus] = useState<"pending" | "approved" | "rejected" | "">("pending");
+  const q = useQuery({
+    queryKey: ["workflow-access-requests", workspaceId, status],
+    enabled: !!workspaceId && canManage,
+    queryFn: async () =>
+      (await listWorkflowAccessRequests({
+        data: { workspaceId, status: status || null, limit: 100 },
+      })) as unknown as AccessRequestRow[],
+  });
+
+  const resolve = useMutation({
+    mutationFn: (v: { id: string; approve: boolean }) =>
+      resolveWorkflowAccessRequest({ data: { requestId: v.id, approve: v.approve } }),
+    onSuccess: (_d, v) => {
+      toast.success(v.approve ? "Đã duyệt yêu cầu và cấp quyền" : "Đã từ chối yêu cầu");
+      void qc.invalidateQueries({ queryKey: ["workflow-access-requests", workspaceId] });
+      void qc.invalidateQueries({ queryKey: ["workflow-permissions", workspaceId] });
+      void qc.invalidateQueries({ queryKey: ["workflow-permission-audit", workspaceId] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không xử lý được yêu cầu"),
+  });
+
+  if (!canManage) return null;
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold">Yêu cầu cấp quyền</h2>
+        <div className="flex gap-1">
+          {([["pending", "Chờ duyệt"], ["approved", "Đã duyệt"], ["rejected", "Từ chối"], ["", "Tất cả"]] as const).map(
+            ([v, label]) => (
+              <button
+                key={v || "all"}
+                onClick={() => setStatus(v)}
+                className={`rounded-lg px-2.5 py-1 text-xs ${status === v ? "bg-primary text-primary-foreground" : "border border-border hover:bg-surface-2"}`}
+              >
+                {label}
+              </button>
+            ),
+          )}
+        </div>
+      </div>
+
+      {q.isLoading ? (
+        <p className="mt-3 text-xs text-muted-foreground">Đang tải…</p>
+      ) : !q.data || q.data.length === 0 ? (
+        <p className="mt-3 text-xs text-muted-foreground">Chưa có yêu cầu nào.</p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {q.data.map((r) => (
+            <li key={r.id} className="rounded-lg border border-border bg-surface p-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-medium">{r.requester_name ?? r.requester_id.slice(0, 8)}</span>
+                <span className="rounded-md bg-surface-2 px-1.5 py-0.5">{REQ_ACTION_LABEL[r.action]}</span>
+                {r.workflow_name && <span className="text-muted-foreground">· {r.workflow_name}</span>}
+                <span className="text-muted-foreground">
+                  · {new Date(r.created_at).toLocaleString("vi-VN")}
+                </span>
+                <span
+                  className={`ml-auto rounded-md px-1.5 py-0.5 text-[10px] ${
+                    r.status === "pending"
+                      ? "bg-warning/15 text-warning"
+                      : r.status === "approved"
+                        ? "bg-success/15 text-success"
+                        : "bg-destructive/15 text-destructive"
+                  }`}
+                >
+                  {r.status === "pending" ? "Chờ duyệt" : r.status === "approved" ? "Đã duyệt" : "Từ chối"}
+                </span>
+              </div>
+              {r.message && <p className="mt-1.5 text-xs text-muted-foreground">“{r.message}”</p>}
+              {r.status === "pending" && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => resolve.mutate({ id: r.id, approve: true })}
+                    disabled={resolve.isPending}
+                    className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    Duyệt & cấp quyền
+                  </button>
+                  <button
+                    onClick={() => resolve.mutate({ id: r.id, approve: false })}
+                    disabled={resolve.isPending}
+                    className="inline-flex h-8 items-center rounded-lg border border-border px-3 text-xs hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    Từ chối
+                  </button>
+                </div>
+              )}
+              {r.status !== "pending" && r.reviewer_name && (
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Xử lý bởi {r.reviewer_name}
+                  {r.reviewed_at ? ` · ${new Date(r.reviewed_at).toLocaleString("vi-VN")}` : ""}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 export const Route = createFileRoute("/workflows_/permissions")({
   head: () => ({
@@ -518,6 +645,7 @@ function WorkflowPermissionsPage() {
             </div>
 
             {activeWs && <RolePermissions workspaceId={activeWs} canManage={canManage} />}
+            {activeWs && <AccessRequests workspaceId={activeWs} canManage={canManage} />}
             {activeWs && <DenialLog workspaceId={activeWs} canManage={canManage} />}
             {activeWs && <AuditTimeline workspaceId={activeWs} />}
           </div>

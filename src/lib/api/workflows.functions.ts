@@ -563,3 +563,77 @@ export const resetWorkflowRolePermission = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { reset: !!ok };
   });
+
+// Batch 1F-PERM-REQ — yêu cầu cấp quyền.
+export const requestWorkflowAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workspaceId: z.string().uuid(),
+      action: z.enum(["edit", "publish", "run"]),
+      workflowId: z.string().uuid().nullable().optional(),
+      message: z.string().max(500).nullable().optional(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: id, error } = await context.supabase.rpc("request_workflow_access", {
+      _workspace_id: data.workspaceId,
+      _action: data.action,
+      _workflow_id: data.workflowId ?? undefined,
+      _message: data.message ?? undefined,
+    });
+    if (error) mapPgError(error);
+    return { id: id as unknown as string | null };
+  });
+
+export const listWorkflowAccessRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      workspaceId: z.string().uuid(),
+      status: z.enum(["pending", "approved", "rejected"]).nullable().optional(),
+      limit: z.number().int().min(1).max(200).optional(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("list_workflow_access_requests", {
+      _workspace_id: data.workspaceId,
+      _status: data.status ?? undefined,
+      _limit: data.limit ?? 50,
+    });
+    if (error) mapPgError(error);
+    return (rows ?? []) as unknown as {
+      id: string;
+      created_at: string;
+      action: "edit" | "publish" | "run";
+      status: "pending" | "approved" | "rejected";
+      requester_id: string;
+      requester_name: string | null;
+      workflow_id: string | null;
+      workflow_name: string | null;
+      message: string | null;
+      reviewer_id: string | null;
+      reviewer_name: string | null;
+      reviewer_note: string | null;
+      reviewed_at: string | null;
+    }[];
+  });
+
+export const resolveWorkflowAccessRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      requestId: z.string().uuid(),
+      approve: z.boolean(),
+      note: z.string().max(500).nullable().optional(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("resolve_workflow_access_request", {
+      _request_id: data.requestId,
+      _approve: data.approve,
+      _note: data.note ?? undefined,
+    });
+    if (error) mapPgError(error);
+    return { ok: true };
+  });

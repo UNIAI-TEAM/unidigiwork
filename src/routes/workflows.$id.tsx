@@ -17,6 +17,7 @@ import {
   DEFAULT_WORKFLOW_PERMS, denialReason, guardWorkflowAction, toastWorkflowError,
   type WorkflowPerms,
 } from "@/lib/workflow-access";
+import { RequestAccessButton } from "@/components/workflow/request-access-button";
 
 export const Route = createFileRoute("/workflows/$id")({
   head: () => ({
@@ -196,14 +197,25 @@ function WorkflowBuilderPage() {
           ) : (
             <div className="mx-auto grid max-w-7xl gap-6 p-4 sm:p-6 xl:grid-cols-3">
               {!permsQuery.isLoading && !perms.can_edit && (
-                <div className="xl:col-span-3 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs text-warning">
-                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    Bạn đang ở chế độ chỉ xem: không có quyền chỉnh sửa quy trình này.
-                    {!perms.can_publish && " Không có quyền phát hành."}
-                    {!perms.can_run && " Không có quyền chạy."}
-                    {" "}Liên hệ chủ sở hữu không gian làm việc tại mục Quy trình → Phân quyền.
-                  </span>
+                <div className="xl:col-span-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs text-warning">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Bạn đang ở chế độ chỉ xem: không có quyền chỉnh sửa quy trình này.
+                      {!perms.can_publish && " Không có quyền phát hành."}
+                      {!perms.can_run && " Không có quyền chạy."}
+                      {" "}Gửi yêu cầu tới quản trị không gian làm việc để được cấp quyền.
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-start gap-2">
+                    <RequestAccessButton workspaceId={perms.workspace_id || null} action="edit" workflowId={id} />
+                    {!perms.can_publish && (
+                      <RequestAccessButton workspaceId={perms.workspace_id || null} action="publish" workflowId={id} />
+                    )}
+                    {!perms.can_run && (
+                      <RequestAccessButton workspaceId={perms.workspace_id || null} action="run" workflowId={id} />
+                    )}
+                  </div>
                 </div>
               )}
               {/* Steps */}
