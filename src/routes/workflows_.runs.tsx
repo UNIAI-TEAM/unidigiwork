@@ -200,7 +200,7 @@ function RunHistoryPage() {
     <div className="min-h-screen bg-background">
       <AppSidebar open={open} onClose={() => setOpen(false)} />
       <div className="lg:pl-64">
-        <AppTopbar onMenu={() => setOpen(true)} />
+        <AppTopbar onOpenSidebar={() => setOpen(true)} />
         <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
