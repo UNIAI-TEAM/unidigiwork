@@ -349,8 +349,8 @@ function WorkflowCalendarPage() {
           ? `Đã chuẩn hoá ${res.fixed} lần chạy theo múi giờ ${tzOffsetLabel(tz)}`
           : "Không có bản ghi nào cần chuẩn hoá",
       );
-      qc.invalidateQueries({ queryKey: ["workflow-runs"] });
-      qc.invalidateQueries({ queryKey: ["workflow-run"] });
+      void queryClient.invalidateQueries({ queryKey: ["workflow-runs"] });
+      void queryClient.invalidateQueries({ queryKey: ["workflow-run"] });
     },
     onError: () => toast.error("Không thể chuẩn hoá thời gian. Vui lòng thử lại."),
   });
