@@ -323,7 +323,7 @@ function ReportsPage() {
                   title={t("rp.act.title")}
                   right={
                     <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
-                      {days} ngày <ChevronDown className="h-3 w-3" />
+                      {days} {t("rp.dd.days")} <ChevronDown className="h-3 w-3" />
                     </button>
                   }
                 />
