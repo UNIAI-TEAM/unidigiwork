@@ -438,7 +438,7 @@ function WorkflowCalendarPage() {
           )}
         </main>
       </div>
-      {runId && <RunDetailModal runId={runId} onClose={() => setRunId(null)} />}
+      {runId && <RunDetailModal runId={runId} tz={tz} onClose={() => setRunId(null)} />}
     </div>
   );
 }
@@ -455,11 +455,24 @@ const STEP_META: Record<string, { label: string; chip: string; dot: string }> = 
   skipped: { label: "Bỏ qua", chip: "bg-amber-500/15 text-amber-500", dot: "bg-amber-500" },
 };
 
-function fmt(ts: string | null | undefined) {
-  return ts ? new Date(ts).toLocaleString("vi-VN") : "—";
+function fmt(ts: string | null | undefined, tz?: string) {
+  if (!ts) return "—";
+  try {
+    return new Date(ts).toLocaleString("vi-VN", tz ? { timeZone: tz } : undefined);
+  } catch {
+    return new Date(ts).toLocaleString("vi-VN");
+  }
 }
 
-function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void }) {
+function RunDetailModal({
+  runId,
+  tz,
+  onClose,
+}: {
+  runId: string;
+  tz: string;
+  onClose: () => void;
+}) {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["workflow-run", runId],
@@ -558,10 +571,10 @@ function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void
                 </span>
               </Field>
               <Field label="Phiên bản quy trình">v{data.run.workflow_version}</Field>
-              <Field label="Bắt đầu">{fmt(data.run.started_at)}</Field>
-              <Field label="Kết thúc">{fmt(data.run.ended_at)}</Field>
-              <Field label="Tạo lúc">{fmt(data.run.created_at)}</Field>
-              <Field label="Cập nhật">{fmt(data.run.updated_at)}</Field>
+              <Field label="Bắt đầu">{fmt(data.run.started_at, tz)}</Field>
+              <Field label="Kết thúc">{fmt(data.run.ended_at, tz)}</Field>
+              <Field label="Tạo lúc">{fmt(data.run.created_at, tz)}</Field>
+              <Field label="Cập nhật">{fmt(data.run.updated_at, tz)}</Field>
               <div className="col-span-2">
                 <Field label="Correlation ID">
                   <span className="break-all font-mono text-xs">
@@ -590,8 +603,8 @@ function RunDetailModal({ runId, onClose }: { runId: string; onClose: () => void
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {fmt(s.started_at ?? s.created_at)}
-                        {s.ended_at ? ` → ${fmt(s.ended_at)}` : ""}
+                        {fmt(s.started_at ?? s.created_at, tz)}
+                        {s.ended_at ? ` → ${fmt(s.ended_at, tz)}` : ""}
                       </div>
                       {s.error && (
                         <p className="mt-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
