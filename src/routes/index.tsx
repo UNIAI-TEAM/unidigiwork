@@ -524,6 +524,30 @@ function Landing() {
 
       {/* Skill cho nhân sự AI */}
       <section
+        id="hire-ai-consult"
+        className="border-t border-border/60 bg-surface/30 py-16 sm:py-20"
+        aria-labelledby="hire-ai-consult-title"
+      >
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <MessageSquare className="h-3.5 w-3.5" /> {t("land.hireform.badge")}
+            </span>
+            <h2
+              id="hire-ai-consult-title"
+              className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl"
+            >
+              {t("land.hireform.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.hireform.sub")}</p>
+          </div>
+          <div className="mt-8">
+            <HireConsultForm />
+          </div>
+        </div>
+      </section>
+
+      <section
         id="ai-skills"
         className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
         aria-labelledby="ai-skills-title"
@@ -607,7 +631,17 @@ function Landing() {
 }
 
 function DemoLeadForm() {
+  return <LeadForm variant="demo" />;
+}
+
+function HireConsultForm() {
+  return <LeadForm variant="hire" />;
+}
+
+function LeadForm({ variant }: { variant: "demo" | "hire" }) {
   const { t } = useI18n();
+  const isHire = variant === "hire";
+  const idp = isHire ? "hire" : "demo";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
@@ -657,7 +691,7 @@ function DemoLeadForm() {
           onClick={() => setSuccess(false)}
           className="mt-3 text-sm text-primary hover:underline"
         >
-          {t("land.demo.form.submit")}
+          {isHire ? t("land.hireform.submit") : t("land.demo.form.submit")}
         </button>
       </div>
     );
@@ -667,11 +701,11 @@ function DemoLeadForm() {
     <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-name">
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-name`}>
             {t("land.demo.form.name")}
           </label>
           <input
-            id="demo-name"
+            id={`${idp}-name`}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -682,15 +716,18 @@ function DemoLeadForm() {
           {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-role">
-            {t("land.demo.form.role")}
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-role`}>
+            {isHire ? t("land.hireform.need") : t("land.demo.form.role")}
           </label>
           <input
-            id="demo-role"
+            id={`${idp}-role`}
             type="text"
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            placeholder={t("land.demo.form.role.placeholder")}
+            maxLength={100}
+            placeholder={
+              isHire ? t("land.hireform.need.placeholder") : t("land.demo.form.role.placeholder")
+            }
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
             disabled={loading}
           />
@@ -698,11 +735,11 @@ function DemoLeadForm() {
         </div>
       </div>
       <div className="mt-4">
-        <label className="text-xs font-medium text-muted-foreground" htmlFor="demo-email">
+        <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-email`}>
           {t("land.demo.form.email")}
         </label>
         <input
-          id="demo-email"
+          id={`${idp}-email`}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -718,7 +755,7 @@ function DemoLeadForm() {
         className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {t("land.demo.form.submit")}
+        {isHire ? t("land.hireform.submit") : t("land.demo.form.submit")}
       </button>
     </form>
   );

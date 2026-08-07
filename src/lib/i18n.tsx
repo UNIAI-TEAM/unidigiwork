@@ -116,6 +116,13 @@ const dict = {
     "land.hire.unit": "/ nhân sự / tháng",
     "land.hire.cta": "Thuê nhân sự AI",
     "land.hire.contact": "Tư vấn cấu hình đội AI",
+    "land.hireform.badge": "Đăng ký tư vấn",
+    "land.hireform.title": "Gửi nhu cầu thuê nhân sự AI",
+    "land.hireform.sub":
+      "Để lại thông tin, đội ngũ UNIWORK sẽ liên hệ tư vấn cấu hình đội AI phù hợp trong 24 giờ làm việc.",
+    "land.hireform.need": "Nhu cầu của bạn",
+    "land.hireform.need.placeholder": "Ví dụ: cần 2 AI trợ lý lịch họp và 1 AI chăm sóc khách hàng…",
+    "land.hireform.submit": "Gửi nhu cầu tư vấn",
     "land.skill.badge": "Thư viện kỹ năng",
     "land.skill.title": "Skill cho nhân sự AI",
     "land.skill.sub":
@@ -637,6 +644,13 @@ const dict = {
     "land.hire.unit": "/ staff / month",
     "land.hire.cta": "Hire AI staff",
     "land.hire.contact": "Talk to us about your AI team",
+    "land.hireform.badge": "Request a consultation",
+    "land.hireform.title": "Tell us what you need",
+    "land.hireform.sub":
+      "Leave your details and our team will get back within 24 business hours with an AI team setup.",
+    "land.hireform.need": "What do you need?",
+    "land.hireform.need.placeholder": "e.g. 2 AI scheduling assistants and 1 AI support agent…",
+    "land.hireform.submit": "Send my request",
     "land.skill.badge": "Skill library",
     "land.skill.title": "Skills for your AI staff",
     "land.skill.sub":
