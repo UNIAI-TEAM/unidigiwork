@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
-import type { LucideIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
+import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
 import {
   Plus,
   Filter,
@@ -20,6 +24,7 @@ import {
   Upload,
   Download,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -38,171 +43,40 @@ export const Route = createFileRoute("/tasks")({
   component: TasksPage,
 });
 
-type Status = "todo" | "inprogress" | "review" | "testing" | "done";
-type Tag = { label: string; color: string };
+// Trạng thái công việc khớp enum task_status trong CSDL.
+type Status = "todo" | "in_progress" | "blocked" | "done" | "canceled";
+type Priority = "low" | "normal" | "high" | "urgent";
+
 type Task = {
   id: string;
   title: string;
+  description: string | null;
   status: Status;
-  assignee: { name: string; seed: string };
-  tag: Tag;
-  comments?: number;
-  attachments?: number;
-  date: string;
-  subtasks?: { done: number; total: number };
-  doneMark?: boolean;
+  priority: Priority;
+  due_at: string | null;
+  updated_at: string;
+  row_version: number;
 };
 
-const tagColors: Record<string, string> = {
-  Design: "bg-pink-500/20 text-pink-300 border border-pink-500/30",
-  Backend: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
-  Frontend: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
-  Testing: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
-  DevOps: "bg-orange-500/20 text-orange-300 border border-orange-500/30",
-  Database: "bg-violet-500/20 text-violet-300 border border-violet-500/30",
-  Docs: "bg-teal-500/20 text-teal-300 border border-teal-500/30",
+const priorityColors: Record<Priority, string> = {
+  low: "bg-muted text-muted-foreground border border-border",
+  normal: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
+  high: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+  urgent: "bg-destructive/20 text-destructive border border-destructive/30",
 };
 
-const initialTasks: Task[] = [
-  {
-    id: "STOS-128",
-    title: "Thiết kế giao diện Dashboard",
-    status: "todo",
-    assignee: { name: "Minh Anh", seed: "minh-anh" },
-    tag: { label: "Design", color: tagColors.Design },
-    comments: 3,
-    attachments: 2,
-    date: "May 30",
-  },
-  {
-    id: "STOS-142",
-    title: "Tích hợp API Payment Gateway",
-    status: "todo",
-    assignee: { name: "Quang Minh", seed: "quang-minh" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 2,
-    date: "May 31",
-    subtasks: { done: 2, total: 3 },
-  },
-  {
-    id: "STOS-143",
-    title: "Viết tài liệu hướng dẫn sử dụng",
-    status: "todo",
-    assignee: { name: "Bảo Ngọc", seed: "bao-ngoc" },
-    tag: { label: "Docs", color: tagColors.Docs },
-    comments: 1,
-    date: "",
-  },
-
-  {
-    id: "STOS-102",
-    title: "Phát triển API Gateway",
-    status: "inprogress",
-    assignee: { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 5,
-    date: "May 24",
-    subtasks: { done: 3, total: 5 },
-  },
-  {
-    id: "STOS-115",
-    title: "Quản lý người dùng & phân quyền",
-    status: "inprogress",
-    assignee: { name: "Hoàng Long", seed: "hoang-long" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 4,
-    date: "May",
-    subtasks: { done: 2, total: 4 },
-  },
-  {
-    id: "STOS-117",
-    title: "Thiết kế Database Schema",
-    status: "inprogress",
-    assignee: { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-    tag: { label: "Database", color: tagColors.Database },
-    comments: 3,
-    date: "M",
-    subtasks: { done: 1, total: 3 },
-  },
-
-  {
-    id: "STOS-090",
-    title: "Module Quản lý dự án",
-    status: "review",
-    assignee: { name: "Hương Trần", seed: "huong-tran" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 2,
-    date: "May 22",
-    subtasks: { done: 2, total: 3 },
-  },
-  {
-    id: "STOS-091",
-    title: "Báo cáo tiến độ dự án",
-    status: "review",
-    assignee: { name: "Duy Anh", seed: "duy-anh" },
-    tag: { label: "Frontend", color: tagColors.Frontend },
-    comments: 1,
-    date: "May 23",
-    subtasks: { done: 1, total: 2 },
-  },
-
-  {
-    id: "STOS-081",
-    title: "Kiểm thử API Gateway",
-    status: "testing",
-    assignee: { name: "Phương Linh", seed: "phuong-linh" },
-    tag: { label: "Testing", color: tagColors.Testing },
-    comments: 3,
-    date: "May 21",
-    subtasks: { done: 2, total: 4 },
-  },
-  {
-    id: "STOS-082",
-    title: "Kiểm thử chức năng đăng nhập",
-    status: "testing",
-    assignee: { name: "Phương Linh", seed: "phuong-linh" },
-    tag: { label: "Testing", color: tagColors.Testing },
-    comments: 2,
-    date: "",
-    subtasks: { done: 1, total: 3 },
-  },
-
-  {
-    id: "STOS-060",
-    title: "Thiết lập môi trường Dev",
-    status: "done",
-    assignee: { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-    tag: { label: "DevOps", color: tagColors.DevOps },
-    date: "May 10",
-    doneMark: true,
-  },
-  {
-    id: "STOS-061",
-    title: "CI/CD Pipeline",
-    status: "done",
-    assignee: { name: "Minh Anh", seed: "minh-anh" },
-    tag: { label: "DevOps", color: tagColors.DevOps },
-    date: "May 11",
-    doneMark: true,
-  },
-  {
-    id: "STOS-062",
-    title: "Thiết kế UI Login",
-    status: "done",
-    assignee: { name: "Duy Anh", seed: "duy-anh" },
-    tag: { label: "Design", color: tagColors.Design },
-    date: "May 12",
-    doneMark: true,
-  },
+const columns: { status: Status; key: Key; barColor: string }[] = [
+  { status: "todo", key: "tasks.col.todo", barColor: "bg-muted-foreground" },
+  { status: "in_progress", key: "tasks.col.inprogress", barColor: "bg-sky-500" },
+  { status: "blocked", key: "tasks.col.blocked", barColor: "bg-destructive" },
+  { status: "done", key: "tasks.col.done", barColor: "bg-success" },
+  { status: "canceled", key: "tasks.col.canceled", barColor: "bg-muted" },
 ];
 
-const columns: { status: Status; key: string; count: number; barColor: string }[] = [
-  { status: "todo", key: "tasks.col.todo", count: 26, barColor: "bg-muted-foreground" },
-  { status: "inprogress", key: "tasks.col.inprogress", count: 28, barColor: "bg-sky-500" },
-  { status: "review", key: "tasks.col.review", count: 16, barColor: "bg-violet-500" },
-  { status: "testing", key: "tasks.col.testing", count: 14, barColor: "bg-amber-500" },
-  { status: "done", key: "tasks.col.done", count: 44, barColor: "bg-success" },
-];
+function fmtDate(v: string | null) {
+  if (!v) return "";
+  return new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
 
 function TasksPage() {
   const [open, setOpen] = useSidebarState();
