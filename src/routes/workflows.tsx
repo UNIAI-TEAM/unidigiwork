@@ -38,6 +38,7 @@ import {
   toastWorkflowError,
   type WorkflowPerms,
 } from "@/lib/workflow-access";
+import { RequestAccessButton } from "@/components/workflow/request-access-button";
 
 export const Route = createFileRoute("/workflows")({
   head: () => ({
