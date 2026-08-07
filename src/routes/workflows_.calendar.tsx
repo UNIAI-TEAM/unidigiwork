@@ -279,9 +279,25 @@ function WorkflowCalendarPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {total} lần chạy trong khoảng {from} → {to}
               </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Múi giờ hiển thị: {tzOffsetLabel(tz)}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>Múi giờ hiển thị: {tzOffsetLabel(tz)}</span>
+                <div className="inline-flex overflow-hidden rounded-lg border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setTzMode("workspace")}
+                    className={`px-2 py-1 text-[11px] ${tzMode === "workspace" ? "bg-primary text-primary-foreground" : "hover:bg-muted/40"}`}
+                  >
+                    Múi giờ workspace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTzMode("browser")}
+                    className={`border-l border-border px-2 py-1 text-[11px] ${tzMode === "browser" ? "bg-primary text-primary-foreground" : "hover:bg-muted/40"}`}
+                  >
+                    Múi giờ trình duyệt
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {workspaces.data && workspaces.data.length > 0 && (
@@ -433,8 +449,13 @@ function WorkflowCalendarPage() {
 
               <aside className="rounded-xl border border-border bg-surface p-4">
                 <h2 className="text-sm font-semibold">
-                  {selected ? `Chi tiết ngày ${selected}` : "Chọn một ngày"}
+                  {selected ? longDateTz(selected, tz) : "Chọn một ngày"}
                 </h2>
+                {selected && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Theo {tzOffsetLabel(tz)}
+                  </p>
+                )}
                 {!selected ? (
                   <p className="mt-2 text-sm text-muted-foreground">
                     Bấm vào một ô ngày để xem các lần chạy trong ngày đó.
@@ -462,9 +483,20 @@ function WorkflowCalendarPage() {
                             {STATUS_META[r.status].label}
                           </span>
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {timeTz(r.started_at ?? r.created_at, tz)}
-                          {r.ended_at ? ` → ${timeTz(r.ended_at, tz)}` : ""}
+                        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                          <div>
+                            Bắt đầu: {dateTimeTz(r.started_at ?? r.created_at, tz)}
+                          </div>
+                          <div>
+                            Kết thúc:{" "}
+                            {r.ended_at ? dateTimeTz(r.ended_at, tz) : "Đang chạy"}
+                          </div>
+                          {r.ended_at && (
+                            <div>
+                              Thời lượng:{" "}
+                              {durationLabel(r.started_at ?? r.created_at, r.ended_at)}
+                            </div>
+                          )}
                         </div>
                         </button>
                       </li>
