@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MyEffectivePermissions } from "@/components/workflow/my-effective-permissions";
+import { PermissionHint } from "@/components/workflow/permission-hint";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
@@ -251,6 +252,9 @@ function WorkflowsPage() {
                 >
                   <Plus className="h-4 w-4" /> {t("wf.new")}
                 </button>
+                {!permsQuery.isLoading && !perms.can_edit && (
+                  <PermissionHint workspaceId={activeWs ?? null} action="edit" />
+                )}
                 {!permsQuery.isLoading && !perms.can_edit && (
                   <RequestAccessButton workspaceId={activeWs} action="edit" className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface" />
                 )}
