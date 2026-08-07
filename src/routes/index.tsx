@@ -21,6 +21,11 @@ import {
   Calendar,
   Send,
   CheckCircle2,
+  BriefcaseBusiness,
+  BarChart3,
+  Headphones,
+  Settings2,
+  Plug,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
