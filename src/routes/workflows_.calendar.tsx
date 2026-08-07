@@ -292,6 +292,13 @@ function WorkflowCalendarPage() {
   const activeWs = wsId ?? workspaces.data?.[0]?.id;
   // Múi giờ chuẩn hoá theo cấu hình workspace đang chọn.
   const [tzMode, setTzMode] = useState<"workspace" | "browser">("workspace");
+  const [autoRepairRetry, setAutoRepairRetry] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem("wf.autoRepairRetry") !== "0";
+  });
+  useEffect(() => {
+    window.localStorage.setItem("wf.autoRepairRetry", autoRepairRetry ? "1" : "0");
+  }, [autoRepairRetry]);
   const workspaceTz =
     (workspaces.data ?? []).find((w) => w.id === activeWs)?.timezone?.trim() || browserTz();
   const tz = tzMode === "browser" ? browserTz() : workspaceTz;
@@ -467,6 +474,15 @@ function WorkflowCalendarPage() {
                   </button>
                 </div>
               </div>
+              <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={autoRepairRetry}
+                  onChange={(e) => setAutoRepairRetry(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-border accent-[hsl(var(--primary))]"
+                />
+                Khi chạy lại lần chạy có cảnh báo thời gian, tự chuẩn hoá theo múi giờ workspace
+              </label>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {workspaces.data && workspaces.data.length > 0 && (
@@ -776,6 +792,7 @@ function WorkflowCalendarPage() {
         <RunDetailModal
           runId={runId}
           tz={tz}
+          autoRepairRetry={autoRepairRetry}
           onClose={() => setRunId(null)}
           onRerun={(dayIso) => {
             if (dayIso < from) setFrom(dayIso);
@@ -808,11 +825,13 @@ function fmt(ts: string | null | undefined, tz: string) {
 function RunDetailModal({
   runId,
   tz,
+  autoRepairRetry,
   onClose,
   onRerun,
 }: {
   runId: string;
   tz: string;
+  autoRepairRetry?: boolean;
   onClose: () => void;
   onRerun?: (dayIso: string) => void;
 }) {
@@ -841,19 +860,33 @@ function RunDetailModal({
   });
 
   const retryMut = useMutation({
-    mutationFn: async () =>
+    mutationFn: async () => {
+      let repaired = 0;
+      if (autoRepairRetry && data && timestampIssues(data.run).length > 0) {
+        try {
+          const res = await repairWorkflowRunTimestamps({ data: { runIds: [runId] } });
+          repaired = res.fixed;
+        } catch {
+          toast.warning("Không thể chuẩn hoá thời gian lần chạy cũ, vẫn tiếp tục chạy lại.");
+        }
+      }
       await startWorkflowRun({
         data: {
           workflowId: data!.run.workflow_id,
           context: (data!.run.context ?? {}) as Record<string, unknown>,
           idempotencyKey: crypto.randomUUID(),
         },
-      }),
-    onSuccess: () => {
+      });
+      return { repaired };
+    },
+    onSuccess: ({ repaired }) => {
       const now = new Date();
       onRerun?.(isoTz(now, tz));
       toast.success(`Đã chạy lại quy trình lúc ${dateTimeTz(now.toISOString(), tz)}`, {
-        description: `Múi giờ ${tzOffsetLabel(tz)}`,
+        description:
+          repaired > 0
+            ? `Đã chuẩn hoá thời gian lần chạy cũ · Múi giờ ${tzOffsetLabel(tz)}`
+            : `Múi giờ ${tzOffsetLabel(tz)}`,
       });
       refresh();
       onClose();
