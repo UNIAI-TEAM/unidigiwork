@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { MyEffectivePermissions } from "@/components/workflow/my-effective-permissions";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
@@ -307,6 +308,8 @@ function WorkflowsPage() {
                 accent="text-violet-300"
               />
             </div>
+
+            <MyEffectivePermissions workspaceId={activeWs ?? null} className="mt-5" />
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <div className="relative min-w-[200px] flex-1">

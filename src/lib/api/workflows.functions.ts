@@ -637,3 +637,27 @@ export const resolveWorkflowAccessRequest = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true };
   });
+
+// Batch 1F-PERM — "Quyền hiệu lực của tôi": chi tiết từng thao tác + nguồn quyền.
+export const explainMyWorkflowPermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: res, error } = await context.supabase.rpc("explain_my_workflow_permissions", {
+      _workspace_id: data.workspaceId,
+    });
+    if (error) mapPgError(error);
+    return (res ?? null) as unknown as {
+      workspace_id: string;
+      workspace_name: string | null;
+      is_owner: boolean;
+      tenant_role: string | null;
+      can_manage: boolean;
+      permissions: {
+        action: "edit" | "publish" | "run";
+        allowed: boolean;
+        source: "owner" | "user" | "role" | "default";
+        detail: string | null;
+      }[];
+    } | null;
+  });

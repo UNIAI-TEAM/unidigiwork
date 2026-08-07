@@ -3712,6 +3712,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      explain_my_workflow_permissions: {
+        Args: { _workspace_id: string }
+        Returns: Json
+      }
       extend_outbox_lease: {
         Args: { _id: string; _seconds: number; _worker: string }
         Returns: boolean

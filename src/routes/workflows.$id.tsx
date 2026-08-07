@@ -18,6 +18,7 @@ import {
   type WorkflowPerms,
 } from "@/lib/workflow-access";
 import { RequestAccessButton } from "@/components/workflow/request-access-button";
+import { MyEffectivePermissions } from "@/components/workflow/my-effective-permissions";
 
 export const Route = createFileRoute("/workflows/$id")({
   head: () => ({
@@ -220,6 +221,7 @@ function WorkflowBuilderPage() {
               )}
               {/* Steps */}
               <section className="space-y-4 xl:col-span-2">
+                <MyEffectivePermissions workspaceId={workspaceId} workflowId={id} />
                 <div className="rounded-xl border border-border bg-card p-4 md:p-6">
                   <h2 className="text-sm font-semibold">Mô tả</h2>
                   <textarea
