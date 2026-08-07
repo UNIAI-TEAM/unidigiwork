@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldCheck, Loader2, RotateCcw, Crown, Lock } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Loader2, RotateCcw, Crown, Lock, History } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
   listWorkflowPermissions, setWorkflowPermission, resetWorkflowPermission,
+  listWorkflowPermissionAudit,
 } from "@/lib/api/workflows.functions";
 
 export const Route = createFileRoute("/workflows_/permissions")({
@@ -41,6 +42,77 @@ const PERMS = [
   { key: "can_run" as const, label: "Chạy", hint: "Khởi chạy hoặc chạy thử quy trình" },
 ];
 
+type PermState = { can_edit?: boolean | null; can_publish?: boolean | null; can_run?: boolean | null; is_default?: boolean | null } | null;
+type AuditRow = {
+  id: string;
+  occurred_at: string;
+  action: string;
+  actor_name: string | null;
+  target_name: string | null;
+  before_state: PermState;
+  after_state: PermState;
+};
+
+function permSummary(s: PermState) {
+  if (!s) return "—";
+  const on = PERMS.filter((p) => s[p.key]).map((p) => p.label);
+  const base = on.length ? on.join(" · ") : "Không có quyền";
+  return s.is_default ? `${base} (mặc định)` : base;
+}
+
+function AuditTimeline({ workspaceId }: { workspaceId: string }) {
+  const q = useQuery({
+    queryKey: ["workflow-permission-audit", workspaceId],
+    queryFn: async () =>
+      (await listWorkflowPermissionAudit({ data: { workspaceId, limit: 50 } })) as unknown as AuditRow[],
+  });
+  const rows = q.data ?? [];
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+      <div className="flex items-center gap-2">
+        <History className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold">Lịch sử thay đổi quyền</h2>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Ghi nhận ai đã thay đổi, thời điểm và quyền trước / sau khi thay đổi.
+      </p>
+
+      {q.isLoading ? (
+        <p className="mt-4 text-sm text-muted-foreground">Đang tải…</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">Chưa có thay đổi quyền nào được ghi nhận.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {rows.map((r) => (
+            <li key={r.id} className="rounded-lg border border-border/70 bg-surface-2 p-3">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-medium">{r.actor_name || "Hệ thống"}</span>
+                <span className="text-muted-foreground">
+                  {r.action === "workflow_permission.reset" ? "đặt lại quyền của" : "cập nhật quyền của"}
+                </span>
+                <span className="font-medium">{r.target_name || "thành viên"}</span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {new Date(r.occurred_at).toLocaleString("vi-VN")}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-md bg-background px-2 py-1 text-muted-foreground line-through decoration-muted-foreground/50">
+                  {permSummary(r.before_state)}
+                </span>
+                <span className="text-muted-foreground">→</span>
+                <span className="rounded-md bg-primary/10 px-2 py-1 font-medium text-primary">
+                  {permSummary(r.after_state)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function WorkflowPermissionsPage() {
   const [open, setOpen] = useSidebarState();
   const qc = useQueryClient();
@@ -74,6 +146,7 @@ function WorkflowPermissionsPage() {
       }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["workflow-permissions", activeWs] });
+      await qc.invalidateQueries({ queryKey: ["workflow-permission-audit", activeWs] });
       toast.success("Đã cập nhật quyền");
     },
     onError: (e: Error) => toast.error(e.message || "Không cập nhật được quyền"),
@@ -84,6 +157,7 @@ function WorkflowPermissionsPage() {
       resetWorkflowPermission({ data: { workspaceId: activeWs!, userId } }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["workflow-permissions", activeWs] });
+      await qc.invalidateQueries({ queryKey: ["workflow-permission-audit", activeWs] });
       toast.success("Đã đưa về quyền mặc định");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -194,6 +268,8 @@ function WorkflowPermissionsPage() {
                 </div>
               )}
             </div>
+
+            {activeWs && <AuditTimeline workspaceId={activeWs} />}
           </div>
         </div>
       </div>
