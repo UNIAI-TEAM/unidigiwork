@@ -3650,6 +3650,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      retry_workflow_run: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _mode?: string
+          _run_id: string
+        }
+        Returns: {
+          context: Json
+          correlation_id: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          row_version: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          tenant_id: string
+          triggered_by: string | null
+          updated_at: string
+          workflow_id: string
+          workflow_version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflow_runs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }
         Returns: {
