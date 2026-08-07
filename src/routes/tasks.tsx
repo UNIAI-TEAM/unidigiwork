@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
+import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
 import {
   Plus,
   Filter,
@@ -20,6 +25,7 @@ import {
   Upload,
   Download,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -38,171 +44,40 @@ export const Route = createFileRoute("/tasks")({
   component: TasksPage,
 });
 
-type Status = "todo" | "inprogress" | "review" | "testing" | "done";
-type Tag = { label: string; color: string };
+// Trạng thái công việc khớp enum task_status trong CSDL.
+type Status = "todo" | "in_progress" | "blocked" | "done" | "canceled";
+type Priority = "low" | "normal" | "high" | "urgent";
+
 type Task = {
   id: string;
   title: string;
+  description: string | null;
   status: Status;
-  assignee: { name: string; seed: string };
-  tag: Tag;
-  comments?: number;
-  attachments?: number;
-  date: string;
-  subtasks?: { done: number; total: number };
-  doneMark?: boolean;
+  priority: Priority;
+  due_at: string | null;
+  updated_at: string;
+  row_version: number;
 };
 
-const tagColors: Record<string, string> = {
-  Design: "bg-pink-500/20 text-pink-300 border border-pink-500/30",
-  Backend: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
-  Frontend: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
-  Testing: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
-  DevOps: "bg-orange-500/20 text-orange-300 border border-orange-500/30",
-  Database: "bg-violet-500/20 text-violet-300 border border-violet-500/30",
-  Docs: "bg-teal-500/20 text-teal-300 border border-teal-500/30",
+const priorityColors: Record<Priority, string> = {
+  low: "bg-muted text-muted-foreground border border-border",
+  normal: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
+  high: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+  urgent: "bg-destructive/20 text-destructive border border-destructive/30",
 };
 
-const initialTasks: Task[] = [
-  {
-    id: "STOS-128",
-    title: "Thiết kế giao diện Dashboard",
-    status: "todo",
-    assignee: { name: "Minh Anh", seed: "minh-anh" },
-    tag: { label: "Design", color: tagColors.Design },
-    comments: 3,
-    attachments: 2,
-    date: "May 30",
-  },
-  {
-    id: "STOS-142",
-    title: "Tích hợp API Payment Gateway",
-    status: "todo",
-    assignee: { name: "Quang Minh", seed: "quang-minh" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 2,
-    date: "May 31",
-    subtasks: { done: 2, total: 3 },
-  },
-  {
-    id: "STOS-143",
-    title: "Viết tài liệu hướng dẫn sử dụng",
-    status: "todo",
-    assignee: { name: "Bảo Ngọc", seed: "bao-ngoc" },
-    tag: { label: "Docs", color: tagColors.Docs },
-    comments: 1,
-    date: "",
-  },
-
-  {
-    id: "STOS-102",
-    title: "Phát triển API Gateway",
-    status: "inprogress",
-    assignee: { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 5,
-    date: "May 24",
-    subtasks: { done: 3, total: 5 },
-  },
-  {
-    id: "STOS-115",
-    title: "Quản lý người dùng & phân quyền",
-    status: "inprogress",
-    assignee: { name: "Hoàng Long", seed: "hoang-long" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 4,
-    date: "May",
-    subtasks: { done: 2, total: 4 },
-  },
-  {
-    id: "STOS-117",
-    title: "Thiết kế Database Schema",
-    status: "inprogress",
-    assignee: { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-    tag: { label: "Database", color: tagColors.Database },
-    comments: 3,
-    date: "M",
-    subtasks: { done: 1, total: 3 },
-  },
-
-  {
-    id: "STOS-090",
-    title: "Module Quản lý dự án",
-    status: "review",
-    assignee: { name: "Hương Trần", seed: "huong-tran" },
-    tag: { label: "Backend", color: tagColors.Backend },
-    comments: 2,
-    date: "May 22",
-    subtasks: { done: 2, total: 3 },
-  },
-  {
-    id: "STOS-091",
-    title: "Báo cáo tiến độ dự án",
-    status: "review",
-    assignee: { name: "Duy Anh", seed: "duy-anh" },
-    tag: { label: "Frontend", color: tagColors.Frontend },
-    comments: 1,
-    date: "May 23",
-    subtasks: { done: 1, total: 2 },
-  },
-
-  {
-    id: "STOS-081",
-    title: "Kiểm thử API Gateway",
-    status: "testing",
-    assignee: { name: "Phương Linh", seed: "phuong-linh" },
-    tag: { label: "Testing", color: tagColors.Testing },
-    comments: 3,
-    date: "May 21",
-    subtasks: { done: 2, total: 4 },
-  },
-  {
-    id: "STOS-082",
-    title: "Kiểm thử chức năng đăng nhập",
-    status: "testing",
-    assignee: { name: "Phương Linh", seed: "phuong-linh" },
-    tag: { label: "Testing", color: tagColors.Testing },
-    comments: 2,
-    date: "",
-    subtasks: { done: 1, total: 3 },
-  },
-
-  {
-    id: "STOS-060",
-    title: "Thiết lập môi trường Dev",
-    status: "done",
-    assignee: { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-    tag: { label: "DevOps", color: tagColors.DevOps },
-    date: "May 10",
-    doneMark: true,
-  },
-  {
-    id: "STOS-061",
-    title: "CI/CD Pipeline",
-    status: "done",
-    assignee: { name: "Minh Anh", seed: "minh-anh" },
-    tag: { label: "DevOps", color: tagColors.DevOps },
-    date: "May 11",
-    doneMark: true,
-  },
-  {
-    id: "STOS-062",
-    title: "Thiết kế UI Login",
-    status: "done",
-    assignee: { name: "Duy Anh", seed: "duy-anh" },
-    tag: { label: "Design", color: tagColors.Design },
-    date: "May 12",
-    doneMark: true,
-  },
+const columns: { status: Status; key: Key; barColor: string }[] = [
+  { status: "todo", key: "tasks.col.todo", barColor: "bg-muted-foreground" },
+  { status: "in_progress", key: "tasks.col.inprogress", barColor: "bg-sky-500" },
+  { status: "blocked", key: "tasks.col.blocked", barColor: "bg-destructive" },
+  { status: "done", key: "tasks.col.done", barColor: "bg-success" },
+  { status: "canceled", key: "tasks.col.canceled", barColor: "bg-muted" },
 ];
 
-const columns: { status: Status; key: string; count: number; barColor: string }[] = [
-  { status: "todo", key: "tasks.col.todo", count: 26, barColor: "bg-muted-foreground" },
-  { status: "inprogress", key: "tasks.col.inprogress", count: 28, barColor: "bg-sky-500" },
-  { status: "review", key: "tasks.col.review", count: 16, barColor: "bg-violet-500" },
-  { status: "testing", key: "tasks.col.testing", count: 14, barColor: "bg-amber-500" },
-  { status: "done", key: "tasks.col.done", count: 44, barColor: "bg-success" },
-];
+function fmtDate(v: string | null) {
+  if (!v) return "";
+  return new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
 
 function TasksPage() {
   const [open, setOpen] = useSidebarState();
@@ -210,27 +85,81 @@ function TasksPage() {
   const [tab, setTab] = useState<
     "overview" | "board" | "list" | "timeline" | "calendar" | "reports" | "files"
   >("board");
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [counter, setCounter] = useState(200);
+  const queryClient = useQueryClient();
 
-  const addTask = (
-    status: Status,
-    payload: { title: string; tag: string; assigneeSeed: string; assigneeName: string },
-  ) => {
-    const id = `STOS-${counter}`;
-    setCounter((c) => c + 1);
-    setTasks((prev) => [
-      {
-        id,
-        title: payload.title,
-        status,
-        assignee: { name: payload.assigneeName, seed: payload.assigneeSeed },
-        tag: { label: payload.tag, color: tagColors[payload.tag] ?? tagColors.Backend },
-        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      },
-      ...prev,
-    ]);
-  };
+  const workspaces = useQuery({
+    queryKey: ["my-workspaces"],
+    queryFn: () => listMyWorkspaces(),
+  });
+  const [wsId, setWsId] = useState<string | undefined>(undefined);
+  const activeWs = wsId ?? workspaces.data?.[0]?.id;
+
+  const tasksQuery = useQuery({
+    queryKey: ["tasks", activeWs],
+    enabled: Boolean(activeWs),
+    queryFn: async () =>
+      (await listTasks({ data: { workspaceId: activeWs!, limit: 200 } })) as unknown as Task[],
+  });
+  const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
+
+  // Realtime: mọi thay đổi trên tasks của workspace đang xem sẽ làm mới bảng.
+  useEffect(() => {
+    if (!activeWs) return;
+    const channel = supabase
+      .channel(`tasks-board-${activeWs}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks", filter: `workspace_id=eq.${activeWs}` },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [activeWs, queryClient]);
+
+  const createMutation = useMutation({
+    mutationFn: (p: { status: Status; title: string; priority: Priority }) =>
+      createTask({
+        data: {
+          workspaceId: activeWs!,
+          title: p.title,
+          priority: p.priority,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: async (_r, vars) => {
+      await queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] });
+      if (vars.status !== "todo") return;
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const transitionMutation = useMutation({
+    mutationFn: (p: { taskId: string; toStatus: Status }) =>
+      transitionTask({
+        data: { taskId: p.taskId, toStatus: p.toStatus, idempotencyKey: crypto.randomUUID() },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const counts = useMemo(() => {
+    const c: Record<Status, number> = {
+      todo: 0,
+      in_progress: 0,
+      blocked: 0,
+      done: 0,
+      canceled: 0,
+    };
+    for (const tk of tasks) c[tk.status] += 1;
+    return c;
+  }, [tasks]);
+  const total = tasks.length;
+  const overdue = tasks.filter(
+    (tk) => tk.due_at && tk.status !== "done" && new Date(tk.due_at) < new Date(),
+  ).length;
+  const progress = total ? Math.round((counts.done / total) * 100) : 0;
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -272,25 +201,31 @@ function TasksPage() {
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight">STOS Platform Development</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">
+                    {workspaces.data?.find((w) => w.id === activeWs)?.name ?? t("tasks.project")}
+                  </h1>
                   <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">{t("tasks.sub")}</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {["tuan-nam-ba", "huong-tran", "minh-anh", "phuong-linh", "duy-anh"].map((s) => (
-                    <img
-                      key={s}
-                      src={avatar(s)}
-                      alt=""
-                      className="h-7 w-7 rounded-full border-2 border-bg object-cover"
-                    />
-                  ))}
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-bg bg-surface-2 text-[10px] text-muted-foreground">
-                    +8
-                  </span>
-                </div>
+                <select
+                  value={activeWs ?? ""}
+                  onChange={(e) => setWsId(e.target.value)}
+                  disabled={workspaces.isLoading}
+                  aria-label="Workspace"
+                  className="rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 focus:outline-none"
+                >
+                  {workspaces.data?.length ? (
+                    workspaces.data.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Chưa có workspace</option>
+                  )}
+                </select>
                 <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                   <Settings2 className="h-4 w-4" /> {t("tasks.settings")}{" "}
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -302,39 +237,80 @@ function TasksPage() {
             <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               <KpiCard
                 label={t("tasks.kpi.progress")}
-                value="72%"
+                value={`${progress}%`}
                 footer={
                   <div className="h-1.5 w-full rounded-full bg-surface-2">
-                    <div className="h-full w-[72%] rounded-full bg-primary" />
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${progress}%` }}
+                    />
                   </div>
                 }
               />
               <KpiCard
                 label={t("tasks.kpi.tasks")}
-                value="128"
-                footer={<span className="text-xs text-warning">18 {t("tasks.kpi.overdue")}</span>}
+                value={String(total)}
+                footer={
+                  <span className="text-xs text-warning">
+                    {overdue} {t("tasks.kpi.overdue")}
+                  </span>
+                }
               />
-              <KpiCard label={t("tasks.kpi.completed")} value="92" valueClass="text-success" />
-              <KpiCard label={t("tasks.kpi.inprogress")} value="28" valueClass="text-sky-400" />
-              <KpiCard label={t("tasks.kpi.todo")} value="26" />
-              <KpiCard label={t("tasks.kpi.blocked")} value="7" valueClass="text-destructive" />
+              <KpiCard
+                label={t("tasks.kpi.completed")}
+                value={String(counts.done)}
+                valueClass="text-success"
+              />
+              <KpiCard
+                label={t("tasks.kpi.inprogress")}
+                value={String(counts.in_progress)}
+                valueClass="text-sky-400"
+              />
+              <KpiCard label={t("tasks.kpi.todo")} value={String(counts.todo)} />
+              <KpiCard
+                label={t("tasks.kpi.blocked")}
+                value={String(counts.blocked)}
+                valueClass="text-destructive"
+              />
             </div>
 
             {/* Board */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {columns.map((col) => (
-                <BoardColumn
-                  key={col.status}
-                  col={col}
-                  tasks={tasks.filter((tk) => tk.status === col.status)}
-                  onAdd={(payload) => addTask(col.status, payload)}
-                />
-              ))}
-            </div>
+            {tasksQuery.isLoading ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface py-12 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Đang tải công việc…
+              </div>
+            ) : tasksQuery.isError ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                Không tải được danh sách công việc. Vui lòng thử lại.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                {columns.map((col) => (
+                  <BoardColumn
+                    key={col.status}
+                    col={col}
+                    count={counts[col.status]}
+                    tasks={tasks.filter((tk) => tk.status === col.status)}
+                    disabled={!activeWs || createMutation.isPending}
+                    onAdd={(payload) =>
+                      createMutation.mutate({ status: col.status, ...payload }, {
+                        onSuccess: (res: unknown) => {
+                          const id = (res as { task_id?: string } | null)?.task_id;
+                          if (id && col.status !== "todo") {
+                            transitionMutation.mutate({ taskId: id, toStatus: col.status });
+                          }
+                        },
+                      })
+                    }
+                    onMove={(taskId, toStatus) => transitionMutation.mutate({ taskId, toStatus })}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Bottom panels */}
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <ProjectOverview />
+              <ProjectOverview counts={counts} total={total} />
               <BurndownChart />
               <MyTasks tasks={tasks} />
             </div>
@@ -393,16 +369,22 @@ function KpiCard({
   );
 }
 
-type QuickAddPayload = { title: string; tag: string; assigneeSeed: string; assigneeName: string };
+type QuickAddPayload = { title: string; priority: Priority };
 
 function BoardColumn({
   col,
+  count,
   tasks,
+  disabled,
   onAdd,
+  onMove,
 }: {
   col: (typeof columns)[number];
+  count: number;
   tasks: Task[];
+  disabled: boolean;
   onAdd: (p: QuickAddPayload) => void;
+  onMove: (taskId: string, toStatus: Status) => void;
 }) {
   const { t } = useI18n();
   const [adding, setAdding] = useState(false);
@@ -410,19 +392,20 @@ function BoardColumn({
     <div className="flex flex-col gap-3 rounded-xl bg-surface/40 p-3">
       <div className="flex items-center gap-2 px-1">
         <span className={`h-2 w-2 rounded-full ${col.barColor}`} />
-        <span className="text-sm font-semibold">{t(col.key as Key)}</span>
+        <span className="text-sm font-semibold">{t(col.key)}</span>
         <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-muted-foreground">
-          {col.count}
+          {count}
         </span>
         <button
           onClick={() => setAdding(true)}
+          disabled={disabled}
           className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
       </div>
       {tasks.map((tk) => (
-        <TaskCard key={tk.id} task={tk} />
+        <TaskCard key={tk.id} task={tk} onMove={onMove} />
       ))}
       {adding ? (
         <QuickAddForm
@@ -435,6 +418,7 @@ function BoardColumn({
       ) : (
         <button
           onClick={() => setAdding(true)}
+          disabled={disabled}
           className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2"
         >
           <Plus className="h-3.5 w-3.5" /> {t("tasks.add")}
@@ -444,18 +428,7 @@ function BoardColumn({
   );
 }
 
-const assigneeOptions = [
-  { name: "Tuấn Nam", seed: "tuan-nam-ba" },
-  { name: "Minh Anh", seed: "minh-anh" },
-  { name: "Hương Trần", seed: "huong-tran" },
-  { name: "Phương Linh", seed: "phuong-linh" },
-  { name: "Duy Anh", seed: "duy-anh" },
-  { name: "Bảo Ngọc", seed: "bao-ngoc" },
-  { name: "Quang Minh", seed: "quang-minh" },
-  { name: "Hoàng Long", seed: "hoang-long" },
-];
-
-const tagOptions = Object.keys(tagColors);
+const priorityOptions: Priority[] = ["low", "normal", "high", "urgent"];
 
 function QuickAddForm({
   onCancel,
@@ -466,14 +439,12 @@ function QuickAddForm({
 }) {
   const { t } = useI18n();
   const [title, setTitle] = useState("");
-  const [tag, setTag] = useState(tagOptions[0]);
-  const [assigneeSeed, setAssigneeSeed] = useState(assigneeOptions[0].seed);
+  const [priority, setPriority] = useState<Priority>("normal");
 
   const submit = () => {
     const v = title.trim();
     if (!v) return;
-    const a = assigneeOptions.find((x) => x.seed === assigneeSeed) ?? assigneeOptions[0];
-    onSubmit({ title: v, tag, assigneeSeed: a.seed, assigneeName: a.name });
+    onSubmit({ title: v, priority });
     setTitle("");
   };
 
@@ -495,26 +466,14 @@ function QuickAddForm({
       />
       <div className="flex items-center gap-2">
         <select
-          value={tag}
-          onChange={(e) => setTag(e.target.value)}
-          className="rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as Priority)}
+          className="flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
           aria-label={t("tasks.quick.tag")}
         >
-          {tagOptions.map((tg) => (
-            <option key={tg} value={tg}>
-              {tg}
-            </option>
-          ))}
-        </select>
-        <select
-          value={assigneeSeed}
-          onChange={(e) => setAssigneeSeed(e.target.value)}
-          className="flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
-          aria-label={t("tasks.quick.assignee")}
-        >
-          {assigneeOptions.map((a) => (
-            <option key={a.seed} value={a.seed}>
-              {a.name}
+          {priorityOptions.map((p) => (
+            <option key={p} value={p}>
+              {p}
             </option>
           ))}
         </select>
@@ -538,71 +497,84 @@ function QuickAddForm({
   );
 }
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({
+  task,
+  onMove,
+}: {
+  task: Task;
+  onMove: (taskId: string, toStatus: Status) => void;
+}) {
+  const { t } = useI18n();
+  const overdue = task.due_at && task.status !== "done" && new Date(task.due_at) < new Date();
   return (
-    <div className="cursor-grab rounded-lg border border-border bg-surface p-3 transition-colors hover:border-primary/40">
+    <div className="rounded-lg border border-border bg-surface p-3 transition-colors hover:border-primary/40">
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span>{task.id}</span>
-        <button className="rounded p-0.5 hover:bg-surface-2">
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </button>
+        <span className="font-mono">{task.id.slice(0, 8)}</span>
+        {task.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
       </div>
       <div className="mt-1 text-sm font-medium leading-snug">{task.title}</div>
-      <div className="mt-3 flex items-center gap-2">
-        <img
-          src={avatar(task.assignee.seed)}
-          alt={task.assignee.name}
-          className="h-6 w-6 rounded-full object-cover"
-        />
-        <span className="text-xs text-muted-foreground">{task.assignee.name}</span>
-        <span className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium ${task.tag.color}`}>
-          {task.tag.label}
-        </span>
-      </div>
-      <div className="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
-        {task.comments !== undefined && (
-          <span className="flex items-center gap-1">
-            <MessageSquare className="h-3 w-3" /> {task.comments}
-          </span>
-        )}
-        {task.attachments !== undefined && (
-          <span className="flex items-center gap-1">
-            <Paperclip className="h-3 w-3" /> {task.attachments}
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-1">
-          {task.date && (
-            <>
-              <Calendar className="h-3 w-3" /> {task.date}
-            </>
-          )}
-        </span>
-        {task.doneMark && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
-        {task.subtasks && (
-          <span className="text-foreground">
-            {task.subtasks.done}/{task.subtasks.total}
-          </span>
-        )}
-      </div>
-      {task.subtasks && (
-        <div className="mt-2 h-1 w-full rounded-full bg-surface-2">
-          <div
-            className="h-full rounded-full bg-primary"
-            style={{ width: `${(task.subtasks.done / task.subtasks.total) * 100}%` }}
-          />
-        </div>
+      {task.description && (
+        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
       )}
+      <div className="mt-3 flex items-center gap-2">
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
+        >
+          {task.priority}
+        </span>
+        {task.due_at && (
+          <span
+            className={`ml-auto flex items-center gap-1 text-[11px] ${overdue ? "text-warning" : "text-muted-foreground"}`}
+          >
+            <Calendar className="h-3 w-3" /> {fmtDate(task.due_at)}
+          </span>
+        )}
+      </div>
+      <select
+        value={task.status}
+        onChange={(e) => onMove(task.id, e.target.value as Status)}
+        aria-label="Chuyển trạng thái"
+        className="mt-2 w-full rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-3 focus:outline-none"
+      >
+        {columns.map((c) => (
+          <option key={c.status} value={c.status}>
+            {t(c.key)}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
 
-function ProjectOverview() {
+function ProjectOverview({
+  counts,
+  total,
+}: {
+  counts: Record<Status, number>;
+  total: number;
+}) {
   const { t } = useI18n();
+  const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
   const segs = [
-    { label: "Done", value: 92, pct: 72, color: "bg-success" },
-    { label: "In Progress", value: 28, pct: 22, color: "bg-sky-500" },
-    { label: "To Do", value: 26, pct: 20, color: "bg-muted-foreground" },
-    { label: "Blocked", value: 7, pct: 6, color: "bg-destructive" },
+    { label: t("tasks.col.done"), value: counts.done, pct: pct(counts.done), color: "bg-success" },
+    {
+      label: t("tasks.col.inprogress"),
+      value: counts.in_progress,
+      pct: pct(counts.in_progress),
+      color: "bg-sky-500",
+    },
+    {
+      label: t("tasks.col.todo"),
+      value: counts.todo,
+      pct: pct(counts.todo),
+      color: "bg-muted-foreground",
+    },
+    {
+      label: t("tasks.col.blocked"),
+      value: counts.blocked,
+      pct: pct(counts.blocked),
+      color: "bg-destructive",
+    },
   ];
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
@@ -712,11 +684,11 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
             <span className="text-muted-foreground">{tk.id}</span>
             <span className="flex-1 truncate text-foreground">{tk.title}</span>
             <span
-              className={`hidden rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline ${tk.tag.color}`}
+              className={`hidden rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline ${priorityColors[tk.priority]}`}
             >
-              {tk.tag.label}
+              {tk.priority}
             </span>
-            <span className="hidden text-muted-foreground md:inline">{tk.date}</span>
+            <span className="hidden text-muted-foreground md:inline">{fmtDate(tk.due_at)}</span>
           </div>
         ))}
       </div>
