@@ -427,7 +427,7 @@ export const listWorkflowPermissionAudit = createServerFn({ method: "GET" })
       actor_name: string | null;
       target_user_id: string | null;
       target_name: string | null;
-      before_state: Record<string, unknown> | null;
-      after_state: Record<string, unknown> | null;
+      before_state: Record<string, boolean | string | null> | null;
+      after_state: Record<string, boolean | string | null> | null;
     }[];
   });
