@@ -42,9 +42,14 @@ export const updateDemoRequestStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = { status: data.status, updated_at: new Date().toISOString() };
-    if (data.notes !== undefined) patch['notes'] = data.notes;
-    const { error } = await supabaseAdmin.from("demo_requests").update(patch).eq("id", data.id);
+    const { error } = await supabaseAdmin
+      .from("demo_requests")
+      .update({
+        status: data.status,
+        updated_at: new Date().toISOString(),
+        ...(data.notes !== undefined ? { notes: data.notes } : {}),
+      })
+      .eq("id", data.id);
     if (error) throw new Error(`DEMO_REQUEST_UPDATE_FAILED: ${error.message}`);
     return { success: true };
   });
