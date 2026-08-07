@@ -179,3 +179,17 @@ export const listWorkflowRuns = createServerFn({ method: "GET" })
     if (error) mapPgError(error);
     return rows ?? [];
   });
+
+export const repairWorkflowRunTimestamps = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ runIds: z.array(z.string().uuid()).min(1).max(200) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc(
+      "repair_workflow_run_timestamps",
+      { _run_ids: data.runIds },
+    );
+    if (error) mapPgError(error);
+    return { fixed: (rows ?? []).length };
+  });
