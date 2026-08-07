@@ -2385,6 +2385,94 @@ export type Database = {
           },
         ]
       }
+      workflow_triggers: {
+        Row: {
+          at_hour: number | null
+          at_minute: number | null
+          created_at: string
+          created_by: string | null
+          event_type: string | null
+          frequency: string | null
+          id: string
+          interval_minutes: number | null
+          is_enabled: boolean
+          kind: string
+          last_fired_at: string | null
+          next_run_at: string | null
+          payload: Json
+          tenant_id: string
+          timezone: string
+          updated_at: string
+          weekday: number | null
+          workflow_id: string
+          workspace_id: string
+        }
+        Insert: {
+          at_hour?: number | null
+          at_minute?: number | null
+          created_at?: string
+          created_by?: string | null
+          event_type?: string | null
+          frequency?: string | null
+          id?: string
+          interval_minutes?: number | null
+          is_enabled?: boolean
+          kind: string
+          last_fired_at?: string | null
+          next_run_at?: string | null
+          payload?: Json
+          tenant_id: string
+          timezone?: string
+          updated_at?: string
+          weekday?: number | null
+          workflow_id: string
+          workspace_id: string
+        }
+        Update: {
+          at_hour?: number | null
+          at_minute?: number | null
+          created_at?: string
+          created_by?: string | null
+          event_type?: string | null
+          frequency?: string | null
+          id?: string
+          interval_minutes?: number | null
+          is_enabled?: boolean
+          kind?: string
+          last_fired_at?: string | null
+          next_run_at?: string | null
+          payload?: Json
+          tenant_id?: string
+          timezone?: string
+          updated_at?: string
+          weekday?: number | null
+          workflow_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_triggers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_triggers_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_triggers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflows: {
         Row: {
           created_at: string
@@ -2583,6 +2671,15 @@ export type Database = {
         Args: { _correlation_id: string }
         Returns: undefined
       }
+      _start_workflow_run_internal: {
+        Args: {
+          _context: Json
+          _correlation_id: string
+          _trigger_id: string
+          _workflow_id: string
+        }
+        Returns: string
+      }
       _test_purge_tenant: { Args: { _tenant_id: string }; Returns: undefined }
       _test_seed_entitlement: {
         Args: {
@@ -2596,6 +2693,18 @@ export type Database = {
       _test_unconfirm_auth_email: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      _workflow_next_run: {
+        Args: {
+          _at_hour: number
+          _at_minute: number
+          _frequency: string
+          _from: string
+          _interval_minutes: number
+          _timezone: string
+          _weekday: number
+        }
+        Returns: string
       }
       accept_tenant_invitation: {
         Args: { _correlation_id?: string; _token_hash: string }
@@ -3255,7 +3364,12 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_workflow_trigger: {
+        Args: { _trigger_id: string }
+        Returns: boolean
+      }
       dispatch_task_due_reminders: { Args: never; Returns: number }
+      dispatch_workflow_schedules: { Args: never; Returns: number }
       end_meeting: {
         Args: {
           _correlation_id?: string
@@ -3319,6 +3433,10 @@ export type Database = {
           _meeting_id: string
         }
         Returns: undefined
+      }
+      fire_workflow_event: {
+        Args: { _event_type: string; _payload?: Json; _workspace_id: string }
+        Returns: number
       }
       global_search: {
         Args: {
@@ -3922,6 +4040,40 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_workflow: {
+        Args: {
+          _correlation_id?: string
+          _definition?: Json
+          _description?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _name?: string
+          _workflow_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          published_at: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["workflow_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflows"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       upload_document_version: {
         Args: {
           _comment?: string
@@ -3947,6 +4099,49 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "document_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_workflow_trigger: {
+        Args: {
+          _at_hour?: number
+          _at_minute?: number
+          _event_type?: string
+          _frequency?: string
+          _interval_minutes?: number
+          _is_enabled?: boolean
+          _kind: string
+          _payload?: Json
+          _timezone?: string
+          _trigger_id?: string
+          _weekday?: number
+          _workflow_id: string
+        }
+        Returns: {
+          at_hour: number | null
+          at_minute: number | null
+          created_at: string
+          created_by: string | null
+          event_type: string | null
+          frequency: string | null
+          id: string
+          interval_minutes: number | null
+          is_enabled: boolean
+          kind: string
+          last_fired_at: string | null
+          next_run_at: string | null
+          payload: Json
+          tenant_id: string
+          timezone: string
+          updated_at: string
+          weekday: number | null
+          workflow_id: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflow_triggers"
           isOneToOne: true
           isSetofReturn: false
         }
