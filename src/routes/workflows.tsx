@@ -157,6 +157,16 @@ function WorkflowsPage() {
   const failed = runs.filter((r) => r.status === "failed").length;
   const avg = avgHours(runs);
 
+  const permsQuery = useQuery({
+    queryKey: ["workflow-my-perms", activeWs],
+    queryFn: () => getMyWorkflowPermissions({ data: { workspaceId: activeWs! } }),
+    enabled: !!activeWs,
+  });
+  const perms: WorkflowPerms = (permsQuery.data as WorkflowPerms | null) ?? {
+    ...DEFAULT_WORKFLOW_PERMS,
+    workspace_id: activeWs ?? "",
+  };
+
   const createMut = useMutation({
     mutationFn: (p: { name: string; description?: string }) =>
       createWorkflow({
