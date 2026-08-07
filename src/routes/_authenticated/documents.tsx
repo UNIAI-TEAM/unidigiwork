@@ -386,6 +386,27 @@ function DocumentsPage() {
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
+              <label
+                title="Tải tệp lên"
+                className={`flex cursor-pointer items-center rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70 ${!currentWs || uploading ? "pointer-events-none opacity-50" : ""}`}
+              >
+                {uploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5" />
+                )}
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  aria-label="Tải tệp lên"
+                  disabled={!currentWs || uploading}
+                  onChange={(e) => {
+                    void uploadFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
             </div>
             <div className="flex-1 overflow-y-auto px-2 pb-3">
               {docs.length === 0 ? (
