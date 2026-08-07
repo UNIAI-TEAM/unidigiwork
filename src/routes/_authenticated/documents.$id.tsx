@@ -311,29 +311,56 @@ function DocumentDetailPage() {
             </h3>
             {docQuery.data?.versions.length ? (
               <ul className="space-y-2 text-sm">
-                {docQuery.data.versions.map((v) => (
+                {(docQuery.data.versions as DocVersion[]).map((v) => (
                   <li key={v.id} className="rounded-lg border border-border bg-surface p-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium">v{v.version}</span>
+                      <span className="flex items-center gap-1.5 text-xs font-medium">
+                        v{v.version}
+                        {v.version === doc?.current_version ? (
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            Hiện tại
+                          </span>
+                        ) : null}
+                      </span>
                       {isStorageRef(v.storage_ref) ? (
-                        <button
-                          type="button"
-                          title="Tải xuống"
-                          onClick={() => void openFile(v.storage_ref, true)}
-                          className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                        </button>
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            title="Tải xuống"
+                            onClick={() => void openFile(v.storage_ref, true)}
+                            className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
+                          {v.version !== doc?.current_version ? (
+                            <button
+                              type="button"
+                              title="Khôi phục phiên bản này"
+                              disabled={restoring === v.id}
+                              onClick={() => void restoreVersion(v)}
+                              className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+                            >
+                              {restoring === v.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          ) : null}
+                        </div>
                       ) : null}
                     </div>
-                    <div className="text-[11px] text-muted-foreground">{fmtTime(v.created_at)}</div>
-                    {v.size_bytes ? (
-                      <div className="text-[11px] text-muted-foreground">
-                        {formatBytes(v.size_bytes)}
-                      </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {fmtTime(v.created_at)}
+                      {v.size_bytes ? ` · ${formatBytes(v.size_bytes)}` : ""}
+                    </div>
+                    {v.author_name ? (
+                      <div className="text-[11px] text-muted-foreground">{v.author_name}</div>
                     ) : null}
                     {v.comment ? (
-                      <div className="mt-1 text-[11px] text-muted-foreground">{v.comment}</div>
+                      <div className="mt-1 truncate text-[11px] text-muted-foreground" title={v.comment}>
+                        {v.comment}
+                      </div>
                     ) : null}
                   </li>
                 ))}
