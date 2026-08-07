@@ -100,6 +100,42 @@ function timeTz(ts: string, tz: string) {
     return new Date(ts).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
   }
 }
+function dateTimeTz(ts: string, tz: string) {
+  try {
+    return new Date(ts).toLocaleString("vi-VN", {
+      timeZone: tz,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return new Date(ts).toLocaleString("vi-VN");
+  }
+}
+function longDateTz(isoDay: string, tz: string) {
+  try {
+    return new Date(`${isoDay}T12:00:00Z`).toLocaleDateString("vi-VN", {
+      timeZone: tz,
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return isoDay;
+  }
+}
+function durationLabel(startTs: string, endTs: string) {
+  const ms = new Date(endTs).getTime() - new Date(startTs).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s} giây`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} phút ${s % 60}s`;
+  return `${Math.floor(m / 60)} giờ ${m % 60} phút`;
+}
 function tzOffsetLabel(tz: string) {
   try {
     const s = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
