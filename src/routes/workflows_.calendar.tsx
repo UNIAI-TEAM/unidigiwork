@@ -276,12 +276,15 @@ function WorkflowCalendarPage() {
     const allow = wfIds.length ? new Set(wfIds) : null;
     for (const r of runsQuery.data ?? []) {
       if (allow && !allow.has(r.workflow_id)) continue;
+      const hasWarning = timestampIssues(r).length > 0;
+      if (warningFilter === "warning" && !hasWarning) continue;
+      if (warningFilter === "clean" && hasWarning) continue;
       const key = isoTz(new Date(r.started_at ?? r.created_at), tz);
       if (key < from || key > to) continue;
       m.set(key, [...(m.get(key) ?? []), r]);
     }
     return m;
-  }, [runsQuery.data, from, to, wfIds, tz]);
+  }, [runsQuery.data, from, to, wfIds, tz, warningFilter]);
 
   const days = useMemo(() => {
     const start = startOfWeek(new Date(`${from}T00:00:00`));
