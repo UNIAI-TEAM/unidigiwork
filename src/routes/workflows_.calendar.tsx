@@ -137,6 +137,9 @@ function WorkflowCalendarPage() {
   const workspaces = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const [wsId, setWsId] = useState<string | undefined>(undefined);
   const activeWs = wsId ?? workspaces.data?.[0]?.id;
+  // Múi giờ chuẩn hoá theo cấu hình workspace đang chọn.
+  const tz =
+    (workspaces.data ?? []).find((w) => w.id === activeWs)?.timezone?.trim() || browserTz();
 
   const wfQuery = useQuery({
     queryKey: ["workflows", activeWs],
@@ -178,12 +181,12 @@ function WorkflowCalendarPage() {
     const allow = wfIds.length ? new Set(wfIds) : null;
     for (const r of runsQuery.data ?? []) {
       if (allow && !allow.has(r.workflow_id)) continue;
-      const key = iso(new Date(r.started_at ?? r.created_at));
+      const key = isoTz(new Date(r.started_at ?? r.created_at), tz);
       if (key < from || key > to) continue;
       m.set(key, [...(m.get(key) ?? []), r]);
     }
     return m;
-  }, [runsQuery.data, from, to, wfIds]);
+  }, [runsQuery.data, from, to, wfIds, tz]);
 
   const days = useMemo(() => {
     const start = startOfWeek(new Date(`${from}T00:00:00`));
@@ -211,8 +214,8 @@ function WorkflowCalendarPage() {
   const selectedRuns = selected ? (runsByDay.get(selected) ?? []) : [];
 
   const preset = (n: number) => {
-    setFrom(iso(addDays(new Date(), -(n - 1))));
-    setTo(iso(new Date()));
+    setFrom(isoTz(addDays(new Date(), -(n - 1)), tz));
+    setTo(isoTz(new Date(), tz));
     setSelected(null);
   };
 
@@ -237,6 +240,9 @@ function WorkflowCalendarPage() {
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {total} lần chạy trong khoảng {from} → {to}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Múi giờ hiển thị: {tzOffsetLabel(tz)}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -419,13 +425,8 @@ function WorkflowCalendarPage() {
                           </span>
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {new Date(r.started_at ?? r.created_at).toLocaleTimeString("vi-VN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                          {r.ended_at
-                            ? ` → ${new Date(r.ended_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`
-                            : ""}
+                          {timeTz(r.started_at ?? r.created_at, tz)}
+                          {r.ended_at ? ` → ${timeTz(r.ended_at, tz)}` : ""}
                         </div>
                         </button>
                       </li>
