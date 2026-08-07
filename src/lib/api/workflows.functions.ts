@@ -407,3 +407,27 @@ export const resetWorkflowPermission = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { reset: !!ok };
   });
+
+export const listWorkflowPermissionAudit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ workspaceId: z.string().uuid(), limit: z.number().int().min(1).max(200).optional() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("list_workflow_permission_audit", {
+      _workspace_id: data.workspaceId,
+      _limit: data.limit ?? 50,
+    });
+    if (error) mapPgError(error);
+    return (rows ?? []) as unknown as {
+      id: string;
+      occurred_at: string;
+      action: string;
+      actor_id: string | null;
+      actor_name: string | null;
+      target_user_id: string | null;
+      target_name: string | null;
+      before_state: Record<string, unknown> | null;
+      after_state: Record<string, unknown> | null;
+    }[];
+  });
