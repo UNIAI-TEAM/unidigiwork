@@ -3526,6 +3526,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_workspace_timezone: {
+        Args: { _timezone: string; _workspace_id: string }
+        Returns: {
+          id: string
+          timezone: string
+        }[]
+      }
       share_document: {
         Args: {
           _correlation_id?: string
