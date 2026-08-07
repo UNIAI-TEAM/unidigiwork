@@ -222,6 +222,7 @@ function WorkflowCalendarPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [wfIds, setWfIds] = useState<string[]>([]); // rỗng = tất cả quy trình
   const [wfMenu, setWfMenu] = useState(false);
+  const [warningFilter, setWarningFilter] = useState<"all" | "warning" | "clean">("all");
   const [runId, setRunId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
