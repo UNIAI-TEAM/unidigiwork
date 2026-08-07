@@ -355,7 +355,10 @@ function ReportsPage() {
                     ))}
                   </tbody>
                 </table>
-                <button className="mt-3 text-xs text-primary hover:underline">
+                <button
+                  onClick={() => drill()}
+                  className="mt-3 text-xs text-primary hover:underline"
+                >
                   {t("rp.top.viewall")}
                 </button>
               </Card>
