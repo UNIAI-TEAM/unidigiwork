@@ -239,8 +239,12 @@ function WorkflowsPage() {
                   />
                 )}
                 <button
-                  onClick={() => setShowCreate(true)}
-                  disabled={!activeWs}
+                  onClick={() => {
+                    if (!guardWorkflowAction(perms, "edit")) return;
+                    setShowCreate(true);
+                  }}
+                  disabled={!activeWs || !perms.can_edit}
+                  title={perms.can_edit ? undefined : denialReason("edit")}
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" /> {t("wf.new")}
@@ -331,8 +335,12 @@ function WorkflowsPage() {
                   <WorkflowIcon className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">{t("wf.sub")}</p>
                   <button
-                    onClick={() => setShowCreate(true)}
-                    disabled={!activeWs}
+                    onClick={() => {
+                      if (!guardWorkflowAction(perms, "edit")) return;
+                      setShowCreate(true);
+                    }}
+                    disabled={!activeWs || !perms.can_edit}
+                    title={perms.can_edit ? undefined : denialReason("edit")}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                   >
                     <Plus className="h-4 w-4" /> {t("wf.create")}
@@ -406,8 +414,15 @@ function WorkflowsPage() {
               wf={selected}
               runs={runsByWf.get(selected.id) ?? []}
               onClose={() => setPanelOpen(false)}
-              onPublish={() => publishMut.mutate(selected)}
-              onRun={() => runMut.mutate(selected)}
+              perms={perms}
+              onPublish={() => {
+                if (!guardWorkflowAction(perms, "publish")) return;
+                publishMut.mutate(selected);
+              }}
+              onRun={() => {
+                if (!guardWorkflowAction(perms, "run")) return;
+                runMut.mutate(selected);
+              }}
               busy={publishMut.isPending || runMut.isPending}
               t={t}
             />
@@ -513,6 +528,7 @@ function WorkflowPanel({
   wf,
   runs,
   onClose,
+  perms,
   onPublish,
   onRun,
   busy,
@@ -521,6 +537,7 @@ function WorkflowPanel({
   wf: WF;
   runs: Run[];
   onClose: () => void;
+  perms: WorkflowPerms;
   onPublish: () => void;
   onRun: () => void;
   busy: boolean;
@@ -614,7 +631,8 @@ function WorkflowPanel({
         {wf.status === "draft" && (
           <button
             onClick={onPublish}
-            disabled={busy}
+            disabled={busy || !perms.can_publish}
+            title={perms.can_publish ? undefined : denialReason("publish")}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-surface-2 disabled:opacity-50"
           >
             <Rocket className="h-4 w-4" /> Publish
@@ -622,7 +640,8 @@ function WorkflowPanel({
         )}
         <button
           onClick={onRun}
-          disabled={busy || wf.status !== "published"}
+          disabled={busy || wf.status !== "published" || !perms.can_run}
+          title={perms.can_run ? undefined : denialReason("run")}
           className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
