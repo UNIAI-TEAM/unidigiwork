@@ -31,6 +31,7 @@ import {
   Plus,
   HelpCircle,
   ChevronDown,
+  Quote,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
@@ -603,6 +604,84 @@ function Landing() {
             >
               <Bot className="h-4 w-4" /> {t("land.skill.cta")}
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Case study / Testimonial */}
+      <section
+        id="hire-ai-case"
+        className="border-t border-border/60 py-16 sm:py-24"
+        aria-labelledby="hire-ai-case-title"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Users className="h-3.5 w-3.5" /> {t("land.case.badge")}
+            </span>
+            <h2 id="hire-ai-case-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              {t("land.case.title")}
+            </h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.case.sub")}</p>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+            {([
+              {
+                name: "land.case.c1.name",
+                role: "land.case.c1.role",
+                quote: "land.case.c1.quote",
+                metrics: [
+                  { label: "land.case.c1.m1", value: "land.case.c1.v1" },
+                  { label: "land.case.c1.m2", value: "land.case.c1.v2" },
+                  { label: "land.case.c1.m3", value: "land.case.c1.v3" },
+                ],
+              },
+              {
+                name: "land.case.c2.name",
+                role: "land.case.c2.role",
+                quote: "land.case.c2.quote",
+                metrics: [
+                  { label: "land.case.c2.m1", value: "land.case.c2.v1" },
+                  { label: "land.case.c2.m2", value: "land.case.c2.v2" },
+                  { label: "land.case.c2.m3", value: "land.case.c2.v3" },
+                ],
+              },
+              {
+                name: "land.case.c3.name",
+                role: "land.case.c3.role",
+                quote: "land.case.c3.quote",
+                metrics: [
+                  { label: "land.case.c3.m1", value: "land.case.c3.v1" },
+                  { label: "land.case.c3.m2", value: "land.case.c3.v2" },
+                  { label: "land.case.c3.m3", value: "land.case.c3.v3" },
+                ],
+              },
+            ] as const).map((c) => (
+              <article
+                key={c.name}
+                className="flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
+              >
+                <Quote className="h-6 w-6 text-primary/70" />
+                <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
+                  &ldquo;{t(c.quote)}&rdquo;
+                </blockquote>
+                <div className="mt-6 border-t border-border pt-4">
+                  <div className="text-sm font-semibold">{t(c.name)}</div>
+                  <div className="text-xs text-muted-foreground">{t(c.role)}</div>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {c.metrics.map((m) => (
+                    <div key={m.label} className="rounded-lg bg-surface p-3 text-center">
+                      <div className="text-base font-bold text-primary">{t(m.value)}</div>
+                      <div className="text-[10px] leading-tight text-muted-foreground">
+                        {t(m.label)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
