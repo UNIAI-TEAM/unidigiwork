@@ -794,7 +794,7 @@ function HireEstimator() {
   const total = baseTotal - discountAmount;
 
   const formatVnd = (n: number) =>
-    n.toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
+    n.toLocaleString("vi-VN", { maximumFractionDigits: 0 }).replace(/,/g, ".") + "₫";
 
   const changeQty = (delta: number) => {
     setQty((prev) => Math.max(1, prev + delta));
