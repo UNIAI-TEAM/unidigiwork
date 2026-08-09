@@ -278,6 +278,22 @@ function CalendarPage() {
                 </button>
               </div>
               <div className="min-w-0 text-sm font-semibold capitalize">{monthLabel}</div>
+              {isPending && (
+                <span className="text-xs text-muted-foreground">Đang tải…</span>
+              )}
+              {isError && (
+                <button
+                  onClick={() => refetch()}
+                  className="rounded-lg border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                >
+                  Không tải được dữ liệu · Thử lại
+                </button>
+              )}
+              {!isPending && !isError && events.length === 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Không có sự kiện trong khoảng thời gian này
+                </span>
+              )}
 
               <div className="relative ml-auto hidden min-w-0 sm:block sm:max-w-xs sm:flex-1">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
