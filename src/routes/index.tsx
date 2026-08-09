@@ -890,7 +890,7 @@ function HireEstimator() {
           <div className="text-sm text-muted-foreground">{t("land.hire.estimator.total")}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-3xl font-bold tracking-tight text-primary">{formatVnd(total)}</span>
-            <span className="text-sm text-muted-foreground">/{duration} tháng</span>
+            <span className="text-sm text-muted-foreground">/{duration} {t("land.hire.estimator.duration.unit")}</span>
           </div>
           {selectedDuration.discount > 0 && (
             <div className="mt-1 text-xs text-success">
