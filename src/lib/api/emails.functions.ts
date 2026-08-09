@@ -124,12 +124,196 @@ export const getEmailThread = createServerFn({ method: "GET" })
     };
   });
 
+
+type EmailCtx = { supabase: any; userId: string };
+
+/** Resolve caller's primary workspace + its tenant. */
+async function resolveWorkspace(ctx: EmailCtx): Promise<{ workspaceId: string; tenantId: string }> {
+  const { data: wm, error } = await ctx.supabase
+    .from("workspace_members")
+    .select("workspace_id, workspaces!inner(id, tenant_id)")
+    .eq("user_id", ctx.userId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const ws = (wm as any)?.workspaces;
+  if (!ws?.id || !ws?.tenant_id) throw new Error("Bạn cần tham gia workspace trước khi gửi email");
+  return { workspaceId: ws.id as string, tenantId: ws.tenant_id as string };
+}
+
+/** Map email addresses to internal user ids (profiles). */
+async function resolveRecipients(
+  ctx: EmailCtx,
+  to: string[],
+  cc: string[],
+): Promise<{ toUserIds: string[]; ccUserIds: string[]; unknown: string[] }> {
+  const all = Array.from(new Set([...to, ...cc]));
+  if (all.length === 0) return { toUserIds: [], ccUserIds: [], unknown: [] };
+  const { data: profs, error } = await ctx.supabase.from("profiles").select("id, email").in("email", all);
+  if (error) throw new Error(error.message);
+  const map = new Map((profs ?? []).map((p: { email: string; id: string }) => [p.email, p.id] as const));
+  return {
+    toUserIds: to.map((e) => map.get(e)).filter((v): v is string => !!v),
+    ccUserIds: cc.map((e) => map.get(e)).filter((v): v is string => !!v),
+    unknown: all.filter((e) => !map.has(e)),
+  };
+}
+
+/** Ensure a thread exists for a draft/message. */
+async function ensureThread(
+  ctx: EmailCtx,
+  scope: { workspaceId: string; tenantId: string },
+  threadId: string | null | undefined,
+  subject: string,
+): Promise<string> {
+  if (threadId) return threadId;
+  const { data: t, error } = await ctx.supabase
+    .from("email_threads")
+    .insert({
+      workspace_id: scope.workspaceId,
+      tenant_id: scope.tenantId,
+      subject: subject || "(Không tiêu đề)",
+      created_by: ctx.userId,
+      updated_by: ctx.userId,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return t.id as string;
+}
+
+const draftSchema = z.object({
+  draft_id: z.string().uuid().optional(),
+  thread_id: z.string().uuid().optional(),
+  to: z.array(z.string().email()).default([]),
+  cc: z.array(z.string().email()).default([]),
+  subject: z.string().max(500).default(""),
+  body: z.string().max(100000).default(""),
+});
+
+/** Create or update a draft message (stored in DB, visible in folder "drafts"). */
+export const saveEmailDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => draftSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as EmailCtx;
+    const scope = await resolveWorkspace(ctx);
+    const { toUserIds, ccUserIds } = await resolveRecipients(ctx, data.to, data.cc);
+
+    if (data.draft_id) {
+      const { data: existing, error: exErr } = await ctx.supabase
+        .from("email_messages")
+        .select("id, thread_id, is_draft, from_user_id")
+        .eq("id", data.draft_id)
+        .maybeSingle();
+      if (exErr) throw new Error(exErr.message);
+      if (!existing || existing.from_user_id !== ctx.userId || !existing.is_draft) {
+        throw new Error("Không tìm thấy bản nháp");
+      }
+      const { error } = await ctx.supabase
+        .from("email_messages")
+        .update({
+          to_user_ids: toUserIds,
+          cc_user_ids: ccUserIds,
+          subject: data.subject,
+          body: data.body,
+          updated_by: ctx.userId,
+        })
+        .eq("id", data.draft_id);
+      if (error) throw new Error(error.message);
+      if (data.subject) {
+        await ctx.supabase
+          .from("email_threads")
+          .update({ subject: data.subject, updated_by: ctx.userId })
+          .eq("id", existing.thread_id);
+      }
+      return { ok: true, draft_id: data.draft_id as string, thread_id: existing.thread_id as string };
+    }
+
+    const threadId = await ensureThread(ctx, scope, data.thread_id, data.subject);
+    const { data: msg, error } = await ctx.supabase
+      .from("email_messages")
+      .insert({
+        thread_id: threadId,
+        workspace_id: scope.workspaceId,
+        tenant_id: scope.tenantId,
+        from_user_id: ctx.userId,
+        created_by: ctx.userId,
+        updated_by: ctx.userId,
+        to_user_ids: toUserIds,
+        cc_user_ids: ccUserIds,
+        subject: data.subject,
+        body: data.body,
+        is_draft: true,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    const { error: sErr } = await ctx.supabase.from("email_states").insert({
+      user_id: ctx.userId,
+      message_id: msg.id,
+      tenant_id: scope.tenantId,
+      folder: "drafts",
+      is_read: true,
+    });
+    if (sErr) throw new Error(sErr.message);
+    return { ok: true, draft_id: msg.id as string, thread_id: threadId };
+  });
+
+/** Load a draft for editing (recipient emails resolved back from user ids). */
+export const getEmailDraft = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as EmailCtx;
+    const { data: msg, error } = await ctx.supabase
+      .from("email_messages")
+      .select("id, thread_id, subject, body, to_user_ids, cc_user_ids, is_draft, from_user_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!msg || msg.from_user_id !== ctx.userId || !msg.is_draft) return null;
+    const ids = Array.from(new Set([...(msg.to_user_ids ?? []), ...(msg.cc_user_ids ?? [])]));
+    let idToEmail = new Map<string, string>();
+    if (ids.length) {
+      const { data: profs } = await ctx.supabase.from("profiles").select("id, email").in("id", ids);
+      idToEmail = new Map((profs ?? []).map((p: { id: string; email: string }) => [p.id, p.email] as const));
+    }
+    return {
+      id: msg.id as string,
+      thread_id: msg.thread_id as string,
+      subject: (msg.subject as string) ?? "",
+      body: (msg.body as string) ?? "",
+      to: ((msg.to_user_ids ?? []) as string[]).map((i) => idToEmail.get(i)).filter(Boolean) as string[],
+      cc: ((msg.cc_user_ids ?? []) as string[]).map((i) => idToEmail.get(i)).filter(Boolean) as string[],
+    };
+  });
+
+/** Delete a draft (message + own state row). */
+export const deleteEmailDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as EmailCtx;
+    await ctx.supabase.from("email_states").delete().eq("message_id", data.id).eq("user_id", ctx.userId);
+    const { error } = await ctx.supabase
+      .from("email_messages")
+      .delete()
+      .eq("id", data.id)
+      .eq("from_user_id", ctx.userId)
+      .eq("is_draft", true);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 const sendSchema = z.object({
   to: z.array(z.string().email()).min(1),
   cc: z.array(z.string().email()).optional(),
   subject: z.string().min(1).max(500),
   body: z.string().default(""),
   thread_id: z.string().uuid().optional(),
+  draft_id: z.string().uuid().optional(),
 });
 
 /** Send an email. Recipients are resolved from emails → user_ids via profiles. */
@@ -137,89 +321,128 @@ export const sendEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => sendSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: wm, error: wmErr } = await context.supabase
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", context.userId)
-      .limit(1)
-      .maybeSingle();
-    if (wmErr) throw new Error(wmErr.message);
-    if (!wm?.workspace_id) throw new Error("Bạn cần tham gia workspace trước khi gửi email");
+    const ctx = context as unknown as EmailCtx;
+    const scope = await resolveWorkspace(ctx);
+    const { toUserIds, ccUserIds, unknown } = await resolveRecipients(ctx, data.to, data.cc ?? []);
+    if (toUserIds.length === 0) {
+      throw new Error(
+        unknown.length
+          ? `Không tìm thấy người nhận trong hệ thống: ${unknown.join(", ")}`
+          : "Không tìm thấy người nhận trong hệ thống",
+      );
+    }
 
-    const allEmails = Array.from(new Set([...data.to, ...(data.cc ?? [])]));
-    const { data: profs, error: pErr } = await context.supabase
-      .from("profiles")
-      .select("id, email")
-      .in("email", allEmails);
-    if (pErr) throw new Error(pErr.message);
-    const emailToId = new Map((profs ?? []).map((p) => [p.email, p.id] as const));
-    const toUserIds = data.to.map((e) => emailToId.get(e)).filter((v): v is string => !!v);
-    const ccUserIds = (data.cc ?? []).map((e) => emailToId.get(e)).filter((v): v is string => !!v);
-    if (toUserIds.length === 0) throw new Error("Không tìm thấy người nhận trong hệ thống");
-
+    const sentAt = new Date().toISOString();
     let threadId = data.thread_id ?? null;
-    if (!threadId) {
-      const { data: t, error: tErr } = await context.supabase
-        .from("email_threads")
-        .insert({ workspace_id: wm.workspace_id, tenant_id: wm.workspace_id, subject: data.subject })
+    let messageId: string;
+
+    if (data.draft_id) {
+      // Promote an existing draft: giữ nguyên thread/message, chỉ đổi trạng thái.
+      const { data: draft, error: dErr } = await ctx.supabase
+        .from("email_messages")
+        .select("id, thread_id, from_user_id, is_draft")
+        .eq("id", data.draft_id)
+        .maybeSingle();
+      if (dErr) throw new Error(dErr.message);
+      if (!draft || draft.from_user_id !== ctx.userId || !draft.is_draft) {
+        throw new Error("Không tìm thấy bản nháp để gửi");
+      }
+      threadId = draft.thread_id as string;
+      messageId = draft.id as string;
+      const { error: uErr } = await ctx.supabase
+        .from("email_messages")
+        .update({
+          to_user_ids: toUserIds,
+          cc_user_ids: ccUserIds,
+          subject: data.subject,
+          body: data.body,
+          is_draft: false,
+          sent_at: sentAt,
+          updated_by: ctx.userId,
+        })
+        .eq("id", messageId);
+      if (uErr) throw new Error(uErr.message);
+      const { error: msErr } = await ctx.supabase
+        .from("email_states")
+        .update({ folder: "sent", is_read: true })
+        .eq("message_id", messageId)
+        .eq("user_id", ctx.userId);
+      if (msErr) throw new Error(msErr.message);
+    } else {
+      threadId = await ensureThread(ctx, scope, threadId, data.subject);
+      const { data: msg, error: mErr } = await ctx.supabase
+        .from("email_messages")
+        .insert({
+          thread_id: threadId,
+          workspace_id: scope.workspaceId,
+          tenant_id: scope.tenantId,
+          from_user_id: ctx.userId,
+          created_by: ctx.userId,
+          updated_by: ctx.userId,
+          to_user_ids: toUserIds,
+          cc_user_ids: ccUserIds,
+          subject: data.subject,
+          body: data.body,
+          is_draft: false,
+          sent_at: sentAt,
+        })
         .select("id")
         .single();
-      if (tErr) throw new Error(tErr.message);
-      threadId = t.id;
+      if (mErr) throw new Error(mErr.message);
+      messageId = msg.id as string;
+      const { error: sErr } = await ctx.supabase.from("email_states").insert({
+        user_id: ctx.userId,
+        message_id: messageId,
+        tenant_id: scope.tenantId,
+        folder: "sent",
+        is_read: true,
+      });
+      if (sErr) throw new Error(sErr.message);
     }
 
-    const { data: msg, error: mErr } = await context.supabase
-      .from("email_messages")
-      .insert({
-        thread_id: threadId,
-        workspace_id: wm.workspace_id,
-        tenant_id: wm.workspace_id,
-        from_user_id: context.userId,
-        to_user_ids: toUserIds,
-        cc_user_ids: ccUserIds,
-        subject: data.subject,
-        body: data.body,
-        is_draft: false,
-        sent_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-    if (mErr) throw new Error(mErr.message);
+    // Inbox state cho người nhận (idempotent qua upsert theo message + user).
+    const recipients = [...new Set([...toUserIds, ...ccUserIds])].filter((uid) => uid !== ctx.userId);
+    if (recipients.length) {
+      const { error: rErr } = await ctx.supabase.from("email_states").upsert(
+        recipients.map((uid) => ({
+          user_id: uid,
+          message_id: messageId,
+          tenant_id: scope.tenantId,
+          folder: "inbox",
+          is_read: false,
+        })),
+        { onConflict: "message_id,user_id" },
+      );
+      if (rErr) throw new Error(rErr.message);
+    }
 
-    // Per-user state rows
-    const stateRows = [
-      { user_id: context.userId, message_id: msg.id, tenant_id: wm.workspace_id, folder: "sent", is_read: true },
-      ...[...new Set([...toUserIds, ...ccUserIds])]
-        .filter((uid) => uid !== context.userId)
-        .map((uid) => ({ user_id: uid, message_id: msg.id, tenant_id: wm.workspace_id, folder: "inbox", is_read: false })),
-    ];
-    const { error: sErr } = await context.supabase.from("email_states").insert(stateRows);
-    if (sErr) throw new Error(sErr.message);
+    // Đồng bộ thread: tiêu đề + thời điểm tin cuối.
+    await ctx.supabase
+      .from("email_threads")
+      .update({ subject: data.subject, last_message_at: sentAt, updated_by: ctx.userId })
+      .eq("id", threadId);
 
-    // Sender profile for notif label
-    const { data: sender } = await context.supabase
+    const { data: sender } = await ctx.supabase
       .from("profiles")
       .select("display_name, email")
-      .eq("id", context.userId)
+      .eq("id", ctx.userId)
       .maybeSingle();
 
-    // Notify recipients
-    const notifRows = [...new Set([...toUserIds, ...ccUserIds])]
-      .filter((uid) => uid !== context.userId)
-      .map((uid) => ({
-        user_id: uid,
-        workspace_id: wm.workspace_id,
-        type: "email",
-        title: data.subject,
-        body: data.body.slice(0, 240),
-        link: `/email/${threadId}`,
-        meta: { actor: sender?.display_name ?? sender?.email ?? "" } as never,
-      }));
+    const notifRows = recipients.map((uid) => ({
+      user_id: uid,
+      workspace_id: scope.workspaceId,
+      tenant_id: scope.tenantId,
+      type: "email",
+      title: data.subject,
+      body: data.body.slice(0, 240),
+      link: `/email/${threadId}`,
+      meta: { actor: sender?.display_name ?? sender?.email ?? "" } as never,
+    }));
     if (notifRows.length) {
-      await context.supabase.from("notifications").insert(notifRows);
+      await ctx.supabase.from("notifications").insert(notifRows);
     }
 
-    return { ok: true, thread_id: threadId, message_id: msg.id };
+    return { ok: true, thread_id: threadId as string, message_id: messageId, unknown_recipients: unknown };
   });
 
 /** Move messages to a folder for current user. */
