@@ -38,6 +38,16 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     ],
   }),
   component: DashboardPage,
+  pendingComponent: () => (
+    <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+      Đang tải bảng điều khiển…
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <div role="alert" className="flex min-h-screen items-center justify-center p-6 text-sm">
+      Không tải được dữ liệu bảng điều khiển: {error.message}
+    </div>
+  ),
 });
 
 const dashboardQuery = (rangeDays: number) =>
