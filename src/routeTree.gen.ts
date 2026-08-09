@@ -55,7 +55,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
-import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
+import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
@@ -306,9 +306,9 @@ const AuthenticatedWorkspaceIdRoute =
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedPeopleRoute,
+  id: '/people_/$id',
+  path: '/people/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNotificationsIdRoute =
   AuthenticatedNotificationsIdRouteImport.update({
@@ -425,7 +425,7 @@ export interface FileRoutesByFullPath {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
-  '/people': typeof AuthenticatedPeopleRouteWithChildren
+  '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -487,7 +487,7 @@ export interface FileRoutesByTo {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
-  '/people': typeof AuthenticatedPeopleRouteWithChildren
+  '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -553,7 +553,7 @@ export interface FileRoutesById {
   '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
-  '/_authenticated/people': typeof AuthenticatedPeopleRouteWithChildren
+  '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -581,7 +581,7 @@ export interface FileRoutesById {
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
-  '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -774,7 +774,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
     | '/_authenticated/notifications/$id'
-    | '/_authenticated/people/$id'
+    | '/_authenticated/people_/$id'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/invite'
     | '/blog/category/$category'
@@ -1140,12 +1140,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/people/$id': {
-      id: '/_authenticated/people/$id'
-      path: '/$id'
+    '/_authenticated/people_/$id': {
+      id: '/_authenticated/people_/$id'
+      path: '/people/$id'
       fullPath: '/people/$id'
       preLoaderRoute: typeof AuthenticatedPeopleIdRouteImport
-      parentRoute: typeof AuthenticatedPeopleRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifications/$id': {
       id: '/_authenticated/notifications/$id'
@@ -1328,17 +1328,6 @@ const AuthenticatedNotificationsRouteWithChildren =
     AuthenticatedNotificationsRouteChildren,
   )
 
-interface AuthenticatedPeopleRouteChildren {
-  AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
-}
-
-const AuthenticatedPeopleRouteChildren: AuthenticatedPeopleRouteChildren = {
-  AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
-}
-
-const AuthenticatedPeopleRouteWithChildren =
-  AuthenticatedPeopleRoute._addFileChildren(AuthenticatedPeopleRouteChildren)
-
 interface AuthenticatedWorkspaceIdRouteChildren {
   AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -1362,9 +1351,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
-  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRouteWithChildren
+  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
 }
@@ -1378,9 +1368,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
-  AuthenticatedPeopleRoute: AuthenticatedPeopleRouteWithChildren,
+  AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
 }
