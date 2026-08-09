@@ -29,6 +29,8 @@ import {
   Calculator,
   Minus,
   Plus,
+  HelpCircle,
+  ChevronDown,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
