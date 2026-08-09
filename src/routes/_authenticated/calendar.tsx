@@ -23,6 +23,9 @@ import { Link } from "@tanstack/react-router";
 import { getMeeting } from "@/lib/api/meetings.functions";
 import { Loader2, FileText, Radio } from "lucide-react";
 import { CreateEventDialog } from "@/components/calendar/create-event-dialog";
+import { buildIcs, downloadIcs } from "@/lib/ics";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
@@ -55,6 +58,8 @@ type CalEvent = {
   project?: string;
   meetingStatus?: "upcoming" | "past" | "canceled" | null;
   priority?: "low" | "normal" | "high" | "urgent" | null;
+  at?: string;
+  endAt?: string | null;
 };
 
 type MeetingStatusKey = "upcoming" | "past" | "canceled";
@@ -192,6 +197,8 @@ function CalendarPage() {
           attendees: e.attendees,
           meetingStatus: e.meetingStatus,
           priority: e.priority,
+          at: e.at,
+          endAt: e.endAt ?? null,
         };
       }),
     [data],
