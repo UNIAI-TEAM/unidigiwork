@@ -6,7 +6,7 @@ import { ArrowLeft, Mail, MapPin, Phone, Briefcase, CalendarDays, UserCog } from
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { getPerson, removePerson } from "@/lib/api/people.functions";
 
-export const Route = createFileRoute("/_authenticated/people/$id")({
+export const Route = createFileRoute("/_authenticated/people_/$id")({
   component: PersonDetailPage,
   head: () => ({
     meta: [
