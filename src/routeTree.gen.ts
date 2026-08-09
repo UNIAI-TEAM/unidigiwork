@@ -15,7 +15,6 @@ import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as PeopleRouteImport } from './routes/people'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
@@ -35,7 +34,6 @@ import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
-import { Route as PeopleIdRouteImport } from './routes/people.$id'
 import { Route as MeetingHistoryRouteImport } from './routes/meeting_.history'
 import { Route as MeetingIdRouteImport } from './routes/meeting_.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
@@ -44,6 +42,7 @@ import { Route as ChatChannelIdRouteImport } from './routes/chat.$channelId'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/email'
@@ -56,6 +55,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
@@ -101,11 +101,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PeopleRoute = PeopleRouteImport.update({
-  id: '/people',
-  path: '/people',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -202,11 +197,6 @@ const ReportsTypeRoute = ReportsTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => ReportsRoute,
 } as any)
-const PeopleIdRoute = PeopleIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => PeopleRoute,
-} as any)
 const MeetingHistoryRoute = MeetingHistoryRouteImport.update({
   id: '/meeting_/history',
   path: '/meeting/history',
@@ -245,6 +235,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNotificationsRoute =
@@ -310,6 +305,11 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
+  id: '/people_/$id',
+  path: '/people/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedNotificationsIdRoute =
   AuthenticatedNotificationsIdRouteImport.update({
     id: '/$id',
@@ -411,7 +411,6 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
-  '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
@@ -426,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
+  '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -434,7 +434,6 @@ export interface FileRoutesByFullPath {
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/meeting/history': typeof MeetingHistoryRoute
-  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -454,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
+  '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -475,7 +475,6 @@ export interface FileRoutesByTo {
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
-  '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/tasks': typeof TasksRouteWithChildren
@@ -488,6 +487,7 @@ export interface FileRoutesByTo {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
+  '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -496,7 +496,6 @@ export interface FileRoutesByTo {
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/meeting/history': typeof MeetingHistoryRoute
-  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -516,6 +515,7 @@ export interface FileRoutesByTo {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
+  '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -539,7 +539,6 @@ export interface FileRoutesById {
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
-  '/people': typeof PeopleRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
@@ -554,6 +553,7 @@ export interface FileRoutesById {
   '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
+  '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -562,7 +562,6 @@ export interface FileRoutesById {
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting_/$id': typeof MeetingIdRoute
   '/meeting_/history': typeof MeetingHistoryRoute
-  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -582,6 +581,7 @@ export interface FileRoutesById {
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
+  '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -605,7 +605,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/onboarding'
-    | '/people'
     | '/pricing'
     | '/privacy'
     | '/reports'
@@ -620,6 +619,7 @@ export interface FileRouteTypes {
     | '/email'
     | '/help'
     | '/notifications'
+    | '/people'
     | '/search'
     | '/settings'
     | '/blog/$slug'
@@ -628,7 +628,6 @@ export interface FileRouteTypes {
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/meeting/history'
-    | '/people/$id'
     | '/reports/$type'
     | '/reports/detail'
     | '/tasks/$id'
@@ -648,6 +647,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/notifications/$id'
+    | '/people/$id'
     | '/workspace/$id'
     | '/workspace/invite'
     | '/blog/category/$category'
@@ -669,7 +669,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/onboarding'
-    | '/people'
     | '/pricing'
     | '/privacy'
     | '/tasks'
@@ -682,6 +681,7 @@ export interface FileRouteTypes {
     | '/email'
     | '/help'
     | '/notifications'
+    | '/people'
     | '/search'
     | '/settings'
     | '/blog/$slug'
@@ -690,7 +690,6 @@ export interface FileRouteTypes {
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/meeting/history'
-    | '/people/$id'
     | '/reports/$type'
     | '/reports/detail'
     | '/tasks/$id'
@@ -710,6 +709,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/notifications/$id'
+    | '/people/$id'
     | '/workspace/$id'
     | '/workspace/invite'
     | '/blog/category/$category'
@@ -732,7 +732,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/meeting'
     | '/onboarding'
-    | '/people'
     | '/pricing'
     | '/privacy'
     | '/reports'
@@ -747,6 +746,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email'
     | '/_authenticated/help'
     | '/_authenticated/notifications'
+    | '/_authenticated/people'
     | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/blog/$slug'
@@ -755,7 +755,6 @@ export interface FileRouteTypes {
     | '/knowledge/$slug'
     | '/meeting_/$id'
     | '/meeting_/history'
-    | '/people/$id'
     | '/reports/$type'
     | '/reports/detail'
     | '/tasks/$id'
@@ -775,6 +774,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
     | '/_authenticated/notifications/$id'
+    | '/_authenticated/people_/$id'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/invite'
     | '/blog/category/$category'
@@ -798,7 +798,6 @@ export interface RootRouteChildren {
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
   MeetingRoute: typeof MeetingRoute
   OnboardingRoute: typeof OnboardingRoute
-  PeopleRoute: typeof PeopleRouteWithChildren
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReportsRoute: typeof ReportsRouteWithChildren
@@ -859,13 +858,6 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/people': {
-      id: '/people'
-      path: '/people'
-      fullPath: '/people'
-      preLoaderRoute: typeof PeopleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -1001,13 +993,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsTypeRouteImport
       parentRoute: typeof ReportsRoute
     }
-    '/people/$id': {
-      id: '/people/$id'
-      path: '/$id'
-      fullPath: '/people/$id'
-      preLoaderRoute: typeof PeopleIdRouteImport
-      parentRoute: typeof PeopleRoute
-    }
     '/meeting_/history': {
       id: '/meeting_/history'
       path: '/meeting/history'
@@ -1062,6 +1047,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/people': {
+      id: '/_authenticated/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof AuthenticatedPeopleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifications': {
@@ -1146,6 +1138,13 @@ declare module '@tanstack/react-router' {
       path: '/workspace/$id'
       fullPath: '/workspace/$id'
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/people_/$id': {
+      id: '/_authenticated/people_/$id'
+      path: '/people/$id'
+      fullPath: '/people/$id'
+      preLoaderRoute: typeof AuthenticatedPeopleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifications/$id': {
@@ -1352,8 +1351,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
+  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
 }
@@ -1367,8 +1368,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
+  AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
 }
@@ -1409,17 +1412,6 @@ const KnowledgeRouteChildren: KnowledgeRouteChildren = {
 const KnowledgeRouteWithChildren = KnowledgeRoute._addFileChildren(
   KnowledgeRouteChildren,
 )
-
-interface PeopleRouteChildren {
-  PeopleIdRoute: typeof PeopleIdRoute
-}
-
-const PeopleRouteChildren: PeopleRouteChildren = {
-  PeopleIdRoute: PeopleIdRoute,
-}
-
-const PeopleRouteWithChildren =
-  PeopleRoute._addFileChildren(PeopleRouteChildren)
 
 interface ReportsRouteChildren {
   ReportsTypeRoute: typeof ReportsTypeRoute
@@ -1470,7 +1462,6 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeRoute: KnowledgeRouteWithChildren,
   MeetingRoute: MeetingRoute,
   OnboardingRoute: OnboardingRoute,
-  PeopleRoute: PeopleRouteWithChildren,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ReportsRoute: ReportsRouteWithChildren,

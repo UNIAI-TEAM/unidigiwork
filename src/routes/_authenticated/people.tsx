@@ -1,4 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  listPeople,
+  upsertPersonProfile,
+  removePerson,
+  type PersonDTO,
+} from "@/lib/api/people.functions";
 import { useEffect, useMemo, useState } from "react";
 import {
   Upload,
@@ -64,7 +73,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export const Route = createFileRoute("/people")({
+export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({
     meta: [
       { title: "People · UNIWORK" },
@@ -99,276 +108,38 @@ type Person = {
   about: string;
 };
 
-const DEFAULT_PEOPLE: Person[] = [
-  {
-    id: "p1",
-    name: "Nguyễn Văn A",
-    seed: "nguyen-van-a-1",
-    role: "CEO",
-    roleColor: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
-    title: "Giám đốc Điều hành",
-    team: "Executive Office",
-    email: "nguyenvana@uniwork.vn",
-    phone: "(+84) 912 345 678",
-    location: "Hà Nội, Việt Nam",
-    department: "Executive",
-    status: "online",
-    empId: "UNI-0001",
-    joinDate: "01/01/2022",
-    skills: ["Leadership", "Strategy", "Product Management", "Communication", "Team Building"],
-    reportsTo: "Board of Directors",
-    teams: ["Executive Office", "Strategy Committee", "Digital Transformation Team"],
-    about:
-      "Hơn 10 năm kinh nghiệm trong lĩnh vực công nghệ và quản trị doanh nghiệp. Đam mê xây dựng sản phẩm tốt và đội ngũ mạnh.",
-  },
-  {
-    id: "p2",
-    name: "Phạm Minh C",
-    seed: "pham-minh-c",
-    role: "Dev",
-    roleColor: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
-    title: "Tech Lead",
-    team: "DevOps Team",
-    email: "phamminhc@uniwork.vn",
-    phone: "(+84) 912 000 002",
-    location: "Hà Nội, Việt Nam",
-    department: "Engineering",
-    status: "online",
-    empId: "UNI-0042",
-    joinDate: "12/03/2022",
-    skills: ["Kubernetes", "Go", "AWS", "Terraform"],
-    reportsTo: "Nguyễn Văn A",
-    teams: ["DevOps Team", "Platform Guild"],
-    about: "Tech Lead phụ trách hạ tầng và CI/CD.",
-  },
-  {
-    id: "p3",
-    name: "Trần Thị B",
-    seed: "tran-thi-b",
-    role: "PM",
-    roleColor: "bg-violet-500/20 text-violet-300 border border-violet-500/30",
-    title: "Project Manager",
-    team: "Product Team",
-    email: "tranthib@uniwork.vn",
-    phone: "(+84) 912 000 003",
-    location: "Hà Nội, Việt Nam",
-    department: "Product",
-    status: "online",
-    empId: "UNI-0011",
-    joinDate: "05/02/2022",
-    skills: ["Agile", "Scrum", "Roadmap"],
-    reportsTo: "Nguyễn Văn A",
-    teams: ["Product Team"],
-    about: "PM đa năng, kết nối kỹ thuật và kinh doanh.",
-  },
-  {
-    id: "p4",
-    name: "Lê Hoàng D",
-    seed: "le-hoang-d",
-    role: "Backend",
-    roleColor: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
-    title: "Backend Developer",
-    team: "Backend Team",
-    email: "lehoangd@uniwork.vn",
-    phone: "(+84) 912 000 004",
-    location: "Đà Nẵng, Việt Nam",
-    department: "Engineering",
-    status: "online",
-    empId: "UNI-0058",
-    joinDate: "20/06/2022",
-    skills: ["Node.js", "PostgreSQL", "Redis"],
-    reportsTo: "Phạm Minh C",
-    teams: ["Backend Team"],
-    about: "Backend developer kinh nghiệm hệ thống quy mô lớn.",
-  },
-  {
-    id: "p5",
-    name: "Nguyễn Hương",
-    seed: "nguyen-huong",
-    role: "Designer",
-    roleColor: "bg-pink-500/20 text-pink-300 border border-pink-500/30",
-    title: "UI/UX Designer",
-    team: "Design Team",
-    email: "nguyenhuong@uniwork.vn",
-    phone: "(+84) 912 000 005",
-    location: "Hà Nội, Việt Nam",
-    department: "Design",
-    status: "online",
-    empId: "UNI-0072",
-    joinDate: "10/09/2022",
-    skills: ["Figma", "Design System", "Prototyping"],
-    reportsTo: "Trần Thị B",
-    teams: ["Design Team"],
-    about: "Designer tập trung trải nghiệm sản phẩm SaaS.",
-  },
-  {
-    id: "p6",
-    name: "Đỗ Tuấn Nam",
-    seed: "do-tuan-nam",
-    role: "SysEng",
-    roleColor: "bg-orange-500/20 text-orange-300 border border-orange-500/30",
-    title: "System Engineer",
-    team: "Infrastructure Team",
-    email: "dotuannam@uniwork.vn",
-    phone: "(+84) 912 000 006",
-    location: "Hà Nội, Việt Nam",
-    department: "Engineering",
-    status: "online",
-    empId: "UNI-0090",
-    joinDate: "01/11/2022",
-    skills: ["Linux", "Networking", "Ansible"],
-    reportsTo: "Phạm Minh C",
-    teams: ["Infrastructure Team"],
-    about: "System engineer phụ trách hạ tầng on-prem.",
-  },
-  {
-    id: "p7",
-    name: "Bảo Ngọc",
-    seed: "bao-ngoc",
-    role: "QA",
-    roleColor: "bg-teal-500/20 text-teal-300 border border-teal-500/30",
-    title: "QA Engineer",
-    team: "QA Team",
-    email: "baongoc@uniwork.vn",
-    phone: "(+84) 912 000 007",
-    location: "TP.HCM, Việt Nam",
-    department: "Quality",
-    status: "online",
-    empId: "UNI-0105",
-    joinDate: "08/01/2023",
-    skills: ["Cypress", "Playwright", "Test Plan"],
-    reportsTo: "Trần Thị B",
-    teams: ["QA Team"],
-    about: "QA chuyên test tự động.",
-  },
-  {
-    id: "p8",
-    name: "Quang Minh",
-    seed: "quang-minh",
-    role: "Data",
-    roleColor: "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30",
-    title: "Data Analyst",
-    team: "Data Team",
-    email: "quangminh@uniwork.vn",
-    phone: "(+84) 912 000 008",
-    location: "Hà Nội, Việt Nam",
-    department: "Data",
-    status: "online",
-    empId: "UNI-0120",
-    joinDate: "15/02/2023",
-    skills: ["SQL", "Python", "Looker"],
-    reportsTo: "Trần Thị B",
-    teams: ["Data Team"],
-    about: "Data analyst hỗ trợ ra quyết định.",
-  },
-  {
-    id: "p9",
-    name: "Mỹ Linh",
-    seed: "my-linh",
-    role: "HR",
-    roleColor: "bg-rose-500/20 text-rose-300 border border-rose-500/30",
-    title: "HR Specialist",
-    team: "HR Department",
-    email: "mylinh@uniwork.vn",
-    phone: "(+84) 912 000 009",
-    location: "Hà Nội, Việt Nam",
-    department: "HR",
-    status: "online",
-    empId: "UNI-0133",
-    joinDate: "10/03/2023",
-    skills: ["Recruiting", "Onboarding"],
-    reportsTo: "Nguyễn Văn A",
-    teams: ["HR Department"],
-    about: "Phụ trách tuyển dụng & văn hoá.",
-  },
-  {
-    id: "p10",
-    name: "Duy Anh",
-    seed: "duy-anh",
-    role: "Mobile",
-    roleColor: "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30",
-    title: "Mobile Developer",
-    team: "Mobile Team",
-    email: "duyanh@uniwork.vn",
-    phone: "(+84) 912 000 010",
-    location: "Hà Nội, Việt Nam",
-    department: "Engineering",
-    status: "away",
-    empId: "UNI-0145",
-    joinDate: "01/04/2023",
-    skills: ["React Native", "Swift", "Kotlin"],
-    reportsTo: "Phạm Minh C",
-    teams: ["Mobile Team"],
-    about: "Mobile dev đa nền tảng.",
-  },
-  {
-    id: "p11",
-    name: "Hoàng Nam",
-    seed: "hoang-nam",
-    role: "DevOps",
-    roleColor: "bg-lime-500/20 text-lime-300 border border-lime-500/30",
-    title: "DevOps Engineer",
-    team: "DevOps Team",
-    email: "hoangnam@uniwork.vn",
-    phone: "(+84) 912 000 011",
-    location: "Đà Nẵng, Việt Nam",
-    department: "Engineering",
-    status: "online",
-    empId: "UNI-0158",
-    joinDate: "05/05/2023",
-    skills: ["Docker", "ArgoCD", "GitLab CI"],
-    reportsTo: "Phạm Minh C",
-    teams: ["DevOps Team"],
-    about: "DevOps phụ trách triển khai liên tục.",
-  },
-  {
-    id: "p12",
-    name: "Tuấn Nam",
-    seed: "tuan-nam-ba",
-    role: "BA",
-    roleColor: "bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30",
-    title: "Business Analyst",
-    team: "BA Team",
-    email: "tuannam@uniwork.vn",
-    phone: "(+84) 912 000 012",
-    location: "Hà Nội, Việt Nam",
-    department: "Product",
-    status: "online",
-    empId: "UNI-0170",
-    joinDate: "20/06/2023",
-    skills: ["Requirements", "UML", "Process"],
-    reportsTo: "Trần Thị B",
-    teams: ["BA Team"],
-    about: "BA cầu nối khách hàng và dev team.",
-  },
-];
+const TENANT_ROLES = ["tenant_owner", "tenant_admin", "manager", "member", "guest"];
 
-const departments = [
-  "All",
-  "Executive",
-  "Engineering",
-  "Product",
-  "Design",
-  "Data",
-  "HR",
-  "Quality",
-];
-const roles = [
-  "All",
-  "CEO",
-  "PM",
-  "Dev",
-  "Backend",
-  "Designer",
-  "QA",
-  "Data",
-  "HR",
-  "Mobile",
-  "DevOps",
-  "BA",
-  "SysEng",
-];
-const locations = ["All", "Hà Nội, Việt Nam", "TP.HCM, Việt Nam", "Đà Nẵng, Việt Nam"];
+const ROLE_COLORS: Record<string, string> = {
+  tenant_owner: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+  tenant_admin: "bg-violet-500/20 text-violet-300 border border-violet-500/30",
+  manager: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
+  member: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+  guest: "bg-muted text-muted-foreground border border-border",
+};
+
+export function dtoToPerson(d: PersonDTO): Person {
+  return {
+    id: d.id,
+    name: d.name,
+    seed: d.seed,
+    role: d.role,
+    roleColor: ROLE_COLORS[d.role] ?? ROLE_COLORS["member"]!,
+    title: d.title || "—",
+    team: d.team || "—",
+    email: d.email,
+    phone: d.phone,
+    location: d.location,
+    department: d.department,
+    status: d.memberStatus === "active" ? "online" : "offline",
+    empId: d.empId,
+    joinDate: d.joinDate,
+    skills: d.skills,
+    reportsTo: d.reportsTo,
+    teams: d.teams,
+    about: d.about,
+  };
+}
 
 const statusDot: Record<Status, string> = {
   online: "bg-success",
@@ -379,18 +150,77 @@ const statusDot: Record<Status, string> = {
 function PeoplePage() {
   const [open, setOpen] = useSidebarState();
   const { t } = useI18n();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("All");
   const [role, setRole] = useState("All");
   const [location, setLocation] = useState("All");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [selectedId, setSelectedId] = useState<string>("p1");
-  const [addOpen, setAddOpen] = useState(false);
-  const [peopleList, setPeopleList] = useState<Person[]>(DEFAULT_PEOPLE);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [editOpen, setEditOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchPeople = useServerFn(listPeople);
+  const saveProfile = useServerFn(upsertPersonProfile);
+  const removeMember = useServerFn(removePerson);
+
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ["people"],
+    queryFn: () => fetchPeople(),
+    staleTime: 30_000,
+  });
+
+  const peopleList = useMemo<Person[]>(
+    () => (data?.people ?? []).map(dtoToPerson),
+    [data],
+  );
+  const canManage = data?.canManage ?? false;
+  const departments = useMemo(() => ["All", ...(data?.departments ?? [])], [data]);
+  const roles = useMemo(() => ["All", ...(data?.roles ?? [])], [data]);
+  const locations = useMemo(() => ["All", ...(data?.locations ?? [])], [data]);
+
+  const saveMutation = useMutation({
+    mutationFn: (input: Person) =>
+      saveProfile({
+        data: {
+          userId: input.id,
+          displayName: input.name,
+          title: input.title === "—" ? "" : input.title,
+          department: input.department,
+          team: input.team === "—" ? "" : input.team,
+          location: input.location,
+          phone: input.phone,
+          empId: input.empId,
+          joinDate: input.joinDate,
+          reportsTo: input.reportsTo,
+          skills: input.skills,
+          teams: input.teams,
+          about: input.about,
+          role: input.role,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Đã lưu thông tin nhân sự");
+      qc.invalidateQueries({ queryKey: ["people"] });
+      setEditOpen(false);
+      setEditingPerson(null);
+    },
+    onError: (e: Error) => toast.error(e.message || "Không lưu được"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => removeMember({ data: { userId } }),
+    onSuccess: () => {
+      toast.success("Đã gỡ nhân sự khỏi tổ chức");
+      qc.invalidateQueries({ queryKey: ["people"] });
+      setDeleteOpen(false);
+      setDeletingId(null);
+    },
+    onError: (e: Error) => toast.error(e.message || "Không gỡ được nhân sự"),
+  });
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -425,14 +255,7 @@ function PeoplePage() {
   };
 
   const confirmDelete = () => {
-    if (!deletingId) return;
-    setPeopleList((prev) => prev.filter((p) => p.id !== deletingId));
-    if (selectedId === deletingId) {
-      const remaining = peopleList.filter((p) => p.id !== deletingId);
-      setSelectedId(remaining[0]?.id ?? "");
-    }
-    setDeletingId(null);
-    setDeleteOpen(false);
+    if (deletingId) deleteMutation.mutate(deletingId);
   };
 
   return (
@@ -456,12 +279,12 @@ function PeoplePage() {
                 <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                   <Download className="h-4 w-4" /> {t("people.export")}
                 </button>
-                <button
-                  onClick={() => setAddOpen(true)}
+                <Link
+                  to="/workspace/invite"
                   className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4" /> {t("people.add")}
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -516,15 +339,29 @@ function PeoplePage() {
             {/* Tabs */}
             <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border">
               <Tab label={t("people.tab.all")} count={peopleList.length} active />
-              <Tab label={t("people.tab.teams")} count={16} />
-              <Tab label={t("people.tab.departments")} count={8} />
-              <Tab label={t("people.tab.positions")} count={24} />
+              <Tab label={t("people.tab.teams")} count={new Set(peopleList.flatMap((p) => p.teams)).size} />
+              <Tab label={t("people.tab.departments")} count={(data?.departments ?? []).length} />
+              <Tab label={t("people.tab.positions")} count={new Set(peopleList.map((p) => p.title).filter((x) => x && x !== "—")).size} />
               <Tab label={t("people.tab.skills")} />
               <Tab label={t("people.tab.org")} />
             </div>
 
             {/* Cards / List */}
-            {filtered.length === 0 ? (
+            {isPending ? (
+              <div className="flex items-center justify-center rounded-xl border border-border bg-surface/40 py-16 text-sm text-muted-foreground">
+                Đang tải danh sách nhân sự…
+              </div>
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-destructive/40 bg-surface/40 py-16 text-sm text-destructive">
+                Không tải được danh sách nhân sự.
+                <button
+                  onClick={() => refetch()}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-foreground hover:bg-surface-2"
+                >
+                  Thử lại
+                </button>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface/40 py-16 text-sm text-muted-foreground">
                 <UsersIcon className="mb-2 h-8 w-8 opacity-50" />
                 {t("people.empty")}
@@ -578,10 +415,18 @@ function PeoplePage() {
           </main>
 
           {/* Right panel */}
-          <PersonPanel person={selected} onClose={() => {}} />
+          {selected && (
+            <PersonPanel
+              person={selected}
+              peers={peopleList.filter((p) => p.id !== selected.id)}
+              canManage={canManage || selected.id === data?.people.find((x) => x.isSelf)?.id}
+              onEdit={() => handleEdit(selected)}
+              onOpenDetail={() => navigate({ to: "/people/$id", params: { id: selected.id } })}
+              onClose={() => {}}
+            />
+          )}
         </div>
       </div>
-      <AddPersonDialog open={addOpen} onClose={() => setAddOpen(false)} />
       <EditPersonDialog
         open={editOpen}
         person={editingPerson}
@@ -589,13 +434,9 @@ function PeoplePage() {
           setEditOpen(false);
           setEditingPerson(null);
         }}
-        onSave={(updated) => {
-          setPeopleList((prev) =>
-            prev.map((p) => (p.id === updated.id ? updated : p)),
-          );
-          setEditOpen(false);
-          setEditingPerson(null);
-        }}
+        canManageRole={canManage}
+        saving={saveMutation.isPending}
+        onSave={(updated) => saveMutation.mutate(updated)}
       />
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="bg-surface border-border">
@@ -828,7 +669,20 @@ function IconBtn({ children, className = "" }: { children: React.ReactNode; clas
   );
 }
 
-function PersonPanel({ person }: { person: Person; onClose: () => void }) {
+function PersonPanel({
+  person,
+  peers,
+  canManage,
+  onEdit,
+  onOpenDetail,
+}: {
+  person: Person;
+  peers: Person[];
+  canManage: boolean;
+  onEdit: () => void;
+  onOpenDetail: () => void;
+  onClose: () => void;
+}) {
   const { t } = useI18n();
   const [tab, setTab] = useState<"overview" | "profile" | "activity" | "files" | "tasks">(
     "overview",
@@ -881,7 +735,21 @@ function PersonPanel({ person }: { person: Person; onClose: () => void }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 px-5 py-4">
+      <div className="flex flex-wrap items-center gap-2 px-5 py-4">
+        <button
+          onClick={onOpenDetail}
+          className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs hover:bg-surface-3"
+        >
+          Xem hồ sơ
+        </button>
+        {canManage && (
+          <button
+            onClick={onEdit}
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Chỉnh sửa
+          </button>
+        )}
         <IconBtn>
           <MessageCircle className="h-4 w-4" />
         </IconBtn>
@@ -916,7 +784,7 @@ function PersonPanel({ person }: { person: Person; onClose: () => void }) {
       </div>
 
       <div className="flex-1 space-y-6 px-5 py-5 text-sm">
-        {tab === "overview" && <OverviewTab person={person} />}
+        {tab === "overview" && <OverviewTab person={person} peers={peers} />}
         {tab === "profile" && <ProfileTab person={person} />}
         {tab === "activity" && <ActivityTab />}
         {tab === "files" && <FilesTab />}
@@ -934,7 +802,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function OverviewTab({ person }: { person: Person }) {
+function OverviewTab({ person, peers }: { person: Person; peers: Person[] }) {
   const { t } = useI18n();
   return (
     <>
@@ -959,9 +827,11 @@ function OverviewTab({ person }: { person: Person }) {
         </div>
       </section>
       <section>
-        <SectionTitle>{t("people.panel.direct")} (8)</SectionTitle>
+        <SectionTitle>
+          {t("people.panel.direct")} ({peers.length})
+        </SectionTitle>
         <div className="flex -space-x-2">
-          {DEFAULT_PEOPLE.slice(1, 6).map((p) => (
+          {peers.slice(0, 6).map((p) => (
             <img
               key={p.id}
               src={avatar(p.seed)}
@@ -970,9 +840,11 @@ function OverviewTab({ person }: { person: Person }) {
               className="h-8 w-8 rounded-full border-2 border-surface object-cover"
             />
           ))}
-          <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-[10px] text-muted-foreground">
-            +3
-          </span>
+          {peers.length > 6 && (
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-[10px] text-muted-foreground">
+              +{peers.length - 6}
+            </span>
+          )}
         </div>
       </section>
     </>
@@ -1421,184 +1293,38 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function AddPersonDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    title: "",
-    department: "",
-    role: "",
-    location: "",
-    empId: "",
-    joinDate: "",
-    about: "",
-  });
-
-  const handleChange = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onClose();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto bg-surface">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Thêm nhân sự mới</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Họ và tên</label>
-              <Input
-                placeholder="Nguyễn Văn A"
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="a.nguyen@uniwork.vn"
-                value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Số điện thoại</label>
-              <Input
-                type="tel"
-                placeholder="(+84) 912 345 678"
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Chức danh</label>
-              <Input
-                placeholder="Senior Developer"
-                value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Phòng ban</label>
-              <select
-                value={form.department}
-                onChange={(e) => handleChange("department", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn phòng ban</option>
-                {departments.filter((d) => d !== "All").map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Vai trò</label>
-              <select
-                value={form.role}
-                onChange={(e) => handleChange("role", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn vai trò</option>
-                {roles.filter((r) => r !== "All").map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Địa điểm</label>
-              <select
-                value={form.location}
-                onChange={(e) => handleChange("location", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn địa điểm</option>
-                {locations.filter((l) => l !== "All").map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Mã nhân viên</label>
-              <Input
-                placeholder="UNI-0000"
-                value={form.empId}
-                onChange={(e) => handleChange("empId", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Ngày vào làm</label>
-              <Input
-                type="date"
-                value={form.joinDate}
-                onChange={(e) => handleChange("joinDate", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">Giới thiệu</label>
-            <Textarea
-              placeholder="Mô tả ngắn về nhân sự…"
-              value={form.about}
-              onChange={(e) => handleChange("about", e.target.value)}
-              className="min-h-[80px] bg-surface-2"
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
-            >
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Thêm nhân sự
-            </button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function EditPersonDialog({
   open,
   person,
+  canManageRole,
+  saving,
   onClose,
   onSave,
 }: {
   open: boolean;
   person: Person | null;
+  canManageRole: boolean;
+  saving: boolean;
   onClose: () => void;
-  onSave: (updated: Person) => void;
+  onSave: (person: Person) => void;
 }) {
-  const [form, setForm] = useState({
+  const empty = {
     name: "",
     email: "",
     phone: "",
     title: "",
     department: "",
-    role: "",
+    team: "",
+    role: "member",
     location: "",
     empId: "",
     joinDate: "",
+    reportsTo: "",
+    skills: "",
+    teams: "",
     about: "",
-  });
+  };
+  const [form, setForm] = useState(empty);
 
   useEffect(() => {
     if (person) {
@@ -1606,24 +1332,63 @@ function EditPersonDialog({
         name: person.name,
         email: person.email,
         phone: person.phone,
-        title: person.title,
+        title: person.title === "—" ? "" : person.title,
         department: person.department,
+        team: person.team === "—" ? "" : person.team,
         role: person.role,
         location: person.location,
         empId: person.empId,
         joinDate: person.joinDate,
+        reportsTo: person.reportsTo,
+        skills: person.skills.join(", "),
+        teams: person.teams.join(", "),
         about: person.about,
       });
     }
   }, [person]);
 
-  const handleChange = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  const handleChange = (k: keyof typeof form, v: string) =>
+    setForm((prev) => ({ ...prev, [k]: v }));
+
+  const split = (v: string) =>
+    v
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!person) return;
-    onSave({ ...person, ...form });
+    onSave({
+      ...person,
+      name: form.name,
+      phone: form.phone,
+      title: form.title,
+      department: form.department,
+      team: form.team,
+      role: form.role,
+      location: form.location,
+      empId: form.empId,
+      joinDate: form.joinDate,
+      reportsTo: form.reportsTo,
+      about: form.about,
+      skills: split(form.skills),
+      teams: split(form.teams),
+    });
   };
+
+  const field = (label: string, key: keyof typeof form, placeholder = "", type = "text") => (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium">{label}</label>
+      <Input
+        type={type}
+        placeholder={placeholder}
+        value={form[key]}
+        onChange={(e) => handleChange(key, e.target.value)}
+        className="bg-surface-2"
+      />
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -1633,102 +1398,37 @@ function EditPersonDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Họ và tên</label>
-              <Input
-                placeholder="Nguyễn Văn A"
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
+            {field("Họ và tên", "name", "Nguyễn Văn A")}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="a.nguyen@uniwork.vn"
-                value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                className="bg-surface-2"
-              />
+              <Input value={form.email} disabled className="bg-surface-2 opacity-70" />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Số điện thoại</label>
-              <Input
-                type="tel"
-                placeholder="(+84) 912 345 678"
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Chức danh</label>
-              <Input
-                placeholder="Senior Developer"
-                value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Phòng ban</label>
-              <select
-                value={form.department}
-                onChange={(e) => handleChange("department", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn phòng ban</option>
-                {departments.filter((d) => d !== "All").map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
+            {field("Số điện thoại", "phone", "(+84) 912 345 678", "tel")}
+            {field("Chức danh", "title", "Senior Developer")}
+            {field("Phòng ban", "department", "Engineering")}
+            {field("Nhóm", "team", "Platform Team")}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Vai trò</label>
               <select
                 value={form.role}
+                disabled={!canManageRole}
                 onChange={(e) => handleChange("role", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
               >
-                <option value="">Chọn vai trò</option>
-                {roles.filter((r) => r !== "All").map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                {TENANT_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
                 ))}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Địa điểm</label>
-              <select
-                value={form.location}
-                onChange={(e) => handleChange("location", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn địa điểm</option>
-                {locations.filter((l) => l !== "All").map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Mã nhân viên</label>
-              <Input
-                placeholder="UNI-0000"
-                value={form.empId}
-                onChange={(e) => handleChange("empId", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Ngày vào làm</label>
-              <Input
-                type="date"
-                value={form.joinDate}
-                onChange={(e) => handleChange("joinDate", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
+            {field("Địa điểm", "location", "Hà Nội")}
+            {field("Mã nhân viên", "empId", "UNI-0000")}
+            {field("Ngày vào làm", "joinDate", "", "date")}
+            {field("Quản lý trực tiếp", "reportsTo", "Nguyễn Văn B")}
           </div>
+          {field("Kỹ năng (phân tách bằng dấu phẩy)", "skills", "React, SQL, Figma")}
+          {field("Nhóm tham gia (phân tách bằng dấu phẩy)", "teams", "Platform, Growth")}
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Giới thiệu</label>
             <Textarea
@@ -1748,9 +1448,10 @@ function EditPersonDialog({
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              disabled={saving}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             >
-              Lưu thay đổi
+              {saving ? "Đang lưu…" : "Lưu thay đổi"}
             </button>
           </div>
         </form>
