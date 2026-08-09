@@ -236,6 +236,31 @@ function CalendarPage() {
 
   const selectedEvent = visible.find((e) => e.id === selected) ?? null;
 
+  const handleExportIcs = () => {
+    const items = visible.filter((e) => e.at);
+    if (items.length === 0) {
+      toast.error("Không có sự kiện nào trong khoảng thời gian đang chọn");
+      return;
+    }
+    const ics = buildIcs(
+      items.map((e) => ({
+        id: e.id,
+        title: e.title,
+        kind: e.kind,
+        at: e.at!,
+        endAt: e.endAt,
+        allDay: e.allDay,
+        location: e.location ?? null,
+        description: e.project ? `Dự án: ${e.project}` : null,
+      })),
+      "UNIWORK — Lịch",
+    );
+    const from = isoDate(new Date(range.from));
+    const to = isoDate(new Date(range.to));
+    downloadIcs(`uniwork-calendar-${from}_${to}.ics`, ics);
+    toast.success(`Đã xuất ${items.length} sự kiện ra file ICS`);
+  };
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="calendar" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -257,6 +282,13 @@ function CalendarPage() {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" /> Tạo sự kiện
+            </button>
+
+            <button
+              onClick={handleExportIcs}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2"
+            >
+              <Download className="h-4 w-4" /> Xuất lịch (.ics)
             </button>
 
             <div className="rounded-2xl border border-border bg-surface p-3">
