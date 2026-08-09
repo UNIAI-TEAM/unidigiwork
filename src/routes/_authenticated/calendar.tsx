@@ -109,181 +109,6 @@ function sameDay(a: Date, b: Date) {
   );
 }
 
-function buildEvents(base: Date): CalEvent[] {
-  const y = base.getFullYear();
-  const m = base.getMonth();
-  const mk = (day: number) => isoDate(new Date(y, m, day));
-  return [
-    {
-      id: "m1",
-      title: "Standup Engineering",
-      kind: "meeting",
-      date: mk(2),
-      start: "09:00",
-      end: "09:30",
-      location: "Meet Room A",
-      owner: { name: "Minh", seed: "minh" },
-      attendees: [
-        { name: "An", seed: "an" },
-        { name: "Bảo", seed: "bao" },
-        { name: "Linh", seed: "linh" },
-      ],
-      project: "UNIWORK Core",
-    },
-    {
-      id: "t1",
-      title: "Hoàn thiện wireframe Dashboard",
-      kind: "task",
-      date: mk(3),
-      allDay: true,
-      owner: { name: "Linh", seed: "linh" },
-      project: "Redesign",
-    },
-    {
-      id: "d1",
-      title: "Nộp đề xuất Q3",
-      kind: "deadline",
-      date: mk(5),
-      start: "17:00",
-      owner: { name: "Hà", seed: "ha" },
-    },
-    {
-      id: "m2",
-      title: "Demo khách hàng VPBank",
-      kind: "meeting",
-      date: mk(7),
-      start: "14:00",
-      end: "15:30",
-      location: "Zoom",
-      owner: { name: "Phong", seed: "phong" },
-      attendees: [
-        { name: "Khang", seed: "khang" },
-        { name: "Trang", seed: "trang" },
-      ],
-    },
-    {
-      id: "t2",
-      title: "Review pull request #482",
-      kind: "task",
-      date: mk(7),
-      start: "10:00",
-      end: "11:00",
-      owner: { name: "Bảo", seed: "bao" },
-    },
-    {
-      id: "m3",
-      title: "1:1 với Manager",
-      kind: "meeting",
-      date: mk(9),
-      start: "16:00",
-      end: "16:30",
-      owner: { name: "Hà", seed: "ha" },
-    },
-    {
-      id: "d2",
-      title: "Release v1.4",
-      kind: "deadline",
-      date: mk(12),
-      allDay: true,
-    },
-    {
-      id: "t3",
-      title: "Cập nhật tài liệu API",
-      kind: "task",
-      date: mk(12),
-      start: "13:00",
-      end: "15:00",
-      owner: { name: "Trang", seed: "trang" },
-    },
-    {
-      id: "m4",
-      title: "Sprint Planning",
-      kind: "meeting",
-      date: mk(15),
-      start: "09:30",
-      end: "11:00",
-      location: "Meet Room B",
-      owner: { name: "Minh", seed: "minh" },
-      attendees: [
-        { name: "An", seed: "an" },
-        { name: "Linh", seed: "linh" },
-        { name: "Bảo", seed: "bao" },
-        { name: "Khang", seed: "khang" },
-      ],
-    },
-    {
-      id: "t4",
-      title: "Triển khai test E2E",
-      kind: "task",
-      date: mk(16),
-      allDay: true,
-      owner: { name: "Khang", seed: "khang" },
-    },
-    {
-      id: "d3",
-      title: "Hạn ký hợp đồng NDA",
-      kind: "deadline",
-      date: mk(18),
-      start: "12:00",
-    },
-    {
-      id: "m5",
-      title: "Workshop AI Copilot",
-      kind: "meeting",
-      date: mk(20),
-      start: "10:00",
-      end: "12:00",
-      location: "Hội trường 3",
-      owner: { name: "Phong", seed: "phong" },
-      attendees: [
-        { name: "Hà", seed: "ha" },
-        { name: "Trang", seed: "trang" },
-      ],
-    },
-    {
-      id: "t5",
-      title: "Chuẩn bị slide báo cáo tháng",
-      kind: "task",
-      date: mk(21),
-      start: "14:00",
-      end: "17:00",
-      owner: { name: "Trang", seed: "trang" },
-    },
-    {
-      id: "d4",
-      title: "Deadline thanh toán nhà cung cấp",
-      kind: "deadline",
-      date: mk(24),
-      allDay: true,
-    },
-    {
-      id: "m6",
-      title: "All-hands Q3",
-      kind: "meeting",
-      date: mk(26),
-      start: "15:00",
-      end: "16:00",
-      location: "Zoom",
-      attendees: [
-        { name: "An", seed: "an" },
-        { name: "Bảo", seed: "bao" },
-        { name: "Linh", seed: "linh" },
-        { name: "Khang", seed: "khang" },
-        { name: "Trang", seed: "trang" },
-      ],
-    },
-    {
-      id: "t6",
-      title: "Onboarding nhân sự mới",
-      kind: "task",
-      date: mk(27),
-      start: "09:00",
-      end: "11:00",
-      owner: { name: "Hà", seed: "ha" },
-    },
-  ];
-}
-
 type ViewMode = "month" | "week";
 
 function CalendarPage() {
@@ -298,7 +123,44 @@ function CalendarPage() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
 
-  const events = useMemo(() => buildEvents(cursor), [cursor]);
+  // Khoảng thời gian tải dữ liệu: phủ trọn lưới tháng và tuần đang xem
+  const range = useMemo(() => {
+    const gridStart = addDays(startOfMonthGrid(cursor), -7);
+    const weekStart = addDays(startOfWeek(cursor), -7);
+    const rangeFrom = gridStart < weekStart ? gridStart : weekStart;
+    const rangeTo = addDays(rangeFrom, 70);
+    return { from: rangeFrom.toISOString(), to: rangeTo.toISOString() };
+  }, [cursor]);
+
+  const fetchEvents = useServerFn(listCalendarEvents);
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ["calendar-events", range.from, range.to],
+    queryFn: () => fetchEvents({ data: { from: range.from, to: range.to } }),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+
+  const events = useMemo<CalEvent[]>(
+    () =>
+      (data ?? []).map((e) => {
+        const at = new Date(e.at);
+        const end = e.endAt ? new Date(e.endAt) : null;
+        const hhmm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        return {
+          id: e.id,
+          title: e.title,
+          kind: e.kind,
+          date: isoDate(at),
+          start: e.allDay ? undefined : hhmm(at),
+          end: end ? hhmm(end) : undefined,
+          allDay: e.allDay,
+          location: e.location ?? undefined,
+          project: e.project ?? undefined,
+          attendees: e.attendees,
+        };
+      }),
+    [data],
+  );
 
   const visible = useMemo(
     () =>
