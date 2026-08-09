@@ -279,12 +279,12 @@ function PeoplePage() {
                 <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                   <Download className="h-4 w-4" /> {t("people.export")}
                 </button>
-                <button
-                  onClick={() => setAddOpen(true)}
+                <Link
+                  to="/workspace/invite"
                   className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4" /> {t("people.add")}
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -339,15 +339,29 @@ function PeoplePage() {
             {/* Tabs */}
             <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border">
               <Tab label={t("people.tab.all")} count={peopleList.length} active />
-              <Tab label={t("people.tab.teams")} count={16} />
-              <Tab label={t("people.tab.departments")} count={8} />
-              <Tab label={t("people.tab.positions")} count={24} />
+              <Tab label={t("people.tab.teams")} count={new Set(peopleList.flatMap((p) => p.teams)).size} />
+              <Tab label={t("people.tab.departments")} count={(data?.departments ?? []).length} />
+              <Tab label={t("people.tab.positions")} count={new Set(peopleList.map((p) => p.title).filter((x) => x && x !== "—")).size} />
               <Tab label={t("people.tab.skills")} />
               <Tab label={t("people.tab.org")} />
             </div>
 
             {/* Cards / List */}
-            {filtered.length === 0 ? (
+            {isPending ? (
+              <div className="flex items-center justify-center rounded-xl border border-border bg-surface/40 py-16 text-sm text-muted-foreground">
+                Đang tải danh sách nhân sự…
+              </div>
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-destructive/40 bg-surface/40 py-16 text-sm text-destructive">
+                Không tải được danh sách nhân sự.
+                <button
+                  onClick={() => refetch()}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-foreground hover:bg-surface-2"
+                >
+                  Thử lại
+                </button>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface/40 py-16 text-sm text-muted-foreground">
                 <UsersIcon className="mb-2 h-8 w-8 opacity-50" />
                 {t("people.empty")}
@@ -401,10 +415,18 @@ function PeoplePage() {
           </main>
 
           {/* Right panel */}
-          <PersonPanel person={selected} onClose={() => {}} />
+          {selected && (
+            <PersonPanel
+              person={selected}
+              peers={peopleList.filter((p) => p.id !== selected.id)}
+              canManage={canManage || selected.id === data?.people.find((x) => x.isSelf)?.id}
+              onEdit={() => handleEdit(selected)}
+              onOpenDetail={() => navigate({ to: "/people/$id", params: { id: selected.id } })}
+              onClose={() => {}}
+            />
+          )}
         </div>
       </div>
-      <AddPersonDialog open={addOpen} onClose={() => setAddOpen(false)} />
       <EditPersonDialog
         open={editOpen}
         person={editingPerson}
@@ -412,13 +434,9 @@ function PeoplePage() {
           setEditOpen(false);
           setEditingPerson(null);
         }}
-        onSave={(updated) => {
-          setPeopleList((prev) =>
-            prev.map((p) => (p.id === updated.id ? updated : p)),
-          );
-          setEditOpen(false);
-          setEditingPerson(null);
-        }}
+        canManageRole={canManage}
+        saving={saveMutation.isPending}
+        onSave={(updated) => saveMutation.mutate(updated)}
       />
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="bg-surface border-border">
@@ -651,7 +669,20 @@ function IconBtn({ children, className = "" }: { children: React.ReactNode; clas
   );
 }
 
-function PersonPanel({ person }: { person: Person; onClose: () => void }) {
+function PersonPanel({
+  person,
+  peers,
+  canManage,
+  onEdit,
+  onOpenDetail,
+}: {
+  person: Person;
+  peers: Person[];
+  canManage: boolean;
+  onEdit: () => void;
+  onOpenDetail: () => void;
+  onClose: () => void;
+}) {
   const { t } = useI18n();
   const [tab, setTab] = useState<"overview" | "profile" | "activity" | "files" | "tasks">(
     "overview",
@@ -704,7 +735,21 @@ function PersonPanel({ person }: { person: Person; onClose: () => void }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 px-5 py-4">
+      <div className="flex flex-wrap items-center gap-2 px-5 py-4">
+        <button
+          onClick={onOpenDetail}
+          className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs hover:bg-surface-3"
+        >
+          Xem hồ sơ
+        </button>
+        {canManage && (
+          <button
+            onClick={onEdit}
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Chỉnh sửa
+          </button>
+        )}
         <IconBtn>
           <MessageCircle className="h-4 w-4" />
         </IconBtn>
@@ -739,7 +784,7 @@ function PersonPanel({ person }: { person: Person; onClose: () => void }) {
       </div>
 
       <div className="flex-1 space-y-6 px-5 py-5 text-sm">
-        {tab === "overview" && <OverviewTab person={person} />}
+        {tab === "overview" && <OverviewTab person={person} peers={peers} />}
         {tab === "profile" && <ProfileTab person={person} />}
         {tab === "activity" && <ActivityTab />}
         {tab === "files" && <FilesTab />}
@@ -757,7 +802,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function OverviewTab({ person }: { person: Person }) {
+function OverviewTab({ person, peers }: { person: Person; peers: Person[] }) {
   const { t } = useI18n();
   return (
     <>
@@ -782,9 +827,11 @@ function OverviewTab({ person }: { person: Person }) {
         </div>
       </section>
       <section>
-        <SectionTitle>{t("people.panel.direct")} (8)</SectionTitle>
+        <SectionTitle>
+          {t("people.panel.direct")} ({peers.length})
+        </SectionTitle>
         <div className="flex -space-x-2">
-          {DEFAULT_PEOPLE.slice(1, 6).map((p) => (
+          {peers.slice(0, 6).map((p) => (
             <img
               key={p.id}
               src={avatar(p.seed)}
@@ -793,9 +840,11 @@ function OverviewTab({ person }: { person: Person }) {
               className="h-8 w-8 rounded-full border-2 border-surface object-cover"
             />
           ))}
-          <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-[10px] text-muted-foreground">
-            +3
-          </span>
+          {peers.length > 6 && (
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-[10px] text-muted-foreground">
+              +{peers.length - 6}
+            </span>
+          )}
         </div>
       </section>
     </>
@@ -1241,161 +1290,6 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="text-foreground">{value}</span>
     </div>
-  );
-}
-
-function AddPersonDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    title: "",
-    department: "",
-    role: "",
-    location: "",
-    empId: "",
-    joinDate: "",
-    about: "",
-  });
-
-  const handleChange = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onClose();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto bg-surface">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Thêm nhân sự mới</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Họ và tên</label>
-              <Input
-                placeholder="Nguyễn Văn A"
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="a.nguyen@uniwork.vn"
-                value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Số điện thoại</label>
-              <Input
-                type="tel"
-                placeholder="(+84) 912 345 678"
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Chức danh</label>
-              <Input
-                placeholder="Senior Developer"
-                value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Phòng ban</label>
-              <select
-                value={form.department}
-                onChange={(e) => handleChange("department", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn phòng ban</option>
-                {departments.filter((d) => d !== "All").map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Vai trò</label>
-              <select
-                value={form.role}
-                onChange={(e) => handleChange("role", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn vai trò</option>
-                {roles.filter((r) => r !== "All").map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Địa điểm</label>
-              <select
-                value={form.location}
-                onChange={(e) => handleChange("location", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn địa điểm</option>
-                {locations.filter((l) => l !== "All").map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Mã nhân viên</label>
-              <Input
-                placeholder="UNI-0000"
-                value={form.empId}
-                onChange={(e) => handleChange("empId", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Ngày vào làm</label>
-              <Input
-                type="date"
-                value={form.joinDate}
-                onChange={(e) => handleChange("joinDate", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">Giới thiệu</label>
-            <Textarea
-              placeholder="Mô tả ngắn về nhân sự…"
-              value={form.about}
-              onChange={(e) => handleChange("about", e.target.value)}
-              className="min-h-[80px] bg-surface-2"
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
-            >
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Thêm nhân sự
-            </button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 
