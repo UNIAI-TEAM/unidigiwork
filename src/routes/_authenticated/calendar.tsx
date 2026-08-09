@@ -19,6 +19,9 @@ import {
   Users as UsersIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { Link } from "@tanstack/react-router";
+import { getMeeting } from "@/lib/api/meetings.functions";
+import { Loader2, FileText, Radio } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
@@ -625,27 +628,60 @@ function WeekGrid({
 function EventDetail({ event, onClose }: { event: CalEvent; onClose: () => void }) {
   const meta = KIND_META[event.kind];
   const Icon = meta.icon;
+  const meetingId =
+    event.kind === "meeting" && event.id.startsWith("meeting:") ? event.id.slice("meeting:".length) : null;
+
+  const fetchMeeting = useServerFn(getMeeting);
+  const detailQ = useQuery({
+    queryKey: ["calendar-meeting", meetingId],
+    queryFn: () => fetchMeeting({ data: { meetingId: meetingId! } }),
+    enabled: !!meetingId,
+    staleTime: 30_000,
+  });
+  const detail = detailQ.data as
+    | { agenda: string | null; status: string; location: string | null; conference_provider: string | null }
+    | undefined;
+
+  const STATUS_LABEL: Record<string, string> = {
+    scheduled: "Đã lên lịch",
+    live: "Đang diễn ra",
+    ended: "Đã kết thúc",
+    canceled: "Đã huỷ",
+  };
+  const canJoin = !!meetingId && detail?.status !== "canceled" && detail?.status !== "ended";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/40 p-4 sm:items-center sm:justify-center">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-end bg-black/40 p-4 sm:items-center sm:justify-center"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="flex items-start gap-3 border-b border-border p-4">
-          <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta.chip} border`}
-          >
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${meta.chip} border`}>
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-medium text-muted-foreground">{meta.label}</div>
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              {meta.label}
+              {detail?.status && (
+                <span className="rounded-full border border-border px-1.5 py-0.5 text-[10px]">
+                  {STATUS_LABEL[detail.status] ?? detail.status}
+                </span>
+              )}
+            </div>
             <div className="truncate text-base font-semibold">{event.title}</div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-surface-2"
-          >
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-surface-2" aria-label="Đóng">
             ✕
           </button>
         </div>
-        <div className="space-y-3 p-4 text-sm">
+        <div className="max-h-[60vh] space-y-3 overflow-y-auto p-4 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span>
@@ -662,10 +698,16 @@ function EventDetail({ event, onClose }: { event: CalEvent; onClose: () => void 
                   : ""}
             </span>
           </div>
-          {event.location && (
+          {(event.location || detail?.location) && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span>{event.location}</span>
+              <span>{event.location ?? detail?.location}</span>
+            </div>
+          )}
+          {detail?.conference_provider && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Radio className="h-4 w-4" />
+              <span className="uppercase">{detail.conference_provider}</span>
             </div>
           )}
           {event.project && (
@@ -674,6 +716,28 @@ function EventDetail({ event, onClose }: { event: CalEvent; onClose: () => void 
               <span>{event.project}</span>
             </div>
           )}
+
+          {meetingId && (
+            <div>
+              <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <FileText className="h-3.5 w-3.5" /> Agenda
+              </div>
+              {detailQ.isPending ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải nội dung họp…
+                </div>
+              ) : detailQ.isError ? (
+                <p className="text-xs text-destructive">Không tải được chi tiết cuộc họp.</p>
+              ) : detail?.agenda ? (
+                <p className="whitespace-pre-wrap rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
+                  {detail.agenda}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Chưa có agenda cho cuộc họp này.</p>
+              )}
+            </div>
+          )}
+
           {event.attendees && event.attendees.length > 0 && (
             <div>
               <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -685,11 +749,7 @@ function EventDetail({ event, onClose }: { event: CalEvent; onClose: () => void 
                     key={a.seed}
                     className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-2 py-1 text-xs"
                   >
-                    <img
-                      src={avatar(a.seed)}
-                      alt={a.name}
-                      className="h-5 w-5 rounded-full"
-                    />
+                    <img src={avatar(a.seed)} alt={a.name} className="h-5 w-5 rounded-full" />
                     {a.name}
                   </div>
                 ))}
@@ -704,9 +764,25 @@ function EventDetail({ event, onClose }: { event: CalEvent; onClose: () => void 
           >
             Đóng
           </button>
-          <button className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            {event.kind === "meeting" ? "Tham gia" : "Mở chi tiết"}
-          </button>
+          {meetingId ? (
+            canJoin ? (
+              <Link
+                to="/meeting/$id"
+                params={{ id: meetingId }}
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Tham gia
+              </Link>
+            ) : (
+              <Link
+                to="/meeting/$id"
+                params={{ id: meetingId }}
+                className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+              >
+                Xem chi tiết
+              </Link>
+            )
+          ) : null}
         </div>
       </div>
     </div>
