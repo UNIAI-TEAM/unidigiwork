@@ -1984,6 +1984,75 @@ export type Database = {
           },
         ]
       }
+      tenant_member_profiles: {
+        Row: {
+          about: string | null
+          created_at: string
+          department: string | null
+          emp_id: string | null
+          join_date: string | null
+          location: string | null
+          phone: string | null
+          reports_to: string | null
+          skills: string[]
+          team: string | null
+          teams: string[]
+          tenant_id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          about?: string | null
+          created_at?: string
+          department?: string | null
+          emp_id?: string | null
+          join_date?: string | null
+          location?: string | null
+          phone?: string | null
+          reports_to?: string | null
+          skills?: string[]
+          team?: string | null
+          teams?: string[]
+          tenant_id: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          about?: string | null
+          created_at?: string
+          department?: string | null
+          emp_id?: string | null
+          join_date?: string | null
+          location?: string | null
+          phone?: string | null
+          reports_to?: string | null
+          skills?: string[]
+          team?: string | null
+          teams?: string[]
+          tenant_id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_member_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_member_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_members: {
         Row: {
           created_at: string
