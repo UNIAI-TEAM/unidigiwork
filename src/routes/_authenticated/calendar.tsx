@@ -272,8 +272,9 @@ function CalendarPage() {
         if (e.conferenceProvider) lines.push(`Nền tảng họp: ${e.conferenceProvider}`);
         if (e.meetingStatus) lines.push(`Trạng thái: ${statusLabel[e.meetingStatus]}`);
         if (e.priority) lines.push(`Mức độ: ${priorityLabel[e.priority] ?? e.priority}`);
-        if (e.attendees.length > 0)
-          lines.push(`Thành viên: ${e.attendees.map((a) => a.name).join(", ")}`);
+        const atts = e.attendees ?? [];
+        if (atts.length > 0)
+          lines.push(`Thành viên: ${atts.map((a) => a.name).join(", ")}`);
         if (e.agenda) lines.push("", "Agenda:", e.agenda);
         lines.push("", `Mở trong UNIWORK: ${url}`);
         return {
@@ -290,7 +291,7 @@ function CalendarPage() {
             e.meetingStatus === "canceled"
               ? ("cancelled" as const)
               : ("confirmed" as const),
-          attendees: e.attendees.map((a) => a.name),
+          attendees: atts.map((a) => a.name),
           categories: [
             ...(e.project ? [e.project] : []),
             ...(e.priority ? [priorityLabel[e.priority] ?? e.priority] : []),
