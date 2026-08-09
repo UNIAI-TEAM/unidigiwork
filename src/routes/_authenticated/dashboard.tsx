@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getDashboardOverview } from "@/lib/api/dashboard.functions";
+import type { DashboardOverview as DashboardData } from "@/lib/api/dashboard.functions";
 import {
   Users,
   Activity,
