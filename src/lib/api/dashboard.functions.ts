@@ -117,9 +117,16 @@ export const getDashboardOverview = createServerFn({ method: "GET" })
 
     const overview = (overviewR.data ?? null) as ReportOverview | null;
 
-    type Raw = { id: string; label: string; at: string; by: string | null; area: DashboardRecentItem["area"]; what: string };
+    type Raw = {
+      id: string;
+      label: string;
+      at: string;
+      by: string | null;
+      area: DashboardRecentItem["area"];
+      what: string;
+    };
     const raw: Raw[] = [
-      ...((tasksR.data ?? []) as any[]).map((t) => ({
+      ...((tasksR.data ?? []) as Array<Record<string, unknown>>).map((t) => ({
         id: `task-${t.id}`,
         label: t.title as string,
         at: t.updated_at as string,
@@ -127,7 +134,7 @@ export const getDashboardOverview = createServerFn({ method: "GET" })
         area: "Tasks" as const,
         what: t.status === "done" ? "đã hoàn thành nhiệm vụ" : "đã cập nhật nhiệm vụ",
       })),
-      ...((docsR.data ?? []) as any[]).map((d) => ({
+      ...((docsR.data ?? []) as Array<Record<string, unknown>>).map((d) => ({
         id: `doc-${d.id}`,
         label: d.title as string,
         at: d.updated_at as string,
@@ -135,7 +142,7 @@ export const getDashboardOverview = createServerFn({ method: "GET" })
         area: "Documents" as const,
         what: "đã cập nhật tài liệu",
       })),
-      ...((meetsR.data ?? []) as any[]).map((m) => ({
+      ...((meetsR.data ?? []) as Array<Record<string, unknown>>).map((m) => ({
         id: `meet-${m.id}`,
         label: m.title as string,
         at: m.updated_at as string,
@@ -143,7 +150,7 @@ export const getDashboardOverview = createServerFn({ method: "GET" })
         area: "Meetings" as const,
         what: "đã cập nhật cuộc họp",
       })),
-      ...((wfR.data ?? []) as any[]).map((w) => ({
+      ...((wfR.data ?? []) as Array<Record<string, unknown>>).map((w) => ({
         id: `wf-${w.id}`,
         label: w.name as string,
         at: w.updated_at as string,
@@ -164,7 +171,10 @@ export const getDashboardOverview = createServerFn({ method: "GET" })
         .select("id, display_name, primary_email")
         .in("id", userIds);
       for (const u of users ?? [])
-        names.set(u.id as string, (u.display_name as string) || (u.primary_email as string) || "Thành viên");
+        names.set(
+          u.id as string,
+          (u.display_name as string) || (u.primary_email as string) || "Thành viên",
+        );
     }
 
     const recent: DashboardRecentItem[] = raw.map((r) => ({
@@ -176,11 +186,17 @@ export const getDashboardOverview = createServerFn({ method: "GET" })
       at: r.at,
     }));
 
-    const projects: DashboardProject[] = (overview?.workspaces ?? [])
-      .slice(0, 4)
-      .map((w) => ({ id: w.id, name: w.name, progress: w.progress, tasks: w.tasks, members: w.members }));
+    const projects: DashboardProject[] = (overview?.workspaces ?? []).slice(0, 4).map((w) => ({
+      id: w.id,
+      name: w.name,
+      progress: w.progress,
+      tasks: w.tasks,
+      members: w.members,
+    }));
 
-    const meetings: DashboardMeeting[] = ((todayR.data ?? []) as any[]).map((m) => ({
+    const meetings: DashboardMeeting[] = (
+      (todayR.data ?? []) as Array<Record<string, unknown>>
+    ).map((m) => ({
       id: m.id as string,
       title: m.title as string,
       start_at: m.start_at as string,

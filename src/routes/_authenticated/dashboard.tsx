@@ -162,12 +162,15 @@ function buildDonut(o: DashboardData["overview"]): { slices: DonutSlice[]; total
   };
 }
 
-const PROJECT_COLORS = ["bg-emerald-500", "bg-sky-500", "bg-violet-500", "bg-orange-500", "bg-rose-500"];
+const PROJECT_COLORS = [
+  "bg-emerald-500",
+  "bg-sky-500",
+  "bg-violet-500",
+  "bg-orange-500",
+  "bg-rose-500",
+];
 
-const AREA_META: Record<
-  string,
-  { icon: typeof FileText; tint: string }
-> = {
+const AREA_META: Record<string, { icon: typeof FileText; tint: string }> = {
   Documents: { icon: FileText, tint: "text-sky-300" },
   Tasks: { icon: CheckCircle2, tint: "text-emerald-300" },
   Meetings: { icon: Video, tint: "text-rose-300" },
