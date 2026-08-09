@@ -53,6 +53,8 @@ type CalEvent = {
   end?: string; // HH:mm
   allDay?: boolean;
   location?: string;
+  agenda?: string | null;
+  conferenceProvider?: string | null;
   owner?: { name: string; seed: string };
   attendees?: { name: string; seed: string }[];
   project?: string;
@@ -193,6 +195,8 @@ function CalendarPage() {
           end: end ? hhmm(end) : undefined,
           allDay: e.allDay,
           location: e.location ?? undefined,
+          agenda: e.agenda ?? null,
+          conferenceProvider: e.conferenceProvider ?? null,
           project: e.project ?? undefined,
           attendees: e.attendees,
           meetingStatus: e.meetingStatus,
