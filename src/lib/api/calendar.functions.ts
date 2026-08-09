@@ -16,6 +16,10 @@ export type CalendarEventDTO = {
   endAt: string | null;
   allDay: boolean;
   location: string | null;
+  /** Agenda/nội dung chi tiết (meeting) */
+  agenda: string | null;
+  /** Nền tảng họp trực tuyến (livekit, zoom, ...) */
+  conferenceProvider: string | null;
   project: string | null;
   attendees: { name: string; seed: string }[];
   /** Trạng thái hiển thị của meeting: upcoming | past | canceled */
@@ -42,7 +46,9 @@ export const listCalendarEvents = createServerFn({ method: "GET" })
 
     let meetingsQ = supabase
       .from("meetings")
-      .select("id, title, start_at, end_at, location, workspace_id, status")
+      .select(
+        "id, title, agenda, start_at, end_at, location, workspace_id, status, conference_provider, timezone",
+      )
       .is("deleted_at", null)
       .gte("start_at", from)
       .lte("start_at", to)
@@ -125,6 +131,8 @@ export const listCalendarEvents = createServerFn({ method: "GET" })
         endAt: m.end_at,
         allDay: false,
         location: m.location ?? null,
+        agenda: m.agenda ?? null,
+        conferenceProvider: m.conference_provider ?? null,
         project: m.workspace_id ? (wsMap.get(m.workspace_id) ?? null) : null,
         attendees: attendeeMap.get(m.id) ?? [],
         meetingStatus:
@@ -148,6 +156,8 @@ export const listCalendarEvents = createServerFn({ method: "GET" })
         endAt: null,
         allDay: false,
         location: null,
+        agenda: null,
+        conferenceProvider: null,
         project: t.workspace_id ? (wsMap.get(t.workspace_id) ?? null) : null,
         attendees: [],
         meetingStatus: null,

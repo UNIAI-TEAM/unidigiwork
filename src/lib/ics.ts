@@ -8,6 +8,14 @@ export type IcsEvent = {
   allDay?: boolean;
   location?: string | null;
   description?: string | null;
+  /** Trạng thái sự kiện (map sang STATUS của RFC 5545) */
+  status?: "confirmed" | "tentative" | "cancelled" | null;
+  /** Link tham gia / xem chi tiết */
+  url?: string | null;
+  /** Danh sách người tham dự (tên hiển thị) */
+  attendees?: string[];
+  /** Nhãn phân loại thêm */
+  categories?: string[];
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -71,6 +79,16 @@ export function buildIcs(events: IcsEvent[], calendarName = "UNIWORK"): string {
     lines.push(`SUMMARY:${escapeText(prefix + e.title)}`);
     if (e.location) lines.push(`LOCATION:${escapeText(e.location)}`);
     if (e.description) lines.push(`DESCRIPTION:${escapeText(e.description)}`);
+    if (e.url) lines.push(`URL:${escapeText(e.url)}`);
+    if (e.status) lines.push(`STATUS:${e.status.toUpperCase()}`);
+    const categories = [
+      e.kind === "meeting" ? "Họp" : e.kind === "deadline" ? "Hạn chót" : "Công việc",
+      ...(e.categories ?? []),
+    ];
+    lines.push(`CATEGORIES:${categories.map(escapeText).join(",")}`);
+    for (const a of e.attendees ?? []) {
+      lines.push(`ATTENDEE;CN=${escapeText(a)};ROLE=REQ-PARTICIPANT:invalid:nomail`);
+    }
     lines.push("END:VEVENT");
   }
 
