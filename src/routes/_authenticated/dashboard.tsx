@@ -384,6 +384,16 @@ function AvatarStack({ count, seed }: { count: number; seed: string }) {
 function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAI, setShowAI] = useState(true);
+  const [rangeDays, setRangeDays] = useState(7);
+  const { data } = useSuspenseQuery(dashboardQuery(rangeDays));
+
+  const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
+  const activity = useMemo(() => buildActivity(data.overview), [data.overview]);
+  const donut = useMemo(() => buildDonut(data.overview), [data.overview]);
+  const projects = data.projects;
+  const recent = data.recent;
+  const meetings = data.meetings;
+  const workspaces = data.overview?.workspaces ?? [];
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -401,10 +411,19 @@ function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Tổng quan hoạt động của tổ chức</p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" /> This week{" "}
-                  <ChevronRight className="h-3.5 w-3.5 rotate-90 text-muted-foreground" />
-                </button>
+                <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <select
+                    value={rangeDays}
+                    onChange={(e) => setRangeDays(Number(e.target.value))}
+                    className="bg-transparent text-sm focus:outline-none"
+                    aria-label="Khoảng thời gian"
+                  >
+                    <option value={7}>7 ngày qua</option>
+                    <option value={14}>14 ngày qua</option>
+                    <option value={30}>30 ngày qua</option>
+                  </select>
+                </div>
                 <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
                   <Settings2 className="h-4 w-4 text-muted-foreground" /> Customize
                 </button>
@@ -413,7 +432,7 @@ function DashboardPage() {
 
             {/* KPI grid */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {KPIS.map((k) => (
+              {kpis.map((k) => (
                 <KpiCard key={k.key} k={k} />
               ))}
             </div>
@@ -423,14 +442,14 @@ function DashboardPage() {
               <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
-                  <button className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-xs hover:bg-surface">
-                    7 ngày qua <ChevronRight className="h-3 w-3 rotate-90" />
-                  </button>
+                  <span className="rounded-md border border-border bg-surface-2 px-2.5 py-1 text-xs text-muted-foreground">
+                    {rangeDays} ngày qua
+                  </span>
                 </div>
                 <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_180px]">
-                  <ActivityChart />
+                  <ActivityChart activity={activity} />
                   <ul className="space-y-3 text-sm">
-                    {ACTIVITY.series.map((s) => (
+                    {activity.series.map((s) => (
                       <li key={s.name}>
                         <div className="flex items-center gap-2">
                           <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
@@ -449,9 +468,9 @@ function DashboardPage() {
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
                 <div className="mt-4 flex flex-col items-center gap-4">
-                  <Donut />
+                  <Donut slices={donut.slices} total={donut.total} />
                   <ul className="w-full space-y-2 text-sm">
-                    {DONUT.map((d) => (
+                    {donut.slices.map((d) => (
                       <li key={d.label} className="flex items-center justify-between">
                         <span className="flex items-center gap-2 text-muted-foreground">
                           <span className="h-2 w-2 rounded-full" style={{ background: d.color }} />{" "}
@@ -476,37 +495,38 @@ function DashboardPage() {
                   <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
                   <button className="text-xs text-primary hover:underline">Xem tất cả</button>
                 </div>
-                <ul className="mt-4 space-y-3">
-                  {PROJECTS.map((p) => (
-                    <li
-                      key={p.name}
-                      className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white ${p.color}`}
-                        >
-                          {p.letter}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{p.name}</div>
-                          <div className="text-[11px] text-muted-foreground">
-                            Tiến độ: {p.progress}%
+                {projects.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted-foreground">Chưa có dự án nào.</p>
+                ) : (
+                  <ul className="mt-4 space-y-3">
+                    {projects.map((p, idx) => (
+                      <li
+                        key={p.id}
+                        className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                          >
+                            {p.name.charAt(0).toUpperCase()}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">{p.name}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              Tiến độ: {p.progress}% · {p.tasks} nhiệm vụ · {p.members} thành viên
+                            </div>
                           </div>
                         </div>
-                        <button className="rounded p-1 text-muted-foreground hover:bg-surface">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400"
-                          style={{ width: `${p.progress}%` }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400"
+                            style={{ width: `${p.progress}%` }}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Recent activity */}
@@ -515,39 +535,44 @@ function DashboardPage() {
                   <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
                   <button className="text-xs text-primary hover:underline">Xem tất cả</button>
                 </div>
-                <ul className="mt-4 space-y-3">
-                  {RECENT.map((r, i) => {
-                    const Icon = r.icon;
-                    return (
-                      <li key={i} className="flex items-start gap-3">
-                        <div className="relative">
-                          <img
-                            src={avatar(r.who)}
-                            alt=""
-                            className="h-9 w-9 rounded-full object-cover"
-                          />
-                          <span
-                            className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-surface-2 ${r.tint}`}
-                          >
-                            <Icon className="h-2.5 w-2.5" />
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1 text-sm">
-                          <div className="leading-snug">
-                            <span className="font-medium">{r.who}</span>{" "}
-                            <span className="text-muted-foreground">{r.what}</span>{" "}
-                            <span className="font-medium">{r.target}</span>
+                {recent.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
+                ) : (
+                  <ul className="mt-4 space-y-3">
+                    {recent.map((r) => {
+                      const meta = AREA_META[r.area] ?? AREA_META.Tasks;
+                      const Icon = meta.icon;
+                      return (
+                        <li key={r.id} className="flex items-start gap-3">
+                          <div className="relative">
+                            <img
+                              src={avatar(r.who)}
+                              alt=""
+                              className="h-9 w-9 rounded-full object-cover"
+                            />
+                            <span
+                              className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-surface-2 ${meta.tint}`}
+                            >
+                              <Icon className="h-2.5 w-2.5" />
+                            </span>
                           </div>
-                          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            <span>{r.area}</span>
-                            <span>·</span>
-                            <span>{r.time}</span>
+                          <div className="min-w-0 flex-1 text-sm">
+                            <div className="leading-snug">
+                              <span className="font-medium">{r.who}</span>{" "}
+                              <span className="text-muted-foreground">{r.what}</span>{" "}
+                              <span className="font-medium">{r.target}</span>
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                              <span>{r.area}</span>
+                              <span>·</span>
+                              <span>{fmtTime(r.at)}</span>
+                            </div>
                           </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
 
               {/* Meetings today */}
@@ -556,28 +581,36 @@ function DashboardPage() {
                   <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
                   <button className="text-xs text-primary hover:underline">Xem lịch đầy đủ</button>
                 </div>
-                <ul className="mt-4 space-y-3">
-                  {MEETINGS.map((m) => (
-                    <li
-                      key={m.title}
-                      className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3"
-                    >
-                      <div className="w-14 shrink-0">
-                        <div className="text-sm font-semibold tabular-nums">{m.time}</div>
-                        <div className="text-[11px] text-muted-foreground">{m.dur}</div>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{m.title}</div>
-                        <div className="mt-1">
-                          <AvatarStack count={m.count} seed={m.title} />
+                {meetings.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted-foreground">Hôm nay không có cuộc họp.</p>
+                ) : (
+                  <ul className="mt-4 space-y-3">
+                    {meetings.map((m) => (
+                      <li
+                        key={m.id}
+                        className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                      >
+                        <div className="w-14 shrink-0">
+                          <div className="text-sm font-semibold tabular-nums">
+                            {fmtTime(m.start_at)}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {fmtDur(m.start_at, m.end_at)}
+                          </div>
                         </div>
-                      </div>
-                      <button className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20">
-                        Join
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{m.title}</div>
+                          <div className="mt-1">
+                            <AvatarStack count={m.participants} seed={m.id} />
+                          </div>
+                        </div>
+                        <button className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20">
+                          Tham gia
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
 
@@ -589,36 +622,43 @@ function DashboardPage() {
                   <TrendingUp className="h-3.5 w-3.5" /> So sánh
                 </button>
               </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {WORKSPACES.map((w) => (
-                  <div
-                    key={w.name}
-                    className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`flex h-7 w-7 items-center justify-center rounded text-[12px] font-semibold text-white ${w.color}`}
-                      >
-                        {w.letter}
-                      </span>
-                      <div className="truncate text-sm font-medium">{w.name}</div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-1 text-xs">
-                      <div>
-                        <div className="text-base font-semibold tabular-nums">{w.members}</div>
-                        <div className="text-[10px] text-muted-foreground">thành viên</div>
+              {workspaces.length === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground">Chưa có không gian làm việc.</p>
+              ) : (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  {workspaces.slice(0, 5).map((w, idx) => (
+                    <div
+                      key={w.id}
+                      className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded text-[12px] font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                        >
+                          {w.name.charAt(0).toUpperCase()}
+                        </span>
+                        <div className="truncate text-sm font-medium">{w.name}</div>
                       </div>
-                      <div>
-                        <div className="text-base font-semibold tabular-nums">{w.projects}</div>
-                        <div className="text-[10px] text-muted-foreground">dự án</div>
+                      <div className="mt-3 grid grid-cols-2 gap-1 text-xs">
+                        <div>
+                          <div className="text-base font-semibold tabular-nums">{w.members}</div>
+                          <div className="text-[10px] text-muted-foreground">thành viên</div>
+                        </div>
+                        <div>
+                          <div className="text-base font-semibold tabular-nums">{w.tasks}</div>
+                          <div className="text-[10px] text-muted-foreground">nhiệm vụ</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${w.progress}%` }}
+                        />
                       </div>
                     </div>
-                    <div className="mt-2">
-                      <Sparkline data={w.trend} stroke={w.stroke} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
