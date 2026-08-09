@@ -29,6 +29,8 @@ import {
   Calculator,
   Minus,
   Plus,
+  HelpCircle,
+  ChevronDown,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
@@ -601,6 +603,50 @@ function Landing() {
             >
               <Bot className="h-4 w-4" /> {t("land.skill.cta")}
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ về nhân sự AI */}
+      <section
+        id="hire-ai-faq"
+        className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
+        aria-labelledby="hire-ai-faq-title"
+      >
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <HelpCircle className="h-3.5 w-3.5" /> {t("land.hire.faq.badge")}
+            </span>
+            <h2
+              id="hire-ai-faq-title"
+              className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl"
+            >
+              {t("land.hire.faq.title")}
+            </h2>
+          </div>
+
+          <div className="mt-10 space-y-3">
+            {([
+              { q: "land.hire.faq.q1", a: "land.hire.faq.a1" },
+              { q: "land.hire.faq.q2", a: "land.hire.faq.a2" },
+              { q: "land.hire.faq.q3", a: "land.hire.faq.a3" },
+              { q: "land.hire.faq.q4", a: "land.hire.faq.a4" },
+              { q: "land.hire.faq.q5", a: "land.hire.faq.a5" },
+            ] as const).map((item) => (
+              <details
+                key={item.q}
+                className="group rounded-xl border border-border bg-card open:bg-surface/40"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 text-sm font-semibold transition-colors hover:bg-muted/40 sm:p-5">
+                  <span className="pr-2">{t(item.q)}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="px-4 pb-4 text-sm leading-relaxed text-muted-foreground sm:px-5 sm:pb-5">
+                  {t(item.a)}
+                </p>
+              </details>
+            ))}
           </div>
         </div>
       </section>
