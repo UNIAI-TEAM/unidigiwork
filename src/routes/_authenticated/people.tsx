@@ -1296,26 +1296,35 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 function EditPersonDialog({
   open,
   person,
+  canManageRole,
+  saving,
   onClose,
   onSave,
 }: {
   open: boolean;
   person: Person | null;
+  canManageRole: boolean;
+  saving: boolean;
   onClose: () => void;
-  onSave: (updated: Person) => void;
+  onSave: (person: Person) => void;
 }) {
-  const [form, setForm] = useState({
+  const empty = {
     name: "",
     email: "",
     phone: "",
     title: "",
     department: "",
-    role: "",
+    team: "",
+    role: "member",
     location: "",
     empId: "",
     joinDate: "",
+    reportsTo: "",
+    skills: "",
+    teams: "",
     about: "",
-  });
+  };
+  const [form, setForm] = useState(empty);
 
   useEffect(() => {
     if (person) {
@@ -1323,24 +1332,63 @@ function EditPersonDialog({
         name: person.name,
         email: person.email,
         phone: person.phone,
-        title: person.title,
+        title: person.title === "—" ? "" : person.title,
         department: person.department,
+        team: person.team === "—" ? "" : person.team,
         role: person.role,
         location: person.location,
         empId: person.empId,
         joinDate: person.joinDate,
+        reportsTo: person.reportsTo,
+        skills: person.skills.join(", "),
+        teams: person.teams.join(", "),
         about: person.about,
       });
     }
   }, [person]);
 
-  const handleChange = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  const handleChange = (k: keyof typeof form, v: string) =>
+    setForm((prev) => ({ ...prev, [k]: v }));
+
+  const split = (v: string) =>
+    v
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!person) return;
-    onSave({ ...person, ...form });
+    onSave({
+      ...person,
+      name: form.name,
+      phone: form.phone,
+      title: form.title,
+      department: form.department,
+      team: form.team,
+      role: form.role,
+      location: form.location,
+      empId: form.empId,
+      joinDate: form.joinDate,
+      reportsTo: form.reportsTo,
+      about: form.about,
+      skills: split(form.skills),
+      teams: split(form.teams),
+    });
   };
+
+  const field = (label: string, key: keyof typeof form, placeholder = "", type = "text") => (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium">{label}</label>
+      <Input
+        type={type}
+        placeholder={placeholder}
+        value={form[key]}
+        onChange={(e) => handleChange(key, e.target.value)}
+        className="bg-surface-2"
+      />
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -1350,102 +1398,37 @@ function EditPersonDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Họ và tên</label>
-              <Input
-                placeholder="Nguyễn Văn A"
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
+            {field("Họ và tên", "name", "Nguyễn Văn A")}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="a.nguyen@uniwork.vn"
-                value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                className="bg-surface-2"
-              />
+              <Input value={form.email} disabled className="bg-surface-2 opacity-70" />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Số điện thoại</label>
-              <Input
-                type="tel"
-                placeholder="(+84) 912 345 678"
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Chức danh</label>
-              <Input
-                placeholder="Senior Developer"
-                value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Phòng ban</label>
-              <select
-                value={form.department}
-                onChange={(e) => handleChange("department", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn phòng ban</option>
-                {departments.filter((d) => d !== "All").map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
+            {field("Số điện thoại", "phone", "(+84) 912 345 678", "tel")}
+            {field("Chức danh", "title", "Senior Developer")}
+            {field("Phòng ban", "department", "Engineering")}
+            {field("Nhóm", "team", "Platform Team")}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Vai trò</label>
               <select
                 value={form.role}
+                disabled={!canManageRole}
                 onChange={(e) => handleChange("role", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
               >
-                <option value="">Chọn vai trò</option>
-                {roles.filter((r) => r !== "All").map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                {TENANT_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
                 ))}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Địa điểm</label>
-              <select
-                value={form.location}
-                onChange={(e) => handleChange("location", e.target.value)}
-                className="w-full rounded-md border border-input bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">Chọn địa điểm</option>
-                {locations.filter((l) => l !== "All").map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Mã nhân viên</label>
-              <Input
-                placeholder="UNI-0000"
-                value={form.empId}
-                onChange={(e) => handleChange("empId", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Ngày vào làm</label>
-              <Input
-                type="date"
-                value={form.joinDate}
-                onChange={(e) => handleChange("joinDate", e.target.value)}
-                className="bg-surface-2"
-              />
-            </div>
+            {field("Địa điểm", "location", "Hà Nội")}
+            {field("Mã nhân viên", "empId", "UNI-0000")}
+            {field("Ngày vào làm", "joinDate", "", "date")}
+            {field("Quản lý trực tiếp", "reportsTo", "Nguyễn Văn B")}
           </div>
+          {field("Kỹ năng (phân tách bằng dấu phẩy)", "skills", "React, SQL, Figma")}
+          {field("Nhóm tham gia (phân tách bằng dấu phẩy)", "teams", "Platform, Growth")}
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Giới thiệu</label>
             <Textarea
@@ -1465,9 +1448,10 @@ function EditPersonDialog({
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              disabled={saving}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             >
-              Lưu thay đổi
+              {saving ? "Đang lưu…" : "Lưu thay đổi"}
             </button>
           </div>
         </form>
