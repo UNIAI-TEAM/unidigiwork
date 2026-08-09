@@ -242,17 +242,57 @@ function CalendarPage() {
       toast.error("Không có sự kiện nào trong khoảng thời gian đang chọn");
       return;
     }
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const priorityLabel: Record<string, string> = {
+      urgent: "Khẩn cấp",
+      high: "Ưu tiên cao",
+      normal: "Bình thường",
+      low: "Thấp",
+    };
+    const statusLabel: Record<string, string> = {
+      upcoming: "Sắp diễn ra",
+      past: "Đã diễn ra",
+      canceled: "Đã huỷ",
+    };
     const ics = buildIcs(
-      items.map((e) => ({
-        id: e.id,
-        title: e.title,
-        kind: e.kind,
-        at: e.at!,
-        endAt: e.endAt,
-        allDay: e.allDay,
-        location: e.location ?? null,
-        description: e.project ? `Dự án: ${e.project}` : null,
-      })),
+      items.map((e) => {
+        const rawId = e.id.split(":")[1] ?? e.id;
+        const isMeeting = e.kind === "meeting";
+        const url = isMeeting ? `${origin}/meeting/${rawId}` : `${origin}/tasks/${rawId}`;
+        const lines: string[] = [];
+        lines.push(
+          isMeeting ? "Loại: Cuộc họp" : e.kind === "deadline" ? "Loại: Hạn chót" : "Loại: Công việc",
+        );
+        if (e.project) lines.push(`Dự án / Không gian: ${e.project}`);
+        if (e.location) lines.push(`Địa điểm: ${e.location}`);
+        if (e.conferenceProvider) lines.push(`Nền tảng họp: ${e.conferenceProvider}`);
+        if (e.meetingStatus) lines.push(`Trạng thái: ${statusLabel[e.meetingStatus]}`);
+        if (e.priority) lines.push(`Mức độ: ${priorityLabel[e.priority] ?? e.priority}`);
+        if (e.attendees.length > 0)
+          lines.push(`Thành viên: ${e.attendees.map((a) => a.name).join(", ")}`);
+        if (e.agenda) lines.push("", "Agenda:", e.agenda);
+        lines.push("", `Mở trong UNIWORK: ${url}`);
+        return {
+          id: e.id,
+          title: e.title,
+          kind: e.kind,
+          at: e.at!,
+          endAt: e.endAt,
+          allDay: e.allDay,
+          location: e.location ?? e.conferenceProvider ?? null,
+          description: lines.join("\n"),
+          url,
+          status:
+            e.meetingStatus === "canceled"
+              ? ("cancelled" as const)
+              : ("confirmed" as const),
+          attendees: e.attendees.map((a) => a.name),
+          categories: [
+            ...(e.project ? [e.project] : []),
+            ...(e.priority ? [priorityLabel[e.priority] ?? e.priority] : []),
+          ],
+        };
+      }),
       "UNIWORK — Lịch",
     );
     const from = isoDate(new Date(range.from));
