@@ -18,6 +18,10 @@ export type CalendarEventDTO = {
   location: string | null;
   project: string | null;
   attendees: { name: string; seed: string }[];
+  /** Trạng thái hiển thị của meeting: upcoming | past | canceled */
+  meetingStatus: "upcoming" | "past" | "canceled" | null;
+  /** Mức độ ưu tiên của task (low/normal/high/urgent) */
+  priority: "low" | "normal" | "high" | "urgent" | null;
 };
 
 export const listCalendarEvents = createServerFn({ method: "GET" })
@@ -110,6 +114,7 @@ export const listCalendarEvents = createServerFn({ method: "GET" })
     }
 
     const events: CalendarEventDTO[] = [];
+    const now = Date.now();
 
     for (const m of meetings) {
       events.push({
@@ -122,6 +127,13 @@ export const listCalendarEvents = createServerFn({ method: "GET" })
         location: m.location ?? null,
         project: m.workspace_id ? (wsMap.get(m.workspace_id) ?? null) : null,
         attendees: attendeeMap.get(m.id) ?? [],
+        meetingStatus:
+          m.status === "canceled"
+            ? "canceled"
+            : m.status === "ended" || (m.end_at ? new Date(m.end_at).getTime() < now : false)
+              ? "past"
+              : "upcoming",
+        priority: null,
       });
     }
 
@@ -138,6 +150,8 @@ export const listCalendarEvents = createServerFn({ method: "GET" })
         location: null,
         project: t.workspace_id ? (wsMap.get(t.workspace_id) ?? null) : null,
         attendees: [],
+        meetingStatus: null,
+        priority: (t.priority ?? "normal") as CalendarEventDTO["priority"],
       });
     }
 
