@@ -3,8 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, MapPin, Phone, Briefcase, CalendarDays, UserCog } from "lucide-react";
-import { AppSidebar, useSidebarState } from "@/components/app-sidebar";
-import { AppTopbar } from "@/components/app-topbar";
+import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { getPerson, removePerson } from "@/lib/api/people.functions";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
@@ -20,9 +19,6 @@ export const Route = createFileRoute("/_authenticated/people/$id")({
     ],
   }),
 });
-
-const avatar = (seed: string) =>
-  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
 function PersonDetailPage() {
   const { id } = Route.useParams();
