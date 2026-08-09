@@ -52,7 +52,25 @@ type CalEvent = {
   owner?: { name: string; seed: string };
   attendees?: { name: string; seed: string }[];
   project?: string;
+  meetingStatus?: "upcoming" | "past" | "canceled" | null;
+  priority?: "low" | "normal" | "high" | "urgent" | null;
 };
+
+type MeetingStatusKey = "upcoming" | "past" | "canceled";
+type TaskLevelKey = "urgent" | "high" | "other";
+
+const MEETING_STATUS_META: Record<MeetingStatusKey, string> = {
+  upcoming: "Sắp tới",
+  past: "Đã diễn ra",
+  canceled: "Đã huỷ",
+};
+const TASK_LEVEL_META: Record<TaskLevelKey, string> = {
+  urgent: "Khẩn cấp",
+  high: "Ưu tiên cao",
+  other: "Khác",
+};
+const taskLevelOf = (e: CalEvent): TaskLevelKey =>
+  e.priority === "urgent" ? "urgent" : e.priority === "high" ? "high" : "other";
 
 const KIND_META: Record<
   EventKind,
@@ -123,6 +141,16 @@ function CalendarPage() {
     task: true,
     deadline: true,
   });
+  const [meetingStatusFilter, setMeetingStatusFilter] = useState<Record<MeetingStatusKey, boolean>>({
+    upcoming: true,
+    past: true,
+    canceled: true,
+  });
+  const [taskLevelFilter, setTaskLevelFilter] = useState<Record<TaskLevelKey, boolean>>({
+    urgent: true,
+    high: true,
+    other: true,
+  });
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -160,6 +188,8 @@ function CalendarPage() {
           location: e.location ?? undefined,
           project: e.project ?? undefined,
           attendees: e.attendees,
+          meetingStatus: e.meetingStatus,
+          priority: e.priority,
         };
       }),
     [data],
@@ -169,10 +199,14 @@ function CalendarPage() {
     () =>
       events.filter((e) => {
         if (!filters[e.kind]) return false;
+        if (e.kind === "meeting") {
+          const st = (e.meetingStatus ?? "upcoming") as MeetingStatusKey;
+          if (!meetingStatusFilter[st]) return false;
+        } else if (!taskLevelFilter[taskLevelOf(e)]) return false;
         if (q && !e.title.toLowerCase().includes(q.toLowerCase())) return false;
         return true;
       }),
-    [events, filters, q],
+    [events, filters, meetingStatusFilter, taskLevelFilter, q],
   );
 
   const today = new Date();
@@ -244,6 +278,70 @@ function CalendarPage() {
                     </label>
                   );
                 })}
+              </div>
+
+              <div className="mt-3 border-t border-border pt-3">
+                <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Trạng thái họp
+                </div>
+                <div className="space-y-1">
+                  {(Object.keys(MEETING_STATUS_META) as MeetingStatusKey[]).map((k) => {
+                    const count = events.filter(
+                      (e) => e.kind === "meeting" && (e.meetingStatus ?? "upcoming") === k,
+                    ).length;
+                    return (
+                      <label
+                        key={k}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1 text-sm hover:bg-surface-2"
+                      >
+                        <input
+                          type="checkbox"
+                          className="accent-primary"
+                          disabled={!filters.meeting}
+                          checked={meetingStatusFilter[k]}
+                          onChange={(ev) =>
+                            setMeetingStatusFilter((f) => ({ ...f, [k]: ev.target.checked }))
+                          }
+                        />
+                        <span className="flex-1">{MEETING_STATUS_META[k]}</span>
+                        <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-muted-foreground">
+                          {count}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-3 border-t border-border pt-3">
+                <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Mức độ công việc
+                </div>
+                <div className="space-y-1">
+                  {(Object.keys(TASK_LEVEL_META) as TaskLevelKey[]).map((k) => {
+                    const count = events.filter((e) => e.kind !== "meeting" && taskLevelOf(e) === k).length;
+                    return (
+                      <label
+                        key={k}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1 text-sm hover:bg-surface-2"
+                      >
+                        <input
+                          type="checkbox"
+                          className="accent-primary"
+                          disabled={!filters.task && !filters.deadline}
+                          checked={taskLevelFilter[k]}
+                          onChange={(ev) =>
+                            setTaskLevelFilter((f) => ({ ...f, [k]: ev.target.checked }))
+                          }
+                        />
+                        <span className="flex-1">{TASK_LEVEL_META[k]}</span>
+                        <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-muted-foreground">
+                          {count}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
