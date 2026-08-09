@@ -31,6 +31,7 @@ import {
   Plus,
   HelpCircle,
   ChevronDown,
+  Quote,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
