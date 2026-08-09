@@ -450,6 +450,12 @@ function CalendarPage() {
         {selectedEvent && (
           <EventDetail event={selectedEvent} onClose={() => setSelected(null)} />
         )}
+
+        <CreateEventDialog
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          defaultDate={cursor}
+        />
       </main>
     </div>
   );
