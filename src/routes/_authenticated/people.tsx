@@ -150,18 +150,77 @@ const statusDot: Record<Status, string> = {
 function PeoplePage() {
   const [open, setOpen] = useSidebarState();
   const { t } = useI18n();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("All");
   const [role, setRole] = useState("All");
   const [location, setLocation] = useState("All");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [selectedId, setSelectedId] = useState<string>("p1");
-  const [addOpen, setAddOpen] = useState(false);
-  const [peopleList, setPeopleList] = useState<Person[]>(DEFAULT_PEOPLE);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [editOpen, setEditOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchPeople = useServerFn(listPeople);
+  const saveProfile = useServerFn(upsertPersonProfile);
+  const removeMember = useServerFn(removePerson);
+
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ["people"],
+    queryFn: () => fetchPeople(),
+    staleTime: 30_000,
+  });
+
+  const peopleList = useMemo<Person[]>(
+    () => (data?.people ?? []).map(dtoToPerson),
+    [data],
+  );
+  const canManage = data?.canManage ?? false;
+  const departments = useMemo(() => ["All", ...(data?.departments ?? [])], [data]);
+  const roles = useMemo(() => ["All", ...(data?.roles ?? [])], [data]);
+  const locations = useMemo(() => ["All", ...(data?.locations ?? [])], [data]);
+
+  const saveMutation = useMutation({
+    mutationFn: (input: Person) =>
+      saveProfile({
+        data: {
+          userId: input.id,
+          displayName: input.name,
+          title: input.title === "—" ? "" : input.title,
+          department: input.department,
+          team: input.team === "—" ? "" : input.team,
+          location: input.location,
+          phone: input.phone,
+          empId: input.empId,
+          joinDate: input.joinDate,
+          reportsTo: input.reportsTo,
+          skills: input.skills,
+          teams: input.teams,
+          about: input.about,
+          role: input.role,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Đã lưu thông tin nhân sự");
+      qc.invalidateQueries({ queryKey: ["people"] });
+      setEditOpen(false);
+      setEditingPerson(null);
+    },
+    onError: (e: Error) => toast.error(e.message || "Không lưu được"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => removeMember({ data: { userId } }),
+    onSuccess: () => {
+      toast.success("Đã gỡ nhân sự khỏi tổ chức");
+      qc.invalidateQueries({ queryKey: ["people"] });
+      setDeleteOpen(false);
+      setDeletingId(null);
+    },
+    onError: (e: Error) => toast.error(e.message || "Không gỡ được nhân sự"),
+  });
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -196,14 +255,7 @@ function PeoplePage() {
   };
 
   const confirmDelete = () => {
-    if (!deletingId) return;
-    setPeopleList((prev) => prev.filter((p) => p.id !== deletingId));
-    if (selectedId === deletingId) {
-      const remaining = peopleList.filter((p) => p.id !== deletingId);
-      setSelectedId(remaining[0]?.id ?? "");
-    }
-    setDeletingId(null);
-    setDeleteOpen(false);
+    if (deletingId) deleteMutation.mutate(deletingId);
   };
 
   return (
