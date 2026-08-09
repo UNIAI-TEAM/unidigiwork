@@ -202,7 +202,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       .eq("id", data.channelId)
       .maybeSingle();
     if (chErr) mapPgError(chErr);
-    if (!ch) throw new ApiError("NOT_FOUND", "Không tìm thấy kênh chat");
+    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
     const { data: row, error } = await ctx.supabase
       .from("chat_messages")
       .insert({
@@ -213,7 +213,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) mapPgError(error, "CHAT_SEND_DENIED");
+    if (error) mapPgError(error, "PERMISSION_DENIED");
     return { id: row.id };
   });
 
@@ -228,7 +228,7 @@ export const updateChatMessage = createServerFn({ method: "POST" })
       .from("chat_messages")
       .update({ body: data.body, edited_at: new Date().toISOString() })
       .eq("id", data.messageId);
-    if (error) mapPgError(error, "CHAT_EDIT_DENIED");
+    if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
 
@@ -241,7 +241,7 @@ export const deleteChatMessage = createServerFn({ method: "POST" })
       .from("chat_messages")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", data.messageId);
-    if (error) mapPgError(error, "CHAT_DELETE_DENIED");
+    if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
 
@@ -264,7 +264,7 @@ export const createChatChannel = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     const ctx = context as unknown as Ctx;
     const scope = await resolveScope(ctx);
-    if (!scope?.workspaceId) throw new ApiError("NOT_FOUND", "Chưa có không gian làm việc");
+    if (!scope?.workspaceId) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Chưa có không gian làm việc" });
     const { data: row, error } = await ctx.supabase
       .from("chat_channels")
       .insert({
@@ -279,7 +279,7 @@ export const createChatChannel = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) mapPgError(error, "CHAT_CHANNEL_CREATE_DENIED");
+    if (error) mapPgError(error, "PERMISSION_DENIED");
     const { error: memErr } = await ctx.supabase.from("chat_members").insert({
       channel_id: row.id,
       user_id: ctx.userId,
@@ -301,14 +301,14 @@ export const joinChatChannel = createServerFn({ method: "POST" })
       .eq("id", data.channelId)
       .maybeSingle();
     if (chErr) mapPgError(chErr);
-    if (!ch) throw new ApiError("NOT_FOUND", "Không tìm thấy kênh chat");
+    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
     const { error } = await ctx.supabase
       .from("chat_members")
       .upsert(
         { channel_id: data.channelId, user_id: ctx.userId, tenant_id: ch.tenant_id, role: "member" },
         { onConflict: "channel_id,user_id" },
       );
-    if (error) mapPgError(error, "CHAT_JOIN_DENIED");
+    if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
 
@@ -363,6 +363,6 @@ export const deleteChatChannel = createServerFn({ method: "POST" })
       .from("chat_channels")
       .update({ deleted_at: new Date().toISOString(), updated_by: ctx.userId })
       .eq("id", data.channelId);
-    if (error) mapPgError(error, "CHAT_CHANNEL_DELETE_DENIED");
+    if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
