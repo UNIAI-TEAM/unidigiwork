@@ -26,6 +26,9 @@ import {
   Headphones,
   Settings2,
   Plug,
+  Calculator,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
@@ -505,6 +508,10 @@ function Landing() {
             ))}
           </div>
 
+          <div className="mt-12">
+            <HireEstimator />
+          </div>
+
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               to="/pricing"
@@ -758,6 +765,148 @@ function LeadForm({ variant }: { variant: "demo" | "hire" }) {
         {isHire ? t("land.hireform.submit") : t("land.demo.form.submit")}
       </button>
     </form>
+  );
+}
+
+function HireEstimator() {
+  const { t } = useI18n();
+  const roles = [
+    { key: "assistant", label: t("land.hire.r1.t"), price: 1900000 },
+    { key: "analyst", label: t("land.hire.r2.t"), price: 2900000 },
+    { key: "support", label: t("land.hire.r3.t"), price: 2400000 },
+    { key: "operations", label: t("land.hire.r4.t"), price: 3500000 },
+  ];
+  const durations = [
+    { value: 1, label: t("land.hire.estimator.duration.1"), discount: 0 },
+    { value: 3, label: t("land.hire.estimator.duration.3"), discount: 0.05 },
+    { value: 6, label: t("land.hire.estimator.duration.6"), discount: 0.1 },
+    { value: 12, label: t("land.hire.estimator.duration.12"), discount: 0.15 },
+  ];
+
+  const [roleKey, setRoleKey] = useState<string>(roles[0].key);
+  const [qty, setQty] = useState<number>(1);
+  const [duration, setDuration] = useState<number>(1);
+
+  const selectedRole = roles.find((r) => r.key === roleKey) ?? roles[0];
+  const selectedDuration = durations.find((d) => d.value === duration) ?? durations[0];
+  const baseTotal = selectedRole.price * qty * duration;
+  const discountAmount = baseTotal * selectedDuration.discount;
+  const total = baseTotal - discountAmount;
+
+  const formatVnd = (n: number) =>
+    n.toLocaleString("vi-VN", { maximumFractionDigits: 0 }).replace(/,/g, ".") + "đ";
+
+  const changeQty = (delta: number) => {
+    setQty((prev) => Math.max(1, prev + delta));
+  };
+
+  return (
+    <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="flex items-center gap-2">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+          <Calculator className="h-4 w-4" />
+        </span>
+        <h3 className="text-lg font-semibold">{t("land.hire.estimator.title")}</h3>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">{t("land.hire.estimator.sub")}</p>
+
+      <div className="mt-6 grid gap-5 sm:grid-cols-3">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground" htmlFor="est-role">
+            {t("land.hire.estimator.role")}
+          </label>
+          <select
+            id="est-role"
+            value={roleKey}
+            onChange={(e) => setRoleKey(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+          >
+            <option value="" disabled>
+              {t("land.hire.estimator.role.placeholder")}
+            </option>
+            {roles.map((r) => (
+              <option key={r.key} value={r.key}>
+                {r.label} — {formatVnd(r.price)}/{t("land.hire.unit")}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">{t("land.hire.estimator.qty")}</label>
+          <div className="mt-1 flex items-center rounded-lg border border-border bg-background">
+            <button
+              type="button"
+              onClick={() => changeQty(-1)}
+              className="flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
+              aria-label="Decrease quantity"
+              disabled={qty <= 1}
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <input
+              type="number"
+              min={1}
+              max={99}
+              value={qty}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                setQty(Number.isNaN(v) ? 1 : Math.max(1, Math.min(99, v)));
+              }}
+              className="h-10 w-full border-x border-border bg-background px-3 py-2 text-center text-sm focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => changeQty(1)}
+              className="flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Increase quantity"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-muted-foreground" htmlFor="est-duration">
+            {t("land.hire.estimator.duration")}
+          </label>
+          <select
+            id="est-duration"
+            value={duration}
+            onChange={(e) => setDuration(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+          >
+            {durations.map((d) => (
+              <option key={d.value} value={d.value}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/5 p-5 sm:flex-row">
+        <div>
+          <div className="text-sm text-muted-foreground">{t("land.hire.estimator.total")}</div>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="text-3xl font-bold tracking-tight text-primary">{formatVnd(total)}</span>
+            <span className="text-sm text-muted-foreground">/{duration} {t("land.hire.estimator.duration.unit")}</span>
+          </div>
+          {selectedDuration.discount > 0 && (
+            <div className="mt-1 text-xs text-success">
+              {t("land.hire.estimator.discount")} {formatVnd(discountAmount)} ({Math.round(selectedDuration.discount * 100)}%)
+            </div>
+          )}
+          <div className="mt-1 text-xs text-muted-foreground">{t("land.hire.estimator.total.note")}</div>
+        </div>
+        <Link
+          to="/contact"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+        >
+          {t("land.hire.estimator.cta")} <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
   );
 }
 
