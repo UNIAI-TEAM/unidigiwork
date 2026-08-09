@@ -22,6 +22,7 @@ import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { Link } from "@tanstack/react-router";
 import { getMeeting } from "@/lib/api/meetings.functions";
 import { Loader2, FileText, Radio } from "lucide-react";
+import { CreateEventDialog } from "@/components/calendar/create-event-dialog";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
@@ -153,6 +154,7 @@ function CalendarPage() {
   });
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   // Khoảng thời gian tải dữ liệu: phủ trọn lưới tháng và tuần đang xem
   const range = useMemo(() => {
@@ -243,7 +245,10 @@ function CalendarPage() {
               </p>
             </div>
 
-            <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
               <Plus className="h-4 w-4" /> Tạo sự kiện
             </button>
 
@@ -445,6 +450,12 @@ function CalendarPage() {
         {selectedEvent && (
           <EventDetail event={selectedEvent} onClose={() => setSelected(null)} />
         )}
+
+        <CreateEventDialog
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          defaultDate={cursor}
+        />
       </main>
     </div>
   );
