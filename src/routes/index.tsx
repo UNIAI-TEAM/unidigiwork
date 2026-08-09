@@ -26,6 +26,9 @@ import {
   Headphones,
   Settings2,
   Plug,
+  Calculator,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
