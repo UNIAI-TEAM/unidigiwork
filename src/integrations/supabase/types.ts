@@ -137,6 +137,187 @@ export type Database = {
           },
         ]
       }
+      chat_channels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_private: boolean
+          kind: string
+          last_message_at: string | null
+          name: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          kind?: string
+          last_message_at?: string | null
+          name: string
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          kind?: string
+          last_message_at?: string | null
+          name?: string
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channels_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_channels_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_members: {
+        Row: {
+          channel_id: string
+          created_at: string
+          is_favorite: boolean
+          last_read_at: string | null
+          role: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          is_favorite?: boolean
+          last_read_at?: string | null
+          role?: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          is_favorite?: boolean
+          last_read_at?: string | null
+          role?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          attachments: Json
+          author_id: string
+          body: string
+          channel_id: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          parent_message_id: string | null
+          row_version: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          author_id: string
+          body: string
+          channel_id: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          parent_message_id?: string | null
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          author_id?: string
+          body?: string
+          channel_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          parent_message_id?: string | null
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_requests: {
         Row: {
           created_at: string
@@ -3199,6 +3380,10 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: boolean
       }
+      can_view_chat_channel: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
       cancel_meeting: {
         Args: {
           _correlation_id?: string
@@ -3876,6 +4061,14 @@ export type Database = {
       invite_meeting_participant: {
         Args: { _correlation_id?: string; _email: string; _meeting_id: string }
         Returns: Json
+      }
+      is_chat_channel_admin: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_chat_member: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
       }
       is_reserved_slug: { Args: { _slug: string }; Returns: boolean }
       is_tenant_member: { Args: { _tenant_id: string }; Returns: boolean }
