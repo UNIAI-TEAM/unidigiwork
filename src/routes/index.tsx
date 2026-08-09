@@ -508,6 +508,10 @@ function Landing() {
             ))}
           </div>
 
+          <div className="mt-12">
+            <HireEstimator />
+          </div>
+
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               to="/pricing"
