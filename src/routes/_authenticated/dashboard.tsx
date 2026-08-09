@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { getDashboardOverview } from "@/lib/api/dashboard.functions";
 import {
   Users,
   Activity,
@@ -37,199 +39,148 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-const KPIS = [
-  {
-    key: "users",
-    label: "Total Users",
-    value: "1,248",
-    delta: "+12.5%",
-    icon: Users,
-    tint: "bg-violet-500/15 text-violet-300",
-  },
-  {
-    key: "active",
-    label: "Active Users",
-    value: "856",
-    delta: "+8.3%",
-    icon: Activity,
-    tint: "bg-emerald-500/15 text-emerald-300",
-  },
-  {
-    key: "projects",
-    label: "Total Projects",
-    value: "72",
-    delta: "+9.7%",
-    icon: FolderKanban,
-    tint: "bg-sky-500/15 text-sky-300",
-  },
-  {
-    key: "tasks",
-    label: "Tasks Completed",
-    value: "1,026",
-    delta: "+15.2%",
-    icon: CheckCircle2,
-    tint: "bg-amber-500/15 text-amber-300",
-  },
-  {
-    key: "meetings",
-    label: "Meetings",
-    value: "48",
-    delta: "+6.1%",
-    icon: Video,
-    tint: "bg-rose-500/15 text-rose-300",
-  },
-];
+const dashboardQuery = (rangeDays: number) =>
+  queryOptions({
+    queryKey: ["dashboard-overview", rangeDays],
+    queryFn: () => getDashboardOverview({ data: { rangeDays } }),
+    staleTime: 30_000,
+  });
 
-const ACTIVITY = {
-  labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-  series: [
-    {
-      name: "Tin nhắn",
-      color: "#a78bfa",
-      total: "2,512",
-      delta: "+18.6%",
-      data: [320, 480, 410, 620, 700, 760, 820],
-    },
-    {
-      name: "Cuộc họp",
-      color: "#34d399",
-      total: "48",
-      delta: "+6.1%",
-      data: [260, 380, 340, 460, 540, 600, 660],
-    },
-    {
-      name: "Nhiệm vụ hoàn thành",
-      color: "#fbbf24",
-      total: "1,026",
-      delta: "+15.2%",
-      data: [180, 220, 260, 290, 320, 340, 360],
-    },
-    {
-      name: "Tài liệu cập nhật",
-      color: "#60a5fa",
-      total: "342",
-      delta: "+11.3%",
-      data: [120, 150, 200, 240, 280, 300, 340],
-    },
-  ],
+type Kpi = {
+  key: string;
+  label: string;
+  value: string;
+  delta: string;
+  icon: typeof Users;
+  tint: string;
 };
 
-const DONUT = [
-  { label: "Hoàn thành", value: 1026, pct: 52, color: "#10b981" },
-  { label: "Đang thực hiện", value: 624, pct: 31, color: "#3b82f6" },
-  { label: "Chờ xử lý", value: 284, pct: 14, color: "#f59e0b" },
-  { label: "Bị tạm dừng", value: 86, pct: 3, color: "#ef4444" },
-];
+const nf = new Intl.NumberFormat("vi-VN");
 
-const PROJECTS = [
-  { letter: "S", color: "bg-emerald-500", name: "STOS Platform Development", progress: 72 },
-  { letter: "U", color: "bg-sky-500", name: "Smart University Portal", progress: 65 },
-  { letter: "H", color: "bg-violet-500", name: "UNI-HRM System", progress: 48 },
-  { letter: "D", color: "bg-orange-500", name: "DevOps Infrastructure", progress: 81 },
-];
+function pctDelta(cur: number, prev: number) {
+  if (!prev) return cur > 0 ? "+100%" : "0%";
+  const d = ((cur - prev) / prev) * 100;
+  return `${d >= 0 ? "+" : ""}${d.toFixed(1)}%`;
+}
 
-const RECENT = [
-  {
-    who: "Phạm Minh C",
-    what: "đã cập nhật tài liệu",
-    target: "API_Gateway_Spec_v2.1.docx",
-    area: "Documents",
-    time: "10:30 AM",
-    icon: FileText,
-    tint: "text-sky-300",
-  },
-  {
-    who: "Trần Thị B",
-    what: "đã hoàn thành nhiệm vụ",
-    target: "Thiết kế UI Dashboard",
-    area: "STOS Project",
-    time: "09:45 AM",
-    icon: CheckCircle2,
-    tint: "text-emerald-300",
-  },
-  {
-    who: "Bạn",
-    what: "đã tham gia cuộc họp",
-    target: "Sprint 6 Daily Standup",
-    area: "Meetings",
-    time: "09:30 AM",
-    icon: Video,
-    tint: "text-rose-300",
-  },
-  {
-    who: "Lê Hoàng D",
-    what: "đã tạo mới quy trình",
-    target: "Approval - Leave Request",
-    area: "Workflows",
-    time: "08:15 AM",
-    icon: Workflow,
-    tint: "text-violet-300",
-  },
-  {
-    who: "Nguyễn Hương",
-    what: "đã bình luận trong",
-    target: "#dev-team",
-    area: "Chat",
-    time: "07:50 AM",
-    icon: MessageCircle,
-    tint: "text-amber-300",
-  },
-];
+function buildKpis(o: DashboardData["overview"]): Kpi[] {
+  const k = o?.kpis;
+  return [
+    {
+      key: "users",
+      label: "Tổng người dùng",
+      value: nf.format(k?.users ?? 0),
+      delta: "",
+      icon: Users,
+      tint: "bg-violet-500/15 text-violet-300",
+    },
+    {
+      key: "active",
+      label: "Người dùng hoạt động",
+      value: nf.format(k?.active_users ?? 0),
+      delta: "",
+      icon: Activity,
+      tint: "bg-emerald-500/15 text-emerald-300",
+    },
+    {
+      key: "projects",
+      label: "Không gian làm việc",
+      value: nf.format(k?.workspaces ?? 0),
+      delta: pctDelta(k?.ws_cur ?? 0, k?.ws_prev ?? 0),
+      icon: FolderKanban,
+      tint: "bg-sky-500/15 text-sky-300",
+    },
+    {
+      key: "tasks",
+      label: "Nhiệm vụ",
+      value: nf.format(k?.tasks ?? 0),
+      delta: pctDelta(k?.tasks_cur ?? 0, k?.tasks_prev ?? 0),
+      icon: CheckCircle2,
+      tint: "bg-amber-500/15 text-amber-300",
+    },
+    {
+      key: "meetings",
+      label: "Cuộc họp",
+      value: nf.format(k?.meetings ?? 0),
+      delta: pctDelta(k?.meetings_cur ?? 0, k?.meetings_prev ?? 0),
+      icon: Video,
+      tint: "bg-rose-500/15 text-rose-300",
+    },
+  ];
+}
 
-const MEETINGS = [
-  { time: "09:30 AM", dur: "30m", title: "Sprint 6 Daily Standup", count: 5 },
-  { time: "10:30 AM", dur: "1h", title: "Review API Gateway", count: 3 },
-  { time: "02:00 PM", dur: "45m", title: "Project Sync - STOS", count: 4 },
-  { time: "04:00 PM", dur: "1h", title: "HR Weekly Meeting", count: 2 },
-];
+type ActivityData = {
+  labels: string[];
+  series: { name: string; color: string; total: string; delta: string; data: number[] }[];
+};
 
-const WORKSPACES = [
-  {
-    letter: "S",
-    color: "bg-emerald-500",
-    name: "STOS Project",
-    members: 325,
-    projects: 24,
-    trend: [10, 14, 12, 18, 22, 26, 32],
-    stroke: "#34d399",
-  },
-  {
-    letter: "Y",
-    color: "bg-amber-500",
-    name: "Y tế xã",
-    members: 128,
-    projects: 12,
-    trend: [8, 10, 9, 12, 14, 18, 22],
-    stroke: "#fbbf24",
-  },
-  {
-    letter: "U",
-    color: "bg-sky-500",
-    name: "Smart University",
-    members: 248,
-    projects: 18,
-    trend: [12, 14, 18, 16, 20, 24, 28],
-    stroke: "#38bdf8",
-  },
-  {
-    letter: "M",
-    color: "bg-rose-500",
-    name: "UNI-HRM",
-    members: 96,
-    projects: 8,
-    trend: [6, 9, 8, 11, 13, 15, 18],
-    stroke: "#fb7185",
-  },
-  {
-    letter: "H",
-    color: "bg-violet-500",
-    name: "Marketing & PM",
-    members: 74,
-    projects: 6,
-    trend: [5, 7, 9, 8, 11, 13, 15],
-    stroke: "#a78bfa",
-  },
-];
+function buildActivity(o: DashboardData["overview"]): ActivityData {
+  const rows = o?.activity ?? [];
+  const labels = rows.map((r) =>
+    new Date(r.day).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+  );
+  const mk = (name: string, color: string, pick: (r: (typeof rows)[number]) => number) => {
+    const data = rows.map(pick);
+    const total = data.reduce((a, b) => a + b, 0);
+    const half = Math.floor(data.length / 2) || 1;
+    const prev = data.slice(0, half).reduce((a, b) => a + b, 0);
+    const cur = data.slice(half).reduce((a, b) => a + b, 0);
+    return { name, color, data, total: nf.format(total), delta: pctDelta(cur, prev) };
+  };
+  return {
+    labels: labels.length ? labels : ["—"],
+    series: [
+      mk("Nhiệm vụ tạo mới", "#a78bfa", (r) => r.tasks),
+      mk("Cuộc họp", "#34d399", (r) => r.meetings),
+      mk("Nhiệm vụ hoàn thành", "#fbbf24", (r) => r.completed),
+      mk("Tài liệu cập nhật", "#60a5fa", (r) => r.documents),
+    ],
+  };
+}
+
+type DonutSlice = { label: string; value: number; pct: number; color: string };
+
+function buildDonut(o: DashboardData["overview"]): { slices: DonutSlice[]; total: number } {
+  const t = o?.tasks_by_status;
+  const total = t?.total ?? 0;
+  const defs: Array<[string, number, string]> = [
+    ["Hoàn thành", t?.done ?? 0, "#10b981"],
+    ["Đang thực hiện", t?.in_progress ?? 0, "#3b82f6"],
+    ["Chờ xử lý", t?.todo ?? 0, "#f59e0b"],
+    ["Bị chặn", t?.blocked ?? 0, "#ef4444"],
+    ["Đã hủy", t?.canceled ?? 0, "#94a3b8"],
+  ];
+  return {
+    total,
+    slices: defs.map(([label, value, color]) => ({
+      label,
+      value,
+      pct: total ? Math.round((value / total) * 100) : 0,
+      color,
+    })),
+  };
+}
+
+const PROJECT_COLORS = ["bg-emerald-500", "bg-sky-500", "bg-violet-500", "bg-orange-500", "bg-rose-500"];
+
+const AREA_META: Record<
+  string,
+  { icon: typeof FileText; tint: string }
+> = {
+  Documents: { icon: FileText, tint: "text-sky-300" },
+  Tasks: { icon: CheckCircle2, tint: "text-emerald-300" },
+  Meetings: { icon: Video, tint: "text-rose-300" },
+  Workflows: { icon: Workflow, tint: "text-violet-300" },
+};
+
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+function fmtDur(start: string, end: string) {
+  const m = Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000));
+  return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`;
+}
 
 const AI_ITEMS = [
   {
@@ -258,7 +209,7 @@ const AI_ITEMS = [
   },
 ];
 
-function KpiCard({ k }: { k: (typeof KPIS)[number] }) {
+function KpiCard({ k }: { k: Kpi }) {
   const Icon = k.icon;
   return (
     <div className="rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/40">
@@ -269,26 +220,31 @@ function KpiCard({ k }: { k: (typeof KPIS)[number] }) {
         </div>
       </div>
       <div className="mt-2 text-3xl font-semibold tracking-tight">{k.value}</div>
-      <div className="mt-2 flex items-center gap-1 text-xs text-emerald-400">
-        <ArrowUpRight className="h-3.5 w-3.5" />
-        <span>{k.delta}</span>
-        <span className="text-muted-foreground">so với tuần trước</span>
-      </div>
+      {k.delta ? (
+        <div className="mt-2 flex items-center gap-1 text-xs text-emerald-400">
+          <ArrowUpRight className="h-3.5 w-3.5" />
+          <span>{k.delta}</span>
+          <span className="text-muted-foreground">so với kỳ trước</span>
+        </div>
+      ) : (
+        <div className="mt-2 text-xs text-muted-foreground">Tổng hiện tại</div>
+      )}
     </div>
   );
 }
 
-function ActivityChart() {
+function ActivityChart({ activity }: { activity: ActivityData }) {
   const W = 640,
     H = 240,
     padL = 32,
     padR = 12,
     padT = 16,
     padB = 28;
-  const max = 1000;
-  const step = (W - padL - padR) / (ACTIVITY.labels.length - 1);
+  const peak = Math.max(1, ...activity.series.flatMap((s) => s.data));
+  const max = Math.ceil(peak / 5) * 5 || 5;
+  const step = (W - padL - padR) / Math.max(1, activity.labels.length - 1);
   const yFor = (v: number) => padT + (1 - v / max) * (H - padT - padB);
-  const yTicks = [0, 200, 400, 600, 800, 1000];
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(max * f));
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-[240px] w-full">
       {yTicks.map((t) => (
@@ -312,7 +268,7 @@ function ActivityChart() {
           </text>
         </g>
       ))}
-      {ACTIVITY.labels.map((l, i) => (
+      {activity.labels.map((l, i) => (
         <text
           key={l}
           x={padL + i * step}
@@ -324,7 +280,7 @@ function ActivityChart() {
           {l}
         </text>
       ))}
-      {ACTIVITY.series.map((s) => {
+      {activity.series.map((s) => {
         const d = s.data
           .map((v, i) => `${i === 0 ? "M" : "L"} ${padL + i * step} ${yFor(v)}`)
           .join(" ");
@@ -348,7 +304,7 @@ function ActivityChart() {
   );
 }
 
-function Donut() {
+function Donut({ slices, total }: { slices: DonutSlice[]; total: number }) {
   const R = 70,
     r = 48,
     C = 2 * Math.PI * R;
@@ -357,7 +313,7 @@ function Donut() {
     <div className="relative flex items-center justify-center">
       <svg viewBox="0 0 180 180" className="h-44 w-44 -rotate-90">
         <circle cx="90" cy="90" r={R} fill="none" stroke="hsl(var(--surface-2))" strokeWidth="16" />
-        {DONUT.map((d) => {
+        {slices.map((d) => {
           const len = (d.pct / 100) * C;
           const dash = `${len} ${C - len}`;
           const offset = -acc;
@@ -380,8 +336,8 @@ function Donut() {
         <circle cx="90" cy="90" r={r} fill="hsl(var(--surface))" />
       </svg>
       <div className="absolute text-center">
-        <div className="text-2xl font-semibold">1,248</div>
-        <div className="text-[11px] text-muted-foreground">Total tasks</div>
+        <div className="text-2xl font-semibold">{nf.format(total)}</div>
+        <div className="text-[11px] text-muted-foreground">Tổng nhiệm vụ</div>
       </div>
     </div>
   );
