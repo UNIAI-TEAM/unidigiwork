@@ -34,7 +34,6 @@ import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
-import { Route as PeopleIdRouteImport } from './routes/people.$id'
 import { Route as MeetingHistoryRouteImport } from './routes/meeting_.history'
 import { Route as MeetingIdRouteImport } from './routes/meeting_.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
@@ -56,6 +55,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
@@ -197,11 +197,6 @@ const ReportsTypeRoute = ReportsTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => ReportsRoute,
 } as any)
-const PeopleIdRoute = PeopleIdRouteImport.update({
-  id: '/people/$id',
-  path: '/people/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MeetingHistoryRoute = MeetingHistoryRouteImport.update({
   id: '/meeting_/history',
   path: '/meeting/history',
@@ -310,6 +305,11 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedPeopleRoute,
+} as any)
 const AuthenticatedNotificationsIdRoute =
   AuthenticatedNotificationsIdRouteImport.update({
     id: '/$id',
@@ -425,7 +425,7 @@ export interface FileRoutesByFullPath {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
-  '/people': typeof AuthenticatedPeopleRoute
+  '/people': typeof AuthenticatedPeopleRouteWithChildren
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -434,7 +434,6 @@ export interface FileRoutesByFullPath {
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/meeting/history': typeof MeetingHistoryRoute
-  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -454,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
+  '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -487,7 +487,7 @@ export interface FileRoutesByTo {
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
-  '/people': typeof AuthenticatedPeopleRoute
+  '/people': typeof AuthenticatedPeopleRouteWithChildren
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -496,7 +496,6 @@ export interface FileRoutesByTo {
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
   '/meeting/history': typeof MeetingHistoryRoute
-  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -516,6 +515,7 @@ export interface FileRoutesByTo {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
+  '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -553,7 +553,7 @@ export interface FileRoutesById {
   '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
-  '/_authenticated/people': typeof AuthenticatedPeopleRoute
+  '/_authenticated/people': typeof AuthenticatedPeopleRouteWithChildren
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -562,7 +562,6 @@ export interface FileRoutesById {
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting_/$id': typeof MeetingIdRoute
   '/meeting_/history': typeof MeetingHistoryRoute
-  '/people/$id': typeof PeopleIdRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
@@ -582,6 +581,7 @@ export interface FileRoutesById {
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
+  '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -628,7 +628,6 @@ export interface FileRouteTypes {
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/meeting/history'
-    | '/people/$id'
     | '/reports/$type'
     | '/reports/detail'
     | '/tasks/$id'
@@ -648,6 +647,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/notifications/$id'
+    | '/people/$id'
     | '/workspace/$id'
     | '/workspace/invite'
     | '/blog/category/$category'
@@ -690,7 +690,6 @@ export interface FileRouteTypes {
     | '/knowledge/$slug'
     | '/meeting/$id'
     | '/meeting/history'
-    | '/people/$id'
     | '/reports/$type'
     | '/reports/detail'
     | '/tasks/$id'
@@ -710,6 +709,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/notifications/$id'
+    | '/people/$id'
     | '/workspace/$id'
     | '/workspace/invite'
     | '/blog/category/$category'
@@ -755,7 +755,6 @@ export interface FileRouteTypes {
     | '/knowledge/$slug'
     | '/meeting_/$id'
     | '/meeting_/history'
-    | '/people/$id'
     | '/reports/$type'
     | '/reports/detail'
     | '/tasks/$id'
@@ -775,6 +774,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
     | '/_authenticated/notifications/$id'
+    | '/_authenticated/people/$id'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/invite'
     | '/blog/category/$category'
@@ -807,7 +807,6 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
-  PeopleIdRoute: typeof PeopleIdRoute
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
@@ -994,13 +993,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsTypeRouteImport
       parentRoute: typeof ReportsRoute
     }
-    '/people/$id': {
-      id: '/people/$id'
-      path: '/people/$id'
-      fullPath: '/people/$id'
-      preLoaderRoute: typeof PeopleIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/meeting_/history': {
       id: '/meeting_/history'
       path: '/meeting/history'
@@ -1147,6 +1139,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspace/$id'
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/people/$id': {
+      id: '/_authenticated/people/$id'
+      path: '/$id'
+      fullPath: '/people/$id'
+      preLoaderRoute: typeof AuthenticatedPeopleIdRouteImport
+      parentRoute: typeof AuthenticatedPeopleRoute
     }
     '/_authenticated/notifications/$id': {
       id: '/_authenticated/notifications/$id'
@@ -1329,6 +1328,17 @@ const AuthenticatedNotificationsRouteWithChildren =
     AuthenticatedNotificationsRouteChildren,
   )
 
+interface AuthenticatedPeopleRouteChildren {
+  AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
+}
+
+const AuthenticatedPeopleRouteChildren: AuthenticatedPeopleRouteChildren = {
+  AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
+}
+
+const AuthenticatedPeopleRouteWithChildren =
+  AuthenticatedPeopleRoute._addFileChildren(AuthenticatedPeopleRouteChildren)
+
 interface AuthenticatedWorkspaceIdRouteChildren {
   AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
 }
@@ -1352,7 +1362,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
-  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRouteWithChildren
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -1368,7 +1378,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
-  AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedPeopleRoute: AuthenticatedPeopleRouteWithChildren,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
@@ -1470,7 +1480,6 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
-  PeopleIdRoute: PeopleIdRoute,
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
