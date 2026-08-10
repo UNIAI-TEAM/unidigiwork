@@ -1124,6 +1124,60 @@ export type Database = {
           },
         ]
       }
+      meeting_attendance: {
+        Row: {
+          created_at: string
+          id: string
+          joined_at: string
+          left_at: string | null
+          meeting_id: string
+          minutes: number
+          tenant_id: string
+          updated_at: string
+          usage_recorded: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          meeting_id: string
+          minutes?: number
+          tenant_id: string
+          updated_at?: string
+          usage_recorded?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          meeting_id?: string
+          minutes?: number
+          tenant_id?: string
+          updated_at?: string
+          usage_recorded?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_attendance_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_invite_links: {
         Row: {
           created_at: string
@@ -1399,6 +1453,75 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: []
+      }
+      meeting_recordings: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          egress_id: string | null
+          ended_at: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          meeting_id: string
+          provider: string
+          started_at: string
+          started_by: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          egress_id?: string | null
+          ended_at?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          meeting_id: string
+          provider?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          egress_id?: string | null
+          ended_at?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          meeting_id?: string
+          provider?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_recordings_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_recordings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meetings: {
         Row: {
@@ -3514,6 +3637,36 @@ export type Database = {
         }
         Returns: string
       }
+      _meeting_host_guard: {
+        Args: { _meeting_id: string }
+        Returns: {
+          agenda: string | null
+          conference_provider: string | null
+          conference_ref: Json | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          end_at: string
+          id: string
+          location: string | null
+          row_version: number
+          rrule: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       _raise_quota_exceeded: {
         Args: { _delta: number; _meter_key: string; _tenant_id: string }
         Returns: undefined
@@ -3966,6 +4119,27 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      close_meeting_attendance: {
+        Args: { _correlation_id?: string; _meeting_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          joined_at: string
+          left_at: string | null
+          meeting_id: string
+          minutes: number
+          tenant_id: string
+          updated_at: string
+          usage_recorded: boolean
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_attendance"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       comment_task: {
         Args: {
           _body: string
@@ -4344,6 +4518,7 @@ export type Database = {
         Args: { _event_type: string; _payload?: Json; _workspace_id: string }
         Returns: number
       }
+      get_meeting_stats: { Args: { _meeting_id: string }; Returns: Json }
       get_my_workflow_permissions: {
         Args: { _workspace_id: string }
         Returns: Json
@@ -4525,6 +4700,27 @@ export type Database = {
           _workspace_id: string
         }
         Returns: string
+      }
+      open_meeting_attendance: {
+        Args: { _correlation_id?: string; _meeting_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          joined_at: string
+          left_at: string | null
+          meeting_id: string
+          minutes: number
+          tenant_id: string
+          updated_at: string
+          usage_recorded: boolean
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_attendance"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       provision_default_subscription: {
         Args: { _actor: string; _tenant_id: string }
@@ -4946,6 +5142,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      start_meeting_recording: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _meeting_id: string
+        }
+        Returns: {
+          created_at: string
+          duration_seconds: number
+          egress_id: string | null
+          ended_at: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          meeting_id: string
+          provider: string
+          started_at: string
+          started_by: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_recordings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       start_workflow_run: {
         Args: {
           _context?: Json
@@ -4971,6 +5197,38 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "workflow_runs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      stop_meeting_recording: {
+        Args: {
+          _correlation_id?: string
+          _file_size_bytes?: number
+          _file_url?: string
+          _idempotency_key?: string
+          _meeting_id: string
+        }
+        Returns: {
+          created_at: string
+          duration_seconds: number
+          egress_id: string | null
+          ended_at: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          meeting_id: string
+          provider: string
+          started_at: string
+          started_by: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_recordings"
           isOneToOne: true
           isSetofReturn: false
         }

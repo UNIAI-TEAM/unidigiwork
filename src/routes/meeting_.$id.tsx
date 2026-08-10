@@ -18,9 +18,15 @@ import {
   FileText,
   Clock,
   Loader2,
+  Video as VideoIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-request-panel";
+import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
+import {
+  openMeetingAttendance,
+  closeMeetingAttendance,
+} from "@/lib/api/meeting-recordings.functions";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
@@ -73,7 +79,7 @@ function MeetingDetailPage() {
   const { invite } = Route.useSearch();
   const isRealRoom = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const [open, setOpen] = useSidebarState();
-  const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
+  const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai" | "recording">("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [session, setSession] = useState<{
@@ -270,6 +276,30 @@ function MeetingDetailPage() {
     [],
   );
 
+  // Ghi nhận phiên tham dự để tính phút họp (usage) — mở khi vào phòng, đóng khi rời.
+  useEffect(() => {
+    if (!session || !isRealRoom) return;
+    let cancelled = false;
+    void openMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
+    inRoomRef.current = true;
+    return () => {
+      cancelled = true;
+      void closeMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
+      void cancelled;
+    };
+  }, [session, id, isRealRoom]);
+
+  // Rời trang đột ngột vẫn chốt phiên tham dự.
+  useEffect(() => {
+    if (!isRealRoom) return;
+    function onHide() {
+      if (!inRoomRef.current) return;
+      void closeMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
+    }
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+  }, [id, isRealRoom]);
+
   const participants = [
     { name: "Minh Anh", seed: "minh-anh", speaking: true },
     { name: "Tuấn Nam", seed: "tuan-nam-ba", speaking: false },
@@ -449,6 +479,7 @@ function MeetingDetailPage() {
                   { k: "chat", label: "Chat", icon: MessageSquare },
                   { k: "participants", label: "Người", icon: Users },
                   { k: "transcript", label: "Biên bản", icon: FileText },
+                  { k: "recording", label: "Ghi hình", icon: VideoIcon },
                 ] as const
               ).map((it) => (
                 <button
@@ -463,6 +494,15 @@ function MeetingDetailPage() {
 
             <div className="flex-1 overflow-y-auto p-4 text-sm">
               {tab === "ai" && <AICopilotPanel />}
+              {tab === "recording" &&
+                (isRealRoom ? (
+                  <MeetingRecordingPanel meetingId={id} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Phòng demo không có dữ liệu ghi hình. Hãy tạo phòng họp thật để dùng tính năng
+                    này.
+                  </p>
+                ))}
               {tab === "chat" && <ChatPanel />}
               {tab === "participants" && (
                 <ul className="space-y-2">

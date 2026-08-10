@@ -1,0 +1,11 @@
+REVOKE EXECUTE ON FUNCTION public.start_meeting_recording(uuid, text, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.stop_meeting_recording(uuid, text, bigint, text, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.open_meeting_attendance(uuid, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.close_meeting_attendance(uuid, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_meeting_stats(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.tg_meetings_close_sessions() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.start_meeting_recording(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.stop_meeting_recording(uuid, text, bigint, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.open_meeting_attendance(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.close_meeting_attendance(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_meeting_stats(uuid) TO authenticated;
