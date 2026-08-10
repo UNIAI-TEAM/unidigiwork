@@ -426,6 +426,59 @@ function AIPage() {
             </Section>
 
             <Section title={t("ai.panel.recent")} action={t("ai.panel.viewall")}>
+              <div className="mb-2 space-y-2">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Tìm theo tiêu đề hội thoại"
+                    className="w-full rounded-lg border border-border bg-surface-2 py-1.5 pl-7 pr-7 text-xs outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      aria-label="Xóa từ khóa"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1 text-[10px] text-muted-foreground">
+                    Từ ngày
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs text-foreground"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[10px] text-muted-foreground">
+                    Đến ngày
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs text-foreground"
+                    />
+                  </label>
+                </div>
+                {(search || dateFrom || dateTo || workspaceId) && (
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      setDateFrom("");
+                      setDateTo("");
+                      setWorkspaceId("");
+                    }}
+                    className="w-full rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2"
+                  >
+                    Xóa bộ lọc
+                  </button>
+                )}
+              </div>
               {(convList.data?.workspaces.length ?? 0) > 0 && (
                 <select
                   value={workspaceId}
@@ -445,7 +498,11 @@ function AIPage() {
               )}
               <div className="space-y-1">
                 {(convList.data?.conversations.length ?? 0) === 0 && (
-                  <p className="px-2 py-2 text-xs text-muted-foreground">Chưa có hội thoại nào.</p>
+                  <p className="px-2 py-2 text-xs text-muted-foreground">
+                    {search || dateFrom || dateTo || workspaceId
+                      ? "Không có hội thoại phù hợp bộ lọc."
+                      : "Chưa có hội thoại nào."}
+                  </p>
                 )}
                 {convList.data?.conversations.map((c) => (
                   <div
