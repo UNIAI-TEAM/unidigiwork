@@ -127,6 +127,8 @@ function AIPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [pending, setPending] = useState<string | null>(null);
+  const [showTrash, setShowTrash] = useState(false);
+  const [historyMsgId, setHistoryMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
@@ -134,12 +136,15 @@ function AIPage() {
   const getFn = useServerFn(getAiConversation);
   const sendFn = useServerFn(sendAiMessage);
   const deleteFn = useServerFn(deleteAiConversation);
+  const restoreFn = useServerFn(restoreAiConversation);
+  const purgeFn = useServerFn(purgeAiConversation);
 
   const convList = useQuery({
-    queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo],
+    queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo, showTrash],
     queryFn: () =>
       listFn({
         data: {
+          deleted: showTrash,
           ...(workspaceId ? { workspaceId } : {}),
           ...(debouncedSearch ? { q: debouncedSearch } : {}),
           ...(dateFrom ? { from: dateFrom } : {}),
@@ -193,9 +198,34 @@ function AIPage() {
     mutationFn: (id: string) => deleteFn({ data: { conversationId: id } }),
     onSuccess: async (_r, id) => {
       if (id === conversationId) setConversationId(null);
-      toast.success("Đã xóa hội thoại");
+      toast.success("Đã chuyển hội thoại vào thùng rác", {
+        action: {
+          label: "Hoàn tác",
+          onClick: () => restoreMutation.mutate(id),
+        },
+      });
       await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
     },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => restoreFn({ data: { conversationId: id } }),
+    onSuccess: async () => {
+      toast.success("Đã khôi phục hội thoại");
+      await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Không khôi phục được hội thoại"),
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: (id: string) => purgeFn({ data: { conversationId: id } }),
+    onSuccess: async (_r, id) => {
+      if (id === conversationId) setConversationId(null);
+      toast.success("Đã xóa vĩnh viễn hội thoại");
+      await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không xóa được"),
   });
 
   useEffect(() => {
