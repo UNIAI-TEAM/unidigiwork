@@ -129,6 +129,9 @@ function AIPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [sort, setSort] = useState<
+    "recent" | "oldest" | "created_desc" | "created_asc" | "usage_desc" | "usage_asc"
+  >("recent");
   const [pending, setPending] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [historyMsgId, setHistoryMsgId] = useState<string | null>(null);
@@ -144,12 +147,21 @@ function AIPage() {
   const purgeFn = useServerFn(purgeAiConversation);
 
   const convList = useInfiniteQuery({
-    queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo, showTrash],
+    queryKey: [
+      "ai-conversations",
+      workspaceId,
+      debouncedSearch,
+      dateFrom,
+      dateTo,
+      showTrash,
+      sort,
+    ],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       listFn({
         data: {
           deleted: showTrash,
+          sort,
           limit: 20,
           offset: pageParam as number,
           ...(workspaceId ? { workspaceId } : {}),
@@ -598,6 +610,21 @@ function AIPage() {
                     />
                   </label>
                 </div>
+                <label className="flex flex-col gap-1 text-[10px] text-muted-foreground">
+                  Sắp xếp
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as typeof sort)}
+                    className="rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs text-foreground"
+                  >
+                    <option value="recent">Cập nhật mới nhất</option>
+                    <option value="oldest">Cập nhật cũ nhất</option>
+                    <option value="created_desc">Ngày tạo mới nhất</option>
+                    <option value="created_asc">Ngày tạo cũ nhất</option>
+                    <option value="usage_desc">Số lượt dùng nhiều nhất</option>
+                    <option value="usage_asc">Số lượt dùng ít nhất</option>
+                  </select>
+                </label>
                 {(search || dateFrom || dateTo || workspaceId) && (
                   <button
                     onClick={() => {
