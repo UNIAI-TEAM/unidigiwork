@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
+import { AiUsageStatsPanel } from "@/components/ai/usage-stats-panel";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -70,7 +71,7 @@ export const Route = createFileRoute("/ai")({
 
 type Msg = { id: string; role: "user" | "assistant"; text: string; time: string; rich?: boolean };
 
-const TABS = ["chat", "assistants", "prompts", "knowledge", "tools"] as const;
+const TABS = ["chat", "assistants", "prompts", "knowledge", "tools", "usage"] as const;
 type Tab = (typeof TABS)[number];
 
 const suggestions = [
@@ -701,7 +702,12 @@ function TabPanel({ tab }: { tab: Tab }) {
   if (tab === "prompts") return <PromptsPanel />;
   if (tab === "knowledge") return <KnowledgePanel />;
   if (tab === "tools") return <ToolsPanel />;
+  if (tab === "usage") return <UsageTabPanel />;
   return null;
+}
+
+function UsageTabPanel() {
+  return <AiUsageStatsPanel />;
 }
 
 const ALL_ASSISTANTS = [

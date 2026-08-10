@@ -374,3 +374,166 @@ export const getAiUsageSummary = createServerFn({ method: "GET" })
       })),
     };
   });
+export type AiUsageBucketDTO = {
+  bucket: string; // ISO date của mốc ngày/tuần
+  label: string;
+  tokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  requests: number;
+  durationMs: number;
+};
+
+export type AiUsageWorkspaceSeriesDTO = {
+  workspaceId: string | null;
+  workspaceName: string;
+  tokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  requests: number;
+  durationMs: number;
+  buckets: AiUsageBucketDTO[];
+};
+
+function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function startOfWeek(d: Date) {
+  const x = startOfDay(d);
+  const day = (x.getDay() + 6) % 7; // thứ 2 đầu tuần
+  x.setDate(x.getDate() - day);
+  return x;
+}
+
+export const getAiUsageTimeseries = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        granularity: z.enum(["day", "week"]).default("day"),
+        days: z.number().int().min(1).max(180).default(14),
+        workspaceId: z.string().uuid().optional(),
+      })
+      .default({ granularity: "day", days: 14 })
+      .parse(i ?? {}),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      granularity: "day" | "week";
+      buckets: string[];
+      totals: { tokens: number; inputTokens: number; outputTokens: number; requests: number; durationMs: number };
+      workspaces: AiUsageWorkspaceSeriesDTO[];
+    }> => {
+      const ctx = context as unknown as Ctx;
+      const empty = {
+        granularity: data.granularity,
+        buckets: [] as string[],
+        totals: { tokens: 0, inputTokens: 0, outputTokens: 0, requests: 0, durationMs: 0 },
+        workspaces: [] as AiUsageWorkspaceSeriesDTO[],
+      };
+      const tenantId = await resolveTenant(ctx);
+      if (!tenantId) return empty;
+      const wsList = await listWorkspaces(ctx, tenantId);
+      const wsMap = new Map(wsList.map((w) => [w.id, w.name]));
+
+      const since = startOfDay(new Date());
+      since.setDate(since.getDate() - (data.days - 1));
+      const from = data.granularity === "week" ? startOfWeek(since) : since;
+
+      let q = ctx.supabase
+        .from("ai_usage_events")
+        .select("workspace_id, input_tokens, output_tokens, total_tokens, duration_ms, created_at")
+        .eq("tenant_id", tenantId)
+        .gte("created_at", from.toISOString())
+        .order("created_at", { ascending: true })
+        .limit(5000);
+      if (data.workspaceId) q = q.eq("workspace_id", data.workspaceId);
+      const { data: rows, error } = await q;
+      if (error) throw new ApiError({ code: "AI_CONVERSATION_LIST_FAILED", message: error.message });
+
+      // Danh sách mốc thời gian liên tục để biểu đồ không bị đứt quãng.
+      const bucketKeys: string[] = [];
+      const cursor = new Date(from);
+      const now = new Date();
+      while (cursor <= now) {
+        bucketKeys.push(cursor.toISOString().slice(0, 10));
+        cursor.setDate(cursor.getDate() + (data.granularity === "week" ? 7 : 1));
+      }
+
+      const seriesMap = new Map<string, AiUsageWorkspaceSeriesDTO>();
+      const totals = { tokens: 0, inputTokens: 0, outputTokens: 0, requests: 0, durationMs: 0 };
+
+      const makeSeries = (key: string): AiUsageWorkspaceSeriesDTO => ({
+        workspaceId: key === "none" ? null : key,
+        workspaceName: key === "none" ? "Không thuộc workspace" : (wsMap.get(key) ?? "Workspace"),
+        tokens: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        requests: 0,
+        durationMs: 0,
+        buckets: bucketKeys.map((b) => ({
+          bucket: b,
+          label:
+            data.granularity === "week"
+              ? `Tuần ${new Date(b).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}`
+              : new Date(b).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+          tokens: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          requests: 0,
+          durationMs: 0,
+        })),
+      });
+
+      for (const r of (rows ?? []) as Array<{
+        workspace_id: string | null;
+        input_tokens: number | null;
+        output_tokens: number | null;
+        total_tokens: number | null;
+        duration_ms: number | null;
+        created_at: string;
+      }>) {
+        const created = new Date(r.created_at);
+        const bucketDate = data.granularity === "week" ? startOfWeek(created) : startOfDay(created);
+        const bucketKey = bucketDate.toISOString().slice(0, 10);
+        const key = r.workspace_id ?? "none";
+        const series = seriesMap.get(key) ?? makeSeries(key);
+        seriesMap.set(key, series);
+        const slot = series.buckets.find((b) => b.bucket === bucketKey);
+        const input = Number(r.input_tokens ?? 0);
+        const output = Number(r.output_tokens ?? 0);
+        const total = Number(r.total_tokens ?? input + output);
+        const dur = Number(r.duration_ms ?? 0);
+        if (slot) {
+          slot.tokens += total;
+          slot.inputTokens += input;
+          slot.outputTokens += output;
+          slot.requests += 1;
+          slot.durationMs += dur;
+        }
+        series.tokens += total;
+        series.inputTokens += input;
+        series.outputTokens += output;
+        series.requests += 1;
+        series.durationMs += dur;
+        totals.tokens += total;
+        totals.inputTokens += input;
+        totals.outputTokens += output;
+        totals.requests += 1;
+        totals.durationMs += dur;
+      }
+
+      return {
+        granularity: data.granularity,
+        buckets: bucketKeys,
+        totals,
+        workspaces: Array.from(seriesMap.values()).sort((a, b) => b.tokens - a.tokens),
+      };
+    },
+  );
