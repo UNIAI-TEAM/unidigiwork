@@ -25,6 +25,7 @@ export type AiConversationDTO = {
   totalOutputTokens: number;
   lastMessageAt: string;
   createdAt: string;
+  deletedAt: string | null;
 };
 
 export type AiMessageDTO = {
@@ -37,6 +38,13 @@ export type AiMessageDTO = {
 };
 
 export type AiWorkspaceOption = { id: string; name: string };
+
+export type AiMessageVersionDTO = {
+  id: string;
+  version: number;
+  content: string;
+  createdAt: string;
+};
 
 async function resolveTenant(ctx: Ctx): Promise<string | null> {
   const { data, error } = await ctx.supabase
@@ -74,6 +82,7 @@ export const listAiConversations = createServerFn({ method: "GET" })
         q: z.string().max(200).optional(),
         from: z.string().optional(),
         to: z.string().optional(),
+        deleted: z.boolean().optional(),
       })
       .optional()
       .parse(i),
@@ -94,11 +103,12 @@ export const listAiConversations = createServerFn({ method: "GET" })
       let q = ctx.supabase
         .from("ai_conversations")
         .select(
-          "id, title, workspace_id, model, total_input_tokens, total_output_tokens, last_message_at, created_at",
+          "id, title, workspace_id, model, total_input_tokens, total_output_tokens, last_message_at, created_at, deleted_at",
         )
         .eq("tenant_id", tenantId)
         .order("last_message_at", { ascending: false })
         .limit(50);
+      q = data?.deleted ? q.not("deleted_at", "is", null) : q.is("deleted_at", null);
       if (data?.workspaceId) q = q.eq("workspace_id", data.workspaceId);
       const term = data?.q?.trim();
       if (term) q = q.ilike("title", `%${term.replace(/[%_]/g, "")}%`);
@@ -124,6 +134,7 @@ export const listAiConversations = createServerFn({ method: "GET" })
           totalOutputTokens: Number(r.total_output_tokens ?? 0),
           lastMessageAt: r.last_message_at,
           createdAt: r.created_at,
+          deletedAt: r.deleted_at ?? null,
         })),
       };
     },
@@ -159,9 +170,72 @@ export const deleteAiConversation = createServerFn({ method: "POST" })
     const ctx = context as unknown as Ctx;
     const { error } = await ctx.supabase
       .from("ai_conversations")
-      .delete()
+      .update({ deleted_at: new Date().toISOString(), deleted_by: ctx.userId })
       .eq("id", data.conversationId);
     if (error) throw new ApiError({ code: "AI_CONVERSATION_DELETE_FAILED", message: error.message });
+    return { ok: true };
+  });
+
+export const restoreAiConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ conversationId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as Ctx;
+    const { error } = await ctx.supabase
+      .from("ai_conversations")
+      .update({ deleted_at: null, deleted_by: null })
+      .eq("id", data.conversationId);
+    if (error)
+      throw new ApiError({ code: "AI_CONVERSATION_RESTORE_FAILED", message: error.message });
+    return { ok: true };
+  });
+
+export const purgeAiConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ conversationId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as Ctx;
+    const { error } = await ctx.supabase
+      .from("ai_conversations")
+      .delete()
+      .eq("id", data.conversationId)
+      .not("deleted_at", "is", null);
+    if (error) throw new ApiError({ code: "AI_CONVERSATION_PURGE_FAILED", message: error.message });
+    return { ok: true };
+  });
+
+export const listAiMessageVersions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ messageId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<AiMessageVersionDTO[]> => {
+    const ctx = context as unknown as Ctx;
+    const { data: rows, error } = await ctx.supabase
+      .from("ai_message_versions")
+      .select("id, version, content, created_at")
+      .eq("message_id", data.messageId)
+      .order("version", { ascending: false })
+      .limit(50);
+    if (error) throw new ApiError({ code: "AI_MESSAGE_VERSION_LIST_FAILED", message: error.message });
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      version: Number(r.version),
+      content: r.content,
+      createdAt: r.created_at,
+    }));
+  });
+
+export const updateAiMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ messageId: z.string().uuid(), content: z.string().min(1).max(20000) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as Ctx;
+    const { error } = await ctx.supabase
+      .from("ai_messages")
+      .update({ content: data.content })
+      .eq("id", data.messageId);
+    if (error) throw new ApiError({ code: "AI_MESSAGE_UPDATE_FAILED", message: error.message });
     return { ok: true };
   });
 

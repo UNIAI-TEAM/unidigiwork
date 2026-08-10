@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 import { AiUsageStatsPanel } from "@/components/ai/usage-stats-panel";
+import { MessageHistoryDialog } from "@/components/ai/message-history-dialog";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -49,6 +50,8 @@ import {
   Trash2,
   Loader2,
   X,
+  RotateCcw,
+  History,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -57,6 +60,8 @@ import {
   getAiConversation,
   sendAiMessage,
   deleteAiConversation,
+  restoreAiConversation,
+  purgeAiConversation,
 } from "@/lib/api/ai-chat.functions";
 
 export const Route = createFileRoute("/ai")({
@@ -123,6 +128,8 @@ function AIPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [pending, setPending] = useState<string | null>(null);
+  const [showTrash, setShowTrash] = useState(false);
+  const [historyMsgId, setHistoryMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
@@ -130,12 +137,15 @@ function AIPage() {
   const getFn = useServerFn(getAiConversation);
   const sendFn = useServerFn(sendAiMessage);
   const deleteFn = useServerFn(deleteAiConversation);
+  const restoreFn = useServerFn(restoreAiConversation);
+  const purgeFn = useServerFn(purgeAiConversation);
 
   const convList = useQuery({
-    queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo],
+    queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo, showTrash],
     queryFn: () =>
       listFn({
         data: {
+          deleted: showTrash,
           ...(workspaceId ? { workspaceId } : {}),
           ...(debouncedSearch ? { q: debouncedSearch } : {}),
           ...(dateFrom ? { from: dateFrom } : {}),
@@ -189,9 +199,34 @@ function AIPage() {
     mutationFn: (id: string) => deleteFn({ data: { conversationId: id } }),
     onSuccess: async (_r, id) => {
       if (id === conversationId) setConversationId(null);
-      toast.success("Đã xóa hội thoại");
+      toast.success("Đã chuyển hội thoại vào thùng rác", {
+        action: {
+          label: "Hoàn tác",
+          onClick: () => restoreMutation.mutate(id),
+        },
+      });
       await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
     },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => restoreFn({ data: { conversationId: id } }),
+    onSuccess: async () => {
+      toast.success("Đã khôi phục hội thoại");
+      await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Không khôi phục được hội thoại"),
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: (id: string) => purgeFn({ data: { conversationId: id } }),
+    onSuccess: async (_r, id) => {
+      if (id === conversationId) setConversationId(null);
+      toast.success("Đã xóa vĩnh viễn hội thoại");
+      await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không xóa được"),
   });
 
   useEffect(() => {
@@ -297,9 +332,14 @@ function AIPage() {
                   <div className="mx-auto max-w-5xl space-y-4">
                     {msgs.map((m) =>
                       m.role === "user" ? (
-                        <UserBubble key={m.id} m={m} t={t} />
+                        <UserBubble key={m.id} m={m} t={t} onHistory={() => setHistoryMsgId(m.id)} />
                       ) : (
-                        <AssistantBubble key={m.id} m={m} t={t} />
+                        <AssistantBubble
+                          key={m.id}
+                          m={m}
+                          t={t}
+                          onHistory={() => setHistoryMsgId(m.id)}
+                        />
                       ),
                     )}
                     {pending && (
@@ -429,6 +469,20 @@ function AIPage() {
 
             <Section title={t("ai.panel.recent")} action={t("ai.panel.viewall")}>
               <div className="mb-2 space-y-2">
+                <div className="flex rounded-lg border border-border p-0.5 text-[11px]">
+                  <button
+                    onClick={() => setShowTrash(false)}
+                    className={`flex-1 rounded-md px-2 py-1 ${!showTrash ? "bg-surface-2 font-medium text-foreground" : "text-muted-foreground"}`}
+                  >
+                    Hội thoại
+                  </button>
+                  <button
+                    onClick={() => setShowTrash(true)}
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 ${showTrash ? "bg-surface-2 font-medium text-foreground" : "text-muted-foreground"}`}
+                  >
+                    <Trash2 className="h-3 w-3" /> Thùng rác
+                  </button>
+                </div>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <input
@@ -501,7 +555,9 @@ function AIPage() {
               <div className="space-y-1">
                 {(convList.data?.conversations.length ?? 0) === 0 && (
                   <p className="px-2 py-2 text-xs text-muted-foreground">
-                    {search || dateFrom || dateTo || workspaceId
+                    {showTrash
+                      ? "Thùng rác trống."
+                      : search || dateFrom || dateTo || workspaceId
                       ? "Không có hội thoại phù hợp bộ lọc."
                       : "Chưa có hội thoại nào."}
                   </p>
@@ -527,13 +583,34 @@ function AIPage() {
                         {shortTime(c.lastMessageAt)}
                       </span>
                     </button>
-                    <button
-                      onClick={() => deleteMutation.mutate(c.id)}
-                      className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
-                      aria-label="Xóa hội thoại"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    {showTrash ? (
+                      <>
+                        <button
+                          onClick={() => restoreMutation.mutate(c.id)}
+                          className="shrink-0 rounded p-1 text-muted-foreground hover:text-primary"
+                          aria-label="Khôi phục hội thoại"
+                          title="Khôi phục"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => purgeMutation.mutate(c.id)}
+                          className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
+                          aria-label="Xóa vĩnh viễn"
+                          title="Xóa vĩnh viễn"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => deleteMutation.mutate(c.id)}
+                        className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                        aria-label="Xóa hội thoại"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -541,6 +618,18 @@ function AIPage() {
           </aside>
         </div>
       </div>
+
+      <MessageHistoryDialog
+        messageId={historyMsgId}
+        conversationId={conversationId}
+        initialContent={
+          (messagesQuery.data ?? []).find((x) => x.id === historyMsgId)?.content ?? ""
+        }
+        editable={
+          (messagesQuery.data ?? []).find((x) => x.id === historyMsgId)?.role === "user"
+        }
+        onOpenChange={(o) => !o && setHistoryMsgId(null)}
+      />
     </div>
   );
 }
@@ -567,20 +656,45 @@ function Empty({ t, onPick }: { t: (k: Key) => string; onPick: (s: string) => vo
   );
 }
 
-function UserBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
+function UserBubble({
+  m,
+  t,
+  onHistory,
+}: {
+  m: Msg;
+  t: (k: Key) => string;
+  onHistory?: () => void;
+}) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
         <img src={avatar("nguyen-van-a-1")} className="h-7 w-7 rounded-full object-cover" alt="" />
         <span className="text-sm font-medium">{t("ai.you")}</span>
         <span className="text-[11px] text-muted-foreground">{m.time}</span>
+        {onHistory && (
+          <button
+            onClick={onHistory}
+            title="Lịch sử phiên bản"
+            className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          >
+            <History className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
       <p className="text-sm">{m.text}</p>
     </div>
   );
 }
 
-function AssistantBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
+function AssistantBubble({
+  m,
+  t,
+  onHistory,
+}: {
+  m: Msg;
+  t: (k: Key) => string;
+  onHistory?: () => void;
+}) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
@@ -589,6 +703,15 @@ function AssistantBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
         </div>
         <span className="text-sm font-medium">{t("ai.assistant")}</span>
         <span className="text-[11px] text-muted-foreground">{m.time}</span>
+        {onHistory && (
+          <button
+            onClick={onHistory}
+            title="Lịch sử phiên bản"
+            className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          >
+            <History className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {m.rich ? <RichSummary t={t} /> : <p className="text-sm">{m.text}</p>}

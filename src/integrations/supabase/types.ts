@@ -57,6 +57,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           last_message_at: string
           model: string
@@ -70,6 +72,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           last_message_at?: string
           model?: string
@@ -83,6 +87,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           last_message_at?: string
           model?: string
@@ -106,6 +112,61 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_message_versions: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          edited_by: string | null
+          id: string
+          message_id: string
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          edited_by?: string | null
+          id?: string
+          message_id: string
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          edited_by?: string | null
+          id?: string
+          message_id?: string
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_message_versions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_message_versions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ai_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_message_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
