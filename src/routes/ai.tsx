@@ -349,6 +349,7 @@ function AIPage() {
   };
 
   const send = (text?: string) => {
+    // placeholder
     const v = (text ?? input).trim();
     if (!v || sendMutation.isPending) return;
     setPending(v);
