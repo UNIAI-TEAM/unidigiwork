@@ -618,6 +618,18 @@ function AIPage() {
           </aside>
         </div>
       </div>
+
+      <MessageHistoryDialog
+        messageId={historyMsgId}
+        conversationId={conversationId}
+        initialContent={
+          (messagesQuery.data ?? []).find((x) => x.id === historyMsgId)?.content ?? ""
+        }
+        editable={
+          (messagesQuery.data ?? []).find((x) => x.id === historyMsgId)?.role === "user"
+        }
+        onOpenChange={(o) => !o && setHistoryMsgId(null)}
+      />
     </div>
   );
 }
