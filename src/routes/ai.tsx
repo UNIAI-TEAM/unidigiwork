@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 import { AiUsageStatsPanel } from "@/components/ai/usage-stats-panel";
@@ -143,19 +143,43 @@ function AIPage() {
   const restoreFn = useServerFn(restoreAiConversation);
   const purgeFn = useServerFn(purgeAiConversation);
 
-  const convList = useQuery({
+  const convList = useInfiniteQuery({
     queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo, showTrash],
-    queryFn: () =>
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
       listFn({
         data: {
           deleted: showTrash,
+          limit: 20,
+          offset: pageParam as number,
           ...(workspaceId ? { workspaceId } : {}),
           ...(debouncedSearch ? { q: debouncedSearch } : {}),
           ...(dateFrom ? { from: dateFrom } : {}),
           ...(dateTo ? { to: dateTo } : {}),
         },
       }),
+    getNextPageParam: (last) => last.nextOffset ?? undefined,
   });
+
+  const conversations = convList.data?.pages.flatMap((p) => p.conversations) ?? [];
+  const workspaceOptions = convList.data?.pages[0]?.workspaces ?? [];
+  const totalConversations = convList.data?.pages[0]?.total ?? 0;
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && convList.hasNextPage && !convList.isFetchingNextPage) {
+          convList.fetchNextPage();
+        }
+      },
+      { rootMargin: "120px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [convList.hasNextPage, convList.isFetchingNextPage, convList.fetchNextPage, conversations.length]);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -237,7 +261,7 @@ function AIPage() {
   }, [msgs.length, pending]);
 
   const exportConversation = async (id: string, format: "pdf" | "json") => {
-    const conv = convList.data?.conversations.find((c) => c.id === id);
+    const conv = conversations.find((c) => c.id === id);
     if (!conv) return;
     setExportingId(id);
     try {
@@ -588,7 +612,7 @@ function AIPage() {
                   </button>
                 )}
               </div>
-              {(convList.data?.workspaces.length ?? 0) > 0 && (
+              {workspaceOptions.length > 0 && (
                 <select
                   value={workspaceId}
                   onChange={(e) => {
@@ -598,7 +622,7 @@ function AIPage() {
                   className="mb-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs"
                 >
                   <option value="">Tất cả workspace</option>
-                  {convList.data?.workspaces.map((w) => (
+                  {workspaceOptions.map((w) => (
                     <option key={w.id} value={w.id}>
                       {w.name}
                     </option>
@@ -606,7 +630,7 @@ function AIPage() {
                 </select>
               )}
               <div className="space-y-1">
-                {(convList.data?.conversations.length ?? 0) === 0 && (
+                {conversations.length === 0 && !convList.isLoading && (
                   <p className="px-2 py-2 text-xs text-muted-foreground">
                     {showTrash
                       ? "Thùng rác trống."
@@ -615,7 +639,7 @@ function AIPage() {
                       : "Chưa có hội thoại nào."}
                   </p>
                 )}
-                {convList.data?.conversations.map((c) => (
+                {conversations.map((c) => (
                   <div
                     key={c.id}
                     className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2 ${
@@ -690,6 +714,26 @@ function AIPage() {
                     )}
                   </div>
                 ))}
+
+                <div ref={loadMoreRef} className="h-1" />
+                {convList.isFetchingNextPage && (
+                  <p className="flex items-center justify-center gap-2 py-2 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Đang tải thêm…
+                  </p>
+                )}
+                {convList.hasNextPage && !convList.isFetchingNextPage && (
+                  <button
+                    onClick={() => convList.fetchNextPage()}
+                    className="w-full rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2"
+                  >
+                    Tải thêm hội thoại
+                  </button>
+                )}
+                {conversations.length > 0 && (
+                  <p className="px-2 py-1 text-[10px] text-muted-foreground">
+                    Hiển thị {conversations.length}/{totalConversations} hội thoại
+                  </p>
+                )}
               </div>
             </Section>
           </aside>
