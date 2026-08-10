@@ -715,6 +715,22 @@ function AIPage() {
                     <option value="usage_asc">Số lượt dùng ít nhất</option>
                   </select>
                 </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => exportList("pdf")}
+                    disabled={exportingList !== null}
+                    className="flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Xuất PDF
+                  </button>
+                  <button
+                    onClick={() => exportList("csv")}
+                    disabled={exportingList !== null}
+                    className="flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    <FileJson className="h-3.5 w-3.5" /> Xuất CSV
+                  </button>
+                </div>
                 {(search || dateFrom || dateTo || workspaceId) && (
                   <button
                     onClick={() => {
