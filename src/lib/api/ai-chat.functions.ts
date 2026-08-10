@@ -69,7 +69,12 @@ export const listAiConversations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
-      .object({ workspaceId: z.string().uuid().optional() })
+      .object({
+        workspaceId: z.string().uuid().optional(),
+        q: z.string().max(200).optional(),
+        from: z.string().optional(),
+        to: z.string().optional(),
+      })
       .optional()
       .parse(i),
   )
@@ -95,6 +100,14 @@ export const listAiConversations = createServerFn({ method: "GET" })
         .order("last_message_at", { ascending: false })
         .limit(50);
       if (data?.workspaceId) q = q.eq("workspace_id", data.workspaceId);
+      const term = data?.q?.trim();
+      if (term) q = q.ilike("title", `%${term.replace(/[%_]/g, "")}%`);
+      if (data?.from) q = q.gte("last_message_at", new Date(data.from).toISOString());
+      if (data?.to) {
+        const end = new Date(data.to);
+        end.setHours(23, 59, 59, 999);
+        q = q.lte("last_message_at", end.toISOString());
+      }
       const { data: rows, error } = await q;
       if (error) throw new ApiError({ code: "AI_CONVERSATION_LIST_FAILED", message: error.message });
       const wsMap = new Map(workspaces.map((w) => [w.id, w.name]));
