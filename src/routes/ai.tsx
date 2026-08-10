@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
@@ -42,9 +45,17 @@ import {
   Zap,
   Settings,
   ChevronRight,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
+import {
+  listAiConversations,
+  getAiConversation,
+  sendAiMessage,
+  deleteAiConversation,
+} from "@/lib/api/ai-chat.functions";
 
 export const Route = createFileRoute("/ai")({
   head: () => ({
@@ -82,13 +93,14 @@ const prompts = [
   { k: "plan", icon: Calendar },
 ] as const;
 
-const recentChats = [
-  { title: "Tóm tắt cuộc họp Sprint 6", time: "10:30 AM" },
-  { title: "Phân tích báo cáo doanh thu Q2", time: "09:15 AM" },
-  { title: "Kế hoạch marketing tháng 6", time: "Yesterday" },
-  { title: "Review tài liệu PRD – STOS Mobile App", time: "Yesterday" },
-  { title: "So sánh hiệu suất các dự án", time: "16/05/2025" },
-];
+function shortTime(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  return sameDay
+    ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })
+    : d.toLocaleDateString("vi-VN");
+}
 
 const commands = [
   { cmd: "/summary", desc: "Tóm tắt nội dung", icon: Sparkles },
@@ -102,39 +114,82 @@ function AIPage() {
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("chat");
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState<Msg[]>([
-    {
-      id: "m1",
-      role: "user",
-      text: "Tóm tắt cuộc họp Sprint 6 Daily Standup hôm nay",
-      time: "10:30 AM",
-    },
-    { id: "m2", role: "assistant", text: "", time: "10:30 AM", rich: true },
-  ]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string>("");
+  const [pending, setPending] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const qc = useQueryClient();
+
+  const listFn = useServerFn(listAiConversations);
+  const getFn = useServerFn(getAiConversation);
+  const sendFn = useServerFn(sendAiMessage);
+  const deleteFn = useServerFn(deleteAiConversation);
+
+  const convList = useQuery({
+    queryKey: ["ai-conversations", workspaceId],
+    queryFn: () => listFn({ data: workspaceId ? { workspaceId } : {} }),
+  });
+
+  const messagesQuery = useQuery({
+    queryKey: ["ai-messages", conversationId],
+    queryFn: () => getFn({ data: { conversationId: conversationId as string } }),
+    enabled: !!conversationId,
+  });
+
+  const msgs: Msg[] = (messagesQuery.data ?? [])
+    .filter((m) => m.role !== "system")
+    .map((m) => ({
+      id: m.id,
+      role: m.role === "assistant" ? "assistant" : "user",
+      text: m.content,
+      time: shortTime(m.createdAt),
+    }));
+
+  const sendMutation = useMutation({
+    mutationFn: (text: string) =>
+      sendFn({
+        data: {
+          text,
+          ...(conversationId ? { conversationId } : {}),
+          ...(workspaceId && !conversationId ? { workspaceId } : {}),
+        },
+      }),
+    onSuccess: async (res) => {
+      setPending(null);
+      setConversationId(res.conversationId);
+      await qc.invalidateQueries({ queryKey: ["ai-messages", res.conversationId] });
+      await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
+    },
+    onError: (e: unknown) => {
+      setPending(null);
+      toast.error(e instanceof Error ? e.message : "Không gửi được yêu cầu tới AI");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { conversationId: id } }),
+    onSuccess: async (_r, id) => {
+      if (id === conversationId) setConversationId(null);
+      toast.success("Đã xóa hội thoại");
+      await qc.invalidateQueries({ queryKey: ["ai-conversations"] });
+    },
+  });
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [msgs]);
+  }, [msgs.length, pending]);
 
   const send = (text?: string) => {
     const v = (text ?? input).trim();
-    if (!v) return;
-    const now = new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-    setMsgs((m) => [
-      ...m,
-      { id: `u${m.length}`, role: "user", text: v, time: now },
-      {
-        id: `a${m.length + 1}`,
-        role: "assistant",
-        text: "Tôi đang xử lý yêu cầu của bạn…",
-        time: now,
-      },
-    ]);
+    if (!v || sendMutation.isPending) return;
+    setPending(v);
+    setInput("");
+    sendMutation.mutate(v);
+  };
+
+  const newChat = () => {
+    setConversationId(null);
+    setPending(null);
     setInput("");
   };
 
@@ -145,7 +200,7 @@ function AIPage() {
         <AppTopbar
           variant="documents"
           onOpenSidebar={() => setOpen(true)}
-          onNew={() => setMsgs([])}
+          onNew={newChat}
         />
 
         <div className="flex min-h-0 flex-1">
@@ -162,7 +217,7 @@ function AIPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{t("ai.sub")}</p>
               </div>
               <button
-                onClick={() => setMsgs([])}
+                onClick={newChat}
                 className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" /> {t("ai.new")}
@@ -189,7 +244,7 @@ function AIPage() {
             <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
               {tab !== "chat" ? (
                 <TabPanel tab={tab} />
-              ) : msgs.length === 0 ? (
+              ) : msgs.length === 0 && !pending ? (
                 <Empty t={t} onPick={(text) => send(text)} />
               ) : (
                 <>
@@ -228,6 +283,18 @@ function AIPage() {
                         <AssistantBubble key={m.id} m={m} t={t} />
                       ),
                     )}
+                    {pending && (
+                      <>
+                        <UserBubble
+                          m={{ id: "pending-u", role: "user", text: pending, time: "" }}
+                          t={t}
+                        />
+                        <div className="flex items-center gap-2 rounded-xl border border-border bg-surface p-4 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          AI đang soạn câu trả lời…
+                        </div>
+                      </>
+                    )}
                   </div>
                 </>
               )}
@@ -251,9 +318,14 @@ function AIPage() {
                   />
                   <button
                     onClick={() => send()}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={sendMutation.isPending}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                   >
-                    <Send className="h-4 w-4" />
+                    {sendMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
 
@@ -337,18 +409,56 @@ function AIPage() {
             </Section>
 
             <Section title={t("ai.panel.recent")} action={t("ai.panel.viewall")}>
+              {(convList.data?.workspaces.length ?? 0) > 0 && (
+                <select
+                  value={workspaceId}
+                  onChange={(e) => {
+                    setWorkspaceId(e.target.value);
+                    setConversationId(null);
+                  }}
+                  className="mb-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs"
+                >
+                  <option value="">Tất cả workspace</option>
+                  {convList.data?.workspaces.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
+              )}
               <div className="space-y-1">
-                {recentChats.map((c) => (
-                  <button
-                    key={c.title}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-surface-2"
+                {(convList.data?.conversations.length ?? 0) === 0 && (
+                  <p className="px-2 py-2 text-xs text-muted-foreground">Chưa có hội thoại nào.</p>
+                )}
+                {convList.data?.conversations.map((c) => (
+                  <div
+                    key={c.id}
+                    className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2 ${
+                      c.id === conversationId ? "bg-surface-2" : ""
+                    }`}
                   >
-                    <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate text-xs">{c.title}</span>
-                    <span className="shrink-0 whitespace-nowrap text-[10px] text-muted-foreground">
-                      {c.time}
-                    </span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        setConversationId(c.id);
+                        setPending(null);
+                        setTab("chat");
+                      }}
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    >
+                      <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1 truncate text-xs">{c.title}</span>
+                      <span className="shrink-0 whitespace-nowrap text-[10px] text-muted-foreground">
+                        {shortTime(c.lastMessageAt)}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => deleteMutation.mutate(c.id)}
+                      className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                      aria-label="Xóa hội thoại"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </Section>

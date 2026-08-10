@@ -59,7 +59,7 @@ function StageFallback() {
 }
 
 export const Route = createFileRoute("/meeting_/$id")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { invite?: string } => ({
     invite: typeof search['invite'] === "string" ? (search['invite'] as string) : undefined,
   }),
   head: ({ params }) => ({
