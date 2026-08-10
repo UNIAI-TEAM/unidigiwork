@@ -116,6 +116,10 @@ function AIPage() {
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
@@ -126,9 +130,22 @@ function AIPage() {
   const deleteFn = useServerFn(deleteAiConversation);
 
   const convList = useQuery({
-    queryKey: ["ai-conversations", workspaceId],
-    queryFn: () => listFn({ data: workspaceId ? { workspaceId } : {} }),
+    queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo],
+    queryFn: () =>
+      listFn({
+        data: {
+          ...(workspaceId ? { workspaceId } : {}),
+          ...(debouncedSearch ? { q: debouncedSearch } : {}),
+          ...(dateFrom ? { from: dateFrom } : {}),
+          ...(dateTo ? { to: dateTo } : {}),
+        },
+      }),
   });
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   const messagesQuery = useQuery({
     queryKey: ["ai-messages", conversationId],
