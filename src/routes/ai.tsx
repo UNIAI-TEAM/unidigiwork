@@ -54,11 +54,17 @@ import {
   History,
 } from "lucide-react";
 import { Download, FileJson } from "lucide-react";
-import { exportTranscriptJson, exportTranscriptPdf } from "@/lib/ai-transcript-export";
+import {
+  exportTranscriptJson,
+  exportTranscriptPdf,
+  exportConversationListCsv,
+  exportConversationListPdf,
+} from "@/lib/ai-transcript-export";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import {
   listAiConversations,
+  exportAiConversations,
   getAiConversation,
   sendAiMessage,
   deleteAiConversation,
@@ -190,6 +196,8 @@ function AIPage() {
   const deleteFn = useServerFn(deleteAiConversation);
   const restoreFn = useServerFn(restoreAiConversation);
   const purgeFn = useServerFn(purgeAiConversation);
+  const exportListFn = useServerFn(exportAiConversations);
+  const [exportingList, setExportingList] = useState<"csv" | "pdf" | null>(null);
 
   const convList = useInfiniteQuery({
     queryKey: [
