@@ -714,6 +714,26 @@ function AIPage() {
                     )}
                   </div>
                 ))}
+
+                <div ref={loadMoreRef} className="h-1" />
+                {convList.isFetchingNextPage && (
+                  <p className="flex items-center justify-center gap-2 py-2 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Đang tải thêm…
+                  </p>
+                )}
+                {convList.hasNextPage && !convList.isFetchingNextPage && (
+                  <button
+                    onClick={() => convList.fetchNextPage()}
+                    className="w-full rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2"
+                  >
+                    Tải thêm hội thoại
+                  </button>
+                )}
+                {conversations.length > 0 && (
+                  <p className="px-2 py-1 text-[10px] text-muted-foreground">
+                    Hiển thị {conversations.length}/{totalConversations} hội thoại
+                  </p>
+                )}
               </div>
             </Section>
           </aside>
