@@ -3068,6 +3068,54 @@ export type Database = {
           },
         ]
       }
+      workflow_step_types: {
+        Row: {
+          code: string
+          color: string
+          created_at: string
+          default_config: Json
+          description_en: string | null
+          description_vi: string | null
+          icon: string
+          id: string
+          is_enabled: boolean
+          label_en: string
+          label_vi: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          color?: string
+          created_at?: string
+          default_config?: Json
+          description_en?: string | null
+          description_vi?: string | null
+          icon?: string
+          id?: string
+          is_enabled?: boolean
+          label_en: string
+          label_vi: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          color?: string
+          created_at?: string
+          default_config?: Json
+          description_en?: string | null
+          description_vi?: string | null
+          icon?: string
+          id?: string
+          is_enabled?: boolean
+          label_en?: string
+          label_vi?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workflow_steps: {
         Row: {
           created_at: string
@@ -3596,6 +3644,37 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      archive_workflow: {
+        Args: {
+          _archived?: boolean
+          _correlation_id?: string
+          _idempotency_key?: string
+          _workflow_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          published_at: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["workflow_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workflows"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -4178,6 +4257,14 @@ export type Database = {
           _request_id: string
         }
         Returns: Json
+      }
+      delete_workflow: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _workflow_id: string
+        }
+        Returns: boolean
       }
       delete_workflow_trigger: {
         Args: { _trigger_id: string }
