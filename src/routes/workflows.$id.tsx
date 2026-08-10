@@ -1,17 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft, Plus, Save, Play, Rocket, Trash2, ArrowUp, ArrowDown,
   Zap, Sparkles, GitBranch, Mail, Database, CheckCircle2, Clock, Loader2,
-  FlaskConical, AlertTriangle, MinusCircle, XCircle,
+  FlaskConical, AlertTriangle, MinusCircle, XCircle, Archive, ArchiveRestore, Circle,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getWorkflow, updateWorkflow, publishWorkflow, startWorkflowRun,
   upsertWorkflowTrigger, deleteWorkflowTrigger, simulateWorkflowRun,
-  getMyWorkflowPermissions,
+  getMyWorkflowPermissions, listWorkflowStepTypes, archiveWorkflow, deleteWorkflow,
 } from "@/lib/api/workflows.functions";
 import {
   DEFAULT_WORKFLOW_PERMS, denialReason, guardWorkflowAction, toastWorkflowError,
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/workflows/$id")({
   component: WorkflowBuilderPage,
 });
 
-type StepType = "trigger" | "ai" | "branch" | "action" | "notify" | "end";
+type StepType = string;
 type OnErrorPolicy = "stop" | "skip";
 type Step = { key: string; title: string; type: StepType; config: Record<string, unknown> };
 
@@ -43,14 +43,20 @@ const ON_ERROR_OPTIONS: { value: OnErrorPolicy; label: string; hint: string }[] 
 const stepOnError = (s: Step): OnErrorPolicy =>
   (s.config?.["on_error"] === "skip" ? "skip" : "stop");
 
-const STEP_META: Record<StepType, { label: string; icon: React.ComponentType<{ className?: string }>; cls: string }> = {
-  trigger: { label: "Khởi động", icon: Zap, cls: "bg-warning/15 text-warning border-warning/30" },
-  ai: { label: "AI xử lý", icon: Sparkles, cls: "bg-primary/15 text-primary border-primary/30" },
-  branch: { label: "Điều kiện", icon: GitBranch, cls: "bg-accent/15 text-accent-foreground border-border" },
-  action: { label: "Hành động", icon: Database, cls: "bg-success/15 text-success border-success/30" },
-  notify: { label: "Thông báo", icon: Mail, cls: "bg-success/15 text-success border-success/30" },
-  end: { label: "Kết thúc", icon: CheckCircle2, cls: "bg-surface-2 text-muted-foreground border-border" },
+// Biểu tượng/màu suy ra từ danh mục loại bước lưu trong CSDL (workflow_step_types).
+const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  zap: Zap, sparkles: Sparkles, "git-branch": GitBranch, database: Database,
+  mail: Mail, "check-circle": CheckCircle2, circle: Circle,
 };
+const COLOR_CLS: Record<string, string> = {
+  warning: "bg-warning/15 text-warning border-warning/30",
+  primary: "bg-primary/15 text-primary border-primary/30",
+  accent: "bg-accent/15 text-accent-foreground border-border",
+  success: "bg-success/15 text-success border-success/30",
+  muted: "bg-surface-2 text-muted-foreground border-border",
+};
+type StepMeta = { label: string; description: string | null; icon: React.ComponentType<{ className?: string }>; cls: string; defaultConfig: Record<string, unknown> };
+const UNKNOWN_META: StepMeta = { label: "Bước khác", description: null, icon: Circle, cls: COLOR_CLS["muted"]!, defaultConfig: {} };
 
 const FREQ: { value: "minutes" | "hourly" | "daily" | "weekly"; label: string }[] = [
   { value: "minutes", label: "Mỗi N phút" },
@@ -65,11 +71,34 @@ function WorkflowBuilderPage() {
   const { id } = Route.useParams();
   const [open, setOpen] = useSidebarState();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["workflow", id],
     queryFn: () => getWorkflow({ data: { workflowId: id } }),
   });
+
+  const catalogQuery = useQuery({
+    queryKey: ["workflow-step-types"],
+    queryFn: () => listWorkflowStepTypes(),
+    staleTime: 5 * 60_000,
+  });
+  const catalog = useMemo(() => catalogQuery.data ?? [], [catalogQuery.data]);
+  const stepMeta = useMemo(() => {
+    const m = new Map<string, StepMeta>();
+    for (const c of catalog) {
+      m.set(c.code, {
+        label: c.labelVi,
+        description: c.descriptionVi,
+        icon: ICONS[c.icon] ?? Circle,
+        cls: COLOR_CLS[c.color] ?? COLOR_CLS["muted"]!,
+        defaultConfig: c.defaultConfig as Record<string, unknown>,
+      });
+    }
+    return m;
+  }, [catalog]);
+  const metaOf = (type: string): StepMeta => stepMeta.get(type) ?? UNKNOWN_META;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -124,8 +153,18 @@ function WorkflowBuilderPage() {
   });
 
   const mutateSteps = (next: Step[]) => { setSteps(next); setDirty(true); };
-  const addStep = (type: StepType) =>
-    mutateSteps([...steps, { key: `step_${steps.length + 1}_${Math.random().toString(36).slice(2, 6)}`, title: STEP_META[type].label, type, config: {} }]);
+  const addStep = (type: StepType) => {
+    const meta = metaOf(type);
+    mutateSteps([
+      ...steps,
+      {
+        key: `step_${steps.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+        title: meta.label,
+        type,
+        config: { ...meta.defaultConfig },
+      },
+    ]);
+  };
   const move = (i: number, d: -1 | 1) => {
     const j = i + d;
     if (j < 0 || j >= steps.length) return;
@@ -136,6 +175,28 @@ function WorkflowBuilderPage() {
 
   const wf = data?.workflow;
   const published = wf?.status === "published";
+  const archived = wf?.status === "archived";
+
+  const archiveMut = useMutation({
+    mutationFn: (next: boolean) =>
+      archiveWorkflow({ data: { idempotencyKey: uid(), workflowId: id, archived: next } }),
+    onSuccess: (_r, next) => {
+      toast.success(next ? "Đã lưu trữ quy trình" : "Đã khôi phục quy trình");
+      qc.invalidateQueries({ queryKey: ["workflows"] });
+      refresh();
+    },
+    onError: (e: Error) => toastWorkflowError(e, "Không đổi được trạng thái lưu trữ", { workspaceId, workflowId: id }),
+  });
+
+  const removeMut = useMutation({
+    mutationFn: () => deleteWorkflow({ data: { idempotencyKey: uid(), workflowId: id } }),
+    onSuccess: () => {
+      toast.success("Đã xóa quy trình");
+      qc.invalidateQueries({ queryKey: ["workflows"] });
+      void navigate({ to: "/workflows" });
+    },
+    onError: (e: Error) => toastWorkflowError(e, "Không xóa được quy trình", { workspaceId, workflowId: id }),
+  });
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -194,8 +255,46 @@ function WorkflowBuilderPage() {
             {!permsQuery.isLoading && !perms.can_run && (
               <PermissionHint workspaceId={workspaceId} action="run" workflowId={id} />
             )}
+            <button
+              onClick={() => { if (guardWorkflowAction(perms, "edit")) archiveMut.mutate(!archived); }}
+              disabled={archiveMut.isPending || !perms.can_edit}
+              title={perms.can_edit ? undefined : denialReason("edit")}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-surface-2 disabled:opacity-50"
+            >
+              {archived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+              {archived ? "Khôi phục" : "Lưu trữ"}
+            </button>
+            <button
+              onClick={() => { if (guardWorkflowAction(perms, "edit")) setConfirmDelete(true); }}
+              disabled={removeMut.isPending || !perms.can_edit}
+              title={perms.can_edit ? undefined : denialReason("edit")}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-destructive/40 px-3 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" /> Xóa
+            </button>
           </div>
         </div>
+
+        {confirmDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(false)}>
+            <div className="w-full max-w-sm rounded-xl border border-border bg-card p-5" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-sm font-semibold">Xóa quy trình?</h3>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Quy trình “{name || "chưa đặt tên"}” sẽ bị xóa khỏi danh sách. Lịch chạy tự động sẽ bị tắt.
+                Không thể xóa khi còn lượt chạy đang chờ hoặc đang chạy.
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={() => setConfirmDelete(false)} className="h-9 rounded-lg border border-border px-3 text-sm hover:bg-surface-2">Hủy</button>
+                <button
+                  onClick={() => { setConfirmDelete(false); removeMut.mutate(); }}
+                  className="flex h-9 items-center gap-1.5 rounded-lg bg-destructive px-3 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {removeMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Xóa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
@@ -247,10 +346,14 @@ function WorkflowBuilderPage() {
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-semibold">Các bước ({steps.length})</h2>
                     <div className="flex flex-wrap gap-1.5">
-                      {(Object.keys(STEP_META) as StepType[]).map((t) => (
-                        <button key={t} onClick={() => addStep(t)}
+                      {catalogQuery.isLoading && (
+                        <span className="text-xs text-muted-foreground">Đang tải danh mục bước…</span>
+                      )}
+                      {catalog.map((c) => (
+                        <button key={c.code} onClick={() => addStep(c.code)}
+                          title={c.descriptionVi ?? undefined}
                           className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-xs hover:bg-surface-2">
-                          <Plus className="h-3.5 w-3.5" /> {STEP_META[t].label}
+                          <Plus className="h-3.5 w-3.5" /> {c.labelVi}
                         </button>
                       ))}
                     </div>
@@ -261,11 +364,12 @@ function WorkflowBuilderPage() {
                   ) : (
                     <ol className="mt-4 space-y-2">
                       {steps.map((s, i) => {
-                        const Icon = STEP_META[s.type].icon;
+                        const meta = metaOf(s.type);
+                        const Icon = meta.icon;
                         return (
                           <li key={s.key} className="rounded-xl border border-border bg-surface-2 p-3">
                             <div className="flex items-start gap-3">
-                              <span className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-lg border ${STEP_META[s.type].cls}`}>
+                              <span className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-lg border ${meta.cls}`}>
                                 <Icon className="h-4 w-4" />
                               </span>
                               <div className="min-w-0 flex-1 space-y-2">
@@ -280,8 +384,9 @@ function WorkflowBuilderPage() {
                                     onChange={(e) => mutateSteps(steps.map((x, k) => (k === i ? { ...x, type: e.target.value as StepType } : x)))}
                                     className="h-8 rounded-lg border border-border bg-card px-2 text-xs"
                                   >
-                                    {(Object.keys(STEP_META) as StepType[]).map((t) => (
-                                      <option key={t} value={t}>{STEP_META[t].label}</option>
+                                    {!stepMeta.has(s.type) && <option value={s.type}>{s.type}</option>}
+                                    {catalog.map((c) => (
+                                      <option key={c.code} value={c.code}>{c.labelVi}</option>
                                     ))}
                                   </select>
                                   <span className="font-mono text-[10px] text-muted-foreground">{s.key}</span>

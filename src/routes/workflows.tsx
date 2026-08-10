@@ -21,6 +21,9 @@ import {
   CalendarRange,
   History,
   ShieldCheck,
+  Archive,
+  ArchiveRestore,
+  Trash2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -32,6 +35,8 @@ import {
   publishWorkflow,
   startWorkflowRun,
   getMyWorkflowPermissions,
+  archiveWorkflow,
+  deleteWorkflow,
 } from "@/lib/api/workflows.functions";
 import {
   DEFAULT_WORKFLOW_PERMS,
@@ -108,6 +113,7 @@ function WorkflowsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<WF | null>(null);
 
   const workspaces = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const [wsId, setWsId] = useState<string | undefined>(undefined);
@@ -214,6 +220,30 @@ function WorkflowsPage() {
       toast.success(t("wf.panel.run"));
     },
     onError: (e: Error) => toastWorkflowError(e, "Không chạy được quy trình", { workspaceId: activeWs }),
+  });
+
+  const archiveMut = useMutation({
+    mutationFn: (p: { w: WF; archived: boolean }) =>
+      archiveWorkflow({
+        data: { workflowId: p.w.id, archived: p.archived, idempotencyKey: crypto.randomUUID() },
+      }),
+    onSuccess: async (_r, p) => {
+      await qc.invalidateQueries({ queryKey: ["workflows", activeWs] });
+      toast.success(p.archived ? "Đã lưu trữ quy trình" : "Đã khôi phục quy trình");
+    },
+    onError: (e: Error) =>
+      toastWorkflowError(e, "Không đổi được trạng thái lưu trữ", { workspaceId: activeWs }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (w: WF) =>
+      deleteWorkflow({ data: { workflowId: w.id, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: async () => {
+      setPendingDelete(null);
+      await qc.invalidateQueries({ queryKey: ["workflows", activeWs] });
+      toast.success("Đã xóa quy trình");
+    },
+    onError: (e: Error) => toastWorkflowError(e, "Không xóa được quy trình", { workspaceId: activeWs }),
   });
 
   return (
@@ -369,6 +399,7 @@ function WorkflowsPage() {
                         <th className="px-3 py-3 text-left font-medium">{t("wf.col.completed")}</th>
                         <th className="px-3 py-3 text-left font-medium">{t("wf.col.time")}</th>
                         <th className="px-3 py-3 text-left font-medium">{t("wf.col.updated")}</th>
+                        <th className="px-3 py-3 text-right font-medium">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -404,6 +435,42 @@ function WorkflowsPage() {
                             </td>
                             <td className="px-3 py-3 text-muted-foreground">
                               {fmtDate(w.updated_at)}
+                            </td>
+                            <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => {
+                                    if (!guardWorkflowAction(perms, "edit")) return;
+                                    archiveMut.mutate({ w, archived: w.status !== "archived" });
+                                  }}
+                                  disabled={!perms.can_edit || archiveMut.isPending}
+                                  title={
+                                    !perms.can_edit
+                                      ? denialReason("edit")
+                                      : w.status === "archived"
+                                        ? "Khôi phục"
+                                        : "Lưu trữ"
+                                  }
+                                  className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+                                >
+                                  {w.status === "archived" ? (
+                                    <ArchiveRestore className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Archive className="h-3.5 w-3.5" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (!guardWorkflowAction(perms, "edit")) return;
+                                    setPendingDelete(w);
+                                  }}
+                                  disabled={!perms.can_edit}
+                                  title={perms.can_edit ? "Xóa quy trình" : denialReason("edit")}
+                                  className="rounded-lg border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -449,6 +516,44 @@ function WorkflowsPage() {
           busy={createMut.isPending}
           t={t}
         />
+      )}
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setPendingDelete(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-border bg-card p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold">Xóa quy trình?</h3>
+            <p className="mt-2 text-xs text-muted-foreground">
+              “{pendingDelete.name}” sẽ bị xóa khỏi danh sách và mọi lịch chạy tự động sẽ bị tắt.
+              Không thể xóa khi còn lượt chạy đang chờ hoặc đang chạy.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setPendingDelete(null)}
+                className="h-9 rounded-lg border border-border px-3 text-sm hover:bg-surface-2"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => deleteMut.mutate(pendingDelete)}
+                disabled={deleteMut.isPending}
+                className="flex h-9 items-center gap-1.5 rounded-lg bg-destructive px-3 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {deleteMut.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}{" "}
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

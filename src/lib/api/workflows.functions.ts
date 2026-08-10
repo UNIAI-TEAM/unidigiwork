@@ -261,6 +261,77 @@ export const updateWorkflow = createServerFn({ method: "POST" })
     return ensureOk(res, "WORKFLOW_NOT_FOUND");
   });
 
+export const archiveWorkflow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      ...commandMetadataSchema.shape,
+      workflowId: z.string().uuid(),
+      archived: z.boolean().default(true),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("archive_workflow", {
+      _workflow_id: data.workflowId,
+      _archived: data.archived,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    return ensureOk(res, "WORKFLOW_NOT_FOUND");
+  });
+
+export const deleteWorkflow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      ...commandMetadataSchema.shape,
+      workflowId: z.string().uuid(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: ok, error } = await context.supabase.rpc("delete_workflow", {
+      _workflow_id: data.workflowId,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    if (error) mapPgError(error);
+    return { deleted: Boolean(ok) };
+  });
+
+export type WorkflowStepTypeDTO = {
+  code: string;
+  labelVi: string;
+  labelEn: string;
+  descriptionVi: string | null;
+  descriptionEn: string | null;
+  icon: string;
+  color: string;
+  defaultConfig: Record<string, Json>;
+  sortOrder: number;
+};
+
+export const listWorkflowStepTypes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<WorkflowStepTypeDTO[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("workflow_step_types")
+      .select("*")
+      .eq("is_enabled", true)
+      .order("sort_order", { ascending: true });
+    if (error) mapPgError(error);
+    return (rows ?? []).map((r) => ({
+      code: r.code,
+      labelVi: r.label_vi,
+      labelEn: r.label_en,
+      descriptionVi: r.description_vi,
+      descriptionEn: r.description_en,
+      icon: r.icon,
+      color: r.color,
+      defaultConfig: (r.default_config ?? {}) as Record<string, Json>,
+      sortOrder: r.sort_order,
+    }));
+  });
+
 export const upsertWorkflowTrigger = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
