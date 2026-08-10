@@ -138,6 +138,42 @@ function AIPage() {
   const [exportingId, setExportingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
+  const filtersRestored = useRef(false);
+
+  // Khôi phục bộ lọc đã lưu (workspace, khoảng thời gian, sắp xếp)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(AI_FILTERS_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<{
+          workspaceId: string;
+          dateFrom: string;
+          dateTo: string;
+          sort: string;
+        }>;
+        if (typeof saved.workspaceId === "string") setWorkspaceId(saved.workspaceId);
+        if (typeof saved.dateFrom === "string") setDateFrom(saved.dateFrom);
+        if (typeof saved.dateTo === "string") setDateTo(saved.dateTo);
+        if (saved.sort && AI_SORTS.includes(saved.sort as AiSort)) setSort(saved.sort as AiSort);
+      }
+    } catch {
+      /* ignore */
+    }
+    filtersRestored.current = true;
+  }, []);
+
+  // Lưu bộ lọc cho lần truy cập sau
+  useEffect(() => {
+    if (!filtersRestored.current) return;
+    try {
+      localStorage.setItem(
+        AI_FILTERS_KEY,
+        JSON.stringify({ workspaceId, dateFrom, dateTo, sort }),
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [workspaceId, dateFrom, dateTo, sort]);
 
   const listFn = useServerFn(listAiConversations);
   const getFn = useServerFn(getAiConversation);
