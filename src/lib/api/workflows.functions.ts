@@ -261,9 +261,6 @@ export const updateWorkflow = createServerFn({ method: "POST" })
     return ensureOk(res, "WORKFLOW_NOT_FOUND");
   });
 
-export const upsertWorkflowTrigger = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth]) as never;
-
 export const archiveWorkflow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
@@ -309,7 +306,7 @@ export type WorkflowStepTypeDTO = {
   descriptionEn: string | null;
   icon: string;
   color: string;
-  defaultConfig: Record<string, unknown>;
+  defaultConfig: Record<string, Json>;
   sortOrder: number;
 };
 
@@ -330,12 +327,12 @@ export const listWorkflowStepTypes = createServerFn({ method: "GET" })
       descriptionEn: r.description_en,
       icon: r.icon,
       color: r.color,
-      defaultConfig: (r.default_config ?? {}) as Record<string, unknown>,
+      defaultConfig: (r.default_config ?? {}) as Record<string, Json>,
       sortOrder: r.sort_order,
     }));
   });
 
-const upsertWorkflowTriggerBase = createServerFn({ method: "POST" })
+export const upsertWorkflowTrigger = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z.object({
