@@ -296,12 +296,39 @@ function AIPage() {
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">{t("ai.sub")}</p>
               </div>
-              <button
-                onClick={newChat}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" /> {t("ai.new")}
-              </button>
+              <div className="flex items-center gap-2">
+                {conversationId && (
+                  <>
+                    <button
+                      onClick={() => exportConversation(conversationId, "pdf")}
+                      disabled={exportingId === conversationId}
+                      title="Xuất transcript ra PDF"
+                      className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium hover:border-primary/40 disabled:opacity-50"
+                    >
+                      {exportingId === conversationId ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => exportConversation(conversationId, "json")}
+                      disabled={exportingId === conversationId}
+                      title="Xuất transcript ra JSON"
+                      className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium hover:border-primary/40 disabled:opacity-50"
+                    >
+                      <FileJson className="h-4 w-4" /> JSON
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={newChat}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" /> {t("ai.new")}
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}
