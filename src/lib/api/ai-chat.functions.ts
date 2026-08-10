@@ -39,6 +39,12 @@ export type AiMessageDTO = {
 
 export type AiWorkspaceOption = { id: string; name: string };
 
+export type AiConversationExportRow = AiConversationDTO & {
+  messageCount: number;
+  usageMinutes: number;
+  totalTokens: number;
+};
+
 export type AiMessageVersionDTO = {
   id: string;
   version: number;
