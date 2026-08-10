@@ -643,20 +643,45 @@ function Empty({ t, onPick }: { t: (k: Key) => string; onPick: (s: string) => vo
   );
 }
 
-function UserBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
+function UserBubble({
+  m,
+  t,
+  onHistory,
+}: {
+  m: Msg;
+  t: (k: Key) => string;
+  onHistory?: () => void;
+}) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
         <img src={avatar("nguyen-van-a-1")} className="h-7 w-7 rounded-full object-cover" alt="" />
         <span className="text-sm font-medium">{t("ai.you")}</span>
         <span className="text-[11px] text-muted-foreground">{m.time}</span>
+        {onHistory && (
+          <button
+            onClick={onHistory}
+            title="Lịch sử phiên bản"
+            className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          >
+            <History className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
       <p className="text-sm">{m.text}</p>
     </div>
   );
 }
 
-function AssistantBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
+function AssistantBubble({
+  m,
+  t,
+  onHistory,
+}: {
+  m: Msg;
+  t: (k: Key) => string;
+  onHistory?: () => void;
+}) {
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
@@ -665,6 +690,15 @@ function AssistantBubble({ m, t }: { m: Msg; t: (k: Key) => string }) {
         </div>
         <span className="text-sm font-medium">{t("ai.assistant")}</span>
         <span className="text-[11px] text-muted-foreground">{m.time}</span>
+        {onHistory && (
+          <button
+            onClick={onHistory}
+            title="Lịch sử phiên bản"
+            className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          >
+            <History className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {m.rich ? <RichSummary t={t} /> : <p className="text-sm">{m.text}</p>}
