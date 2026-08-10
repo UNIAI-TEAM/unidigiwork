@@ -47,6 +47,7 @@ import {
   ChevronRight,
   Trash2,
   Loader2,
+  X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
