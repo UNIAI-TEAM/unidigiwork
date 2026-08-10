@@ -331,9 +331,14 @@ function AIPage() {
                   <div className="mx-auto max-w-5xl space-y-4">
                     {msgs.map((m) =>
                       m.role === "user" ? (
-                        <UserBubble key={m.id} m={m} t={t} />
+                        <UserBubble key={m.id} m={m} t={t} onHistory={() => setHistoryMsgId(m.id)} />
                       ) : (
-                        <AssistantBubble key={m.id} m={m} t={t} />
+                        <AssistantBubble
+                          key={m.id}
+                          m={m}
+                          t={t}
+                          onHistory={() => setHistoryMsgId(m.id)}
+                        />
                       ),
                     )}
                     {pending && (
