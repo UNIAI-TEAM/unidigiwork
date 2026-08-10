@@ -70,7 +70,7 @@ export const Route = createFileRoute("/ai")({
 
 type Msg = { id: string; role: "user" | "assistant"; text: string; time: string; rich?: boolean };
 
-const TABS = ["chat", "assistants", "prompts", "knowledge", "tools"] as const;
+const TABS = ["chat", "assistants", "prompts", "knowledge", "tools", "usage"] as const;
 type Tab = (typeof TABS)[number];
 
 const suggestions = [
@@ -701,7 +701,12 @@ function TabPanel({ tab }: { tab: Tab }) {
   if (tab === "prompts") return <PromptsPanel />;
   if (tab === "knowledge") return <KnowledgePanel />;
   if (tab === "tools") return <ToolsPanel />;
+  if (tab === "usage") return <UsageTabPanel />;
   return null;
+}
+
+function UsageTabPanel() {
+  return <AiUsageStatsPanel />;
 }
 
 const ALL_ASSISTANTS = [
