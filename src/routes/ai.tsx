@@ -463,6 +463,20 @@ function AIPage() {
 
             <Section title={t("ai.panel.recent")} action={t("ai.panel.viewall")}>
               <div className="mb-2 space-y-2">
+                <div className="flex rounded-lg border border-border p-0.5 text-[11px]">
+                  <button
+                    onClick={() => setShowTrash(false)}
+                    className={`flex-1 rounded-md px-2 py-1 ${!showTrash ? "bg-surface-2 font-medium text-foreground" : "text-muted-foreground"}`}
+                  >
+                    Hội thoại
+                  </button>
+                  <button
+                    onClick={() => setShowTrash(true)}
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 ${showTrash ? "bg-surface-2 font-medium text-foreground" : "text-muted-foreground"}`}
+                  >
+                    <Trash2 className="h-3 w-3" /> Thùng rác
+                  </button>
+                </div>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <input
@@ -535,7 +549,9 @@ function AIPage() {
               <div className="space-y-1">
                 {(convList.data?.conversations.length ?? 0) === 0 && (
                   <p className="px-2 py-2 text-xs text-muted-foreground">
-                    {search || dateFrom || dateTo || workspaceId
+                    {showTrash
+                      ? "Thùng rác trống."
+                      : search || dateFrom || dateTo || workspaceId
                       ? "Không có hội thoại phù hợp bộ lọc."
                       : "Chưa có hội thoại nào."}
                   </p>
@@ -561,13 +577,34 @@ function AIPage() {
                         {shortTime(c.lastMessageAt)}
                       </span>
                     </button>
-                    <button
-                      onClick={() => deleteMutation.mutate(c.id)}
-                      className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
-                      aria-label="Xóa hội thoại"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    {showTrash ? (
+                      <>
+                        <button
+                          onClick={() => restoreMutation.mutate(c.id)}
+                          className="shrink-0 rounded p-1 text-muted-foreground hover:text-primary"
+                          aria-label="Khôi phục hội thoại"
+                          title="Khôi phục"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => purgeMutation.mutate(c.id)}
+                          className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
+                          aria-label="Xóa vĩnh viễn"
+                          title="Xóa vĩnh viễn"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => deleteMutation.mutate(c.id)}
+                        className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                        aria-label="Xóa hội thoại"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
