@@ -49,6 +49,8 @@ import {
   Trash2,
   Loader2,
   X,
+  RotateCcw,
+  History,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -57,6 +59,8 @@ import {
   getAiConversation,
   sendAiMessage,
   deleteAiConversation,
+  restoreAiConversation,
+  purgeAiConversation,
 } from "@/lib/api/ai-chat.functions";
 
 export const Route = createFileRoute("/ai")({
