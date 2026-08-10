@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
+import { AiUsageStatsPanel } from "@/components/ai/usage-stats-panel";
 import type { Key } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import {

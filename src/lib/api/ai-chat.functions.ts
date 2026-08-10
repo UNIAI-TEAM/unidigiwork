@@ -455,7 +455,7 @@ export const getAiUsageTimeseries = createServerFn({ method: "GET" })
         .limit(5000);
       if (data.workspaceId) q = q.eq("workspace_id", data.workspaceId);
       const { data: rows, error } = await q;
-      if (error) throw new ApiError({ code: "AI_USAGE_STATS_FAILED", message: error.message });
+      if (error) throw new ApiError({ code: "AI_CONVERSATION_LIST_FAILED", message: error.message });
 
       // Danh sách mốc thời gian liên tục để biểu đồ không bị đứt quãng.
       const bucketKeys: string[] = [];
