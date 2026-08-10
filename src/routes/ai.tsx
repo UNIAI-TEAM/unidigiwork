@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 import { AiUsageStatsPanel } from "@/components/ai/usage-stats-panel";
@@ -143,19 +143,43 @@ function AIPage() {
   const restoreFn = useServerFn(restoreAiConversation);
   const purgeFn = useServerFn(purgeAiConversation);
 
-  const convList = useQuery({
+  const convList = useInfiniteQuery({
     queryKey: ["ai-conversations", workspaceId, debouncedSearch, dateFrom, dateTo, showTrash],
-    queryFn: () =>
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
       listFn({
         data: {
           deleted: showTrash,
+          limit: 20,
+          offset: pageParam as number,
           ...(workspaceId ? { workspaceId } : {}),
           ...(debouncedSearch ? { q: debouncedSearch } : {}),
           ...(dateFrom ? { from: dateFrom } : {}),
           ...(dateTo ? { to: dateTo } : {}),
         },
       }),
+    getNextPageParam: (last) => last.nextOffset ?? undefined,
   });
+
+  const conversations = convList.data?.pages.flatMap((p) => p.conversations) ?? [];
+  const workspaceOptions = convList.data?.pages[0]?.workspaces ?? [];
+  const totalConversations = convList.data?.pages[0]?.total ?? 0;
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && convList.hasNextPage && !convList.isFetchingNextPage) {
+          convList.fetchNextPage();
+        }
+      },
+      { rootMargin: "120px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [convList.hasNextPage, convList.isFetchingNextPage, convList.fetchNextPage, conversations.length]);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
