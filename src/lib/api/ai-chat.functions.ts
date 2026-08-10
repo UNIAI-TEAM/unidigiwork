@@ -83,6 +83,9 @@ export const listAiConversations = createServerFn({ method: "GET" })
         from: z.string().optional(),
         to: z.string().optional(),
         deleted: z.boolean().optional(),
+        sort: z
+          .enum(["recent", "oldest", "created_desc", "created_asc", "usage_desc", "usage_asc"])
+          .optional(),
         limit: z.number().int().min(1).max(100).optional(),
         offset: z.number().int().min(0).optional(),
       })
@@ -107,6 +110,16 @@ export const listAiConversations = createServerFn({ method: "GET" })
       const workspaces = await listWorkspaces(ctx, tenantId);
       const limit = data?.limit ?? 20;
       const offset = data?.offset ?? 0;
+      const sort = data?.sort ?? "recent";
+      const sortSpec: Record<string, { col: string; asc: boolean }> = {
+        recent: { col: "last_message_at", asc: false },
+        oldest: { col: "last_message_at", asc: true },
+        created_desc: { col: "created_at", asc: false },
+        created_asc: { col: "created_at", asc: true },
+        usage_desc: { col: "total_output_tokens", asc: false },
+        usage_asc: { col: "total_output_tokens", asc: true },
+      };
+      const { col: sortCol, asc: sortAsc } = sortSpec[sort]!;
       let q = ctx.supabase
         .from("ai_conversations")
         .select(
@@ -114,6 +127,7 @@ export const listAiConversations = createServerFn({ method: "GET" })
           { count: "exact" },
         )
         .eq("tenant_id", tenantId)
+        .order(sortCol, { ascending: sortAsc, nullsFirst: false })
         .order("last_message_at", { ascending: false })
         .range(offset, offset + limit - 1);
       q = data?.deleted ? q.not("deleted_at", "is", null) : q.is("deleted_at", null);
