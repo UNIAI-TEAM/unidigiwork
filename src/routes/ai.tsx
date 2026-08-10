@@ -261,7 +261,7 @@ function AIPage() {
   }, [msgs.length, pending]);
 
   const exportConversation = async (id: string, format: "pdf" | "json") => {
-    const conv = convList.data?.conversations.find((c) => c.id === id);
+    const conv = conversations.find((c) => c.id === id);
     if (!conv) return;
     setExportingId(id);
     try {
@@ -612,7 +612,7 @@ function AIPage() {
                   </button>
                 )}
               </div>
-              {(convList.data?.workspaces.length ?? 0) > 0 && (
+              {workspaceOptions.length > 0 && (
                 <select
                   value={workspaceId}
                   onChange={(e) => {
@@ -622,7 +622,7 @@ function AIPage() {
                   className="mb-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs"
                 >
                   <option value="">Tất cả workspace</option>
-                  {convList.data?.workspaces.map((w) => (
+                  {workspaceOptions.map((w) => (
                     <option key={w.id} value={w.id}>
                       {w.name}
                     </option>
@@ -630,7 +630,7 @@ function AIPage() {
                 </select>
               )}
               <div className="space-y-1">
-                {(convList.data?.conversations.length ?? 0) === 0 && (
+                {conversations.length === 0 && !convList.isLoading && (
                   <p className="px-2 py-2 text-xs text-muted-foreground">
                     {showTrash
                       ? "Thùng rác trống."
@@ -639,7 +639,7 @@ function AIPage() {
                       : "Chưa có hội thoại nào."}
                   </p>
                 )}
-                {convList.data?.conversations.map((c) => (
+                {conversations.map((c) => (
                   <div
                     key={c.id}
                     className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2 ${
