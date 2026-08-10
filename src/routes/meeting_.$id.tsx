@@ -281,6 +281,7 @@ function MeetingDetailPage() {
     if (!session || !isRealRoom) return;
     let cancelled = false;
     void openMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
+    inRoomRef.current = true;
     return () => {
       cancelled = true;
       void closeMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
@@ -478,6 +479,7 @@ function MeetingDetailPage() {
                   { k: "chat", label: "Chat", icon: MessageSquare },
                   { k: "participants", label: "Người", icon: Users },
                   { k: "transcript", label: "Biên bản", icon: FileText },
+                  { k: "recording", label: "Ghi hình", icon: VideoIcon },
                 ] as const
               ).map((it) => (
                 <button
@@ -492,6 +494,15 @@ function MeetingDetailPage() {
 
             <div className="flex-1 overflow-y-auto p-4 text-sm">
               {tab === "ai" && <AICopilotPanel />}
+              {tab === "recording" &&
+                (isRealRoom ? (
+                  <MeetingRecordingPanel meetingId={id} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Phòng demo không có dữ liệu ghi hình. Hãy tạo phòng họp thật để dùng tính năng
+                    này.
+                  </p>
+                ))}
               {tab === "chat" && <ChatPanel />}
               {tab === "participants" && (
                 <ul className="space-y-2">
