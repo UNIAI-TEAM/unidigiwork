@@ -83,6 +83,8 @@ export const listAiConversations = createServerFn({ method: "GET" })
         from: z.string().optional(),
         to: z.string().optional(),
         deleted: z.boolean().optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+        offset: z.number().int().min(0).optional(),
       })
       .optional()
       .parse(i),
@@ -95,19 +97,25 @@ export const listAiConversations = createServerFn({ method: "GET" })
       tenantId: string | null;
       workspaces: AiWorkspaceOption[];
       conversations: AiConversationDTO[];
+      nextOffset: number | null;
+      total: number;
     }> => {
       const ctx = context as unknown as Ctx;
       const tenantId = await resolveTenant(ctx);
-      if (!tenantId) return { tenantId: null, workspaces: [], conversations: [] };
+      if (!tenantId)
+        return { tenantId: null, workspaces: [], conversations: [], nextOffset: null, total: 0 };
       const workspaces = await listWorkspaces(ctx, tenantId);
+      const limit = data?.limit ?? 20;
+      const offset = data?.offset ?? 0;
       let q = ctx.supabase
         .from("ai_conversations")
         .select(
           "id, title, workspace_id, model, total_input_tokens, total_output_tokens, last_message_at, created_at, deleted_at",
+          { count: "exact" },
         )
         .eq("tenant_id", tenantId)
         .order("last_message_at", { ascending: false })
-        .limit(50);
+        .range(offset, offset + limit - 1);
       q = data?.deleted ? q.not("deleted_at", "is", null) : q.is("deleted_at", null);
       if (data?.workspaceId) q = q.eq("workspace_id", data.workspaceId);
       const term = data?.q?.trim();
@@ -118,13 +126,17 @@ export const listAiConversations = createServerFn({ method: "GET" })
         end.setHours(23, 59, 59, 999);
         q = q.lte("last_message_at", end.toISOString());
       }
-      const { data: rows, error } = await q;
+      const { data: rows, error, count } = await q;
       if (error) throw new ApiError({ code: "AI_CONVERSATION_LIST_FAILED", message: error.message });
       const wsMap = new Map(workspaces.map((w) => [w.id, w.name]));
+      const list = rows ?? [];
+      const total = count ?? offset + list.length;
       return {
         tenantId,
         workspaces,
-        conversations: (rows ?? []).map((r: any) => ({
+        nextOffset: offset + list.length < total ? offset + list.length : null,
+        total,
+        conversations: list.map((r: any) => ({
           id: r.id,
           title: r.title,
           workspaceId: r.workspace_id,
