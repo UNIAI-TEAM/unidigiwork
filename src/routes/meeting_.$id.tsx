@@ -18,9 +18,15 @@ import {
   FileText,
   Clock,
   Loader2,
+  Video as VideoIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-request-panel";
+import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
+import {
+  openMeetingAttendance,
+  closeMeetingAttendance,
+} from "@/lib/api/meeting-recordings.functions";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
@@ -73,7 +79,7 @@ function MeetingDetailPage() {
   const { invite } = Route.useSearch();
   const isRealRoom = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const [open, setOpen] = useSidebarState();
-  const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai">("ai");
+  const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai" | "recording">("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [session, setSession] = useState<{
