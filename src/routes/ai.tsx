@@ -656,13 +656,37 @@ function AIPage() {
                         </button>
                       </>
                     ) : (
-                      <button
+                      <>
+                        <button
+                          onClick={() => exportConversation(c.id, "pdf")}
+                          disabled={exportingId === c.id}
+                          className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-primary group-hover:opacity-100 disabled:opacity-50"
+                          aria-label="Xuất transcript PDF"
+                          title="Xuất PDF"
+                        >
+                          {exportingId === c.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => exportConversation(c.id, "json")}
+                          disabled={exportingId === c.id}
+                          className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-primary group-hover:opacity-100 disabled:opacity-50"
+                          aria-label="Xuất transcript JSON"
+                          title="Xuất JSON"
+                        >
+                          <FileJson className="h-3.5 w-3.5" />
+                        </button>
+                        <button
                         onClick={() => deleteMutation.mutate(c.id)}
                         className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
                         aria-label="Xóa hội thoại"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                        </button>
+                      </>
                     )}
                   </div>
                 ))}
