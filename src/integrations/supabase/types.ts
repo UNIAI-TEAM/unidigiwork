@@ -862,6 +862,74 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_articles: {
+        Row: {
+          category: string
+          content: string
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          published_at: string | null
+          row_version: number
+          slug: string
+          status: string
+          summary: string
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          view_count: number
+        }
+        Insert: {
+          category?: string
+          content?: string
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published_at?: string | null
+          row_version?: number
+          slug: string
+          status?: string
+          summary?: string
+          tags?: string[]
+          tenant_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          view_count?: number
+        }
+        Update: {
+          category?: string
+          content?: string
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published_at?: string | null
+          row_version?: number
+          slug?: string
+          status?: string
+          summary?: string
+          tags?: string[]
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_articles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_invite_links: {
         Row: {
           created_at: string
