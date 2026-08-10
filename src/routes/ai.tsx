@@ -53,6 +53,8 @@ import {
   RotateCcw,
   History,
 } from "lucide-react";
+import { Download, FileJson } from "lucide-react";
+import { exportTranscriptJson, exportTranscriptPdf } from "@/lib/ai-transcript-export";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -130,6 +132,7 @@ function AIPage() {
   const [pending, setPending] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [historyMsgId, setHistoryMsgId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
@@ -233,6 +236,29 @@ function AIPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs.length, pending]);
 
+  const exportConversation = async (id: string, format: "pdf" | "json") => {
+    const conv = convList.data?.conversations.find((c) => c.id === id);
+    if (!conv) return;
+    setExportingId(id);
+    try {
+      const messages =
+        id === conversationId && messagesQuery.data
+          ? messagesQuery.data
+          : await getFn({ data: { conversationId: id } });
+      const rows = messages.filter((m) => m.role !== "system");
+      const ok =
+        format === "json"
+          ? exportTranscriptJson(conv, rows)
+          : exportTranscriptPdf(conv, rows);
+      if (!ok) toast.error("Trình duyệt đã chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.");
+      else if (format === "json") toast.success("Đã tải transcript JSON");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không xuất được transcript");
+    } finally {
+      setExportingId(null);
+    }
+  };
+
   const send = (text?: string) => {
     const v = (text ?? input).trim();
     if (!v || sendMutation.isPending) return;
@@ -270,12 +296,39 @@ function AIPage() {
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">{t("ai.sub")}</p>
               </div>
-              <button
-                onClick={newChat}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" /> {t("ai.new")}
-              </button>
+              <div className="flex items-center gap-2">
+                {conversationId && (
+                  <>
+                    <button
+                      onClick={() => exportConversation(conversationId, "pdf")}
+                      disabled={exportingId === conversationId}
+                      title="Xuất transcript ra PDF"
+                      className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium hover:border-primary/40 disabled:opacity-50"
+                    >
+                      {exportingId === conversationId ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => exportConversation(conversationId, "json")}
+                      disabled={exportingId === conversationId}
+                      title="Xuất transcript ra JSON"
+                      className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium hover:border-primary/40 disabled:opacity-50"
+                    >
+                      <FileJson className="h-4 w-4" /> JSON
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={newChat}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" /> {t("ai.new")}
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}
@@ -603,13 +656,37 @@ function AIPage() {
                         </button>
                       </>
                     ) : (
-                      <button
+                      <>
+                        <button
+                          onClick={() => exportConversation(c.id, "pdf")}
+                          disabled={exportingId === c.id}
+                          className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-primary group-hover:opacity-100 disabled:opacity-50"
+                          aria-label="Xuất transcript PDF"
+                          title="Xuất PDF"
+                        >
+                          {exportingId === c.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => exportConversation(c.id, "json")}
+                          disabled={exportingId === c.id}
+                          className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-primary group-hover:opacity-100 disabled:opacity-50"
+                          aria-label="Xuất transcript JSON"
+                          title="Xuất JSON"
+                        >
+                          <FileJson className="h-3.5 w-3.5" />
+                        </button>
+                        <button
                         onClick={() => deleteMutation.mutate(c.id)}
                         className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
                         aria-label="Xóa hội thoại"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                        </button>
+                      </>
                     )}
                   </div>
                 ))}
