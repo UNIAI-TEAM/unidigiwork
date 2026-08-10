@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -71,6 +71,8 @@ function WorkflowBuilderPage() {
   const { id } = Route.useParams();
   const [open, setOpen] = useSidebarState();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["workflow", id],
