@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { LayoutGrid, ShieldCheck, Users, ListFilter, ArrowLeft, Activity, Webhook, Inbox } from "lucide-react";
+import { LayoutGrid, ShieldCheck, Users, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { getMyIsAdmin } from "@/lib/api/admin.functions";
 
@@ -19,6 +19,7 @@ const TABS = [
   { to: "/admin" as const, label: "Tổng quan", icon: LayoutGrid, exact: true },
   { to: "/admin/users" as const, label: "Tài khoản", icon: Users },
   { to: "/admin/rules" as const, label: "Quy tắc", icon: ListFilter },
+  { to: "/admin/knowledge" as const, label: "Knowledge", icon: BookOpen },
   { to: "/admin/leads" as const, label: "Lead demo", icon: Inbox },
   { to: "/admin/quota" as const, label: "Quota", icon: Activity },
   { to: "/admin/webhooks" as const, label: "Webhook", icon: Webhook },
