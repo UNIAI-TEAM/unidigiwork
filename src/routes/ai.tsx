@@ -118,6 +118,17 @@ const commands = [
   { cmd: "/analysis", desc: "Phân tích dữ liệu", icon: BarChart3 },
 ] as const;
 
+const AI_FILTERS_KEY = "uniwork.ai.filters.v1";
+const AI_SORTS = [
+  "recent",
+  "oldest",
+  "created_desc",
+  "created_asc",
+  "usage_desc",
+  "usage_asc",
+] as const;
+type AiSort = (typeof AI_SORTS)[number];
+
 function AIPage() {
   const { t } = useI18n();
   const [open, setOpen] = useSidebarState();
@@ -129,9 +140,7 @@ function AIPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [sort, setSort] = useState<
-    "recent" | "oldest" | "created_desc" | "created_asc" | "usage_desc" | "usage_asc"
-  >("recent");
+  const [sort, setSort] = useState<AiSort>("recent");
   const [pending, setPending] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [historyMsgId, setHistoryMsgId] = useState<string | null>(null);
