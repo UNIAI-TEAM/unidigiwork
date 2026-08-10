@@ -54,11 +54,17 @@ import {
   History,
 } from "lucide-react";
 import { Download, FileJson } from "lucide-react";
-import { exportTranscriptJson, exportTranscriptPdf } from "@/lib/ai-transcript-export";
+import {
+  exportTranscriptJson,
+  exportTranscriptPdf,
+  exportConversationListCsv,
+  exportConversationListPdf,
+} from "@/lib/ai-transcript-export";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import {
   listAiConversations,
+  exportAiConversations,
   getAiConversation,
   sendAiMessage,
   deleteAiConversation,
@@ -190,6 +196,8 @@ function AIPage() {
   const deleteFn = useServerFn(deleteAiConversation);
   const restoreFn = useServerFn(restoreAiConversation);
   const purgeFn = useServerFn(purgeAiConversation);
+  const exportListFn = useServerFn(exportAiConversations);
+  const [exportingList, setExportingList] = useState<"csv" | "pdf" | null>(null);
 
   const convList = useInfiniteQuery({
     queryKey: [
@@ -337,6 +345,43 @@ function AIPage() {
       toast.error(e instanceof Error ? e.message : "Không xuất được transcript");
     } finally {
       setExportingId(null);
+    }
+  };
+
+  const exportList = async (format: "csv" | "pdf") => {
+    setExportingList(format);
+    try {
+      const rows = await exportListFn({
+        data: {
+          deleted: showTrash,
+          sort,
+          ...(workspaceId ? { workspaceId } : {}),
+          ...(debouncedSearch ? { q: debouncedSearch } : {}),
+          ...(dateFrom ? { from: dateFrom } : {}),
+          ...(dateTo ? { to: dateTo } : {}),
+        },
+      });
+      if (rows.length === 0) {
+        toast.info("Không có hội thoại nào khớp bộ lọc");
+        return;
+      }
+      const parts = [
+        workspaceId
+          ? `Workspace: ${workspaceOptions.find((w) => w.id === workspaceId)?.name ?? workspaceId}`
+          : "Tất cả workspace",
+        debouncedSearch ? `Từ khóa: ${debouncedSearch}` : "",
+        dateFrom || dateTo ? `Thời gian: ${dateFrom || "…"} → ${dateTo || "…"}` : "",
+      ].filter(Boolean);
+      const ok =
+        format === "csv"
+          ? exportConversationListCsv(rows)
+          : exportConversationListPdf(rows, parts.join(" · "));
+      if (!ok) toast.error("Trình duyệt đã chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.");
+      else if (format === "csv") toast.success(`Đã tải CSV (${rows.length} hội thoại)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không xuất được danh sách");
+    } finally {
+      setExportingList(null);
     }
   };
 
@@ -670,6 +715,22 @@ function AIPage() {
                     <option value="usage_asc">Số lượt dùng ít nhất</option>
                   </select>
                 </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => exportList("pdf")}
+                    disabled={exportingList !== null}
+                    className="flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Xuất PDF
+                  </button>
+                  <button
+                    onClick={() => exportList("csv")}
+                    disabled={exportingList !== null}
+                    className="flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
+                  >
+                    <FileJson className="h-3.5 w-3.5" /> Xuất CSV
+                  </button>
+                </div>
                 {(search || dateFrom || dateTo || workspaceId) && (
                   <button
                     onClick={() => {
