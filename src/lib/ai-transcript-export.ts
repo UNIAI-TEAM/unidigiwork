@@ -107,3 +107,109 @@ ${rows || '<p class="meta">Hội thoại chưa có tin nhắn.</p>'}
   setTimeout(() => w.print(), 400);
   return true;
 }
+
+// ===== Xuất danh sách hội thoại đã lọc =====
+type ExportRow = Conv & {
+  messageCount: number;
+  usageMinutes: number;
+  totalTokens: number;
+  deletedAt?: string | null;
+};
+
+const summarize = (rows: ExportRow[]) => ({
+  conversations: rows.length,
+  messages: rows.reduce((s, r) => s + r.messageCount, 0),
+  minutes: Math.round(rows.reduce((s, r) => s + r.usageMinutes, 0) * 100) / 100,
+  tokens: rows.reduce((s, r) => s + r.totalTokens, 0),
+});
+
+export function exportConversationListCsv(rows: ExportRow[]) {
+  const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const header = [
+    "Tiêu đề",
+    "Workspace",
+    "Model",
+    "Ngày tạo",
+    "Cập nhật",
+    "Số tin nhắn",
+    "Usage (phút)",
+    "Tokens",
+  ];
+  const body = rows.map((r) =>
+    [
+      r.title,
+      r.workspaceName ?? "",
+      r.model ?? "",
+      fmt(r.createdAt),
+      fmt(r.lastMessageAt),
+      r.messageCount,
+      r.usageMinutes,
+      r.totalTokens,
+    ]
+      .map(cell)
+      .join(","),
+  );
+  const s = summarize(rows);
+  const csv = [
+    header.map(cell).join(","),
+    ...body,
+    "",
+    [cell("TỔNG"), cell(""), cell(""), cell(""), cell(""), cell(s.messages), cell(s.minutes), cell(s.tokens)].join(","),
+  ].join("\n");
+  download(`uniwork-ai-conversations_${stamp()}.csv`, "\uFEFF" + csv, "text/csv");
+  return true;
+}
+
+export function exportConversationListPdf(rows: ExportRow[], filterLabel?: string) {
+  const s = summarize(rows);
+  const trs = rows
+    .map(
+      (r) => `<tr>
+  <td>${esc(r.title)}</td>
+  <td>${esc(r.workspaceName ?? "—")}</td>
+  <td>${esc(r.model ?? "—")}</td>
+  <td>${esc(fmt(r.createdAt))}</td>
+  <td>${esc(fmt(r.lastMessageAt))}</td>
+  <td class="n">${r.messageCount}</td>
+  <td class="n">${r.usageMinutes}</td>
+  <td class="n">${r.totalTokens.toLocaleString("vi-VN")}</td>
+</tr>`,
+    )
+    .join("");
+
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Danh sách hội thoại AI · UNIWORK</title>
+<style>
+ body{font-family:Inter,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111827;margin:24px;font-size:11px}
+ h1{font-size:18px;margin:0 0 4px}
+ .meta{color:#6b7280;font-size:10px;margin:0 0 10px}
+ .cards{display:flex;gap:8px;margin-bottom:12px}
+ .card{border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;flex:1}
+ .card b{display:block;font-size:15px}
+ table{width:100%;border-collapse:collapse}
+ th,td{border:1px solid #e5e7eb;padding:5px 6px;text-align:left;vertical-align:top}
+ th{background:#f9fafb;font-size:10px}
+ td.n{text-align:right;white-space:nowrap}
+ tr{page-break-inside:avoid}
+ @page{size:A4 landscape;margin:12mm}
+</style></head><body>
+<h1>Danh sách hội thoại AI</h1>
+<p class="meta">UNIWORK AI Workspace · Xuất lúc ${esc(fmt(new Date().toISOString()))}${filterLabel ? ` · ${esc(filterLabel)}` : ""}</p>
+<div class="cards">
+  <div class="card">Hội thoại<b>${s.conversations}</b></div>
+  <div class="card">Tin nhắn<b>${s.messages}</b></div>
+  <div class="card">Usage (phút)<b>${s.minutes}</b></div>
+  <div class="card">Tokens<b>${s.tokens.toLocaleString("vi-VN")}</b></div>
+</div>
+<table><thead><tr>
+<th>Tiêu đề</th><th>Workspace</th><th>Model</th><th>Ngày tạo</th><th>Cập nhật</th><th>Tin nhắn</th><th>Phút</th><th>Tokens</th>
+</tr></thead><tbody>${trs || '<tr><td colspan="8">Không có hội thoại phù hợp bộ lọc.</td></tr>'}</tbody></table>
+</body></html>`;
+
+  const w = window.open("", "_blank", "width=1100,height=900");
+  if (!w) return false;
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 400);
+  return true;
+}

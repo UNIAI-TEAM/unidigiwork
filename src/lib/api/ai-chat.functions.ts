@@ -643,3 +643,102 @@ export const getAiUsageTimeseries = createServerFn({ method: "GET" })
       };
     },
   );
+
+// Xuất danh sách hội thoại đã lọc kèm số tin nhắn + usage minutes
+export const exportAiConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspaceId: z.string().uuid().optional(),
+        q: z.string().max(200).optional(),
+        from: z.string().optional(),
+        to: z.string().optional(),
+        deleted: z.boolean().optional(),
+        sort: z
+          .enum(["recent", "oldest", "created_desc", "created_asc", "usage_desc", "usage_asc"])
+          .optional(),
+      })
+      .optional()
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<AiConversationExportRow[]> => {
+    const ctx = context as unknown as Ctx;
+    const tenantId = await resolveTenant(ctx);
+    if (!tenantId) return [];
+    const workspaces = await listWorkspaces(ctx, tenantId);
+    const sortSpec: Record<string, { col: string; asc: boolean }> = {
+      recent: { col: "last_message_at", asc: false },
+      oldest: { col: "last_message_at", asc: true },
+      created_desc: { col: "created_at", asc: false },
+      created_asc: { col: "created_at", asc: true },
+      usage_desc: { col: "total_output_tokens", asc: false },
+      usage_asc: { col: "total_output_tokens", asc: true },
+    };
+    const { col, asc } = sortSpec[data?.sort ?? "recent"]!;
+    let q = ctx.supabase
+      .from("ai_conversations")
+      .select(
+        "id, title, workspace_id, model, total_input_tokens, total_output_tokens, last_message_at, created_at, deleted_at",
+      )
+      .eq("tenant_id", tenantId)
+      .order(col, { ascending: asc, nullsFirst: false })
+      .limit(1000);
+    q = data?.deleted ? q.not("deleted_at", "is", null) : q.is("deleted_at", null);
+    if (data?.workspaceId) q = q.eq("workspace_id", data.workspaceId);
+    const term = data?.q?.trim();
+    if (term) q = q.ilike("title", `%${term.replace(/[%_]/g, "")}%`);
+    if (data?.from) q = q.gte("last_message_at", new Date(data.from).toISOString());
+    if (data?.to) {
+      const end = new Date(data.to);
+      end.setHours(23, 59, 59, 999);
+      q = q.lte("last_message_at", end.toISOString());
+    }
+    const { data: rows, error } = await q;
+    if (error) throw new ApiError({ code: "AI_CONVERSATION_LIST_FAILED", message: error.message });
+    const list = (rows ?? []) as any[];
+    const ids = list.map((r) => r.id);
+    const counts = new Map<string, number>();
+    const durations = new Map<string, number>();
+    const tokens = new Map<string, number>();
+    if (ids.length > 0) {
+      const { data: msgs } = await ctx.supabase
+        .from("ai_messages")
+        .select("conversation_id")
+        .in("conversation_id", ids);
+      for (const m of (msgs ?? []) as Array<{ conversation_id: string }>)
+        counts.set(m.conversation_id, (counts.get(m.conversation_id) ?? 0) + 1);
+      const { data: usage } = await ctx.supabase
+        .from("ai_usage_events")
+        .select("conversation_id, duration_ms, total_tokens")
+        .in("conversation_id", ids);
+      for (const u of (usage ?? []) as Array<{
+        conversation_id: string;
+        duration_ms: number | null;
+        total_tokens: number | null;
+      }>) {
+        durations.set(u.conversation_id, (durations.get(u.conversation_id) ?? 0) + (u.duration_ms ?? 0));
+        tokens.set(u.conversation_id, (tokens.get(u.conversation_id) ?? 0) + (u.total_tokens ?? 0));
+      }
+    }
+    const wsMap = new Map(workspaces.map((w) => [w.id, w.name]));
+    return list.map((r) => {
+      const inTok = Number(r.total_input_tokens ?? 0);
+      const outTok = Number(r.total_output_tokens ?? 0);
+      return {
+        id: r.id,
+        title: r.title,
+        workspaceId: r.workspace_id,
+        workspaceName: r.workspace_id ? (wsMap.get(r.workspace_id) ?? null) : null,
+        model: r.model,
+        totalInputTokens: inTok,
+        totalOutputTokens: outTok,
+        lastMessageAt: r.last_message_at,
+        createdAt: r.created_at,
+        deletedAt: r.deleted_at ?? null,
+        messageCount: counts.get(r.id) ?? 0,
+        usageMinutes: Math.round(((durations.get(r.id) ?? 0) / 60000) * 100) / 100,
+        totalTokens: tokens.get(r.id) || inTok + outTok,
+      };
+    });
+  });
