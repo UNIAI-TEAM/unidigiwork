@@ -53,6 +53,8 @@ import {
   RotateCcw,
   History,
 } from "lucide-react";
+import { Download, FileJson } from "lucide-react";
+import { exportTranscriptJson, exportTranscriptPdf } from "@/lib/ai-transcript-export";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -130,6 +132,7 @@ function AIPage() {
   const [pending, setPending] = useState<string | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [historyMsgId, setHistoryMsgId] = useState<string | null>(null);
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
@@ -232,6 +235,29 @@ function AIPage() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs.length, pending]);
+
+  const exportConversation = async (id: string, format: "pdf" | "json") => {
+    const conv = convList.data?.conversations.find((c) => c.id === id);
+    if (!conv) return;
+    setExportingId(id);
+    try {
+      const messages =
+        id === conversationId && messagesQuery.data
+          ? messagesQuery.data
+          : await getFn({ data: { conversationId: id } });
+      const rows = messages.filter((m) => m.role !== "system");
+      const ok =
+        format === "json"
+          ? exportTranscriptJson(conv, rows)
+          : exportTranscriptPdf(conv, rows);
+      if (!ok) toast.error("Trình duyệt đã chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.");
+      else if (format === "json") toast.success("Đã tải transcript JSON");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không xuất được transcript");
+    } finally {
+      setExportingId(null);
+    }
+  };
 
   const send = (text?: string) => {
     const v = (text ?? input).trim();
