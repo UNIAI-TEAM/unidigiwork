@@ -348,8 +348,44 @@ function AIPage() {
     }
   };
 
+  const exportList = async (format: "csv" | "pdf") => {
+    setExportingList(format);
+    try {
+      const rows = await exportListFn({
+        data: {
+          deleted: showTrash,
+          sort,
+          ...(workspaceId ? { workspaceId } : {}),
+          ...(debouncedSearch ? { q: debouncedSearch } : {}),
+          ...(dateFrom ? { from: dateFrom } : {}),
+          ...(dateTo ? { to: dateTo } : {}),
+        },
+      });
+      if (rows.length === 0) {
+        toast.info("Không có hội thoại nào khớp bộ lọc");
+        return;
+      }
+      const parts = [
+        workspaceId
+          ? `Workspace: ${workspaceOptions.find((w) => w.id === workspaceId)?.name ?? workspaceId}`
+          : "Tất cả workspace",
+        debouncedSearch ? `Từ khóa: ${debouncedSearch}` : "",
+        dateFrom || dateTo ? `Thời gian: ${dateFrom || "…"} → ${dateTo || "…"}` : "",
+      ].filter(Boolean);
+      const ok =
+        format === "csv"
+          ? exportConversationListCsv(rows)
+          : exportConversationListPdf(rows, parts.join(" · "));
+      if (!ok) toast.error("Trình duyệt đã chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.");
+      else if (format === "csv") toast.success(`Đã tải CSV (${rows.length} hội thoại)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không xuất được danh sách");
+    } finally {
+      setExportingList(null);
+    }
+  };
+
   const send = (text?: string) => {
-    // placeholder
     const v = (text ?? input).trim();
     if (!v || sendMutation.isPending) return;
     setPending(v);
