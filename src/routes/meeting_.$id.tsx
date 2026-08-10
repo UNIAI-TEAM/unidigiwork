@@ -276,6 +276,29 @@ function MeetingDetailPage() {
     [],
   );
 
+  // Ghi nhận phiên tham dự để tính phút họp (usage) — mở khi vào phòng, đóng khi rời.
+  useEffect(() => {
+    if (!session || !isRealRoom) return;
+    let cancelled = false;
+    void openMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
+    return () => {
+      cancelled = true;
+      void closeMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
+      void cancelled;
+    };
+  }, [session, id, isRealRoom]);
+
+  // Rời trang đột ngột vẫn chốt phiên tham dự.
+  useEffect(() => {
+    if (!isRealRoom) return;
+    function onHide() {
+      if (!inRoomRef.current) return;
+      void closeMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
+    }
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+  }, [id, isRealRoom]);
+
   const participants = [
     { name: "Minh Anh", seed: "minh-anh", speaking: true },
     { name: "Tuấn Nam", seed: "tuan-nam-ba", speaking: false },
