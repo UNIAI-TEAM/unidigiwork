@@ -20,6 +20,7 @@ import {
   Clock,
   Loader2,
   Lock,
+  Crown,
   Video as VideoIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -47,6 +48,7 @@ import {
   startMeeting,
   endMeeting,
   listMeetingHostActions,
+  transferMeetingHost,
 } from "@/lib/api/meetings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
@@ -89,6 +91,7 @@ const HOST_ACTION_LABELS: Record<string, string> = {
   start: "Bắt đầu",
   end: "Kết thúc",
   cancel: "Hủy họp",
+  transfer_host: "Chuyển quyền chủ trì",
 };
 
 const MEETING_STATUS_META: Record<
@@ -379,6 +382,7 @@ function MeetingDetailPage() {
 
   const participants = (participantsQuery.data ?? []).map((p) => ({
     seed: p.userId,
+    userId: p.userId,
     name: p.name ?? p.email ?? "Thành viên",
     role: p.role,
     rsvp: p.rsvp,
