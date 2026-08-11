@@ -35,6 +35,8 @@ export type ChatMessageDTO = {
   parentAuthorName: string | null;
   parentExcerpt: string | null;
   attachments: ChatAttachment[];
+  pinnedAt: string | null;
+  pinnedByName: string | null;
 };
 
 export type ChatAttachment = {
