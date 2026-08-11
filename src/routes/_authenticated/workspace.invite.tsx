@@ -24,6 +24,14 @@ import {
   getWorkspaceInviteAccess,
   type WorkspaceInviteRow,
 } from "@/lib/api/workspace-invites.functions";
+import { listInviteEmailTemplates } from "@/lib/api/invite-email-templates.functions";
+import {
+  defaultTemplate,
+  inviteEmailPlainText,
+  permissionsSummary,
+  INVITE_ROLE_LABEL as ROLE_LABEL_MAP,
+  type InviteRole,
+} from "@/lib/invite-email-template";
 
 export const Route = createFileRoute("/_authenticated/workspace/invite")({
   head: () => ({
@@ -117,6 +125,37 @@ function WorkspaceInvitePage() {
     queryFn: () => getWorkspaceInviteAccess({ data: { workspaceId: activeWs! } }),
   });
   const canManage = access.data?.canManage ?? false;
+
+  const emailTemplates = useQuery({
+    queryKey: ["invite-email-templates", activeWs],
+    enabled: Boolean(activeWs),
+    queryFn: () => listInviteEmailTemplates({ data: { workspaceId: activeWs! } }),
+  });
+
+  const copyInviteEmail = (
+    url: string,
+    to: string,
+    forRole: InviteRole,
+    perms: { canEdit: boolean; canPublish: boolean; canRun: boolean },
+    wsRole: string,
+  ) => {
+    const tpl =
+      (emailTemplates.data ?? []).find((t) => t.role === forRole) ?? defaultTemplate(forRole);
+    const wsName = (workspaces.data ?? []).find((w) => w.id === activeWs)?.name ?? "workspace";
+    const text = inviteEmailPlainText(tpl, {
+      inviteeEmail: to,
+      inviterName: "Quản trị viên",
+      tenantName: "tổ chức của bạn",
+      workspaceName: wsName,
+      roleLabel: ROLE_LABEL_MAP[forRole] ?? forRole,
+      workspaceRoleLabel: wsRole === "owner" ? "Chủ workspace" : "Thành viên",
+      permissions: permissionsSummary(perms),
+      expiresAt: new Date(Date.now() + ttlDays * 86400_000).toLocaleString("vi-VN"),
+      inviteUrl: url,
+    });
+    void navigator.clipboard.writeText(`Tiêu đề: ${tpl.subject}\n\n${text}`);
+    toast.success("Đã sao chép nội dung email mời");
+  };
 
   const revoke = useMutation({
     mutationFn: (invitationId: string) => revokeWorkspaceInvite({ data: { invitationId } }),
