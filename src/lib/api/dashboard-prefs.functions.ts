@@ -51,8 +51,10 @@ export const saveDashboardPrefs = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const tenantId = await resolveTenantId(context.supabase, context.userId);
-    const payload: Record<string, unknown> = { sections: data.sections };
-    if (data.order) payload["section_order"] = data.order;
+    const payload = {
+      sections: data.sections,
+      ...(data.order ? { section_order: data.order } : {}),
+    };
     let sel = context.supabase
       .from("user_dashboard_prefs")
       .select("id")
