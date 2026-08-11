@@ -7,6 +7,7 @@ import {
   Calendar as CalendarIcon,
   CheckCheck,
   MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye, Pin, PinOff,
+  ListTodo,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -20,6 +21,8 @@ import {
   listChatChannelReaders, listPinnedChatMessages, setChatMessagePin,
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
+import { createTask } from "@/lib/api/tasks.functions";
+import { useMyWorkspaces, useActiveWorkspace } from "@/lib/active-workspace";
 
 const BUCKET = "chat-attachments";
 
