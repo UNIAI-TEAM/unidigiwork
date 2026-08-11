@@ -1407,8 +1407,24 @@ function DashboardInner() {
               )}
 
               <div className="mt-5 rounded-xl border border-border/60 bg-surface-2/40 p-3">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <ShieldCheck className="h-4 w-4 text-primary" /> Thông báo quan trọng
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <ShieldCheck className="h-4 w-4 text-primary" /> Thông báo quan trọng
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleNotifSort}
+                    title={
+                      notifSort === "recent"
+                        ? "Đang sắp xếp: Mới nhất — bấm để đổi sang Ưu tiên"
+                        : "Đang sắp xếp: Ưu tiên — bấm để đổi sang Mới nhất"
+                    }
+                    aria-label="Đổi chế độ sắp xếp thông báo"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2"
+                  >
+                    <ArrowUpDown className="h-3 w-3" />
+                    {notifSort === "recent" ? "Mới nhất" : "Ưu tiên"}
+                  </button>
                 </div>
                 {notificationsQuery.isPending ? (
                   <div className="mt-2 space-y-2" aria-busy="true">
