@@ -548,14 +548,18 @@ function DashboardInner() {
             </div>
 
             {/* KPI grid */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {kpis.map((k) => (
-                <KpiCard key={k.key} k={k} />
-              ))}
-            </div>
+            {visible.kpis && (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {kpis.map((k) => (
+                  <KpiCard key={k.key} k={k} />
+                ))}
+              </div>
+            )}
 
             {/* Activity + Donut */}
+            {(visible.activity || visible.donut) && (
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              {visible.activity && (
               <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
@@ -581,7 +585,9 @@ function DashboardInner() {
                   </ul>
                 </div>
               </div>
+              )}
 
+              {visible.donut && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
                 <div className="mt-4 flex flex-col items-center gap-4">
@@ -602,11 +608,15 @@ function DashboardInner() {
                   </ul>
                 </div>
               </div>
+              )}
             </div>
+            )}
 
             {/* Three column row */}
+            {(visible.projects || visible.recent || visible.meetings) && (
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
               {/* Projects */}
+              {visible.projects && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
