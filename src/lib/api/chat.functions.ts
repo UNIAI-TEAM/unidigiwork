@@ -194,6 +194,8 @@ export const listChatMessages = createServerFn({ method: "GET" })
         limit: z.number().int().min(1).max(200).optional(),
         q: z.string().max(200).optional(),
         before: z.string().optional(),
+        from: z.string().datetime().optional(),
+        to: z.string().datetime().optional(),
       })
       .parse(i),
   )
@@ -208,6 +210,8 @@ export const listChatMessages = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(limit + 1);
     if (data.q && data.q.trim()) query = query.ilike("body", `%${data.q.trim()}%`);
+    if (data.from) query = query.gte("created_at", data.from);
+    if (data.to) query = query.lte("created_at", data.to);
     if (data.before) query = query.lt("created_at", data.before);
     const { data: rows, error } = await query;
     if (error) mapPgError(error);
