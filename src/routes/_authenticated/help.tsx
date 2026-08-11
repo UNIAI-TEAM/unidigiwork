@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LifeBuoy,
   Search,
@@ -35,6 +36,7 @@ import {
   Github,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { listKnowledgeArticles, type KnowledgeArticleDTO } from "@/lib/api/knowledge.functions";
 
 export const Route = createFileRoute("/_authenticated/help")({
   head: () => ({
@@ -150,15 +152,32 @@ function HelpPage() {
   const [q, setQ] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
+  const kb = useQuery({
+    queryKey: ["knowledge", "list"],
+    queryFn: () => listKnowledgeArticles({ data: {} }),
+  });
+  const published = useMemo(
+    () => (kb.data?.articles ?? []).filter((a) => a.status === "published"),
+    [kb.data],
+  );
+  const ARTICLES = useMemo(
+    () => published.filter((a) => a.category !== "faq").map(toArticle),
+    [published],
+  );
+  const FAQS = useMemo(
+    () => published.filter((a) => a.category === "faq").map((a) => ({ q: a.title, a: a.content })),
+    [published],
+  );
+
   const filtered = useMemo(() => {
     return ARTICLES.filter((a) => {
       if (cat !== "all" && a.cat !== cat) return false;
       if (q && !`${a.title} ${a.desc}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [cat, q]);
+  }, [ARTICLES, cat, q]);
 
-  const popular = ARTICLES.filter((a) => a.popular);
+  const popular = useMemo(() => ARTICLES.filter((a) => a.popular), [ARTICLES]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
