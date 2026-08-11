@@ -412,6 +412,59 @@ function MeetingPage() {
     onError: () => toast.error("Không tạo được phòng họp. Kiểm tra quyền và hạn mức của tổ chức."),
   });
 
+  // Sửa / hủy phòng họp thật.
+  type RoomItem = { id: string; title: string; status: string; start_at: string; end_at: string };
+  const [editRoom, setEditRoom] = useState<RoomItem | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [cancelRoom, setCancelRoom] = useState<RoomItem | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const openEdit = (r: RoomItem) => {
+    setEditRoom(r);
+    setEditTitle(r.title);
+    setEditStart(r.start_at ? toLocalInput(new Date(r.start_at)) : "");
+    setEditEnd(r.end_at ? toLocalInput(new Date(r.end_at)) : "");
+  };
+
+  const updateRoom = useMutation({
+    mutationFn: () =>
+      updateMeeting({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          meetingId: editRoom!.id,
+          title: editTitle.trim(),
+          ...(editStart ? { startAt: new Date(editStart).toISOString() } : {}),
+          ...(editEnd ? { endAt: new Date(editEnd).toISOString() } : {}),
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      setEditRoom(null);
+      toast.success("Đã cập nhật cuộc họp.");
+    },
+    onError: () => toast.error("Không cập nhật được cuộc họp. Kiểm tra quyền của bạn."),
+  });
+
+  const cancelRoomMutation = useMutation({
+    mutationFn: () =>
+      cancelMeeting({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          meetingId: cancelRoom!.id,
+          ...(cancelReason.trim() ? { reason: cancelReason.trim() } : {}),
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      setCancelRoom(null);
+      setCancelReason("");
+      toast.success("Đã hủy cuộc họp.");
+    },
+    onError: () => toast.error("Không hủy được cuộc họp. Kiểm tra quyền của bạn."),
+  });
+
   if (inRoom) {
     return (
       <div className="flex min-h-screen bg-bg text-foreground">
