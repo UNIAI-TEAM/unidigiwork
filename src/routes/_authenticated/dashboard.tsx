@@ -50,10 +50,13 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   ),
 });
 
-const dashboardQuery = (rangeDays: number) =>
+const dashboardQuery = (rangeDays: number, workspaceId?: string | null) =>
   queryOptions({
-    queryKey: ["dashboard-overview", rangeDays],
-    queryFn: () => getDashboardOverview({ data: { rangeDays } }),
+    queryKey: ["dashboard-overview", rangeDays, workspaceId ?? "all"],
+    queryFn: () =>
+      getDashboardOverview({
+        data: { rangeDays, ...(workspaceId ? { workspaceId } : {}) },
+      }),
     staleTime: 30_000,
   });
 
@@ -399,7 +402,8 @@ function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAI, setShowAI] = useState(true);
   const [rangeDays, setRangeDays] = useState(7);
-  const { data } = useSuspenseQuery(dashboardQuery(rangeDays));
+  const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
+  const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
 
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
   const activity = useMemo(() => buildActivity(data.overview), [data.overview]);
