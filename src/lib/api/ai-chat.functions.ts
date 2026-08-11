@@ -321,6 +321,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid().optional(),
         text: z.string().min(1).max(8000),
         contextNote: z.string().max(2000).optional(),
+        metadata: messageMetadataSchema.optional(),
       })
       .parse(i),
   )
@@ -377,6 +378,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           role: "user",
           content: data.text,
           created_by: ctx.userId,
+          metadata: data.metadata ?? {},
         })
         .select("id")
         .single();
