@@ -330,6 +330,15 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     setPending([]);
   }, [activeId, query, dateFrom, dateTo]);
 
+  // Cuộn tới tin nhắn được liên kết từ công việc
+  useEffect(() => {
+    if (!highlightMessageId) return;
+    const t = setTimeout(() => {
+      document.getElementById(`msg-${highlightMessageId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [highlightMessageId, activeId]);
+
   // Realtime cho kênh đang mở + toàn bộ danh sách kênh (badge chưa đọc)
   useEffect(() => {
     if (!activeId) return;
