@@ -539,10 +539,10 @@ function MeetingDetailPage() {
 
   const [nowTick, setNowTick] = useState(() => Date.now());
   useEffect(() => {
-    if (!isLive || !actualStartAt) return;
+    if (!isRealRoom || meetingStatus === "ended") return;
     const t = window.setInterval(() => setNowTick(Date.now()), 1000);
     return () => window.clearInterval(t);
-  }, [isLive, actualStartAt]);
+  }, [isRealRoom, meetingStatus]);
 
   const elapsedMs = actualStartAt
     ? (isLive || !actualEndAt ? nowTick : new Date(actualEndAt).getTime()) -
@@ -553,6 +553,49 @@ function MeetingDetailPage() {
   const startTimeLabel = actualStartAt
     ? new Date(actualStartAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
     : null;
+
+  // Lịch dự kiến (start_at / end_at) để đếm ngược và cảnh báo quá giờ.
+  const meetingRow = meetingQuery.data as
+    | { start_at?: string | null; end_at?: string | null }
+    | undefined;
+  const plannedStart = meetingRow?.start_at ? new Date(meetingRow.start_at) : null;
+  const plannedEnd = meetingRow?.end_at ? new Date(meetingRow.end_at) : null;
+  const fmtTime = (d: Date) =>
+    d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  const fmtDateTime = (d: Date) =>
+    d.toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+  // Bộ đếm theo trạng thái: chưa bắt đầu -> đếm ngược tới giờ bắt đầu (hoặc trễ giờ);
+  // đang diễn ra -> còn lại tới giờ kết thúc dự kiến (hoặc quá giờ).
+  let timerLabel: string | null = null;
+  let timerTone: "normal" | "warn" | "over" = "normal";
+  if (isRealRoom) {
+    if (meetingStatus === "live" && plannedEnd) {
+      const diff = plannedEnd.getTime() - nowTick;
+      if (diff >= 0) {
+        timerLabel = `Còn ${formatDuration(diff)}`;
+        timerTone = diff <= 5 * 60_000 ? "warn" : "normal";
+      } else {
+        timerLabel = `Quá giờ ${formatDuration(-diff)}`;
+        timerTone = "over";
+      }
+    } else if ((meetingStatus === "scheduled" || !meetingStatus) && plannedStart) {
+      const diff = plannedStart.getTime() - nowTick;
+      if (diff >= 0) {
+        timerLabel = `Bắt đầu sau ${formatDuration(diff)}`;
+        timerTone = diff <= 5 * 60_000 ? "warn" : "normal";
+      } else {
+        timerLabel = `Trễ ${formatDuration(-diff)}`;
+        timerTone = "over";
+      }
+    }
+  }
+  const timerToneClass =
+    timerTone === "over"
+      ? "bg-destructive/15 text-destructive"
+      : timerTone === "warn"
+        ? "bg-primary/15 text-primary"
+        : "bg-muted text-muted-foreground";
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -575,16 +618,38 @@ function MeetingDetailPage() {
                   <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} /> {statusMeta.label}
                 </span>
                 {isRealRoom ? (
-                  durationLabel ? (
-                    <>
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        Bắt đầu {startTimeLabel} · {isLive ? "Đã diễn ra" : "Tổng"}{" "}
-                        <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
-                      </span>
-                      <span>·</span>
-                    </>
-                  ) : null
+                  <>
+                    {(plannedStart || plannedEnd) && (
+                      <>
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {plannedStart ? fmtDateTime(plannedStart) : "—"}
+                          {plannedEnd ? ` → ${fmtTime(plannedEnd)}` : ""}
+                        </span>
+                        <span>·</span>
+                      </>
+                    )}
+                    {timerLabel && (
+                      <>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono tabular-nums ${timerToneClass}`}
+                        >
+                          {timerLabel}
+                        </span>
+                        <span>·</span>
+                      </>
+                    )}
+                    {durationLabel && (
+                      <>
+                        <span>
+                          {startTimeLabel ? `Bắt đầu thật ${startTimeLabel} · ` : ""}
+                          {isLive ? "Đã diễn ra" : "Tổng"}{" "}
+                          <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
+                        </span>
+                        <span>·</span>
+                      </>
+                    )}
+                  </>
                 ) : (
                   <>
                     <Clock className="h-3 w-3" /> 32:14
