@@ -1174,6 +1174,62 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_email_template_versions: {
+        Row: {
+          action: string
+          body: string
+          changed_by: string | null
+          created_at: string
+          cta_label: string
+          footer: string
+          heading: string
+          id: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["tenant_role"]
+          subject: string
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          action?: string
+          body: string
+          changed_by?: string | null
+          created_at?: string
+          cta_label: string
+          footer?: string
+          heading: string
+          id?: string
+          is_active?: boolean
+          role: Database["public"]["Enums"]["tenant_role"]
+          subject: string
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          action?: string
+          body?: string
+          changed_by?: string | null
+          created_at?: string
+          cta_label?: string
+          footer?: string
+          heading?: string
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["tenant_role"]
+          subject?: string
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_email_template_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invite_email_templates: {
         Row: {
           body: string
