@@ -206,13 +206,13 @@ export const restoreInviteEmailTemplateVersion = createServerFn({ method: "POST"
       .eq("tenant_id", tenantId)
       .maybeSingle();
     if (readErr) throw new ApiError({ code: "PERMISSION_DENIED", message: readErr.message });
-    if (!row) throw new ApiError({ code: "NOT_FOUND", message: "VERSION_NOT_FOUND" });
+    if (!row) throw new ApiError({ code: "WORKSPACE_ACCESS_DENIED", message: "VERSION_NOT_FOUND" });
     const v = row as unknown as Row;
 
     const { error } = await context.supabase.from("invite_email_templates").upsert(
       {
         tenant_id: tenantId,
-        role: v.role,
+        role: v.role as InviteRole,
         subject: v.subject,
         heading: v.heading,
         body: v.body,
