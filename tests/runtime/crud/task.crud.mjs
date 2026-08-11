@@ -13,9 +13,11 @@ export async function run(ids) {
 
   // C — create valid
   const before = (await a.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", ids.workspaces.A)).count ?? 0;
-  const { data: taskId, error: cErr } = await owner.client.rpc("create_task", {
+  const { data: created, error: cErr } = await owner.client.rpc("create_task", {
     _workspace_id: ids.workspaces.A, _title: `${TAG}task_1`, _description: "d", _priority: "high",
   });
+  const pickId = (v) => (typeof v === "string" ? v : Array.isArray(v) ? pickId(v[0]) : (v?.id ?? v?.task_id ?? null));
+  const taskId = pickId(created);
   const after = (await a.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", ids.workspaces.A)).count ?? 0;
   const { data: row } = await a.from("tasks").select("*").eq("id", taskId ?? "00000000-0000-0000-0000-000000000000").maybeSingle();
   rec("TASK-C-01", "CREATE", !cErr && after === before + 1 && row?.tenant_id === ids.tenants.A && row?.created_by ? "PASS_REAL" : "FAIL_BROKEN",
@@ -39,7 +41,7 @@ export async function run(ids) {
   const r1 = await owner.client.rpc("create_task", { _workspace_id: ids.workspaces.A, _title: `${TAG}idem`, _idempotency_key: key });
   const r2 = await owner.client.rpc("create_task", { _workspace_id: ids.workspaces.A, _title: `${TAG}idem`, _idempotency_key: key });
   const { count: idemCount } = await a.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", ids.workspaces.A).eq("title", `${TAG}idem`);
-  rec("TASK-C-05", "CREATE_IDEMPOTENCY", idemCount === 1 ? "PASS_REAL" : "FAIL_BROKEN", { idemCount, r1: r1.data, r2: r2.data, error: r2.error?.message });
+  rec("TASK-C-05", "CREATE_IDEMPOTENCY", idemCount === 1 ? "PASS_REAL" : "FAIL_BROKEN", { idemCount, r1: pickId(r1.data), r2: pickId(r2.data), error: r2.error?.message });
 
   // R — list as member (tenant scoped)
   const { data: listMember } = await member.client.from("tasks").select("id,title").eq("workspace_id", ids.workspaces.A);
@@ -86,7 +88,7 @@ export async function run(ids) {
   rec("TASK-A-01", "ASSIGN", !aErr && assigneeCount > 0 ? "PASS_REAL" : "FAIL_BROKEN", { error: aErr?.message, assigneeCount });
 
   // AUDIT reality
-  const { count: auditCount } = await a.from("audit_events").select("id", { count: "exact", head: true }).eq("tenant_id", ids.tenants.A).eq("resource_id", taskId);
+  const { count: auditCount } = await a.from("audit_events").select("id", { count: "exact", head: true }).eq("tenant_id", ids.tenants.A).or(`resource_id.eq.${taskId},aggregate_id.eq.${taskId}`);
   rec("TASK-AU-01", "AUDIT", auditCount > 0 ? "PASS_REAL" : "FAIL_AUDIT", { auditCount });
 
   // OUTBOX reality

@@ -10,9 +10,11 @@ export async function run(ids) {
   const member = await actorClient(`${TAG}${ids.runId}_member_a@example.com`);
   const outsider = await actorClient(`${TAG}${ids.runId}_outsider@example.com`);
 
-  const { data: docId, error: cErr } = await owner.client.rpc("create_document", {
+  const pickId = (v) => (typeof v === "string" ? v : Array.isArray(v) ? pickId(v[0]) : (v?.id ?? v?.document_id ?? null));
+  const { data: createdDoc, error: cErr } = await owner.client.rpc("create_document", {
     _workspace_id: ids.workspaces.A, _title: `${TAG}doc_1`, _folder: "My Documents", _tags: ["crud", "e2e"],
   });
+  const docId = pickId(createdDoc);
   const { data: row } = await a.from("documents").select("*").eq("id", docId ?? "00000000-0000-0000-0000-000000000000").maybeSingle();
   rec("DOC-C-01", "CREATE", !cErr && row?.tenant_id === ids.tenants.A ? "PASS_REAL" : "FAIL_BROKEN",
     { error: cErr?.message, evidence: row && { id: row.id, title: row.title, tenant_id: row.tenant_id, tags: row.tags, status: row.status ?? null } });
@@ -35,13 +37,13 @@ export async function run(ids) {
   rec("DOC-A-01", "SHARE", !shErr && permCount > 0 ? "PASS_REAL" : "FAIL_BROKEN", { error: shErr?.message, permCount });
 
   const { error: arErr } = await owner.client.rpc("archive_document", { _document_id: docId });
-  const { data: afterA } = await a.from("documents").select("status,archived_at,deleted_at").eq("id", docId).maybeSingle();
-  rec("DOC-D-01", "ARCHIVE", !arErr && afterA && (afterA.status === "archived" || afterA.archived_at || afterA.deleted_at) ? "PASS_REAL" : "FAIL_BROKEN", { error: arErr?.message, after: afterA });
+  const { data: afterA } = await a.from("documents").select("deleted_at,updated_at").eq("id", docId).maybeSingle();
+  rec("DOC-D-01", "ARCHIVE", !arErr && afterA && afterA.deleted_at ? "PASS_REAL" : "FAIL_BROKEN", { error: arErr?.message, after: afterA });
 
   const { error: arErr2 } = await owner.client.rpc("archive_document", { _document_id: docId });
   rec("DOC-D-02", "ARCHIVE_REPEAT", "PASS_REAL", { note: "idempotency/stability observed", error: arErr2?.message ?? null });
 
-  const { count: auditCount } = await a.from("audit_events").select("id", { count: "exact", head: true }).eq("resource_id", docId);
+  const { count: auditCount } = await a.from("audit_events").select("id", { count: "exact", head: true }).or(`resource_id.eq.${docId},aggregate_id.eq.${docId}`);
   rec("DOC-AU-01", "AUDIT", auditCount > 0 ? "PASS_REAL" : "FAIL_AUDIT", { auditCount });
 
   return cells;
