@@ -3696,8 +3696,11 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          allow_member_invites: boolean
           created_at: string
+          default_member_role: string
           deleted_at: string | null
+          description: string | null
           id: string
           name: string
           owner_id: string
@@ -3706,10 +3709,14 @@ export type Database = {
           timezone: string
           updated_at: string
           updated_by: string | null
+          visibility: string
         }
         Insert: {
+          allow_member_invites?: boolean
           created_at?: string
+          default_member_role?: string
           deleted_at?: string | null
+          description?: string | null
           id?: string
           name: string
           owner_id: string
@@ -3718,10 +3725,14 @@ export type Database = {
           timezone?: string
           updated_at?: string
           updated_by?: string | null
+          visibility?: string
         }
         Update: {
+          allow_member_invites?: boolean
           created_at?: string
+          default_member_role?: string
           deleted_at?: string | null
+          description?: string | null
           id?: string
           name?: string
           owner_id?: string
@@ -3730,6 +3741,7 @@ export type Database = {
           timezone?: string
           updated_at?: string
           updated_by?: string | null
+          visibility?: string
         }
         Relationships: [
           {
