@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { getDashboardOverview } from "@/lib/api/dashboard.functions";
 import type { DashboardOverview as DashboardData } from "@/lib/api/dashboard.functions";
@@ -401,8 +403,43 @@ function AvatarStack({ count, seed }: { count: number; seed: string }) {
 
 function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showAI, setShowAI] = useState(true);
   const [rangeDays, setRangeDays] = useState(7);
+  const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SECTIONS_STORAGE_KEY);
+      if (raw) setSections({ ...DEFAULT_SECTIONS, ...JSON.parse(raw) });
+    } catch {
+      /* ignore */
+    }
+    setHydrated(true);
+  }, []);
+
+  const toggleSection = (key: SectionKey) => {
+    setSections((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  const resetSections = () => {
+    setSections(DEFAULT_SECTIONS);
+    try {
+      localStorage.removeItem(SECTIONS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const visible = hydrated ? sections : DEFAULT_SECTIONS;
+  const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
 
@@ -443,9 +480,47 @@ function DashboardPage() {
                     <option value={30}>30 ngày qua</option>
                   </select>
                 </div>
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
-                  <Settings2 className="h-4 w-4 text-muted-foreground" /> Customize
-                </button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2"
+                    >
+                      <Settings2 className="h-4 w-4 text-muted-foreground" /> Tuỳ chỉnh
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-72 p-0">
+                    <div className="border-b border-border px-4 py-3">
+                      <div className="text-sm font-semibold">Tuỳ chỉnh bảng điều khiển</div>
+                      <p className="text-xs text-muted-foreground">
+                        Chọn các khối muốn hiển thị. Thiết lập được lưu trên thiết bị này.
+                      </p>
+                    </div>
+                    <ul className="max-h-80 space-y-1 overflow-y-auto p-2">
+                      {SECTION_OPTIONS.map((opt) => (
+                        <li key={opt.key}>
+                          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
+                            <span>{opt.label}</span>
+                            <Switch
+                              checked={visible[opt.key]}
+                              onCheckedChange={() => toggleSection(opt.key)}
+                              aria-label={opt.label}
+                            />
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="border-t border-border px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        onClick={resetSections}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Khôi phục mặc định
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
