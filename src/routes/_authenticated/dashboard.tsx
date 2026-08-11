@@ -68,7 +68,20 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   ),
 });
 
-const dashboardQuery = (rangeDays: number, workspaceId?: string | null) =>
+const REFRESH_INTERVALS = [
+  { value: 0, label: "Tắt tự động" },
+  { value: 60_000, label: "Mỗi 1 phút" },
+  { value: 300_000, label: "Mỗi 5 phút" },
+  { value: 900_000, label: "Mỗi 15 phút" },
+] as const;
+const REFRESH_STORAGE_KEY = "uniwork:dashboard:refresh-interval";
+const DEFAULT_REFRESH_MS = 300_000;
+
+const dashboardQuery = (
+  rangeDays: number,
+  workspaceId?: string | null,
+  refreshMs: number = DEFAULT_REFRESH_MS,
+) =>
   queryOptions({
     queryKey: ["dashboard-overview", rangeDays, workspaceId ?? "all"],
     queryFn: () =>
@@ -76,6 +89,10 @@ const dashboardQuery = (rangeDays: number, workspaceId?: string | null) =>
         data: { rangeDays, ...(workspaceId ? { workspaceId } : {}) },
       }),
     staleTime: 30_000,
+    refetchInterval: refreshMs > 0 ? refreshMs : false,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
 type Kpi = {
@@ -598,7 +615,25 @@ function DashboardInner() {
   const layoutOrder = hydrated ? order : DEFAULT_ORDER;
   const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
-  const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
+  const [refreshMs, setRefreshMs] = useState<number>(DEFAULT_REFRESH_MS);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REFRESH_STORAGE_KEY);
+      if (saved !== null && !Number.isNaN(Number(saved))) setRefreshMs(Number(saved));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const changeRefreshMs = (ms: number) => {
+    setRefreshMs(ms);
+    try {
+      localStorage.setItem(REFRESH_STORAGE_KEY, String(ms));
+    } catch {
+      /* ignore */
+    }
+  };
+  const overviewQuery = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId, refreshMs));
+  const { data } = overviewQuery;
 
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
   const aiSummaryQuery = useQuery({
@@ -608,13 +643,25 @@ function DashboardInner() {
         data: activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {},
       }),
     staleTime: 30_000,
+    refetchInterval: refreshMs > 0 ? refreshMs : false,
+    refetchOnWindowFocus: true,
   });
   const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
   const notificationsQuery = useQuery({
     queryKey: ["dashboard-notifications"],
     queryFn: () => listNotifications(),
     staleTime: 30_000,
+    refetchInterval: refreshMs > 0 ? refreshMs : false,
+    refetchOnWindowFocus: true,
   });
+  const isRefreshing =
+    overviewQuery.isFetching || aiSummaryQuery.isFetching || notificationsQuery.isFetching;
+  const lastUpdatedAt = overviewQuery.dataUpdatedAt;
+  const refreshAll = () => {
+    void overviewQuery.refetch();
+    void aiSummaryQuery.refetch();
+    void notificationsQuery.refetch();
+  };
   const importantNotifications = useMemo(() => {
     const rows = notificationsQuery.data ?? [];
     const unread = rows.filter((n: any) => !n.is_read);
@@ -691,6 +738,36 @@ function DashboardInner() {
                     <option value={14}>14 ngày qua</option>
                     <option value={30}>30 ngày qua</option>
                   </select>
+                </div>
+                <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                  <RefreshCw
+                    className={`h-4 w-4 text-muted-foreground ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                  <select
+                    value={refreshMs}
+                    onChange={(e) => changeRefreshMs(Number(e.target.value))}
+                    className="bg-transparent text-sm focus:outline-none"
+                    aria-label="Tần suất tự động làm mới"
+                  >
+                    {REFRESH_INTERVALS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={refreshAll}
+                    disabled={isRefreshing}
+                    className="ml-1 border-l border-border pl-2 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                    title={
+                      lastUpdatedAt
+                        ? `Cập nhật lúc ${new Date(lastUpdatedAt).toLocaleTimeString("vi-VN")}`
+                        : undefined
+                    }
+                  >
+                    Làm mới
+                  </button>
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
