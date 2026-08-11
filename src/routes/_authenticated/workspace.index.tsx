@@ -14,7 +14,7 @@ import {
   UserMinus,
   UserPlus,
   Users,
-} from "lucide-react";
+, Tags} from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   archiveWorkspace,

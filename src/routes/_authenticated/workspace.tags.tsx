@@ -82,14 +82,17 @@ function WorkspaceTagsPage() {
   };
 
   const saveM = useMutation({
-    mutationFn: () =>
-      editing
-        ? updateWorkspaceTag({
+    mutationFn: async (): Promise<void> => {
+      if (editing) {
+        await updateWorkspaceTag({
             data: { tagId: editing.id, name: name.trim(), color, description: description.trim() },
-          })
-        : createWorkspaceTag({
-            data: { workspaceId, name: name.trim(), color, description: description.trim() },
-          }),
+        });
+        return;
+      }
+      await createWorkspaceTag({
+        data: { workspaceId, name: name.trim(), color, description: description.trim() },
+      });
+    },
     onSuccess: () => {
       toast.success(editing ? "Đã cập nhật nhãn" : "Đã tạo nhãn mới");
       reset();

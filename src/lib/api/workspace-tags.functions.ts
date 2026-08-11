@@ -18,7 +18,7 @@ function fail(err: { message?: string } | null, fallback: string): never {
   const denied = raw.includes("PERMISSION") || raw.includes("DENIED") || raw.includes("RLS");
   const dup = raw.includes("DUPLICATE") || raw.includes("UNIQUE");
   throw new ApiError({
-    code: denied ? "PERMISSION_DENIED" : dup ? "VALIDATION_ERROR" : "INTERNAL_ERROR",
+    code: denied ? "PERMISSION_DENIED" : "INTERNAL_ERROR",
     message: dup ? "Nhãn này đã tồn tại trong workspace" : (err?.message ?? fallback),
   });
 }
