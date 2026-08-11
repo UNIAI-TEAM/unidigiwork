@@ -59,6 +59,13 @@ const JOIN_ERROR_HINTS: Record<string, string> = {
 };
 
 function StageFallback() {
+const RSVP_LABELS: Record<string, string> = {
+  pending: "Chờ phản hồi",
+  accepted: "Tham gia",
+  declined: "Từ chối",
+  tentative: "Chưa chắc",
+};
+
   return (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang kết nối phòng họp…
