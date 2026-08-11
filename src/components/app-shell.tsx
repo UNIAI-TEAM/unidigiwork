@@ -183,7 +183,12 @@ function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
   const rows = data ?? [];
   if (rows.length === 0) {
     return collapsed ? null : (
-      <div className="px-3 py-2 text-[11px] text-muted-foreground">Chưa có workspace</div>
+      <div className="px-3 py-2 text-[11px] text-muted-foreground">
+        Chưa có workspace ·{" "}
+        <Link to="/workspace" className="text-primary hover:underline">
+          Tạo mới
+        </Link>
+      </div>
     );
   }
   return (
@@ -198,6 +203,14 @@ function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
           collapsed={collapsed}
         />
       ))}
+      {!collapsed && (
+        <Link
+          to="/workspace"
+          className="mx-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5" /> Quản lý workspace
+        </Link>
+      )}
     </>
   );
 }
