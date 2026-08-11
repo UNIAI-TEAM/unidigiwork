@@ -18,6 +18,7 @@ import {
   Wallet,
   ExternalLink,
   Lock,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
@@ -31,6 +32,7 @@ import {
   resumeSubscription,
   listInvoices,
 } from "@/lib/api/billing.functions";
+import { downloadInvoicePdf } from "@/lib/invoice-print";
 
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({
@@ -135,6 +137,28 @@ function BillingPage() {
       hint: "Thêm thẻ để tự động gia hạn gói dịch vụ.",
     };
   }, [invoicesQ.data]);
+
+  const tenantName = active.data?.name ?? "Tổ chức";
+
+  const handleDownloadInvoice = (inv: {
+    invoiceNumber: string;
+    planName: string | null;
+    amount: number;
+    currency: string;
+    status: string;
+    periodStart: string | null;
+    periodEnd: string | null;
+    issuedAt: string;
+    dueAt: string | null;
+    paidAt: string | null;
+    paymentMethod: string | null;
+  }) => {
+    try {
+      downloadInvoicePdf(inv, tenantName);
+    } catch {
+      toast.error("Không mở được cửa sổ tải hóa đơn");
+    }
+  };
 
   const invalidate = () =>
     Promise.all([
@@ -446,7 +470,8 @@ function BillingPage() {
                             <th className="py-2 pr-4 font-medium">Ngày phát hành</th>
                             <th className="py-2 pr-4 font-medium">Hạn thanh toán</th>
                             <th className="py-2 pr-4 text-right font-medium">Số tiền</th>
-                            <th className="py-2 text-right font-medium">Trạng thái</th>
+                            <th className="py-2 pr-4 text-right font-medium">Trạng thái</th>
+                            <th className="py-2 text-right font-medium">Hóa đơn</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -464,10 +489,23 @@ function BillingPage() {
                                 <td className="py-2.5 pr-4 text-right font-medium">
                                   {fmtMoney(inv.amount, inv.currency)}
                                 </td>
-                                <td className="py-2.5 text-right">
+                                <td className="py-2.5 pr-4 text-right">
                                   <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${st.cls}`}>
                                     {st.label}
                                   </span>
+                                </td>
+                                <td className="py-2.5 text-right">
+                                  {inv.status === "paid" ? (
+                                    <button
+                                      onClick={() => handleDownloadInvoice(inv)}
+                                      title={`Tải hóa đơn ${inv.invoiceNumber} (PDF)`}
+                                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-2"
+                                    >
+                                      <Download className="h-3.5 w-3.5" /> PDF
+                                    </button>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -502,6 +540,14 @@ function BillingPage() {
                                 ? `Đã thanh toán ${fmtDate(inv.paidAt)}${inv.paymentMethod ? ` · ${inv.paymentMethod}` : ""}`
                                 : `Hạn thanh toán ${fmtDate(inv.dueAt)}`}
                             </p>
+                            {inv.status === "paid" && (
+                              <button
+                                onClick={() => handleDownloadInvoice(inv)}
+                                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium hover:bg-surface-2"
+                              >
+                                <Download className="h-3.5 w-3.5" /> Tải hóa đơn PDF
+                              </button>
+                            )}
                           </li>
                         );
                       })}
