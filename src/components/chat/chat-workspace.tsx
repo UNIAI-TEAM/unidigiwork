@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Hash, Lock, Plus, Search as SearchIcon, Send, Star, Users, X, Trash2, LogOut, Loader2,
-  MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield,
+  MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -14,10 +14,33 @@ import {
   leaveChatChannel, setChatFavorite, markChatChannelRead, deleteChatChannel, deleteChatMessage,
   updateChatMessage, listChatChannelMembers, listChatPeople, addChatChannelMember,
   removeChatChannelMember, setChatMemberRole, openDirectMessage,
-  type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment,
+  listChatChannelReaders,
+  type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
 
 const BUCKET = "chat-attachments";
+
+/** Danh sách người đã xem một tin nhắn (dựa trên mốc đã đọc của từng thành viên). */
+function ReadReceipts({ readers, message }: { readers: ChatReaderDTO[]; message: ChatMessageDTO }) {
+  const seen = readers.filter(
+    (r) => r.userId !== message.authorId && r.lastReadAt && new Date(r.lastReadAt) >= new Date(message.createdAt),
+  );
+  if (seen.length === 0) return null;
+  const label = seen.map((r) => (r.isMe ? "Bạn" : r.name)).join(", ");
+  return (
+    <div className="mt-1 flex items-center gap-1.5" title={`Đã xem: ${label}`}>
+      <Eye className="h-3 w-3 text-muted-foreground" />
+      <div className="flex -space-x-1.5">
+        {seen.slice(0, 4).map((r) => (
+          <img key={r.userId} src={avatar(r.userId)} alt={r.name} className="h-4 w-4 rounded-full ring-1 ring-background" />
+        ))}
+      </div>
+      <span className="text-[11px] text-muted-foreground">
+        {seen.length > 4 ? `Đã xem bởi ${seen.length} người` : `Đã xem bởi ${label}`}
+      </span>
+    </div>
+  );
+}
 
 function timeLabel(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -93,6 +116,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   const doRemoveMember = useServerFn(removeChatChannelMember);
   const doSetRole = useServerFn(setChatMemberRole);
   const doOpenDm = useServerFn(openDirectMessage);
+  const fetchReaders = useServerFn(listChatChannelReaders);
 
   const [activeId, setActiveId] = useState<string | null>(initialChannelId ?? null);
   const [input, setInput] = useState("");
@@ -144,6 +168,13 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   });
   const people = peopleQ.data ?? [];
 
+  const readersQ = useQuery({
+    queryKey: ["chat", "readers", activeId],
+    queryFn: () => fetchReaders({ data: { channelId: activeId! } }),
+    enabled: !!activeId && !!active?.isMember,
+  });
+  const readers = readersQ.data ?? [];
+
   // Reset trạng thái khi đổi kênh / từ khoá
   useEffect(() => {
     setOlder([]);
@@ -176,6 +207,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_members" }, () => {
         qc.invalidateQueries({ queryKey: ["chat", "channels"] });
         qc.invalidateQueries({ queryKey: ["chat", "members"] });
+        qc.invalidateQueries({ queryKey: ["chat", "readers"] });
       })
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
@@ -656,6 +688,8 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                                       {m.attachments.map((f) => <AttachmentChip key={f.path} file={f} />)}
                                     </div>
                                   )}
+
+                                  <ReadReceipts readers={readers} message={m} />
                                 </div>
                               </div>
                             </div>
