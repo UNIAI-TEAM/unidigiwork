@@ -234,7 +234,8 @@ function fmtDur(start: string, end: string) {
   return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`;
 }
 
-function buildAiItems(s: DashboardAiSummary | undefined) {
+function buildAiItems(s: DashboardAiSummary | undefined, ws?: string) {
+  const today = localDayKey();
   return [
     {
       icon: FileText,
@@ -242,7 +243,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.staleDocuments ?? 0} tài liệu cần cập nhật`,
       action: "Xem chi tiết",
       to: "/documents",
-      search: { filter: "stale" as const },
+      search: { filter: "stale" as const, ...(ws ? { ws } : {}) },
     },
     {
       icon: AlertTriangle,
@@ -250,7 +251,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.overdueTasks ?? 0} nhiệm vụ đang quá hạn`,
       action: "Xem chi tiết",
       to: "/tasks",
-      search: { filter: "overdue" as const },
+      search: { filter: "overdue" as const, ...(ws ? { ws } : {}) },
     },
     {
       icon: Video,
@@ -258,7 +259,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.meetingsToday ?? 0} cuộc họp trong hôm nay`,
       action: "Xem lịch",
       to: "/calendar",
-      search: { view: "week" as const, kind: "meeting" as const },
+      search: { view: "week" as const, kind: "meeting" as const, day: today },
     },
     {
       icon: Workflow,
@@ -665,7 +666,10 @@ function DashboardInner() {
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchOnWindowFocus: true,
   });
-  const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
+  const aiItems = useMemo(
+    () => buildAiItems(aiSummaryQuery.data, activeWorkspaceId ?? undefined),
+    [aiSummaryQuery.data, activeWorkspaceId],
+  );
   const notificationsQuery = useQuery({
     queryKey: ["dashboard-notifications"],
     queryFn: () => listNotifications(),
