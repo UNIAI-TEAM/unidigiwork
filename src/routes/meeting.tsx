@@ -718,15 +718,45 @@ function MeetingPage() {
                     </button>
                   ))}
                 </div>
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                  <span className="text-xs text-muted-foreground">Từ</span>
+                  <input
+                    type="date"
+                    value={dateFrom ?? ""}
+                    max={dateTo ?? undefined}
+                    onChange={(e) => setRoomFilter({ from: e.target.value, page: 1 })}
+                    aria-label="Từ ngày"
+                    className="bg-transparent text-sm focus:outline-none"
+                  />
+                  <span className="text-xs text-muted-foreground">đến</span>
+                  <input
+                    type="date"
+                    value={dateTo ?? ""}
+                    min={dateFrom ?? undefined}
+                    onChange={(e) => setRoomFilter({ to: e.target.value, page: 1 })}
+                    aria-label="Đến ngày"
+                    className="bg-transparent text-sm focus:outline-none"
+                  />
+                  {rangeActive && (
+                    <button
+                      onClick={() => setRoomFilter({ from: "", to: "", page: 1 })}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {rooms.isLoading ? (
+              {listLoading ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
                 </div>
-              ) : (rooms.data?.items.length ?? 0) === 0 ? (
+              ) : listItems.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  {roomState === "live"
+                  {rangeActive
+                    ? "Không có cuộc họp nào trong khoảng ngày đã chọn."
+                    : roomState === "live"
                     ? "Không có phòng nào đang diễn ra trong workspace này."
                     : roomState === "upcoming"
                       ? "Không có phòng nào sắp diễn ra trong workspace này."
@@ -737,7 +767,7 @@ function MeetingPage() {
               ) : (
                 <>
                   <ul className="grid gap-2 md:grid-cols-2">
-                    {rooms.data?.items.map((r) => (
+                    {listItems.map((r) => (
                       <li key={r.id}>
                         <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40">
                           <Link
@@ -775,24 +805,23 @@ function MeetingPage() {
                       </li>
                     ))}
                   </ul>
-                  {rooms.data && rooms.data.total > ROOM_PAGE_SIZE && (
+                  {listTotal > ROOM_PAGE_SIZE && (
                     <div className="mt-3 flex items-center justify-between gap-3 text-xs">
                       <span className="text-muted-foreground">
                         Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
-                        {Math.min(currentPage * ROOM_PAGE_SIZE, rooms.data.total)} /{" "}
-                        {rooms.data.total} phòng
+                        {Math.min(currentPage * ROOM_PAGE_SIZE, listTotal)} / {listTotal} phòng
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setRoomFilter({ page: currentPage - 1 })}
-                          disabled={currentPage <= 1 || rooms.isFetching}
+                          disabled={currentPage <= 1 || listFetching}
                           className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
                         >
                           Trước
                         </button>
                         <button
                           onClick={() => setRoomFilter({ page: currentPage + 1 })}
-                          disabled={currentPage * ROOM_PAGE_SIZE >= rooms.data.total || rooms.isFetching}
+                          disabled={currentPage * ROOM_PAGE_SIZE >= listTotal || listFetching}
                           className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
                         >
                           Sau
