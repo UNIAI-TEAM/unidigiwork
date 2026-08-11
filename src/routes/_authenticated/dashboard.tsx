@@ -44,6 +44,7 @@ import {
   Clock,
   Bell,
   GripVertical,
+  RefreshCw,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -1024,6 +1025,49 @@ function DashboardInner() {
                   Đây là những thông tin AI tổng hợp cho bạn hôm nay.
                 </p>
               </div>
+              {aiSummaryQuery.isPending ? (
+                <ul className="mt-4 space-y-2" aria-busy="true">
+                  {[0, 1, 2, 3].map((i) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                    >
+                      <span className="h-9 w-9 animate-pulse rounded-lg bg-surface-2" />
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="h-3 w-2/3 animate-pulse rounded bg-surface-2" />
+                        <div className="h-2.5 w-1/3 animate-pulse rounded bg-surface-2" />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : aiSummaryQuery.isError ? (
+                <div
+                  role="alert"
+                  className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs"
+                >
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-destructive" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-destructive">
+                        Không tải được số liệu tổng hợp
+                      </div>
+                      <div className="mt-0.5 break-words text-muted-foreground">
+                        {(aiSummaryQuery.error as Error)?.message ?? "Lỗi không xác định"}
+                      </div>
+                      <button
+                        onClick={() => aiSummaryQuery.refetch()}
+                        disabled={aiSummaryQuery.isFetching}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[11px] hover:bg-surface-2 disabled:opacity-60"
+                      >
+                        <RefreshCw
+                          className={`h-3 w-3 ${aiSummaryQuery.isFetching ? "animate-spin" : ""}`}
+                        />
+                        Thử lại
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <ul className="mt-4 space-y-2">
                 {aiItems.map((it) => {
                   const Icon = it.icon;
@@ -1049,6 +1093,7 @@ function DashboardInner() {
                   );
                 })}
               </ul>
+              )}
 
               {(aiThread.length > 0 || aiSending) && (
                 <div
@@ -1108,8 +1153,39 @@ function DashboardInner() {
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <ShieldCheck className="h-4 w-4 text-primary" /> Thông báo quan trọng
                 </div>
-                {notificationsQuery.isLoading ? (
-                  <div className="mt-2 text-xs text-muted-foreground">Đang tải thông báo…</div>
+                {notificationsQuery.isPending ? (
+                  <div className="mt-2 space-y-2" aria-busy="true">
+                    {[0, 1].map((i) => (
+                      <div key={i} className="space-y-1.5">
+                        <div className="h-3 w-3/4 animate-pulse rounded bg-surface-2" />
+                        <div className="h-2.5 w-1/2 animate-pulse rounded bg-surface-2" />
+                      </div>
+                    ))}
+                  </div>
+                ) : notificationsQuery.isError ? (
+                  <div role="alert" className="mt-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-destructive" />
+                      <div className="min-w-0">
+                        <div className="font-medium text-destructive">
+                          Không tải được thông báo
+                        </div>
+                        <div className="break-words text-muted-foreground">
+                          {(notificationsQuery.error as Error)?.message ?? "Lỗi không xác định"}
+                        </div>
+                        <button
+                          onClick={() => notificationsQuery.refetch()}
+                          disabled={notificationsQuery.isFetching}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[11px] hover:bg-surface-2 disabled:opacity-60"
+                        >
+                          <RefreshCw
+                            className={`h-3 w-3 ${notificationsQuery.isFetching ? "animate-spin" : ""}`}
+                          />
+                          Thử lại
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ) : importantNotifications.length === 0 ? (
                   <div className="mt-2 text-xs text-muted-foreground">Không có thông báo mới</div>
                 ) : (
