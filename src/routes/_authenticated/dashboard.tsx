@@ -472,6 +472,14 @@ function DashboardInner() {
   const [dragKey, setDragKey] = useState<SectionKey | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
+  const userName = useMemo(
+    () =>
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.full_name ||
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.display_name ||
+      user?.email?.split("@")[0] ||
+      "bạn",
+    [user],
+  );
   const prefsQuery = useQuery({
     queryKey: ["dashboard-prefs"],
     queryFn: () => getDashboardPrefs(),
