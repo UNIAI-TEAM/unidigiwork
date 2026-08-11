@@ -728,7 +728,7 @@ function DashboardInner() {
       `Workspace: ${activeWorkspaceName ?? (activeWorkspaceId ? activeWorkspaceId : "Tất cả workspace")}`,
       `Khoảng thời gian đang xem: ${rangeDays} ngày qua`,
       s
-        ? `Số liệu hiện tại — tài liệu cần cập nhật (>30 ngày): ${s.staleDocuments ?? 0}; nhiệm vụ quá hạn: ${s.overdueTasks ?? 0}; cuộc họp hôm nay: ${s.meetingsToday ?? 0}; quy trình chờ duyệt: ${s.pendingWorkflows ?? 0}`
+        ? `Số liệu hiện tại — tài liệu cần cập nhật (>30 ngày): ${s.staleDocuments ?? 0}; nhiệm vụ quá hạn: ${s.overdueTasks ?? 0}; cuộc họp hôm nay: ${s.meetingsToday ?? 0}; quy trình chờ duyệt: ${s.pendingWorkflowApprovals ?? 0}`
         : "Số liệu hiện tại: chưa tải được",
     ].join("\n");
     setAiInput("");
