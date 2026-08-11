@@ -400,7 +400,8 @@ function MeetingDetailPage() {
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex flex-1 flex-col overflow-hidden p-4 lg:p-6">
-            <div className="mb-3">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
               <Link to="/meeting" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-3.5 w-3.5" /> Tất cả cuộc họp
               </Link>
@@ -415,6 +416,34 @@ function MeetingDetailPage() {
                 <span>·</span>
                 <Users className="h-3 w-3" /> {participants.length} người
               </div>
+              </div>
+              {isRealRoom && isHost && (
+                <div className="flex shrink-0 items-center gap-2">
+                  {meetingStatus !== "live" && meetingStatus !== "ended" && (
+                    <button
+                      type="button"
+                      disabled={lifecycleBusy !== null}
+                      onClick={() => void handleLifecycle("start")}
+                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      {lifecycleBusy === "start" ? "Đang bắt đầu…" : "Bắt đầu họp"}
+                    </button>
+                  )}
+                  {meetingStatus === "live" && (
+                    <button
+                      type="button"
+                      disabled={lifecycleBusy !== null}
+                      onClick={() => void handleLifecycle("end")}
+                      className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      {lifecycleBusy === "end" ? "Đang kết thúc…" : "Kết thúc họp"}
+                    </button>
+                  )}
+                  {meetingStatus === "ended" && (
+                    <span className="text-xs text-muted-foreground">Cuộc họp đã kết thúc</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {session ? (
