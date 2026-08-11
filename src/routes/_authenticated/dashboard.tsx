@@ -1244,6 +1244,13 @@ function DashboardInner() {
                         to={it.to}
                         search={it.search as never}
                         preload="intent"
+                        onClick={() =>
+                          recordOpenedLink(
+                            it.title,
+                            it.to,
+                            (it.search ?? {}) as Record<string, unknown>,
+                          )
+                        }
                         className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
                       >
                         <span
