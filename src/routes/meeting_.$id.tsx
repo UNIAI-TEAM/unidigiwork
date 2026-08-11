@@ -29,7 +29,7 @@ import {
   closeMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
 import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
-import { setMeetingRsvp } from "@/lib/api/meetings.functions";
+import { setMeetingRsvp, getMeeting, startMeeting, endMeeting } from "@/lib/api/meetings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
@@ -358,6 +358,38 @@ function MeetingDetailPage() {
       }
     },
     [id, isRealRoom, participantsQuery],
+  );
+
+  // Trạng thái cuộc họp + quyền chủ trì để hiện nút Bắt đầu / Kết thúc.
+  const meetingQuery = useQuery({
+    queryKey: ["meeting", id],
+    enabled: isRealRoom,
+    staleTime: 15_000,
+    queryFn: () => getMeeting({ data: { meetingId: id } }),
+  });
+  const meetingStatus = (meetingQuery.data as { status?: string } | undefined)?.status ?? null;
+  const isHost =
+    !!myUserId &&
+    (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
+  const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
+
+  const handleLifecycle = useCallback(
+    async (action: "start" | "end") => {
+      setLifecycleBusy(action);
+      try {
+        const fn = action === "start" ? startMeeting : endMeeting;
+        await fn({ data: { meetingId: id, idempotencyKey: crypto.randomUUID() } });
+        toast.success(action === "start" ? "Đã bắt đầu cuộc họp." : "Đã kết thúc cuộc họp.");
+        await meetingQuery.refetch();
+      } catch {
+        toast.error(
+          action === "start" ? "Không bắt đầu được cuộc họp." : "Không kết thúc được cuộc họp.",
+        );
+      } finally {
+        setLifecycleBusy(null);
+      }
+    },
+    [id, meetingQuery],
   );
 
   return (
