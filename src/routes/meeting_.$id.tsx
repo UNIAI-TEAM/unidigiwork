@@ -901,7 +901,8 @@ function MeetingDetailPage() {
                           <button
                             key={v}
                             type="button"
-                            disabled={rsvpSaving !== null}
+                            disabled={rsvpSaving !== null || rsvpLocked}
+                            title={rsvpLockReason ?? undefined}
                             onClick={() => void handleRsvp(v)}
                             className={`flex-1 rounded-md border px-2 py-1.5 text-[11px] transition-colors disabled:opacity-60 ${
                               myRsvp === v
@@ -913,6 +914,12 @@ function MeetingDetailPage() {
                           </button>
                         ))}
                       </div>
+                      {rsvpLockReason && (
+                        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                          <Lock className="mt-0.5 h-3 w-3 shrink-0" />
+                          <span>{rsvpLockReason}</span>
+                        </p>
+                      )}
                     </div>
                   )}
                   {participantsQuery.isLoading ? (
