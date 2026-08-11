@@ -41,6 +41,7 @@ export const Route = createFileRoute("/tasks")({
   validateSearch: (search: Record<string, unknown>) => ({
     filter: search['filter'] === "overdue" ? ("overdue" as const) : undefined,
     range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
+    ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,
   }),
   head: () => ({
     meta: [
@@ -115,7 +116,7 @@ function TasksPage() {
   const allTasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   // Bộ lọc phân loại: nhãn (tags) + mức ưu tiên
-  const { filter: urlFilter, range: rangeDays } = Route.useSearch();
+  const { filter: urlFilter, range: rangeDays, ws: urlWs } = Route.useSearch();
   const navigateTasks = useNavigate();
   const overdueOnly = urlFilter === "overdue";
   const [tagFilter, setTagFilter] = useState<string[]>([]);
@@ -135,8 +136,7 @@ function TasksPage() {
           (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))) &&
           (!rangeDays ||
             Date.now() - new Date(tk.updated_at).getTime() <= rangeDays * 86400_000) &&
-          (!overdueOnly ||
-            (!!tk.due_at && tk.status !== "done" && new Date(tk.due_at) < new Date())),
+          (!overdueOnly || isOverdueTask(tk)),
       );
       if (sortBy === "default") return filtered;
       const rank: Record<Priority, number> = { urgent: 4, high: 3, normal: 2, low: 1 };
