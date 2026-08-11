@@ -566,28 +566,6 @@ export const listChatChannelReaders = createServerFn({ method: "GET" })
     }));
   });
 
-const _addChatChannelMemberLegacy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({ channelId: z.string().uuid(), userId: z.string().uuid() }).parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const ctx = context as unknown as Ctx;
-    const { data: ch, error: chErr } = await ctx.supabase
-      .from("chat_channels")
-      .select("id, tenant_id")
-      .eq("id", data.channelId)
-      .maybeSingle();
-    if (chErr) mapPgError(chErr);
-    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
-    const { error } = await ctx.supabase.from("chat_members").upsert(
-      { channel_id: data.channelId, user_id: data.userId, tenant_id: ch.tenant_id, role: "member" },
-      { onConflict: "channel_id,user_id" },
-    );
-    if (error) mapPgError(error, "PERMISSION_DENIED");
-    return { ok: true };
-  });
-
 export const removeChatChannelMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
