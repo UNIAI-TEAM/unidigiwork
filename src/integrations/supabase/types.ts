@@ -5780,80 +5780,43 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      update_document:
-        | {
-            Args: {
-              _correlation_id?: string
-              _document_id: string
-              _expected_row_version?: number
-              _folder?: string
-              _idempotency_key?: string
-              _tags?: string[]
-              _title?: string
-            }
-            Returns: {
-              content: string
-              created_at: string
-              created_by: string | null
-              current_version: number
-              deleted_at: string | null
-              folder: string
-              id: string
-              mime_type: string | null
-              row_version: number
-              size_bytes: number | null
-              storage_ref: Json | null
-              tags: string[]
-              tenant_id: string
-              title: string
-              updated_at: string
-              updated_by: string | null
-              workspace_id: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "documents"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              _content?: string
-              _correlation_id?: string
-              _document_id: string
-              _expected_row_version?: number
-              _folder?: string
-              _idempotency_key?: string
-              _tags?: string[]
-              _title?: string
-            }
-            Returns: {
-              content: string
-              created_at: string
-              created_by: string | null
-              current_version: number
-              deleted_at: string | null
-              folder: string
-              id: string
-              mime_type: string | null
-              row_version: number
-              size_bytes: number | null
-              storage_ref: Json | null
-              tags: string[]
-              tenant_id: string
-              title: string
-              updated_at: string
-              updated_by: string | null
-              workspace_id: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "documents"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      update_document: {
+        Args: {
+          _content?: string
+          _correlation_id?: string
+          _document_id: string
+          _expected_row_version?: number
+          _folder?: string
+          _idempotency_key?: string
+          _tags?: string[]
+          _title?: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          created_by: string | null
+          current_version: number
+          deleted_at: string | null
+          folder: string
+          id: string
+          mime_type: string | null
+          row_version: number
+          size_bytes: number | null
+          storage_ref: Json | null
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_meeting: {
         Args: {
           _agenda?: string

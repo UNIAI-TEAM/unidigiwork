@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.update_document(uuid, text, text, text[], bigint, text, text);
