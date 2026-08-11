@@ -127,6 +127,29 @@ function TasksPage() {
     [allTasks, priorityFilter, tagFilter],
   );
 
+  // Bộ lọc đã lưu ("view") theo người dùng
+  const viewsQuery = useQuery({ queryKey: ["task-views"], queryFn: () => listTaskViews() });
+  const savedViews = viewsQuery.data ?? [];
+  const [activeViewId, setActiveViewId] = useState<string>("");
+  const saveViewM = useMutation({
+    mutationFn: (name: string) =>
+      saveTaskView({ data: { name, tags: tagFilter, priority: priorityFilter } }),
+    onSuccess: () => {
+      toast.success("Đã lưu bộ lọc");
+      void qc.invalidateQueries({ queryKey: ["task-views"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không lưu được bộ lọc"),
+  });
+  const deleteViewM = useMutation({
+    mutationFn: (viewId: string) => deleteTaskView({ data: { viewId } }),
+    onSuccess: () => {
+      setActiveViewId("");
+      toast.success("Đã xóa bộ lọc");
+      void qc.invalidateQueries({ queryKey: ["task-views"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không xóa được bộ lọc"),
+  });
+
   // Realtime: mọi thay đổi trên tasks của workspace đang xem sẽ làm mới bảng.
   useEffect(() => {
     if (!activeWs) return;
