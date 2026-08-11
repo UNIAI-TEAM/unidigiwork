@@ -706,8 +706,17 @@ function DashboardInner() {
   const importantNotifications = useMemo(() => {
     const rows = notificationsQuery.data ?? [];
     const unread = rows.filter((n: any) => !n.is_read);
-    return (unread.length ? unread : rows).slice(0, 3);
-  }, [notificationsQuery.data]);
+    const base = [...(unread.length ? unread : rows)];
+    const time = (n: any) => new Date(n.created_at ?? 0).getTime();
+    if (notifSort === "priority") {
+      base.sort(
+        (a: any, b: any) => notifPriorityRank(b) - notifPriorityRank(a) || time(b) - time(a),
+      );
+    } else {
+      base.sort((a: any, b: any) => time(b) - time(a));
+    }
+    return base.slice(0, 3);
+  }, [notificationsQuery.data, notifSort]);
   const markReadFn = useServerFn(markNotificationsRead);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const handleMarkRead = async (id: string) => {
