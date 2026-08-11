@@ -261,6 +261,42 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
       assigneeId: "",
     });
   };
+
+  // Cấu hình mặc định của workspace đang chọn — dùng cho "Tạo nhanh"
+  const quickWorkspaceId = activeWorkspaceId ?? myWorkspaces?.[0]?.id ?? "";
+  const wsDefaultsQ = useQuery({
+    queryKey: ["workspace", quickWorkspaceId, "settings"],
+    queryFn: () => getWorkspaceSettings({ data: { workspaceId: quickWorkspaceId } }),
+    enabled: !!quickWorkspaceId,
+  });
+  const [quickBusyId, setQuickBusyId] = useState<string | null>(null);
+
+  /** Tạo Task ngay lập tức với tiêu đề/mô tả/hạn theo cấu hình mặc định của workspace. */
+  const quickCreateTask = (m: ChatMessageDTO) => {
+    if (!quickWorkspaceId) {
+      toast.error("Chưa chọn workspace");
+      return;
+    }
+    const d = wsDefaultsQ.data;
+    const prefix = d?.defaultTaskTitlePrefix?.trim() ? `${d.defaultTaskTitlePrefix.trim()} ` : "";
+    const firstLine = (m.body || "").split("\n")[0]?.trim() || "Công việc từ chat";
+    const dueDays = d?.defaultTaskDueDays ?? 3;
+    const due = new Date();
+    due.setDate(due.getDate() + dueDays);
+    setQuickBusyId(m.id);
+    createTaskM.mutate(
+      {
+        messageId: m.id,
+        title: `${prefix}${firstLine}`.slice(0, 200),
+        description: `Từ chat — ${m.authorName} (${dayLabel(m.createdAt)} ${timeLabel(m.createdAt)}):\n\n${m.body}`,
+        workspaceId: quickWorkspaceId,
+        priority: d?.defaultTaskPriority ?? "normal",
+        dueAt: due.toISOString(),
+        assigneeId: "",
+      },
+      { onSettled: () => setQuickBusyId(null) },
+    );
+  };
   const [showPeople, setShowPeople] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentioned, setMentioned] = useState<Record<string, string>>({});
@@ -939,6 +975,16 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                                       </button>
                                       <button onClick={() => openTaskDraft(m)} aria-label="Tạo công việc từ tin nhắn" title="Tạo công việc">
                                         <ListTodo className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                                      </button>
+                                      <button
+                                        onClick={() => quickCreateTask(m)}
+                                        disabled={quickBusyId === m.id}
+                                        aria-label="Tạo nhanh công việc theo mặc định workspace"
+                                        title="Tạo nhanh (theo mặc định workspace)"
+                                      >
+                                        {quickBusyId === m.id
+                                          ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                                          : <Zap className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />}
                                       </button>
                                       <button
                                         onClick={() => pinM.mutate({ messageId: m.id, pinned: !m.pinnedAt })}
