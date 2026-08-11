@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   listChatChannels, listChatMessages, sendChatMessage, createChatChannel, joinChatChannel,
   leaveChatChannel, setChatFavorite, markChatChannelRead, deleteChatChannel, deleteChatMessage,
@@ -24,34 +25,90 @@ const BUCKET = "chat-attachments";
 
 /** Danh sách người đã xem một tin nhắn (dựa trên mốc đã đọc của từng thành viên). */
 function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; message: ChatMessageDTO; isDm?: boolean }) {
+  const [open, setOpen] = useState(false);
   const seen = readers.filter(
     (r) => r.userId !== message.authorId && r.lastReadAt && new Date(r.lastReadAt) >= new Date(message.createdAt),
   );
+  const notSeen = readers.filter(
+    (r) => r.userId !== message.authorId && !seen.some((s) => s.userId === r.userId),
+  );
   if (seen.length === 0) return null;
   const label = seen.map((r) => (r.isMe ? "Bạn" : r.name)).join(", ");
-  if (isDm) {
-    const other = seen[0];
-    return (
-      <div className="mt-1 flex items-center gap-1.5" title={`Đã xem: ${label}`}>
-        <CheckCheck className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[11px] text-muted-foreground">
-          {other.isMe ? "Bạn đã xem" : `${other.name} đã xem`} lúc {timeLabel(other.lastReadAt!)}
-        </span>
-      </div>
-    );
-  }
+  const other = seen[0];
   return (
-    <div className="mt-1 flex items-center gap-1.5" title={`Đã xem: ${label}`}>
-      <Eye className="h-3 w-3 text-muted-foreground" />
-      <div className="flex -space-x-1.5">
-        {seen.slice(0, 4).map((r) => (
-          <img key={r.userId} src={avatar(r.userId)} alt={r.name} className="h-4 w-4 rounded-full ring-1 ring-background" />
-        ))}
-      </div>
-      <span className="text-[11px] text-muted-foreground">
-        {seen.length > 4 ? `Đã xem bởi ${seen.length} người` : `Đã xem bởi ${label}`}
-      </span>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        title="Xem chi tiết người đã xem"
+        className="mt-1 flex items-center gap-1.5 rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {isDm ? (
+          <>
+            <CheckCheck className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[11px] text-muted-foreground">
+              {other.isMe ? "Bạn đã xem" : `${other.name} đã xem`} lúc {timeLabel(other.lastReadAt!)}
+            </span>
+          </>
+        ) : (
+          <>
+            <Eye className="h-3 w-3 text-muted-foreground" />
+            <div className="flex -space-x-1.5">
+              {seen.slice(0, 4).map((r) => (
+                <img key={r.userId} src={avatar(r.userId)} alt={r.name} className="h-4 w-4 rounded-full ring-1 ring-background" />
+              ))}
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {seen.length > 4 ? `Đã xem bởi ${seen.length} người` : `Đã xem bởi ${label}`}
+            </span>
+          </>
+        )}
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Eye className="h-4 w-4 text-muted-foreground" />
+              Đã xem · {seen.length} người
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+            <div className="space-y-1">
+              {seen.map((r) => (
+                <div key={r.userId} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50">
+                  <img src={avatar(r.userId)} alt={r.name} className="h-9 w-9 rounded-full" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{r.isMe ? `${r.name} (Bạn)` : r.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Đã xem lúc {timeLabel(r.lastReadAt!)} · {dayLabel(r.lastReadAt!)}
+                    </p>
+                  </div>
+                  <CheckCheck className="h-4 w-4 shrink-0 text-primary" />
+                </div>
+              ))}
+            </div>
+
+            {notSeen.length > 0 && (
+              <div className="space-y-1 border-t pt-3">
+                <p className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Chưa xem · {notSeen.length}
+                </p>
+                {notSeen.map((r) => (
+                  <div key={r.userId} className="flex items-center gap-3 rounded-lg px-2 py-2 opacity-70 hover:bg-muted/50">
+                    <img src={avatar(r.userId)} alt={r.name} className="h-9 w-9 rounded-full grayscale" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{r.isMe ? `${r.name} (Bạn)` : r.name}</p>
+                      <p className="text-xs text-muted-foreground">Chưa xem tin nhắn này</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
