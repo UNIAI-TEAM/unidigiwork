@@ -464,6 +464,7 @@ function normalizeOrder(input: unknown): SectionKey[] {
 }
 
 function DashboardInner() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState(7);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
