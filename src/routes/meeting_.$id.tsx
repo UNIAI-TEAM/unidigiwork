@@ -79,6 +79,7 @@ const JOIN_ERROR_HINTS: Record<string, string> = {
 };
 
 const RSVP_LABELS: Record<string, string> = {
+</dummy>
   pending: "Chờ phản hồi",
   accepted: "Tham gia",
   declined: "Từ chối",
