@@ -38,6 +38,9 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/tasks")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    filter: search['filter'] === "overdue" ? ("overdue" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Tasks & Projects · UNIWORK" },
