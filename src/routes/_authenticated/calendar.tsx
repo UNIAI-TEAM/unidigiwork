@@ -560,13 +560,27 @@ function CalendarPage() {
 
               <div className="flex rounded-lg border border-border bg-surface-2 p-0.5 text-xs">
                 <button
-                  onClick={() => setView("month")}
+                  onClick={() => {
+                    setView("month");
+                    void navigateCalendar({
+                      to: "/calendar",
+                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "month" }),
+                      replace: true,
+                    });
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${view === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   <CalendarDays className="h-3.5 w-3.5" /> Tháng
                 </button>
                 <button
-                  onClick={() => setView("week")}
+                  onClick={() => {
+                    setView("week");
+                    void navigateCalendar({
+                      to: "/calendar",
+                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "week" }),
+                      replace: true,
+                    });
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${view === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   <CalendarRange className="h-3.5 w-3.5" /> Tuần
