@@ -293,6 +293,55 @@ function TasksPage() {
             </div>
 
             {/* Board */}
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3">
+              <span className="text-xs font-medium text-muted-foreground">Lọc:</span>
+              <select
+                aria-label="Lọc theo mức ưu tiên"
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as Priority | "")}
+                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Mọi mức ưu tiên</option>
+                <option value="low">Thấp</option>
+                <option value="normal">Bình thường</option>
+                <option value="high">Cao</option>
+                <option value="urgent">Khẩn cấp</option>
+              </select>
+              {allTags.length === 0 ? (
+                <span className="text-xs text-muted-foreground">Chưa có nhãn nào</span>
+              ) : (
+                allTags.map((tg) => {
+                  const on = tagFilter.includes(tg);
+                  return (
+                    <button
+                      key={tg}
+                      onClick={() =>
+                        setTagFilter(on ? tagFilter.filter((x) => x !== tg) : [...tagFilter, tg])
+                      }
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
+                        on
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border text-muted-foreground hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      {tg}
+                    </button>
+                  );
+                })
+              )}
+              {(tagFilter.length > 0 || priorityFilter) && (
+                <button
+                  onClick={() => {
+                    setTagFilter([]);
+                    setPriorityFilter("");
+                  }}
+                  className="ml-auto text-xs text-primary hover:underline"
+                >
+                  Xóa bộ lọc
+                </button>
+              )}
+            </div>
+
             {tasksQuery.isLoading ? (
               <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface py-12 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Đang tải công việc…
