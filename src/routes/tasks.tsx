@@ -583,6 +583,18 @@ function TaskCard({
       {task.description && (
         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
       )}
+      {(task.tags?.length ?? 0) > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {task.tags!.map((tg) => (
+            <span
+              key={tg}
+              className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+            >
+              {tg}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="mt-3 flex items-center gap-2">
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
