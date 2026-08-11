@@ -642,7 +642,8 @@ function DashboardInner() {
   const visible = hydrated ? sections : DEFAULT_SECTIONS;
   const layoutOrder = hydrated ? order : DEFAULT_ORDER;
   const showAI = visible.ai;
-  const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
+  const { workspaceId: activeWorkspaceId, workspaceName: activeWorkspaceName } =
+    useActiveWorkspace();
   const [refreshMs, setRefreshMs] = useState<number>(DEFAULT_REFRESH_MS);
   useEffect(() => {
     try {
@@ -722,6 +723,14 @@ function DashboardInner() {
   const handleAskAi = async () => {
     const text = aiInput.trim();
     if (!text || aiSending) return;
+    const s = aiSummaryQuery.data;
+    const contextNote = [
+      `Workspace: ${activeWorkspaceName ?? (activeWorkspaceId ? activeWorkspaceId : "Tất cả workspace")}`,
+      `Khoảng thời gian đang xem: ${rangeDays} ngày qua`,
+      s
+        ? `Số liệu hiện tại — tài liệu cần cập nhật (>30 ngày): ${s.staleDocuments ?? 0}; nhiệm vụ quá hạn: ${s.overdueTasks ?? 0}; cuộc họp hôm nay: ${s.meetingsToday ?? 0}; quy trình chờ duyệt: ${s.pendingWorkflowApprovals ?? 0}`
+        : "Số liệu hiện tại: chưa tải được",
+    ].join("\n");
     setAiInput("");
     setAiThread((prev) => [...prev, { role: "user", content: text }]);
     setAiSending(true);
@@ -729,6 +738,7 @@ function DashboardInner() {
       const res = await sendAiFn({
         data: {
           text,
+          contextNote,
           ...(aiConversationId ? { conversationId: aiConversationId } : {}),
           ...(activeWorkspaceId && !aiConversationId ? { workspaceId: activeWorkspaceId } : {}),
         },

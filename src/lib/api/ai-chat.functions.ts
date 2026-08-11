@@ -284,6 +284,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         conversationId: z.string().uuid().optional(),
         workspaceId: z.string().uuid().optional(),
         text: z.string().min(1).max(8000),
+        contextNote: z.string().max(2000).optional(),
       })
       .parse(i),
   )
@@ -365,7 +366,9 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       try {
         const result = streamText({
           model: provider.responses(MODEL),
-          system: SYSTEM_PROMPT,
+          system: data.contextNote
+            ? `${SYSTEM_PROMPT}\n\n[Ngữ cảnh hiện tại của người dùng]\n${data.contextNote}\nHãy ưu tiên trả lời bám theo ngữ cảnh này khi phù hợp.`
+            : SYSTEM_PROMPT,
           messages: ((history ?? []) as Array<{ role: string; content: string }>).map((m) => ({
             role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
             content: m.content,
