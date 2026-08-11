@@ -689,6 +689,7 @@ function DashboardInner() {
   const notificationsQuery = useQuery({
     queryKey: ["dashboard-notifications"],
     queryFn: () => listNotifications(),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchOnWindowFocus: true,
