@@ -57,6 +57,7 @@ type Task = {
   due_at: string | null;
   updated_at: string;
   row_version: number;
+  tags?: string[] | null;
 };
 
 const priorityColors: Record<Priority, string> = {
@@ -100,7 +101,24 @@ function TasksPage() {
     queryFn: async () =>
       (await listTasks({ data: { workspaceId: activeWs!, limit: 200 } })) as unknown as Task[],
   });
-  const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
+  const allTasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
+
+  // Bộ lọc phân loại: nhãn (tags) + mức ưu tiên
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "">("");
+  const allTags = useMemo(
+    () => Array.from(new Set(allTasks.flatMap((tk) => tk.tags ?? []))).sort(),
+    [allTasks],
+  );
+  const tasks = useMemo(
+    () =>
+      allTasks.filter(
+        (tk) =>
+          (!priorityFilter || tk.priority === priorityFilter) &&
+          (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))),
+      ),
+    [allTasks, priorityFilter, tagFilter],
+  );
 
   // Realtime: mọi thay đổi trên tasks của workspace đang xem sẽ làm mới bảng.
   useEffect(() => {
