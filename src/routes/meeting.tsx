@@ -361,6 +361,7 @@ function MeetingPage() {
   const ROOM_PAGE_SIZE = 20;
 
   const roomState: RoomFilterState = search.state ?? restoredFilter?.state ?? "all";
+  const sortStartAt: "asc" | "desc" = search.sort ?? "asc";
 
   // Bộ lọc khoảng ngày (yyyy-mm-dd) — khi bật sẽ truy vấn qua listMeetings.
   const dateFrom = search.from;
@@ -371,12 +372,12 @@ function MeetingPage() {
     try {
       window.localStorage.setItem(
         ROOM_FILTER_KEY,
-        JSON.stringify({ ws: activeWs, q: roomQuery, state: roomState }),
+        JSON.stringify({ ws: activeWs, q: roomQuery, state: roomState, sort: sortStartAt }),
       );
     } catch {
       /* storage không khả dụng */
     }
-  }, [activeWs, roomQuery, roomState]);
+  }, [activeWs, roomQuery, roomState, sortStartAt]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
@@ -388,10 +389,12 @@ function MeetingPage() {
     state?: RoomFilterState;
     from?: string;
     to?: string;
+    sort?: "asc" | "desc";
   }) => {
     setRestoredFilter(null);
     const effectiveState = next.state ?? roomState;
-    const { state: _ignored, from: nextFrom, to: nextTo, ...rest } = next;
+    const effectiveSort = next.sort ?? sortStartAt;
+    const { state: _ignored, sort: _ignoredSort, from: nextFrom, to: nextTo, ...rest } = next;
     void navigate({
       to: "/meeting",
       search: {
@@ -402,13 +405,14 @@ function MeetingPage() {
         to: nextTo !== undefined ? nextTo || undefined : dateTo,
         ...rest,
         state: effectiveState === "all" ? undefined : effectiveState,
+        sort: effectiveSort === "asc" ? undefined : effectiveSort,
       },
       replace: true,
     });
   };
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, sortStartAt, currentPage],
     enabled: !!activeWs && !rangeActive,
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -417,6 +421,7 @@ function MeetingPage() {
           workspaceId: activeWs,
           search: roomQuery || undefined,
           state: roomState,
+          sort: sortStartAt,
           limit: ROOM_PAGE_SIZE,
           offset: (currentPage - 1) * ROOM_PAGE_SIZE,
         },
@@ -424,7 +429,7 @@ function MeetingPage() {
   });
 
   const rangeQuery = useQuery({
-    queryKey: ["meetings-range", activeWs ?? null, dateFrom ?? null, dateTo ?? null],
+    queryKey: ["meetings-range", activeWs ?? null, dateFrom ?? null, dateTo ?? null, sortStartAt],
     enabled: !!activeWs && rangeActive,
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -433,6 +438,7 @@ function MeetingPage() {
           workspaceId: activeWs as string,
           ...(dateFrom ? { from: new Date(`${dateFrom}T00:00:00`).toISOString() } : {}),
           ...(dateTo ? { to: new Date(`${dateTo}T23:59:59.999`).toISOString() } : {}),
+          sort: sortStartAt,
           limit: 200,
         },
       }),
