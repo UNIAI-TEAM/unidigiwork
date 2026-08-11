@@ -2,7 +2,7 @@ import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { sendAiMessage } from "@/lib/api/ai-chat.functions";
-import { listNotifications } from "@/lib/api/notifications.functions";
+import { listNotifications, markNotificationsRead } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
 import {
   queryOptions,
@@ -708,6 +708,22 @@ function DashboardInner() {
     const unread = rows.filter((n: any) => !n.is_read);
     return (unread.length ? unread : rows).slice(0, 3);
   }, [notificationsQuery.data]);
+  const markReadFn = useServerFn(markNotificationsRead);
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  const handleMarkRead = async (id: string) => {
+    if (markingId) return;
+    setMarkingId(id);
+    try {
+      await markReadFn({ data: { ids: [id] } });
+      await notificationsQuery.refetch();
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("Đã đánh dấu là đã đọc");
+    } catch (e) {
+      toast.error((e as Error)?.message ?? "Không đánh dấu được thông báo");
+    } finally {
+      setMarkingId(null);
+    }
+  };
   const sendAiFn = useServerFn(sendAiMessage);
   const [aiInput, setAiInput] = useState("");
   const [openedLinks, setOpenedLinks] = useState<
@@ -1380,14 +1396,30 @@ function DashboardInner() {
                 ) : (
                   <div className="mt-2 space-y-2">
                     {importantNotifications.map((n: any) => (
-                      <Link
-                        key={n.id}
-                        to="/notifications"
-                        className="flex items-start gap-2 text-xs hover:opacity-80"
-                      >
-                        <Bell className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
-                        <div className="min-w-0">
-                          <div className="truncate font-medium">{n.title}</div>
+                      <div key={n.id} className="flex items-start gap-2 text-xs">
+                        <button
+                          type="button"
+                          disabled={n.is_read || markingId === n.id}
+                          onClick={() => handleMarkRead(n.id)}
+                          title={n.is_read ? "Đã đọc" : "Đánh dấu đã đọc"}
+                          aria-label={n.is_read ? "Đã đọc" : "Đánh dấu đã đọc"}
+                          className="mt-0.5 shrink-0 disabled:opacity-60"
+                        >
+                          <Bell
+                            className={`h-3.5 w-3.5 ${n.is_read ? "text-muted-foreground" : "text-amber-300"}`}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMarkRead(n.id)}
+                          className="min-w-0 flex-1 text-left hover:opacity-80 disabled:opacity-60"
+                          disabled={markingId === n.id}
+                        >
+                          <div
+                            className={`truncate ${n.is_read ? "font-normal text-muted-foreground" : "font-medium"}`}
+                          >
+                            {n.title}
+                          </div>
                           {n.body && (
                             <div className="truncate text-muted-foreground">{n.body}</div>
                           )}
@@ -1402,8 +1434,15 @@ function DashboardInner() {
                             }).format(new Date(n.created_at))}{" "}
                             (GMT+7)
                           </div>
-                        </div>
-                      </Link>
+                        </button>
+                        <Link
+                          to="/notifications"
+                          className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                          aria-label="Mở trang thông báo"
+                        >
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
                     ))}
                   </div>
                 )}
