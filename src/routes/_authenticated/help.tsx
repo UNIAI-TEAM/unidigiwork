@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LifeBuoy,
   Search,
@@ -35,6 +36,7 @@ import {
   Github,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { listKnowledgeArticles, type KnowledgeArticleDTO } from "@/lib/api/knowledge.functions";
 
 export const Route = createFileRoute("/_authenticated/help")({
   head: () => ({
@@ -75,116 +77,44 @@ const CATS: { key: Cat; label: string; icon: LucideIcon; tint: string }[] = [
 
 type Article = {
   id: string;
+  slug: string;
   cat: Exclude<Cat, "all">;
   title: string;
   desc: string;
   time: string;
   level: "Cơ bản" | "Nâng cao";
-  popular?: boolean;
+  popular: boolean;
 };
 
-const ARTICLES: Article[] = [
-  {
-    id: "a1",
-    cat: "start",
-    title: "Thiết lập workspace đầu tiên trong 5 phút",
-    desc: "Tạo workspace, mời thành viên, cấu hình thông tin tổ chức và logo.",
-    time: "5 phút đọc",
-    level: "Cơ bản",
-    popular: true,
-  },
-  {
-    id: "a2",
-    cat: "start",
-    title: "Tour nhanh giao diện UNIWORK",
-    desc: "Khám phá Dashboard, sidebar, topbar và trợ lý AI tích hợp.",
-    time: "3 phút đọc",
-    level: "Cơ bản",
-    popular: true,
-  },
-  {
-    id: "a3",
-    cat: "chat",
-    title: "Tạo kênh chat và quản lý quyền truy cập",
-    desc: "Kênh công khai, kênh riêng tư, kênh khách và quy ước đặt tên.",
-    time: "6 phút đọc",
-    level: "Cơ bản",
-  },
-  {
-    id: "a4",
-    cat: "meeting",
-    title: "Lên lịch và ghi âm cuộc họp với AI tóm tắt",
-    desc: "Tích hợp lịch, ghi âm tự động, sinh biên bản và hành động sau họp.",
-    time: "8 phút đọc",
-    level: "Nâng cao",
-    popular: true,
-  },
-  {
-    id: "a5",
-    cat: "tasks",
-    title: "Phân công nhiệm vụ và theo dõi tiến độ Sprint",
-    desc: "Tạo task, sub-task, deadline, ưu tiên và bảng Kanban theo nhóm.",
-    time: "7 phút đọc",
-    level: "Cơ bản",
-  },
-  {
-    id: "a6",
-    cat: "documents",
-    title: "Cộng tác tài liệu thời gian thực",
-    desc: "Co-editing, bình luận, lịch sử phiên bản và chia sẻ liên kết an toàn.",
-    time: "5 phút đọc",
-    level: "Cơ bản",
-  },
-  {
-    id: "a7",
-    cat: "workflow",
-    title: "Thiết kế quy trình phê duyệt nghỉ phép",
-    desc: "Mẫu sẵn có cho HR, điều kiện rẽ nhánh và thông báo đa kênh.",
-    time: "10 phút đọc",
-    level: "Nâng cao",
-  },
-  {
-    id: "a8",
-    cat: "admin",
-    title: "Quản lý vai trò, nhóm và phân quyền chi tiết",
-    desc: "RBAC, nhóm động theo phòng ban và kiểm toán hành động người dùng.",
-    time: "9 phút đọc",
-    level: "Nâng cao",
-  },
-  {
-    id: "a9",
-    cat: "security",
-    title: "Bật xác thực 2 lớp (2FA) và SSO",
-    desc: "TOTP, khóa bảo mật phần cứng, SAML SSO với Google/Microsoft.",
-    time: "4 phút đọc",
-    level: "Cơ bản",
-    popular: true,
-  },
-  {
-    id: "a10",
-    cat: "security",
-    title: "Khôi phục mật khẩu và quản lý phiên đăng nhập",
-    desc: "Đặt lại mật khẩu, đăng xuất từ xa và cảnh báo đăng nhập bất thường.",
-    time: "3 phút đọc",
-    level: "Cơ bản",
-  },
-  {
-    id: "a11",
-    cat: "chat",
-    title: "Tích hợp Mattermost & Slack qua bridge",
-    desc: "Đồng bộ kênh, danh bạ và lịch sử tin nhắn hai chiều.",
-    time: "6 phút đọc",
-    level: "Nâng cao",
-  },
-  {
-    id: "a12",
-    cat: "tasks",
-    title: "Tự động hoá nhắc deadline bằng AI",
-    desc: "Nhắc thông minh dựa trên độ ưu tiên, lịch và mức tải công việc.",
-    time: "5 phút đọc",
-    level: "Nâng cao",
-  },
+const CAT_KEYS: Exclude<Cat, "all">[] = [
+  "start",
+  "chat",
+  "meeting",
+  "tasks",
+  "documents",
+  "workflow",
+  "admin",
+  "security",
 ];
+
+function toArticle(a: KnowledgeArticleDTO): Article {
+  const tags = a.tags ?? [];
+  const cat = (CAT_KEYS as string[]).includes(a.category)
+    ? (a.category as Exclude<Cat, "all">)
+    : "start";
+  const time = tags.find((t) => /phút đọc/i.test(t)) ?? "3 phút đọc";
+  const level = tags.includes("Nâng cao") ? "Nâng cao" : "Cơ bản";
+  return {
+    id: a.id,
+    slug: a.slug,
+    cat,
+    title: a.title,
+    desc: a.summary,
+    time,
+    level,
+    popular: tags.includes("popular"),
+  };
+}
 
 const QUICK_LINKS = [
   {
@@ -208,33 +138,6 @@ const QUICK_LINKS = [
   },
 ];
 
-const FAQS = [
-  {
-    q: "Tôi có thể đổi tên workspace sau khi tạo không?",
-    a: "Có. Vào Cài đặt → Workspace → Tên hiển thị. Đường dẫn (slug) chỉ đổi được bởi chủ sở hữu và sẽ cập nhật tất cả liên kết chia sẻ tự động.",
-  },
-  {
-    q: "UNIWORK có phiên bản desktop và mobile không?",
-    a: "Có ứng dụng Desktop cho Windows/macOS/Linux và Mobile iOS/Android. Tải tại trang Ứng dụng & API hoặc đồng bộ qua MDM cho doanh nghiệp.",
-  },
-  {
-    q: "Dữ liệu của tôi được lưu trữ ở đâu?",
-    a: "Mặc định lưu trên cụm máy chủ Việt Nam (Hà Nội & TP.HCM) đạt chuẩn ISO 27001. Doanh nghiệp có thể chọn vùng EU/SG hoặc triển khai On-Premise.",
-  },
-  {
-    q: "Có giới hạn dung lượng tài liệu không?",
-    a: "Gói Pro 100GB/người, Business 1TB/người, Enterprise không giới hạn. Tệp đính kèm tối đa 5GB cho mỗi lần tải lên.",
-  },
-  {
-    q: "Làm sao xuất dữ liệu khi rời khỏi UNIWORK?",
-    a: "Hỗ trợ xuất toàn bộ dữ liệu (chat, tài liệu, nhiệm vụ) ở định dạng JSON/CSV/Markdown qua Cài đặt → Dữ liệu → Xuất.",
-  },
-  {
-    q: "Trợ lý AI có học từ dữ liệu nội bộ không?",
-    a: "Trợ lý AI hoạt động theo cơ chế RAG trên dữ liệu workspace của bạn, không huấn luyện mô hình nền và không chia sẻ ngữ cảnh giữa các tổ chức.",
-  },
-];
-
 const STATUS = [
   { name: "Chat & Tin nhắn", state: "ok" as const, latency: "42 ms" },
   { name: "Họp trực tuyến", state: "ok" as const, latency: "118 ms" },
@@ -249,15 +152,32 @@ function HelpPage() {
   const [q, setQ] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
+  const kb = useQuery({
+    queryKey: ["knowledge", "list"],
+    queryFn: () => listKnowledgeArticles({ data: {} }),
+  });
+  const published = useMemo(
+    () => (kb.data?.articles ?? []).filter((a) => a.status === "published"),
+    [kb.data],
+  );
+  const ARTICLES = useMemo(
+    () => published.filter((a) => a.category !== "faq").map(toArticle),
+    [published],
+  );
+  const FAQS = useMemo(
+    () => published.filter((a) => a.category === "faq").map((a) => ({ q: a.title, a: a.content })),
+    [published],
+  );
+
   const filtered = useMemo(() => {
     return ARTICLES.filter((a) => {
       if (cat !== "all" && a.cat !== cat) return false;
       if (q && !`${a.title} ${a.desc}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [cat, q]);
+  }, [ARTICLES, cat, q]);
 
-  const popular = ARTICLES.filter((a) => a.popular);
+  const popular = useMemo(() => ARTICLES.filter((a) => a.popular), [ARTICLES]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -394,8 +314,10 @@ function HelpPage() {
                   {popular.map((a) => {
                     const meta = CATS.find((c) => c.key === a.cat)!;
                     return (
-                      <button
+                      <Link
                         key={a.id}
+                        to="/knowledge/$slug"
+                        params={{ slug: a.slug }}
                         className="group flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2/50"
                       >
                         <div
@@ -415,7 +337,7 @@ function HelpPage() {
                           </div>
                         </div>
                         <ChevronRight className="mt-2 h-4 w-4 text-muted-foreground" />
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>
@@ -437,7 +359,11 @@ function HelpPage() {
                   <option>Phổ biến</option>
                 </select>
               </div>
-              {filtered.length === 0 ? (
+              {kb.isLoading ? (
+                <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+                  Đang tải bài viết…
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
                     <Search className="h-5 w-5" />
@@ -452,8 +378,10 @@ function HelpPage() {
                   {filtered.map((a) => {
                     const meta = CATS.find((c) => c.key === a.cat)!;
                     return (
-                      <button
+                      <Link
                         key={a.id}
+                        to="/knowledge/$slug"
+                        params={{ slug: a.slug }}
                         className="group flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-surface-2/50"
                       >
                         <div
@@ -488,7 +416,7 @@ function HelpPage() {
                           </div>
                         </div>
                         <ChevronRight className="mt-2 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>
