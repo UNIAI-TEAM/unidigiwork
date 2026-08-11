@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft, Calendar, CheckCircle2, Clock, Download, Flag, Link2,
-  Loader2, Paperclip, Plus, Send, Trash2, User,
+  Loader2, MessageSquare, Paperclip, Plus, Send, Trash2, User,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
@@ -14,6 +14,7 @@ import {
 import {
   uploadTaskAttachment, getTaskAttachmentUrl, removeTaskAttachmentObject, formatBytes,
 } from "@/lib/tasks-storage";
+import { parseChatSource, stripChatSource } from "@/lib/chat-task-link";
 
 export const Route = createFileRoute("/tasks/$id")({
   head: () => ({
@@ -202,8 +203,23 @@ function TaskDetailPage() {
 
                   <Section title="Mô tả">
                     <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                      {task.description || "Chưa có mô tả."}
+                      {stripChatSource(task.description) || "Chưa có mô tả."}
                     </p>
+                    {(() => {
+                      const src = parseChatSource(task.description);
+                      if (!src) return null;
+                      return (
+                        <Link
+                          to="/chat/$channelId"
+                          params={{ channelId: src.channelId }}
+                          search={{ m: src.messageId }}
+                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-surface-2"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Quay lại tin nhắn trong chat
+                        </Link>
+                      );
+                    })()}
                   </Section>
 
                   <Section title={`Công việc con (${doneSubtasks}/${subtasks.length})`}>

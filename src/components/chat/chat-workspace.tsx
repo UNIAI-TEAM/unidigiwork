@@ -22,6 +22,7 @@ import {
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
 import { createTask } from "@/lib/api/tasks.functions";
+import { buildChatSourceTag } from "@/lib/chat-task-link";
 import { useMyWorkspaces, useActiveWorkspace } from "@/lib/active-workspace";
 
 const BUCKET = "chat-attachments";
@@ -167,7 +168,7 @@ function AttachmentChip({ file }: { file: ChatAttachment }) {
   );
 }
 
-export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string }) {
+export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initialChannelId?: string; highlightMessageId?: string }) {
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -217,17 +218,19 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
     { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string } | null
   >(null);
   const createTaskM = useMutation({
-    mutationFn: async (v: NonNullable<typeof taskDraft>) =>
-      doCreateTask({
+    mutationFn: async (v: NonNullable<typeof taskDraft>) => {
+      const src = activeId ? `\n\n${buildChatSourceTag(activeId, v.messageId)}` : "";
+      return doCreateTask({
         data: {
           idempotencyKey: crypto.randomUUID(),
           workspaceId: v.workspaceId,
           title: v.title.trim().slice(0, 500),
-          description: v.description.trim() || undefined,
+          description: `${v.description.trim()}${src}`.trim() || undefined,
           priority: v.priority,
           dueAt: v.dueAt ? new Date(v.dueAt).toISOString() : undefined,
         },
-      }),
+      });
+    },
     onSuccess: (task: any) => {
       const created = Array.isArray(task) ? task[0] : task;
       setTaskDraft(null);
@@ -326,6 +329,15 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
     setEditing(null);
     setPending([]);
   }, [activeId, query, dateFrom, dateTo]);
+
+  // Cuộn tới tin nhắn được liên kết từ công việc
+  useEffect(() => {
+    if (!highlightMessageId) return;
+    const t = setTimeout(() => {
+      document.getElementById(`msg-${highlightMessageId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [highlightMessageId, activeId]);
 
   // Realtime cho kênh đang mở + toàn bộ danh sách kênh (badge chưa đọc)
   useEffect(() => {
@@ -892,7 +904,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                           const prev = messages[i - 1];
                           const newDay = !prev || new Date(prev.createdAt).toDateString() !== new Date(m.createdAt).toDateString();
                           return (
-                            <div key={m.id}>
+                            <div key={m.id} id={`msg-${m.id}`} className={m.id === highlightMessageId ? "-mx-2 rounded-lg bg-primary/5 px-2 py-1 ring-1 ring-primary/40" : undefined}>
                               {newDay && (
                                 <div className="my-4 flex items-center gap-3">
                                   <div className="h-px flex-1 bg-border" />
