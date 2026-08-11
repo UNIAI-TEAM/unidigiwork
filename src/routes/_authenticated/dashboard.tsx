@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -36,6 +36,7 @@ import {
   TrendingUp,
   Clock,
   Bell,
+  GripVertical,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
@@ -430,10 +431,34 @@ const DEFAULT_SECTIONS = Object.fromEntries(
   SECTION_OPTIONS.map((o) => [o.key, true]),
 ) as Record<SectionKey, boolean>;
 
+const DEFAULT_ORDER = SECTION_OPTIONS.map((o) => o.key) as SectionKey[];
+const ORDER_STORAGE_KEY = "uniwork.dashboard.order.v1";
+
+// Chiều rộng mặc định của từng khối trong lưới 3 cột.
+const SECTION_SPAN: Record<SectionKey, string> = {
+  kpis: "lg:col-span-3",
+  activity: "lg:col-span-2",
+  donut: "lg:col-span-1",
+  projects: "lg:col-span-1",
+  recent: "lg:col-span-1",
+  meetings: "lg:col-span-1",
+  workspaces: "lg:col-span-3",
+  ai: "lg:col-span-1",
+};
+
+function normalizeOrder(input: unknown): SectionKey[] {
+  const arr = Array.isArray(input) ? (input as string[]) : [];
+  const valid = arr.filter((k): k is SectionKey => DEFAULT_ORDER.includes(k as SectionKey));
+  const seen = new Set(valid);
+  return [...valid, ...DEFAULT_ORDER.filter((k) => !seen.has(k))];
+}
+
 function DashboardInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState(7);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
+  const [order, setOrder] = useState<SectionKey[]>(DEFAULT_ORDER);
+  const [dragKey, setDragKey] = useState<SectionKey | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
   const prefsQuery = useQuery({
@@ -449,12 +474,28 @@ function DashboardInner() {
     } catch {
       handleStorageFailure();
     }
+    try {
+      const rawOrder = localStorage.getItem(ORDER_STORAGE_KEY);
+      if (rawOrder) setOrder(normalizeOrder(JSON.parse(rawOrder)));
+    } catch {
+      setOrder(DEFAULT_ORDER);
+    }
     setHydrated(true);
   }, []);
 
   // Cấu hình từ server (đồng bộ đa thiết bị) luôn thắng cache cục bộ.
   useEffect(() => {
     const remote = prefsQuery.data?.sections;
+    const remoteOrder = prefsQuery.data?.order;
+    if (remoteOrder) {
+      const nextOrder = normalizeOrder(remoteOrder);
+      setOrder(nextOrder);
+      try {
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(nextOrder));
+      } catch {
+        /* ignore */
+      }
+    }
     if (!remote) return;
     const merged = { ...DEFAULT_SECTIONS, ...remote } as Record<SectionKey, boolean>;
     setSections(merged);
@@ -487,17 +528,37 @@ function DashboardInner() {
       return;
     }
     setSections(next);
-    void saveDashboardPrefs({ data: { sections: next } })
+    void saveDashboardPrefs({ data: { sections: next, order } })
       .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
       .catch(() => {
         toast.error("Không đồng bộ được tuỳ chỉnh lên tài khoản");
       });
   };
 
+  // Kéo-thả sắp xếp thứ tự khối.
+  const moveSection = (from: SectionKey, to: SectionKey) => {
+    if (from === to) return;
+    const next = order.filter((k) => k !== from);
+    next.splice(next.indexOf(to), 0, from);
+    setOrder(next);
+    try {
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    void saveDashboardPrefs({ data: { sections, order: next } })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
+      .catch(() => {
+        toast.error("Không đồng bộ được thứ tự khối lên tài khoản");
+      });
+  };
+
   const resetSections = () => {
     setSections(DEFAULT_SECTIONS);
+    setOrder(DEFAULT_ORDER);
     try {
       localStorage.removeItem(SECTIONS_STORAGE_KEY);
+      localStorage.removeItem(ORDER_STORAGE_KEY);
     } catch {
       /* ignore */
     }
@@ -507,6 +568,7 @@ function DashboardInner() {
   };
 
   const visible = hydrated ? sections : DEFAULT_SECTIONS;
+  const layoutOrder = hydrated ? order : DEFAULT_ORDER;
   const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
@@ -561,22 +623,41 @@ function DashboardInner() {
                     <div className="border-b border-border px-4 py-3">
                       <div className="text-sm font-semibold">Tuỳ chỉnh bảng điều khiển</div>
                       <p className="text-xs text-muted-foreground">
-                        Chọn các khối muốn hiển thị. Thiết lập được đồng bộ theo tài khoản của bạn.
+                        Chọn khối muốn hiển thị và kéo-thả để đổi thứ tự. Thiết lập đồng bộ theo
+                        tài khoản của bạn.
                       </p>
                     </div>
                     <ul className="max-h-80 space-y-1 overflow-y-auto p-2">
-                      {SECTION_OPTIONS.map((opt) => (
-                        <li key={opt.key}>
-                          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
-                            <span>{opt.label}</span>
-                            <Switch
-                              checked={visible[opt.key]}
-                              onCheckedChange={() => toggleSection(opt.key)}
-                              aria-label={opt.label}
-                            />
-                          </label>
-                        </li>
-                      ))}
+                      {layoutOrder.map((key) => {
+                        const opt = SECTION_OPTIONS.find((o) => o.key === key)!;
+                        return (
+                          <li
+                            key={key}
+                            draggable
+                            onDragStart={() => setDragKey(key)}
+                            onDragEnd={() => setDragKey(null)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (dragKey) moveSection(dragKey, key);
+                              setDragKey(null);
+                            }}
+                            className={`rounded-lg ${dragKey === key ? "opacity-50" : ""}`}
+                          >
+                            <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
+                              <span className="flex min-w-0 items-center gap-2">
+                                <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
+                                <span className="truncate">{opt.label}</span>
+                              </span>
+                              <Switch
+                                checked={visible[key]}
+                                onCheckedChange={() => toggleSection(key)}
+                                aria-label={opt.label}
+                              />
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                     <div className="border-t border-border px-3 py-2 text-right">
                       <button
@@ -592,19 +673,16 @@ function DashboardInner() {
               </div>
             </div>
 
-            {/* KPI grid */}
-            {visible.kpis && (
+            {(() => {
+              const blocks: Partial<Record<SectionKey, ReactNode>> = {
+                kpis: (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {kpis.map((k) => (
                   <KpiCard key={k.key} k={k} />
                 ))}
               </div>
-            )}
-
-            {/* Activity + Donut */}
-            {(visible.activity || visible.donut) && (
-            <div className="mt-5 grid gap-4 lg:grid-cols-3">
-              {visible.activity && (
+                ),
+                activity: (
               <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
@@ -630,9 +708,8 @@ function DashboardInner() {
                   </ul>
                 </div>
               </div>
-              )}
-
-              {visible.donut && (
+                ),
+                donut: (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
                 <div className="mt-4 flex flex-col items-center gap-4">
@@ -653,15 +730,8 @@ function DashboardInner() {
                   </ul>
                 </div>
               </div>
-              )}
-            </div>
-            )}
-
-            {/* Three column row */}
-            {(visible.projects || visible.recent || visible.meetings) && (
-            <div className="mt-5 grid gap-4 lg:grid-cols-3">
-              {/* Projects */}
-              {visible.projects && (
+                ),
+                projects: (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
@@ -700,10 +770,8 @@ function DashboardInner() {
                   </ul>
                 )}
               </div>
-              )}
-
-              {/* Recent activity */}
-              {visible.recent && (
+                ),
+                recent: (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
@@ -748,10 +816,8 @@ function DashboardInner() {
                   </ul>
                 )}
               </div>
-              )}
-
-              {/* Meetings today */}
-              {visible.meetings && (
+                ),
+                meetings: (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
@@ -788,12 +854,8 @@ function DashboardInner() {
                   </ul>
                 )}
               </div>
-              )}
-            </div>
-            )}
-
-            {/* Workspaces overview */}
-            {visible.workspaces && (
+                ),
+                workspaces: (
             <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
@@ -839,7 +901,20 @@ function DashboardInner() {
                 </div>
               )}
             </div>
-            )}
+                ),
+              };
+              return (
+                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                  {layoutOrder
+                    .filter((k) => k !== "ai" && visible[k] && blocks[k])
+                    .map((k) => (
+                      <div key={k} className={`min-w-0 ${SECTION_SPAN[k]}`}>
+                        {blocks[k]}
+                      </div>
+                    ))}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Right rail: AI Assistant */}

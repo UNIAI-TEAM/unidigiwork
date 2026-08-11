@@ -1,0 +1,1 @@
+ALTER TABLE public.user_dashboard_prefs ADD COLUMN IF NOT EXISTS section_order jsonb;

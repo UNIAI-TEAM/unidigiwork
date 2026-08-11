@@ -7,6 +7,7 @@ import { ApiError } from "@/contracts/errors";
 export type DashboardSections = Record<string, boolean>;
 
 const sectionsSchema = z.record(z.string().min(1).max(40), z.boolean());
+const orderSchema = z.array(z.string().min(1).max(40)).max(40);
 
 function fail(err: { message?: string } | null, fallback: string): never {
   throw new ApiError({ code: "INTERNAL_ERROR", message: err?.message ?? fallback });
@@ -28,25 +29,32 @@ async function resolveTenantId(
 
 export const getDashboardPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ sections: DashboardSections | null }> => {
+  .handler(async ({ context }): Promise<{ sections: DashboardSections | null; order: string[] | null }> => {
     const tenantId = await resolveTenantId(context.supabase, context.userId);
     let q = context.supabase
       .from("user_dashboard_prefs")
-      .select("sections")
+      .select("sections, section_order")
       .eq("user_id", context.userId);
     q = tenantId ? q.eq("tenant_id", tenantId) : q.is("tenant_id", null);
     const { data, error } = await q.maybeSingle();
     if (error) fail(error, "Không tải được tuỳ chỉnh bảng điều khiển");
-    return { sections: (data?.sections as DashboardSections | undefined) ?? null };
+    return {
+      sections: (data?.sections as DashboardSections | undefined) ?? null,
+      order: (data?.section_order as string[] | undefined) ?? null,
+    };
   });
 
 export const saveDashboardPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { sections: DashboardSections }) =>
-    z.object({ sections: sectionsSchema }).parse(i),
+  .inputValidator((i: { sections: DashboardSections; order?: string[] }) =>
+    z.object({ sections: sectionsSchema, order: orderSchema.optional() }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const tenantId = await resolveTenantId(context.supabase, context.userId);
+    const payload = {
+      sections: data.sections,
+      ...(data.order ? { section_order: data.order } : {}),
+    };
     let sel = context.supabase
       .from("user_dashboard_prefs")
       .select("id")
@@ -57,14 +65,14 @@ export const saveDashboardPrefs = createServerFn({ method: "POST" })
     if (existing?.id) {
       const { error } = await context.supabase
         .from("user_dashboard_prefs")
-        .update({ sections: data.sections })
+        .update(payload)
         .eq("id", existing.id);
       if (error) fail(error, "Không lưu được tuỳ chỉnh");
     } else {
       const { error } = await context.supabase.from("user_dashboard_prefs").insert({
         user_id: context.userId,
         tenant_id: tenantId,
-        sections: data.sections,
+        ...payload,
       });
       if (error) fail(error, "Không lưu được tuỳ chỉnh");
     }
