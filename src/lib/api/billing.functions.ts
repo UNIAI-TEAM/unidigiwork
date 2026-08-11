@@ -261,3 +261,57 @@ export const resumeSubscription = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true as const, subscriptionId: (row as { id?: string } | null)?.id ?? null };
   });
+
+// ------------------------------------------------------------------
+// Invoices (Blueprint §18) — read-only, RLS-scoped by tenant membership
+// ------------------------------------------------------------------
+
+export type InvoiceDto = {
+  id: string;
+  invoiceNumber: string;
+  planName: string | null;
+  amount: number;
+  currency: string;
+  status: "draft" | "open" | "paid" | "past_due" | "refunded" | "void";
+  periodStart: string | null;
+  periodEnd: string | null;
+  issuedAt: string;
+  dueAt: string | null;
+  paidAt: string | null;
+  paymentMethod: string | null;
+};
+
+const ListInvoicesInput = z.object({
+  tenantId: z.string().uuid(),
+  limit: z.number().int().min(1).max(100).default(24),
+});
+
+export const listInvoices = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ListInvoicesInput.parse(d))
+  .handler(async ({ data, context }): Promise<InvoiceDto[]> => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("invoices")
+      .select(
+        "id, invoice_number, plan_name, amount, currency, status, period_start, period_end, issued_at, due_at, paid_at, payment_method",
+      )
+      .eq("tenant_id", data.tenantId)
+      .order("issued_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new ApiError({ code: "INTERNAL_ERROR", message: "INVOICE_LIST_FAILED" });
+    return ((rows ?? []) as Array<Record<string, unknown>>).map((r) => ({
+      id: String(r["id"]),
+      invoiceNumber: String(r["invoice_number"]),
+      planName: (r["plan_name"] as string | null) ?? null,
+      amount: Number(r["amount"] ?? 0),
+      currency: String(r["currency"] ?? "VND"),
+      status: r["status"] as InvoiceDto["status"],
+      periodStart: (r["period_start"] as string | null) ?? null,
+      periodEnd: (r["period_end"] as string | null) ?? null,
+      issuedAt: String(r["issued_at"]),
+      dueAt: (r["due_at"] as string | null) ?? null,
+      paidAt: (r["paid_at"] as string | null) ?? null,
+      paymentMethod: (r["payment_method"] as string | null) ?? null,
+    }));
+  });
