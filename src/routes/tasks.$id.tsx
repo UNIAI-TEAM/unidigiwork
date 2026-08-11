@@ -367,7 +367,76 @@ function TaskDetailPage() {
                     </span>
                   </Field>
                   <Field icon={Flag} label="Mức ưu tiên">
-                    <span className="text-sm">{PRIORITY_LABEL[task.priority] ?? task.priority}</span>
+                    <select
+                      aria-label="Đổi mức ưu tiên"
+                      value={task.priority}
+                      disabled={savePriority.isPending}
+                      onChange={(e) =>
+                        savePriority.mutate(e.target.value as "low" | "normal" | "high" | "urgent")
+                      }
+                      className="w-full rounded-lg border border-border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                    >
+                      <option value="low">Thấp</option>
+                      <option value="normal">Bình thường</option>
+                      <option value="high">Cao</option>
+                      <option value="urgent">Khẩn cấp</option>
+                    </select>
+                  </Field>
+                  <Field icon={Tag} label="Nhãn">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {(task.tags ?? []).length === 0 ? (
+                          <span className="text-xs text-muted-foreground">Chưa có nhãn</span>
+                        ) : (
+                          (task.tags ?? []).map((tg) => (
+                            <span
+                              key={tg}
+                              className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs font-medium"
+                            >
+                              {tg}
+                              <button
+                                aria-label={`Xoá nhãn ${tg}`}
+                                disabled={saveTags.isPending}
+                                onClick={() =>
+                                  saveTags.mutate((task.tags ?? []).filter((x) => x !== tg))
+                                }
+                                className="text-muted-foreground hover:text-destructive disabled:opacity-50"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))
+                        )}
+                      </div>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const v = tagDraft.trim();
+                          if (!v) return;
+                          const current = task.tags ?? [];
+                          if (current.includes(v)) { setTagDraft(""); return; }
+                          saveTags.mutate([...current, v]);
+                          setTagDraft("");
+                        }}
+                        className="flex gap-1.5"
+                      >
+                        <input
+                          value={tagDraft}
+                          onChange={(e) => setTagDraft(e.target.value)}
+                          placeholder="Thêm nhãn…"
+                          aria-label="Thêm nhãn"
+                          maxLength={40}
+                          className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <button
+                          type="submit"
+                          disabled={saveTags.isPending || !tagDraft.trim()}
+                          className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          {saveTags.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Thêm"}
+                        </button>
+                      </form>
+                    </div>
                   </Field>
                   <Field icon={Calendar} label="Hạn chót">
                     <span className={`text-sm ${dueState?.tone ?? ""}`}>{fmtDate(task.due_at)}</span>
