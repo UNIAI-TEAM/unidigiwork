@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,6 +32,10 @@ export const Route = createFileRoute("/_authenticated/calendar")({
   validateSearch: (search: Record<string, unknown>) => ({
     view: search['view'] === "week" ? ("week" as const) : undefined,
     kind: search['kind'] === "meeting" ? ("meeting" as const) : undefined,
+    day:
+      typeof search['day'] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search['day'] as string)
+        ? (search['day'] as string)
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -146,9 +150,10 @@ function sameDay(a: Date, b: Date) {
 type ViewMode = "month" | "week";
 
 function CalendarPage() {
-  const { view: urlView, kind: urlKind } = Route.useSearch();
+  const { view: urlView, kind: urlKind, day: urlDay } = Route.useSearch();
+  const navigateCalendar = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [cursor, setCursor] = useState(() => new Date());
+  const [cursor, setCursor] = useState(() => (urlDay ? new Date(`${urlDay}T00:00:00`) : new Date()));
   const [view, setView] = useState<ViewMode>(urlView === "week" ? "week" : "month");
   const [filters, setFilters] = useState<Record<EventKind, boolean>>({
     meeting: true,
@@ -225,6 +230,7 @@ function CalendarPage() {
   const visible = useMemo(
     () =>
       events.filter((e) => {
+        if (urlDay && e.date !== urlDay) return false;
         if (!filters[e.kind]) return false;
         if (e.kind === "meeting") {
           const st = (e.meetingStatus ?? "upcoming") as MeetingStatusKey;
@@ -233,7 +239,7 @@ function CalendarPage() {
         if (q && !e.title.toLowerCase().includes(q.toLowerCase())) return false;
         return true;
       }),
-    [events, filters, meetingStatusFilter, taskLevelFilter, q],
+    [events, filters, meetingStatusFilter, taskLevelFilter, q, urlDay],
   );
 
   const today = new Date();
@@ -525,6 +531,22 @@ function CalendarPage() {
               </div>
             </div>
 
+            {urlDay && (
+              <button
+                onClick={() =>
+                  navigateCalendar({
+                    to: "/calendar",
+                    search: (p: { view?: "week"; kind?: "meeting"; day?: string }) => ({
+                      ...p,
+                      day: undefined,
+                    }),
+                  })
+                }
+                className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-xs text-primary hover:bg-primary/25"
+              >
+                Chỉ ngày {urlDay} · Bỏ lọc ✕
+              </button>
+            )}
             {view === "month" ? (
               <MonthGrid
                 cursor={cursor}

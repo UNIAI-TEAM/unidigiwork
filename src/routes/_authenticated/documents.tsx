@@ -1,3 +1,4 @@
+import { isStaleDocument } from "@/lib/metrics";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -66,6 +67,7 @@ export const Route = createFileRoute("/_authenticated/documents")({
   validateSearch: (search: Record<string, unknown>) => ({
     filter: search['filter'] === "stale" ? ("stale" as const) : undefined,
     range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
+    ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,
   }),
   head: () => ({
     meta: [
@@ -125,7 +127,12 @@ function DocumentsPage() {
         return;
       }
       setWorkspaces(ws as Workspace[]);
-      if (ws && ws.length > 0) setCurrentWs(ws[0] as Workspace);
+      if (ws && ws.length > 0) {
+        // Ưu tiên workspace do dashboard truyền sang (?ws=) để số liệu khớp thẻ thống kê.
+        const wanted = new URLSearchParams(window.location.search).get("ws");
+        const picked = (wanted && ws.find((w) => (w as Workspace).id === wanted)) || ws[0];
+        setCurrentWs(picked as Workspace);
+      }
     })();
   }, [navigate]);
 
@@ -348,13 +355,9 @@ function DocumentsPage() {
     navigate({ to: "/auth" });
   };
 
-  const rangeDays = Route.useSearch().range;
+  const { range: rangeDays } = Route.useSearch();
   const visibleDocs = (
-    docFilter === "stale"
-      ? docs.filter(
-          (d) => Date.now() - new Date(d.updated_at).getTime() > 30 * 24 * 60 * 60 * 1000,
-        )
-      : docs
+    docFilter === "stale" ? docs.filter((d) => isStaleDocument(d)) : docs
   ).filter(
     (d) => !rangeDays || Date.now() - new Date(d.updated_at).getTime() <= rangeDays * 86400_000,
   );

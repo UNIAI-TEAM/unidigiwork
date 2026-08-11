@@ -18,6 +18,7 @@ import type {
   DashboardOverview as DashboardData,
   DashboardAiSummary,
 } from "@/lib/api/dashboard.functions";
+import { localDayKey } from "@/lib/metrics";
 import { Link } from "@tanstack/react-router";
 import {
   Users,
@@ -234,7 +235,8 @@ function fmtDur(start: string, end: string) {
   return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`;
 }
 
-function buildAiItems(s: DashboardAiSummary | undefined) {
+function buildAiItems(s: DashboardAiSummary | undefined, ws?: string) {
+  const today = localDayKey();
   return [
     {
       icon: FileText,
@@ -242,7 +244,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.staleDocuments ?? 0} tài liệu cần cập nhật`,
       action: "Xem chi tiết",
       to: "/documents",
-      search: { filter: "stale" as const },
+      search: { filter: "stale" as const, ...(ws ? { ws } : {}) },
     },
     {
       icon: AlertTriangle,
@@ -250,7 +252,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.overdueTasks ?? 0} nhiệm vụ đang quá hạn`,
       action: "Xem chi tiết",
       to: "/tasks",
-      search: { filter: "overdue" as const },
+      search: { filter: "overdue" as const, ...(ws ? { ws } : {}) },
     },
     {
       icon: Video,
@@ -258,7 +260,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.meetingsToday ?? 0} cuộc họp trong hôm nay`,
       action: "Xem lịch",
       to: "/calendar",
-      search: { view: "week" as const, kind: "meeting" as const },
+      search: { view: "week" as const, kind: "meeting" as const, day: today },
     },
     {
       icon: Workflow,
@@ -657,15 +659,26 @@ function DashboardInner() {
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
   const aiSummaryQuery = useQuery({
     queryKey: ["dashboard-ai-summary", activeWorkspaceId ?? "all"],
-    queryFn: () =>
-      getDashboardAiSummary({
-        data: activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {},
-      }),
+    queryFn: () => {
+      const s = new Date();
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(s.getTime() + 86400_000);
+      return getDashboardAiSummary({
+        data: {
+          ...(activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {}),
+          dayStart: s.toISOString(),
+          dayEnd: e.toISOString(),
+        },
+      });
+    },
     staleTime: 30_000,
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchOnWindowFocus: true,
   });
-  const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
+  const aiItems = useMemo(
+    () => buildAiItems(aiSummaryQuery.data, activeWorkspaceId ?? undefined),
+    [aiSummaryQuery.data, activeWorkspaceId],
+  );
   const notificationsQuery = useQuery({
     queryKey: ["dashboard-notifications"],
     queryFn: () => listNotifications(),
