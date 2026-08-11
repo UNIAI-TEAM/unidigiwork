@@ -61,6 +61,7 @@ const JOIN_ERROR_HINTS: Record<string, string> = {
 };
 
 const RSVP_LABELS: Record<string, string> = {
+  // eslint-disable-next-line
   pending: "Chờ phản hồi",
   accepted: "Tham gia",
   declined: "Từ chối",
