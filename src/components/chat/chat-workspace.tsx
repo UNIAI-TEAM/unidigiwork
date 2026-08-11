@@ -257,10 +257,13 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   }, [recent.length]);
 
   useEffect(() => {
-    if (activeId && active?.isMember && (active?.unread ?? 0) > 0) {
-      doRead({ data: { channelId: activeId } }).then(() => qc.invalidateQueries({ queryKey: ["chat", "channels"] }));
-    }
-  }, [activeId, active?.isMember, active?.unread, doRead, qc]);
+    if (!activeId || !active?.isMember) return;
+    // Đánh dấu đã đọc khi mở kênh/DM và mỗi khi có tin mới, để đối phương thấy trạng thái "đã xem".
+    doRead({ data: { channelId: activeId } }).then(() => {
+      qc.invalidateQueries({ queryKey: ["chat", "channels"] });
+      qc.invalidateQueries({ queryKey: ["chat", "readers", activeId] });
+    });
+  }, [activeId, active?.isMember, recent.length, doRead, qc]);
 
   const refreshAll = () => { qc.invalidateQueries({ queryKey: ["chat"] }); };
 
