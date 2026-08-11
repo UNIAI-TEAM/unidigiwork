@@ -40,7 +40,13 @@ import {
   closeMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
 import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
-import { setMeetingRsvp, getMeeting, startMeeting, endMeeting } from "@/lib/api/meetings.functions";
+import {
+  setMeetingRsvp,
+  getMeeting,
+  startMeeting,
+  endMeeting,
+  listMeetingHostActions,
+} from "@/lib/api/meetings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
@@ -370,6 +376,7 @@ function MeetingDetailPage() {
     await queryClient.invalidateQueries({ queryKey: ["meeting-participants", id] });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["meeting", id] }),
+      queryClient.invalidateQueries({ queryKey: ["meeting-host-actions", id] }),
       queryClient.invalidateQueries({ queryKey: ["meetings"] }),
       queryClient.invalidateQueries({ queryKey: ["calendar"] }),
       queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
@@ -476,6 +483,14 @@ function MeetingDetailPage() {
     (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
   const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
   const [confirmEndOpen, setConfirmEndOpen] = useState(false);
+
+  // Nhật ký thao tác chủ trì (start/end, thành công/thất bại)
+  const hostLogQuery = useQuery({
+    queryKey: ["meeting-host-actions", id],
+    enabled: isRealRoom,
+    staleTime: 10_000,
+    queryFn: () => listMeetingHostActions({ data: { meetingId: id, limit: 50 } }),
+  });
 
   const handleLifecycle = useCallback(
     async (action: "start" | "end") => {
@@ -799,6 +814,44 @@ function MeetingDetailPage() {
                       </li>
                     ))}
                   </ul>
+                  )}
+                  {isRealRoom && (
+                    <div className="mt-5 border-t border-border pt-3">
+                      <h4 className="mb-2 text-xs font-semibold">Lịch sử thao tác chủ trì</h4>
+                      {hostLogQuery.isLoading ? (
+                        <p className="text-xs text-muted-foreground">Đang tải…</p>
+                      ) : (hostLogQuery.data ?? []).length === 0 ? (
+                        <p className="text-xs text-muted-foreground">Chưa có thao tác nào.</p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {(hostLogQuery.data ?? []).map((e) => (
+                            <li key={e.id} className="text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                                    e.outcome === "success"
+                                      ? "bg-success/10 text-success"
+                                      : "bg-destructive/10 text-destructive"
+                                  }`}
+                                >
+                                  {e.action === "start" ? "Bắt đầu" : "Kết thúc"} ·{" "}
+                                  {e.outcome === "success" ? "Thành công" : "Thất bại"}
+                                </span>
+                              </div>
+                              <div className="mt-0.5 text-[10px] text-muted-foreground">
+                                {e.actorName ?? "Người dùng"} ·{" "}
+                                {new Date(e.occurredAt).toLocaleString("vi-VN")}
+                              </div>
+                              {e.errorCode && (
+                                <div className="text-[10px] font-mono text-destructive">
+                                  {e.errorCode}
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

@@ -162,6 +162,7 @@ export const startMeeting = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
     });
+    await logHostAction(context.supabase, data.meetingId, "start", res.error, data);
     return ensureOk(res, "MEETING_NOT_FOUND");
   });
 
@@ -177,7 +178,101 @@ export const endMeeting = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
     });
+    await logHostAction(context.supabase, data.meetingId, "end", res.error, data);
     return ensureOk(res, "MEETING_NOT_FOUND");
+  });
+
+// Nhật ký thao tác của host: ai bấm, lúc nào, start/end thành công hay thất bại.
+async function logHostAction(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  meetingId: string,
+  action: "start" | "end",
+  error: { message?: string; code?: string } | null,
+  meta: { idempotencyKey?: string | null; correlationId?: string | null },
+): Promise<void> {
+  try {
+    await supabase.rpc("log_meeting_host_action", {
+      _meeting_id: meetingId,
+      _action: action,
+      _outcome: error ? "failure" : "success",
+      _error_code: error ? (error.message ?? error.code ?? "UNKNOWN") : undefined,
+      _idempotency_key: meta.idempotencyKey ? `${meta.idempotencyKey}:log` : undefined,
+      _correlation_id: meta.correlationId ?? undefined,
+    });
+  } catch {
+    // Ghi nhật ký không được phép làm hỏng lệnh chính.
+  }
+}
+
+export interface MeetingHostActionDto {
+  id: string;
+  action: "start" | "end" | string;
+  outcome: "success" | "failure" | string;
+  errorCode: string | null;
+  actorId: string | null;
+  actorName: string | null;
+  occurredAt: string;
+}
+
+export const listMeetingHostActions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({ meetingId: z.string().uuid(), limit: z.number().int().min(1).max(100).default(50) })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<MeetingHostActionDto[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("audit_events")
+      .select("id, action, actor_user_id, actor_id, occurred_at, payload")
+      .eq("resource_type", "meeting")
+      .eq("resource_id", data.meetingId)
+      .like("action", "meeting.host.%")
+      .order("occurred_at", { ascending: false })
+      .limit(data.limit);
+    if (error) mapPgError(error);
+
+    const list = (rows ?? []) as Array<{
+      id: string;
+      action: string | null;
+      actor_user_id: string | null;
+      actor_id: string | null;
+      occurred_at: string | null;
+      payload: { action?: string; outcome?: string; error_code?: string | null } | null;
+    }>;
+
+    const actorIds = Array.from(
+      new Set(list.map((r) => r.actor_user_id ?? r.actor_id).filter((v): v is string => !!v)),
+    );
+    const names = new Map<string, string>();
+    if (actorIds.length > 0) {
+      const { data: profiles } = await context.supabase
+        .from("profiles")
+        .select("id, display_name, email")
+        .in("id", actorIds);
+      for (const p of (profiles ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        email: string | null;
+      }>) {
+        names.set(p.id, p.display_name ?? p.email ?? p.id);
+      }
+    }
+
+    return list.map((r) => {
+      const actorId = r.actor_user_id ?? r.actor_id ?? null;
+      const parts = (r.action ?? "").split(".");
+      return {
+        id: r.id,
+        action: r.payload?.action ?? parts[2] ?? "unknown",
+        outcome: r.payload?.outcome ?? parts[3] ?? "unknown",
+        errorCode: r.payload?.error_code ?? null,
+        actorId,
+        actorName: actorId ? (names.get(actorId) ?? null) : null,
+        occurredAt: r.occurred_at ?? new Date(0).toISOString(),
+      };
+    });
   });
 
 /**

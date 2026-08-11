@@ -5141,6 +5141,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      log_meeting_host_action: {
+        Args: {
+          _action: string
+          _correlation_id?: string
+          _error_code?: string
+          _idempotency_key?: string
+          _meeting_id: string
+          _outcome: string
+        }
+        Returns: string
+      }
       log_workflow_denial: {
         Args: {
           _action: string
