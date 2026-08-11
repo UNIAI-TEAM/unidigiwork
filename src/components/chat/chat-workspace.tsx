@@ -175,6 +175,25 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   });
   const readers = readersQ.data ?? [];
 
+  const fetchPinned = useServerFn(listPinnedChatMessages);
+  const doPin = useServerFn(setChatMessagePin);
+  const pinnedQ = useQuery({
+    queryKey: ["chat", "pinned", activeId],
+    queryFn: () => fetchPinned({ data: { channelId: activeId! } }),
+    enabled: !!activeId && !!active?.isMember,
+  });
+  const pinned = pinnedQ.data ?? [];
+  const [showPinned, setShowPinned] = useState(false);
+  const pinM = useMutation({
+    mutationFn: (v: { messageId: string; pinned: boolean }) => doPin({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(v.pinned ? "Đã ghim tin nhắn" : "Đã bỏ ghim");
+      setOlder([]);
+      refreshAll();
+    },
+    onError: () => toast.error("Không thể ghim tin nhắn"),
+  });
+
   // Reset trạng thái khi đổi kênh / từ khoá
   useEffect(() => {
     setOlder([]);
