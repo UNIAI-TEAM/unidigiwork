@@ -79,11 +79,16 @@ const JOIN_ERROR_HINTS: Record<string, string> = {
 };
 
 const RSVP_LABELS: Record<string, string> = {
-</dummy>
   pending: "Chờ phản hồi",
   accepted: "Tham gia",
   declined: "Từ chối",
   tentative: "Chưa chắc",
+};
+
+const HOST_ACTION_LABELS: Record<string, string> = {
+  start: "Bắt đầu",
+  end: "Kết thúc",
+  cancel: "Hủy họp",
 };
 
 const MEETING_STATUS_META: Record<
