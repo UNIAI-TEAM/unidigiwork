@@ -1,90 +1,38 @@
 [
   {
-    "id": "TASK-C-01",
-    "entity": "task",
-    "op": "CREATE",
-    "status": "FAIL_BROKEN",
-    "before": 0,
-    "after": 1,
-    "evidence": null
-  },
-  {
     "id": "TASK-C-05",
     "entity": "task",
     "op": "CREATE_IDEMPOTENCY",
     "status": "FAIL_BROKEN",
     "idemCount": 2,
-    "r1": {
-      "id": "726f6864-cd5f-4f80-ac1d-528770bd35c5",
-      "tenant_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-      "workspace_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-      "parent_task_id": null,
-      "project_id": null,
-      "title": "crud_e2e_idem",
-      "description": null,
-      "status": "todo",
-      "priority": "normal",
-      "due_at": null,
-      "completed_at": null,
-      "row_version": 1,
-      "created_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-      "updated_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-      "deleted_at": null,
-      "created_at": "2026-08-11T15:00:28.107948+00:00",
-      "updated_at": "2026-08-11T15:00:28.107948+00:00",
-      "tags": []
-    },
-    "r2": {
-      "id": "76ed4ba1-ba10-4e45-a391-6081f39a4f7a",
-      "tenant_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-      "workspace_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-      "parent_task_id": null,
-      "project_id": null,
-      "title": "crud_e2e_idem",
-      "description": null,
-      "status": "todo",
-      "priority": "normal",
-      "due_at": null,
-      "completed_at": null,
-      "row_version": 1,
-      "created_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-      "updated_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-      "deleted_at": null,
-      "created_at": "2026-08-11T15:00:28.310665+00:00",
-      "updated_at": "2026-08-11T15:00:28.310665+00:00",
-      "tags": []
-    }
+    "r1": "6cf2c99e-c64b-4d0b-9428-f63294915246",
+    "r2": "392968c2-e53c-439b-95d1-27ba68870f68"
   },
   {
-    "id": "TASK-R-03",
+    "id": "TASK-U-04",
     "entity": "task",
-    "op": "READ_DETAIL",
-    "status": "FAIL_BROKEN"
-  },
-  {
-    "id": "TASK-U-01",
-    "entity": "task",
-    "op": "UPDATE",
+    "op": "UPDATE_DIRECT_TABLE",
     "status": "FAIL_BROKEN",
-    "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
-    "before": {},
-    "after": {}
+    "note": "lifecycle write must go through command"
   },
   {
     "id": "TASK-L-01",
     "entity": "task",
     "op": "COMPLETE",
     "status": "FAIL_BROKEN",
-    "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
-    "after": null
+    "error": "TASK_INVALID_TRANSITION: todo -> done",
+    "after": {
+      "status": "todo",
+      "completed_at": null
+    }
   },
   {
     "id": "TASK-A-01",
     "entity": "task",
     "op": "ASSIGN",
     "status": "FAIL_BROKEN",
-    "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
-    "assigneeCount": null
+    "error": "there is no unique or exclusion constraint matching the ON CONFLICT specification",
+    "assigneeCount": 0
   },
   {
     "id": "TASK-AU-01",
@@ -98,23 +46,7 @@
     "entity": "task",
     "op": "DELETE_DIRECT_DENIED",
     "status": "FAIL_BROKEN",
-    "error": "invalid input syntax for type uuid: \"[object Object]\"",
     "stillExists": false
-  },
-  {
-    "id": "DOC-C-01",
-    "entity": "document",
-    "op": "CREATE",
-    "status": "FAIL_BROKEN",
-    "evidence": null
-  },
-  {
-    "id": "DOC-U-01",
-    "entity": "document",
-    "op": "UPDATE",
-    "status": "FAIL_BROKEN",
-    "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\"",
-    "after": null
   },
   {
     "id": "DOC-A-01",
@@ -122,15 +54,7 @@
     "op": "SHARE",
     "status": "FAIL_BROKEN",
     "error": "Could not find the function public.share_document(_document_id, _grantee_id, _permission) in the schema cache",
-    "permCount": null
-  },
-  {
-    "id": "DOC-D-01",
-    "entity": "document",
-    "op": "ARCHIVE",
-    "status": "FAIL_BROKEN",
-    "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\"",
-    "after": null
+    "permCount": 0
   },
   {
     "id": "DOC-AU-01",

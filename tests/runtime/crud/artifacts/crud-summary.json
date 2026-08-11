@@ -1,21 +1,21 @@
 {
   "summary": {
-    "runId": "c4291fe8",
-    "startedAt": "2026-08-11T15:00:14.676Z",
-    "finishedAt": "2026-08-11T15:00:40.331Z",
+    "runId": "57650d14",
+    "startedAt": "2026-08-11T15:02:15.962Z",
+    "finishedAt": "2026-08-11T15:04:44.401Z",
     "bootError": null,
     "total": 37,
-    "passed": 24,
-    "failed": 13,
+    "passed": 29,
+    "failed": 8,
     "teardownOrphans": [
-      "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-      "5e3024f9-363c-443a-b404-879ee3ebd807",
-      "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
-      "cfe196ec-6033-4a14-9c6e-f0284b71b6b0"
+      "5ff5ba60-d524-4138-b159-59835563554e",
+      "290ddc4a-cbc4-4f1c-884e-a73e3b0438f5",
+      "16094c73-feb2-4ff4-bb9b-4716587a204c",
+      "7ff11caf-464a-4c82-af40-9959e75b397e"
     ],
     "byStatus": {
-      "PASS_REAL": 24,
-      "FAIL_BROKEN": 11,
+      "PASS_REAL": 29,
+      "FAIL_BROKEN": 6,
       "FAIL_AUDIT": 2
     }
   },
@@ -27,13 +27,13 @@
       "status": "PASS_REAL",
       "evidence": {
         "workspace": {
-          "id": "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
-          "name": "crud_e2e_c4291fe8_ws_new",
-          "tenant_id": "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
-          "owner_id": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0"
+          "id": "16094c73-feb2-4ff4-bb9b-4716587a204c",
+          "name": "crud_e2e_57650d14_ws_new",
+          "tenant_id": "16094c73-feb2-4ff4-bb9b-4716587a204c",
+          "owner_id": "7ff11caf-464a-4c82-af40-9959e75b397e"
         },
         "tenant": {
-          "id": "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
+          "id": "16094c73-feb2-4ff4-bb9b-4716587a204c",
           "status": "active"
         },
         "memberCount": 1
@@ -52,7 +52,7 @@
       "op": "UPDATE",
       "status": "PASS_REAL",
       "after": {
-        "name": "crud_e2e_c4291fe8_ws_new_upd"
+        "name": "crud_e2e_57650d14_ws_new_upd"
       }
     },
     {
@@ -74,7 +74,7 @@
       "op": "CREATE",
       "status": "PASS_REAL",
       "evidence": {
-        "id": "029efc1a-4f29-41ca-8989-f5a5130f20b4",
+        "id": "d8f14e31-abd2-40b2-8640-6653d98a139e",
         "name": "crud_e2e_tag"
       }
     },
@@ -119,10 +119,16 @@
       "id": "TASK-C-01",
       "entity": "task",
       "op": "CREATE",
-      "status": "FAIL_BROKEN",
+      "status": "PASS_REAL",
       "before": 0,
       "after": 1,
-      "evidence": null
+      "evidence": {
+        "id": "b4fbe22d-84fb-4c14-8945-2f374f54ced7",
+        "tenant_id": "5ff5ba60-d524-4138-b159-59835563554e",
+        "title": "crud_e2e_task_1",
+        "priority": "high",
+        "row_version": 1
+      }
     },
     {
       "id": "TASK-C-02",
@@ -151,46 +157,8 @@
       "op": "CREATE_IDEMPOTENCY",
       "status": "FAIL_BROKEN",
       "idemCount": 2,
-      "r1": {
-        "id": "726f6864-cd5f-4f80-ac1d-528770bd35c5",
-        "tenant_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-        "workspace_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-        "parent_task_id": null,
-        "project_id": null,
-        "title": "crud_e2e_idem",
-        "description": null,
-        "status": "todo",
-        "priority": "normal",
-        "due_at": null,
-        "completed_at": null,
-        "row_version": 1,
-        "created_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-        "updated_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-        "deleted_at": null,
-        "created_at": "2026-08-11T15:00:28.107948+00:00",
-        "updated_at": "2026-08-11T15:00:28.107948+00:00",
-        "tags": []
-      },
-      "r2": {
-        "id": "76ed4ba1-ba10-4e45-a391-6081f39a4f7a",
-        "tenant_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-        "workspace_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
-        "parent_task_id": null,
-        "project_id": null,
-        "title": "crud_e2e_idem",
-        "description": null,
-        "status": "todo",
-        "priority": "normal",
-        "due_at": null,
-        "completed_at": null,
-        "row_version": 1,
-        "created_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-        "updated_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
-        "deleted_at": null,
-        "created_at": "2026-08-11T15:00:28.310665+00:00",
-        "updated_at": "2026-08-11T15:00:28.310665+00:00",
-        "tags": []
-      }
+      "r1": "6cf2c99e-c64b-4d0b-9428-f63294915246",
+      "r2": "392968c2-e53c-439b-95d1-27ba68870f68"
     },
     {
       "id": "TASK-R-01",
@@ -210,37 +178,41 @@
       "id": "TASK-R-03",
       "entity": "task",
       "op": "READ_DETAIL",
-      "status": "FAIL_BROKEN"
+      "status": "PASS_REAL"
     },
     {
       "id": "TASK-U-01",
       "entity": "task",
       "op": "UPDATE",
-      "status": "FAIL_BROKEN",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
-      "before": {},
-      "after": {}
+      "status": "PASS_REAL",
+      "before": {
+        "title": "crud_e2e_task_1",
+        "row_version": 1
+      },
+      "after": {
+        "title": "crud_e2e_task_1_updated",
+        "row_version": 2
+      }
     },
     {
       "id": "TASK-U-02",
       "entity": "task",
       "op": "UPDATE_STALE_VERSION",
       "status": "PASS_REAL",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\""
+      "error": "upstream request timeout"
     },
     {
       "id": "TASK-U-03",
       "entity": "task",
       "op": "UPDATE_PERMISSION",
       "status": "PASS_REAL",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\""
+      "error": "TENANT_ACCESS_DENIED"
     },
     {
       "id": "TASK-U-04",
       "entity": "task",
       "op": "UPDATE_DIRECT_TABLE",
-      "status": "PASS_REAL",
-      "error": "invalid input syntax for type uuid: \"[object Object]\"",
+      "status": "FAIL_BROKEN",
       "note": "lifecycle write must go through command"
     },
     {
@@ -248,16 +220,19 @@
       "entity": "task",
       "op": "COMPLETE",
       "status": "FAIL_BROKEN",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
-      "after": null
+      "error": "TASK_INVALID_TRANSITION: todo -> done",
+      "after": {
+        "status": "todo",
+        "completed_at": null
+      }
     },
     {
       "id": "TASK-A-01",
       "entity": "task",
       "op": "ASSIGN",
       "status": "FAIL_BROKEN",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
-      "assigneeCount": null
+      "error": "there is no unique or exclusion constraint matching the ON CONFLICT specification",
+      "assigneeCount": 0
     },
     {
       "id": "TASK-AU-01",
@@ -271,22 +246,30 @@
       "entity": "task",
       "op": "OUTBOX",
       "status": "PASS_REAL",
-      "outboxCount": 7
+      "outboxCount": 8
     },
     {
       "id": "TASK-D-01",
       "entity": "task",
       "op": "DELETE_DIRECT_DENIED",
       "status": "FAIL_BROKEN",
-      "error": "invalid input syntax for type uuid: \"[object Object]\"",
       "stillExists": false
     },
     {
       "id": "DOC-C-01",
       "entity": "document",
       "op": "CREATE",
-      "status": "FAIL_BROKEN",
-      "evidence": null
+      "status": "PASS_REAL",
+      "evidence": {
+        "id": "240492e1-9bb7-4ddc-aaac-839e84bb8615",
+        "title": "crud_e2e_doc_1",
+        "tenant_id": "5ff5ba60-d524-4138-b159-59835563554e",
+        "tags": [
+          "crud",
+          "e2e"
+        ],
+        "status": null
+      }
     },
     {
       "id": "DOC-C-02",
@@ -313,9 +296,11 @@
       "id": "DOC-U-01",
       "entity": "document",
       "op": "UPDATE",
-      "status": "FAIL_BROKEN",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\"",
-      "after": null
+      "status": "PASS_REAL",
+      "after": {
+        "title": "crud_e2e_doc_1_updated",
+        "row_version": 2
+      }
     },
     {
       "id": "DOC-A-01",
@@ -323,15 +308,17 @@
       "op": "SHARE",
       "status": "FAIL_BROKEN",
       "error": "Could not find the function public.share_document(_document_id, _grantee_id, _permission) in the schema cache",
-      "permCount": null
+      "permCount": 0
     },
     {
       "id": "DOC-D-01",
       "entity": "document",
       "op": "ARCHIVE",
-      "status": "FAIL_BROKEN",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\"",
-      "after": null
+      "status": "PASS_REAL",
+      "after": {
+        "deleted_at": "2026-08-11T15:04:41.474672+00:00",
+        "updated_at": "2026-08-11T15:04:41.474672+00:00"
+      }
     },
     {
       "id": "DOC-D-02",
@@ -339,7 +326,7 @@
       "op": "ARCHIVE_REPEAT",
       "status": "PASS_REAL",
       "note": "idempotency/stability observed",
-      "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\""
+      "error": "DOCUMENT_NOT_FOUND"
     },
     {
       "id": "DOC-AU-01",
