@@ -575,6 +575,14 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                         </button>
                       )}
                     </div>
+                    <button
+                      onClick={() => setShowFilters((v) => !v)}
+                      className={`rounded-lg p-2 hover:bg-surface-2 ${showFilters || dateFrom || dateTo ? "bg-surface-2 text-foreground" : "text-muted-foreground"}`}
+                      aria-label="Lọc theo thời gian"
+                      title="Lọc theo khoảng thời gian"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
                     {active.isMember && (
                       <button
                         onClick={() => setShowMembers((v) => !v)}
