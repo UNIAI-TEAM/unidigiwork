@@ -139,6 +139,11 @@ function WorkspaceManagePage() {
                 </Link>
               </Button>
               <Button variant="outline" asChild>
+                <Link to="/workspace/tags">
+                  <Tags className="mr-1.5 h-4 w-4" /> Quản lý nhãn
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
                 <Link to="/workspace/members">
                   <UserPlus className="mr-1.5 h-4 w-4" /> Quản lý thành viên
                 </Link>
