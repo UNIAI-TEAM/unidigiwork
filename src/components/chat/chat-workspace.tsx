@@ -8,6 +8,7 @@ import {
   CheckCheck,
   MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye, Pin, PinOff,
   ListTodo,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -22,7 +23,7 @@ import {
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
 import { createTask } from "@/lib/api/tasks.functions";
-import { listWorkspaceMembers } from "@/lib/api/workspaces.functions";
+import { listWorkspaceMembers, getWorkspaceSettings } from "@/lib/api/workspaces.functions";
 import { buildChatSourceTag } from "@/lib/chat-task-link";
 import { useMyWorkspaces, useActiveWorkspace } from "@/lib/active-workspace";
 
