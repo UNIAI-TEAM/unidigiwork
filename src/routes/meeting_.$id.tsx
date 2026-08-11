@@ -376,6 +376,7 @@ function MeetingDetailPage() {
     await queryClient.invalidateQueries({ queryKey: ["meeting-participants", id] });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["meeting", id] }),
+      queryClient.invalidateQueries({ queryKey: ["meeting-host-actions", id] }),
       queryClient.invalidateQueries({ queryKey: ["meetings"] }),
       queryClient.invalidateQueries({ queryKey: ["calendar"] }),
       queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
