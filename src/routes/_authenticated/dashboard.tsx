@@ -1446,6 +1446,13 @@ function DashboardInner() {
                     ))}
                   </div>
                 )}
+                <Link
+                  to="/notifications"
+                  preload="intent"
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  Xem tất cả thông báo <ArrowUpRight className="h-3 w-3" />
+                </Link>
               </div>
 
               <button className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2">
