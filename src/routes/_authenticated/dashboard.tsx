@@ -608,6 +608,16 @@ function DashboardInner() {
     staleTime: 30_000,
   });
   const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
+  const notificationsQuery = useQuery({
+    queryKey: ["dashboard-notifications"],
+    queryFn: () => listNotifications(),
+    staleTime: 30_000,
+  });
+  const importantNotifications = useMemo(() => {
+    const rows = notificationsQuery.data ?? [];
+    const unread = rows.filter((n: any) => !n.is_read);
+    return (unread.length ? unread : rows).slice(0, 3);
+  }, [notificationsQuery.data]);
   const sendAiFn = useServerFn(sendAiMessage);
   const [aiInput, setAiInput] = useState("");
   const [aiSending, setAiSending] = useState(false);
