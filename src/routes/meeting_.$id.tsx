@@ -29,6 +29,8 @@ import {
   closeMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
 import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
+import { setMeetingRsvp } from "@/lib/api/meetings.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
@@ -324,6 +326,40 @@ function MeetingDetailPage() {
     speaking: false,
   }));
 
+  // RSVP của chính mình
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [rsvpSaving, setRsvpSaving] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (alive) setMyUserId(data.user?.id ?? null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const myRsvp =
+    (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.rsvp ?? null;
+
+  const handleRsvp = useCallback(
+    async (rsvp: "accepted" | "declined" | "tentative") => {
+      if (!isRealRoom) return;
+      setRsvpSaving(rsvp);
+      try {
+        await setMeetingRsvp({
+          data: { meetingId: id, rsvp, idempotencyKey: crypto.randomUUID() },
+        });
+        toast.success(`Đã cập nhật: ${RSVP_LABELS[rsvp]}`);
+        await participantsQuery.refetch();
+      } catch {
+        toast.error("Không cập nhật được phản hồi tham dự.");
+      } finally {
+        setRsvpSaving(null);
+      }
+    },
+    [id, isRealRoom, participantsQuery],
+  );
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
@@ -520,7 +556,33 @@ function MeetingDetailPage() {
                 ))}
               {tab === "chat" && <ChatPanel />}
               {tab === "participants" && (
-                participantsQuery.isLoading ? (
+                <div className="space-y-3">
+                  {isRealRoom && (
+                    <div className="rounded-lg border border-border bg-surface-2 p-2">
+                      <p className="mb-2 text-[11px] text-muted-foreground">
+                        Phản hồi tham dự của bạn
+                        {myRsvp ? ` · ${RSVP_LABELS[myRsvp] ?? myRsvp}` : ""}
+                      </p>
+                      <div className="flex gap-1.5">
+                        {(["accepted", "tentative", "declined"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            disabled={rsvpSaving !== null}
+                            onClick={() => void handleRsvp(v)}
+                            className={`flex-1 rounded-md border px-2 py-1.5 text-[11px] transition-colors disabled:opacity-60 ${
+                              myRsvp === v
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-surface hover:bg-surface-3"
+                            }`}
+                          >
+                            {rsvpSaving === v ? "Đang lưu…" : RSVP_LABELS[v]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {participantsQuery.isLoading ? (
                   <p className="text-xs text-muted-foreground">Đang tải danh sách…</p>
                 ) : participants.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
@@ -545,7 +607,8 @@ function MeetingDetailPage() {
                       </li>
                     ))}
                   </ul>
-                )
+                  )}
+                </div>
               )}
               {tab === "transcript" && (
                 <div className="space-y-3 text-xs">
