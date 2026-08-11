@@ -32,7 +32,7 @@ export async function run(ids) {
   const { data: afterU } = await a.from("documents").select("title,row_version").eq("id", docId).maybeSingle();
   rec("DOC-U-01", "UPDATE", !uErr && afterU?.title === `${TAG}doc_1_updated` ? "PASS_REAL" : "FAIL_BROKEN", { error: uErr?.message, after: afterU });
 
-  const { error: shErr } = await owner.client.rpc("share_document", { _document_id: docId, _grantee_id: member.userId, _permission: "view" });
+  const { error: shErr } = await owner.client.rpc("share_document", { _document_id: docId, _principal_type: "user", _principal_id: member.userId, _level: "view" });
   const { count: permCount } = await a.from("document_permissions").select("id", { count: "exact", head: true }).eq("document_id", docId);
   rec("DOC-A-01", "SHARE", !shErr && permCount > 0 ? "PASS_REAL" : "FAIL_BROKEN", { error: shErr?.message, permCount });
 

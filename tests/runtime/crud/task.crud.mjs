@@ -78,6 +78,7 @@ export async function run(ids) {
   rec("TASK-U-04", "UPDATE_DIRECT_TABLE", afterDirect?.title !== "direct" ? "PASS_REAL" : "FAIL_BROKEN", { error: directErr?.message, note: "lifecycle write must go through command" });
 
   // Lifecycle — transition
+  await owner.client.rpc("transition_task", { _task_id: taskId, _to_status: "in_progress" });
   const { error: tErr } = await owner.client.rpc("transition_task", { _task_id: taskId, _to_status: "done" });
   const { data: afterT } = await a.from("tasks").select("status,completed_at").eq("id", taskId).maybeSingle();
   rec("TASK-L-01", "COMPLETE", !tErr && afterT?.status === "done" ? "PASS_REAL" : "FAIL_BROKEN", { error: tErr?.message, after: afterT });

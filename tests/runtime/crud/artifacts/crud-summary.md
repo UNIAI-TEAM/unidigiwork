@@ -1,6 +1,6 @@
 # CRUD runtime summary
 
-Run: 57650d14 · 2026-08-11T15:02:15.962Z
+Run: 46dd2bdc · 2026-08-11T15:05:46.580Z
 
 | Cell | Entity | Operation | Status |
 |---|---|---|---|
@@ -37,10 +37,10 @@ Run: 57650d14 · 2026-08-11T15:02:15.962Z
 | DOC-R-01 | document | READ_LIST | PASS_REAL |
 | DOC-R-02 | document | READ_LIST_FOREIGN | PASS_REAL |
 | DOC-U-01 | document | UPDATE | PASS_REAL |
-| DOC-A-01 | document | SHARE | FAIL_BROKEN |
+| DOC-A-01 | document | SHARE | PASS_REAL |
 | DOC-D-01 | document | ARCHIVE | PASS_REAL |
 | DOC-D-02 | document | ARCHIVE_REPEAT | PASS_REAL |
 | DOC-AU-01 | document | AUDIT | FAIL_AUDIT |
 
-Total 37 · PASS 29 · FAIL 8
-Teardown orphans: 5ff5ba60-d524-4138-b159-59835563554e, 290ddc4a-cbc4-4f1c-884e-a73e3b0438f5, 16094c73-feb2-4ff4-bb9b-4716587a204c, 7ff11caf-464a-4c82-af40-9959e75b397e
+Total 37 · PASS 30 · FAIL 7
+Teardown orphans: 84ed7e6d-0f21-4ea6-ae9d-c27b1e12d2c9, b6b774c9-4dd3-4c2f-9d95-fb002081a860, 7378f1f0-00d0-4b16-980a-f3c7bbc99376, 849d1c4e-3ffc-4e07-be2a-1c3de5bf6e58

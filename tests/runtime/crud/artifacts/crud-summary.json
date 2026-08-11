@@ -1,21 +1,21 @@
 {
   "summary": {
-    "runId": "57650d14",
-    "startedAt": "2026-08-11T15:02:15.962Z",
-    "finishedAt": "2026-08-11T15:04:44.401Z",
+    "runId": "46dd2bdc",
+    "startedAt": "2026-08-11T15:05:46.580Z",
+    "finishedAt": "2026-08-11T15:08:15.711Z",
     "bootError": null,
     "total": 37,
-    "passed": 29,
-    "failed": 8,
+    "passed": 30,
+    "failed": 7,
     "teardownOrphans": [
-      "5ff5ba60-d524-4138-b159-59835563554e",
-      "290ddc4a-cbc4-4f1c-884e-a73e3b0438f5",
-      "16094c73-feb2-4ff4-bb9b-4716587a204c",
-      "7ff11caf-464a-4c82-af40-9959e75b397e"
+      "84ed7e6d-0f21-4ea6-ae9d-c27b1e12d2c9",
+      "b6b774c9-4dd3-4c2f-9d95-fb002081a860",
+      "7378f1f0-00d0-4b16-980a-f3c7bbc99376",
+      "849d1c4e-3ffc-4e07-be2a-1c3de5bf6e58"
     ],
     "byStatus": {
-      "PASS_REAL": 29,
-      "FAIL_BROKEN": 6,
+      "PASS_REAL": 30,
+      "FAIL_BROKEN": 5,
       "FAIL_AUDIT": 2
     }
   },
@@ -27,13 +27,13 @@
       "status": "PASS_REAL",
       "evidence": {
         "workspace": {
-          "id": "16094c73-feb2-4ff4-bb9b-4716587a204c",
-          "name": "crud_e2e_57650d14_ws_new",
-          "tenant_id": "16094c73-feb2-4ff4-bb9b-4716587a204c",
-          "owner_id": "7ff11caf-464a-4c82-af40-9959e75b397e"
+          "id": "7378f1f0-00d0-4b16-980a-f3c7bbc99376",
+          "name": "crud_e2e_46dd2bdc_ws_new",
+          "tenant_id": "7378f1f0-00d0-4b16-980a-f3c7bbc99376",
+          "owner_id": "849d1c4e-3ffc-4e07-be2a-1c3de5bf6e58"
         },
         "tenant": {
-          "id": "16094c73-feb2-4ff4-bb9b-4716587a204c",
+          "id": "7378f1f0-00d0-4b16-980a-f3c7bbc99376",
           "status": "active"
         },
         "memberCount": 1
@@ -52,7 +52,7 @@
       "op": "UPDATE",
       "status": "PASS_REAL",
       "after": {
-        "name": "crud_e2e_57650d14_ws_new_upd"
+        "name": "crud_e2e_46dd2bdc_ws_new_upd"
       }
     },
     {
@@ -74,7 +74,7 @@
       "op": "CREATE",
       "status": "PASS_REAL",
       "evidence": {
-        "id": "d8f14e31-abd2-40b2-8640-6653d98a139e",
+        "id": "87f7f837-f7db-48f8-8bfc-5f8183c2c4cb",
         "name": "crud_e2e_tag"
       }
     },
@@ -123,8 +123,8 @@
       "before": 0,
       "after": 1,
       "evidence": {
-        "id": "b4fbe22d-84fb-4c14-8945-2f374f54ced7",
-        "tenant_id": "5ff5ba60-d524-4138-b159-59835563554e",
+        "id": "4c69b416-431a-411b-8879-64f9a607b15c",
+        "tenant_id": "84ed7e6d-0f21-4ea6-ae9d-c27b1e12d2c9",
         "title": "crud_e2e_task_1",
         "priority": "high",
         "row_version": 1
@@ -157,8 +157,8 @@
       "op": "CREATE_IDEMPOTENCY",
       "status": "FAIL_BROKEN",
       "idemCount": 2,
-      "r1": "6cf2c99e-c64b-4d0b-9428-f63294915246",
-      "r2": "392968c2-e53c-439b-95d1-27ba68870f68"
+      "r1": "0055f4a3-19f8-4fa2-a6ec-6f60ad986539",
+      "r2": "034bdbb3-3c78-4948-972b-9d1470a1702f"
     },
     {
       "id": "TASK-R-01",
@@ -220,9 +220,9 @@
       "entity": "task",
       "op": "COMPLETE",
       "status": "FAIL_BROKEN",
-      "error": "TASK_INVALID_TRANSITION: todo -> done",
+      "error": "VALIDATION_FAILED: quantity must be positive",
       "after": {
-        "status": "todo",
+        "status": "in_progress",
         "completed_at": null
       }
     },
@@ -246,7 +246,7 @@
       "entity": "task",
       "op": "OUTBOX",
       "status": "PASS_REAL",
-      "outboxCount": 8
+      "outboxCount": 9
     },
     {
       "id": "TASK-D-01",
@@ -261,9 +261,9 @@
       "op": "CREATE",
       "status": "PASS_REAL",
       "evidence": {
-        "id": "240492e1-9bb7-4ddc-aaac-839e84bb8615",
+        "id": "6d3d751b-a3bc-40b1-b71a-e2bac7bbd024",
         "title": "crud_e2e_doc_1",
-        "tenant_id": "5ff5ba60-d524-4138-b159-59835563554e",
+        "tenant_id": "84ed7e6d-0f21-4ea6-ae9d-c27b1e12d2c9",
         "tags": [
           "crud",
           "e2e"
@@ -306,9 +306,8 @@
       "id": "DOC-A-01",
       "entity": "document",
       "op": "SHARE",
-      "status": "FAIL_BROKEN",
-      "error": "Could not find the function public.share_document(_document_id, _grantee_id, _permission) in the schema cache",
-      "permCount": 0
+      "status": "PASS_REAL",
+      "permCount": 1
     },
     {
       "id": "DOC-D-01",
@@ -316,8 +315,8 @@
       "op": "ARCHIVE",
       "status": "PASS_REAL",
       "after": {
-        "deleted_at": "2026-08-11T15:04:41.474672+00:00",
-        "updated_at": "2026-08-11T15:04:41.474672+00:00"
+        "deleted_at": "2026-08-11T15:08:12.094892+00:00",
+        "updated_at": "2026-08-11T15:08:12.094892+00:00"
       }
     },
     {
