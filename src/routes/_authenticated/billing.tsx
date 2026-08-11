@@ -14,6 +14,7 @@ import {
   Gauge,
   CalendarClock,
   RefreshCw,
+  Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
@@ -25,6 +26,7 @@ import {
   changeSubscription,
   cancelSubscription,
   resumeSubscription,
+  listInvoices,
 } from "@/lib/api/billing.functions";
 
 export const Route = createFileRoute("/_authenticated/billing")({
@@ -59,6 +61,23 @@ const STATUS_LABEL: Record<string, string> = {
   canceled: "Đã hủy",
 };
 
+const INVOICE_STATUS: Record<string, { label: string; cls: string }> = {
+  draft: { label: "Nháp", cls: "border-border bg-surface-2 text-muted-foreground" },
+  open: { label: "Chờ thanh toán", cls: "border-warning/30 bg-warning/10 text-warning" },
+  paid: { label: "Đã thanh toán", cls: "border-success/30 bg-success/10 text-success" },
+  past_due: { label: "Quá hạn", cls: "border-destructive/30 bg-destructive/10 text-destructive" },
+  refunded: { label: "Đã hoàn tiền", cls: "border-border bg-surface-2 text-muted-foreground" },
+  void: { label: "Đã hủy", cls: "border-border bg-surface-2 text-muted-foreground" },
+};
+
+function fmtMoney(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
+  } catch {
+    return `${amount.toLocaleString("vi-VN")} ${currency}`;
+  }
+}
+
 function BillingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const qc = useQueryClient();
@@ -72,6 +91,7 @@ function BillingPage() {
   const changeFn = useServerFn(changeSubscription);
   const cancelFn = useServerFn(cancelSubscription);
   const resumeFn = useServerFn(resumeSubscription);
+  const invoicesFn = useServerFn(listInvoices);
 
   const plansQ = useQuery({ queryKey: ["billing", "plans"], queryFn: () => plansFn(), staleTime: 300_000 });
   const subQ = useQuery({
@@ -82,6 +102,11 @@ function BillingPage() {
   const entQ = useQuery({
     queryKey: ["billing", "entitlements", tenantId],
     queryFn: () => entFn({ data: { tenantId: tenantId! } }),
+    enabled: !!tenantId,
+  });
+  const invoicesQ = useQuery({
+    queryKey: ["billing", "invoices", tenantId],
+    queryFn: () => invoicesFn({ data: { tenantId: tenantId!, limit: 24 } }),
     enabled: !!tenantId,
   });
 
