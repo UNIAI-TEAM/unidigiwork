@@ -594,7 +594,7 @@ function MeetingDetailPage() {
     timerTone === "over"
       ? "bg-destructive/15 text-destructive"
       : timerTone === "warn"
-        ? "bg-warning/15 text-warning"
+        ? "bg-primary/15 text-primary"
         : "bg-muted text-muted-foreground";
 
   return (
