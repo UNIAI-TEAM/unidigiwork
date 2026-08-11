@@ -90,6 +90,27 @@ export type WorkspaceOverviewDTO = {
 
 const UUID = z.string().uuid();
 
+export type MyWorkspaceDTO = { id: string; name: string; isOwner: boolean };
+
+// Danh sách workspace mà người dùng hiện tại là thành viên (RLS lọc sẵn).
+export const listMyWorkspaces = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MyWorkspaceDTO[]> => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("workspaces")
+      .select("id, name, owner_id")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) mapPgError(error, "WORKSPACE_ACCESS_DENIED");
+    return ((data ?? []) as Row[]).map((w) => ({
+      id: w.id as string,
+      name: (w.name as string) ?? "Workspace",
+      isOwner: w.owner_id === userId,
+    }));
+  });
+
 export const getWorkspaceOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { workspaceId: string }) => z.object({ workspaceId: UUID }).parse(input))
