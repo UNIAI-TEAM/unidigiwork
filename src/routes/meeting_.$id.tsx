@@ -302,14 +302,20 @@ function MeetingDetailPage() {
     return () => window.removeEventListener("pagehide", onHide);
   }, [id, isRealRoom]);
 
-  const participants = [
-    { name: "Minh Anh", seed: "minh-anh", speaking: true },
-    { name: "Tuấn Nam", seed: "tuan-nam-ba", speaking: false },
-    { name: "Hương Trần", seed: "huong-tran", speaking: false },
-    { name: "Duy Anh", seed: "duy-anh", speaking: false },
-    { name: "Bảo Ngọc", seed: "bao-ngoc", speaking: false },
-    { name: "Phương Linh", seed: "phuong-linh", speaking: false },
-  ];
+  const participantsQuery = useQuery({
+    queryKey: ["meeting-participants", id],
+    enabled: isRealRoom,
+    staleTime: 30_000,
+    queryFn: () => listMeetingParticipants({ data: { meetingId: id } }),
+  });
+
+  const participants = (participantsQuery.data ?? []).map((p) => ({
+    seed: p.userId,
+    name: p.name ?? p.email ?? "Thành viên",
+    role: p.role,
+    rsvp: p.rsvp,
+    speaking: false,
+  }));
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
