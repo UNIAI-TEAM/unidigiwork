@@ -12,7 +12,7 @@ import {
   listMyWorkspaces,
   listMeetingParticipants,
 } from "@/lib/api/meeting-rooms.functions";
-import { cancelMeeting, updateMeeting } from "@/lib/api/meetings.functions";
+import { cancelMeeting, listMeetings, updateMeeting } from "@/lib/api/meetings.functions";
 import {
   Dialog,
   DialogContent,
@@ -81,12 +81,16 @@ export const Route = createFileRoute("/meeting")({
     focus?: "rooms";
     state?: "live" | "upcoming";
     page?: number;
+    from?: string;
+    to?: string;
   } & Partial<Record<string, unknown>>): {
     ws?: string;
     q?: string;
     focus?: "rooms";
     state?: "live" | "upcoming";
     page?: number;
+    from?: string;
+    to?: string;
   } => ({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
@@ -98,6 +102,14 @@ export const Route = createFileRoute("/meeting")({
     page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
       ? Number(search["page"])
       : 1,
+    from:
+      typeof search["from"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["from"] as string)
+        ? (search["from"] as string)
+        : undefined,
+    to:
+      typeof search["to"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["to"] as string)
+        ? (search["to"] as string)
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -343,6 +355,11 @@ function MeetingPage() {
 
   const roomState: RoomFilterState = search.state ?? restoredFilter?.state ?? "all";
 
+  // Bộ lọc khoảng ngày (yyyy-mm-dd) — khi bật sẽ truy vấn qua listMeetings.
+  const dateFrom = search.from;
+  const dateTo = search.to;
+  const rangeActive = !!(dateFrom || dateTo);
+
   useEffect(() => {
     try {
       window.localStorage.setItem(
@@ -362,16 +379,20 @@ function MeetingPage() {
     q?: string;
     page?: number;
     state?: RoomFilterState;
+    from?: string;
+    to?: string;
   }) => {
     setRestoredFilter(null);
     const effectiveState = next.state ?? roomState;
-    const { state: _ignored, ...rest } = next;
+    const { state: _ignored, from: nextFrom, to: nextTo, ...rest } = next;
     void navigate({
       to: "/meeting",
       search: {
         ...search,
         ws: activeWs,
         q: roomQuery,
+        from: nextFrom !== undefined ? nextFrom || undefined : dateFrom,
+        to: nextTo !== undefined ? nextTo || undefined : dateTo,
         ...rest,
         state: effectiveState === "all" ? undefined : effectiveState,
       },
@@ -381,7 +402,7 @@ function MeetingPage() {
 
   const rooms = useQuery({
     queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
-    enabled: !!activeWs,
+    enabled: !!activeWs && !rangeActive,
     placeholderData: keepPreviousData,
     queryFn: () =>
       listMyMeetingRooms({
@@ -394,6 +415,44 @@ function MeetingPage() {
         },
       }),
   });
+
+  const rangeQuery = useQuery({
+    queryKey: ["meetings-range", activeWs ?? null, dateFrom ?? null, dateTo ?? null],
+    enabled: !!activeWs && rangeActive,
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      listMeetings({
+        data: {
+          workspaceId: activeWs as string,
+          ...(dateFrom ? { from: new Date(`${dateFrom}T00:00:00`).toISOString() } : {}),
+          ...(dateTo ? { to: new Date(`${dateTo}T23:59:59.999`).toISOString() } : {}),
+          limit: 200,
+        },
+      }),
+  });
+
+  type ListRoom = { id: string; title: string; status: string; start_at: string; end_at: string };
+
+  // Khi lọc theo ngày: lọc thêm từ khóa/trạng thái và phân trang phía client.
+  const rangeFiltered = useMemo<ListRoom[]>(() => {
+    if (!rangeActive) return [];
+    const now = Date.now();
+    const rows = (rangeQuery.data ?? []) as unknown as ListRoom[];
+    return rows.filter((r) => {
+      if (roomQuery && !r.title?.toLowerCase().includes(roomQuery.toLowerCase())) return false;
+      if (roomState === "live") return r.status === "live";
+      if (roomState === "upcoming")
+        return r.status === "scheduled" && new Date(r.start_at).getTime() > now;
+      return true;
+    });
+  }, [rangeActive, rangeQuery.data, roomQuery, roomState]);
+
+  const listItems: ListRoom[] = rangeActive
+    ? rangeFiltered.slice((currentPage - 1) * ROOM_PAGE_SIZE, currentPage * ROOM_PAGE_SIZE)
+    : ((rooms.data?.items ?? []) as ListRoom[]);
+  const listTotal = rangeActive ? rangeFiltered.length : (rooms.data?.total ?? 0);
+  const listLoading = rangeActive ? rangeQuery.isLoading : rooms.isLoading;
+  const listFetching = rangeActive ? rangeQuery.isFetching : rooms.isFetching;
 
   const createRoom = useMutation({
     mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
@@ -659,15 +718,45 @@ function MeetingPage() {
                     </button>
                   ))}
                 </div>
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                  <span className="text-xs text-muted-foreground">Từ</span>
+                  <input
+                    type="date"
+                    value={dateFrom ?? ""}
+                    max={dateTo ?? undefined}
+                    onChange={(e) => setRoomFilter({ from: e.target.value, page: 1 })}
+                    aria-label="Từ ngày"
+                    className="bg-transparent text-sm focus:outline-none"
+                  />
+                  <span className="text-xs text-muted-foreground">đến</span>
+                  <input
+                    type="date"
+                    value={dateTo ?? ""}
+                    min={dateFrom ?? undefined}
+                    onChange={(e) => setRoomFilter({ to: e.target.value, page: 1 })}
+                    aria-label="Đến ngày"
+                    className="bg-transparent text-sm focus:outline-none"
+                  />
+                  {rangeActive && (
+                    <button
+                      onClick={() => setRoomFilter({ from: "", to: "", page: 1 })}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {rooms.isLoading ? (
+              {listLoading ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
                 </div>
-              ) : (rooms.data?.items.length ?? 0) === 0 ? (
+              ) : listItems.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  {roomState === "live"
+                  {rangeActive
+                    ? "Không có cuộc họp nào trong khoảng ngày đã chọn."
+                    : roomState === "live"
                     ? "Không có phòng nào đang diễn ra trong workspace này."
                     : roomState === "upcoming"
                       ? "Không có phòng nào sắp diễn ra trong workspace này."
@@ -678,7 +767,7 @@ function MeetingPage() {
               ) : (
                 <>
                   <ul className="grid gap-2 md:grid-cols-2">
-                    {rooms.data?.items.map((r) => (
+                    {listItems.map((r) => (
                       <li key={r.id}>
                         <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40">
                           <Link
@@ -716,24 +805,23 @@ function MeetingPage() {
                       </li>
                     ))}
                   </ul>
-                  {rooms.data && rooms.data.total > ROOM_PAGE_SIZE && (
+                  {listTotal > ROOM_PAGE_SIZE && (
                     <div className="mt-3 flex items-center justify-between gap-3 text-xs">
                       <span className="text-muted-foreground">
                         Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
-                        {Math.min(currentPage * ROOM_PAGE_SIZE, rooms.data.total)} /{" "}
-                        {rooms.data.total} phòng
+                        {Math.min(currentPage * ROOM_PAGE_SIZE, listTotal)} / {listTotal} phòng
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setRoomFilter({ page: currentPage - 1 })}
-                          disabled={currentPage <= 1 || rooms.isFetching}
+                          disabled={currentPage <= 1 || listFetching}
                           className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
                         >
                           Trước
                         </button>
                         <button
                           onClick={() => setRoomFilter({ page: currentPage + 1 })}
-                          disabled={currentPage * ROOM_PAGE_SIZE >= rooms.data.total || rooms.isFetching}
+                          disabled={currentPage * ROOM_PAGE_SIZE >= listTotal || listFetching}
                           className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
                         >
                           Sau
