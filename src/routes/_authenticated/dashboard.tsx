@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getDashboardPrefs,
+  saveDashboardPrefs,
+  resetDashboardPrefs,
+} from "@/lib/api/dashboard-prefs.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -429,6 +434,12 @@ function DashboardInner() {
   const [rangeDays, setRangeDays] = useState(7);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
   const [hydrated, setHydrated] = useState(false);
+  const queryClient = useQueryClient();
+  const prefsQuery = useQuery({
+    queryKey: ["dashboard-prefs"],
+    queryFn: () => getDashboardPrefs(),
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     try {
@@ -440,6 +451,19 @@ function DashboardInner() {
     setHydrated(true);
   }, []);
 
+  // Cấu hình từ server (đồng bộ đa thiết bị) luôn thắng cache cục bộ.
+  useEffect(() => {
+    const remote = prefsQuery.data?.sections;
+    if (!remote) return;
+    const merged = { ...DEFAULT_SECTIONS, ...remote } as Record<SectionKey, boolean>;
+    setSections(merged);
+    try {
+      localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(merged));
+    } catch {
+      /* ignore */
+    }
+  }, [prefsQuery.data]);
+
   const toggleSection = (key: SectionKey) => {
     setSections((prev) => {
       const next = { ...prev, [key]: !prev[key] };
@@ -448,6 +472,9 @@ function DashboardInner() {
       } catch {
         /* ignore */
       }
+      void saveDashboardPrefs({ data: { sections: next } })
+        .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
+        .catch(() => {});
       return next;
     });
   };
@@ -459,6 +486,9 @@ function DashboardInner() {
     } catch {
       /* ignore */
     }
+    void resetDashboardPrefs()
+      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
+      .catch(() => {});
   };
 
   const visible = hydrated ? sections : DEFAULT_SECTIONS;
