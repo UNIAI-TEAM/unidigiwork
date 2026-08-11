@@ -121,6 +121,9 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   const [activeId, setActiveId] = useState<string | null>(initialChannelId ?? null);
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [filter, setFilter] = useState("");
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -147,9 +150,13 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
 
   const active = useMemo(() => channels.find((c) => c.id === activeId) ?? null, [channels, activeId]);
 
+  const fromISO = dateFrom ? new Date(`${dateFrom}T00:00:00`).toISOString() : undefined;
+  const toISO = dateTo ? new Date(`${dateTo}T23:59:59.999`).toISOString() : undefined;
+  const searchActive = !!(query || dateFrom || dateTo);
+
   const messagesQ = useQuery({
-    queryKey: ["chat", "messages", activeId, query],
-    queryFn: () => fetchMessages({ data: { channelId: activeId!, q: query || undefined } }),
+    queryKey: ["chat", "messages", activeId, query, dateFrom, dateTo],
+    queryFn: () => fetchMessages({ data: { channelId: activeId!, q: query || undefined, from: fromISO, to: toISO } }),
     enabled: !!activeId && !!active?.isMember,
   });
   const recent = messagesQ.data?.messages ?? [];
@@ -200,7 +207,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
     setReplyTo(null);
     setEditing(null);
     setPending([]);
-  }, [activeId, query]);
+  }, [activeId, query, dateFrom, dateTo]);
 
   // Realtime cho kênh đang mở + toàn bộ danh sách kênh (badge chưa đọc)
   useEffect(() => {
@@ -249,13 +256,13 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
     if (!first || !activeId) return;
     setLoadingOlder(true);
     try {
-      const res = await fetchMessages({ data: { channelId: activeId, before: first.createdAt, q: query || undefined } });
+      const res = await fetchMessages({ data: { channelId: activeId, before: first.createdAt, q: query || undefined, from: fromISO, to: toISO } });
       setOlder((prev) => [...res.messages, ...prev]);
       if (!res.hasMore) toast.info("Đã tải hết lịch sử tin nhắn");
     } finally {
       setLoadingOlder(false);
     }
-  }, [messages, activeId, fetchMessages, query]);
+  }, [messages, activeId, fetchMessages, query, fromISO, toISO]);
 
   const sendM = useMutation({
     mutationFn: () =>
