@@ -12,7 +12,7 @@ export async function run(ids) {
 
   // Workspace create through the app path (insert + provisioning trigger)
   const wsId = randomUUID();
-  const { error: cErr } = await owner.client.from("workspaces").insert({ id: wsId, name: `${TAG}${ids.runId}_ws_new`, slug: `${TAG}${ids.runId}-ws-new`.toLowerCase(), owner_id: owner.userId });
+  const { error: cErr } = await owner.client.from("workspaces").insert({ id: wsId, name: `${TAG}${ids.runId}_ws_new`, owner_id: owner.userId });
   const { data: wsRow } = await a.from("workspaces").select("id,name,tenant_id,owner_id").eq("id", wsId).maybeSingle();
   const { data: tenantRow } = await a.from("tenants").select("id,status").eq("id", wsId).maybeSingle();
   const { count: memberCount } = await a.from("tenant_members").select("user_id", { count: "exact", head: true }).eq("tenant_id", wsId);

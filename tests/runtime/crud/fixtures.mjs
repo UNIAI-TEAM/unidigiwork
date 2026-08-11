@@ -43,7 +43,7 @@ export async function bootstrap(runId) {
   for (const [tk, owner] of [["A", "owner_a"], ["B", "owner_b"]]) {
     const wsId = randomUUID();
     const { error } = await a.from("workspaces").insert({
-      id: wsId, name: `${TAG}${runId}_ws_${tk}`, slug: `${TAG}${runId}-ws-${tk}`.toLowerCase(), owner_id: ids.users[owner],
+      id: wsId, name: `${TAG}${runId}_ws_${tk}`, owner_id: ids.users[owner],
     });
     if (error) throw new Error(`workspace ${tk}: ${error.message}`);
     ids.workspaces[tk] = wsId;
