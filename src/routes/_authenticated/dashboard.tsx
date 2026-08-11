@@ -10,8 +10,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { getDashboardOverview } from "@/lib/api/dashboard.functions";
-import type { DashboardOverview as DashboardData } from "@/lib/api/dashboard.functions";
+import { getDashboardOverview, getDashboardAiSummary } from "@/lib/api/dashboard.functions";
+import type {
+  DashboardOverview as DashboardData,
+  DashboardAiSummary,
+} from "@/lib/api/dashboard.functions";
+import { Link } from "@tanstack/react-router";
 import {
   Users,
   Activity,
@@ -209,32 +213,38 @@ function fmtDur(start: string, end: string) {
   return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`;
 }
 
-const AI_ITEMS = [
-  {
-    icon: FileText,
-    tint: "bg-sky-500/20 text-sky-300",
-    title: "15 tài liệu cần cập nhật",
-    action: "Xem chi tiết",
-  },
-  {
-    icon: AlertTriangle,
-    tint: "bg-rose-500/20 text-rose-300",
-    title: "3 nhiệm vụ đang quá hạn",
-    action: "Xem chi tiết",
-  },
-  {
-    icon: Video,
-    tint: "bg-emerald-500/20 text-emerald-300",
-    title: "5 cuộc họp trong hôm nay",
-    action: "Xem lịch",
-  },
-  {
-    icon: Workflow,
-    tint: "bg-amber-500/20 text-amber-300",
-    title: "2 quy trình cần phê duyệt",
-    action: "Xem chi tiết",
-  },
-];
+function buildAiItems(s: DashboardAiSummary | undefined) {
+  return [
+    {
+      icon: FileText,
+      tint: "bg-sky-500/20 text-sky-300",
+      title: `${s?.staleDocuments ?? 0} tài liệu cần cập nhật`,
+      action: "Xem chi tiết",
+      to: "/documents",
+    },
+    {
+      icon: AlertTriangle,
+      tint: "bg-rose-500/20 text-rose-300",
+      title: `${s?.overdueTasks ?? 0} nhiệm vụ đang quá hạn`,
+      action: "Xem chi tiết",
+      to: "/tasks",
+    },
+    {
+      icon: Video,
+      tint: "bg-emerald-500/20 text-emerald-300",
+      title: `${s?.meetingsToday ?? 0} cuộc họp trong hôm nay`,
+      action: "Xem lịch",
+      to: "/calendar",
+    },
+    {
+      icon: Workflow,
+      tint: "bg-amber-500/20 text-amber-300",
+      title: `${s?.pendingWorkflowApprovals ?? 0} quy trình cần phê duyệt`,
+      action: "Xem chi tiết",
+      to: "/workflows/permissions",
+    },
+  ];
+}
 
 function KpiCard({ k }: { k: Kpi }) {
   const Icon = k.icon;
@@ -574,6 +584,15 @@ function DashboardInner() {
   const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
 
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
+  const aiSummaryQuery = useQuery({
+    queryKey: ["dashboard-ai-summary", activeWorkspaceId ?? "all"],
+    queryFn: () =>
+      getDashboardAiSummary({
+        data: activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {},
+      }),
+    staleTime: 30_000,
+  });
+  const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
   const activity = useMemo(() => buildActivity(data.overview), [data.overview]);
   const donut = useMemo(() => buildDonut(data.overview), [data.overview]);
   const projects = data.projects;
@@ -944,11 +963,14 @@ function DashboardInner() {
                 </p>
               </div>
               <ul className="mt-4 space-y-2">
-                {AI_ITEMS.map((it) => {
+                {aiItems.map((it) => {
                   const Icon = it.icon;
                   return (
                     <li key={it.title}>
-                      <button className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40">
+                      <Link
+                        to={it.to}
+                        className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
+                      >
                         <span
                           className={`flex h-9 w-9 items-center justify-center rounded-lg ${it.tint}`}
                         >
@@ -959,7 +981,7 @@ function DashboardInner() {
                           <div className="text-[11px] text-primary">{it.action} →</div>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                      </button>
+                      </Link>
                     </li>
                   );
                 })}

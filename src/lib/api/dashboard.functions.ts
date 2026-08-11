@@ -206,3 +206,71 @@ export const getDashboardOverview = createServerFn({ method: "GET" })
 
     return { overview, projects, recent, meetings };
   });
+
+// --- AI summary counts (dữ liệu thật cho các thẻ ở panel AI Assistant) ---
+export type DashboardAiSummary = {
+  staleDocuments: number;
+  overdueTasks: number;
+  meetingsToday: number;
+  pendingWorkflowApprovals: number;
+};
+
+export const getDashboardAiSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ workspaceId: z.string().uuid().optional() }).parse(i ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<DashboardAiSummary> => {
+    const supabase = context.supabase;
+    const now = new Date();
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart.getTime() + 86400_000);
+    const staleBefore = new Date(now.getTime() - 30 * 86400_000).toISOString();
+
+    const ws = data.workspaceId;
+    const scope = <T extends { eq: (c: string, v: string) => T }>(q: T) =>
+      ws ? q.eq("workspace_id", ws) : q;
+
+    const docsQ = scope(
+      supabase
+        .from("documents")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .lt("updated_at", staleBefore),
+    );
+    const overdueQ = scope(
+      supabase
+        .from("tasks")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .not("due_at", "is", null)
+        .lt("due_at", now.toISOString())
+        .not("status", "in", "(done,canceled)"),
+    );
+    const meetQ = scope(
+      supabase
+        .from("meetings")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .gte("start_at", dayStart.toISOString())
+        .lt("start_at", dayEnd.toISOString()),
+    );
+    const wfQ = scope(
+      supabase
+        .from("workflow_access_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+    );
+
+    const [docsR, overdueR, meetR, wfR] = await Promise.all([docsQ, overdueQ, meetQ, wfQ]);
+    for (const r of [docsR, overdueR, meetR, wfR]) {
+      if (r.error) mapPgError(r.error);
+    }
+    return {
+      staleDocuments: docsR.count ?? 0,
+      overdueTasks: overdueR.count ?? 0,
+      meetingsToday: meetR.count ?? 0,
+      pendingWorkflowApprovals: wfR.count ?? 0,
+    };
+  });
