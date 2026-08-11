@@ -104,6 +104,7 @@ export const updateDocument = createServerFn({ method: "POST" })
       title: z.string().min(1).max(500).optional(),
       folder: z.string().max(200).optional(),
       tags: z.array(z.string().max(50)).max(50).optional(),
+      content: z.string().max(500000).optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -112,6 +113,7 @@ export const updateDocument = createServerFn({ method: "POST" })
       _title: data.title ?? undefined,
       _folder: data.folder ?? undefined,
       _tags: data.tags ?? undefined,
+      _content: data.content ?? undefined,
       _expected_row_version: data.expectedRowVersion ?? undefined,
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
