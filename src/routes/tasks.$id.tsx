@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft, Calendar, CheckCircle2, Clock, Download, Flag, Link2,
-  Loader2, MessageSquare, Paperclip, Plus, Send, Trash2, User,
+  Loader2, MessageSquare, Paperclip, Plus, Send, Tag, Trash2, User, X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
