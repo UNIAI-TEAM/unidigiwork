@@ -710,6 +710,25 @@ function DashboardInner() {
   }, [notificationsQuery.data]);
   const sendAiFn = useServerFn(sendAiMessage);
   const [aiInput, setAiInput] = useState("");
+  const [openedLinks, setOpenedLinks] = useState<
+    Array<{ label: string; path: string; filters?: Record<string, string | number | boolean>; at: string }>
+  >([]);
+  const recordOpenedLink = (
+    label: string,
+    path: string,
+    filters?: Record<string, unknown>,
+  ) => {
+    const safe: Record<string, string | number | boolean> = {};
+    for (const [k, v] of Object.entries(filters ?? {})) {
+      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") safe[k] = v;
+    }
+    setOpenedLinks((prev) =>
+      [
+        { label, path, ...(Object.keys(safe).length ? { filters: safe } : {}), at: new Date().toISOString() },
+        ...prev.filter((l) => l.path !== path || JSON.stringify(l.filters ?? {}) !== JSON.stringify(safe)),
+      ].slice(0, 5),
+    );
+  };
   const [aiSending, setAiSending] = useState(false);
   const [aiConversationId, setAiConversationId] = useState<string | null>(null);
   const [aiThread, setAiThread] = useState<Array<{ role: "user" | "assistant"; content: string }>>(
