@@ -653,9 +653,22 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                                     <span className="text-sm font-semibold">{m.authorName}</span>
                                     <span className="text-[11px] text-muted-foreground">{timeLabel(m.createdAt)}</span>
                                     {m.editedAt && <span className="text-[11px] text-muted-foreground">(đã sửa)</span>}
+                                    {m.pinnedAt && (
+                                      <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                        <Pin className="h-3 w-3" /> Đã ghim
+                                      </span>
+                                    )}
                                     <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
                                       <button onClick={() => { setReplyTo(m); setEditing(null); }} aria-label="Trả lời">
                                         <Reply className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                      </button>
+                                      <button
+                                        onClick={() => pinM.mutate({ messageId: m.id, pinned: !m.pinnedAt })}
+                                        aria-label={m.pinnedAt ? "Bỏ ghim tin nhắn" : "Ghim tin nhắn"}
+                                      >
+                                        {m.pinnedAt
+                                          ? <PinOff className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                          : <Pin className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />}
                                       </button>
                                       {m.isMine && (
                                         <>
