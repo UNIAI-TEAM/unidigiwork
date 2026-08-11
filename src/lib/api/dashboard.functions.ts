@@ -218,14 +218,21 @@ export type DashboardAiSummary = {
 export const getDashboardAiSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({ workspaceId: z.string().uuid().optional() }).parse(i ?? {}),
+    z
+      .object({
+        workspaceId: z.string().uuid().optional(),
+        // Ranh giới "hôm nay" theo múi giờ trình duyệt, để số họp hôm nay khớp trang lịch.
+        dayStart: z.string().datetime({ offset: true }).optional(),
+        dayEnd: z.string().datetime({ offset: true }).optional(),
+      })
+      .parse(i ?? {}),
   )
   .handler(async ({ data, context }): Promise<DashboardAiSummary> => {
     const supabase = context.supabase;
     const now = new Date();
-    const dayStart = new Date(now);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart.getTime() + 86400_000);
+    const dayStart = data.dayStart ? new Date(data.dayStart) : new Date(now);
+    if (!data.dayStart) dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = data.dayEnd ? new Date(data.dayEnd) : new Date(dayStart.getTime() + 86400_000);
     const staleBefore = new Date(now.getTime() - 30 * 86400_000).toISOString();
 
     const ws = data.workspaceId;
