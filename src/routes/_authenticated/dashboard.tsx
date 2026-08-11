@@ -473,12 +473,28 @@ function DashboardInner() {
     } catch {
       handleStorageFailure();
     }
+    try {
+      const rawOrder = localStorage.getItem(ORDER_STORAGE_KEY);
+      if (rawOrder) setOrder(normalizeOrder(JSON.parse(rawOrder)));
+    } catch {
+      setOrder(DEFAULT_ORDER);
+    }
     setHydrated(true);
   }, []);
 
   // Cấu hình từ server (đồng bộ đa thiết bị) luôn thắng cache cục bộ.
   useEffect(() => {
     const remote = prefsQuery.data?.sections;
+    const remoteOrder = prefsQuery.data?.order;
+    if (remoteOrder) {
+      const nextOrder = normalizeOrder(remoteOrder);
+      setOrder(nextOrder);
+      try {
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(nextOrder));
+      } catch {
+        /* ignore */
+      }
+    }
     if (!remote) return;
     const merged = { ...DEFAULT_SECTIONS, ...remote } as Record<SectionKey, boolean>;
     setSections(merged);
@@ -511,17 +527,37 @@ function DashboardInner() {
       return;
     }
     setSections(next);
-    void saveDashboardPrefs({ data: { sections: next } })
+    void saveDashboardPrefs({ data: { sections: next, order } })
       .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
       .catch(() => {
         toast.error("Không đồng bộ được tuỳ chỉnh lên tài khoản");
       });
   };
 
+  // Kéo-thả sắp xếp thứ tự khối.
+  const moveSection = (from: SectionKey, to: SectionKey) => {
+    if (from === to) return;
+    const next = order.filter((k) => k !== from);
+    next.splice(next.indexOf(to), 0, from);
+    setOrder(next);
+    try {
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    void saveDashboardPrefs({ data: { sections, order: next } })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
+      .catch(() => {
+        toast.error("Không đồng bộ được thứ tự khối lên tài khoản");
+      });
+  };
+
   const resetSections = () => {
     setSections(DEFAULT_SECTIONS);
+    setOrder(DEFAULT_ORDER);
     try {
       localStorage.removeItem(SECTIONS_STORAGE_KEY);
+      localStorage.removeItem(ORDER_STORAGE_KEY);
     } catch {
       /* ignore */
     }
@@ -531,6 +567,7 @@ function DashboardInner() {
   };
 
   const visible = hydrated ? sections : DEFAULT_SECTIONS;
+  const layoutOrder = hydrated ? order : DEFAULT_ORDER;
   const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
