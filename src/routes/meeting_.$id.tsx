@@ -19,6 +19,7 @@ import {
   FileText,
   Clock,
   Loader2,
+  Lock,
   Video as VideoIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -597,6 +598,15 @@ function MeetingDetailPage() {
         ? "bg-primary/15 text-primary"
         : "bg-muted text-muted-foreground";
 
+  // Khóa RSVP khi cuộc họp đã kết thúc hoặc đã hủy.
+  const rsvpLocked = meetingStatus === "ended" || meetingStatus === "canceled";
+  const rsvpLockReason =
+    meetingStatus === "ended"
+      ? "Cuộc họp đã kết thúc nên không thể thay đổi phản hồi tham dự."
+      : meetingStatus === "canceled"
+        ? "Cuộc họp đã bị hủy nên không thể thay đổi phản hồi tham dự."
+        : null;
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
@@ -892,7 +902,8 @@ function MeetingDetailPage() {
                           <button
                             key={v}
                             type="button"
-                            disabled={rsvpSaving !== null}
+                            disabled={rsvpSaving !== null || rsvpLocked}
+                            title={rsvpLockReason ?? undefined}
                             onClick={() => void handleRsvp(v)}
                             className={`flex-1 rounded-md border px-2 py-1.5 text-[11px] transition-colors disabled:opacity-60 ${
                               myRsvp === v
@@ -904,6 +915,12 @@ function MeetingDetailPage() {
                           </button>
                         ))}
                       </div>
+                      {rsvpLockReason && (
+                        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                          <Lock className="mt-0.5 h-3 w-3 shrink-0" />
+                          <span>{rsvpLockReason}</span>
+                        </p>
+                      )}
                     </div>
                   )}
                   {participantsQuery.isLoading ? (
