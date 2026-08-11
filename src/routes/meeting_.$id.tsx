@@ -618,16 +618,38 @@ function MeetingDetailPage() {
                   <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} /> {statusMeta.label}
                 </span>
                 {isRealRoom ? (
-                  durationLabel ? (
-                    <>
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        Bắt đầu {startTimeLabel} · {isLive ? "Đã diễn ra" : "Tổng"}{" "}
-                        <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
-                      </span>
-                      <span>·</span>
-                    </>
-                  ) : null
+                  <>
+                    {(plannedStart || plannedEnd) && (
+                      <>
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {plannedStart ? fmtDateTime(plannedStart) : "—"}
+                          {plannedEnd ? ` → ${fmtTime(plannedEnd)}` : ""}
+                        </span>
+                        <span>·</span>
+                      </>
+                    )}
+                    {timerLabel && (
+                      <>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono tabular-nums ${timerToneClass}`}
+                        >
+                          {timerLabel}
+                        </span>
+                        <span>·</span>
+                      </>
+                    )}
+                    {durationLabel && (
+                      <>
+                        <span>
+                          {startTimeLabel ? `Bắt đầu thật ${startTimeLabel} · ` : ""}
+                          {isLive ? "Đã diễn ra" : "Tổng"}{" "}
+                          <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
+                        </span>
+                        <span>·</span>
+                      </>
+                    )}
+                  </>
                 ) : (
                   <>
                     <Clock className="h-3 w-3" /> 32:14
