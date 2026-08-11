@@ -65,6 +65,7 @@ type Member = {
 export const Route = createFileRoute("/_authenticated/documents")({
   validateSearch: (search: Record<string, unknown>) => ({
     filter: search['filter'] === "stale" ? ("stale" as const) : undefined,
+    range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
   }),
   head: () => ({
     meta: [
@@ -347,12 +348,16 @@ function DocumentsPage() {
     navigate({ to: "/auth" });
   };
 
-  const visibleDocs =
+  const rangeDays = Route.useSearch().range;
+  const visibleDocs = (
     docFilter === "stale"
       ? docs.filter(
           (d) => Date.now() - new Date(d.updated_at).getTime() > 30 * 24 * 60 * 60 * 1000,
         )
-      : docs;
+      : docs
+  ).filter(
+    (d) => !rangeDays || Date.now() - new Date(d.updated_at).getTime() <= rangeDays * 86400_000,
+  );
   const userFolders = Array.from(new Set(visibleDocs.map((d) => d.folder)));
 
   return (
@@ -460,13 +465,32 @@ function DocumentsPage() {
             <div className="flex-1 overflow-y-auto px-2 pb-3">
               {docFilter === "stale" && (
                 <button
-                  onClick={() => navigate({ to: "/documents", search: {} })}
+                  onClick={() =>
+                    navigate({
+                      to: "/documents",
+                      search: (p: { filter?: "stale"; range?: number }) => ({ ...p, filter: undefined }),
+                    })
+                  }
                   className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-warning/15 px-2.5 py-1.5 text-xs text-warning hover:bg-warning/25"
                 >
                   <span>Tài liệu cần cập nhật (&gt;30 ngày)</span>
                   <span>Bỏ lọc ✕</span>
                 </button>
               )}
+              {rangeDays ? (
+                <button
+                  onClick={() =>
+                    navigate({
+                      to: "/documents",
+                      search: (p: { filter?: "stale"; range?: number }) => ({ ...p, range: undefined }),
+                    })
+                  }
+                  className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs text-primary hover:bg-primary/25"
+                >
+                  <span>{rangeDays} ngày qua</span>
+                  <span>Bỏ lọc ✕</span>
+                </button>
+              ) : null}
               {visibleDocs.length === 0 ? (
                 <div className="px-2 py-6 text-center text-xs text-muted-foreground">
                   {docFilter === "stale"
