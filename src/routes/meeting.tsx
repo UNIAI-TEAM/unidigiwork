@@ -54,6 +54,7 @@ import {
   Download,
   Star,
   ArrowUpRight,
+  ArrowUpDown,
   CheckCircle2,
   AlertCircle,
   Send,
@@ -83,6 +84,7 @@ export const Route = createFileRoute("/meeting")({
     page?: number;
     from?: string;
     to?: string;
+    sort?: "asc" | "desc";
   } & Partial<Record<string, unknown>>): {
     ws?: string;
     q?: string;
@@ -91,6 +93,7 @@ export const Route = createFileRoute("/meeting")({
     page?: number;
     from?: string;
     to?: string;
+    sort?: "asc" | "desc";
   } => ({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
@@ -109,6 +112,10 @@ export const Route = createFileRoute("/meeting")({
     to:
       typeof search["to"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["to"] as string)
         ? (search["to"] as string)
+        : undefined,
+    sort:
+      search["sort"] === "asc" || search["sort"] === "desc"
+        ? (search["sort"] as "asc" | "desc")
         : undefined,
   }),
   head: () => ({
