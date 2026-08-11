@@ -45,6 +45,7 @@ import {
   Send,
   BookOpen,
   AlertTriangle,
+  ArrowUpDown,
   ShieldCheck,
   X,
   TrendingUp,
@@ -242,6 +243,34 @@ function fmtDur(start: string, end: string) {
 }
 
 function buildAiItems(s: DashboardAiSummary | undefined, ws?: string) {
+  return buildAiItemsInner(s, ws);
+}
+
+/** Mức ưu tiên suy ra từ loại thông báo + trạng thái đọc. */
+const NOTIF_TYPE_WEIGHT: Record<string, number> = {
+  alert: 40,
+  quota: 35,
+  billing: 35,
+  security: 40,
+  mention: 30,
+  task: 20,
+  meeting: 20,
+  workflow: 15,
+  chat: 10,
+  system: 5,
+};
+
+function notifPriorityRank(n: any): number {
+  const type = String(n?.type ?? "").toLowerCase();
+  const metaPriority = String(n?.meta?.priority ?? "").toLowerCase();
+  const metaWeight =
+    metaPriority === "urgent" ? 60 : metaPriority === "high" ? 45 : metaPriority === "low" ? -10 : 0;
+  const typeWeight =
+    Object.entries(NOTIF_TYPE_WEIGHT).find(([k]) => type.includes(k))?.[1] ?? 10;
+  return typeWeight + metaWeight + (n?.is_read ? 0 : 25);
+}
+
+function buildAiItemsInner(s: DashboardAiSummary | undefined, ws?: string) {
   const today = localDayKey();
   return [
     {
@@ -695,6 +724,21 @@ function DashboardInner() {
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchOnWindowFocus: true,
   });
+  const [notifSort, setNotifSort] = useState<"recent" | "priority">(() => {
+    if (typeof window === "undefined") return "recent";
+    return window.localStorage.getItem("dashboard.notifSort") === "priority"
+      ? "priority"
+      : "recent";
+  });
+  const toggleNotifSort = () => {
+    const next = notifSort === "recent" ? "priority" : "recent";
+    setNotifSort(next);
+    try {
+      window.localStorage.setItem("dashboard.notifSort", next);
+    } catch {
+      /* ignore */
+    }
+  };
   const isRefreshing =
     overviewQuery.isFetching || aiSummaryQuery.isFetching || notificationsQuery.isFetching;
   const lastUpdatedAt = overviewQuery.dataUpdatedAt;
@@ -706,8 +750,17 @@ function DashboardInner() {
   const importantNotifications = useMemo(() => {
     const rows = notificationsQuery.data ?? [];
     const unread = rows.filter((n: any) => !n.is_read);
-    return (unread.length ? unread : rows).slice(0, 3);
-  }, [notificationsQuery.data]);
+    const base = [...(unread.length ? unread : rows)];
+    const time = (n: any) => new Date(n.created_at ?? 0).getTime();
+    if (notifSort === "priority") {
+      base.sort(
+        (a: any, b: any) => notifPriorityRank(b) - notifPriorityRank(a) || time(b) - time(a),
+      );
+    } else {
+      base.sort((a: any, b: any) => time(b) - time(a));
+    }
+    return base.slice(0, 3);
+  }, [notificationsQuery.data, notifSort]);
   const markReadFn = useServerFn(markNotificationsRead);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const handleMarkRead = async (id: string) => {
@@ -1355,8 +1408,24 @@ function DashboardInner() {
               )}
 
               <div className="mt-5 rounded-xl border border-border/60 bg-surface-2/40 p-3">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <ShieldCheck className="h-4 w-4 text-primary" /> Thông báo quan trọng
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <ShieldCheck className="h-4 w-4 text-primary" /> Thông báo quan trọng
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleNotifSort}
+                    title={
+                      notifSort === "recent"
+                        ? "Đang sắp xếp: Mới nhất — bấm để đổi sang Ưu tiên"
+                        : "Đang sắp xếp: Ưu tiên — bấm để đổi sang Mới nhất"
+                    }
+                    aria-label="Đổi chế độ sắp xếp thông báo"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-2"
+                  >
+                    <ArrowUpDown className="h-3 w-3" />
+                    {notifSort === "recent" ? "Mới nhất" : "Ưu tiên"}
+                  </button>
                 </div>
                 {notificationsQuery.isPending ? (
                   <div className="mt-2 space-y-2" aria-busy="true">
