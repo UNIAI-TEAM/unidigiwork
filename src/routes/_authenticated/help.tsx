@@ -314,8 +314,10 @@ function HelpPage() {
                   {popular.map((a) => {
                     const meta = CATS.find((c) => c.key === a.cat)!;
                     return (
-                      <button
+                      <Link
                         key={a.id}
+                        to="/knowledge/$slug"
+                        params={{ slug: a.slug }}
                         className="group flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2/50"
                       >
                         <div
@@ -335,7 +337,7 @@ function HelpPage() {
                           </div>
                         </div>
                         <ChevronRight className="mt-2 h-4 w-4 text-muted-foreground" />
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>
@@ -357,7 +359,11 @@ function HelpPage() {
                   <option>Phổ biến</option>
                 </select>
               </div>
-              {filtered.length === 0 ? (
+              {kb.isLoading ? (
+                <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+                  Đang tải bài viết…
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
                     <Search className="h-5 w-5" />
@@ -372,8 +378,10 @@ function HelpPage() {
                   {filtered.map((a) => {
                     const meta = CATS.find((c) => c.key === a.cat)!;
                     return (
-                      <button
+                      <Link
                         key={a.id}
+                        to="/knowledge/$slug"
+                        params={{ slug: a.slug }}
                         className="group flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-surface-2/50"
                       >
                         <div
@@ -408,7 +416,7 @@ function HelpPage() {
                           </div>
                         </div>
                         <ChevronRight className="mt-2 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>
