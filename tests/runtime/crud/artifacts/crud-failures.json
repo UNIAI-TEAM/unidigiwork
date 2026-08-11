@@ -1,13 +1,1 @@
-[
-  {
-    "id": "DOC-U-01",
-    "entity": "document",
-    "op": "UPDATE",
-    "status": "FAIL_BROKEN",
-    "error": "Could not choose the best candidate function between: public.update_document(_document_id => uuid, _title => text, _folder => text, _tags => text[], _expected_row_version => bigint, _idempotency_key => text, _correlation_id => text), public.update_document(_document_id => uuid, _title => text, _folder => text, _tags => text[], _expected_row_version => bigint, _idempotency_key => text, _correlation_id => text, _content => text)",
-    "after": {
-      "title": "crud_e2e_doc_1",
-      "row_version": 1
-    }
-  }
-]
+[]
