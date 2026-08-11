@@ -202,7 +202,7 @@ export const listChatMessages = createServerFn({ method: "GET" })
     const limit = data.limit ?? 50;
     let query = ctx.supabase
       .from("chat_messages")
-      .select("id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments")
+      .select("id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by")
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -230,6 +230,7 @@ export const listChatMessages = createServerFn({ method: "GET" })
 
     const names = await displayNames(ctx, [
       ...list.map((r) => r.author_id),
+      ...list.map((r) => r.pinned_by).filter(Boolean),
       ...Array.from(parents.values()).map((p) => p.author_id),
     ]);
 
@@ -248,9 +249,63 @@ export const listChatMessages = createServerFn({ method: "GET" })
         parentAuthorName: parent ? names.get(parent.author_id) ?? "Thành viên" : null,
         parentExcerpt: parent ? String(parent.body).slice(0, 140) : null,
         attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
+        pinnedAt: r.pinned_at ?? null,
+        pinnedByName: r.pinned_by ? names.get(r.pinned_by) ?? "Thành viên" : null,
       };
     });
     return { messages, hasMore };
+  });
+
+/** Ghim / bỏ ghim một tin nhắn (chỉ thành viên kênh). */
+export const setChatMessagePin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ messageId: z.string().uuid(), pinned: z.boolean() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as Ctx;
+    const { error } = await ctx.supabase.rpc("set_chat_message_pin", {
+      _message_id: data.messageId,
+      _pinned: data.pinned,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    return { ok: true };
+  });
+
+/** Danh sách tin nhắn đã ghim của kênh. */
+export const listPinnedChatMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ channelId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<ChatMessageDTO[]> => {
+    const ctx = context as unknown as Ctx;
+    const { data: rows, error } = await ctx.supabase
+      .from("chat_messages")
+      .select("id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by")
+      .eq("channel_id", data.channelId)
+      .is("deleted_at", null)
+      .not("pinned_at", "is", null)
+      .order("pinned_at", { ascending: false })
+      .limit(50);
+    if (error) mapPgError(error);
+    const list = (rows ?? []) as any[];
+    const names = await displayNames(ctx, [
+      ...list.map((r) => r.author_id),
+      ...list.map((r) => r.pinned_by).filter(Boolean),
+    ]);
+    return list.map((r) => ({
+      id: r.id,
+      channelId: r.channel_id,
+      body: r.body,
+      authorId: r.author_id,
+      authorName: names.get(r.author_id) ?? "Thành viên",
+      createdAt: r.created_at,
+      editedAt: r.edited_at,
+      isMine: r.author_id === ctx.userId,
+      parentId: r.parent_message_id ?? null,
+      parentAuthorName: null,
+      parentExcerpt: null,
+      attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
+      pinnedAt: r.pinned_at ?? null,
+      pinnedByName: r.pinned_by ? names.get(r.pinned_by) ?? "Thành viên" : null,
+    }));
   });
 
 export const sendChatMessage = createServerFn({ method: "POST" })
