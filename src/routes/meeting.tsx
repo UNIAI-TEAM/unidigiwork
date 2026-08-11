@@ -12,6 +12,18 @@ import {
   listMyWorkspaces,
   listMeetingParticipants,
 } from "@/lib/api/meeting-rooms.functions";
+import { cancelMeeting, updateMeeting } from "@/lib/api/meetings.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   ListChecks,
   Users,
