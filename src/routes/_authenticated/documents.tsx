@@ -63,6 +63,9 @@ type Member = {
 };
 
 export const Route = createFileRoute("/_authenticated/documents")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    filter: search['filter'] === "stale" ? ("stale" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Documents — UNIWORK" },
@@ -82,6 +85,7 @@ function ToolbarBtn({ icon: Icon }: { icon: LucideIcon }) {
 
 function DocumentsPage() {
   const navigate = useNavigate();
+  const { filter: docFilter } = Route.useSearch();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -343,7 +347,13 @@ function DocumentsPage() {
     navigate({ to: "/auth" });
   };
 
-  const userFolders = Array.from(new Set(docs.map((d) => d.folder)));
+  const visibleDocs =
+    docFilter === "stale"
+      ? docs.filter(
+          (d) => Date.now() - new Date(d.updated_at).getTime() > 30 * 24 * 60 * 60 * 1000,
+        )
+      : docs;
+  const userFolders = Array.from(new Set(visibleDocs.map((d) => d.folder)));
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -448,9 +458,22 @@ function DocumentsPage() {
               </label>
             </div>
             <div className="flex-1 overflow-y-auto px-2 pb-3">
-              {docs.length === 0 ? (
+              {docFilter === "stale" && (
+                <button
+                  onClick={() => navigate({ to: "/documents", search: {} })}
+                  className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-warning/15 px-2.5 py-1.5 text-xs text-warning hover:bg-warning/25"
+                >
+                  <span>Tài liệu cần cập nhật (&gt;30 ngày)</span>
+                  <span>Bỏ lọc ✕</span>
+                </button>
+              )}
+              {visibleDocs.length === 0 ? (
                 <div className="px-2 py-6 text-center text-xs text-muted-foreground">
-                  {currentWs ? "Chưa có tài liệu nào. Bấm + để tạo mới" : "Tạo workspace đầu tiên để bắt đầu"}
+                  {docFilter === "stale"
+                    ? "Không có tài liệu nào quá 30 ngày chưa cập nhật"
+                    : currentWs
+                      ? "Chưa có tài liệu nào. Bấm + để tạo mới"
+                      : "Tạo workspace đầu tiên để bắt đầu"}
                 </div>
               ) : (
                 userFolders.map((f) => (
@@ -458,7 +481,7 @@ function DocumentsPage() {
                     <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <Folder className="h-3.5 w-3.5 text-primary" /> {f}
                     </div>
-                    {docs
+                    {visibleDocs
                       .filter((d) => d.folder === f)
                       .map((d) => (
                         <div
