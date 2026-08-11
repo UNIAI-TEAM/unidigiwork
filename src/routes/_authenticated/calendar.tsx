@@ -154,6 +154,10 @@ type ViewMode = "month" | "week";
 function CalendarPage() {
   const { view: urlView, kind: urlKind, day: urlDay } = Route.useSearch();
   const navigateCalendar = useNavigate();
+  const calendarSearch = Route.useSearch();
+  useStickySearch("calendar", calendarSearch, (saved) =>
+    navigateCalendar({ to: "/calendar", search: () => saved, replace: true }),
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cursor, setCursor] = useState(() => (urlDay ? new Date(`${urlDay}T00:00:00`) : new Date()));
   const [view, setView] = useState<ViewMode>(urlView === "week" ? "week" : "month");
