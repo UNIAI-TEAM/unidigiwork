@@ -1,14 +1,336 @@
 {
   "summary": {
-    "runId": "f72759c7",
-    "startedAt": "2026-08-11T15:09:54.309Z",
-    "finishedAt": "2026-08-11T15:09:58.465Z",
-    "bootError": "provision A: column \"quantity\" of relation \"usage_counters\" does not exist",
-    "total": 0,
-    "passed": 0,
-    "failed": 0,
-    "teardownOrphans": [],
-    "byStatus": {}
+    "runId": "f1b3f09b",
+    "startedAt": "2026-08-11T15:11:17.002Z",
+    "finishedAt": "2026-08-11T15:13:45.291Z",
+    "bootError": null,
+    "total": 37,
+    "passed": 33,
+    "failed": 4,
+    "teardownOrphans": [
+      "5d6b88fa-d526-49b5-8a2c-431fad64e145",
+      "fa99b053-9828-497d-88f6-98f666eaa335",
+      "e0fd4a8d-8809-4856-a3f7-e656f656faa5",
+      "bf970748-f2f0-4332-b115-521df9dcd0e7"
+    ],
+    "byStatus": {
+      "PASS_REAL": 33,
+      "FAIL_BROKEN": 2,
+      "FAIL_AUDIT": 2
+    }
   },
-  "cells": []
+  "cells": [
+    {
+      "id": "WS-C-01",
+      "entity": "workspace",
+      "op": "CREATE",
+      "status": "PASS_REAL",
+      "evidence": {
+        "workspace": {
+          "id": "e0fd4a8d-8809-4856-a3f7-e656f656faa5",
+          "name": "crud_e2e_f1b3f09b_ws_new",
+          "tenant_id": "e0fd4a8d-8809-4856-a3f7-e656f656faa5",
+          "owner_id": "bf970748-f2f0-4332-b115-521df9dcd0e7"
+        },
+        "tenant": {
+          "id": "e0fd4a8d-8809-4856-a3f7-e656f656faa5",
+          "status": "active"
+        },
+        "memberCount": 1
+      }
+    },
+    {
+      "id": "WS-T-01",
+      "entity": "workspace",
+      "op": "TRANSACTION_ATOMICITY",
+      "status": "PASS_REAL",
+      "note": "workspace → tenant → owner membership must be atomic"
+    },
+    {
+      "id": "WS-U-01",
+      "entity": "workspace",
+      "op": "UPDATE",
+      "status": "PASS_REAL",
+      "after": {
+        "name": "crud_e2e_f1b3f09b_ws_new_upd"
+      }
+    },
+    {
+      "id": "WS-U-02",
+      "entity": "workspace",
+      "op": "UPDATE_CROSS_TENANT",
+      "status": "PASS_REAL"
+    },
+    {
+      "id": "WS-R-01",
+      "entity": "workspace",
+      "op": "READ_FOREIGN",
+      "status": "PASS_REAL",
+      "rows": 0
+    },
+    {
+      "id": "TAG-C-01",
+      "entity": "workspace_tag",
+      "op": "CREATE",
+      "status": "PASS_REAL",
+      "evidence": {
+        "id": "4940d4f9-8dec-4f32-a24a-95bfd7f35298",
+        "name": "crud_e2e_tag"
+      }
+    },
+    {
+      "id": "TAG-U-01",
+      "entity": "workspace_tag",
+      "op": "UPDATE",
+      "status": "PASS_REAL",
+      "after": {
+        "name": "crud_e2e_tag_upd"
+      }
+    },
+    {
+      "id": "TAG-U-02",
+      "entity": "workspace_tag",
+      "op": "UPDATE_CROSS_TENANT",
+      "status": "PASS_REAL"
+    },
+    {
+      "id": "TAG-D-01",
+      "entity": "workspace_tag",
+      "op": "DELETE",
+      "status": "PASS_REAL"
+    },
+    {
+      "id": "MEM-U-01",
+      "entity": "tenant_member",
+      "op": "CHANGE_ROLE",
+      "status": "PASS_REAL",
+      "after": {
+        "role": "manager"
+      }
+    },
+    {
+      "id": "MEM-U-02",
+      "entity": "tenant_member",
+      "op": "CHANGE_ROLE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "PERMISSION_DENIED"
+    },
+    {
+      "id": "TASK-C-01",
+      "entity": "task",
+      "op": "CREATE",
+      "status": "PASS_REAL",
+      "before": 0,
+      "after": 1,
+      "evidence": {
+        "id": "2a28d33a-1a89-4ab6-9ba3-92a4d1205e68",
+        "tenant_id": "5d6b88fa-d526-49b5-8a2c-431fad64e145",
+        "title": "crud_e2e_task_1",
+        "priority": "high",
+        "row_version": 1
+      }
+    },
+    {
+      "id": "TASK-C-02",
+      "entity": "task",
+      "op": "CREATE_INVALID",
+      "status": "PASS_REAL",
+      "error": "new row for relation \"tasks\" violates check constraint \"tasks_title_check\""
+    },
+    {
+      "id": "TASK-C-03",
+      "entity": "task",
+      "op": "CREATE_CROSS_TENANT",
+      "status": "PASS_REAL",
+      "error": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "TASK-C-04",
+      "entity": "task",
+      "op": "CREATE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "TASK-C-05",
+      "entity": "task",
+      "op": "CREATE_IDEMPOTENCY",
+      "status": "PASS_REAL",
+      "idemCount": 1,
+      "r1": "84f078c6-8ef9-4f03-af3c-d32155dce880",
+      "r2": "84f078c6-8ef9-4f03-af3c-d32155dce880"
+    },
+    {
+      "id": "TASK-R-01",
+      "entity": "task",
+      "op": "READ_LIST",
+      "status": "PASS_REAL",
+      "rows": 2
+    },
+    {
+      "id": "TASK-R-02",
+      "entity": "task",
+      "op": "READ_LIST_FOREIGN",
+      "status": "PASS_REAL",
+      "rows": 0
+    },
+    {
+      "id": "TASK-R-03",
+      "entity": "task",
+      "op": "READ_DETAIL",
+      "status": "PASS_REAL"
+    },
+    {
+      "id": "TASK-U-01",
+      "entity": "task",
+      "op": "UPDATE",
+      "status": "PASS_REAL",
+      "before": {
+        "title": "crud_e2e_task_1",
+        "row_version": 1
+      },
+      "after": {
+        "title": "crud_e2e_task_1_updated",
+        "row_version": 2
+      }
+    },
+    {
+      "id": "TASK-U-02",
+      "entity": "task",
+      "op": "UPDATE_STALE_VERSION",
+      "status": "PASS_REAL",
+      "error": "upstream request timeout"
+    },
+    {
+      "id": "TASK-U-03",
+      "entity": "task",
+      "op": "UPDATE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "TASK-U-04",
+      "entity": "task",
+      "op": "UPDATE_DIRECT_TABLE",
+      "status": "FAIL_BROKEN",
+      "note": "lifecycle write must go through command"
+    },
+    {
+      "id": "TASK-L-01",
+      "entity": "task",
+      "op": "COMPLETE",
+      "status": "PASS_REAL",
+      "after": {
+        "status": "done",
+        "completed_at": "2026-08-11T15:13:37.093803+00:00"
+      }
+    },
+    {
+      "id": "TASK-A-01",
+      "entity": "task",
+      "op": "ASSIGN",
+      "status": "PASS_REAL",
+      "assigneeCount": 1
+    },
+    {
+      "id": "TASK-AU-01",
+      "entity": "task",
+      "op": "AUDIT",
+      "status": "FAIL_AUDIT",
+      "auditCount": 0
+    },
+    {
+      "id": "TASK-OB-01",
+      "entity": "task",
+      "op": "OUTBOX",
+      "status": "PASS_REAL",
+      "outboxCount": 11
+    },
+    {
+      "id": "TASK-D-01",
+      "entity": "task",
+      "op": "DELETE_DIRECT_DENIED",
+      "status": "FAIL_BROKEN",
+      "stillExists": false
+    },
+    {
+      "id": "DOC-C-01",
+      "entity": "document",
+      "op": "CREATE",
+      "status": "PASS_REAL",
+      "evidence": {
+        "id": "747ceca7-ae57-4aa2-a762-6b12c4211443",
+        "title": "crud_e2e_doc_1",
+        "tenant_id": "5d6b88fa-d526-49b5-8a2c-431fad64e145",
+        "tags": [
+          "crud",
+          "e2e"
+        ],
+        "status": null
+      }
+    },
+    {
+      "id": "DOC-C-02",
+      "entity": "document",
+      "op": "CREATE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "DOC-R-01",
+      "entity": "document",
+      "op": "READ_LIST",
+      "status": "PASS_REAL",
+      "rows": 1
+    },
+    {
+      "id": "DOC-R-02",
+      "entity": "document",
+      "op": "READ_LIST_FOREIGN",
+      "status": "PASS_REAL",
+      "rows": 0
+    },
+    {
+      "id": "DOC-U-01",
+      "entity": "document",
+      "op": "UPDATE",
+      "status": "PASS_REAL",
+      "after": {
+        "title": "crud_e2e_doc_1_updated",
+        "row_version": 2
+      }
+    },
+    {
+      "id": "DOC-A-01",
+      "entity": "document",
+      "op": "SHARE",
+      "status": "PASS_REAL",
+      "permCount": 1
+    },
+    {
+      "id": "DOC-D-01",
+      "entity": "document",
+      "op": "ARCHIVE",
+      "status": "PASS_REAL",
+      "after": {
+        "deleted_at": "2026-08-11T15:13:42.200361+00:00",
+        "updated_at": "2026-08-11T15:13:42.200361+00:00"
+      }
+    },
+    {
+      "id": "DOC-D-02",
+      "entity": "document",
+      "op": "ARCHIVE_REPEAT",
+      "status": "PASS_REAL",
+      "note": "idempotency/stability observed",
+      "error": "DOCUMENT_NOT_FOUND"
+    },
+    {
+      "id": "DOC-AU-01",
+      "entity": "document",
+      "op": "AUDIT",
+      "status": "FAIL_AUDIT",
+      "auditCount": 0
+    }
+  ]
 }

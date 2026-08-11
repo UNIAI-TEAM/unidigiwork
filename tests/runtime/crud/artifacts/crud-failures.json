@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "TASK-U-04",
+    "entity": "task",
+    "op": "UPDATE_DIRECT_TABLE",
+    "status": "FAIL_BROKEN",
+    "note": "lifecycle write must go through command"
+  },
+  {
+    "id": "TASK-AU-01",
+    "entity": "task",
+    "op": "AUDIT",
+    "status": "FAIL_AUDIT",
+    "auditCount": 0
+  },
+  {
+    "id": "TASK-D-01",
+    "entity": "task",
+    "op": "DELETE_DIRECT_DENIED",
+    "status": "FAIL_BROKEN",
+    "stillExists": false
+  },
+  {
+    "id": "DOC-AU-01",
+    "entity": "document",
+    "op": "AUDIT",
+    "status": "FAIL_AUDIT",
+    "auditCount": 0
+  }
+]
