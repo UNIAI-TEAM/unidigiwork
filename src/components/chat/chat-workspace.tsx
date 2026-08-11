@@ -219,7 +219,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
   >(null);
   const createTaskM = useMutation({
     mutationFn: async (v: NonNullable<typeof taskDraft>) => {
-      const src = activeIdRef.current ? `\n\n${buildChatSourceTag(activeIdRef.current, v.messageId)}` : "";
+      const src = activeId ? `\n\n${buildChatSourceTag(activeId, v.messageId)}` : "";
       return doCreateTask({
         data: {
           idempotencyKey: crypto.randomUUID(),
