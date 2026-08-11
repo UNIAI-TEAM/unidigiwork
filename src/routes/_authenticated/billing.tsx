@@ -14,6 +14,7 @@ import {
   Gauge,
   CalendarClock,
   RefreshCw,
+  Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
@@ -25,6 +26,7 @@ import {
   changeSubscription,
   cancelSubscription,
   resumeSubscription,
+  listInvoices,
 } from "@/lib/api/billing.functions";
 
 export const Route = createFileRoute("/_authenticated/billing")({
@@ -59,6 +61,23 @@ const STATUS_LABEL: Record<string, string> = {
   canceled: "Đã hủy",
 };
 
+const INVOICE_STATUS: Record<string, { label: string; cls: string }> = {
+  draft: { label: "Nháp", cls: "border-border bg-surface-2 text-muted-foreground" },
+  open: { label: "Chờ thanh toán", cls: "border-warning/30 bg-warning/10 text-warning" },
+  paid: { label: "Đã thanh toán", cls: "border-success/30 bg-success/10 text-success" },
+  past_due: { label: "Quá hạn", cls: "border-destructive/30 bg-destructive/10 text-destructive" },
+  refunded: { label: "Đã hoàn tiền", cls: "border-border bg-surface-2 text-muted-foreground" },
+  void: { label: "Đã hủy", cls: "border-border bg-surface-2 text-muted-foreground" },
+};
+
+function fmtMoney(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
+  } catch {
+    return `${amount.toLocaleString("vi-VN")} ${currency}`;
+  }
+}
+
 function BillingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const qc = useQueryClient();
@@ -72,6 +91,7 @@ function BillingPage() {
   const changeFn = useServerFn(changeSubscription);
   const cancelFn = useServerFn(cancelSubscription);
   const resumeFn = useServerFn(resumeSubscription);
+  const invoicesFn = useServerFn(listInvoices);
 
   const plansQ = useQuery({ queryKey: ["billing", "plans"], queryFn: () => plansFn(), staleTime: 300_000 });
   const subQ = useQuery({
@@ -82,6 +102,11 @@ function BillingPage() {
   const entQ = useQuery({
     queryKey: ["billing", "entitlements", tenantId],
     queryFn: () => entFn({ data: { tenantId: tenantId! } }),
+    enabled: !!tenantId,
+  });
+  const invoicesQ = useQuery({
+    queryKey: ["billing", "invoices", tenantId],
+    queryFn: () => invoicesFn({ data: { tenantId: tenantId!, limit: 24 } }),
     enabled: !!tenantId,
   });
 
@@ -325,6 +350,100 @@ function BillingPage() {
                   </div>
                 </section>
               )}
+
+              {/* Invoices */}
+              <section className="rounded-2xl border border-border bg-surface p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold">
+                    <Receipt className="h-4 w-4 text-primary" /> Hóa đơn & trạng thái thanh toán
+                  </h2>
+                  {invoicesQ.data && invoicesQ.data.length > 0 && (
+                    <span className="text-xs text-muted-foreground">{invoicesQ.data.length} hóa đơn</span>
+                  )}
+                </div>
+
+                {invoicesQ.isLoading ? (
+                  <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Đang tải hóa đơn…
+                  </div>
+                ) : !invoicesQ.data || invoicesQ.data.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">Chưa có hóa đơn nào cho tổ chức này.</p>
+                ) : (
+                  <>
+                    {/* Desktop table */}
+                    <div className="hidden overflow-x-auto md:block">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                            <th className="py-2 pr-4 font-medium">Số hóa đơn</th>
+                            <th className="py-2 pr-4 font-medium">Gói</th>
+                            <th className="py-2 pr-4 font-medium">Kỳ</th>
+                            <th className="py-2 pr-4 font-medium">Ngày phát hành</th>
+                            <th className="py-2 pr-4 font-medium">Hạn thanh toán</th>
+                            <th className="py-2 pr-4 text-right font-medium">Số tiền</th>
+                            <th className="py-2 text-right font-medium">Trạng thái</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoicesQ.data.map((inv) => {
+                            const st = INVOICE_STATUS[inv.status] ?? INVOICE_STATUS["draft"]!;
+                            return (
+                              <tr key={inv.id} className="border-b border-border/60 last:border-0">
+                                <td className="py-2.5 pr-4 font-medium">{inv.invoiceNumber}</td>
+                                <td className="py-2.5 pr-4 text-muted-foreground">{inv.planName ?? "—"}</td>
+                                <td className="py-2.5 pr-4 text-muted-foreground">
+                                  {fmtDate(inv.periodStart)} → {fmtDate(inv.periodEnd)}
+                                </td>
+                                <td className="py-2.5 pr-4 text-muted-foreground">{fmtDate(inv.issuedAt)}</td>
+                                <td className="py-2.5 pr-4 text-muted-foreground">{fmtDate(inv.dueAt)}</td>
+                                <td className="py-2.5 pr-4 text-right font-medium">
+                                  {fmtMoney(inv.amount, inv.currency)}
+                                </td>
+                                <td className="py-2.5 text-right">
+                                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${st.cls}`}>
+                                    {st.label}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile cards */}
+                    <ul className="space-y-3 md:hidden">
+                      {invoicesQ.data.map((inv) => {
+                        const st = INVOICE_STATUS[inv.status] ?? INVOICE_STATUS["draft"]!;
+                        return (
+                          <li key={inv.id} className="rounded-xl border border-border bg-surface-2 p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">{inv.invoiceNumber}</p>
+                                <p className="text-xs text-muted-foreground">{inv.planName ?? "—"}</p>
+                              </div>
+                              <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${st.cls}`}>
+                                {st.label}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                              <span>Phát hành {fmtDate(inv.issuedAt)}</span>
+                              <span className="text-sm font-semibold text-foreground">
+                                {fmtMoney(inv.amount, inv.currency)}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {inv.paidAt
+                                ? `Đã thanh toán ${fmtDate(inv.paidAt)}${inv.paymentMethod ? ` · ${inv.paymentMethod}` : ""}`
+                                : `Hạn thanh toán ${fmtDate(inv.dueAt)}`}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
+              </section>
 
               <section>
                 <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Các gói khả dụng</h2>
