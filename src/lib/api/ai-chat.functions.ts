@@ -42,7 +42,7 @@ export type AiMessageDTO = {
 export type AiOpenedLink = {
   label?: string;
   path: string;
-  filters?: Record<string, unknown>;
+  filters?: Record<string, string | number | boolean>;
   at?: string;
 };
 
@@ -57,7 +57,7 @@ export type AiMessageMetadata = {
 const openedLinkSchema = z.object({
   label: z.string().max(120).optional(),
   path: z.string().max(300),
-  filters: z.record(z.string(), z.unknown()).optional(),
+  filters: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   at: z.string().max(40).optional(),
 });
 
