@@ -12,6 +12,18 @@ import {
   listMyWorkspaces,
   listMeetingParticipants,
 } from "@/lib/api/meeting-rooms.functions";
+import { cancelMeeting, updateMeeting } from "@/lib/api/meetings.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   ListChecks,
   Users,
@@ -400,6 +412,59 @@ function MeetingPage() {
     onError: () => toast.error("Không tạo được phòng họp. Kiểm tra quyền và hạn mức của tổ chức."),
   });
 
+  // Sửa / hủy phòng họp thật.
+  type RoomItem = { id: string; title: string; status: string; start_at: string; end_at: string };
+  const [editRoom, setEditRoom] = useState<RoomItem | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [cancelRoom, setCancelRoom] = useState<RoomItem | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const openEdit = (r: RoomItem) => {
+    setEditRoom(r);
+    setEditTitle(r.title);
+    setEditStart(r.start_at ? toLocalInput(new Date(r.start_at)) : "");
+    setEditEnd(r.end_at ? toLocalInput(new Date(r.end_at)) : "");
+  };
+
+  const updateRoom = useMutation({
+    mutationFn: () =>
+      updateMeeting({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          meetingId: editRoom!.id,
+          title: editTitle.trim(),
+          ...(editStart ? { startAt: new Date(editStart).toISOString() } : {}),
+          ...(editEnd ? { endAt: new Date(editEnd).toISOString() } : {}),
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      setEditRoom(null);
+      toast.success("Đã cập nhật cuộc họp.");
+    },
+    onError: () => toast.error("Không cập nhật được cuộc họp. Kiểm tra quyền của bạn."),
+  });
+
+  const cancelRoomMutation = useMutation({
+    mutationFn: () =>
+      cancelMeeting({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          meetingId: cancelRoom!.id,
+          ...(cancelReason.trim() ? { reason: cancelReason.trim() } : {}),
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      setCancelRoom(null);
+      setCancelReason("");
+      toast.success("Đã hủy cuộc họp.");
+    },
+    onError: () => toast.error("Không hủy được cuộc họp. Kiểm tra quyền của bạn."),
+  });
+
   if (inRoom) {
     return (
       <div className="flex min-h-screen bg-bg text-foreground">
@@ -615,18 +680,39 @@ function MeetingPage() {
                   <ul className="grid gap-2 md:grid-cols-2">
                     {rooms.data?.items.map((r) => (
                       <li key={r.id}>
-                        <Link
-                          to="/meeting/$id"
-                          params={{ id: r.id }}
-                          className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
-                        >
-                          <span className="min-w-0 flex-1 truncate">{r.title}</span>
-                          <RoomStatusChip
-                            status={r.status}
-                            startAt={r.start_at}
-                            endAt={r.end_at}
-                          />
-                        </Link>
+                        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40">
+                          <Link
+                            to="/meeting/$id"
+                            params={{ id: r.id }}
+                            className="flex min-w-0 flex-1 items-center justify-between gap-2"
+                          >
+                            <span className="min-w-0 flex-1 truncate">{r.title}</span>
+                            <RoomStatusChip
+                              status={r.status}
+                              startAt={r.start_at}
+                              endAt={r.end_at}
+                            />
+                          </Link>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(r)}
+                              className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCancelRoom(r);
+                                setCancelReason("");
+                              }}
+                              className="rounded-md border border-border px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -812,6 +898,88 @@ function MeetingPage() {
           onSubmit={(v) => createRoom.mutate(v)}
         />
       ) : null}
+
+      <Dialog open={!!editRoom} onOpenChange={(o) => !o && setEditRoom(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sửa cuộc họp</DialogTitle>
+            <DialogDescription>Cập nhật tiêu đề và thời gian của cuộc họp.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-title">Tiêu đề</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-start">Bắt đầu</Label>
+                <Input
+                  id="edit-start"
+                  type="datetime-local"
+                  value={editStart}
+                  onChange={(e) => setEditStart(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-end">Kết thúc</Label>
+                <Input
+                  id="edit-end"
+                  type="datetime-local"
+                  value={editEnd}
+                  onChange={(e) => setEditEnd(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditRoom(null)}>
+              Đóng
+            </Button>
+            <Button
+              onClick={() => updateRoom.mutate()}
+              disabled={updateRoom.isPending || !editTitle.trim()}
+            >
+              {updateRoom.isPending ? "Đang lưu…" : "Lưu thay đổi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!cancelRoom} onOpenChange={(o) => !o && setCancelRoom(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hủy cuộc họp</DialogTitle>
+            <DialogDescription>
+              {cancelRoom ? `“${cancelRoom.title}” sẽ được đánh dấu là đã hủy.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="cancel-reason">Lý do (tùy chọn)</Label>
+            <Input
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ví dụ: dời sang tuần sau"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelRoom(null)}>
+              Quay lại
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => cancelRoomMutation.mutate()}
+              disabled={cancelRoomMutation.isPending}
+            >
+              {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
