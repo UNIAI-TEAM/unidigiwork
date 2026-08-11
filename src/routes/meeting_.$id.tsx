@@ -556,7 +556,33 @@ function MeetingDetailPage() {
                 ))}
               {tab === "chat" && <ChatPanel />}
               {tab === "participants" && (
-                participantsQuery.isLoading ? (
+                <div className="space-y-3">
+                  {isRealRoom && (
+                    <div className="rounded-lg border border-border bg-surface-2 p-2">
+                      <p className="mb-2 text-[11px] text-muted-foreground">
+                        Phản hồi tham dự của bạn
+                        {myRsvp ? ` · ${RSVP_LABELS[myRsvp] ?? myRsvp}` : ""}
+                      </p>
+                      <div className="flex gap-1.5">
+                        {(["accepted", "tentative", "declined"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            disabled={rsvpSaving !== null}
+                            onClick={() => void handleRsvp(v)}
+                            className={`flex-1 rounded-md border px-2 py-1.5 text-[11px] transition-colors disabled:opacity-60 ${
+                              myRsvp === v
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-surface hover:bg-surface-3"
+                            }`}
+                          >
+                            {rsvpSaving === v ? "Đang lưu…" : RSVP_LABELS[v]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {participantsQuery.isLoading ? (
                   <p className="text-xs text-muted-foreground">Đang tải danh sách…</p>
                 ) : participants.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
@@ -581,7 +607,8 @@ function MeetingDetailPage() {
                       </li>
                     ))}
                   </ul>
-                )
+                  )}
+                </div>
               )}
               {tab === "transcript" && (
                 <div className="space-y-3 text-xs">
