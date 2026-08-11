@@ -189,7 +189,7 @@ async function logHostAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   meetingId: string,
-  action: "start" | "end" | "cancel",
+  action: "start" | "end" | "cancel" | "transfer_host",
   error: { message?: string; code?: string } | null,
   meta: { idempotencyKey?: string | null; correlationId?: string | null },
 ): Promise<void> {
