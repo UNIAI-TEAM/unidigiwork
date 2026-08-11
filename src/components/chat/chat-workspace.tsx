@@ -22,12 +22,23 @@ import {
 const BUCKET = "chat-attachments";
 
 /** Danh sách người đã xem một tin nhắn (dựa trên mốc đã đọc của từng thành viên). */
-function ReadReceipts({ readers, message }: { readers: ChatReaderDTO[]; message: ChatMessageDTO }) {
+function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; message: ChatMessageDTO; isDm?: boolean }) {
   const seen = readers.filter(
     (r) => r.userId !== message.authorId && r.lastReadAt && new Date(r.lastReadAt) >= new Date(message.createdAt),
   );
   if (seen.length === 0) return null;
   const label = seen.map((r) => (r.isMe ? "Bạn" : r.name)).join(", ");
+  if (isDm) {
+    const other = seen[0];
+    return (
+      <div className="mt-1 flex items-center gap-1.5" title={`Đã xem: ${label}`}>
+        <CheckCheck className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[11px] text-muted-foreground">
+          {other.isMe ? "Bạn đã xem" : `${other.name} đã xem`} lúc {timeLabel(other.lastReadAt!)}
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="mt-1 flex items-center gap-1.5" title={`Đã xem: ${label}`}>
       <Eye className="h-3 w-3 text-muted-foreground" />
