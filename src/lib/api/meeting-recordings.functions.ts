@@ -113,3 +113,30 @@ export const closeMeetingAttendance = createServerFn({ method: "POST" })
     if (error) mapPgError(error, "MEETING_NOT_FOUND");
     return (row ?? null) as unknown as MeetingAttendanceDTO | null;
   });
+
+export type MeetingPresenceDTO = {
+  userId: string;
+  joinedAt: string;
+  leftAt: string | null;
+};
+
+export const listMeetingAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => meetingIdSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("meeting_attendance")
+      .select("user_id, joined_at, left_at")
+      .eq("meeting_id", data.meetingId)
+      .order("joined_at", { ascending: true });
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    return ((rows ?? []) as Array<{
+      user_id: string;
+      joined_at: string;
+      left_at: string | null;
+    }>).map((r) => ({
+      userId: r.user_id,
+      joinedAt: r.joined_at,
+      leftAt: r.left_at,
+    })) satisfies MeetingPresenceDTO[];
+  });
