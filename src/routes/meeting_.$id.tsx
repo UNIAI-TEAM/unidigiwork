@@ -597,6 +597,15 @@ function MeetingDetailPage() {
         ? "bg-primary/15 text-primary"
         : "bg-muted text-muted-foreground";
 
+  // Khóa RSVP khi cuộc họp đã kết thúc hoặc đã hủy.
+  const rsvpLocked = meetingStatus === "ended" || meetingStatus === "canceled";
+  const rsvpLockReason =
+    meetingStatus === "ended"
+      ? "Cuộc họp đã kết thúc nên không thể thay đổi phản hồi tham dự."
+      : meetingStatus === "canceled"
+        ? "Cuộc họp đã bị hủy nên không thể thay đổi phản hồi tham dự."
+        : null;
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
