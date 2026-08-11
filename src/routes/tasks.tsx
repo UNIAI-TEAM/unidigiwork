@@ -8,6 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
 import {
+  listTaskViews,
+  saveTaskView,
+  deleteTaskView,
+} from "@/lib/api/task-views.functions";
+import {
   Plus,
   Filter,
   Star,
@@ -26,6 +31,8 @@ import {
   Download,
   FileText,
   Loader2,
+  BookmarkPlus,
+  X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
