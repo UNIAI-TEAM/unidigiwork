@@ -326,6 +326,40 @@ function MeetingDetailPage() {
     speaking: false,
   }));
 
+  // RSVP của chính mình
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [rsvpSaving, setRsvpSaving] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (alive) setMyUserId(data.user?.id ?? null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const myRsvp =
+    (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.rsvp ?? null;
+
+  const handleRsvp = useCallback(
+    async (rsvp: "accepted" | "declined" | "tentative") => {
+      if (!isRealRoom) return;
+      setRsvpSaving(rsvp);
+      try {
+        await setMeetingRsvp({
+          data: { meetingId: id, rsvp, idempotencyKey: crypto.randomUUID() },
+        });
+        toast.success(`Đã cập nhật: ${RSVP_LABELS[rsvp]}`);
+        await participantsQuery.refetch();
+      } catch {
+        toast.error("Không cập nhật được phản hồi tham dự.");
+      } finally {
+        setRsvpSaving(null);
+      }
+    },
+    [id, isRealRoom, participantsQuery],
+  );
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
