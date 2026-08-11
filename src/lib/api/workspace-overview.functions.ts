@@ -6,6 +6,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 import { mapPgError } from "./business.server";
 
+// Hàng dữ liệu thô từ PostgREST (chỉ dùng nội bộ để map sang DTO).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Row = Record<string, any>;
+
 export type WsMemberDTO = {
   userId: string;
   name: string;
@@ -152,10 +156,10 @@ export const getWorkspaceOverview = createServerFn({ method: "GET" })
       role: string;
       created_at: string;
     }>;
-    const taskRows = (tasksRes.data ?? []) as Array<Record<string, unknown>>;
-    const docRows = (docsRes.data ?? []) as Array<Record<string, unknown>>;
-    const meetingRows = (meetingsRes.data ?? []) as Array<Record<string, unknown>>;
-    const auditRows = (auditRes.data ?? []) as Array<Record<string, unknown>>;
+    const taskRows = (tasksRes.data ?? []) as Array<Row>;
+    const docRows = (docsRes.data ?? []) as Array<Row>;
+    const meetingRows = (meetingsRes.data ?? []) as Array<Row>;
+    const auditRows = (auditRes.data ?? []) as Array<Row>;
 
     // Hồ sơ người dùng cho member + actor hoạt động.
     const userIds = Array.from(
@@ -178,14 +182,14 @@ export const getWorkspaceOverview = createServerFn({ method: "GET" })
         : Promise.resolve({ data: [], error: null }),
     ]);
     const userMap = new Map<string, { name: string; email: string }>();
-    for (const u of (usersRes.data ?? []) as Array<Record<string, unknown>>) {
+    for (const u of (usersRes.data ?? []) as Array<Row>) {
       userMap.set(u.id, {
         name: u.display_name ?? u.primary_email ?? "Thành viên",
         email: u.primary_email ?? "",
       });
     }
     const profMap = new Map<string, { title: string; department: string }>();
-    for (const p of (profilesRes.data ?? []) as Array<Record<string, unknown>>) {
+    for (const p of (profilesRes.data ?? []) as Array<Row>) {
       profMap.set(p.user_id, { title: p.title ?? "", department: p.department ?? "" });
     }
 
@@ -197,7 +201,7 @@ export const getWorkspaceOverview = createServerFn({ method: "GET" })
         .from("task_assignees")
         .select("task_id, user_id")
         .in("task_id", taskIds);
-      for (const a of (asg ?? []) as Array<Record<string, unknown>>) {
+      for (const a of (asg ?? []) as Array<Row>) {
         const list = assigneeMap.get(a.task_id) ?? [];
         list.push(a.user_id);
         assigneeMap.set(a.task_id, list);
@@ -215,7 +219,7 @@ export const getWorkspaceOverview = createServerFn({ method: "GET" })
         .from("meeting_participants")
         .select("meeting_id")
         .in("meeting_id", meetingIds);
-      for (const p of (parts ?? []) as Array<Record<string, unknown>>) {
+      for (const p of (parts ?? []) as Array<Row>) {
         attendeeCount.set(p.meeting_id, (attendeeCount.get(p.meeting_id) ?? 0) + 1);
       }
     }
