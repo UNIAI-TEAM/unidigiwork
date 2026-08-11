@@ -517,6 +517,34 @@ function MeetingDetailPage() {
     [id, meetingQuery, refetchParticipants, syncMeetingQueries],
   );
 
+  // Thời lượng cuộc họp: suy ra từ nhật ký thao tác chủ trì (start/end thành công).
+  const hostLog = hostLogQuery.data ?? [];
+  const successStarts = hostLog.filter((e) => e.action === "start" && e.outcome === "success");
+  const successEnds = hostLog.filter((e) => e.action === "end" && e.outcome === "success");
+  const actualStartAt =
+    successStarts.length > 0
+      ? successStarts[successStarts.length - 1]!.occurredAt
+      : null;
+  const actualEndAt = successEnds.length > 0 ? successEnds[0]!.occurredAt : null;
+  const isLive = meetingStatus === "live";
+
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!isLive || !actualStartAt) return;
+    const t = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [isLive, actualStartAt]);
+
+  const elapsedMs = actualStartAt
+    ? (isLive || !actualEndAt ? nowTick : new Date(actualEndAt).getTime()) -
+      new Date(actualStartAt).getTime()
+    : null;
+  const durationLabel =
+    elapsedMs !== null && elapsedMs >= 0 ? formatDuration(elapsedMs) : null;
+  const startTimeLabel = actualStartAt
+    ? new Date(actualStartAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
