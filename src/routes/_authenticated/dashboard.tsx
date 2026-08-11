@@ -242,6 +242,34 @@ function fmtDur(start: string, end: string) {
 }
 
 function buildAiItems(s: DashboardAiSummary | undefined, ws?: string) {
+  return buildAiItemsInner(s, ws);
+}
+
+/** Mức ưu tiên suy ra từ loại thông báo + trạng thái đọc. */
+const NOTIF_TYPE_WEIGHT: Record<string, number> = {
+  alert: 40,
+  quota: 35,
+  billing: 35,
+  security: 40,
+  mention: 30,
+  task: 20,
+  meeting: 20,
+  workflow: 15,
+  chat: 10,
+  system: 5,
+};
+
+function notifPriorityRank(n: any): number {
+  const type = String(n?.type ?? "").toLowerCase();
+  const metaPriority = String(n?.meta?.priority ?? "").toLowerCase();
+  const metaWeight =
+    metaPriority === "urgent" ? 60 : metaPriority === "high" ? 45 : metaPriority === "low" ? -10 : 0;
+  const typeWeight =
+    Object.entries(NOTIF_TYPE_WEIGHT).find(([k]) => type.includes(k))?.[1] ?? 10;
+  return typeWeight + metaWeight + (n?.is_read ? 0 : 25);
+}
+
+function buildAiItemsInner(s: DashboardAiSummary | undefined, ws?: string) {
   const today = localDayKey();
   return [
     {
