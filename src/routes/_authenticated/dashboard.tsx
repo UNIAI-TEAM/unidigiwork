@@ -430,10 +430,34 @@ const DEFAULT_SECTIONS = Object.fromEntries(
   SECTION_OPTIONS.map((o) => [o.key, true]),
 ) as Record<SectionKey, boolean>;
 
+const DEFAULT_ORDER = SECTION_OPTIONS.map((o) => o.key) as SectionKey[];
+const ORDER_STORAGE_KEY = "uniwork.dashboard.order.v1";
+
+// Chiều rộng mặc định của từng khối trong lưới 3 cột.
+const SECTION_SPAN: Record<SectionKey, string> = {
+  kpis: "lg:col-span-3",
+  activity: "lg:col-span-2",
+  donut: "lg:col-span-1",
+  projects: "lg:col-span-1",
+  recent: "lg:col-span-1",
+  meetings: "lg:col-span-1",
+  workspaces: "lg:col-span-3",
+  ai: "lg:col-span-1",
+};
+
+function normalizeOrder(input: unknown): SectionKey[] {
+  const arr = Array.isArray(input) ? (input as string[]) : [];
+  const valid = arr.filter((k): k is SectionKey => DEFAULT_ORDER.includes(k as SectionKey));
+  const seen = new Set(valid);
+  return [...valid, ...DEFAULT_ORDER.filter((k) => !seen.has(k))];
+}
+
 function DashboardInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState(7);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
+  const [order, setOrder] = useState<SectionKey[]>(DEFAULT_ORDER);
+  const [dragKey, setDragKey] = useState<SectionKey | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
   const prefsQuery = useQuery({
