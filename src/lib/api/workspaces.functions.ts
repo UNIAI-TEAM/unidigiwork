@@ -31,9 +31,9 @@ export type WorkspaceMemberRowDTO = {
 
 function fail(err: { message?: string } | null, fallback: string): never {
   const raw = (err?.message ?? "").toUpperCase();
-  const code = raw.includes("PERMISSION") || raw.includes("DENIED") ? "PERMISSION_DENIED" : fallback;
+  const denied = raw.includes("PERMISSION") || raw.includes("DENIED") || raw.includes("RLS");
   throw new ApiError({
-    code: code as "PERMISSION_DENIED",
+    code: denied ? "PERMISSION_DENIED" : "INTERNAL_ERROR",
     message: err?.message ?? fallback,
   });
 }
