@@ -1184,7 +1184,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Không gian làm việc</label>
                   <select
                     value={taskDraft.workspaceId}
-                    onChange={(e) => setTaskDraft({ ...taskDraft, workspaceId: e.target.value })}
+                    onChange={(e) => setTaskDraft({ ...taskDraft, workspaceId: e.target.value, assigneeId: "" })}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">— Chọn —</option>
@@ -1215,6 +1215,26 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                   onChange={(e) => setTaskDraft({ ...taskDraft, dueAt: e.target.value })}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Người phụ trách (tuỳ chọn)</label>
+                <select
+                  value={taskDraft.assigneeId}
+                  onChange={(e) => setTaskDraft({ ...taskDraft, assigneeId: e.target.value })}
+                  disabled={!taskDraft.workspaceId || taskMembersQ.isLoading}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                >
+                  <option value="">
+                    {!taskDraft.workspaceId
+                      ? "— Chọn không gian làm việc trước —"
+                      : taskMembersQ.isLoading ? "Đang tải thành viên…" : "— Chưa giao —"}
+                  </option>
+                  {(taskMembersQ.data ?? []).map((m) => (
+                    <option key={m.userId} value={m.userId}>
+                      {m.name}{m.isMe ? " (Tôi)" : ""}{m.role === "owner" ? " · Chủ sở hữu" : ""}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button
