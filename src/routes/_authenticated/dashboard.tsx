@@ -1108,13 +1108,40 @@ function DashboardInner() {
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <ShieldCheck className="h-4 w-4 text-primary" /> Thông báo quan trọng
                 </div>
-                <div className="mt-2 flex items-start gap-2 text-xs">
-                  <Bell className="mt-0.5 h-3.5 w-3.5 text-amber-300" />
-                  <div>
-                    <div className="font-medium">Bảo mật: Hệ thống sẽ bảo trì định kỳ</div>
-                    <div className="text-muted-foreground">Vào 22:00 ngày 25/05/2026 (GMT+7)</div>
+                {notificationsQuery.isLoading ? (
+                  <div className="mt-2 text-xs text-muted-foreground">Đang tải thông báo…</div>
+                ) : importantNotifications.length === 0 ? (
+                  <div className="mt-2 text-xs text-muted-foreground">Không có thông báo mới</div>
+                ) : (
+                  <div className="mt-2 space-y-2">
+                    {importantNotifications.map((n: any) => (
+                      <Link
+                        key={n.id}
+                        to="/notifications"
+                        className="flex items-start gap-2 text-xs hover:opacity-80"
+                      >
+                        <Bell className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{n.title}</div>
+                          {n.body && (
+                            <div className="truncate text-muted-foreground">{n.body}</div>
+                          )}
+                          <div className="text-muted-foreground">
+                            {new Intl.DateTimeFormat("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              timeZone: "Asia/Ho_Chi_Minh",
+                            }).format(new Date(n.created_at))}{" "}
+                            (GMT+7)
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
 
               <button className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2">
