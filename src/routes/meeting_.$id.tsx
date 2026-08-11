@@ -406,8 +406,11 @@ function MeetingDetailPage() {
     seed: p.userId,
     userId: p.userId,
     name: p.name ?? p.email ?? "Thành viên",
+    email: p.email ?? null,
     role: p.role,
     rsvp: p.rsvp,
+    rsvpAt: p.rsvpAt ?? null,
+    invitedAt: p.invitedAt ?? null,
     presence: presenceByUser.get(p.userId) ?? ("absent" as const),
     speaking: false,
   }));
