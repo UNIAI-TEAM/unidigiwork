@@ -319,22 +319,23 @@ function MeetingPage() {
     queryFn: () => listMyWorkspaces(),
   });
 
-  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa + trạng thái) giữa các lần truy cập.
+  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa + trạng thái + sắp xếp) giữa các lần truy cập.
   const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
   type RoomFilterState = "all" | "live" | "upcoming";
   const [restoredFilter, setRestoredFilter] = useState<{
     ws?: string;
     q?: string;
     state?: RoomFilterState;
+    sort?: "asc" | "desc";
   } | null>(null);
 
   useEffect(() => {
-    if (search.ws !== undefined || search.q !== undefined || search.state !== undefined) return;
+    if (search.ws !== undefined || search.q !== undefined || search.state !== undefined || search.sort !== undefined) return;
     try {
       const raw = window.localStorage.getItem(ROOM_FILTER_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { ws?: string; q?: string; state?: RoomFilterState };
-      if (!saved || (!saved.ws && !saved.q && !saved.state)) return;
+      const saved = JSON.parse(raw) as { ws?: string; q?: string; state?: RoomFilterState; sort?: "asc" | "desc" };
+      if (!saved || (!saved.ws && !saved.q && !saved.state && !saved.sort)) return;
       setRestoredFilter(saved);
       void navigate({
         to: "/meeting",
@@ -343,6 +344,7 @@ function MeetingPage() {
           ws: saved.ws,
           q: saved.q,
           state: saved.state === "all" ? undefined : saved.state,
+          sort: saved.sort === "asc" ? undefined : saved.sort,
           page: 1,
         },
         replace: true,
