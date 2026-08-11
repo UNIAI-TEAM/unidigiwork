@@ -1,6 +1,6 @@
 # CRUD runtime summary
 
-Run: f1b3f09b · 2026-08-11T15:11:17.002Z
+Run: 066f0596 · 2026-08-11T15:27:19.127Z
 
 | Cell | Entity | Operation | Status |
 |---|---|---|---|
@@ -26,21 +26,21 @@ Run: f1b3f09b · 2026-08-11T15:11:17.002Z
 | TASK-U-01 | task | UPDATE | PASS_REAL |
 | TASK-U-02 | task | UPDATE_STALE_VERSION | PASS_REAL |
 | TASK-U-03 | task | UPDATE_PERMISSION | PASS_REAL |
-| TASK-U-04 | task | UPDATE_DIRECT_TABLE | FAIL_BROKEN |
+| TASK-U-04 | task | UPDATE_DIRECT_TABLE | PASS_REAL |
 | TASK-L-01 | task | COMPLETE | PASS_REAL |
 | TASK-A-01 | task | ASSIGN | PASS_REAL |
-| TASK-AU-01 | task | AUDIT | FAIL_AUDIT |
+| TASK-AU-01 | task | AUDIT | PASS_REAL |
 | TASK-OB-01 | task | OUTBOX | PASS_REAL |
-| TASK-D-01 | task | DELETE_DIRECT_DENIED | FAIL_BROKEN |
+| TASK-D-01 | task | DELETE_DIRECT_DENIED | PASS_REAL |
 | DOC-C-01 | document | CREATE | PASS_REAL |
 | DOC-C-02 | document | CREATE_PERMISSION | PASS_REAL |
 | DOC-R-01 | document | READ_LIST | PASS_REAL |
 | DOC-R-02 | document | READ_LIST_FOREIGN | PASS_REAL |
-| DOC-U-01 | document | UPDATE | PASS_REAL |
+| DOC-U-01 | document | UPDATE | FAIL_BROKEN |
 | DOC-A-01 | document | SHARE | PASS_REAL |
 | DOC-D-01 | document | ARCHIVE | PASS_REAL |
 | DOC-D-02 | document | ARCHIVE_REPEAT | PASS_REAL |
-| DOC-AU-01 | document | AUDIT | FAIL_AUDIT |
+| DOC-AU-01 | document | AUDIT | PASS_REAL |
 
-Total 37 · PASS 33 · FAIL 4
-Teardown orphans: 5d6b88fa-d526-49b5-8a2c-431fad64e145, fa99b053-9828-497d-88f6-98f666eaa335, e0fd4a8d-8809-4856-a3f7-e656f656faa5, bf970748-f2f0-4332-b115-521df9dcd0e7
+Total 37 · PASS 36 · FAIL 1
+Teardown orphans: ea9764fe-ab9d-4e24-823a-0dc3a6757b91, 50053673-968c-47e0-9b50-61829fa3053d, 075603e4-8706-498d-9e76-f47d7fcdbb26, e89c4552-a819-4eea-a214-0da1e3a738bf
