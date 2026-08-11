@@ -749,7 +749,21 @@ function DashboardInner() {
       s
         ? `Số liệu hiện tại — tài liệu cần cập nhật (>30 ngày): ${s.staleDocuments ?? 0}; nhiệm vụ quá hạn: ${s.overdueTasks ?? 0}; cuộc họp hôm nay: ${s.meetingsToday ?? 0}; quy trình chờ duyệt: ${s.pendingWorkflowApprovals ?? 0}`
         : "Số liệu hiện tại: chưa tải được",
-    ].join("\n");
+      openedLinks.length
+        ? `Trang đã mở từ AI Assistant: ${openedLinks
+            .map(
+              (l) =>
+                `${l.label} (${l.path}${
+                  l.filters && Object.keys(l.filters).length
+                    ? "?" + new URLSearchParams(Object.entries(l.filters).map(([k, v]) => [k, String(v)])).toString()
+                    : ""
+                })`,
+            )
+            .join("; ")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
     setAiInput("");
     setAiThread((prev) => [...prev, { role: "user", content: text }]);
     setAiSending(true);
@@ -758,6 +772,13 @@ function DashboardInner() {
         data: {
           text,
           contextNote,
+          metadata: {
+            source: "dashboard_ai_assistant",
+            workspaceId: activeWorkspaceId ?? null,
+            workspaceName: activeWorkspaceName ?? null,
+            rangeDays,
+            openedLinks,
+          },
           ...(aiConversationId ? { conversationId: aiConversationId } : {}),
           ...(activeWorkspaceId && !aiConversationId ? { workspaceId: activeWorkspaceId } : {}),
         },
