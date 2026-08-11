@@ -249,6 +249,83 @@ function BillingPage() {
               </section>
 
               {/* Plans */}
+              {sub && (
+                <section className="rounded-2xl border border-border bg-surface p-5">
+                  <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+                    <CalendarClock className="h-4 w-4 text-primary" /> Chu kỳ thanh toán
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Bắt đầu kỳ</p>
+                      <p className="mt-0.5 text-sm font-medium">{fmtDate(sub.periodStart)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {sub.cancelAt ? "Kết thúc dịch vụ" : "Gia hạn kế tiếp"}
+                      </p>
+                      <p className="mt-0.5 text-sm font-medium">
+                        {fmtDate(sub.cancelAt ?? sub.periodEnd)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tự động gia hạn</p>
+                      <p
+                        className={`mt-0.5 text-sm font-medium ${autoRenew ? "text-success" : "text-destructive"}`}
+                      >
+                        {autoRenew ? "Đang bật" : "Đã tắt"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {cycle && (
+                    <div className="mt-4">
+                      <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Tiến độ kỳ hiện tại</span>
+                        <span>Còn {cycle.daysLeft} ngày</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${cycle.pct}%` }} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                    {autoRenew ? (
+                      <button
+                        onClick={() => cancelM.mutate(false)}
+                        disabled={!isOwner || cancelM.isPending || sub.planCode === "free"}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        {cancelM.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        Hủy gia hạn vào cuối kỳ
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => resumeM.mutate()}
+                        disabled={!isOwner || resumeM.isPending}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-50"
+                      >
+                        {resumeM.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                        Bật lại tự động gia hạn
+                      </button>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {autoRenew
+                        ? "Gói sẽ tự động gia hạn vào ngày kết thúc kỳ. Hủy gia hạn vẫn giữ đầy đủ tính năng đến hết kỳ."
+                        : "Sau ngày kết thúc kỳ, tổ chức sẽ chuyển về gói Free."}
+                    </p>
+                  </div>
+                </section>
+              )}
+
               <section>
                 <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Các gói khả dụng</h2>
                 {plansQ.isLoading ? (
