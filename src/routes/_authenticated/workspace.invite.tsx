@@ -376,6 +376,19 @@ function WorkspaceInvitePage() {
                 >
                   <Copy className="h-3.5 w-3.5" /> Sao chép
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    copyInviteEmail(lastLink, email || "người được mời", tenantRole, {
+                      canEdit,
+                      canPublish,
+                      canRun,
+                    }, workspaceRole)
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium"
+                >
+                  <Mail className="h-3.5 w-3.5" /> Sao chép nội dung email
+                </button>
               </div>
             ) : null}
           </section>
