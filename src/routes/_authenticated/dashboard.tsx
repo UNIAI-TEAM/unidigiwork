@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -464,6 +464,7 @@ function normalizeOrder(input: unknown): SectionKey[] {
 }
 
 function DashboardInner() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState(7);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
@@ -471,6 +472,14 @@ function DashboardInner() {
   const [dragKey, setDragKey] = useState<SectionKey | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
+  const userName = useMemo(
+    () =>
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.full_name ||
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.display_name ||
+      user?.email?.split("@")[0] ||
+      "bạn",
+    [user],
+  );
   const prefsQuery = useQuery({
     queryKey: ["dashboard-prefs"],
     queryFn: () => getDashboardPrefs(),
@@ -957,7 +966,7 @@ function DashboardInner() {
                 </button>
               </div>
               <div className="mt-4">
-                <div className="text-sm font-medium">Chào Nguyễn Văn A,</div>
+                <div className="text-sm font-medium">Chào {userName},</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Đây là những thông tin AI tổng hợp cho bạn hôm nay.
                 </p>
