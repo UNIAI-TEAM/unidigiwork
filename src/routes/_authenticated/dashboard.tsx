@@ -642,7 +642,8 @@ function DashboardInner() {
   const visible = hydrated ? sections : DEFAULT_SECTIONS;
   const layoutOrder = hydrated ? order : DEFAULT_ORDER;
   const showAI = visible.ai;
-  const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
+  const { workspaceId: activeWorkspaceId, workspaceName: activeWorkspaceName } =
+    useActiveWorkspace();
   const [refreshMs, setRefreshMs] = useState<number>(DEFAULT_REFRESH_MS);
   useEffect(() => {
     try {
