@@ -15,6 +15,9 @@ import {
   CalendarClock,
   RefreshCw,
   Receipt,
+  Wallet,
+  ExternalLink,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
@@ -109,6 +112,29 @@ function BillingPage() {
     queryFn: () => invoicesFn({ data: { tenantId: tenantId!, limit: 24 } }),
     enabled: !!tenantId,
   });
+
+  const [portalOpen, setPortalOpen] = useState(false);
+  const [portalStep, setPortalStep] = useState<"idle" | "redirecting">("idle");
+
+  const paymentMethod = useMemo(() => {
+    const paid = (invoicesQ.data ?? []).find((i) => i.status === "paid" && i.paymentMethod);
+    if (paid?.paymentMethod) {
+      const raw = paid.paymentMethod;
+      const m = raw.match(/(\d{4})\s*$/);
+      return {
+        brand: raw.split(/[\s•*]/)[0]?.slice(0, 5).toUpperCase() || "CARD",
+        label: raw.replace(/\s*\d{4}\s*$/, "").trim() || "Thẻ thanh toán",
+        last4: m?.[1] ?? null,
+        hint: `Đã dùng cho hóa đơn ${paid.invoiceNumber}`,
+      };
+    }
+    return {
+      brand: "—",
+      label: "Chưa có phương thức thanh toán",
+      last4: null,
+      hint: "Thêm thẻ để tự động gia hạn gói dịch vụ.",
+    };
+  }, [invoicesQ.data]);
 
   const invalidate = () =>
     Promise.all([
@@ -351,6 +377,45 @@ function BillingPage() {
                 </section>
               )}
 
+              {/* Payment method */}
+              <section className="rounded-2xl border border-border bg-surface p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold">
+                    <Wallet className="h-4 w-4 text-primary" /> Phương thức thanh toán
+                  </h2>
+                  <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs text-warning">
+                    Môi trường mô phỏng
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-14 items-center justify-center rounded-md border border-border bg-surface text-xs font-semibold tracking-wide">
+                      {paymentMethod.brand}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {paymentMethod.label}
+                        {paymentMethod.last4 ? ` •••• ${paymentMethod.last4}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{paymentMethod.hint}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setPortalOpen(true)}
+                    disabled={!isOwner}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  >
+                    <ExternalLink className="h-4 w-4" /> Cập nhật phương thức thanh toán
+                  </button>
+                </div>
+
+                <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  Thông tin thẻ được xử lý trên Stripe Customer Portal, hệ thống UNIWORK không lưu số thẻ.
+                </p>
+              </section>
+
               {/* Invoices */}
               <section className="rounded-2xl border border-border bg-surface p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
@@ -548,6 +613,56 @@ function BillingPage() {
             </div>
           )}
         </div>
+        {portalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-lg">
+              <h3 className="flex items-center gap-2 text-base font-semibold">
+                <Wallet className="h-4 w-4 text-primary" /> Cập nhật phương thức thanh toán
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Bạn sẽ được chuyển tới Stripe Customer Portal để thêm, đổi hoặc gỡ thẻ, đồng thời xem
+                lịch sử thanh toán của tổ chức.
+              </p>
+              <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
+                Cổng thanh toán chưa được kích hoạt cho dự án này, nên luồng hiện đang ở chế độ mô
+                phỏng. Sau khi bật Stripe, nút này sẽ mở phiên Customer Portal thật.
+              </div>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setPortalOpen(false);
+                    setPortalStep("idle");
+                  }}
+                  className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface-2"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={() => {
+                    setPortalStep("redirecting");
+                    window.setTimeout(() => {
+                      setPortalStep("idle");
+                      setPortalOpen(false);
+                      toast.info("Chế độ mô phỏng", {
+                        description:
+                          "Chưa có phiên Stripe Customer Portal. Bật thanh toán để dùng luồng thật.",
+                      });
+                    }, 900);
+                  }}
+                  disabled={portalStep === "redirecting"}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                >
+                  {portalStep === "redirecting" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4" />
+                  )}
+                  Mở Stripe Portal
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {confirm && (
