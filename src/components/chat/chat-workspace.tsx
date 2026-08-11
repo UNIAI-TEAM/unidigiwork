@@ -916,6 +916,9 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                                       <button onClick={() => { setReplyTo(m); setEditing(null); }} aria-label="Trả lời">
                                         <Reply className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                                       </button>
+                                      <button onClick={() => openTaskDraft(m)} aria-label="Tạo công việc từ tin nhắn" title="Tạo công việc">
+                                        <ListTodo className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                                      </button>
                                       <button
                                         onClick={() => pinM.mutate({ messageId: m.id, pinned: !m.pinnedAt })}
                                         aria-label={m.pinnedAt ? "Bỏ ghim tin nhắn" : "Ghim tin nhắn"}
