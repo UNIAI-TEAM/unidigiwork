@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  History,
   ArchiveRestore,
   Crown,
   Loader2,
@@ -127,6 +128,11 @@ function WorkspaceManagePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" asChild>
+                <Link to="/workspace/audit">
+                  <History className="mr-1.5 h-4 w-4" /> Nhật ký
+                </Link>
+              </Button>
               <Button variant="outline" asChild>
                 <Link to="/workspace/settings">
                   <Settings2 className="mr-1.5 h-4 w-4" /> Cài đặt workspace
