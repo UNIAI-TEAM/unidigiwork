@@ -2,7 +2,7 @@ import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { sendAiMessage } from "@/lib/api/ai-chat.functions";
-import { listNotifications } from "@/lib/api/notifications.functions";
+import { listNotifications, markNotificationsRead } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
 import {
   queryOptions,
@@ -708,6 +708,22 @@ function DashboardInner() {
     const unread = rows.filter((n: any) => !n.is_read);
     return (unread.length ? unread : rows).slice(0, 3);
   }, [notificationsQuery.data]);
+  const markReadFn = useServerFn(markNotificationsRead);
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  const handleMarkRead = async (id: string) => {
+    if (markingId) return;
+    setMarkingId(id);
+    try {
+      await markReadFn({ data: { ids: [id] } });
+      await notificationsQuery.refetch();
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("Đã đánh dấu là đã đọc");
+    } catch (e) {
+      toast.error((e as Error)?.message ?? "Không đánh dấu được thông báo");
+    } finally {
+      setMarkingId(null);
+    }
+  };
   const sendAiFn = useServerFn(sendAiMessage);
   const [aiInput, setAiInput] = useState("");
   const [openedLinks, setOpenedLinks] = useState<
