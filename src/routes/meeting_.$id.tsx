@@ -484,7 +484,13 @@ function MeetingDetailPage() {
         const fn = action === "start" ? startMeeting : endMeeting;
         await fn({ data: { meetingId: id, idempotencyKey: crypto.randomUUID() } });
         toast.success(action === "start" ? "Đã bắt đầu cuộc họp." : "Đã kết thúc cuộc họp.");
-        await meetingQuery.refetch();
+        // Đồng bộ ngay roster + thông tin phòng họp
+        await syncMeetingQueries();
+        await Promise.all([meetingQuery.refetch(), refetchParticipants()]);
+        // Webhook meeting_provider_events có thể tới trễ -> sync lại lần nữa
+        window.setTimeout(() => {
+          void syncMeetingQueries();
+        }, 2500);
       } catch {
         toast.error(
           action === "start" ? "Không bắt đầu được cuộc họp." : "Không kết thúc được cuộc họp.",
@@ -493,7 +499,7 @@ function MeetingDetailPage() {
         setLifecycleBusy(null);
       }
     },
-    [id, meetingQuery],
+    [id, meetingQuery, refetchParticipants, syncMeetingQueries],
   );
 
   return (
