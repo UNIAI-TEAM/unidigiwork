@@ -116,6 +116,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   const doRemoveMember = useServerFn(removeChatChannelMember);
   const doSetRole = useServerFn(setChatMemberRole);
   const doOpenDm = useServerFn(openDirectMessage);
+  const fetchReaders = useServerFn(listChatChannelReaders);
 
   const [activeId, setActiveId] = useState<string | null>(initialChannelId ?? null);
   const [input, setInput] = useState("");
@@ -167,6 +168,13 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   });
   const people = peopleQ.data ?? [];
 
+  const readersQ = useQuery({
+    queryKey: ["chat", "readers", activeId],
+    queryFn: () => fetchReaders({ data: { channelId: activeId! } }),
+    enabled: !!activeId && !!active?.isMember,
+  });
+  const readers = readersQ.data ?? [];
+
   // Reset trạng thái khi đổi kênh / từ khoá
   useEffect(() => {
     setOlder([]);
@@ -199,6 +207,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_members" }, () => {
         qc.invalidateQueries({ queryKey: ["chat", "channels"] });
         qc.invalidateQueries({ queryKey: ["chat", "members"] });
+        qc.invalidateQueries({ queryKey: ["chat", "readers"] });
       })
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
@@ -679,6 +688,8 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                                       {m.attachments.map((f) => <AttachmentChip key={f.path} file={f} />)}
                                     </div>
                                   )}
+
+                                  <ReadReceipts readers={readers} message={m} />
                                 </div>
                               </div>
                             </div>
