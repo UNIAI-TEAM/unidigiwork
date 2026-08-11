@@ -43,7 +43,7 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
       .object({
         workspaceId: z.string().uuid().optional(),
         search: z.string().max(200).optional(),
-        state: z.enum(["all", "live", "upcoming"]).default("all"),
+        state: z.enum(["all", "live", "upcoming", "ended"]).default("all"),
         sort: z.enum(["asc", "desc"]).default("asc"),
         limit: z.number().int().min(1).max(50).default(20),
         offset: z.number().int().min(0).default(0),
@@ -93,6 +93,8 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
       q = q.eq("status", "live");
     } else if (data.state === "upcoming") {
       q = q.eq("status", "scheduled").gte("start_at", nowIso);
+    } else if (data.state === "ended") {
+      q = q.in("status", ["ended", "canceled"]);
     } else {
       q = q.in("status", ["scheduled", "live"]);
     }

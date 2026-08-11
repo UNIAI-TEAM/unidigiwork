@@ -80,7 +80,7 @@ export const Route = createFileRoute("/meeting")({
     ws?: string;
     q?: string;
     focus?: "rooms";
-    state?: "live" | "upcoming";
+    state?: "live" | "upcoming" | "ended";
     page?: number;
     from?: string;
     to?: string;
@@ -89,7 +89,7 @@ export const Route = createFileRoute("/meeting")({
     ws?: string;
     q?: string;
     focus?: "rooms";
-    state?: "live" | "upcoming";
+    state?: "live" | "upcoming" | "ended";
     page?: number;
     from?: string;
     to?: string;
@@ -99,8 +99,10 @@ export const Route = createFileRoute("/meeting")({
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
     state:
-      search["state"] === "live" || search["state"] === "upcoming"
-        ? (search["state"] as "live" | "upcoming")
+      search["state"] === "live" ||
+      search["state"] === "upcoming" ||
+      search["state"] === "ended"
+        ? (search["state"] as "live" | "upcoming" | "ended")
         : undefined,
     page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
       ? Number(search["page"])
@@ -321,7 +323,7 @@ function MeetingPage() {
 
   // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa + trạng thái + sắp xếp) giữa các lần truy cập.
   const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
-  type RoomFilterState = "all" | "live" | "upcoming";
+  type RoomFilterState = "all" | "live" | "upcoming" | "ended";
   const [restoredFilter, setRestoredFilter] = useState<{
     ws?: string;
     q?: string;
@@ -458,6 +460,7 @@ function MeetingPage() {
       if (roomState === "live") return r.status === "live";
       if (roomState === "upcoming")
         return r.status === "scheduled" && new Date(r.start_at).getTime() > now;
+      if (roomState === "ended") return r.status === "ended" || r.status === "canceled";
       return true;
     });
   }, [rangeActive, rangeQuery.data, roomQuery, roomState]);
@@ -717,6 +720,7 @@ function MeetingPage() {
                       { key: "all", label: "Tất cả" },
                       { key: "live", label: "Đang diễn ra" },
                       { key: "upcoming", label: "Sắp diễn ra" },
+                      { key: "ended", label: "Đã kết thúc" },
                     ] as const
                   ).map((s) => (
                     <button
@@ -783,6 +787,8 @@ function MeetingPage() {
                     ? "Không có phòng nào đang diễn ra trong workspace này."
                     : roomState === "upcoming"
                       ? "Không có phòng nào sắp diễn ra trong workspace này."
+                      : roomState === "ended"
+                        ? "Chưa có cuộc họp nào đã kết thúc trong workspace này."
                       : roomQuery
                     ? "Không có phòng nào khớp từ khóa trong workspace này."
                     : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
