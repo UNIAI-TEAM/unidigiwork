@@ -208,6 +208,47 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   const [pending, setPending] = useState<ChatAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+
+  // Tạo công việc từ một tin nhắn chat
+  const { data: myWorkspaces } = useMyWorkspaces();
+  const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
+  const doCreateTask = useServerFn(createTask);
+  const [taskDraft, setTaskDraft] = useState<
+    { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string } | null
+  >(null);
+  const createTaskM = useMutation({
+    mutationFn: async (v: NonNullable<typeof taskDraft>) =>
+      doCreateTask({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          workspaceId: v.workspaceId,
+          title: v.title.trim().slice(0, 500),
+          description: v.description.trim() || undefined,
+          priority: v.priority,
+          dueAt: v.dueAt ? new Date(v.dueAt).toISOString() : undefined,
+        },
+      }),
+    onSuccess: (task: any) => {
+      const created = Array.isArray(task) ? task[0] : task;
+      setTaskDraft(null);
+      toast.success("Đã tạo công việc từ tin nhắn");
+      if (created?.id) navigate({ to: "/tasks/$id", params: { id: created.id } });
+      else navigate({ to: "/tasks" });
+    },
+    onError: () => toast.error("Không thể tạo công việc"),
+  });
+
+  const openTaskDraft = (m: ChatMessageDTO) => {
+    const firstLine = (m.body || "").split("\n")[0]?.trim() || "Công việc từ chat";
+    setTaskDraft({
+      messageId: m.id,
+      title: firstLine.slice(0, 200),
+      description: `Từ chat — ${m.authorName} (${dayLabel(m.createdAt)} ${timeLabel(m.createdAt)}):\n\n${m.body}`,
+      workspaceId: activeWorkspaceId ?? myWorkspaces?.[0]?.id ?? "",
+      priority: "normal",
+      dueAt: "",
+    });
+  };
   const [showPeople, setShowPeople] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentioned, setMentioned] = useState<Record<string, string>>({});
