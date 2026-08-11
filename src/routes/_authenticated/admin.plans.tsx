@@ -93,8 +93,7 @@ function AdminPlansPage() {
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["admin", "plans"] });
-    qc.invalidateQueries({ queryKey: ["public", "plans"] });
-    qc.invalidateQueries({ queryKey: ["pricing"] });
+    qc.invalidateQueries({ queryKey: ["public-plans"] });
   };
 
   const saveMut = useMutation({
