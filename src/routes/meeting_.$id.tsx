@@ -968,7 +968,7 @@ function MeetingDetailPage() {
                                       : "bg-destructive/10 text-destructive"
                                   }`}
                                 >
-                                  {e.action === "start" ? "Bắt đầu" : "Kết thúc"} ·{" "}
+                                  {HOST_ACTION_LABELS[e.action] ?? e.action} ·{" "}
                                   {e.outcome === "success" ? "Thành công" : "Thất bại"}
                                 </span>
                               </div>
