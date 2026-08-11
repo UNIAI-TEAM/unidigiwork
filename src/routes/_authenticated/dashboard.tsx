@@ -793,7 +793,7 @@ function DashboardInner() {
                   </span>
                 </div>
                 <button
-                  onClick={() => setShowAI(false)}
+                  onClick={() => toggleSection("ai")}
                   className="rounded p-1 text-muted-foreground hover:bg-surface-2"
                 >
                   <X className="h-4 w-4" />
