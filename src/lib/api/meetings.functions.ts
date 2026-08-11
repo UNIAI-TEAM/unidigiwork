@@ -185,11 +185,33 @@ export const endMeeting = createServerFn({ method: "POST" })
   });
 
 // Nhật ký thao tác của host: ai bấm, lúc nào, start/end thành công hay thất bại.
+export const transferMeetingHost = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        meetingId: z.string().uuid(),
+        newHostUserId: z.string().uuid(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("transfer_meeting_host", {
+      _meeting_id: data.meetingId,
+      _new_host_user_id: data.newHostUserId,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    await logHostAction(context.supabase, data.meetingId, "transfer_host", res.error, data);
+    return ensureOk(res, "MEETING_NOT_FOUND");
+  });
+
 async function logHostAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   meetingId: string,
-  action: "start" | "end" | "cancel",
+  action: "start" | "end" | "cancel" | "transfer_host",
   error: { message?: string; code?: string } | null,
   meta: { idempotencyKey?: string | null; correlationId?: string | null },
 ): Promise<void> {

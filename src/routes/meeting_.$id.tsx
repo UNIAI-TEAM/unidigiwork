@@ -20,6 +20,7 @@ import {
   Clock,
   Loader2,
   Lock,
+  Crown,
   Video as VideoIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -47,6 +48,7 @@ import {
   startMeeting,
   endMeeting,
   listMeetingHostActions,
+  transferMeetingHost,
 } from "@/lib/api/meetings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
@@ -89,6 +91,7 @@ const HOST_ACTION_LABELS: Record<string, string> = {
   start: "Bắt đầu",
   end: "Kết thúc",
   cancel: "Hủy họp",
+  transfer_host: "Chuyển quyền chủ trì",
 };
 
 const MEETING_STATUS_META: Record<
@@ -379,6 +382,7 @@ function MeetingDetailPage() {
 
   const participants = (participantsQuery.data ?? []).map((p) => ({
     seed: p.userId,
+    userId: p.userId,
     name: p.name ?? p.email ?? "Thành viên",
     role: p.role,
     rsvp: p.rsvp,
@@ -499,6 +503,7 @@ function MeetingDetailPage() {
     (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
   const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
   const [confirmEndOpen, setConfirmEndOpen] = useState(false);
+  const [transferBusy, setTransferBusy] = useState<string | null>(null);
 
   // Nhật ký thao tác chủ trì (start/end, thành công/thất bại)
   const hostLogQuery = useQuery({
@@ -532,6 +537,25 @@ function MeetingDetailPage() {
       }
     },
     [id, meetingQuery, hostLogQuery, refetchParticipants, syncMeetingQueries],
+  );
+
+  const handleTransferHost = useCallback(
+    async (userId: string, name: string) => {
+      setTransferBusy(userId);
+      try {
+        await transferMeetingHost({
+          data: { meetingId: id, newHostUserId: userId, idempotencyKey: crypto.randomUUID() },
+        });
+        toast.success(`Đã chuyển quyền chủ trì cho ${name}.`);
+        await syncMeetingQueries();
+        await Promise.all([refetchParticipants(), hostLogQuery.refetch()]);
+      } catch {
+        toast.error("Không chuyển được quyền chủ trì.");
+      } finally {
+        setTransferBusy(null);
+      }
+    },
+    [id, hostLogQuery, refetchParticipants, syncMeetingQueries],
   );
 
   // Thời lượng cuộc họp: suy ra từ nhật ký thao tác chủ trì (start/end thành công).
@@ -952,6 +976,44 @@ function MeetingDetailPage() {
                         <span className="text-[10px] text-muted-foreground">
                           {RSVP_LABELS[p.rsvp] ?? p.rsvp}
                         </span>
+                        {isHost &&
+                          p.userId !== myUserId &&
+                          meetingStatus !== "ended" &&
+                          meetingStatus !== "canceled" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  type="button"
+                                  disabled={transferBusy !== null}
+                                  title="Chuyển quyền chủ trì"
+                                  className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground disabled:opacity-60"
+                                >
+                                  {transferBusy === p.userId ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Crown className="h-3 w-3" />
+                                  )}
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Chuyển quyền chủ trì?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {p.name} sẽ trở thành người chủ trì cuộc họp. Bạn sẽ chuyển
+                                    thành người tham gia và mất quyền bắt đầu/kết thúc cuộc họp.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => void handleTransferHost(p.userId, p.name)}
+                                  >
+                                    Chuyển quyền
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                       </li>
                     ))}
                   </ul>
