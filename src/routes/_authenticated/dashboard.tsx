@@ -44,6 +44,7 @@ import {
   Clock,
   Bell,
   GripVertical,
+  RefreshCw,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
