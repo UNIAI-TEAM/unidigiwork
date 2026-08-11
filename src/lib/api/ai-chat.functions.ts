@@ -284,6 +284,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         conversationId: z.string().uuid().optional(),
         workspaceId: z.string().uuid().optional(),
         text: z.string().min(1).max(8000),
+        contextNote: z.string().max(2000).optional(),
       })
       .parse(i),
   )
