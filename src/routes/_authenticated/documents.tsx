@@ -137,6 +137,7 @@ function DocumentsPage() {
         .from("documents")
         .select("*")
         .eq("workspace_id", currentWs.id)
+        .is("deleted_at", null)
         .order("updated_at", { ascending: false });
       setDocs((d ?? []) as Doc[]);
       setSelected(null);
@@ -284,6 +285,7 @@ function DocumentsPage() {
       .from("documents")
       .select("*")
       .eq("workspace_id", currentWs.id)
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false });
     if (refreshed) setDocs(refreshed as Doc[]);
     setUploading(false);
