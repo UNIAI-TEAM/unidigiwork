@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listMyWorkspaces } from "@/lib/api/workspace-overview.functions";
+import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -98,7 +99,8 @@ type NavKey =
   | "people"
   | "email"
   | "reports"
-  | "ai";
+  | "ai"
+  | "notifications";
 
 function NavItem({
   icon: Icon,
@@ -320,6 +322,7 @@ export function AppSidebar({
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
   const [wsOpen, setWsOpen] = useState(false);
+  const { unreadCount } = useUnreadNotifications();
 
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
@@ -403,6 +406,20 @@ export function AppSidebar({
             label={t("nav.calendar")}
             to="/calendar"
             active={active === "calendar"}
+            collapsed={collapsed}
+          />
+          <NavItem
+            icon={Bell}
+            label={t("nav.notifications")}
+            to="/notifications"
+            active={active === "notifications"}
+            badge={
+              !collapsed && unreadCount > 0 ? (
+                <span className="rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              ) : undefined
+            }
             collapsed={collapsed}
           />
           <NavItem
@@ -1467,6 +1484,7 @@ export function AppTopbar({
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
   const navigate = useNavigate();
+  const { unreadCount: topbarUnread } = useUnreadNotifications();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchValue, setSearchValue] = useState("");
   // ⌘K is owned globally by <CommandPalette />. Topbar input stays as a
@@ -1589,9 +1607,11 @@ export function AppTopbar({
           aria-expanded={notifOpen}
         >
           <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
-            12
-          </span>
+          {topbarUnread > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
+              {topbarUnread > 99 ? "99+" : topbarUnread}
+            </span>
+          )}
         </button>
         {notifOpen && <NotificationsPanel onClose={() => setNotifOpen(false)} />}
       </div>
