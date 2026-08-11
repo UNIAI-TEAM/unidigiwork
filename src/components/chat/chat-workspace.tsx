@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Hash, Lock, Plus, Search as SearchIcon, Send, Star, Users, X, Trash2, LogOut, Loader2,
   Calendar as CalendarIcon,
+  CheckCheck,
   MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye, Pin, PinOff,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,12 +23,23 @@ import {
 const BUCKET = "chat-attachments";
 
 /** Danh sách người đã xem một tin nhắn (dựa trên mốc đã đọc của từng thành viên). */
-function ReadReceipts({ readers, message }: { readers: ChatReaderDTO[]; message: ChatMessageDTO }) {
+function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; message: ChatMessageDTO; isDm?: boolean }) {
   const seen = readers.filter(
     (r) => r.userId !== message.authorId && r.lastReadAt && new Date(r.lastReadAt) >= new Date(message.createdAt),
   );
   if (seen.length === 0) return null;
   const label = seen.map((r) => (r.isMe ? "Bạn" : r.name)).join(", ");
+  if (isDm) {
+    const other = seen[0];
+    return (
+      <div className="mt-1 flex items-center gap-1.5" title={`Đã xem: ${label}`}>
+        <CheckCheck className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[11px] text-muted-foreground">
+          {other.isMe ? "Bạn đã xem" : `${other.name} đã xem`} lúc {timeLabel(other.lastReadAt!)}
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="mt-1 flex items-center gap-1.5" title={`Đã xem: ${label}`}>
       <Eye className="h-3 w-3 text-muted-foreground" />
@@ -245,10 +257,13 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   }, [recent.length]);
 
   useEffect(() => {
-    if (activeId && active?.isMember && (active?.unread ?? 0) > 0) {
-      doRead({ data: { channelId: activeId } }).then(() => qc.invalidateQueries({ queryKey: ["chat", "channels"] }));
-    }
-  }, [activeId, active?.isMember, active?.unread, doRead, qc]);
+    if (!activeId || !active?.isMember) return;
+    // Đánh dấu đã đọc khi mở kênh/DM và mỗi khi có tin mới, để đối phương thấy trạng thái "đã xem".
+    doRead({ data: { channelId: activeId } }).then(() => {
+      qc.invalidateQueries({ queryKey: ["chat", "channels"] });
+      qc.invalidateQueries({ queryKey: ["chat", "readers", activeId] });
+    });
+  }, [activeId, active?.isMember, recent.length, doRead, qc]);
 
   const refreshAll = () => { qc.invalidateQueries({ queryKey: ["chat"] }); };
 
@@ -837,7 +852,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                                     </div>
                                   )}
 
-                                  <ReadReceipts readers={readers} message={m} />
+                                  <ReadReceipts readers={readers} message={m} isDm={active.kind === "dm"} />
                                 </div>
                               </div>
                             </div>
