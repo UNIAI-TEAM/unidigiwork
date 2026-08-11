@@ -40,6 +40,7 @@ import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
   openMeetingAttendance,
   closeMeetingAttendance,
+  listMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
 import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
 import {
@@ -85,6 +86,12 @@ const RSVP_LABELS: Record<string, string> = {
   accepted: "Tham gia",
   declined: "Từ chối",
   tentative: "Chưa chắc",
+};
+
+const PRESENCE_LABELS: Record<string, string> = {
+  online: "Đang online",
+  left: "Đã rời",
+  absent: "Chưa vào",
 };
 
 const HOST_ACTION_LABELS: Record<string, string> = {
@@ -380,12 +387,28 @@ function MeetingDetailPage() {
     queryFn: () => listMeetingParticipants({ data: { meetingId: id } }),
   });
 
+  const attendanceQuery = useQuery({
+    queryKey: ["meeting-attendance", id],
+    enabled: isRealRoom,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    queryFn: () => listMeetingAttendance({ data: { meetingId: id } }),
+  });
+
+  const presenceByUser = new Map<string, "online" | "left">();
+  for (const a of attendanceQuery.data ?? []) {
+    const current = presenceByUser.get(a.userId);
+    if (a.leftAt === null) presenceByUser.set(a.userId, "online");
+    else if (current !== "online") presenceByUser.set(a.userId, "left");
+  }
+
   const participants = (participantsQuery.data ?? []).map((p) => ({
     seed: p.userId,
     userId: p.userId,
     name: p.name ?? p.email ?? "Thành viên",
     role: p.role,
     rsvp: p.rsvp,
+    presence: presenceByUser.get(p.userId) ?? ("absent" as const),
     speaking: false,
   }));
 
@@ -794,7 +817,18 @@ function MeetingDetailPage() {
                 >
                   <img src={avatar(p.seed)} className="h-20 w-20 rounded-full" alt="" />
                   <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between rounded-md bg-black/40 px-2 py-1 text-xs backdrop-blur">
-                    <span className="truncate">{p.name}</span>
+                    <span className="flex min-w-0 items-center gap-1.5 truncate">
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                          p.presence === "online"
+                            ? "bg-success"
+                            : p.presence === "left"
+                              ? "bg-muted-foreground"
+                              : "bg-border"
+                        }`}
+                      />
+                      <span className="truncate">{p.name}</span>
+                    </span>
                     {p.speaking && <Mic className="h-3 w-3 text-success" />}
                   </div>
                 </div>
@@ -972,6 +1006,27 @@ function MeetingDetailPage() {
                           {p.role === "host" && (
                             <span className="ml-1 text-[10px] text-muted-foreground">(Chủ trì)</span>
                           )}
+                        </span>
+                        <span
+                          title={PRESENCE_LABELS[p.presence]}
+                          className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] ${
+                            p.presence === "online"
+                              ? "bg-success/10 text-success"
+                              : p.presence === "left"
+                                ? "bg-surface-3 text-muted-foreground"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              p.presence === "online"
+                                ? "bg-success"
+                                : p.presence === "left"
+                                  ? "bg-muted-foreground"
+                                  : "bg-border"
+                            }`}
+                          />
+                          {PRESENCE_LABELS[p.presence]}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
                           {RSVP_LABELS[p.rsvp] ?? p.rsvp}
