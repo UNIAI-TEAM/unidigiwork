@@ -66,6 +66,7 @@ export const Route = createFileRoute("/_authenticated/documents")({
   validateSearch: (search: Record<string, unknown>) => ({
     filter: search['filter'] === "stale" ? ("stale" as const) : undefined,
     range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
+    ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,
   }),
   head: () => ({
     meta: [
@@ -348,13 +349,9 @@ function DocumentsPage() {
     navigate({ to: "/auth" });
   };
 
-  const rangeDays = Route.useSearch().range;
+  const { range: rangeDays } = Route.useSearch();
   const visibleDocs = (
-    docFilter === "stale"
-      ? docs.filter(
-          (d) => Date.now() - new Date(d.updated_at).getTime() > 30 * 24 * 60 * 60 * 1000,
-        )
-      : docs
+    docFilter === "stale" ? docs.filter((d) => isStaleDocument(d)) : docs
   ).filter(
     (d) => !rangeDays || Date.now() - new Date(d.updated_at).getTime() <= rangeDays * 86400_000,
   );
