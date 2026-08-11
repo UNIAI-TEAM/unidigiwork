@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -459,6 +459,14 @@ function TasksPage() {
                     </button>
                   );
                 })
+              )}
+              {overdueOnly && (
+                <button
+                  onClick={() => navigateTasks({ to: "/tasks", search: {} })}
+                  className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs text-warning hover:bg-warning/25"
+                >
+                  Chỉ hiển thị quá hạn <X className="h-3 w-3" />
+                </button>
               )}
               {(tagFilter.length > 0 || priorityFilter) && (
                 <button
