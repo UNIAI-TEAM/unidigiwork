@@ -67,6 +67,32 @@ const RSVP_LABELS: Record<string, string> = {
   tentative: "Chưa chắc",
 };
 
+const MEETING_STATUS_META: Record<
+  string,
+  { label: string; className: string; dotClassName: string }
+> = {
+  scheduled: {
+    label: "Chưa bắt đầu",
+    className: "bg-muted text-muted-foreground",
+    dotClassName: "bg-muted-foreground",
+  },
+  live: {
+    label: "Đang diễn ra",
+    className: "bg-destructive/20 text-destructive",
+    dotClassName: "bg-destructive animate-pulse",
+  },
+  ended: {
+    label: "Đã kết thúc",
+    className: "bg-muted text-muted-foreground",
+    dotClassName: "bg-muted-foreground",
+  },
+  canceled: {
+    label: "Đã hủy",
+    className: "bg-muted text-muted-foreground line-through",
+    dotClassName: "bg-muted-foreground",
+  },
+};
+
 function StageFallback() {
   return (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -360,6 +386,24 @@ function MeetingDetailPage() {
     };
   }, [id, isRealRoom, syncMeetingQueries]);
 
+  // Realtime: trạng thái cuộc họp (scheduled / live / ended / canceled)
+  useEffect(() => {
+    if (!isRealRoom) return;
+    const channel = supabase
+      .channel(`meeting-status-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meetings", filter: `id=eq.${id}` },
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ["meeting", id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [id, isRealRoom, queryClient]);
+
   // RSVP của chính mình
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [rsvpSaving, setRsvpSaving] = useState<string | null>(null);
@@ -415,6 +459,7 @@ function MeetingDetailPage() {
     queryFn: () => getMeeting({ data: { meetingId: id } }),
   });
   const meetingStatus = (meetingQuery.data as { status?: string } | undefined)?.status ?? null;
+  const statusMeta = MEETING_STATUS_META[meetingStatus ?? ""] ?? MEETING_STATUS_META["scheduled"];
   const isHost =
     !!myUserId &&
     (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
@@ -456,8 +501,8 @@ function MeetingDetailPage() {
                 Sprint Review · <span className="font-mono text-muted-foreground">{id}</span>
               </h1>
               <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/20 px-2 py-0.5 text-destructive">
-                  <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" /> Trực tiếp
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${statusMeta.className}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} /> {statusMeta.label}
                 </span>
                 <Clock className="h-3 w-3" /> 32:14
                 <span>·</span>
