@@ -2744,6 +2744,36 @@ export type Database = {
           },
         ]
       }
+      task_saved_views: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          priority: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          priority?: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          priority?: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           completed_at: string | null

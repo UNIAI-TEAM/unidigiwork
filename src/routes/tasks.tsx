@@ -8,6 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
 import {
+  listTaskViews,
+  saveTaskView,
+  deleteTaskView,
+} from "@/lib/api/task-views.functions";
+import {
   Plus,
   Filter,
   Star,
@@ -26,6 +31,8 @@ import {
   Download,
   FileText,
   Loader2,
+  BookmarkPlus,
+  X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -119,6 +126,29 @@ function TasksPage() {
       ),
     [allTasks, priorityFilter, tagFilter],
   );
+
+  // Bộ lọc đã lưu ("view") theo người dùng
+  const viewsQuery = useQuery({ queryKey: ["task-views"], queryFn: () => listTaskViews() });
+  const savedViews = viewsQuery.data ?? [];
+  const [activeViewId, setActiveViewId] = useState<string>("");
+  const saveViewM = useMutation({
+    mutationFn: (name: string) =>
+      saveTaskView({ data: { name, tags: tagFilter, priority: priorityFilter } }),
+    onSuccess: () => {
+      toast.success("Đã lưu bộ lọc");
+      void queryClient.invalidateQueries({ queryKey: ["task-views"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không lưu được bộ lọc"),
+  });
+  const deleteViewM = useMutation({
+    mutationFn: (viewId: string) => deleteTaskView({ data: { viewId } }),
+    onSuccess: () => {
+      setActiveViewId("");
+      toast.success("Đã xóa bộ lọc");
+      void queryClient.invalidateQueries({ queryKey: ["task-views"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không xóa được bộ lọc"),
+  });
 
   // Realtime: mọi thay đổi trên tasks của workspace đang xem sẽ làm mới bảng.
   useEffect(() => {
@@ -294,11 +324,69 @@ function TasksPage() {
 
             {/* Board */}
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3">
+              <span className="text-xs font-medium text-muted-foreground">Bộ lọc đã lưu:</span>
+              {savedViews.length === 0 ? (
+                <span className="text-xs text-muted-foreground">Chưa có view nào</span>
+              ) : (
+                savedViews.map((v) => {
+                  const on = activeViewId === v.id;
+                  return (
+                    <span
+                      key={v.id}
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
+                        on
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveViewId(v.id);
+                          setTagFilter(v.tags);
+                          setPriorityFilter((v.priority || "") as Priority | "");
+                        }}
+                        className="font-medium"
+                      >
+                        {v.name}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Xóa bộ lọc ${v.name}`}
+                        disabled={deleteViewM.isPending}
+                        onClick={() => deleteViewM.mutate(v.id)}
+                        className="opacity-70 hover:opacity-100"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })
+              )}
+              <button
+                type="button"
+                disabled={
+                  saveViewM.isPending || (tagFilter.length === 0 && !priorityFilter)
+                }
+                onClick={() => {
+                  const name = window.prompt("Tên bộ lọc:")?.trim();
+                  if (name) saveViewM.mutate(name);
+                }}
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-surface-2 disabled:opacity-50"
+              >
+                <BookmarkPlus className="h-3.5 w-3.5" /> Lưu bộ lọc hiện tại
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3">
               <span className="text-xs font-medium text-muted-foreground">Lọc:</span>
               <select
                 aria-label="Lọc theo mức ưu tiên"
                 value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value as Priority | "")}
+                onChange={(e) => {
+                  setActiveViewId("");
+                  setPriorityFilter(e.target.value as Priority | "");
+                }}
                 className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">Mọi mức ưu tiên</option>
@@ -315,9 +403,10 @@ function TasksPage() {
                   return (
                     <button
                       key={tg}
-                      onClick={() =>
-                        setTagFilter(on ? tagFilter.filter((x) => x !== tg) : [...tagFilter, tg])
-                      }
+                      onClick={() => {
+                        setActiveViewId("");
+                        setTagFilter(on ? tagFilter.filter((x) => x !== tg) : [...tagFilter, tg]);
+                      }}
                       className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
                         on
                           ? "bg-primary text-primary-foreground"
@@ -334,6 +423,7 @@ function TasksPage() {
                   onClick={() => {
                     setTagFilter([]);
                     setPriorityFilter("");
+                    setActiveViewId("");
                   }}
                   className="ml-auto text-xs text-primary hover:underline"
                 >
