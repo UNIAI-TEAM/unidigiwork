@@ -10,8 +10,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { getDashboardOverview } from "@/lib/api/dashboard.functions";
-import type { DashboardOverview as DashboardData } from "@/lib/api/dashboard.functions";
+import { getDashboardOverview, getDashboardAiSummary } from "@/lib/api/dashboard.functions";
+import type {
+  DashboardOverview as DashboardData,
+  DashboardAiSummary,
+} from "@/lib/api/dashboard.functions";
+import { Link } from "@tanstack/react-router";
 import {
   Users,
   Activity,
@@ -950,11 +954,14 @@ function DashboardInner() {
                 </p>
               </div>
               <ul className="mt-4 space-y-2">
-                {AI_ITEMS.map((it) => {
+                {aiItems.map((it) => {
                   const Icon = it.icon;
                   return (
                     <li key={it.title}>
-                      <button className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40">
+                      <Link
+                        to={it.to}
+                        className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
+                      >
                         <span
                           className={`flex h-9 w-9 items-center justify-center rounded-lg ${it.tint}`}
                         >
@@ -965,7 +972,7 @@ function DashboardInner() {
                           <div className="text-[11px] text-primary">{it.action} →</div>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                      </button>
+                      </Link>
                     </li>
                   );
                 })}
