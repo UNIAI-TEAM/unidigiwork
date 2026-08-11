@@ -503,6 +503,7 @@ function MeetingDetailPage() {
     (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
   const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
   const [confirmEndOpen, setConfirmEndOpen] = useState(false);
+  const [transferBusy, setTransferBusy] = useState<string | null>(null);
 
   // Nhật ký thao tác chủ trì (start/end, thành công/thất bại)
   const hostLogQuery = useQuery({
