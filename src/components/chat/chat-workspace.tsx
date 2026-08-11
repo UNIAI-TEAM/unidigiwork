@@ -192,6 +192,10 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
     queryKey: ["chat", "readers", activeId],
     queryFn: () => fetchReaders({ data: { channelId: activeId! } }),
     enabled: !!activeId && !!active?.isMember,
+    // Gộp nhiều sự kiện đọc gần nhau: dữ liệu còn "tươi" trong 2s nên không refetch dồn dập.
+    staleTime: 2000,
+    placeholderData: (prev) => prev,
+    refetchOnWindowFocus: false,
   });
   const readers = readersQ.data ?? [];
 
@@ -235,6 +239,17 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   }, [activeId, qc]);
 
   useEffect(() => {
+    // Gom sự kiện realtime của chat_members (nhiều người đọc cùng lúc) rồi làm mới 1 lần.
+    let membersTimer: ReturnType<typeof setTimeout> | null = null;
+    const flushMembers = () => {
+      if (membersTimer) return;
+      membersTimer = setTimeout(() => {
+        membersTimer = null;
+        qc.invalidateQueries({ queryKey: ["chat", "readers"] });
+        qc.invalidateQueries({ queryKey: ["chat", "members"] });
+        qc.invalidateQueries({ queryKey: ["chat", "channels"] });
+      }, 800);
+    };
     const ch = supabase
       .channel("chat-global")
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, () => {
@@ -243,27 +258,34 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_channels" }, () => {
         qc.invalidateQueries({ queryKey: ["chat", "channels"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_members" }, () => {
-        qc.invalidateQueries({ queryKey: ["chat", "channels"] });
-        qc.invalidateQueries({ queryKey: ["chat", "members"] });
-        qc.invalidateQueries({ queryKey: ["chat", "readers"] });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_members" }, flushMembers)
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => {
+      if (membersTimer) clearTimeout(membersTimer);
+      void supabase.removeChannel(ch);
+    };
   }, [qc]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [recent.length]);
 
+  const lastReadKeyRef = useRef<string | null>(null);
+  const lastMessageId = recent.length ? recent[recent.length - 1]!.id : null;
   useEffect(() => {
     if (!activeId || !active?.isMember) return;
-    // Đánh dấu đã đọc khi mở kênh/DM và mỗi khi có tin mới, để đối phương thấy trạng thái "đã xem".
-    doRead({ data: { channelId: activeId } }).then(() => {
-      qc.invalidateQueries({ queryKey: ["chat", "channels"] });
-      qc.invalidateQueries({ queryKey: ["chat", "readers", activeId] });
-    });
-  }, [activeId, active?.isMember, recent.length, doRead, qc]);
+    // Chỉ gọi khi thực sự có tin mới nhất khác lần trước → tránh ghi DB lặp và refetch dồn dập.
+    const key = `${activeId}:${lastMessageId ?? "empty"}`;
+    if (lastReadKeyRef.current === key) return;
+    lastReadKeyRef.current = key;
+    const t = setTimeout(() => {
+      void doRead({ data: { channelId: activeId } }).then(() => {
+        qc.invalidateQueries({ queryKey: ["chat", "channels"] });
+        qc.invalidateQueries({ queryKey: ["chat", "readers", activeId] });
+      });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [activeId, active?.isMember, lastMessageId, doRead, qc]);
 
   const refreshAll = () => { qc.invalidateQueries({ queryKey: ["chat"] }); };
 
