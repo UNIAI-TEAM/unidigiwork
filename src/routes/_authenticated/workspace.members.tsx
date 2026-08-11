@@ -59,7 +59,7 @@ function fmtDate(v: string | null): string {
 
 function WorkspaceMembersPage() {
   const qc = useQueryClient();
-  const { sidebarOpen, openSidebar, closeSidebar } = useSidebarState();
+  const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const [workspaceId, setWorkspaceId] = useState<string>("");
   const [email, setEmail] = useState("");
   const [tenantRole, setTenantRole] = useState<(typeof TENANT_ROLES)[number]["value"]>("member");
@@ -131,9 +131,9 @@ function WorkspaceMembersPage() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <AppSidebar active="dashboard" open={sidebarOpen} onClose={closeSidebar} />
+      <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
-        <AppTopbar variant="documents" onOpenSidebar={openSidebar} />
+        <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
         <div className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
