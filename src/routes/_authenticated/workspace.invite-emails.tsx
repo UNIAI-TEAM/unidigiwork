@@ -124,7 +124,7 @@ function InviteEmailTemplatesPage() {
 
   const previewVars = {
     inviteeEmail: "an.nguyen@congty.com",
-    inviterName: "Bạn",
+    inviterName: "Quản trị viên",
     tenantName: "Tổ chức của bạn",
     workspaceName: activeWsName,
     roleLabel: INVITE_ROLE_LABEL[role] ?? role,
