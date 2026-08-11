@@ -1919,39 +1919,63 @@ export type Database = {
       }
       plans: {
         Row: {
+          billing_period: string
           code: string
           created_at: string
+          cta_label: string | null
           description: string | null
           id: string
           is_active: boolean
           is_default: boolean
+          is_featured: boolean
           name: string
+          price_amount: number | null
+          price_currency: string
+          price_label: string | null
+          price_unit_label: string | null
           row_version: number
           sort_order: number
+          tagline: string | null
           updated_at: string
         }
         Insert: {
+          billing_period?: string
           code: string
           created_at?: string
+          cta_label?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean
+          is_featured?: boolean
           name: string
+          price_amount?: number | null
+          price_currency?: string
+          price_label?: string | null
+          price_unit_label?: string | null
           row_version?: number
           sort_order?: number
+          tagline?: string | null
           updated_at?: string
         }
         Update: {
+          billing_period?: string
           code?: string
           created_at?: string
+          cta_label?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean
+          is_featured?: boolean
           name?: string
+          price_amount?: number | null
+          price_currency?: string
+          price_label?: string | null
+          price_unit_label?: string | null
           row_version?: number
           sort_order?: number
+          tagline?: string | null
           updated_at?: string
         }
         Relationships: []
