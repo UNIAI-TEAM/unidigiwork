@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { getDashboardOverview } from "@/lib/api/dashboard.functions";
 import type { DashboardOverview as DashboardData } from "@/lib/api/dashboard.functions";
@@ -400,9 +402,67 @@ function AvatarStack({ count, seed }: { count: number; seed: string }) {
 }
 
 function DashboardPage() {
+  return <DashboardInner />;
+}
+
+const SECTIONS_STORAGE_KEY = "uniwork.dashboard.sections";
+
+const SECTION_OPTIONS = [
+  { key: "kpis", label: "Chỉ số KPI" },
+  { key: "activity", label: "Hoạt động tổng quan" },
+  { key: "donut", label: "Phân bổ công việc" },
+  { key: "projects", label: "Dự án nổi bật" },
+  { key: "recent", label: "Hoạt động gần đây" },
+  { key: "meetings", label: "Lịch họp hôm nay" },
+  { key: "workspaces", label: "Tổng quan không gian làm việc" },
+  { key: "ai", label: "Trợ lý AI (cột phải)" },
+] as const;
+
+type SectionKey = (typeof SECTION_OPTIONS)[number]["key"];
+
+const DEFAULT_SECTIONS = Object.fromEntries(
+  SECTION_OPTIONS.map((o) => [o.key, true]),
+) as Record<SectionKey, boolean>;
+
+function DashboardInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showAI, setShowAI] = useState(true);
   const [rangeDays, setRangeDays] = useState(7);
+  const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SECTIONS_STORAGE_KEY);
+      if (raw) setSections({ ...DEFAULT_SECTIONS, ...JSON.parse(raw) });
+    } catch {
+      /* ignore */
+    }
+    setHydrated(true);
+  }, []);
+
+  const toggleSection = (key: SectionKey) => {
+    setSections((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  const resetSections = () => {
+    setSections(DEFAULT_SECTIONS);
+    try {
+      localStorage.removeItem(SECTIONS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const visible = hydrated ? sections : DEFAULT_SECTIONS;
+  const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
 
@@ -443,21 +503,63 @@ function DashboardPage() {
                     <option value={30}>30 ngày qua</option>
                   </select>
                 </div>
-                <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
-                  <Settings2 className="h-4 w-4 text-muted-foreground" /> Customize
-                </button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2"
+                    >
+                      <Settings2 className="h-4 w-4 text-muted-foreground" /> Tuỳ chỉnh
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-72 p-0">
+                    <div className="border-b border-border px-4 py-3">
+                      <div className="text-sm font-semibold">Tuỳ chỉnh bảng điều khiển</div>
+                      <p className="text-xs text-muted-foreground">
+                        Chọn các khối muốn hiển thị. Thiết lập được lưu trên thiết bị này.
+                      </p>
+                    </div>
+                    <ul className="max-h-80 space-y-1 overflow-y-auto p-2">
+                      {SECTION_OPTIONS.map((opt) => (
+                        <li key={opt.key}>
+                          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
+                            <span>{opt.label}</span>
+                            <Switch
+                              checked={visible[opt.key]}
+                              onCheckedChange={() => toggleSection(opt.key)}
+                              aria-label={opt.label}
+                            />
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="border-t border-border px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        onClick={resetSections}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Khôi phục mặc định
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
             {/* KPI grid */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {kpis.map((k) => (
-                <KpiCard key={k.key} k={k} />
-              ))}
-            </div>
+            {visible.kpis && (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {kpis.map((k) => (
+                  <KpiCard key={k.key} k={k} />
+                ))}
+              </div>
+            )}
 
             {/* Activity + Donut */}
+            {(visible.activity || visible.donut) && (
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              {visible.activity && (
               <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
@@ -483,7 +585,9 @@ function DashboardPage() {
                   </ul>
                 </div>
               </div>
+              )}
 
+              {visible.donut && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
                 <div className="mt-4 flex flex-col items-center gap-4">
@@ -504,11 +608,15 @@ function DashboardPage() {
                   </ul>
                 </div>
               </div>
+              )}
             </div>
+            )}
 
             {/* Three column row */}
+            {(visible.projects || visible.recent || visible.meetings) && (
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
               {/* Projects */}
+              {visible.projects && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
@@ -547,8 +655,10 @@ function DashboardPage() {
                   </ul>
                 )}
               </div>
+              )}
 
               {/* Recent activity */}
+              {visible.recent && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
@@ -593,8 +703,10 @@ function DashboardPage() {
                   </ul>
                 )}
               </div>
+              )}
 
               {/* Meetings today */}
+              {visible.meetings && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
@@ -631,9 +743,12 @@ function DashboardPage() {
                   </ul>
                 )}
               </div>
+              )}
             </div>
+            )}
 
             {/* Workspaces overview */}
+            {visible.workspaces && (
             <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
@@ -679,6 +794,7 @@ function DashboardPage() {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           {/* Right rail: AI Assistant */}
@@ -695,7 +811,7 @@ function DashboardPage() {
                   </span>
                 </div>
                 <button
-                  onClick={() => setShowAI(false)}
+                  onClick={() => toggleSection("ai")}
                   className="rounded p-1 text-muted-foreground hover:bg-surface-2"
                 >
                   <X className="h-4 w-4" />
