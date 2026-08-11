@@ -40,7 +40,8 @@ export async function bootstrap(runId) {
     ids.users[key] = await ensureUser(a, `${TAG}${runId}_${key}@example.com`);
   }
   for (const [tk, owner] of [["A", "owner_a"], ["B", "owner_b"]]) {
-    const { data: rows, error } = await a.rpc("provision_tenant", {
+    const actor = await actorClient(`${TAG}${runId}_${owner}@example.com`);
+    const { data: rows, error } = await actor.client.rpc("provision_tenant", {
       _name: `${TAG}${runId}_t_${tk}`,
       _slug: `${TAG}${runId}-t-${tk}`.toLowerCase().replace(/_/g, "-"),
       _owner_id: ids.users[owner],

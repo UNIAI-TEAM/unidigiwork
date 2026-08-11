@@ -1,14 +1,352 @@
 {
   "summary": {
-    "runId": "7b9e433b",
-    "startedAt": "2026-08-11T15:00:02.004Z",
-    "finishedAt": "2026-08-11T15:00:05.049Z",
-    "bootError": "provision A: AUTHENTICATION_REQUIRED",
-    "total": 0,
-    "passed": 0,
-    "failed": 0,
-    "teardownOrphans": [],
-    "byStatus": {}
+    "runId": "c4291fe8",
+    "startedAt": "2026-08-11T15:00:14.676Z",
+    "finishedAt": "2026-08-11T15:00:40.331Z",
+    "bootError": null,
+    "total": 37,
+    "passed": 24,
+    "failed": 13,
+    "teardownOrphans": [
+      "a55ac51f-715d-48a0-8e57-525b64b58d7d",
+      "5e3024f9-363c-443a-b404-879ee3ebd807",
+      "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
+      "cfe196ec-6033-4a14-9c6e-f0284b71b6b0"
+    ],
+    "byStatus": {
+      "PASS_REAL": 24,
+      "FAIL_BROKEN": 11,
+      "FAIL_AUDIT": 2
+    }
   },
-  "cells": []
+  "cells": [
+    {
+      "id": "WS-C-01",
+      "entity": "workspace",
+      "op": "CREATE",
+      "status": "PASS_REAL",
+      "evidence": {
+        "workspace": {
+          "id": "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
+          "name": "crud_e2e_c4291fe8_ws_new",
+          "tenant_id": "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
+          "owner_id": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0"
+        },
+        "tenant": {
+          "id": "e7e554ff-a6fe-430a-8cff-92e5189b3ae9",
+          "status": "active"
+        },
+        "memberCount": 1
+      }
+    },
+    {
+      "id": "WS-T-01",
+      "entity": "workspace",
+      "op": "TRANSACTION_ATOMICITY",
+      "status": "PASS_REAL",
+      "note": "workspace → tenant → owner membership must be atomic"
+    },
+    {
+      "id": "WS-U-01",
+      "entity": "workspace",
+      "op": "UPDATE",
+      "status": "PASS_REAL",
+      "after": {
+        "name": "crud_e2e_c4291fe8_ws_new_upd"
+      }
+    },
+    {
+      "id": "WS-U-02",
+      "entity": "workspace",
+      "op": "UPDATE_CROSS_TENANT",
+      "status": "PASS_REAL"
+    },
+    {
+      "id": "WS-R-01",
+      "entity": "workspace",
+      "op": "READ_FOREIGN",
+      "status": "PASS_REAL",
+      "rows": 0
+    },
+    {
+      "id": "TAG-C-01",
+      "entity": "workspace_tag",
+      "op": "CREATE",
+      "status": "PASS_REAL",
+      "evidence": {
+        "id": "029efc1a-4f29-41ca-8989-f5a5130f20b4",
+        "name": "crud_e2e_tag"
+      }
+    },
+    {
+      "id": "TAG-U-01",
+      "entity": "workspace_tag",
+      "op": "UPDATE",
+      "status": "PASS_REAL",
+      "after": {
+        "name": "crud_e2e_tag_upd"
+      }
+    },
+    {
+      "id": "TAG-U-02",
+      "entity": "workspace_tag",
+      "op": "UPDATE_CROSS_TENANT",
+      "status": "PASS_REAL"
+    },
+    {
+      "id": "TAG-D-01",
+      "entity": "workspace_tag",
+      "op": "DELETE",
+      "status": "PASS_REAL"
+    },
+    {
+      "id": "MEM-U-01",
+      "entity": "tenant_member",
+      "op": "CHANGE_ROLE",
+      "status": "PASS_REAL",
+      "after": {
+        "role": "manager"
+      }
+    },
+    {
+      "id": "MEM-U-02",
+      "entity": "tenant_member",
+      "op": "CHANGE_ROLE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "PERMISSION_DENIED"
+    },
+    {
+      "id": "TASK-C-01",
+      "entity": "task",
+      "op": "CREATE",
+      "status": "FAIL_BROKEN",
+      "before": 0,
+      "after": 1,
+      "evidence": null
+    },
+    {
+      "id": "TASK-C-02",
+      "entity": "task",
+      "op": "CREATE_INVALID",
+      "status": "PASS_REAL",
+      "error": "new row for relation \"tasks\" violates check constraint \"tasks_title_check\""
+    },
+    {
+      "id": "TASK-C-03",
+      "entity": "task",
+      "op": "CREATE_CROSS_TENANT",
+      "status": "PASS_REAL",
+      "error": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "TASK-C-04",
+      "entity": "task",
+      "op": "CREATE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "TASK-C-05",
+      "entity": "task",
+      "op": "CREATE_IDEMPOTENCY",
+      "status": "FAIL_BROKEN",
+      "idemCount": 2,
+      "r1": {
+        "id": "726f6864-cd5f-4f80-ac1d-528770bd35c5",
+        "tenant_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
+        "workspace_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
+        "parent_task_id": null,
+        "project_id": null,
+        "title": "crud_e2e_idem",
+        "description": null,
+        "status": "todo",
+        "priority": "normal",
+        "due_at": null,
+        "completed_at": null,
+        "row_version": 1,
+        "created_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
+        "updated_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
+        "deleted_at": null,
+        "created_at": "2026-08-11T15:00:28.107948+00:00",
+        "updated_at": "2026-08-11T15:00:28.107948+00:00",
+        "tags": []
+      },
+      "r2": {
+        "id": "76ed4ba1-ba10-4e45-a391-6081f39a4f7a",
+        "tenant_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
+        "workspace_id": "a55ac51f-715d-48a0-8e57-525b64b58d7d",
+        "parent_task_id": null,
+        "project_id": null,
+        "title": "crud_e2e_idem",
+        "description": null,
+        "status": "todo",
+        "priority": "normal",
+        "due_at": null,
+        "completed_at": null,
+        "row_version": 1,
+        "created_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
+        "updated_by": "cfe196ec-6033-4a14-9c6e-f0284b71b6b0",
+        "deleted_at": null,
+        "created_at": "2026-08-11T15:00:28.310665+00:00",
+        "updated_at": "2026-08-11T15:00:28.310665+00:00",
+        "tags": []
+      }
+    },
+    {
+      "id": "TASK-R-01",
+      "entity": "task",
+      "op": "READ_LIST",
+      "status": "PASS_REAL",
+      "rows": 3
+    },
+    {
+      "id": "TASK-R-02",
+      "entity": "task",
+      "op": "READ_LIST_FOREIGN",
+      "status": "PASS_REAL",
+      "rows": 0
+    },
+    {
+      "id": "TASK-R-03",
+      "entity": "task",
+      "op": "READ_DETAIL",
+      "status": "FAIL_BROKEN"
+    },
+    {
+      "id": "TASK-U-01",
+      "entity": "task",
+      "op": "UPDATE",
+      "status": "FAIL_BROKEN",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
+      "before": {},
+      "after": {}
+    },
+    {
+      "id": "TASK-U-02",
+      "entity": "task",
+      "op": "UPDATE_STALE_VERSION",
+      "status": "PASS_REAL",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\""
+    },
+    {
+      "id": "TASK-U-03",
+      "entity": "task",
+      "op": "UPDATE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\""
+    },
+    {
+      "id": "TASK-U-04",
+      "entity": "task",
+      "op": "UPDATE_DIRECT_TABLE",
+      "status": "PASS_REAL",
+      "error": "invalid input syntax for type uuid: \"[object Object]\"",
+      "note": "lifecycle write must go through command"
+    },
+    {
+      "id": "TASK-L-01",
+      "entity": "task",
+      "op": "COMPLETE",
+      "status": "FAIL_BROKEN",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
+      "after": null
+    },
+    {
+      "id": "TASK-A-01",
+      "entity": "task",
+      "op": "ASSIGN",
+      "status": "FAIL_BROKEN",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"a28abc97-8790-4cb3-b28f-914e13e21ca3\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"parent_task_id\":null,\"project_id\":null,\"title\":\"crud_e2e_task_1\",\"description\":\"d\",\"status\":\"todo\",\"priority\":\"high\",\"due_at\":null,\"completed_at\":null,\"row_version\":1,\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"created_at\":\"2026-08-11T15:00:25.992637+00:00\",\"updated_at\":\"2026-08-11T15:00:25.992637+00:00\",\"tags\":[]}\"",
+      "assigneeCount": null
+    },
+    {
+      "id": "TASK-AU-01",
+      "entity": "task",
+      "op": "AUDIT",
+      "status": "FAIL_AUDIT",
+      "auditCount": 0
+    },
+    {
+      "id": "TASK-OB-01",
+      "entity": "task",
+      "op": "OUTBOX",
+      "status": "PASS_REAL",
+      "outboxCount": 7
+    },
+    {
+      "id": "TASK-D-01",
+      "entity": "task",
+      "op": "DELETE_DIRECT_DENIED",
+      "status": "FAIL_BROKEN",
+      "error": "invalid input syntax for type uuid: \"[object Object]\"",
+      "stillExists": false
+    },
+    {
+      "id": "DOC-C-01",
+      "entity": "document",
+      "op": "CREATE",
+      "status": "FAIL_BROKEN",
+      "evidence": null
+    },
+    {
+      "id": "DOC-C-02",
+      "entity": "document",
+      "op": "CREATE_PERMISSION",
+      "status": "PASS_REAL",
+      "error": "TENANT_ACCESS_DENIED"
+    },
+    {
+      "id": "DOC-R-01",
+      "entity": "document",
+      "op": "READ_LIST",
+      "status": "PASS_REAL",
+      "rows": 1
+    },
+    {
+      "id": "DOC-R-02",
+      "entity": "document",
+      "op": "READ_LIST_FOREIGN",
+      "status": "PASS_REAL",
+      "rows": 0
+    },
+    {
+      "id": "DOC-U-01",
+      "entity": "document",
+      "op": "UPDATE",
+      "status": "FAIL_BROKEN",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\"",
+      "after": null
+    },
+    {
+      "id": "DOC-A-01",
+      "entity": "document",
+      "op": "SHARE",
+      "status": "FAIL_BROKEN",
+      "error": "Could not find the function public.share_document(_document_id, _grantee_id, _permission) in the schema cache",
+      "permCount": null
+    },
+    {
+      "id": "DOC-D-01",
+      "entity": "document",
+      "op": "ARCHIVE",
+      "status": "FAIL_BROKEN",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\"",
+      "after": null
+    },
+    {
+      "id": "DOC-D-02",
+      "entity": "document",
+      "op": "ARCHIVE_REPEAT",
+      "status": "PASS_REAL",
+      "note": "idempotency/stability observed",
+      "error": "invalid input syntax for type uuid: \"{\"id\":\"3444dd85-ade0-4907-be7d-fbc0102f3801\",\"title\":\"crud_e2e_doc_1\",\"folder\":\"My Documents\",\"content\":\"\",\"created_at\":\"2026-08-11T15:00:34.594061+00:00\",\"updated_at\":\"2026-08-11T15:00:34.594061+00:00\",\"workspace_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"tenant_id\":\"a55ac51f-715d-48a0-8e57-525b64b58d7d\",\"row_version\":1,\"updated_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\",\"deleted_at\":null,\"storage_ref\":null,\"mime_type\":null,\"size_bytes\":0,\"current_version\":1,\"tags\":[\"crud\",\"e2e\"],\"created_by\":\"cfe196ec-6033-4a14-9c6e-f0284b71b6b0\"}\""
+    },
+    {
+      "id": "DOC-AU-01",
+      "entity": "document",
+      "op": "AUDIT",
+      "status": "FAIL_AUDIT",
+      "auditCount": 0
+    }
+  ]
 }
