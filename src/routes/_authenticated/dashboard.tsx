@@ -904,7 +904,7 @@ function DashboardInner() {
                 ),
               };
               return (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
                   {layoutOrder
                     .filter((k) => k !== "ai" && visible[k] && blocks[k])
                     .map((k) => (
