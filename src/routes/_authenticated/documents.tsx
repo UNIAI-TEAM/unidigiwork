@@ -1,3 +1,4 @@
+import { FilterPageHeader } from "@/components/filter-page-header";
 import { isStaleDocument } from "@/lib/metrics";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
@@ -550,6 +551,66 @@ function DocumentsPage() {
           {/* Document content */}
           <section className="flex min-w-0 flex-1 flex-col overflow-y-auto">
             <div className="border-b border-border px-4 py-3 sm:px-8">
+              <FilterPageHeader
+                crumbs={[
+                  { label: "Dashboard", to: "/dashboard" },
+                  { label: "Tài liệu", to: "/documents" },
+                  {
+                    label:
+                      docFilter === "stale"
+                        ? "Cần cập nhật"
+                        : rangeDays
+                          ? `${rangeDays} ngày qua`
+                          : "Tất cả",
+                  },
+                ]}
+                title={
+                  docFilter === "stale"
+                    ? "Tài liệu cần cập nhật"
+                    : rangeDays
+                      ? `Tài liệu ${rangeDays} ngày qua`
+                      : "Tất cả tài liệu"
+                }
+                description={
+                  docFilter === "stale"
+                    ? "Chưa được cập nhật trong hơn 30 ngày"
+                    : rangeDays
+                      ? `Được cập nhật trong ${rangeDays} ngày gần nhất`
+                      : undefined
+                }
+                chips={[
+                  ...(docFilter === "stale"
+                    ? [
+                        {
+                          label: "Quá 30 ngày",
+                          onClear: () =>
+                            navigate({
+                              to: "/documents",
+                              search: (p: { filter?: "stale"; range?: number }) => ({
+                                ...p,
+                                filter: undefined,
+                              }),
+                            }),
+                        },
+                      ]
+                    : []),
+                  ...(rangeDays
+                    ? [
+                        {
+                          label: `${rangeDays} ngày qua`,
+                          onClear: () =>
+                            navigate({
+                              to: "/documents",
+                              search: (p: { filter?: "stale"; range?: number }) => ({
+                                ...p,
+                                range: undefined,
+                              }),
+                            }),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                   <span>{currentWs?.name ?? "Workspace"}</span>

@@ -1,3 +1,4 @@
+import { FilterPageHeader } from "@/components/filter-page-header";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -280,6 +281,65 @@ function TasksPage() {
             </div>
 
             {/* Title row */}
+            <FilterPageHeader
+              crumbs={[
+                { label: "Dashboard", to: "/dashboard" },
+                { label: "Công việc", to: "/tasks" },
+                {
+                  label: overdueOnly
+                    ? "Quá hạn"
+                    : rangeDays
+                      ? `${rangeDays} ngày qua`
+                      : "Tất cả",
+                },
+              ]}
+              title={
+                overdueOnly
+                  ? "Công việc quá hạn"
+                  : rangeDays
+                    ? `Công việc ${rangeDays} ngày qua`
+                    : "Tất cả công việc"
+              }
+              description={
+                overdueOnly
+                  ? "Chỉ hiển thị việc đã quá hạn và chưa hoàn thành/huỷ"
+                  : rangeDays
+                    ? `Việc được cập nhật trong ${rangeDays} ngày gần nhất`
+                    : undefined
+              }
+              chips={[
+                ...(overdueOnly
+                  ? [
+                      {
+                        label: "Quá hạn",
+                        onClear: () =>
+                          navigateTasks({
+                            to: "/tasks",
+                            search: (p: { filter?: "overdue"; range?: number }) => ({
+                              ...p,
+                              filter: undefined,
+                            }),
+                          }),
+                      },
+                    ]
+                  : []),
+                ...(rangeDays
+                  ? [
+                      {
+                        label: `${rangeDays} ngày qua`,
+                        onClear: () =>
+                          navigateTasks({
+                            to: "/tasks",
+                            search: (p: { filter?: "overdue"; range?: number }) => ({
+                              ...p,
+                              range: undefined,
+                            }),
+                          }),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
