@@ -1130,6 +1130,91 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
           </section>
         </div>
       </div>
+
+      <Dialog open={!!taskDraft} onOpenChange={(o) => !o && setTaskDraft(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <ListTodo className="h-4 w-4 text-primary" /> Tạo công việc từ tin nhắn
+            </DialogTitle>
+          </DialogHeader>
+          {taskDraft && (
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Tiêu đề</label>
+                <input
+                  autoFocus
+                  value={taskDraft.title}
+                  onChange={(e) => setTaskDraft({ ...taskDraft, title: e.target.value })}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Mô tả</label>
+                <textarea
+                  rows={4}
+                  value={taskDraft.description}
+                  onChange={(e) => setTaskDraft({ ...taskDraft, description: e.target.value })}
+                  className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Không gian làm việc</label>
+                  <select
+                    value={taskDraft.workspaceId}
+                    onChange={(e) => setTaskDraft({ ...taskDraft, workspaceId: e.target.value })}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Chọn —</option>
+                    {(myWorkspaces ?? []).map((w) => (
+                      <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Độ ưu tiên</label>
+                  <select
+                    value={taskDraft.priority}
+                    onChange={(e) => setTaskDraft({ ...taskDraft, priority: e.target.value as typeof taskDraft.priority })}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="normal">Bình thường</option>
+                    <option value="high">Cao</option>
+                    <option value="urgent">Khẩn cấp</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Hạn hoàn thành (tuỳ chọn)</label>
+                <input
+                  type="datetime-local"
+                  value={taskDraft.dueAt}
+                  onChange={(e) => setTaskDraft({ ...taskDraft, dueAt: e.target.value })}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setTaskDraft(null)}
+                  className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface-2"
+                >
+                  Huỷ
+                </button>
+                <button
+                  disabled={!taskDraft.title.trim() || !taskDraft.workspaceId || createTaskM.isPending}
+                  onClick={() => createTaskM.mutate(taskDraft)}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                >
+                  {createTaskM.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Tạo & mở công việc
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
