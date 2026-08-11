@@ -9,7 +9,7 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
   getTaskDetail, commentTask, createSubtask, transitionTask,
-  addTaskAttachment, deleteTaskAttachment,
+  addTaskAttachment, deleteTaskAttachment, updateTask, setTaskTags,
 } from "@/lib/api/tasks.functions";
 import {
   uploadTaskAttachment, getTaskAttachmentUrl, removeTaskAttachmentObject, formatBytes,
@@ -63,6 +63,7 @@ function TaskDetailPage() {
   const [comment, setComment] = useState("");
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
 
   const detail = useQuery({
     queryKey: ["task-detail", id],
@@ -70,7 +71,25 @@ function TaskDetailPage() {
     retry: false,
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["task-detail", id] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["task-detail", id] });
+    qc.invalidateQueries({ queryKey: ["tasks"] });
+  };
+
+  // Sửa mức ưu tiên ngay tại trang chi tiết, lưu tức thì
+  const savePriority = useMutation({
+    mutationFn: (priority: "low" | "normal" | "high" | "urgent") =>
+      updateTask({ data: { taskId: id, priority, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => { invalidate(); toast.success("Đã cập nhật mức ưu tiên"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Sửa nhãn (tags) ngay tại trang chi tiết, lưu tức thì
+  const saveTags = useMutation({
+    mutationFn: (tags: string[]) => setTaskTags({ data: { taskId: id, tags } }),
+    onSuccess: () => { invalidate(); toast.success("Đã cập nhật nhãn"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const addComment = useMutation({
     mutationFn: (body: string) =>
