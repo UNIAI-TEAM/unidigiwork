@@ -31,6 +31,32 @@ export type ChatMessageDTO = {
   createdAt: string;
   editedAt: string | null;
   isMine: boolean;
+  parentId: string | null;
+  parentAuthorName: string | null;
+  parentExcerpt: string | null;
+  attachments: ChatAttachment[];
+};
+
+export type ChatAttachment = {
+  path: string;
+  name: string;
+  size: number;
+  mime: string;
+};
+
+export type ChatMemberDTO = {
+  userId: string;
+  name: string;
+  email: string | null;
+  role: "owner" | "member";
+  isMe: boolean;
+};
+
+export type ChatPersonDTO = {
+  userId: string;
+  name: string;
+  email: string | null;
+  isMember: boolean;
 };
 
 export type ChatListResult = {
@@ -158,26 +184,49 @@ export const listChatMessages = createServerFn({ method: "GET" })
         channelId: z.string().uuid(),
         limit: z.number().int().min(1).max(200).optional(),
         q: z.string().max(200).optional(),
+        before: z.string().optional(),
       })
       .parse(i),
   )
-  .handler(async ({ data, context }): Promise<ChatMessageDTO[]> => {
+  .handler(async ({ data, context }): Promise<{ messages: ChatMessageDTO[]; hasMore: boolean }> => {
     const ctx = context as unknown as Ctx;
+    const limit = data.limit ?? 50;
     let query = ctx.supabase
       .from("chat_messages")
-      .select("id, channel_id, body, author_id, created_at, edited_at")
+      .select("id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments")
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
-      .limit(data.limit ?? 100);
+      .limit(limit + 1);
     if (data.q && data.q.trim()) query = query.ilike("body", `%${data.q.trim()}%`);
+    if (data.before) query = query.lt("created_at", data.before);
     const { data: rows, error } = await query;
     if (error) mapPgError(error);
-    const list = (rows ?? []) as any[];
-    const names = await displayNames(ctx, list.map((r) => r.author_id));
-    return list
-      .reverse()
-      .map((r) => ({
+    let list = (rows ?? []) as any[];
+    const hasMore = list.length > limit;
+    if (hasMore) list = list.slice(0, limit);
+
+    // Tin nhắn gốc (reply)
+    const parentIds = Array.from(
+      new Set(list.map((r) => r.parent_message_id).filter(Boolean)),
+    ) as string[];
+    const parents = new Map<string, { body: string; author_id: string }>();
+    if (parentIds.length > 0) {
+      const { data: prows } = await ctx.supabase
+        .from("chat_messages")
+        .select("id, body, author_id")
+        .in("id", parentIds);
+      for (const p of (prows ?? []) as any[]) parents.set(p.id, p);
+    }
+
+    const names = await displayNames(ctx, [
+      ...list.map((r) => r.author_id),
+      ...Array.from(parents.values()).map((p) => p.author_id),
+    ]);
+
+    const messages = list.reverse().map((r) => {
+      const parent = r.parent_message_id ? parents.get(r.parent_message_id) : undefined;
+      return {
         id: r.id,
         channelId: r.channel_id,
         body: r.body,
@@ -186,13 +235,37 @@ export const listChatMessages = createServerFn({ method: "GET" })
         createdAt: r.created_at,
         editedAt: r.edited_at,
         isMine: r.author_id === ctx.userId,
-      }));
+        parentId: r.parent_message_id ?? null,
+        parentAuthorName: parent ? names.get(parent.author_id) ?? "Thành viên" : null,
+        parentExcerpt: parent ? String(parent.body).slice(0, 140) : null,
+        attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
+      };
+    });
+    return { messages, hasMore };
   });
 
 export const sendChatMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({ channelId: z.string().uuid(), body: z.string().trim().min(1).max(8000) }).parse(i),
+    z
+      .object({
+        channelId: z.string().uuid(),
+        body: z.string().trim().min(1).max(8000),
+        parentId: z.string().uuid().nullish(),
+        mentions: z.array(z.string().uuid()).max(30).optional(),
+        attachments: z
+          .array(
+            z.object({
+              path: z.string().min(1).max(500),
+              name: z.string().min(1).max(200),
+              size: z.number().int().min(0),
+              mime: z.string().max(120),
+            }),
+          )
+          .max(10)
+          .optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     const ctx = context as unknown as Ctx;
@@ -210,10 +283,18 @@ export const sendChatMessage = createServerFn({ method: "POST" })
         tenant_id: ch.tenant_id,
         author_id: ctx.userId,
         body: data.body,
+        parent_message_id: data.parentId ?? null,
+        attachments: data.attachments ?? [],
       })
       .select("id")
       .single();
     if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (data.mentions && data.mentions.length > 0) {
+      await ctx.supabase.rpc("create_chat_mention_notifications", {
+        _message_id: row.id,
+        _user_ids: data.mentions,
+      });
+    }
     return { id: row.id };
   });
 
