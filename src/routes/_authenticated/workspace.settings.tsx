@@ -53,6 +53,11 @@ function WorkspaceSettingsPage() {
   const [visibility, setVisibility] = useState<"private" | "tenant">("private");
   const [defaultMemberRole, setDefaultMemberRole] = useState<"member" | "owner">("member");
   const [allowMemberInvites, setAllowMemberInvites] = useState(false);
+  const [defaultTaskPriority, setDefaultTaskPriority] = useState<
+    "low" | "normal" | "high" | "urgent"
+  >("normal");
+  const [defaultTaskDueDays, setDefaultTaskDueDays] = useState(3);
+  const [defaultTaskTitlePrefix, setDefaultTaskTitlePrefix] = useState("");
 
   const workspacesQ = useQuery({ queryKey: ["workspaces", "list"], queryFn: () => listWorkspaces() });
   const workspaces = useMemo(() => workspacesQ.data ?? [], [workspacesQ.data]);
@@ -76,6 +81,9 @@ function WorkspaceSettingsPage() {
     setVisibility(s.visibility);
     setDefaultMemberRole(s.defaultMemberRole);
     setAllowMemberInvites(s.allowMemberInvites);
+    setDefaultTaskPriority(s.defaultTaskPriority);
+    setDefaultTaskDueDays(s.defaultTaskDueDays);
+    setDefaultTaskTitlePrefix(s.defaultTaskTitlePrefix);
   }, [settingsQ.data]);
 
   const isOwner = Boolean(settingsQ.data?.isOwner);
@@ -91,6 +99,9 @@ function WorkspaceSettingsPage() {
           visibility,
           defaultMemberRole,
           allowMemberInvites,
+          defaultTaskPriority,
+          defaultTaskDueDays,
+          defaultTaskTitlePrefix: defaultTaskTitlePrefix.trim(),
         },
       }),
     onSuccess: () => {
@@ -275,6 +286,7 @@ function WorkspaceSettingsPage() {
               </section>
 
               <div className="flex justify-end">
+                {null}
                 <button
                   type="submit"
                   disabled={!canSave}
