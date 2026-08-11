@@ -976,6 +976,44 @@ function MeetingDetailPage() {
                         <span className="text-[10px] text-muted-foreground">
                           {RSVP_LABELS[p.rsvp] ?? p.rsvp}
                         </span>
+                        {isHost &&
+                          p.userId !== myUserId &&
+                          meetingStatus !== "ended" &&
+                          meetingStatus !== "canceled" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  type="button"
+                                  disabled={transferBusy !== null}
+                                  title="Chuyển quyền chủ trì"
+                                  className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground disabled:opacity-60"
+                                >
+                                  {transferBusy === p.userId ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Crown className="h-3 w-3" />
+                                  )}
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Chuyển quyền chủ trì?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {p.name} sẽ trở thành người chủ trì cuộc họp. Bạn sẽ chuyển
+                                    thành người tham gia và mất quyền bắt đầu/kết thúc cuộc họp.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => void handleTransferHost(p.userId, p.name)}
+                                  >
+                                    Chuyển quyền
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                       </li>
                     ))}
                   </ul>
