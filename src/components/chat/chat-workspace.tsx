@@ -895,7 +895,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                           const prev = messages[i - 1];
                           const newDay = !prev || new Date(prev.createdAt).toDateString() !== new Date(m.createdAt).toDateString();
                           return (
-                            <div key={m.id}>
+                            <div key={m.id} id={`msg-${m.id}`} className={m.id === highlightMessageId ? "-mx-2 rounded-lg bg-primary/5 px-2 py-1 ring-1 ring-primary/40" : undefined}>
                               {newDay && (
                                 <div className="my-4 flex items-center gap-3">
                                   <div className="h-px flex-1 bg-border" />
