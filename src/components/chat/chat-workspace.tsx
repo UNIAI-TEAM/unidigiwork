@@ -613,6 +613,71 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                   </div>
                 </header>
 
+                {showFilters && (
+                  <div className="flex flex-wrap items-end gap-3 border-b border-border bg-surface-2/40 px-5 py-3">
+                    <div className="flex items-center gap-2 sm:hidden">
+                      <SearchIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Tìm tin nhắn…"
+                        className="rounded-lg border border-border bg-background px-2 py-1 text-sm focus:outline-none"
+                      />
+                    </div>
+                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                      Từ ngày
+                      <input
+                        type="date"
+                        value={dateFrom}
+                        max={dateTo || undefined}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="rounded-lg border border-border bg-background px-2 py-1 text-sm text-foreground focus:outline-none"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                      Đến ngày
+                      <input
+                        type="date"
+                        value={dateTo}
+                        min={dateFrom || undefined}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="rounded-lg border border-border bg-background px-2 py-1 text-sm text-foreground focus:outline-none"
+                      />
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      {[
+                        { label: "7 ngày", days: 7 },
+                        { label: "30 ngày", days: 30 },
+                        { label: "90 ngày", days: 90 },
+                      ].map((p) => (
+                        <button
+                          key={p.days}
+                          onClick={() => {
+                            const now = new Date();
+                            const start = new Date(now.getTime() - p.days * 86400000);
+                            setDateFrom(start.toISOString().slice(0, 10));
+                            setDateTo(now.toISOString().slice(0, 10));
+                          }}
+                          className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                    {searchActive && (
+                      <button
+                        onClick={() => { setQuery(""); setDateFrom(""); setDateTo(""); }}
+                        className="rounded-lg px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+                      >
+                        Xoá bộ lọc
+                      </button>
+                    )}
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {searchActive ? `${messages.length} kết quả${hasMore ? "+" : ""}` : "Toàn bộ tin nhắn"}
+                    </span>
+                  </div>
+                )}
+
                 {!active.isMember ? (
                   <div className="flex flex-1 flex-col items-center justify-center gap-3">
                     <p className="text-sm text-muted-foreground">Bạn chưa tham gia kênh này.</p>
