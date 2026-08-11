@@ -800,6 +800,44 @@ function MeetingDetailPage() {
                     ))}
                   </ul>
                   )}
+                  {isRealRoom && (
+                    <div className="mt-5 border-t border-border pt-3">
+                      <h4 className="mb-2 text-xs font-semibold">Lịch sử thao tác chủ trì</h4>
+                      {hostLogQuery.isLoading ? (
+                        <p className="text-xs text-muted-foreground">Đang tải…</p>
+                      ) : (hostLogQuery.data ?? []).length === 0 ? (
+                        <p className="text-xs text-muted-foreground">Chưa có thao tác nào.</p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {(hostLogQuery.data ?? []).map((e) => (
+                            <li key={e.id} className="text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                                    e.outcome === "success"
+                                      ? "bg-success/10 text-success"
+                                      : "bg-destructive/10 text-destructive"
+                                  }`}
+                                >
+                                  {e.action === "start" ? "Bắt đầu" : "Kết thúc"} ·{" "}
+                                  {e.outcome === "success" ? "Thành công" : "Thất bại"}
+                                </span>
+                              </div>
+                              <div className="mt-0.5 text-[10px] text-muted-foreground">
+                                {e.actorName ?? "Người dùng"} ·{" "}
+                                {new Date(e.occurredAt).toLocaleString("vi-VN")}
+                              </div>
+                              {e.errorCode && (
+                                <div className="text-[10px] font-mono text-destructive">
+                                  {e.errorCode}
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {tab === "transcript" && (
