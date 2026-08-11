@@ -127,7 +127,12 @@ function DocumentsPage() {
         return;
       }
       setWorkspaces(ws as Workspace[]);
-      if (ws && ws.length > 0) setCurrentWs(ws[0] as Workspace);
+      if (ws && ws.length > 0) {
+        // Ưu tiên workspace do dashboard truyền sang (?ws=) để số liệu khớp thẻ thống kê.
+        const wanted = new URLSearchParams(window.location.search).get("ws");
+        const picked = (wanted && ws.find((w) => (w as Workspace).id === wanted)) || ws[0];
+        setCurrentWs(picked as Workspace);
+      }
     })();
   }, [navigate]);
 
