@@ -680,18 +680,39 @@ function MeetingPage() {
                   <ul className="grid gap-2 md:grid-cols-2">
                     {rooms.data?.items.map((r) => (
                       <li key={r.id}>
-                        <Link
-                          to="/meeting/$id"
-                          params={{ id: r.id }}
-                          className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40"
-                        >
-                          <span className="min-w-0 flex-1 truncate">{r.title}</span>
-                          <RoomStatusChip
-                            status={r.status}
-                            startAt={r.start_at}
-                            endAt={r.end_at}
-                          />
-                        </Link>
+                        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40">
+                          <Link
+                            to="/meeting/$id"
+                            params={{ id: r.id }}
+                            className="flex min-w-0 flex-1 items-center justify-between gap-2"
+                          >
+                            <span className="min-w-0 flex-1 truncate">{r.title}</span>
+                            <RoomStatusChip
+                              status={r.status}
+                              startAt={r.start_at}
+                              endAt={r.end_at}
+                            />
+                          </Link>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(r)}
+                              className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCancelRoom(r);
+                                setCancelReason("");
+                              }}
+                              className="rounded-md border border-border px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
                       </li>
                     ))}
                   </ul>
