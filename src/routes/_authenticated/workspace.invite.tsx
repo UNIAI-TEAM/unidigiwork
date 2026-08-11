@@ -236,6 +236,12 @@ function WorkspaceInvitePage() {
               Gán sẵn vai trò và quyền quy trình mặc định — hệ thống tự áp dụng ngay khi người được
               mời chấp nhận.
             </p>
+            <Link
+              to="/workspace/invite-emails"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
+            >
+              <Mail className="h-3.5 w-3.5" /> Chỉnh sửa mẫu email mời theo vai trò
+            </Link>
           </header>
 
           <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
