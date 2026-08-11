@@ -1396,14 +1396,30 @@ function DashboardInner() {
                 ) : (
                   <div className="mt-2 space-y-2">
                     {importantNotifications.map((n: any) => (
-                      <Link
-                        key={n.id}
-                        to="/notifications"
-                        className="flex items-start gap-2 text-xs hover:opacity-80"
-                      >
-                        <Bell className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
-                        <div className="min-w-0">
-                          <div className="truncate font-medium">{n.title}</div>
+                      <div key={n.id} className="flex items-start gap-2 text-xs">
+                        <button
+                          type="button"
+                          disabled={n.is_read || markingId === n.id}
+                          onClick={() => handleMarkRead(n.id)}
+                          title={n.is_read ? "Đã đọc" : "Đánh dấu đã đọc"}
+                          aria-label={n.is_read ? "Đã đọc" : "Đánh dấu đã đọc"}
+                          className="mt-0.5 shrink-0 disabled:opacity-60"
+                        >
+                          <Bell
+                            className={`h-3.5 w-3.5 ${n.is_read ? "text-muted-foreground" : "text-amber-300"}`}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMarkRead(n.id)}
+                          className="min-w-0 flex-1 text-left hover:opacity-80 disabled:opacity-60"
+                          disabled={markingId === n.id}
+                        >
+                          <div
+                            className={`truncate ${n.is_read ? "font-normal text-muted-foreground" : "font-medium"}`}
+                          >
+                            {n.title}
+                          </div>
                           {n.body && (
                             <div className="truncate text-muted-foreground">{n.body}</div>
                           )}
@@ -1418,8 +1434,15 @@ function DashboardInner() {
                             }).format(new Date(n.created_at))}{" "}
                             (GMT+7)
                           </div>
-                        </div>
-                      </Link>
+                        </button>
+                        <Link
+                          to="/notifications"
+                          className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                          aria-label="Mở trang thông báo"
+                        >
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
                     ))}
                   </div>
                 )}
