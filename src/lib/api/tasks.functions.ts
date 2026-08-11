@@ -16,6 +16,8 @@ export const listTasks = createServerFn({ method: "GET" })
     z.object({
       workspaceId: z.string().uuid(),
       status: taskStatusSchema.optional(),
+      priority: taskPrioritySchema.optional(),
+      tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
       limit: z.number().int().min(1).max(200).default(50),
     }).parse(i),
   )
@@ -25,6 +27,8 @@ export const listTasks = createServerFn({ method: "GET" })
       .eq("workspace_id", data.workspaceId).is("deleted_at", null)
       .order("updated_at", { ascending: false }).limit(data.limit);
     if (data.status) q = q.eq("status", data.status);
+    if (data.priority) q = q.eq("priority", data.priority);
+    if (data.tags?.length) q = q.overlaps("tags", data.tags);
     const { data: rows, error } = await q;
     if (error) mapPgError(error);
     return rows ?? [];
@@ -41,6 +45,7 @@ export const createTask = createServerFn({ method: "POST" })
       priority: taskPrioritySchema.default("normal"),
       dueAt: z.string().datetime().optional(),
       assigneeId: z.string().uuid().optional(),
+      tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -54,7 +59,31 @@ export const createTask = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
     });
-    return ensureOk(res, "TASK_NOT_FOUND");
+    const created = ensureOk(res, "TASK_NOT_FOUND");
+    // Nhãn (tags) không thuộc RPC create_task → ghi bổ sung theo RLS của người dùng.
+    const row = Array.isArray(created) ? (created as any[])[0] : (created as any);
+    if (data.tags?.length && row?.id) {
+      const tags = Array.from(new Set(data.tags.map((t) => t.trim()).filter(Boolean)));
+      await context.supabase.from("tasks").update({ tags }).eq("id", row.id);
+      if (row) row.tags = tags;
+    }
+    return created;
+  });
+
+/** Cập nhật nhãn cho một công việc (RLS áp dụng theo người dùng). */
+export const setTaskTags = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      taskId: z.string().uuid(),
+      tags: z.array(z.string().trim().min(1).max(40)).max(10),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tags = Array.from(new Set(data.tags.map((t) => t.trim()).filter(Boolean)));
+    const { error } = await context.supabase.from("tasks").update({ tags }).eq("id", data.taskId);
+    if (error) mapPgError(error);
+    return { ok: true as const, tags };
   });
 
 export const updateTask = createServerFn({ method: "POST" })
