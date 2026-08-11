@@ -761,6 +761,14 @@ function MeetingPage() {
                     </button>
                   )}
                 </div>
+                <button
+                  onClick={() => setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })}
+                  aria-label={sortStartAt === "asc" ? "Sắp xếp ngày bắt đầu tăng dần" : "Sắp xếp ngày bắt đầu giảm dần"}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                  {sortStartAt === "asc" ? "Ngày bắt đầu ↑" : "Ngày bắt đầu ↓"}
+                </button>
               </div>
 
               {listLoading ? (
