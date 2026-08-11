@@ -898,6 +898,88 @@ function MeetingPage() {
           onSubmit={(v) => createRoom.mutate(v)}
         />
       ) : null}
+
+      <Dialog open={!!editRoom} onOpenChange={(o) => !o && setEditRoom(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sửa cuộc họp</DialogTitle>
+            <DialogDescription>Cập nhật tiêu đề và thời gian của cuộc họp.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-title">Tiêu đề</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-start">Bắt đầu</Label>
+                <Input
+                  id="edit-start"
+                  type="datetime-local"
+                  value={editStart}
+                  onChange={(e) => setEditStart(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-end">Kết thúc</Label>
+                <Input
+                  id="edit-end"
+                  type="datetime-local"
+                  value={editEnd}
+                  onChange={(e) => setEditEnd(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditRoom(null)}>
+              Đóng
+            </Button>
+            <Button
+              onClick={() => updateRoom.mutate()}
+              disabled={updateRoom.isPending || !editTitle.trim()}
+            >
+              {updateRoom.isPending ? "Đang lưu…" : "Lưu thay đổi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!cancelRoom} onOpenChange={(o) => !o && setCancelRoom(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hủy cuộc họp</DialogTitle>
+            <DialogDescription>
+              {cancelRoom ? `“${cancelRoom.title}” sẽ được đánh dấu là đã hủy.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="cancel-reason">Lý do (tùy chọn)</Label>
+            <Input
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ví dụ: dời sang tuần sau"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelRoom(null)}>
+              Quay lại
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => cancelRoomMutation.mutate()}
+              disabled={cancelRoomMutation.isPending}
+            >
+              {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
