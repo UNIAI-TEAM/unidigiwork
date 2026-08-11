@@ -12,7 +12,7 @@ import {
   listMyWorkspaces,
   listMeetingParticipants,
 } from "@/lib/api/meeting-rooms.functions";
-import { cancelMeeting, updateMeeting } from "@/lib/api/meetings.functions";
+import { cancelMeeting, listMeetings, updateMeeting } from "@/lib/api/meetings.functions";
 import {
   Dialog,
   DialogContent,
@@ -355,6 +355,11 @@ function MeetingPage() {
 
   const roomState: RoomFilterState = search.state ?? restoredFilter?.state ?? "all";
 
+  // Bộ lọc khoảng ngày (yyyy-mm-dd) — khi bật sẽ truy vấn qua listMeetings.
+  const dateFrom = search.from;
+  const dateTo = search.to;
+  const rangeActive = !!(dateFrom || dateTo);
+
   useEffect(() => {
     try {
       window.localStorage.setItem(
@@ -374,16 +379,20 @@ function MeetingPage() {
     q?: string;
     page?: number;
     state?: RoomFilterState;
+    from?: string;
+    to?: string;
   }) => {
     setRestoredFilter(null);
     const effectiveState = next.state ?? roomState;
-    const { state: _ignored, ...rest } = next;
+    const { state: _ignored, from: nextFrom, to: nextTo, ...rest } = next;
     void navigate({
       to: "/meeting",
       search: {
         ...search,
         ws: activeWs,
         q: roomQuery,
+        from: nextFrom !== undefined ? nextFrom || undefined : dateFrom,
+        to: nextTo !== undefined ? nextTo || undefined : dateTo,
         ...rest,
         state: effectiveState === "all" ? undefined : effectiveState,
       },
@@ -393,7 +402,7 @@ function MeetingPage() {
 
   const rooms = useQuery({
     queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
-    enabled: !!activeWs,
+    enabled: !!activeWs && !rangeActive,
     placeholderData: keepPreviousData,
     queryFn: () =>
       listMyMeetingRooms({
@@ -406,6 +415,44 @@ function MeetingPage() {
         },
       }),
   });
+
+  const rangeQuery = useQuery({
+    queryKey: ["meetings-range", activeWs ?? null, dateFrom ?? null, dateTo ?? null],
+    enabled: !!activeWs && rangeActive,
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      listMeetings({
+        data: {
+          workspaceId: activeWs as string,
+          ...(dateFrom ? { from: new Date(`${dateFrom}T00:00:00`).toISOString() } : {}),
+          ...(dateTo ? { to: new Date(`${dateTo}T23:59:59.999`).toISOString() } : {}),
+          limit: 200,
+        },
+      }),
+  });
+
+  type ListRoom = { id: string; title: string; status: string; start_at: string; end_at: string };
+
+  // Khi lọc theo ngày: lọc thêm từ khóa/trạng thái và phân trang phía client.
+  const rangeFiltered = useMemo<ListRoom[]>(() => {
+    if (!rangeActive) return [];
+    const now = Date.now();
+    const rows = (rangeQuery.data ?? []) as unknown as ListRoom[];
+    return rows.filter((r) => {
+      if (roomQuery && !r.title?.toLowerCase().includes(roomQuery.toLowerCase())) return false;
+      if (roomState === "live") return r.status === "live";
+      if (roomState === "upcoming")
+        return r.status === "scheduled" && new Date(r.start_at).getTime() > now;
+      return true;
+    });
+  }, [rangeActive, rangeQuery.data, roomQuery, roomState]);
+
+  const listItems: ListRoom[] = rangeActive
+    ? rangeFiltered.slice((currentPage - 1) * ROOM_PAGE_SIZE, currentPage * ROOM_PAGE_SIZE)
+    : ((rooms.data?.items ?? []) as ListRoom[]);
+  const listTotal = rangeActive ? rangeFiltered.length : (rooms.data?.total ?? 0);
+  const listLoading = rangeActive ? rangeQuery.isLoading : rooms.isLoading;
+  const listFetching = rangeActive ? rangeQuery.isFetching : rooms.isFetching;
 
   const createRoom = useMutation({
     mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
