@@ -140,7 +140,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
   const peopleQ = useQuery({
     queryKey: ["chat", "people", activeId],
     queryFn: () => fetchPeople({ data: { channelId: activeId ?? null } }),
-    enabled: showPeople || mentionQuery !== null,
+    enabled: showPeople || showMembers || mentionQuery !== null,
   });
   const people = peopleQ.data ?? [];
 
