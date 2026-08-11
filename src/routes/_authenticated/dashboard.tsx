@@ -45,6 +45,7 @@ import {
   Send,
   BookOpen,
   AlertTriangle,
+  ArrowUpDown,
   ShieldCheck,
   X,
   TrendingUp,
