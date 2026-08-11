@@ -245,6 +245,18 @@ export const createWorkspace = createServerFn({ method: "POST" })
     if (data.timezone && data.timezone !== "Asia/Ho_Chi_Minh") {
       await supabase.from("workspaces").update({ timezone: data.timezone }).eq("id", workspaceId);
     }
+    const { data: created } = await supabase
+      .from("workspaces")
+      .select(AUDIT_FIELDS)
+      .eq("id", workspaceId)
+      .maybeSingle();
+    await logWorkspaceAudit({
+      tenantId: ((created as Row | null)?.tenant_id as string) ?? null,
+      actorId: userId,
+      eventType: "workspace.created",
+      workspaceId,
+      after: (created as Row | null) ?? null,
+    });
     return { workspaceId };
   });
 
@@ -284,17 +296,31 @@ export const updateWorkspace = createServerFn({ method: "POST" })
     if (data.defaultMemberRole) patch.default_member_role = data.defaultMemberRole;
     if (data.allowMemberInvites !== undefined) patch.allow_member_invites = data.allowMemberInvites;
 
+    const { data: before } = await supabase
+      .from("workspaces")
+      .select(AUDIT_FIELDS)
+      .eq("id", data.workspaceId)
+      .maybeSingle();
+
     const { data: updated, error } = await supabase
       .from("workspaces")
       .update(patch)
       .eq("id", data.workspaceId)
-      .select("id");
+      .select(AUDIT_FIELDS);
     if (error) fail(error, "WORKSPACE_UPDATE_FAILED");
     if (!updated?.length)
       throw new ApiError({
         code: "PERMISSION_DENIED",
         message: "Chỉ chủ sở hữu workspace mới được chỉnh sửa.",
       });
+    await logWorkspaceAudit({
+      tenantId: ((updated[0] as Row).tenant_id as string) ?? null,
+      actorId: userId,
+      eventType: "workspace.updated",
+      workspaceId: data.workspaceId,
+      before: (before as Row | null) ?? null,
+      after: updated[0] as Row,
+    });
     return { ok: true };
   });
 
@@ -347,6 +373,11 @@ export const archiveWorkspace = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ArchiveInput.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
+    const { data: beforeArchive } = await supabase
+      .from("workspaces")
+      .select(AUDIT_FIELDS)
+      .eq("id", data.workspaceId)
+      .maybeSingle();
     const { data: updated, error } = await supabase
       .from("workspaces")
       .update({
@@ -355,13 +386,21 @@ export const archiveWorkspace = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.workspaceId)
-      .select("id");
+      .select(AUDIT_FIELDS);
     if (error) fail(error, "WORKSPACE_DELETE_FAILED");
     if (!updated?.length)
       throw new ApiError({
         code: "PERMISSION_DENIED",
         message: "Chỉ chủ sở hữu workspace mới được xóa hoặc khôi phục.",
       });
+    await logWorkspaceAudit({
+      tenantId: ((updated[0] as Row).tenant_id as string) ?? null,
+      actorId: userId,
+      eventType: data.restore ? "workspace.restored" : "workspace.archived",
+      workspaceId: data.workspaceId,
+      before: (beforeArchive as Row | null) ?? null,
+      after: updated[0] as Row,
+    });
     return { ok: true };
   });
 
