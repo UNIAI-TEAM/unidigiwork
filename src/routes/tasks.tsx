@@ -40,6 +40,7 @@ import { useI18n } from "@/lib/i18n";
 export const Route = createFileRoute("/tasks")({
   validateSearch: (search: Record<string, unknown>) => ({
     filter: search['filter'] === "overdue" ? ("overdue" as const) : undefined,
+    range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
   }),
   head: () => ({
     meta: [
@@ -114,7 +115,7 @@ function TasksPage() {
   const allTasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   // Bộ lọc phân loại: nhãn (tags) + mức ưu tiên
-  const { filter: urlFilter } = Route.useSearch();
+  const { filter: urlFilter, range: rangeDays } = Route.useSearch();
   const navigateTasks = useNavigate();
   const overdueOnly = urlFilter === "overdue";
   const [tagFilter, setTagFilter] = useState<string[]>([]);
@@ -132,6 +133,8 @@ function TasksPage() {
         (tk) =>
           (!priorityFilter || tk.priority === priorityFilter) &&
           (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))) &&
+          (!rangeDays ||
+            Date.now() - new Date(tk.updated_at).getTime() <= rangeDays * 86400_000) &&
           (!overdueOnly ||
             (!!tk.due_at && tk.status !== "done" && new Date(tk.due_at) < new Date())),
       );
@@ -153,7 +156,7 @@ function TasksPage() {
         }
       });
     },
-    [allTasks, priorityFilter, tagFilter, sortBy, overdueOnly],
+    [allTasks, priorityFilter, tagFilter, sortBy, overdueOnly, rangeDays],
   );
 
   // Bộ lọc đã lưu ("view") theo người dùng
@@ -462,10 +465,18 @@ function TasksPage() {
               )}
               {overdueOnly && (
                 <button
-                  onClick={() => navigateTasks({ to: "/tasks", search: {} })}
+                  onClick={() => navigateTasks({ to: "/tasks", search: (p: { filter?: "overdue"; range?: number }) => ({ ...p, filter: undefined }) })}
                   className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs text-warning hover:bg-warning/25"
                 >
                   Chỉ hiển thị quá hạn <X className="h-3 w-3" />
+                </button>
+              )}
+              {rangeDays && (
+                <button
+                  onClick={() => navigateTasks({ to: "/tasks", search: (p: { filter?: "overdue"; range?: number }) => ({ ...p, range: undefined }) })}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs text-primary hover:bg-primary/25"
+                >
+                  {rangeDays} ngày qua <X className="h-3 w-3" />
                 </button>
               )}
               {(tagFilter.length > 0 || priorityFilter) && (
