@@ -811,7 +811,18 @@ function MeetingDetailPage() {
                 >
                   <img src={avatar(p.seed)} className="h-20 w-20 rounded-full" alt="" />
                   <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between rounded-md bg-black/40 px-2 py-1 text-xs backdrop-blur">
-                    <span className="truncate">{p.name}</span>
+                    <span className="flex min-w-0 items-center gap-1.5 truncate">
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                          p.presence === "online"
+                            ? "bg-success"
+                            : p.presence === "left"
+                              ? "bg-muted-foreground"
+                              : "bg-border"
+                        }`}
+                      />
+                      <span className="truncate">{p.name}</span>
+                    </span>
                     {p.speaking && <Mic className="h-3 w-3 text-success" />}
                   </div>
                 </div>
@@ -989,6 +1000,27 @@ function MeetingDetailPage() {
                           {p.role === "host" && (
                             <span className="ml-1 text-[10px] text-muted-foreground">(Chủ trì)</span>
                           )}
+                        </span>
+                        <span
+                          title={PRESENCE_LABELS[p.presence]}
+                          className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] ${
+                            p.presence === "online"
+                              ? "bg-success/10 text-success"
+                              : p.presence === "left"
+                                ? "bg-surface-3 text-muted-foreground"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              p.presence === "online"
+                                ? "bg-success"
+                                : p.presence === "left"
+                                  ? "bg-muted-foreground"
+                                  : "bg-border"
+                            }`}
+                          />
+                          {PRESENCE_LABELS[p.presence]}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
                           {RSVP_LABELS[p.rsvp] ?? p.rsvp}
