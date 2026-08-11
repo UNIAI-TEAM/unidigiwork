@@ -584,6 +584,15 @@ function DashboardInner() {
   const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
 
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
+  const aiSummaryQuery = useQuery({
+    queryKey: ["dashboard-ai-summary", activeWorkspaceId ?? "all"],
+    queryFn: () =>
+      getDashboardAiSummary({
+        data: activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {},
+      }),
+    staleTime: 30_000,
+  });
+  const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
   const activity = useMemo(() => buildActivity(data.overview), [data.overview]);
   const donut = useMemo(() => buildDonut(data.overview), [data.overview]);
   const projects = data.projects;
