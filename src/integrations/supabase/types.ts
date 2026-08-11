@@ -4518,6 +4518,10 @@ export type Database = {
         Args: { _id: string; _worker: string }
         Returns: boolean
       }
+      create_chat_mention_notifications: {
+        Args: { _message_id: string; _user_ids: string[] }
+        Returns: number
+      }
       create_document: {
         Args: {
           _correlation_id?: string
