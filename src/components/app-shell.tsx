@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listMyWorkspaces } from "@/lib/api/workspace-overview.functions";
+import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -403,6 +404,20 @@ export function AppSidebar({
             label={t("nav.calendar")}
             to="/calendar"
             active={active === "calendar"}
+            collapsed={collapsed}
+          />
+          <NavItem
+            icon={Bell}
+            label={t("nav.notifications")}
+            to="/notifications"
+            active={active === "notifications"}
+            badge={
+              !collapsed && unreadCount > 0 ? (
+                <span className="rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              ) : undefined
+            }
             collapsed={collapsed}
           />
           <NavItem
