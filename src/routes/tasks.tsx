@@ -113,18 +113,39 @@ function TasksPage() {
   // Bộ lọc phân loại: nhãn (tags) + mức ưu tiên
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<Priority | "">("");
+  const [sortBy, setSortBy] = useState<"default" | "priority-desc" | "priority-asc" | "tag-asc" | "tag-desc">(
+    "default",
+  );
   const allTags = useMemo(
     () => Array.from(new Set(allTasks.flatMap((tk) => tk.tags ?? []))).sort(),
     [allTasks],
   );
   const tasks = useMemo(
-    () =>
-      allTasks.filter(
+    () => {
+      const filtered = allTasks.filter(
         (tk) =>
           (!priorityFilter || tk.priority === priorityFilter) &&
           (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))),
-      ),
-    [allTasks, priorityFilter, tagFilter],
+      );
+      if (sortBy === "default") return filtered;
+      const rank: Record<Priority, number> = { urgent: 4, high: 3, normal: 2, low: 1 };
+      const firstTag = (t: Task) => ((t.tags ?? []).slice().sort()[0] ?? "\uffff").toLowerCase();
+      return filtered.slice().sort((a, b) => {
+        switch (sortBy) {
+          case "priority-desc":
+            return rank[b.priority] - rank[a.priority];
+          case "priority-asc":
+            return rank[a.priority] - rank[b.priority];
+          case "tag-asc":
+            return firstTag(a).localeCompare(firstTag(b), "vi");
+          case "tag-desc":
+            return firstTag(b).localeCompare(firstTag(a), "vi");
+          default:
+            return 0;
+        }
+      });
+    },
+    [allTasks, priorityFilter, tagFilter, sortBy],
   );
 
   // Bộ lọc đã lưu ("view") theo người dùng
@@ -394,6 +415,19 @@ function TasksPage() {
                 <option value="normal">Bình thường</option>
                 <option value="high">Cao</option>
                 <option value="urgent">Khẩn cấp</option>
+              </select>
+              <span className="text-xs font-medium text-muted-foreground">Sắp xếp:</span>
+              <select
+                aria-label="Sắp xếp công việc"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="default">Mặc định</option>
+                <option value="priority-desc">Ưu tiên: cao → thấp</option>
+                <option value="priority-asc">Ưu tiên: thấp → cao</option>
+                <option value="tag-asc">Nhãn: A → Z</option>
+                <option value="tag-desc">Nhãn: Z → A</option>
               </select>
               {allTags.length === 0 ? (
                 <span className="text-xs text-muted-foreground">Chưa có nhãn nào</span>
