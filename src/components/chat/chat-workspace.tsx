@@ -22,6 +22,7 @@ import {
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
 import { createTask } from "@/lib/api/tasks.functions";
+import { listWorkspaceMembers } from "@/lib/api/workspaces.functions";
 import { buildChatSourceTag } from "@/lib/chat-task-link";
 import { useMyWorkspaces, useActiveWorkspace } from "@/lib/active-workspace";
 
@@ -215,8 +216,14 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const doCreateTask = useServerFn(createTask);
   const [taskDraft, setTaskDraft] = useState<
-    { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string } | null
+    { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string; assigneeId: string } | null
   >(null);
+  // Thành viên của workspace đang chọn — dùng cho ô "Người phụ trách"
+  const taskMembersQ = useQuery({
+    queryKey: ["workspace", "members", taskDraft?.workspaceId],
+    queryFn: () => listWorkspaceMembers({ data: { workspaceId: taskDraft!.workspaceId } }),
+    enabled: !!taskDraft?.workspaceId,
+  });
   const createTaskM = useMutation({
     mutationFn: async (v: NonNullable<typeof taskDraft>) => {
       const src = activeId ? `\n\n${buildChatSourceTag(activeId, v.messageId)}` : "";
@@ -228,6 +235,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
           description: `${v.description.trim()}${src}`.trim() || undefined,
           priority: v.priority,
           dueAt: v.dueAt ? new Date(v.dueAt).toISOString() : undefined,
+          assigneeId: v.assigneeId || undefined,
         },
       });
     },
@@ -250,6 +258,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
       workspaceId: activeWorkspaceId ?? myWorkspaces?.[0]?.id ?? "",
       priority: "normal",
       dueAt: "",
+      assigneeId: "",
     });
   };
   const [showPeople, setShowPeople] = useState(false);
