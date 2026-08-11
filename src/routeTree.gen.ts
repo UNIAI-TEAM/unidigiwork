@@ -50,6 +50,7 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
@@ -279,6 +280,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWorkspaceIndexRoute =
+  AuthenticatedWorkspaceIndexRouteImport.update({
+    id: '/workspace/',
+    path: '/workspace/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -467,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
@@ -530,6 +538,7 @@ export interface FileRoutesByTo {
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
@@ -597,6 +606,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
@@ -664,6 +674,7 @@ export interface FileRouteTypes {
     | '/workspace/invite'
     | '/blog/category/$category'
     | '/admin/'
+    | '/workspace/'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
@@ -727,6 +738,7 @@ export interface FileRouteTypes {
     | '/workspace/invite'
     | '/blog/category/$category'
     | '/admin'
+    | '/workspace'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
@@ -793,6 +805,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/invite'
     | '/blog/category/$category'
     | '/_authenticated/admin/'
+    | '/_authenticated/workspace/'
     | '/_authenticated/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
@@ -1118,6 +1131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workspace/': {
+      id: '/_authenticated/workspace/'
+      path: '/workspace'
+      fullPath: '/workspace/'
+      preLoaderRoute: typeof AuthenticatedWorkspaceIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -1381,6 +1401,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
+  AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1400,6 +1421,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
+  AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
