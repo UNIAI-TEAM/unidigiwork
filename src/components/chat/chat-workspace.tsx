@@ -852,7 +852,7 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                                     </div>
                                   )}
 
-                                  <ReadReceipts readers={readers} message={m} />
+                                  <ReadReceipts readers={readers} message={m} isDm={active.kind === "dm"} />
                                 </div>
                               </div>
                             </div>
