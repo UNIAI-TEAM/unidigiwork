@@ -173,9 +173,17 @@ function CalendarPage() {
   }, [cursor]);
 
   const fetchEvents = useServerFn(listCalendarEvents);
+  const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ["calendar-events", range.from, range.to],
-    queryFn: () => fetchEvents({ data: { from: range.from, to: range.to } }),
+    queryKey: ["calendar-events", range.from, range.to, activeWorkspaceId ?? "all"],
+    queryFn: () =>
+      fetchEvents({
+        data: {
+          from: range.from,
+          to: range.to,
+          ...(activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {}),
+        },
+      }),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
