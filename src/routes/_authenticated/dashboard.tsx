@@ -1293,6 +1293,20 @@ function DashboardInner() {
                 </div>
               )}
 
+              {openedLinks.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {openedLinks.map((l) => (
+                    <span
+                      key={`${l.path}-${l.at}`}
+                      title={`${l.path}${l.filters ? " · " + Object.entries(l.filters).map(([k, v]) => `${k}=${v}`).join(", ") : ""}`}
+                      className="rounded-full border border-border/60 bg-surface-2/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                    >
+                      Đã mở: {l.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="mt-4 flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2">
                 <input
                   value={aiInput}
