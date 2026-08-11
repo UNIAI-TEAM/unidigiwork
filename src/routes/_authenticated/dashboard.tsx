@@ -659,10 +659,18 @@ function DashboardInner() {
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
   const aiSummaryQuery = useQuery({
     queryKey: ["dashboard-ai-summary", activeWorkspaceId ?? "all"],
-    queryFn: () =>
-      getDashboardAiSummary({
-        data: activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {},
-      }),
+    queryFn: () => {
+      const s = new Date();
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(s.getTime() + 86400_000);
+      return getDashboardAiSummary({
+        data: {
+          ...(activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {}),
+          dayStart: s.toISOString(),
+          dayEnd: e.toISOString(),
+        },
+      });
+    },
     staleTime: 30_000,
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchOnWindowFocus: true,
