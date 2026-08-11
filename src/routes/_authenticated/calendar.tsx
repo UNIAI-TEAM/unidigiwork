@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -531,6 +531,22 @@ function CalendarPage() {
               </div>
             </div>
 
+            {urlDay && (
+              <button
+                onClick={() =>
+                  navigateCalendar({
+                    to: "/calendar",
+                    search: (p: { view?: "week"; kind?: "meeting"; day?: string }) => ({
+                      ...p,
+                      day: undefined,
+                    }),
+                  })
+                }
+                className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-xs text-primary hover:bg-primary/25"
+              >
+                Chỉ ngày {urlDay} · Bỏ lọc ✕
+              </button>
+            )}
             {view === "month" ? (
               <MonthGrid
                 cursor={cursor}
