@@ -14,6 +14,7 @@ import {
   UserMinus,
   UserPlus,
   Users,
+  Tags,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
@@ -136,6 +137,11 @@ function WorkspaceManagePage() {
               <Button variant="outline" asChild>
                 <Link to="/workspace/settings">
                   <Settings2 className="mr-1.5 h-4 w-4" /> Cài đặt workspace
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/workspace/tags">
+                  <Tags className="mr-1.5 h-4 w-4" /> Quản lý nhãn
                 </Link>
               </Button>
               <Button variant="outline" asChild>
