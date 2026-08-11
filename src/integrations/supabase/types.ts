@@ -5508,6 +5508,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_task_tags: {
+        Args: { _tags: string[]; _task_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_workflow_permission: {
         Args: {
           _can_edit: boolean
