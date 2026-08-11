@@ -475,8 +475,8 @@ function MeetingDetailPage() {
                 Sprint Review · <span className="font-mono text-muted-foreground">{id}</span>
               </h1>
               <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/20 px-2 py-0.5 text-destructive">
-                  <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" /> Trực tiếp
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${statusMeta.className}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} /> {statusMeta.label}
                 </span>
                 <Clock className="h-3 w-3" /> 32:14
                 <span>·</span>
