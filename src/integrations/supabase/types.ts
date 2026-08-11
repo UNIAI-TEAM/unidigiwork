@@ -574,6 +574,8 @@ export type Database = {
           edited_at: string | null
           id: string
           parent_message_id: string | null
+          pinned_at: string | null
+          pinned_by: string | null
           row_version: number
           tenant_id: string
           updated_at: string
@@ -588,6 +590,8 @@ export type Database = {
           edited_at?: string | null
           id?: string
           parent_message_id?: string | null
+          pinned_at?: string | null
+          pinned_by?: string | null
           row_version?: number
           tenant_id: string
           updated_at?: string
@@ -602,6 +606,8 @@ export type Database = {
           edited_at?: string | null
           id?: string
           parent_message_id?: string | null
+          pinned_at?: string | null
+          pinned_by?: string | null
           row_version?: number
           tenant_id?: string
           updated_at?: string
@@ -619,6 +625,13 @@ export type Database = {
             columns: ["parent_message_id"]
             isOneToOne: false
             referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_pinned_by_fkey"
+            columns: ["pinned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -5370,6 +5383,10 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      set_chat_message_pin: {
+        Args: { _message_id: string; _pinned: boolean }
+        Returns: boolean
+      }
       set_meeting_rsvp: {
         Args: {
           _correlation_id?: string

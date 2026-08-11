@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Hash, Lock, Plus, Search as SearchIcon, Send, Star, Users, X, Trash2, LogOut, Loader2,
-  MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye,
+  MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye, Pin, PinOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -14,7 +14,7 @@ import {
   leaveChatChannel, setChatFavorite, markChatChannelRead, deleteChatChannel, deleteChatMessage,
   updateChatMessage, listChatChannelMembers, listChatPeople, addChatChannelMember,
   removeChatChannelMember, setChatMemberRole, openDirectMessage,
-  listChatChannelReaders,
+  listChatChannelReaders, listPinnedChatMessages, setChatMessagePin,
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
 
@@ -174,6 +174,25 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
     enabled: !!activeId && !!active?.isMember,
   });
   const readers = readersQ.data ?? [];
+
+  const fetchPinned = useServerFn(listPinnedChatMessages);
+  const doPin = useServerFn(setChatMessagePin);
+  const pinnedQ = useQuery({
+    queryKey: ["chat", "pinned", activeId],
+    queryFn: () => fetchPinned({ data: { channelId: activeId! } }),
+    enabled: !!activeId && !!active?.isMember,
+  });
+  const pinned = pinnedQ.data ?? [];
+  const [showPinned, setShowPinned] = useState(false);
+  const pinM = useMutation({
+    mutationFn: (v: { messageId: string; pinned: boolean }) => doPin({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(v.pinned ? "Đã ghim tin nhắn" : "Đã bỏ ghim");
+      setOlder([]);
+      refreshAll();
+    },
+    onError: () => toast.error("Không thể ghim tin nhắn"),
+  });
 
   // Reset trạng thái khi đổi kênh / từ khoá
   useEffect(() => {
@@ -592,6 +611,41 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                 ) : (
                   <div className="flex min-h-0 flex-1">
                     <div className="flex min-w-0 flex-1 flex-col">
+                      {pinned.length > 0 && (
+                        <div className="border-b border-border bg-surface-2/60 px-5 py-2">
+                          <button
+                            onClick={() => setShowPinned((v) => !v)}
+                            className="flex w-full items-center gap-2 text-left text-xs font-medium text-foreground"
+                          >
+                            <Pin className="h-3.5 w-3.5 text-primary" />
+                            {pinned.length} tin nhắn đã ghim
+                            <ChevronUp className={`ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform ${showPinned ? "" : "rotate-180"}`} />
+                          </button>
+                          {showPinned && (
+                            <ul className="mt-2 space-y-1.5">
+                              {pinned.map((p) => (
+                                <li key={p.id} className="flex items-start gap-2 rounded-md bg-background px-2.5 py-1.5">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs">
+                                      <span className="font-medium">{p.authorName}</span>: {p.body}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      Ghim bởi {p.pinnedByName ?? "Thành viên"} · {timeLabel(p.createdAt)}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => pinM.mutate({ messageId: p.id, pinned: false })}
+                                    aria-label="Bỏ ghim tin nhắn"
+                                    className="mt-0.5 shrink-0"
+                                  >
+                                    <PinOff className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                       <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
                         {messagesQ.isLoading && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -634,9 +688,22 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                                     <span className="text-sm font-semibold">{m.authorName}</span>
                                     <span className="text-[11px] text-muted-foreground">{timeLabel(m.createdAt)}</span>
                                     {m.editedAt && <span className="text-[11px] text-muted-foreground">(đã sửa)</span>}
+                                    {m.pinnedAt && (
+                                      <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                        <Pin className="h-3 w-3" /> Đã ghim
+                                      </span>
+                                    )}
                                     <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
                                       <button onClick={() => { setReplyTo(m); setEditing(null); }} aria-label="Trả lời">
                                         <Reply className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                      </button>
+                                      <button
+                                        onClick={() => pinM.mutate({ messageId: m.id, pinned: !m.pinnedAt })}
+                                        aria-label={m.pinnedAt ? "Bỏ ghim tin nhắn" : "Ghim tin nhắn"}
+                                      >
+                                        {m.pinnedAt
+                                          ? <PinOff className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                          : <Pin className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />}
                                       </button>
                                       {m.isMine && (
                                         <>
