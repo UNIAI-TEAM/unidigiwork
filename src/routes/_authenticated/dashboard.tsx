@@ -546,7 +546,7 @@ function DashboardInner() {
                     <div className="border-b border-border px-4 py-3">
                       <div className="text-sm font-semibold">Tuỳ chỉnh bảng điều khiển</div>
                       <p className="text-xs text-muted-foreground">
-                        Chọn các khối muốn hiển thị. Thiết lập được lưu trên thiết bị này.
+                        Chọn các khối muốn hiển thị. Thiết lập được đồng bộ theo tài khoản của bạn.
                       </p>
                     </div>
                     <ul className="max-h-80 space-y-1 overflow-y-auto p-2">
