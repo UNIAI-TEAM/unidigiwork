@@ -67,6 +67,32 @@ const RSVP_LABELS: Record<string, string> = {
   tentative: "Chưa chắc",
 };
 
+const MEETING_STATUS_META: Record<
+  string,
+  { label: string; className: string; dotClassName: string }
+> = {
+  scheduled: {
+    label: "Chưa bắt đầu",
+    className: "bg-muted text-muted-foreground",
+    dotClassName: "bg-muted-foreground",
+  },
+  live: {
+    label: "Đang diễn ra",
+    className: "bg-destructive/20 text-destructive",
+    dotClassName: "bg-destructive animate-pulse",
+  },
+  ended: {
+    label: "Đã kết thúc",
+    className: "bg-muted text-muted-foreground",
+    dotClassName: "bg-muted-foreground",
+  },
+  canceled: {
+    label: "Đã hủy",
+    className: "bg-muted text-muted-foreground line-through",
+    dotClassName: "bg-muted-foreground",
+  },
+};
+
 function StageFallback() {
   return (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
