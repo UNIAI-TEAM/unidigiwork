@@ -148,6 +148,20 @@ function BillingPage() {
 
   const quotaRows = (entQ.data?.entitlements ?? []).filter((e) => e.kind === "quota");
 
+  // Chu kỳ thanh toán hiện tại
+  const cycle = useMemo(() => {
+    if (!sub?.periodStart || !sub.periodEnd) return null;
+    const start = new Date(sub.periodStart).getTime();
+    const end = new Date(sub.periodEnd).getTime();
+    const now = Date.now();
+    const total = Math.max(1, end - start);
+    const pct = Math.min(100, Math.max(0, Math.round(((now - start) / total) * 100)));
+    const daysLeft = Math.max(0, Math.ceil((end - now) / 86_400_000));
+    return { pct, daysLeft };
+  }, [sub?.periodStart, sub?.periodEnd]);
+
+  const autoRenew = !!sub && !sub.cancelAt && sub.status !== "canceled";
+
   if (active.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
