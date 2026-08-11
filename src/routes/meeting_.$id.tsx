@@ -1,5 +1,6 @@
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ import {
   openMeetingAttendance,
   closeMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
+import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
@@ -54,6 +56,13 @@ const JOIN_ERROR_HINTS: Record<string, string> = {
   MEETING_NOT_JOINABLE: "Bạn có thể xem lại thông tin cuộc họp trong lịch sử cuộc họp.",
   ENTITLEMENT_DENIED: "Liên hệ quản trị tổ chức để nâng cấp gói có hội nghị trực tuyến.",
   QUOTA_EXCEEDED: "Liên hệ quản trị tổ chức để tăng hạn mức phút họp hoặc chờ chu kỳ kế tiếp.",
+};
+
+const RSVP_LABELS: Record<string, string> = {
+  pending: "Chờ phản hồi",
+  accepted: "Tham gia",
+  declined: "Từ chối",
+  tentative: "Chưa chắc",
 };
 
 function StageFallback() {
@@ -300,14 +309,20 @@ function MeetingDetailPage() {
     return () => window.removeEventListener("pagehide", onHide);
   }, [id, isRealRoom]);
 
-  const participants = [
-    { name: "Minh Anh", seed: "minh-anh", speaking: true },
-    { name: "Tuấn Nam", seed: "tuan-nam-ba", speaking: false },
-    { name: "Hương Trần", seed: "huong-tran", speaking: false },
-    { name: "Duy Anh", seed: "duy-anh", speaking: false },
-    { name: "Bảo Ngọc", seed: "bao-ngoc", speaking: false },
-    { name: "Phương Linh", seed: "phuong-linh", speaking: false },
-  ];
+  const participantsQuery = useQuery({
+    queryKey: ["meeting-participants", id],
+    enabled: isRealRoom,
+    staleTime: 30_000,
+    queryFn: () => listMeetingParticipants({ data: { meetingId: id } }),
+  });
+
+  const participants = (participantsQuery.data ?? []).map((p) => ({
+    seed: p.userId,
+    name: p.name ?? p.email ?? "Thành viên",
+    role: p.role,
+    rsvp: p.rsvp,
+    speaking: false,
+  }));
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -371,7 +386,7 @@ function MeetingDetailPage() {
                   Bạn (xem trước)
                 </div>
               </div>
-              {participants.slice(1).map((p) => (
+              {participants.map((p) => (
                 <div
                   key={p.seed}
                   className={`relative flex items-center justify-center rounded-xl bg-surface-2 ${p.speaking ? "ring-2 ring-success" : ""}`}
@@ -505,15 +520,32 @@ function MeetingDetailPage() {
                 ))}
               {tab === "chat" && <ChatPanel />}
               {tab === "participants" && (
-                <ul className="space-y-2">
-                  {participants.map((p) => (
-                    <li key={p.seed} className="flex items-center gap-2">
-                      <img src={avatar(p.seed)} className="h-7 w-7 rounded-full" alt="" />
-                      <span className="flex-1">{p.name}</span>
-                      {p.speaking && <Mic className="h-3 w-3 text-success" />}
-                    </li>
-                  ))}
-                </ul>
+                participantsQuery.isLoading ? (
+                  <p className="text-xs text-muted-foreground">Đang tải danh sách…</p>
+                ) : participants.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {isRealRoom
+                      ? "Chưa có người tham gia nào được mời."
+                      : "Phòng demo không có danh sách người tham gia thật."}
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {participants.map((p) => (
+                      <li key={p.seed} className="flex items-center gap-2">
+                        <img src={avatar(p.seed)} className="h-7 w-7 rounded-full" alt="" />
+                        <span className="flex-1 truncate">
+                          {p.name}
+                          {p.role === "host" && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">(Chủ trì)</span>
+                          )}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {RSVP_LABELS[p.rsvp] ?? p.rsvp}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )
               )}
               {tab === "transcript" && (
                 <div className="space-y-3 text-xs">
