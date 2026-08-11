@@ -336,12 +336,49 @@ function CalendarPage() {
         <div className="mx-auto grid w-full max-w-[1400px] flex-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr]">
           {/* Left rail */}
           <aside className="space-y-4">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Lịch</h1>
-              <p className="text-xs text-muted-foreground">
-                Tổng hợp họp, công việc và hạn chót của workspace
-              </p>
-            </div>
+            <FilterPageHeader
+              crumbs={[
+                { label: "Dashboard", to: "/dashboard" },
+                { label: "Lịch", to: "/calendar" },
+                {
+                  label: urlDay
+                    ? "Hôm nay"
+                    : urlKind === "meeting"
+                      ? "Cuộc họp"
+                      : view === "week"
+                        ? "Tuần"
+                        : "Tháng",
+                },
+              ]}
+              title={urlKind === "meeting" ? "Lịch cuộc họp" : "Lịch"}
+              description="Tổng hợp họp, công việc và hạn chót của workspace"
+              chips={[
+                ...(urlDay
+                  ? [
+                      {
+                        label: `Ngày ${urlDay}`,
+                        onClear: () =>
+                          navigateCalendar({
+                            to: "/calendar",
+                            search: (p: Record<string, unknown>) => ({ ...p, day: undefined }),
+                          }),
+                      },
+                    ]
+                  : []),
+                ...(urlKind === "meeting"
+                  ? [
+                      {
+                        label: "Chỉ cuộc họp",
+                        onClear: () =>
+                          navigateCalendar({
+                            to: "/calendar",
+                            search: (p: Record<string, unknown>) => ({ ...p, kind: undefined }),
+                          }),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
 
             <button
               onClick={() => setCreateOpen(true)}
