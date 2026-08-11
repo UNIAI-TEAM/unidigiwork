@@ -24,6 +24,14 @@ import {
   getWorkspaceInviteAccess,
   type WorkspaceInviteRow,
 } from "@/lib/api/workspace-invites.functions";
+import { listInviteEmailTemplates } from "@/lib/api/invite-email-templates.functions";
+import {
+  defaultTemplate,
+  inviteEmailPlainText,
+  permissionsSummary,
+  INVITE_ROLE_LABEL as ROLE_LABEL_MAP,
+  type InviteRole,
+} from "@/lib/invite-email-template";
 
 export const Route = createFileRoute("/_authenticated/workspace/invite")({
   head: () => ({
@@ -118,6 +126,37 @@ function WorkspaceInvitePage() {
   });
   const canManage = access.data?.canManage ?? false;
 
+  const emailTemplates = useQuery({
+    queryKey: ["invite-email-templates", activeWs],
+    enabled: Boolean(activeWs),
+    queryFn: () => listInviteEmailTemplates({ data: { workspaceId: activeWs! } }),
+  });
+
+  const copyInviteEmail = (
+    url: string,
+    to: string,
+    forRole: InviteRole,
+    perms: { canEdit: boolean; canPublish: boolean; canRun: boolean },
+    wsRole: string,
+  ) => {
+    const tpl =
+      (emailTemplates.data ?? []).find((t) => t.role === forRole) ?? defaultTemplate(forRole);
+    const wsName = (workspaces.data ?? []).find((w) => w.id === activeWs)?.name ?? "workspace";
+    const text = inviteEmailPlainText(tpl, {
+      inviteeEmail: to,
+      inviterName: "Quản trị viên",
+      tenantName: "tổ chức của bạn",
+      workspaceName: wsName,
+      roleLabel: ROLE_LABEL_MAP[forRole] ?? forRole,
+      workspaceRoleLabel: wsRole === "owner" ? "Chủ workspace" : "Thành viên",
+      permissions: permissionsSummary(perms),
+      expiresAt: new Date(Date.now() + ttlDays * 86400_000).toLocaleString("vi-VN"),
+      inviteUrl: url,
+    });
+    void navigator.clipboard.writeText(`Tiêu đề: ${tpl.subject}\n\n${text}`);
+    toast.success("Đã sao chép nội dung email mời");
+  };
+
   const revoke = useMutation({
     mutationFn: (invitationId: string) => revokeWorkspaceInvite({ data: { invitationId } }),
     onSuccess: async () => {
@@ -197,6 +236,12 @@ function WorkspaceInvitePage() {
               Gán sẵn vai trò và quyền quy trình mặc định — hệ thống tự áp dụng ngay khi người được
               mời chấp nhận.
             </p>
+            <Link
+              to="/workspace/invite-emails"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
+            >
+              <Mail className="h-3.5 w-3.5" /> Chỉnh sửa mẫu email mời theo vai trò
+            </Link>
           </header>
 
           <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
@@ -336,6 +381,19 @@ function WorkspaceInvitePage() {
                   className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium"
                 >
                   <Copy className="h-3.5 w-3.5" /> Sao chép
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    copyInviteEmail(lastLink, email || "người được mời", tenantRole, {
+                      canEdit,
+                      canPublish,
+                      canRun,
+                    }, workspaceRole)
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium"
+                >
+                  <Mail className="h-3.5 w-3.5" /> Sao chép nội dung email
                 </button>
               </div>
             ) : null}

@@ -55,6 +55,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace.settings'
 import { Route as AuthenticatedWorkspaceMembersRouteImport } from './routes/_authenticated/workspace.members'
+import { Route as AuthenticatedWorkspaceInviteEmailsRouteImport } from './routes/_authenticated/workspace.invite-emails'
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceAuditRouteImport } from './routes/_authenticated/workspace.audit'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
@@ -312,6 +313,12 @@ const AuthenticatedWorkspaceMembersRoute =
     path: '/workspace/members',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkspaceInviteEmailsRoute =
+  AuthenticatedWorkspaceInviteEmailsRouteImport.update({
+    id: '/workspace/invite-emails',
+    path: '/workspace/invite-emails',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWorkspaceInviteRoute =
   AuthenticatedWorkspaceInviteRouteImport.update({
     id: '/workspace/invite',
@@ -501,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
+  '/workspace/invite-emails': typeof AuthenticatedWorkspaceInviteEmailsRoute
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -569,6 +577,7 @@ export interface FileRoutesByTo {
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
+  '/workspace/invite-emails': typeof AuthenticatedWorkspaceInviteEmailsRoute
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -641,6 +650,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
+  '/_authenticated/workspace/invite-emails': typeof AuthenticatedWorkspaceInviteEmailsRoute
   '/_authenticated/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/_authenticated/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -713,6 +723,7 @@ export interface FileRouteTypes {
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
+    | '/workspace/invite-emails'
     | '/workspace/members'
     | '/workspace/settings'
     | '/blog/category/$category'
@@ -781,6 +792,7 @@ export interface FileRouteTypes {
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
+    | '/workspace/invite-emails'
     | '/workspace/members'
     | '/workspace/settings'
     | '/blog/category/$category'
@@ -852,6 +864,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/audit'
     | '/_authenticated/workspace/invite'
+    | '/_authenticated/workspace/invite-emails'
     | '/_authenticated/workspace/members'
     | '/_authenticated/workspace/settings'
     | '/blog/category/$category'
@@ -1217,6 +1230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceMembersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workspace/invite-emails': {
+      id: '/_authenticated/workspace/invite-emails'
+      path: '/workspace/invite-emails'
+      fullPath: '/workspace/invite-emails'
+      preLoaderRoute: typeof AuthenticatedWorkspaceInviteEmailsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/workspace/invite': {
       id: '/_authenticated/workspace/invite'
       path: '/workspace/invite'
@@ -1483,6 +1503,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
   AuthenticatedWorkspaceAuditRoute: typeof AuthenticatedWorkspaceAuditRoute
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
+  AuthenticatedWorkspaceInviteEmailsRoute: typeof AuthenticatedWorkspaceInviteEmailsRoute
   AuthenticatedWorkspaceMembersRoute: typeof AuthenticatedWorkspaceMembersRoute
   AuthenticatedWorkspaceSettingsRoute: typeof AuthenticatedWorkspaceSettingsRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
@@ -1506,6 +1527,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
   AuthenticatedWorkspaceAuditRoute: AuthenticatedWorkspaceAuditRoute,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
+  AuthenticatedWorkspaceInviteEmailsRoute:
+    AuthenticatedWorkspaceInviteEmailsRoute,
   AuthenticatedWorkspaceMembersRoute: AuthenticatedWorkspaceMembersRoute,
   AuthenticatedWorkspaceSettingsRoute: AuthenticatedWorkspaceSettingsRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,

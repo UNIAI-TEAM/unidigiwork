@@ -1174,6 +1174,59 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_email_templates: {
+        Row: {
+          body: string
+          created_at: string
+          cta_label: string
+          footer: string
+          heading: string
+          id: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["tenant_role"]
+          subject: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          cta_label?: string
+          footer?: string
+          heading: string
+          id?: string
+          is_active?: boolean
+          role: Database["public"]["Enums"]["tenant_role"]
+          subject: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          cta_label?: string
+          footer?: string
+          heading?: string
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["tenant_role"]
+          subject?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_email_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
