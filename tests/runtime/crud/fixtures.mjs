@@ -1,7 +1,6 @@
 // Shared fixture bootstrap for the CRUD reality runtime suite.
 // Creates namespaced tenants/actors via service role; actors act with real JWTs.
 import { createClient } from "@supabase/supabase-js";
-import { randomUUID } from "node:crypto";
 
 export const TAG = "crud_e2e_";
 const URL = process.env.SUPABASE_URL;
@@ -41,13 +40,17 @@ export async function bootstrap(runId) {
     ids.users[key] = await ensureUser(a, `${TAG}${runId}_${key}@example.com`);
   }
   for (const [tk, owner] of [["A", "owner_a"], ["B", "owner_b"]]) {
-    const wsId = randomUUID();
-    const { error } = await a.from("workspaces").insert({
-      id: wsId, name: `${TAG}${runId}_ws_${tk}`, owner_id: ids.users[owner],
+    const { data: rows, error } = await a.rpc("provision_tenant", {
+      _name: `${TAG}${runId}_t_${tk}`,
+      _slug: `${TAG}${runId}-t-${tk}`.toLowerCase().replace(/_/g, "-"),
+      _owner_id: ids.users[owner],
+      _default_workspace_name: `${TAG}${runId}_ws_${tk}`,
+      _idempotency_key: `${TAG}${runId}-${tk}`,
     });
-    if (error) throw new Error(`workspace ${tk}: ${error.message}`);
-    ids.workspaces[tk] = wsId;
-    ids.tenants[tk] = wsId; // workspace.id === tenant.id invariant (Batch 0B)
+    if (error) throw new Error(`provision ${tk}: ${error.message}`);
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    ids.tenants[tk] = row.tenant_id;
+    ids.workspaces[tk] = row.workspace_id;
   }
   // member_a joins tenant A
   await a.from("tenant_members").insert({ tenant_id: ids.tenants.A, user_id: ids.users.member_a, role: "member", status: "active" });

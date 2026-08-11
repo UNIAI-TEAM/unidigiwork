@@ -1,9 +1,9 @@
 {
   "summary": {
-    "runId": "5d319262",
-    "startedAt": "2026-08-11T14:59:32.314Z",
-    "finishedAt": "2026-08-11T14:59:34.905Z",
-    "bootError": "workspace A: insert or update on table \"workspaces\" violates foreign key constraint \"workspaces_tenant_id_fkey\"",
+    "runId": "7b9e433b",
+    "startedAt": "2026-08-11T15:00:02.004Z",
+    "finishedAt": "2026-08-11T15:00:05.049Z",
+    "bootError": "provision A: AUTHENTICATION_REQUIRED",
     "total": 0,
     "passed": 0,
     "failed": 0,

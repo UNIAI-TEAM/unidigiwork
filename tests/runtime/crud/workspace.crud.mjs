@@ -11,14 +11,21 @@ export async function run(ids) {
   const outsider = await actorClient(`${TAG}${ids.runId}_outsider@example.com`);
 
   // Workspace create through the app path (insert + provisioning trigger)
-  const wsId = randomUUID();
-  const { error: cErr } = await owner.client.from("workspaces").insert({ id: wsId, name: `${TAG}${ids.runId}_ws_new`, owner_id: owner.userId });
+  const { data: provRows, error: cErr } = await owner.client.rpc("provision_tenant", {
+    _name: `${TAG}${ids.runId}_t_new`,
+    _slug: `${TAG}${ids.runId}-t-new`.toLowerCase().replace(/_/g, "-"),
+    _owner_id: owner.userId,
+    _default_workspace_name: `${TAG}${ids.runId}_ws_new`,
+    _idempotency_key: `${TAG}${ids.runId}-new`,
+  });
+  const provRow = Array.isArray(provRows) ? provRows[0] : provRows;
+  const wsId = provRow?.workspace_id ?? "00000000-0000-0000-0000-000000000000";
   const { data: wsRow } = await a.from("workspaces").select("id,name,tenant_id,owner_id").eq("id", wsId).maybeSingle();
-  const { data: tenantRow } = await a.from("tenants").select("id,status").eq("id", wsId).maybeSingle();
-  const { count: memberCount } = await a.from("tenant_members").select("user_id", { count: "exact", head: true }).eq("tenant_id", wsId);
+  const { data: tenantRow } = await a.from("tenants").select("id,status").eq("id", wsRow?.tenant_id ?? "00000000-0000-0000-0000-000000000000").maybeSingle();
+  const { count: memberCount } = await a.from("tenant_members").select("user_id", { count: "exact", head: true }).eq("tenant_id", wsRow?.tenant_id ?? "00000000-0000-0000-0000-000000000000");
   rec("WS-C-01", "workspace", "CREATE", !cErr && wsRow && tenantRow && memberCount > 0 ? "PASS_REAL" : "FAIL_BROKEN",
     { error: cErr?.message, evidence: { workspace: wsRow, tenant: tenantRow, memberCount } });
-  if (wsRow) ids.tenants[`NEW_${ids.runId}`] = wsId;
+  if (wsRow) ids.tenants[`NEW_${ids.runId}`] = wsRow.tenant_id;
 
   // Atomicity: workspace without tenant/membership is an invariant violation
   rec("WS-T-01", "workspace", "TRANSACTION_ATOMICITY", wsRow && tenantRow && memberCount > 0 ? "PASS_REAL" : "FAIL_BROKEN",
