@@ -68,7 +68,20 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   ),
 });
 
-const dashboardQuery = (rangeDays: number, workspaceId?: string | null) =>
+const REFRESH_INTERVALS = [
+  { value: 0, label: "Tắt tự động" },
+  { value: 60_000, label: "Mỗi 1 phút" },
+  { value: 300_000, label: "Mỗi 5 phút" },
+  { value: 900_000, label: "Mỗi 15 phút" },
+] as const;
+const REFRESH_STORAGE_KEY = "uniwork:dashboard:refresh-interval";
+const DEFAULT_REFRESH_MS = 300_000;
+
+const dashboardQuery = (
+  rangeDays: number,
+  workspaceId?: string | null,
+  refreshMs: number = DEFAULT_REFRESH_MS,
+) =>
   queryOptions({
     queryKey: ["dashboard-overview", rangeDays, workspaceId ?? "all"],
     queryFn: () =>
@@ -76,6 +89,10 @@ const dashboardQuery = (rangeDays: number, workspaceId?: string | null) =>
         data: { rangeDays, ...(workspaceId ? { workspaceId } : {}) },
       }),
     staleTime: 30_000,
+    refetchInterval: refreshMs > 0 ? refreshMs : false,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
 type Kpi = {
