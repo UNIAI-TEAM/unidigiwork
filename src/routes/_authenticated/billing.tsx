@@ -12,6 +12,8 @@ import {
   RotateCcw,
   XCircle,
   Gauge,
+  CalendarClock,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
