@@ -18,6 +18,7 @@ import type {
   DashboardOverview as DashboardData,
   DashboardAiSummary,
 } from "@/lib/api/dashboard.functions";
+import { localDayKey } from "@/lib/metrics";
 import { Link } from "@tanstack/react-router";
 import {
   Users,
