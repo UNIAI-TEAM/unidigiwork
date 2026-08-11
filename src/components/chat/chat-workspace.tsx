@@ -8,6 +8,7 @@ import {
   CheckCheck,
   MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye, Pin, PinOff,
   ListTodo,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -22,7 +23,7 @@ import {
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
 import { createTask } from "@/lib/api/tasks.functions";
-import { listWorkspaceMembers } from "@/lib/api/workspaces.functions";
+import { listWorkspaceMembers, getWorkspaceSettings } from "@/lib/api/workspaces.functions";
 import { buildChatSourceTag } from "@/lib/chat-task-link";
 import { useMyWorkspaces, useActiveWorkspace } from "@/lib/active-workspace";
 
@@ -260,6 +261,42 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
       dueAt: "",
       assigneeId: "",
     });
+  };
+
+  // Cấu hình mặc định của workspace đang chọn — dùng cho "Tạo nhanh"
+  const quickWorkspaceId = activeWorkspaceId ?? myWorkspaces?.[0]?.id ?? "";
+  const wsDefaultsQ = useQuery({
+    queryKey: ["workspace", quickWorkspaceId, "settings"],
+    queryFn: () => getWorkspaceSettings({ data: { workspaceId: quickWorkspaceId } }),
+    enabled: !!quickWorkspaceId,
+  });
+  const [quickBusyId, setQuickBusyId] = useState<string | null>(null);
+
+  /** Tạo Task ngay lập tức với tiêu đề/mô tả/hạn theo cấu hình mặc định của workspace. */
+  const quickCreateTask = (m: ChatMessageDTO) => {
+    if (!quickWorkspaceId) {
+      toast.error("Chưa chọn workspace");
+      return;
+    }
+    const d = wsDefaultsQ.data;
+    const prefix = d?.defaultTaskTitlePrefix?.trim() ? `${d.defaultTaskTitlePrefix.trim()} ` : "";
+    const firstLine = (m.body || "").split("\n")[0]?.trim() || "Công việc từ chat";
+    const dueDays = d?.defaultTaskDueDays ?? 3;
+    const due = new Date();
+    due.setDate(due.getDate() + dueDays);
+    setQuickBusyId(m.id);
+    createTaskM.mutate(
+      {
+        messageId: m.id,
+        title: `${prefix}${firstLine}`.slice(0, 200),
+        description: `Từ chat — ${m.authorName} (${dayLabel(m.createdAt)} ${timeLabel(m.createdAt)}):\n\n${m.body}`,
+        workspaceId: quickWorkspaceId,
+        priority: d?.defaultTaskPriority ?? "normal",
+        dueAt: due.toISOString(),
+        assigneeId: "",
+      },
+      { onSettled: () => setQuickBusyId(null) },
+    );
   };
   const [showPeople, setShowPeople] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -939,6 +976,16 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                                       </button>
                                       <button onClick={() => openTaskDraft(m)} aria-label="Tạo công việc từ tin nhắn" title="Tạo công việc">
                                         <ListTodo className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                                      </button>
+                                      <button
+                                        onClick={() => quickCreateTask(m)}
+                                        disabled={quickBusyId === m.id}
+                                        aria-label="Tạo nhanh công việc theo mặc định workspace"
+                                        title="Tạo nhanh (theo mặc định workspace)"
+                                      >
+                                        {quickBusyId === m.id
+                                          ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                                          : <Zap className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />}
                                       </button>
                                       <button
                                         onClick={() => pinM.mutate({ messageId: m.id, pinned: !m.pinnedAt })}

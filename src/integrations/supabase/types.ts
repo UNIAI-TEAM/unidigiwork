@@ -3906,6 +3906,9 @@ export type Database = {
           allow_member_invites: boolean
           created_at: string
           default_member_role: string
+          default_task_due_days: number
+          default_task_priority: string
+          default_task_title_prefix: string
           deleted_at: string | null
           description: string | null
           id: string
@@ -3922,6 +3925,9 @@ export type Database = {
           allow_member_invites?: boolean
           created_at?: string
           default_member_role?: string
+          default_task_due_days?: number
+          default_task_priority?: string
+          default_task_title_prefix?: string
           deleted_at?: string | null
           description?: string | null
           id?: string
@@ -3938,6 +3944,9 @@ export type Database = {
           allow_member_invites?: boolean
           created_at?: string
           default_member_role?: string
+          default_task_due_days?: number
+          default_task_priority?: string
+          default_task_title_prefix?: string
           deleted_at?: string | null
           description?: string | null
           id?: string

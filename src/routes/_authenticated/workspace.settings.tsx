@@ -53,6 +53,11 @@ function WorkspaceSettingsPage() {
   const [visibility, setVisibility] = useState<"private" | "tenant">("private");
   const [defaultMemberRole, setDefaultMemberRole] = useState<"member" | "owner">("member");
   const [allowMemberInvites, setAllowMemberInvites] = useState(false);
+  const [defaultTaskPriority, setDefaultTaskPriority] = useState<
+    "low" | "normal" | "high" | "urgent"
+  >("normal");
+  const [defaultTaskDueDays, setDefaultTaskDueDays] = useState(3);
+  const [defaultTaskTitlePrefix, setDefaultTaskTitlePrefix] = useState("");
 
   const workspacesQ = useQuery({ queryKey: ["workspaces", "list"], queryFn: () => listWorkspaces() });
   const workspaces = useMemo(() => workspacesQ.data ?? [], [workspacesQ.data]);
@@ -76,6 +81,9 @@ function WorkspaceSettingsPage() {
     setVisibility(s.visibility);
     setDefaultMemberRole(s.defaultMemberRole);
     setAllowMemberInvites(s.allowMemberInvites);
+    setDefaultTaskPriority(s.defaultTaskPriority);
+    setDefaultTaskDueDays(s.defaultTaskDueDays);
+    setDefaultTaskTitlePrefix(s.defaultTaskTitlePrefix);
   }, [settingsQ.data]);
 
   const isOwner = Boolean(settingsQ.data?.isOwner);
@@ -91,6 +99,9 @@ function WorkspaceSettingsPage() {
           visibility,
           defaultMemberRole,
           allowMemberInvites,
+          defaultTaskPriority,
+          defaultTaskDueDays,
+          defaultTaskTitlePrefix: defaultTaskTitlePrefix.trim(),
         },
       }),
     onSuccess: () => {
@@ -271,6 +282,68 @@ function WorkspaceSettingsPage() {
                       </span>
                     </span>
                   </label>
+                </div>
+              </section>
+
+              <div className="flex justify-end">
+              </div>
+
+              <section className="rounded-xl border border-border bg-card p-5">
+                <h2 className="text-base font-semibold">Mặc định khi tạo công việc</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Áp dụng cho nút "Tạo nhanh" công việc từ tin nhắn chat.
+                </p>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="ws-task-priority">
+                      Mức ưu tiên mặc định
+                    </label>
+                    <select
+                      id="ws-task-priority"
+                      className={`${inputCls} mt-1.5`}
+                      value={defaultTaskPriority}
+                      disabled={!isOwner}
+                      onChange={(e) =>
+                        setDefaultTaskPriority(e.target.value as "low" | "normal" | "high" | "urgent")
+                      }
+                    >
+                      <option value="low">Thấp</option>
+                      <option value="normal">Bình thường</option>
+                      <option value="high">Cao</option>
+                      <option value="urgent">Khẩn cấp</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="ws-task-due">
+                      Hạn mặc định (số ngày kể từ hôm nay)
+                    </label>
+                    <input
+                      id="ws-task-due"
+                      type="number"
+                      min={0}
+                      max={365}
+                      className={`${inputCls} mt-1.5`}
+                      value={defaultTaskDueDays}
+                      disabled={!isOwner}
+                      onChange={(e) =>
+                        setDefaultTaskDueDays(Math.max(0, Math.min(365, Number(e.target.value) || 0)))
+                      }
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-sm font-medium" htmlFor="ws-task-prefix">
+                      Tiền tố tiêu đề (tùy chọn)
+                    </label>
+                    <input
+                      id="ws-task-prefix"
+                      className={`${inputCls} mt-1.5`}
+                      placeholder="[Chat]"
+                      maxLength={60}
+                      value={defaultTaskTitlePrefix}
+                      disabled={!isOwner}
+                      onChange={(e) => setDefaultTaskTitlePrefix(e.target.value)}
+                    />
+                  </div>
                 </div>
               </section>
 
