@@ -2,7 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Loader2, Mail, RotateCcw, Save, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  History,
+  Loader2,
+  Mail,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  Undo2,
+  User,
+} from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { getWorkspaceInviteAccess } from "@/lib/api/workspace-invites.functions";
@@ -10,6 +21,8 @@ import {
   listInviteEmailTemplates,
   saveInviteEmailTemplate,
   resetInviteEmailTemplate,
+  listInviteEmailTemplateVersions,
+  restoreInviteEmailTemplateVersion,
 } from "@/lib/api/invite-email-templates.functions";
 import {
   INVITE_EMAIL_VARIABLES,
@@ -116,11 +129,38 @@ function InviteEmailTemplatesPage() {
     mutationFn: () => resetInviteEmailTemplate({ data: { workspaceId: activeWs!, role } }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["invite-email-templates", activeWs] });
+      await qc.invalidateQueries({ queryKey: ["invite-email-template-versions", activeWs, role] });
       setDraft(defaultTemplate(role));
       toast.success("Đã khôi phục mẫu mặc định");
     },
     onError: (e: Error) => toast.error(e.message || "Không khôi phục được mẫu"),
   });
+
+  const versions = useQuery({
+    queryKey: ["invite-email-template-versions", activeWs, role],
+    enabled: Boolean(activeWs),
+    queryFn: () =>
+      listInviteEmailTemplateVersions({ data: { workspaceId: activeWs!, role, limit: 30 } }),
+  });
+
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const restore = useMutation({
+    mutationFn: (versionId: string) =>
+      restoreInviteEmailTemplateVersion({ data: { workspaceId: activeWs!, versionId } }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["invite-email-templates", activeWs] });
+      await qc.invalidateQueries({ queryKey: ["invite-email-template-versions", activeWs, role] });
+      toast.success("Đã khôi phục phiên bản");
+    },
+    onError: (e: Error) => toast.error(e.message || "Không khôi phục được phiên bản"),
+  });
+
+  const actionLabel: Record<string, string> = {
+    create: "Tạo mới",
+    update: "Cập nhật",
+    reset: "Về mặc định",
+  };
 
   const previewVars = {
     inviteeEmail: "an.nguyen@congty.com",
@@ -365,6 +405,83 @@ function InviteEmailTemplatesPage() {
               </div>
             </section>
           </div>
+
+          <section className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
+              <History className="h-4 w-4 text-primary" />
+              Lịch sử phiên bản · {INVITE_ROLE_LABEL[role]}
+            </h2>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Mỗi lần lưu sẽ tạo một phiên bản mới. Bạn có thể xem nội dung và khôi phục lại.
+            </p>
+
+            {versions.isLoading ? (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch sử…
+              </p>
+            ) : (versions.data ?? []).length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                Chưa có thay đổi nào được ghi nhận cho vai trò này.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {(versions.data ?? []).map((v) => (
+                  <li key={v.id} className="py-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                      <span className="rounded-md bg-surface-2 px-2 py-0.5 font-mono text-xs">
+                        v{v.version}
+                      </span>
+                      <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {actionLabel[v.action] ?? v.action}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <User className="h-3.5 w-3.5" />
+                        {v.changedByName ?? "Không rõ"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(v.createdAt).toLocaleString("vi-VN")}
+                      </span>
+                      <div className="ml-auto flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExpanded(expanded === v.id ? null : v.id)}
+                          className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface-2"
+                        >
+                          {expanded === v.id ? "Ẩn" : "Xem"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!canManage || restore.isPending}
+                          onClick={() => restore.mutate(v.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium disabled:opacity-50 hover:bg-surface-2"
+                        >
+                          <Undo2 className="h-3.5 w-3.5" /> Khôi phục
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mt-1 truncate text-sm">{v.subject}</p>
+                    {expanded === v.id ? (
+                      <div className="mt-3 space-y-2 rounded-lg border border-border bg-surface-2 p-3 text-xs">
+                        <p>
+                          <span className="font-medium">Tiêu đề lớn:</span> {v.heading}
+                        </p>
+                        <p className="whitespace-pre-wrap text-muted-foreground">{v.body}</p>
+                        <p>
+                          <span className="font-medium">Nút:</span> {v.ctaLabel}
+                        </p>
+                        {v.footer ? (
+                          <p className="text-muted-foreground">
+                            <span className="font-medium text-foreground">Chân trang:</span>{" "}
+                            {v.footer}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </main>
       </div>
     </div>
