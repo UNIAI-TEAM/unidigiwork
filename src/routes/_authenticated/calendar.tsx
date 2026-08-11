@@ -29,6 +29,10 @@ import { Download } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    view: search['view'] === "week" ? ("week" as const) : undefined,
+    kind: search['kind'] === "meeting" ? ("meeting" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Lịch — UNIWORK" },
@@ -142,13 +146,14 @@ function sameDay(a: Date, b: Date) {
 type ViewMode = "month" | "week";
 
 function CalendarPage() {
+  const { view: urlView, kind: urlKind } = Route.useSearch();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cursor, setCursor] = useState(() => new Date());
-  const [view, setView] = useState<ViewMode>("month");
+  const [view, setView] = useState<ViewMode>(urlView === "week" ? "week" : "month");
   const [filters, setFilters] = useState<Record<EventKind, boolean>>({
     meeting: true,
-    task: true,
-    deadline: true,
+    task: urlKind !== "meeting",
+    deadline: urlKind !== "meeting",
   });
   const [meetingStatusFilter, setMeetingStatusFilter] = useState<Record<MeetingStatusKey, boolean>>({
     upcoming: true,

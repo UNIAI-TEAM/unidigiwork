@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -38,6 +38,9 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/tasks")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    filter: search['filter'] === "overdue" ? ("overdue" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Tasks & Projects · UNIWORK" },
@@ -111,6 +114,9 @@ function TasksPage() {
   const allTasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   // Bộ lọc phân loại: nhãn (tags) + mức ưu tiên
+  const { filter: urlFilter } = Route.useSearch();
+  const navigateTasks = useNavigate();
+  const overdueOnly = urlFilter === "overdue";
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<Priority | "">("");
   const [sortBy, setSortBy] = useState<"default" | "priority-desc" | "priority-asc" | "tag-asc" | "tag-desc">(
@@ -125,7 +131,9 @@ function TasksPage() {
       const filtered = allTasks.filter(
         (tk) =>
           (!priorityFilter || tk.priority === priorityFilter) &&
-          (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))),
+          (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))) &&
+          (!overdueOnly ||
+            (!!tk.due_at && tk.status !== "done" && new Date(tk.due_at) < new Date())),
       );
       if (sortBy === "default") return filtered;
       const rank: Record<Priority, number> = { urgent: 4, high: 3, normal: 2, low: 1 };
@@ -145,7 +153,7 @@ function TasksPage() {
         }
       });
     },
-    [allTasks, priorityFilter, tagFilter, sortBy],
+    [allTasks, priorityFilter, tagFilter, sortBy, overdueOnly],
   );
 
   // Bộ lọc đã lưu ("view") theo người dùng
@@ -451,6 +459,14 @@ function TasksPage() {
                     </button>
                   );
                 })
+              )}
+              {overdueOnly && (
+                <button
+                  onClick={() => navigateTasks({ to: "/tasks", search: {} })}
+                  className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs text-warning hover:bg-warning/25"
+                >
+                  Chỉ hiển thị quá hạn <X className="h-3 w-3" />
+                </button>
               )}
               {(tagFilter.length > 0 || priorityFilter) && (
                 <button
