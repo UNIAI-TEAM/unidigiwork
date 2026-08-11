@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useActiveWorkspace } from "@/lib/active-workspace";
 import { listCalendarEvents } from "@/lib/api/calendar.functions";
 import {
   ChevronLeft,
@@ -173,9 +174,17 @@ function CalendarPage() {
   }, [cursor]);
 
   const fetchEvents = useServerFn(listCalendarEvents);
+  const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ["calendar-events", range.from, range.to],
-    queryFn: () => fetchEvents({ data: { from: range.from, to: range.to } }),
+    queryKey: ["calendar-events", range.from, range.to, activeWorkspaceId ?? "all"],
+    queryFn: () =>
+      fetchEvents({
+        data: {
+          from: range.from,
+          to: range.to,
+          ...(activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {}),
+        },
+      }),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
   });

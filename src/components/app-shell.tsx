@@ -61,6 +61,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { TenantSwitcher } from "@/components/tenant-switcher";
+import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useAvailableTenants } from "@/features/tenants/hooks";
 
 /**
@@ -168,6 +170,7 @@ function wsColorOf(id: string) {
 
 // Danh sách workspace thật của người dùng.
 function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
+  const { workspaceId: activeWsId } = useActiveWorkspace();
   const { data, isLoading } = useQuery({
     queryKey: ["my-workspaces"],
     queryFn: () => listMyWorkspaces(),
@@ -200,6 +203,7 @@ function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
           letter={w.name.trim().charAt(0).toUpperCase() || "W"}
           name={w.name}
           color={wsColorOf(w.id)}
+          active={w.id === activeWsId}
           collapsed={collapsed}
         />
       ))}
@@ -362,6 +366,9 @@ export function AppSidebar({
         </div>
 
         {/* Navigation */}
+        <div className={cn("pb-3", collapsed ? "px-1" : "px-3")}>
+          <WorkspaceSwitcher collapsed={collapsed} />
+        </div>
         <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-1" : "px-3")}>
           <NavItem
             icon={LayoutDashboard}
