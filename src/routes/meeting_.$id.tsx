@@ -29,7 +29,7 @@ import {
   closeMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
 import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
-import { setMeetingRsvp } from "@/lib/api/meetings.functions";
+import { setMeetingRsvp, getMeeting, startMeeting, endMeeting } from "@/lib/api/meetings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
@@ -360,6 +360,38 @@ function MeetingDetailPage() {
     [id, isRealRoom, participantsQuery],
   );
 
+  // Trạng thái cuộc họp + quyền chủ trì để hiện nút Bắt đầu / Kết thúc.
+  const meetingQuery = useQuery({
+    queryKey: ["meeting", id],
+    enabled: isRealRoom,
+    staleTime: 15_000,
+    queryFn: () => getMeeting({ data: { meetingId: id } }),
+  });
+  const meetingStatus = (meetingQuery.data as { status?: string } | undefined)?.status ?? null;
+  const isHost =
+    !!myUserId &&
+    (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
+  const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
+
+  const handleLifecycle = useCallback(
+    async (action: "start" | "end") => {
+      setLifecycleBusy(action);
+      try {
+        const fn = action === "start" ? startMeeting : endMeeting;
+        await fn({ data: { meetingId: id, idempotencyKey: crypto.randomUUID() } });
+        toast.success(action === "start" ? "Đã bắt đầu cuộc họp." : "Đã kết thúc cuộc họp.");
+        await meetingQuery.refetch();
+      } catch {
+        toast.error(
+          action === "start" ? "Không bắt đầu được cuộc họp." : "Không kết thúc được cuộc họp.",
+        );
+      } finally {
+        setLifecycleBusy(null);
+      }
+    },
+    [id, meetingQuery],
+  );
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
@@ -368,7 +400,8 @@ function MeetingDetailPage() {
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex flex-1 flex-col overflow-hidden p-4 lg:p-6">
-            <div className="mb-3">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
               <Link to="/meeting" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-3.5 w-3.5" /> Tất cả cuộc họp
               </Link>
@@ -383,6 +416,34 @@ function MeetingDetailPage() {
                 <span>·</span>
                 <Users className="h-3 w-3" /> {participants.length} người
               </div>
+              </div>
+              {isRealRoom && isHost && (
+                <div className="flex shrink-0 items-center gap-2">
+                  {meetingStatus !== "live" && meetingStatus !== "ended" && (
+                    <button
+                      type="button"
+                      disabled={lifecycleBusy !== null}
+                      onClick={() => void handleLifecycle("start")}
+                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      {lifecycleBusy === "start" ? "Đang bắt đầu…" : "Bắt đầu họp"}
+                    </button>
+                  )}
+                  {meetingStatus === "live" && (
+                    <button
+                      type="button"
+                      disabled={lifecycleBusy !== null}
+                      onClick={() => void handleLifecycle("end")}
+                      className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      {lifecycleBusy === "end" ? "Đang kết thúc…" : "Kết thúc họp"}
+                    </button>
+                  )}
+                  {meetingStatus === "ended" && (
+                    <span className="text-xs text-muted-foreground">Cuộc họp đã kết thúc</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {session ? (
