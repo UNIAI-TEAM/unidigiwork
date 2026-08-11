@@ -218,17 +218,19 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string } | null
   >(null);
   const createTaskM = useMutation({
-    mutationFn: async (v: NonNullable<typeof taskDraft>) =>
-      doCreateTask({
+    mutationFn: async (v: NonNullable<typeof taskDraft>) => {
+      const src = activeIdRef.current ? `\n\n${buildChatSourceTag(activeIdRef.current, v.messageId)}` : "";
+      return doCreateTask({
         data: {
           idempotencyKey: crypto.randomUUID(),
           workspaceId: v.workspaceId,
           title: v.title.trim().slice(0, 500),
-          description: v.description.trim() || undefined,
+          description: `${v.description.trim()}${src}`.trim() || undefined,
           priority: v.priority,
           dueAt: v.dueAt ? new Date(v.dueAt).toISOString() : undefined,
         },
-      }),
+      });
+    },
     onSuccess: (task: any) => {
       const created = Array.isArray(task) ? task[0] : task;
       setTaskDraft(null);
