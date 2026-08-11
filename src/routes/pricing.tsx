@@ -1,12 +1,33 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Check, Minus, Sparkles, Building2, Rocket, ArrowRight, Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  Check,
+  Minus,
+  Sparkles,
+  Building2,
+  Rocket,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Loader2,
+} from "lucide-react";
 import { PublicShell } from "@/components/public-shell";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { listPublicPlans, type PublicPlanDto } from "@/lib/api/pricing.functions";
 import { getActiveTenant } from "@/lib/api/active-tenant.functions";
-import { getActiveSubscription } from "@/lib/api/billing.functions";
+import { getActiveSubscription, changeSubscription } from "@/lib/api/billing.functions";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -75,6 +96,9 @@ function featureLabel(f: PublicPlanDto["features"][number]): string {
 
 function PricingPage() {
   const [signedIn, setSignedIn] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<PublicPlanDto | null>(null);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
   }, []);
@@ -98,6 +122,36 @@ function PricingPage() {
 
   const currentPlanCode = subQuery.data?.planCode ?? null;
   const plans = plansQuery.data ?? [];
+  const currentPlan = plans.find((p) => p.code === currentPlanCode) ?? null;
+  const tenantId = tenantQuery.data?.tenantId ?? null;
+
+  const changeFn = useServerFn(changeSubscription);
+  const changeMutation = useMutation({
+    mutationFn: (plan: PublicPlanDto) =>
+      changeFn({
+        data: {
+          tenantId: tenantId!,
+          planCode: plan.code,
+          metadata: { idempotencyKey: crypto.randomUUID() },
+        },
+      }),
+    onSuccess: async (_res, plan) => {
+      await qc.invalidateQueries();
+      setCheckoutPlan(null);
+      toast.success(`Đã chuyển sang gói ${plan.name}`);
+      void navigate({ to: "/billing" });
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Không đổi được gói. Vui lòng thử lại.");
+    },
+  });
+
+  const direction = (p: PublicPlanDto): "upgrade" | "downgrade" | "switch" => {
+    if (!currentPlan) return "switch";
+    if (p.sortOrder > currentPlan.sortOrder) return "upgrade";
+    if (p.sortOrder < currentPlan.sortOrder) return "downgrade";
+    return "switch";
+  };
 
   return (
     <PublicShell active="pricing">
@@ -184,12 +238,35 @@ function PricingPage() {
                     <span className="mt-7 inline-flex items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary">
                       Đang sử dụng
                     </span>
-                  ) : (
-                    <Link
-                      to="/contact"
+                  ) : signedIn && tenantId && p.priceAmount !== null ? (
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutPlan(p)}
                       className={`mt-7 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium ${highlight ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border bg-surface-2 hover:bg-surface-3"}`}
                     >
-                      {p.ctaLabel ?? "Liên hệ tư vấn"} <ArrowRight className="h-4 w-4" />
+                      {direction(p) === "upgrade" ? (
+                        <>
+                          Nâng cấp lên {p.name} <ArrowUp className="h-4 w-4" />
+                        </>
+                      ) : direction(p) === "downgrade" ? (
+                        <>
+                          Hạ cấp xuống {p.name} <ArrowDown className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Chọn gói {p.name} <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <Link
+                      to={p.priceAmount === null ? "/contact" : "/auth"}
+                      className={`mt-7 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium ${highlight ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border bg-surface-2 hover:bg-surface-3"}`}
+                    >
+                      {p.priceAmount === null
+                        ? (p.ctaLabel ?? "Liên hệ tư vấn")
+                        : "Đăng nhập để đổi gói"}{" "}
+                      <ArrowRight className="h-4 w-4" />
                     </Link>
                   )}
                 </div>
@@ -198,6 +275,41 @@ function PricingPage() {
           </div>
         )}
       </section>
+
+      <Dialog open={!!checkoutPlan} onOpenChange={(o) => !o && setCheckoutPlan(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {checkoutPlan && direction(checkoutPlan) === "downgrade"
+                ? "Xác nhận hạ cấp gói"
+                : "Xác nhận nâng cấp gói"}
+            </DialogTitle>
+            <DialogDescription>
+              {checkoutPlan && (
+                <>
+                  Tổ chức <span className="font-medium">{tenantQuery.data?.tenantName}</span> sẽ chuyển
+                  từ gói <span className="font-medium">{currentPlan?.name ?? "hiện tại"}</span> sang{" "}
+                  <span className="font-medium">{checkoutPlan.name}</span> (
+                  {formatPrice(checkoutPlan).value} {formatPrice(checkoutPlan).unit}). Chi phí được tính
+                  tỷ lệ theo ngày sử dụng còn lại của chu kỳ.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCheckoutPlan(null)}>
+              Huỷ
+            </Button>
+            <Button
+              onClick={() => checkoutPlan && changeMutation.mutate(checkoutPlan)}
+              disabled={changeMutation.isPending}
+            >
+              {changeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Tiếp tục thanh toán
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <section className="border-t border-border/60 bg-surface/30 py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
