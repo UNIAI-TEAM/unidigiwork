@@ -271,10 +271,21 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
   ];
 }
 
-function KpiCard({ k }: { k: Kpi }) {
+function KpiCard({ k, rangeDays }: { k: Kpi; rangeDays: number }) {
   const Icon = k.icon;
-  return (
-    <div className="rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/40">
+  const now = new Date();
+  const from = new Date(now.getTime() - rangeDays * 86400_000).toISOString().slice(0, 10);
+  const to = now.toISOString().slice(0, 10);
+  const target =
+    k.key === "tasks"
+      ? ({ to: "/tasks", search: { range: rangeDays } } as const)
+      : k.key === "meetings"
+        ? ({ to: "/meeting", search: { from, to } } as const)
+        : k.key === "projects"
+          ? ({ to: "/workspace" } as const)
+          : ({ to: "/people" } as const);
+  const body = (
+    <>
       <div className="flex items-start justify-between">
         <div className="text-xs font-medium text-muted-foreground">{k.label}</div>
         <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${k.tint}`}>
@@ -289,9 +300,17 @@ function KpiCard({ k }: { k: Kpi }) {
           <span className="text-muted-foreground">so với kỳ trước</span>
         </div>
       ) : (
-        <div className="mt-2 text-xs text-muted-foreground">Tổng hiện tại</div>
+        <div className="mt-2 text-xs text-muted-foreground">{rangeDays} ngày qua</div>
       )}
-    </div>
+    </>
+  );
+  return (
+    <Link
+      {...target}
+      className="block rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/40"
+    >
+      {body}
+    </Link>
   );
 }
 
@@ -735,8 +754,8 @@ function DashboardInner() {
                     aria-label="Khoảng thời gian"
                   >
                     <option value={7}>7 ngày qua</option>
-                    <option value={14}>14 ngày qua</option>
                     <option value={30}>30 ngày qua</option>
+                    <option value={90}>90 ngày qua</option>
                   </select>
                 </div>
                 <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
@@ -837,7 +856,7 @@ function DashboardInner() {
                 kpis: (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {kpis.map((k) => (
-                  <KpiCard key={k.key} k={k} />
+                  <KpiCard key={k.key} k={k} rangeDays={rangeDays} />
                 ))}
               </div>
                 ),
