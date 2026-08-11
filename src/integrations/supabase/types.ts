@@ -2758,6 +2758,7 @@ export type Database = {
           project_id: string | null
           row_version: number
           status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
           tenant_id: string
           title: string
           updated_at: string
@@ -2777,6 +2778,7 @@ export type Database = {
           project_id?: string | null
           row_version?: number
           status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[]
           tenant_id: string
           title: string
           updated_at?: string
@@ -2796,6 +2798,7 @@ export type Database = {
           project_id?: string | null
           row_version?: number
           status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[]
           tenant_id?: string
           title?: string
           updated_at?: string
@@ -4223,6 +4226,7 @@ export type Database = {
           project_id: string | null
           row_version: number
           status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
           tenant_id: string
           title: string
           updated_at: string
@@ -4613,6 +4617,7 @@ export type Database = {
           project_id: string | null
           row_version: number
           status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
           tenant_id: string
           title: string
           updated_at: string
@@ -4650,6 +4655,7 @@ export type Database = {
           project_id: string | null
           row_version: number
           status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
           tenant_id: string
           title: string
           updated_at: string
@@ -5640,6 +5646,7 @@ export type Database = {
           project_id: string | null
           row_version: number
           status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
           tenant_id: string
           title: string
           updated_at: string
@@ -5754,6 +5761,7 @@ export type Database = {
           project_id: string | null
           row_version: number
           status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
           tenant_id: string
           title: string
           updated_at: string
