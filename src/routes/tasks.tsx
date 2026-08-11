@@ -136,7 +136,7 @@ function TasksPage() {
       saveTaskView({ data: { name, tags: tagFilter, priority: priorityFilter } }),
     onSuccess: () => {
       toast.success("Đã lưu bộ lọc");
-      void qc.invalidateQueries({ queryKey: ["task-views"] });
+      void queryClient.invalidateQueries({ queryKey: ["task-views"] });
     },
     onError: (e: Error) => toast.error(e.message || "Không lưu được bộ lọc"),
   });
@@ -145,7 +145,7 @@ function TasksPage() {
     onSuccess: () => {
       setActiveViewId("");
       toast.success("Đã xóa bộ lọc");
-      void qc.invalidateQueries({ queryKey: ["task-views"] });
+      void queryClient.invalidateQueries({ queryKey: ["task-views"] });
     },
     onError: (e: Error) => toast.error(e.message || "Không xóa được bộ lọc"),
   });
