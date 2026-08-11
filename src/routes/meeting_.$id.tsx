@@ -379,7 +379,7 @@ function MeetingDetailPage() {
                   Bạn (xem trước)
                 </div>
               </div>
-              {participants.slice(1).map((p) => (
+              {participants.map((p) => (
                 <div
                   key={p.seed}
                   className={`relative flex items-center justify-center rounded-xl bg-surface-2 ${p.speaking ? "ring-2 ring-success" : ""}`}
