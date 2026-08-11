@@ -433,6 +433,7 @@ function MeetingDetailPage() {
     queryFn: () => getMeeting({ data: { meetingId: id } }),
   });
   const meetingStatus = (meetingQuery.data as { status?: string } | undefined)?.status ?? null;
+  const statusMeta = MEETING_STATUS_META[meetingStatus ?? ""] ?? MEETING_STATUS_META["scheduled"];
   const isHost =
     !!myUserId &&
     (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
