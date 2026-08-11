@@ -1260,6 +1260,60 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                 </div>
               </div>
               <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Nhãn (tags) — Enter để thêm
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5">
+                  {taskDraft.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                    >
+                      {t}
+                      <button
+                        type="button"
+                        aria-label={`Xóa nhãn ${t}`}
+                        onClick={() =>
+                          setTaskDraft({ ...taskDraft, tags: taskDraft.tags.filter((x) => x !== t) })
+                        }
+                        className="hover:text-foreground"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    value={tagInput}
+                    placeholder={taskDraft.tags.length >= 10 ? "Tối đa 10 nhãn" : "Nhập nhãn…"}
+                    disabled={taskDraft.tags.length >= 10}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== ",") return;
+                      e.preventDefault();
+                      const v = tagInput.trim().slice(0, 40);
+                      if (!v || taskDraft.tags.includes(v) || taskDraft.tags.length >= 10) return;
+                      setTaskDraft({ ...taskDraft, tags: [...taskDraft.tags, v] });
+                      setTagInput("");
+                    }}
+                    className="min-w-[8rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
+                  />
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {["bug", "hỗ trợ", "khẩn", "khách hàng", "nội bộ"]
+                    .filter((s) => !taskDraft.tags.includes(s))
+                    .map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setTaskDraft({ ...taskDraft, tags: [...taskDraft.tags, s] })}
+                        className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
+                      >
+                        + {s}
+                      </button>
+                    ))}
+                </div>
+              </div>
+              <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Hạn hoàn thành (tuỳ chọn)</label>
                 <input
                   type="datetime-local"
