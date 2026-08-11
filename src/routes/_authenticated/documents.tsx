@@ -1,3 +1,4 @@
+import { FilterPageHeader } from "@/components/filter-page-header";
 import { isStaleDocument } from "@/lib/metrics";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
