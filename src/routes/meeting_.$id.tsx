@@ -22,6 +22,17 @@ import {
   Video as VideoIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-request-panel";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
@@ -464,6 +475,7 @@ function MeetingDetailPage() {
     !!myUserId &&
     (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
   const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
+  const [confirmEndOpen, setConfirmEndOpen] = useState(false);
 
   const handleLifecycle = useCallback(
     async (action: "start" | "end") => {
@@ -522,14 +534,35 @@ function MeetingDetailPage() {
                     </button>
                   )}
                   {meetingStatus === "live" && (
-                    <button
-                      type="button"
-                      disabled={lifecycleBusy !== null}
-                      onClick={() => void handleLifecycle("end")}
-                      className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-60"
-                    >
-                      {lifecycleBusy === "end" ? "Đang kết thúc…" : "Kết thúc họp"}
-                    </button>
+                    <AlertDialog open={confirmEndOpen} onOpenChange={setConfirmEndOpen}>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={lifecycleBusy !== null}
+                          className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-60"
+                        >
+                          {lifecycleBusy === "end" ? "Đang kết thúc…" : "Kết thúc họp"}
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Kết thúc cuộc họp?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Hành động này sẽ dừng cuộc họp cho tất cả người tham gia và không thể hoàn tác.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={lifecycleBusy === "end"}>Hủy</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => void handleLifecycle("end")}
+                            disabled={lifecycleBusy === "end"}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {lifecycleBusy === "end" ? "Đang kết thúc…" : "Xác nhận kết thúc"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                   {meetingStatus === "ended" && (
                     <span className="text-xs text-muted-foreground">Cuộc họp đã kết thúc</span>
