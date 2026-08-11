@@ -223,6 +223,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.staleDocuments ?? 0} tài liệu cần cập nhật`,
       action: "Xem chi tiết",
       to: "/documents",
+      search: { filter: "stale" as const },
     },
     {
       icon: AlertTriangle,
@@ -230,6 +231,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.overdueTasks ?? 0} nhiệm vụ đang quá hạn`,
       action: "Xem chi tiết",
       to: "/tasks",
+      search: { filter: "overdue" as const },
     },
     {
       icon: Video,
@@ -237,6 +239,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.meetingsToday ?? 0} cuộc họp trong hôm nay`,
       action: "Xem lịch",
       to: "/calendar",
+      search: { view: "week" as const, kind: "meeting" as const },
     },
     {
       icon: Workflow,
@@ -244,6 +247,7 @@ function buildAiItems(s: DashboardAiSummary | undefined) {
       title: `${s?.pendingWorkflowApprovals ?? 0} quy trình cần phê duyệt`,
       action: "Xem chi tiết",
       to: "/workflows/permissions",
+      search: {},
     },
   ];
 }
