@@ -611,6 +611,41 @@ export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string 
                 ) : (
                   <div className="flex min-h-0 flex-1">
                     <div className="flex min-w-0 flex-1 flex-col">
+                      {pinned.length > 0 && (
+                        <div className="border-b border-border bg-surface-2/60 px-5 py-2">
+                          <button
+                            onClick={() => setShowPinned((v) => !v)}
+                            className="flex w-full items-center gap-2 text-left text-xs font-medium text-foreground"
+                          >
+                            <Pin className="h-3.5 w-3.5 text-primary" />
+                            {pinned.length} tin nhắn đã ghim
+                            <ChevronUp className={`ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform ${showPinned ? "" : "rotate-180"}`} />
+                          </button>
+                          {showPinned && (
+                            <ul className="mt-2 space-y-1.5">
+                              {pinned.map((p) => (
+                                <li key={p.id} className="flex items-start gap-2 rounded-md bg-background px-2.5 py-1.5">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs">
+                                      <span className="font-medium">{p.authorName}</span>: {p.body}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      Ghim bởi {p.pinnedByName ?? "Thành viên"} · {timeLabel(p.createdAt)}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => pinM.mutate({ messageId: p.id, pinned: false })}
+                                    aria-label="Bỏ ghim tin nhắn"
+                                    className="mt-0.5 shrink-0"
+                                  >
+                                    <PinOff className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                       <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
                         {messagesQ.isLoading && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
