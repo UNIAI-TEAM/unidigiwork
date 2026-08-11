@@ -35,7 +35,39 @@ export type AiMessageDTO = {
   createdAt: string;
   inputTokens: number;
   outputTokens: number;
+  metadata: AiMessageMetadata | null;
 };
+
+/** Ngữ cảnh điều hướng người dùng đã mở từ AI Assistant (đường dẫn + filter). */
+export type AiOpenedLink = {
+  label?: string;
+  path: string;
+  filters?: Record<string, string | number | boolean>;
+  at?: string;
+};
+
+export type AiMessageMetadata = {
+  source?: string;
+  workspaceId?: string | null;
+  workspaceName?: string | null;
+  rangeDays?: number;
+  openedLinks?: AiOpenedLink[];
+};
+
+const openedLinkSchema = z.object({
+  label: z.string().max(120).optional(),
+  path: z.string().max(300),
+  filters: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
+  at: z.string().max(40).optional(),
+});
+
+const messageMetadataSchema = z.object({
+  source: z.string().max(60).optional(),
+  workspaceId: z.string().uuid().nullish(),
+  workspaceName: z.string().max(200).nullish(),
+  rangeDays: z.number().int().min(1).max(3650).optional(),
+  openedLinks: z.array(openedLinkSchema).max(10).optional(),
+});
 
 export type AiWorkspaceOption = { id: string; name: string };
 
@@ -179,7 +211,7 @@ export const getAiConversation = createServerFn({ method: "GET" })
     const ctx = context as unknown as Ctx;
     const { data: rows, error } = await ctx.supabase
       .from("ai_messages")
-      .select("id, role, content, created_at, input_tokens, output_tokens")
+      .select("id, role, content, created_at, input_tokens, output_tokens, metadata")
       .eq("conversation_id", data.conversationId)
       .neq("role", "system")
       .order("created_at", { ascending: true })
@@ -192,6 +224,10 @@ export const getAiConversation = createServerFn({ method: "GET" })
       createdAt: r.created_at,
       inputTokens: r.input_tokens ?? 0,
       outputTokens: r.output_tokens ?? 0,
+      metadata:
+        r.metadata && typeof r.metadata === "object" && Object.keys(r.metadata).length > 0
+          ? (r.metadata as AiMessageMetadata)
+          : null,
     }));
   });
 
@@ -285,6 +321,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid().optional(),
         text: z.string().min(1).max(8000),
         contextNote: z.string().max(2000).optional(),
+        metadata: messageMetadataSchema.optional(),
       })
       .parse(i),
   )
@@ -341,6 +378,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           role: "user",
           content: data.text,
           created_by: ctx.userId,
+          metadata: data.metadata ?? {},
         })
         .select("id")
         .single();

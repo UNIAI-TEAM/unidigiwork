@@ -82,7 +82,18 @@ export const Route = createFileRoute("/ai")({
   component: AIPage,
 });
 
-type Msg = { id: string; role: "user" | "assistant"; text: string; time: string; rich?: boolean };
+type Msg = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  time: string;
+  rich?: boolean;
+  openedLinks?: Array<{
+    label?: string;
+    path: string;
+    filters?: Record<string, string | number | boolean>;
+  }>;
+};
 
 const TABS = ["chat", "assistants", "prompts", "knowledge", "tools", "usage"] as const;
 type Tab = (typeof TABS)[number];
@@ -264,6 +275,7 @@ function AIPage() {
       role: m.role === "assistant" ? "assistant" : "user",
       text: m.content,
       time: shortTime(m.createdAt),
+      ...(m.metadata?.openedLinks?.length ? { openedLinks: m.metadata.openedLinks } : {}),
     }));
 
   const sendMutation = useMutation({
@@ -936,6 +948,24 @@ function UserBubble({
         )}
       </div>
       <p className="text-sm">{m.text}</p>
+      {m.openedLinks?.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {m.openedLinks.map((l, i) => (
+            <span
+              key={i}
+              className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[10px] text-muted-foreground"
+              title={l.path}
+            >
+              Đã mở: {l.label ?? l.path}
+              {l.filters && Object.keys(l.filters).length
+                ? ` · ${Object.entries(l.filters)
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join(", ")}`
+                : ""}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -710,6 +710,25 @@ function DashboardInner() {
   }, [notificationsQuery.data]);
   const sendAiFn = useServerFn(sendAiMessage);
   const [aiInput, setAiInput] = useState("");
+  const [openedLinks, setOpenedLinks] = useState<
+    Array<{ label: string; path: string; filters?: Record<string, string | number | boolean>; at: string }>
+  >([]);
+  const recordOpenedLink = (
+    label: string,
+    path: string,
+    filters?: Record<string, unknown>,
+  ) => {
+    const safe: Record<string, string | number | boolean> = {};
+    for (const [k, v] of Object.entries(filters ?? {})) {
+      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") safe[k] = v;
+    }
+    setOpenedLinks((prev) =>
+      [
+        { label, path, ...(Object.keys(safe).length ? { filters: safe } : {}), at: new Date().toISOString() },
+        ...prev.filter((l) => l.path !== path || JSON.stringify(l.filters ?? {}) !== JSON.stringify(safe)),
+      ].slice(0, 5),
+    );
+  };
   const [aiSending, setAiSending] = useState(false);
   const [aiConversationId, setAiConversationId] = useState<string | null>(null);
   const [aiThread, setAiThread] = useState<Array<{ role: "user" | "assistant"; content: string }>>(
@@ -730,7 +749,21 @@ function DashboardInner() {
       s
         ? `Số liệu hiện tại — tài liệu cần cập nhật (>30 ngày): ${s.staleDocuments ?? 0}; nhiệm vụ quá hạn: ${s.overdueTasks ?? 0}; cuộc họp hôm nay: ${s.meetingsToday ?? 0}; quy trình chờ duyệt: ${s.pendingWorkflowApprovals ?? 0}`
         : "Số liệu hiện tại: chưa tải được",
-    ].join("\n");
+      openedLinks.length
+        ? `Trang đã mở từ AI Assistant: ${openedLinks
+            .map(
+              (l) =>
+                `${l.label} (${l.path}${
+                  l.filters && Object.keys(l.filters).length
+                    ? "?" + new URLSearchParams(Object.entries(l.filters).map(([k, v]) => [k, String(v)])).toString()
+                    : ""
+                })`,
+            )
+            .join("; ")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
     setAiInput("");
     setAiThread((prev) => [...prev, { role: "user", content: text }]);
     setAiSending(true);
@@ -739,6 +772,13 @@ function DashboardInner() {
         data: {
           text,
           contextNote,
+          metadata: {
+            source: "dashboard_ai_assistant",
+            workspaceId: activeWorkspaceId ?? null,
+            workspaceName: activeWorkspaceName ?? null,
+            rangeDays,
+            openedLinks,
+          },
           ...(aiConversationId ? { conversationId: aiConversationId } : {}),
           ...(activeWorkspaceId && !aiConversationId ? { workspaceId: activeWorkspaceId } : {}),
         },
@@ -1204,6 +1244,13 @@ function DashboardInner() {
                         to={it.to}
                         search={it.search as never}
                         preload="intent"
+                        onClick={() =>
+                          recordOpenedLink(
+                            it.title,
+                            it.to,
+                            (it.search ?? {}) as Record<string, unknown>,
+                          )
+                        }
                         className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
                       >
                         <span
@@ -1243,6 +1290,20 @@ function DashboardInner() {
                   {aiSending && (
                     <div className="text-xs text-muted-foreground">AI đang trả lời…</div>
                   )}
+                </div>
+              )}
+
+              {openedLinks.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {openedLinks.map((l) => (
+                    <span
+                      key={`${l.path}-${l.at}`}
+                      title={`${l.path}${l.filters ? " · " + Object.entries(l.filters).map(([k, v]) => `${k}=${v}`).join(", ") : ""}`}
+                      className="rounded-full border border-border/60 bg-surface-2/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                    >
+                      Đã mở: {l.label}
+                    </span>
+                  ))}
                 </div>
               )}
 
