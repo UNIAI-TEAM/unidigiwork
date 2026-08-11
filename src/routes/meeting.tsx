@@ -81,12 +81,16 @@ export const Route = createFileRoute("/meeting")({
     focus?: "rooms";
     state?: "live" | "upcoming";
     page?: number;
+    from?: string;
+    to?: string;
   } & Partial<Record<string, unknown>>): {
     ws?: string;
     q?: string;
     focus?: "rooms";
     state?: "live" | "upcoming";
     page?: number;
+    from?: string;
+    to?: string;
   } => ({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
@@ -98,6 +102,14 @@ export const Route = createFileRoute("/meeting")({
     page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
       ? Number(search["page"])
       : 1,
+    from:
+      typeof search["from"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["from"] as string)
+        ? (search["from"] as string)
+        : undefined,
+    to:
+      typeof search["to"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["to"] as string)
+        ? (search["to"] as string)
+        : undefined,
   }),
   head: () => ({
     meta: [
