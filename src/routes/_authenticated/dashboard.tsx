@@ -1,5 +1,7 @@
 import { createFileRoute, useRouteContext } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { sendAiMessage } from "@/lib/api/ai-chat.functions";
 import { toast } from "sonner";
 import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -602,6 +604,42 @@ function DashboardInner() {
     staleTime: 30_000,
   });
   const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
+  const sendAiFn = useServerFn(sendAiMessage);
+  const [aiInput, setAiInput] = useState("");
+  const [aiSending, setAiSending] = useState(false);
+  const [aiConversationId, setAiConversationId] = useState<string | null>(null);
+  const [aiThread, setAiThread] = useState<Array<{ role: "user" | "assistant"; content: string }>>(
+    [],
+  );
+  const aiThreadRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    aiThreadRef.current?.scrollTo({ top: aiThreadRef.current.scrollHeight });
+  }, [aiThread, aiSending]);
+
+  const handleAskAi = async () => {
+    const text = aiInput.trim();
+    if (!text || aiSending) return;
+    setAiInput("");
+    setAiThread((prev) => [...prev, { role: "user", content: text }]);
+    setAiSending(true);
+    try {
+      const res = await sendAiFn({
+        data: {
+          text,
+          ...(aiConversationId ? { conversationId: aiConversationId } : {}),
+          ...(activeWorkspaceId && !aiConversationId ? { workspaceId: activeWorkspaceId } : {}),
+        },
+      });
+      setAiConversationId(res.conversationId);
+      setAiThread((prev) => [...prev, { role: "assistant", content: res.reply }]);
+    } catch (err) {
+      setAiThread((prev) => prev.slice(0, -1));
+      setAiInput(text);
+      toast.error(err instanceof Error ? err.message : "Không gửi được câu hỏi tới AI");
+    } finally {
+      setAiSending(false);
+    }
+  };
   const activity = useMemo(() => buildActivity(data.overview), [data.overview]);
   const donut = useMemo(() => buildDonut(data.overview), [data.overview]);
   const projects = data.projects;
@@ -996,15 +1034,59 @@ function DashboardInner() {
                 })}
               </ul>
 
+              {(aiThread.length > 0 || aiSending) && (
+                <div
+                  ref={aiThreadRef}
+                  className="mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                >
+                  {aiThread.map((m, i) => (
+                    <div
+                      key={i}
+                      className={
+                        m.role === "user"
+                          ? "ml-6 rounded-lg bg-primary px-2.5 py-1.5 text-xs text-primary-foreground"
+                          : "text-xs whitespace-pre-wrap text-foreground"
+                      }
+                    >
+                      {m.content}
+                    </div>
+                  ))}
+                  {aiSending && (
+                    <div className="text-xs text-muted-foreground">AI đang trả lời…</div>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4 flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2">
                 <input
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleAskAi();
+                    }
+                  }}
+                  disabled={aiSending}
                   placeholder="Ask AI anything..."
-                  className="flex-1 bg-transparent text-sm placeholder:text-primary/70 focus:outline-none"
+                  className="flex-1 bg-transparent text-sm placeholder:text-primary/70 focus:outline-none disabled:opacity-60"
                 />
-                <button className="rounded-md bg-primary p-1.5 text-primary-foreground hover:bg-primary/90">
+                <button
+                  onClick={() => void handleAskAi()}
+                  disabled={aiSending || !aiInput.trim()}
+                  className="rounded-md bg-primary p-1.5 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
                   <Send className="h-3.5 w-3.5" />
                 </button>
               </div>
+              {aiConversationId && (
+                <Link
+                  to="/ai"
+                  className="mt-2 block text-[11px] text-primary hover:underline"
+                >
+                  Mở hội thoại đầy đủ trong AI Workspace →
+                </Link>
+              )}
 
               <div className="mt-5 rounded-xl border border-border/60 bg-surface-2/40 p-3">
                 <div className="flex items-center gap-2 text-sm font-medium">
