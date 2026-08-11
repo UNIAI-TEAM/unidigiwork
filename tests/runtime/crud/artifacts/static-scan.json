@@ -1,0 +1,3762 @@
+{
+  "generatedAt": "2026-08-11T14:55:31.137Z",
+  "counts": {
+    "routes": 72,
+    "serverFns": 236,
+    "uiFiles": 135,
+    "buttons": 832,
+    "onClicks": 723,
+    "forms": 19,
+    "mutations": 118,
+    "directDbUi": 3,
+    "orphanFns": 33
+  },
+  "fns": [
+    {
+      "name": "listAvailableTenants",
+      "method": "GET",
+      "file": "src/lib/api/active-tenant.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "getActiveTenant",
+      "method": "GET",
+      "file": "src/lib/api/active-tenant.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/onboarding.tsx",
+        "src/routes/pricing.tsx"
+      ],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts",
+        "src/routes/onboarding.tsx",
+        "src/routes/pricing.tsx"
+      ]
+    },
+    {
+      "name": "setActiveTenant",
+      "method": "POST",
+      "file": "src/lib/api/active-tenant.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "clearActiveTenant",
+      "method": "POST",
+      "file": "src/lib/api/active-tenant.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "listAdminPlans",
+      "method": "GET",
+      "file": "src/lib/api/admin-plans.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ]
+    },
+    {
+      "name": "upsertPlan",
+      "method": "POST",
+      "file": "src/lib/api/admin-plans.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ]
+    },
+    {
+      "name": "deletePlan",
+      "method": "POST",
+      "file": "src/lib/api/admin-plans.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ]
+    },
+    {
+      "name": "upsertPlanFeature",
+      "method": "POST",
+      "file": "src/lib/api/admin-plans.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ]
+    },
+    {
+      "name": "deletePlanFeature",
+      "method": "POST",
+      "file": "src/lib/api/admin-plans.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.plans.tsx"
+      ]
+    },
+    {
+      "name": "getMyIsAdmin",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.tsx"
+      ]
+    },
+    {
+      "name": "listAllUsers",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.users.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.users.tsx"
+      ]
+    },
+    {
+      "name": "grantUserRole",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.users.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.users.tsx"
+      ]
+    },
+    {
+      "name": "revokeUserRole",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.users.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.users.tsx"
+      ]
+    },
+    {
+      "name": "listAdminRules",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ]
+    },
+    {
+      "name": "upsertAdminRule",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ]
+    },
+    {
+      "name": "toggleAdminRule",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ]
+    },
+    {
+      "name": "deleteAdminRule",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.rules.tsx"
+      ]
+    },
+    {
+      "name": "getAdminStats",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.index.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.index.tsx"
+      ]
+    },
+    {
+      "name": "listQuotaCheckEvents",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "getQuotaCheckMetrics",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "listQuotaAlertRules",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "upsertQuotaAlertRule",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "deleteQuotaAlertRule",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "listQuotaAlertEvents",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "exportQuotaCheckEvents",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "traceByCorrelationId",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.trace.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.trace.tsx"
+      ]
+    },
+    {
+      "name": "exportTraceCsv",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.trace.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.trace.tsx"
+      ]
+    },
+    {
+      "name": "createQuotaExportJob",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "listQuotaExportJobs",
+      "method": "GET",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "deleteQuotaExportJob",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "getQuotaExportDownloadUrl",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "runPendingQuotaExports",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "exportQuotaCheckEventsXlsx",
+      "method": "POST",
+      "file": "src/lib/api/admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.quota.tsx"
+      ]
+    },
+    {
+      "name": "listAiConversations",
+      "method": "GET",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/ai.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/ai.tsx"
+      ]
+    },
+    {
+      "name": "getAiConversation",
+      "method": "GET",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/ai.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/ai.tsx"
+      ]
+    },
+    {
+      "name": "deleteAiConversation",
+      "method": "POST",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/ai.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/ai.tsx"
+      ]
+    },
+    {
+      "name": "restoreAiConversation",
+      "method": "POST",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/ai.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/ai.tsx"
+      ]
+    },
+    {
+      "name": "purgeAiConversation",
+      "method": "POST",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/ai.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/ai.tsx"
+      ]
+    },
+    {
+      "name": "listAiMessageVersions",
+      "method": "GET",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/ai/message-history-dialog.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/ai/message-history-dialog.tsx"
+      ]
+    },
+    {
+      "name": "updateAiMessage",
+      "method": "POST",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/ai/message-history-dialog.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/ai/message-history-dialog.tsx"
+      ]
+    },
+    {
+      "name": "sendAiMessage",
+      "method": "POST",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/ai.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/ai.tsx"
+      ]
+    },
+    {
+      "name": "getAiUsageSummary",
+      "method": "GET",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "getAiUsageTimeseries",
+      "method": "GET",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/ai/usage-stats-panel.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/ai/usage-stats-panel.tsx"
+      ]
+    },
+    {
+      "name": "exportAiConversations",
+      "method": "GET",
+      "file": "src/lib/api/ai-chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/ai.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/ai.tsx"
+      ]
+    },
+    {
+      "name": "listTenantAuditEvents",
+      "method": "POST",
+      "file": "src/lib/api/audit.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "listPlans",
+      "method": "GET",
+      "file": "src/lib/api/billing.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ],
+      "anyConsumers": [
+        "src/features/billing/hooks.ts",
+        "src/routes/_authenticated/billing.tsx"
+      ]
+    },
+    {
+      "name": "getActiveSubscription",
+      "method": "POST",
+      "file": "src/lib/api/billing.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/billing.tsx",
+        "src/routes/pricing.tsx"
+      ],
+      "anyConsumers": [
+        "src/features/billing/hooks.ts",
+        "src/routes/_authenticated/billing.tsx",
+        "src/routes/pricing.tsx"
+      ]
+    },
+    {
+      "name": "getEntitlementSnapshot",
+      "method": "POST",
+      "file": "src/lib/api/billing.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ],
+      "anyConsumers": [
+        "src/features/billing/hooks.ts",
+        "src/routes/_authenticated/billing.tsx"
+      ]
+    },
+    {
+      "name": "changeSubscription",
+      "method": "POST",
+      "file": "src/lib/api/billing.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/billing.tsx",
+        "src/routes/pricing.tsx"
+      ],
+      "anyConsumers": [
+        "src/features/billing/hooks.ts",
+        "src/routes/_authenticated/billing.tsx",
+        "src/routes/pricing.tsx"
+      ]
+    },
+    {
+      "name": "cancelSubscription",
+      "method": "POST",
+      "file": "src/lib/api/billing.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ]
+    },
+    {
+      "name": "resumeSubscription",
+      "method": "POST",
+      "file": "src/lib/api/billing.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ]
+    },
+    {
+      "name": "listInvoices",
+      "method": "POST",
+      "file": "src/lib/api/billing.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/billing.tsx"
+      ]
+    },
+    {
+      "name": "listBlogPosts",
+      "method": "GET",
+      "file": "src/lib/api/blog.functions.ts",
+      "auth": false,
+      "uiConsumers": [
+        "src/routes/blog.category.$category.tsx",
+        "src/routes/blog.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/blog.category.$category.tsx",
+        "src/routes/blog.tsx"
+      ]
+    },
+    {
+      "name": "getBlogPost",
+      "method": "GET",
+      "file": "src/lib/api/blog.functions.ts",
+      "auth": false,
+      "uiConsumers": [
+        "src/routes/blog.$slug.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/blog.$slug.tsx"
+      ]
+    },
+    {
+      "name": "listCalendarEvents",
+      "method": "GET",
+      "file": "src/lib/api/calendar.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/calendar.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/calendar.tsx"
+      ]
+    },
+    {
+      "name": "listChatChannels",
+      "method": "GET",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "listChatMessages",
+      "method": "GET",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "setChatMessagePin",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "listPinnedChatMessages",
+      "method": "GET",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "sendChatMessage",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "updateChatMessage",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "deleteChatMessage",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "createChatChannel",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "joinChatChannel",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "leaveChatChannel",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "setChatFavorite",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "markChatChannelRead",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "deleteChatChannel",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "listChatChannelMembers",
+      "method": "GET",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "listChatPeople",
+      "method": "GET",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "addChatChannelMember",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "listChatChannelReaders",
+      "method": "GET",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "removeChatChannelMember",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "setChatMemberRole",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "openDirectMessage",
+      "method": "POST",
+      "file": "src/lib/api/chat.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx"
+      ]
+    },
+    {
+      "name": "getDashboardOverview",
+      "method": "GET",
+      "file": "src/lib/api/dashboard.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ]
+    },
+    {
+      "name": "listDemoRequests",
+      "method": "GET",
+      "file": "src/lib/api/demo-requests.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.leads.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.leads.tsx"
+      ]
+    },
+    {
+      "name": "updateDemoRequestStatus",
+      "method": "POST",
+      "file": "src/lib/api/demo-requests.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.leads.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.leads.tsx"
+      ]
+    },
+    {
+      "name": "submitDemoRequest",
+      "method": "POST",
+      "file": "src/lib/api/demo-requests.functions.ts",
+      "auth": false,
+      "uiConsumers": [
+        "src/routes/index.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/index.tsx"
+      ]
+    },
+    {
+      "name": "listDocuments",
+      "method": "GET",
+      "file": "src/lib/api/documents.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "createDocument",
+      "method": "POST",
+      "file": "src/lib/api/documents.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/documents.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/documents.tsx"
+      ]
+    },
+    {
+      "name": "getDocument",
+      "method": "GET",
+      "file": "src/lib/api/documents.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/documents.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/documents.$id.tsx"
+      ]
+    },
+    {
+      "name": "updateDocument",
+      "method": "POST",
+      "file": "src/lib/api/documents.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/documents.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/documents.$id.tsx"
+      ]
+    },
+    {
+      "name": "uploadDocumentVersion",
+      "method": "POST",
+      "file": "src/lib/api/documents.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/documents.$id.tsx",
+        "src/routes/_authenticated/documents.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/documents.$id.tsx",
+        "src/routes/_authenticated/documents.tsx"
+      ]
+    },
+    {
+      "name": "shareDocument",
+      "method": "POST",
+      "file": "src/lib/api/documents.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "archiveDocument",
+      "method": "POST",
+      "file": "src/lib/api/documents.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "getMyPrimaryWorkspaceId",
+      "method": "GET",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "listEmailMessages",
+      "method": "GET",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/email.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/email.tsx"
+      ]
+    },
+    {
+      "name": "getEmailThread",
+      "method": "GET",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/email.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/email.$id.tsx"
+      ]
+    },
+    {
+      "name": "saveEmailDraft",
+      "method": "POST",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ]
+    },
+    {
+      "name": "getEmailDraft",
+      "method": "GET",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ]
+    },
+    {
+      "name": "deleteEmailDraft",
+      "method": "POST",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ]
+    },
+    {
+      "name": "sendEmail",
+      "method": "POST",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/email.compose.tsx"
+      ]
+    },
+    {
+      "name": "moveEmailMessages",
+      "method": "POST",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "setEmailMessagesRead",
+      "method": "POST",
+      "file": "src/lib/api/emails.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "getGreeting",
+      "method": "POST",
+      "file": "src/lib/api/example.functions.ts",
+      "auth": false,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "listInviteEmailTemplates",
+      "method": "POST",
+      "file": "src/lib/api/invite-email-templates.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ]
+    },
+    {
+      "name": "saveInviteEmailTemplate",
+      "method": "POST",
+      "file": "src/lib/api/invite-email-templates.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ]
+    },
+    {
+      "name": "resetInviteEmailTemplate",
+      "method": "POST",
+      "file": "src/lib/api/invite-email-templates.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ]
+    },
+    {
+      "name": "listInviteEmailTemplateVersions",
+      "method": "POST",
+      "file": "src/lib/api/invite-email-templates.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ]
+    },
+    {
+      "name": "restoreInviteEmailTemplateVersion",
+      "method": "POST",
+      "file": "src/lib/api/invite-email-templates.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx"
+      ]
+    },
+    {
+      "name": "listKnowledgeArticles",
+      "method": "GET",
+      "file": "src/lib/api/knowledge.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx",
+        "src/routes/_authenticated/help.tsx",
+        "src/routes/knowledge.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx",
+        "src/routes/_authenticated/help.tsx",
+        "src/routes/knowledge.tsx"
+      ]
+    },
+    {
+      "name": "getKnowledgeArticle",
+      "method": "GET",
+      "file": "src/lib/api/knowledge.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/knowledge.$slug.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/knowledge.$slug.tsx"
+      ]
+    },
+    {
+      "name": "saveKnowledgeArticle",
+      "method": "POST",
+      "file": "src/lib/api/knowledge.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx"
+      ]
+    },
+    {
+      "name": "setKnowledgeArticleStatus",
+      "method": "POST",
+      "file": "src/lib/api/knowledge.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx"
+      ]
+    },
+    {
+      "name": "deleteKnowledgeArticle",
+      "method": "POST",
+      "file": "src/lib/api/knowledge.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.knowledge.tsx"
+      ]
+    },
+    {
+      "name": "requestMeetingJoin",
+      "method": "POST",
+      "file": "src/lib/api/meeting-join-requests.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/sdk/meetings/index.ts"
+      ]
+    },
+    {
+      "name": "getMyMeetingJoinRequest",
+      "method": "POST",
+      "file": "src/lib/api/meeting-join-requests.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/sdk/meetings/index.ts"
+      ]
+    },
+    {
+      "name": "listMeetingJoinRequests",
+      "method": "POST",
+      "file": "src/lib/api/meeting-join-requests.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/sdk/meetings/index.ts"
+      ]
+    },
+    {
+      "name": "decideMeetingJoinRequest",
+      "method": "POST",
+      "file": "src/lib/api/meeting-join-requests.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/sdk/meetings/index.ts"
+      ]
+    },
+    {
+      "name": "getMeetingStats",
+      "method": "GET",
+      "file": "src/lib/api/meeting-recordings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/meeting/recording-panel.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/meeting/recording-panel.tsx"
+      ]
+    },
+    {
+      "name": "startMeetingRecording",
+      "method": "POST",
+      "file": "src/lib/api/meeting-recordings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/meeting/recording-panel.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/meeting/recording-panel.tsx"
+      ]
+    },
+    {
+      "name": "stopMeetingRecording",
+      "method": "POST",
+      "file": "src/lib/api/meeting-recordings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/meeting/recording-panel.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/meeting/recording-panel.tsx"
+      ]
+    },
+    {
+      "name": "openMeetingAttendance",
+      "method": "POST",
+      "file": "src/lib/api/meeting-recordings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "closeMeetingAttendance",
+      "method": "POST",
+      "file": "src/lib/api/meeting-recordings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "listMeetingAttendance",
+      "method": "POST",
+      "file": "src/lib/api/meeting-recordings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "listMyWorkspaces",
+      "method": "GET",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/app-shell.tsx",
+        "src/components/calendar/create-event-dialog.tsx",
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/meeting.tsx",
+        "src/routes/tasks.tsx",
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.permissions.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/app-shell.tsx",
+        "src/components/calendar/create-event-dialog.tsx",
+        "src/lib/active-workspace.tsx",
+        "src/lib/api/workspace-overview.functions.ts",
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/meeting.tsx",
+        "src/routes/tasks.tsx",
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.permissions.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "listMyMeetingRooms",
+      "method": "POST",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx"
+      ]
+    },
+    {
+      "name": "inviteMeetingParticipant",
+      "method": "POST",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx"
+      ]
+    },
+    {
+      "name": "createInstantMeeting",
+      "method": "POST",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx"
+      ]
+    },
+    {
+      "name": "listMeetingHistory",
+      "method": "GET",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.history.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.history.tsx"
+      ]
+    },
+    {
+      "name": "createMeetingInviteLink",
+      "method": "POST",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx"
+      ]
+    },
+    {
+      "name": "redeemMeetingInviteLink",
+      "method": "POST",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "listMeetingParticipants",
+      "method": "POST",
+      "file": "src/lib/api/meeting-rooms.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx",
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx",
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "listMeetingWebhookEvents",
+      "method": "POST",
+      "file": "src/lib/api/meeting-webhooks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.webhooks.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.webhooks.tsx"
+      ]
+    },
+    {
+      "name": "getMeetingWebhookEvent",
+      "method": "POST",
+      "file": "src/lib/api/meeting-webhooks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.webhooks.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.webhooks.tsx"
+      ]
+    },
+    {
+      "name": "getMeeting",
+      "method": "GET",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/calendar.tsx",
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/calendar.tsx",
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "listMeetings",
+      "method": "GET",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx"
+      ]
+    },
+    {
+      "name": "scheduleMeeting",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/calendar/create-event-dialog.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/calendar/create-event-dialog.tsx"
+      ]
+    },
+    {
+      "name": "updateMeeting",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx"
+      ]
+    },
+    {
+      "name": "cancelMeeting",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting.tsx"
+      ]
+    },
+    {
+      "name": "setMeetingRsvp",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "startMeeting",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "endMeeting",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "transferMeetingHost",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "listMeetingHostActions",
+      "method": "GET",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ]
+    },
+    {
+      "name": "requestJoinToken",
+      "method": "POST",
+      "file": "src/lib/api/meetings.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/meeting_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/meeting_.$id.tsx",
+        "src/sdk/meetings/index.ts"
+      ]
+    },
+    {
+      "name": "getMyNotifPrefs",
+      "method": "GET",
+      "file": "src/lib/api/notif-prefs.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/settings.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/settings.tsx"
+      ]
+    },
+    {
+      "name": "updateMyNotifPrefs",
+      "method": "POST",
+      "file": "src/lib/api/notif-prefs.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/settings.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/settings.tsx"
+      ]
+    },
+    {
+      "name": "listNotifications",
+      "method": "GET",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx",
+        "src/routes/_authenticated/notifications.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx",
+        "src/routes/_authenticated/notifications.tsx"
+      ]
+    },
+    {
+      "name": "getNotification",
+      "method": "GET",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx"
+      ]
+    },
+    {
+      "name": "markNotificationsRead",
+      "method": "POST",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx",
+        "src/routes/_authenticated/notifications.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx",
+        "src/routes/_authenticated/notifications.tsx"
+      ]
+    },
+    {
+      "name": "markAllNotificationsRead",
+      "method": "POST",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/notifications.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/notifications.tsx"
+      ]
+    },
+    {
+      "name": "deleteNotifications",
+      "method": "POST",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx",
+        "src/routes/_authenticated/notifications.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/notifications.$id.tsx",
+        "src/routes/_authenticated/notifications.tsx"
+      ]
+    },
+    {
+      "name": "unmarkNotificationsRead",
+      "method": "POST",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/notifications.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/notifications.tsx"
+      ]
+    },
+    {
+      "name": "restoreNotifications",
+      "method": "POST",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/notifications.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/notifications.tsx"
+      ]
+    },
+    {
+      "name": "createNotification",
+      "method": "POST",
+      "file": "src/lib/api/notifications.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "listPeople",
+      "method": "GET",
+      "file": "src/lib/api/people.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/people.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/people.tsx"
+      ]
+    },
+    {
+      "name": "getPerson",
+      "method": "GET",
+      "file": "src/lib/api/people.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/people_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/people_.$id.tsx"
+      ]
+    },
+    {
+      "name": "upsertPersonProfile",
+      "method": "POST",
+      "file": "src/lib/api/people.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/people.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/people.tsx"
+      ]
+    },
+    {
+      "name": "removePerson",
+      "method": "POST",
+      "file": "src/lib/api/people.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/people.tsx",
+        "src/routes/_authenticated/people_.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/people.tsx",
+        "src/routes/_authenticated/people_.$id.tsx"
+      ]
+    },
+    {
+      "name": "listPublicPlans",
+      "method": "GET",
+      "file": "src/lib/api/pricing.functions.ts",
+      "auth": false,
+      "uiConsumers": [
+        "src/routes/pricing.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/pricing.tsx"
+      ]
+    },
+    {
+      "name": "getReportOverview",
+      "method": "GET",
+      "file": "src/lib/api/reports.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/reports.detail.tsx",
+        "src/routes/reports.index.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/reports.detail.tsx",
+        "src/routes/reports.index.tsx"
+      ]
+    },
+    {
+      "name": "listReportTasks",
+      "method": "GET",
+      "file": "src/lib/api/reports.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/reports.detail.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/reports.detail.tsx"
+      ]
+    },
+    {
+      "name": "searchAll",
+      "method": "GET",
+      "file": "src/lib/api/search.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/search.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/search.tsx"
+      ]
+    },
+    {
+      "name": "getSearchFacets",
+      "method": "GET",
+      "file": "src/lib/api/search.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/search.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/search.tsx"
+      ]
+    },
+    {
+      "name": "listTaskViews",
+      "method": "POST",
+      "file": "src/lib/api/task-views.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.tsx"
+      ]
+    },
+    {
+      "name": "saveTaskView",
+      "method": "POST",
+      "file": "src/lib/api/task-views.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.tsx"
+      ]
+    },
+    {
+      "name": "deleteTaskView",
+      "method": "POST",
+      "file": "src/lib/api/task-views.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.tsx"
+      ]
+    },
+    {
+      "name": "listTasks",
+      "method": "GET",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.tsx"
+      ]
+    },
+    {
+      "name": "createTask",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/calendar/create-event-dialog.tsx",
+        "src/components/chat/chat-workspace.tsx",
+        "src/routes/tasks.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/calendar/create-event-dialog.tsx",
+        "src/components/chat/chat-workspace.tsx",
+        "src/routes/tasks.tsx"
+      ]
+    },
+    {
+      "name": "setTaskTags",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ]
+    },
+    {
+      "name": "updateTask",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ]
+    },
+    {
+      "name": "transitionTask",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx",
+        "src/routes/tasks.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx",
+        "src/routes/tasks.tsx"
+      ]
+    },
+    {
+      "name": "assignTask",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "commentTask",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ]
+    },
+    {
+      "name": "getTaskDetail",
+      "method": "GET",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ]
+    },
+    {
+      "name": "createSubtask",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ]
+    },
+    {
+      "name": "addTaskAttachment",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ]
+    },
+    {
+      "name": "deleteTaskAttachment",
+      "method": "POST",
+      "file": "src/lib/api/tasks.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/tasks.$id.tsx"
+      ]
+    },
+    {
+      "name": "resolveTenantContext",
+      "method": "GET",
+      "file": "src/lib/api/tenant-context.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/platform/tenant-context.ts"
+      ]
+    },
+    {
+      "name": "provisionTenant",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "changeTenantStatus",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "changeMemberRole",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "transferOwnership",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "changeMemberStatus",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "createInvitation",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "revokeInvitation",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "acceptInvitation",
+      "method": "POST",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "listTenantMembers",
+      "method": "GET",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "listTenantInvitations",
+      "method": "GET",
+      "file": "src/lib/api/tenants.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "listWorkflows",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "getWorkflowRun",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "createWorkflow",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.tsx"
+      ]
+    },
+    {
+      "name": "publishWorkflow",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ]
+    },
+    {
+      "name": "startWorkflowRun",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "advanceWorkflowStep",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "cancelWorkflowRun",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "retryWorkflowRun",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "listWorkflowRuns",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "repairWorkflowRunTimestamps",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.calendar.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.calendar.tsx"
+      ]
+    },
+    {
+      "name": "getWorkflow",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ]
+    },
+    {
+      "name": "updateWorkflow",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ]
+    },
+    {
+      "name": "archiveWorkflow",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ]
+    },
+    {
+      "name": "deleteWorkflow",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ]
+    },
+    {
+      "name": "listWorkflowStepTypes",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ]
+    },
+    {
+      "name": "upsertWorkflowTrigger",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ]
+    },
+    {
+      "name": "deleteWorkflowTrigger",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ]
+    },
+    {
+      "name": "fireWorkflowEvent",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": []
+    },
+    {
+      "name": "simulateWorkflowRun",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx"
+      ]
+    },
+    {
+      "name": "getMyWorkflowPermissions",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows.$id.tsx",
+        "src/routes/workflows.tsx"
+      ]
+    },
+    {
+      "name": "listWorkflowPermissions",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "setWorkflowPermission",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "resetWorkflowPermission",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "listWorkflowPermissionAudit",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "logWorkflowDenial",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/lib/workflow-access.ts"
+      ]
+    },
+    {
+      "name": "listWorkflowDenials",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "listWorkflowRolePermissions",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "setWorkflowRolePermission",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "resetWorkflowRolePermission",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "requestWorkflowAccess",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/workflow/request-access-button.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/workflow/request-access-button.tsx"
+      ]
+    },
+    {
+      "name": "listWorkflowAccessRequests",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "resolveWorkflowAccessRequest",
+      "method": "POST",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/workflows_.permissions.tsx"
+      ]
+    },
+    {
+      "name": "explainMyWorkflowPermissions",
+      "method": "GET",
+      "file": "src/lib/api/workflows.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/workflow/my-effective-permissions.tsx",
+        "src/components/workflow/permission-hint.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/workflow/my-effective-permissions.tsx",
+        "src/components/workflow/permission-hint.tsx"
+      ]
+    },
+    {
+      "name": "inviteUserToWorkspace",
+      "method": "POST",
+      "file": "src/lib/api/workspace-invites.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ]
+    },
+    {
+      "name": "getWorkspaceInviteAccess",
+      "method": "POST",
+      "file": "src/lib/api/workspace-invites.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ]
+    },
+    {
+      "name": "revokeWorkspaceInvite",
+      "method": "POST",
+      "file": "src/lib/api/workspace-invites.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ]
+    },
+    {
+      "name": "resendWorkspaceInvite",
+      "method": "POST",
+      "file": "src/lib/api/workspace-invites.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx"
+      ]
+    },
+    {
+      "name": "listWorkspaceInvites",
+      "method": "POST",
+      "file": "src/lib/api/workspace-invites.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ]
+    },
+    {
+      "name": "listMyWorkspaces",
+      "method": "GET",
+      "file": "src/lib/api/workspace-overview.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/app-shell.tsx",
+        "src/components/calendar/create-event-dialog.tsx",
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/meeting.tsx",
+        "src/routes/tasks.tsx",
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.permissions.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/app-shell.tsx",
+        "src/components/calendar/create-event-dialog.tsx",
+        "src/lib/active-workspace.tsx",
+        "src/lib/api/meeting-rooms.functions.ts",
+        "src/routes/_authenticated/workspace.invite-emails.tsx",
+        "src/routes/_authenticated/workspace.invite.tsx",
+        "src/routes/meeting.tsx",
+        "src/routes/tasks.tsx",
+        "src/routes/workflows.tsx",
+        "src/routes/workflows_.calendar.tsx",
+        "src/routes/workflows_.permissions.tsx",
+        "src/routes/workflows_.runs.tsx"
+      ]
+    },
+    {
+      "name": "getWorkspaceOverview",
+      "method": "GET",
+      "file": "src/lib/api/workspace-overview.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.$id.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.$id.tsx"
+      ]
+    },
+    {
+      "name": "listWorkspaceTags",
+      "method": "POST",
+      "file": "src/lib/api/workspace-tags.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ]
+    },
+    {
+      "name": "createWorkspaceTag",
+      "method": "POST",
+      "file": "src/lib/api/workspace-tags.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ]
+    },
+    {
+      "name": "updateWorkspaceTag",
+      "method": "POST",
+      "file": "src/lib/api/workspace-tags.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ]
+    },
+    {
+      "name": "deleteWorkspaceTag",
+      "method": "POST",
+      "file": "src/lib/api/workspace-tags.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ]
+    },
+    {
+      "name": "listTenantWorkspaces",
+      "method": "POST",
+      "file": "src/lib/api/workspaces-admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "setWorkspaceTimezone",
+      "method": "POST",
+      "file": "src/lib/api/workspaces-admin.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/admin.tenant.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/admin.tenant.tsx"
+      ]
+    },
+    {
+      "name": "listWorkspaceAuditEvents",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.audit.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.audit.tsx"
+      ]
+    },
+    {
+      "name": "listWorkspaces",
+      "method": "GET",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.audit.tsx",
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx",
+        "src/routes/_authenticated/workspace.settings.tsx",
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ],
+      "anyConsumers": [
+        "src/lib/api/ai-chat.functions.ts",
+        "src/routes/_authenticated/workspace.audit.tsx",
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx",
+        "src/routes/_authenticated/workspace.settings.tsx",
+        "src/routes/_authenticated/workspace.tags.tsx"
+      ]
+    },
+    {
+      "name": "createWorkspace",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/documents.tsx",
+        "src/routes/_authenticated/workspace.index.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/documents.tsx",
+        "src/routes/_authenticated/workspace.index.tsx"
+      ]
+    },
+    {
+      "name": "updateWorkspace",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.settings.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.settings.tsx"
+      ]
+    },
+    {
+      "name": "getWorkspaceSettings",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx",
+        "src/routes/_authenticated/workspace.settings.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx",
+        "src/routes/_authenticated/workspace.settings.tsx"
+      ]
+    },
+    {
+      "name": "archiveWorkspace",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx"
+      ]
+    },
+    {
+      "name": "listWorkspaceMembers",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/components/chat/chat-workspace.tsx",
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ],
+      "anyConsumers": [
+        "src/components/chat/chat-workspace.tsx",
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ]
+    },
+    {
+      "name": "setWorkspaceMemberRole",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ]
+    },
+    {
+      "name": "removeWorkspaceMember",
+      "method": "POST",
+      "file": "src/lib/api/workspaces.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/workspace.index.tsx",
+        "src/routes/_authenticated/workspace.members.tsx"
+      ]
+    }
+  ],
+  "direct": [
+    {
+      "file": "src/routes/_authenticated/documents.tsx",
+      "line": 112,
+      "target": "workspaces",
+      "op": "READ"
+    },
+    {
+      "file": "src/routes/_authenticated/documents.tsx",
+      "line": 201,
+      "target": "documents",
+      "op": "WRITE"
+    },
+    {
+      "file": "src/routes/_authenticated/documents.tsx",
+      "line": 207,
+      "target": "documents",
+      "op": "WRITE"
+    }
+  ],
+  "suspicious": [
+    {
+      "file": "src/components/app-shell.tsx",
+      "line": 286,
+      "kind": "localStorage",
+      "code": "return localStorage.getItem(\"sidebarCollapsed\") === \"true\";"
+    },
+    {
+      "file": "src/components/app-shell.tsx",
+      "line": 301,
+      "kind": "localStorage",
+      "code": "localStorage.setItem(\"sidebarCollapsed\", String(next));"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 387,
+      "kind": "setTimeout fake",
+      "code": "const t = setTimeout(() => {"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 410,
+      "kind": "setTimeout fake",
+      "code": "membersTimer = setTimeout(() => {"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 445,
+      "kind": "setTimeout fake",
+      "code": "const t = setTimeout(() => {"
+    },
+    {
+      "file": "src/components/email-features.tsx",
+      "line": 60,
+      "kind": "setTimeout fake",
+      "code": "setTimeout(() => {"
+    },
+    {
+      "file": "src/components/email-features.tsx",
+      "line": 420,
+      "kind": "setTimeout fake",
+      "code": "setTimeout(() => {"
+    },
+    {
+      "file": "src/routes/__root.tsx",
+      "line": 132,
+      "kind": "localStorage",
+      "code": "__html: `try{var t=localStorage.getItem('uniwork-theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');var l=localSto"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.quota.tsx",
+      "line": 796,
+      "kind": "swallow catch",
+      "code": "}).catch(() => {});"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.tenant.tsx",
+      "line": 452,
+      "kind": "setTimeout fake",
+      "code": "setTimeout(() => setCopied(false), 2000);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 715,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(METADATA_LOG_FILTERS_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 733,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(METADATA_LOG_FILTERS_KEY, JSON.stringify(filters));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 742,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(METADATA_LOG_SORT_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 757,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(METADATA_LOG_SORT_KEY, JSON.stringify(sort));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1809,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(CSV_OPTIONS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1820,
+      "kind": "localStorage",
+      "code": "try { window.localStorage.setItem(CSV_OPTIONS_STORAGE_KEY, JSON.stringify(csvOpts)); } catch { /* noop */ }"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1827,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(PRESETS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1837,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1967,
+      "kind": "setTimeout fake",
+      "code": "window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 1500);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1972,
+      "kind": "setTimeout fake",
+      "code": "window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1992,
+      "kind": "setTimeout fake",
+      "code": "window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2155,
+      "kind": "localStorage",
+      "code": "const raw = Number(window.localStorage.getItem(REFRESH_STORAGE_KEY));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2161,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(REFRESH_STORAGE_KEY, String(autoRefreshSec));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2590,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(COLUMNS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2600,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(columns));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2615,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(COLUMN_ORDER_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2623,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(columnOrder));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2640,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(COLUMN_PRESETS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2657,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(COLUMN_PRESETS_STORAGE_KEY, JSON.stringify(columnPresets));"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2695,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(TRACE_EXPORT_COLS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2702,
+      "kind": "localStorage",
+      "code": "try { window.localStorage.setItem(TRACE_EXPORT_COLS_STORAGE_KEY, JSON.stringify(exportCols)); } catch { /* noop */ }"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2982,
+      "kind": "setTimeout fake",
+      "code": "window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 1500);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2988,
+      "kind": "setTimeout fake",
+      "code": "window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);"
+    },
+    {
+      "file": "src/routes/_authenticated/billing.tsx",
+      "line": 689,
+      "kind": "setTimeout fake",
+      "code": "window.setTimeout(() => {"
+    },
+    {
+      "file": "src/routes/_authenticated/email.compose.tsx",
+      "line": 132,
+      "kind": "setTimeout fake",
+      "code": "const t = setTimeout(() => {"
+    },
+    {
+      "file": "src/routes/_authenticated/email.tsx",
+      "line": 562,
+      "kind": "setTimeout fake",
+      "code": "const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);"
+    },
+    {
+      "file": "src/routes/_authenticated/settings.tsx",
+      "line": 263,
+      "kind": "setTimeout fake",
+      "code": "await new Promise((r) => setTimeout(r, 1200));"
+    },
+    {
+      "file": "src/routes/ai.tsx",
+      "line": 161,
+      "kind": "localStorage",
+      "code": "const raw = localStorage.getItem(AI_FILTERS_KEY);"
+    },
+    {
+      "file": "src/routes/ai.tsx",
+      "line": 184,
+      "kind": "localStorage",
+      "code": "localStorage.setItem("
+    },
+    {
+      "file": "src/routes/ai.tsx",
+      "line": 250,
+      "kind": "setTimeout fake",
+      "code": "const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);"
+    },
+    {
+      "file": "src/routes/meeting.tsx",
+      "line": 337,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(ROOM_FILTER_KEY);"
+    },
+    {
+      "file": "src/routes/meeting.tsx",
+      "line": 377,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem("
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 294,
+      "kind": "setTimeout fake",
+      "code": "refreshTimerRef.current = setTimeout(async () => {"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 321,
+      "kind": "setTimeout fake",
+      "code": "rejoinTimerRef.current = setTimeout(async () => {"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 553,
+      "kind": "setTimeout fake",
+      "code": "window.setTimeout(() => {"
+    },
+    {
+      "file": "src/routes/workflows_.calendar.tsx",
+      "line": 297,
+      "kind": "localStorage",
+      "code": "return window.localStorage.getItem(\"wf.autoRepairRetry\") !== \"0\";"
+    },
+    {
+      "file": "src/routes/workflows_.calendar.tsx",
+      "line": 300,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(\"wf.autoRepairRetry\", autoRepairRetry ? \"1\" : \"0\");"
+    }
+  ],
+  "toastOnly": [
+    {
+      "file": "src/components/app-shell.tsx",
+      "line": 601,
+      "code": "toast.success(`Đã tạo workspace \"${name.trim()}\"`);"
+    },
+    {
+      "file": "src/components/calendar/create-event-dialog.tsx",
+      "line": 99,
+      "code": "toast.success(mode === \"task\" ? \"Đã tạo công việc\" : \"Đã tạo cuộc họp\");"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 248,
+      "code": "toast.success(\"Đã tạo công việc từ tin nhắn\");"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 489,
+      "code": "onSuccess: () => { setEditing(null); setOlder([]); refreshAll(); toast.success(\"Đã cập nhật tin nhắn\"); },"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 496,
+      "code": "toast.success(\"Đã tạo kênh\"); refreshAll();"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 507,
+      "code": "onSuccess: () => { toast.success(\"Đã thêm thành viên\"); refreshAll(); },"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 512,
+      "code": "onSuccess: () => { toast.success(\"Đã gỡ thành viên\"); refreshAll(); },"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 518,
+      "code": "onSuccess: () => { toast.success(\"Đã cập nhật vai trò\"); refreshAll(); },"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 523,
+      "code": "onSuccess: () => { toast.success(\"Đã tham gia kênh\"); refreshAll(); },"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 528,
+      "code": "onSuccess: () => { toast.success(\"Đã rời kênh\"); refreshAll(); },"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 536,
+      "code": "onSuccess: () => { setActiveId(null); toast.success(\"Đã xoá kênh\"); refreshAll(); },"
+    },
+    {
+      "file": "src/components/chat/chat-workspace.tsx",
+      "line": 541,
+      "code": "onSuccess: () => { setOlder([]); toast.success(\"Đã xoá tin nhắn\"); refreshAll(); },"
+    },
+    {
+      "file": "src/components/meeting/join-request-panel.tsx",
+      "line": 35,
+      "code": "toast.success(\"Bạn đã có quyền vào phòng.\");"
+    },
+    {
+      "file": "src/components/meeting/join-request-panel.tsx",
+      "line": 38,
+      "code": "toast.success(\"Đã gửi yêu cầu — đang chờ chủ phòng duyệt.\");"
+    },
+    {
+      "file": "src/components/meeting/join-request-panel.tsx",
+      "line": 151,
+      "code": "toast.success(v.approve ? \"Đã duyệt yêu cầu tham gia.\" : \"Đã từ chối yêu cầu.\");"
+    },
+    {
+      "file": "src/components/workflow/request-access-button.tsx",
+      "line": 39,
+      "code": "toast.success(\"Đã gửi yêu cầu cấp quyền\", {"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.knowledge.tsx",
+      "line": 93,
+      "code": "toast.success(\"Đã lưu bài viết\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.knowledge.tsx",
+      "line": 103,
+      "code": "toast.success(v.status === \"published\" ? \"Đã xuất bản\" : \"Đã cập nhật trạng thái\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.knowledge.tsx",
+      "line": 112,
+      "code": "toast.success(\"Đã xóa bài viết\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.leads.tsx",
+      "line": 42,
+      "code": "toast.success(\"Đã cập nhật trạng thái lead\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.plans.tsx",
+      "line": 121,
+      "code": "toast.success(\"Đã lưu gói dịch vụ\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.plans.tsx",
+      "line": 131,
+      "code": "toast.success(r.deleted ? \"Đã xóa gói\" : \"Gói đang có thuê bao — đã chuyển sang ngừng bán\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.plans.tsx",
+      "line": 141,
+      "code": "toast.success(\"Đã cập nhật tính năng\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.plans.tsx",
+      "line": 150,
+      "code": "toast.success(\"Đã gỡ tính năng khỏi gói\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.quota.tsx",
+      "line": 428,
+      "code": "toast.success(\"Đã lưu rule cảnh báo\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.quota.tsx",
+      "line": 436,
+      "code": "toast.success(\"Đã xóa rule\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.quota.tsx",
+      "line": 791,
+      "code": "toast.success(\"Đã tạo job export nền\");"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 958,
+      "code": "toast.success(`Đã tải log kiểm tra metadata (${filtered.length} lượt đã lọc)`, { duration: 2500 });"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 976,
+      "code": "toast.success(`Đã tải log kiểm tra metadata dạng CSV (${filtered.length} lượt đã lọc)`, { duration: 2500 });"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1010,
+      "code": "toast.success(`Đã tải log kiểm tra metadata dạng JSON (${filtered.length} lượt đã lọc)`, { duration: 2500 });"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1220,
+      "code": ".then(() => toast.success(\"Đã sao chép stack trace\"))"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1274,
+      "code": ".then(() => toast.success(\"Đã sao chép stack trace\"))"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1299,
+      "code": ".then(() => toast.success(\"Đã sao chép nội dung log\"))"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1427,
+      "code": "if (bad === 0) toast.success(`Excel parse OK — ${r.length} cột`, { duration: 2500 });"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 1978,
+      "code": "toast.success(`Đã export ${data.rowCount.toLocaleString(\"vi-VN\")} dòng.`);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2128,
+      "code": "toast.success(`Đã lưu preset \"${trimmed}\"`);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2147,
+      "code": "toast.success(`Đã áp dụng preset \"${p.name}\"`);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2674,
+      "code": "toast.success(existing ? `Đã cập nhật preset \"${trimmed}\"` : `Đã lưu preset \"${trimmed}\"`);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2683,
+      "code": "toast.success(`Đã áp dụng preset \"${p.name}\"`);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2688,
+      "code": "if (p) toast.success(`Đã xóa preset \"${p.name}\"`);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2742,
+      "code": "() => toast.success(\"Đã copy correlation_id\"),"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 2983,
+      "code": "toast.success(`Đã export ${rows.toLocaleString(\"vi-VN\")} dòng theo cột hiện tại.`);"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 3814,
+      "code": "toast.success(\"Đã sao chép toàn bộ dòng metadata\", { duration: 2000 });"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 3834,
+      "code": "toast.success(\"Đã sao chép metadata (tất cả kết quả)\", { duration: 2000 });"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.trace.tsx",
+      "line": 3863,
+      "code": "toast.success(\"Đã sao chép metadata (cột hiện tại)\", { duration: 2000 });"
+    },
+    {
+      "file": "src/routes/_authenticated/admin.webhooks.tsx",
+      "line": 148,
+      "code": "toast.success(\"Đã tải log CSV của trang hiện tại.\");"
+    },
+    {
+      "file": "src/routes/_authenticated/billing.tsx",
+      "line": 182,
+      "code": "toast.success(\"Đã cập nhật gói dịch vụ\");"
+    },
+    {
+      "file": "src/routes/_authenticated/calendar.tsx",
+      "line": 315,
+      "code": "toast.success(`Đã xuất ${items.length} sự kiện ra file ICS`);"
+    },
+    {
+      "file": "src/routes/_authenticated/email.compose.tsx",
+      "line": 99,
+      "code": "if (!r.silent) toast.success(\"Đã lưu nháp\");"
+    },
+    {
+      "file": "src/routes/_authenticated/email.compose.tsx",
+      "line": 111,
+      "code": "toast.success(\"Đã gửi email\");"
+    },
+    {
+      "file": "src/routes/_authenticated/email.compose.tsx",
+      "line": 121,
+      "code": "toast.success(\"Đã xoá bản nháp\");"
+    },
+    {
+      "file": "src/routes/_authenticated/people.tsx",
+      "line": 206,
+      "code": "toast.success(\"Đã lưu thông tin nhân sự\");"
+    },
+    {
+      "file": "src/routes/_authenticated/people.tsx",
+      "line": 217,
+      "code": "toast.success(\"Đã gỡ nhân sự khỏi tổ chức\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 604,
+      "code": "toast.success(\"Đã xoá milestone\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 657,
+      "code": "onClick={() => toast.success(`Đang tải xuống ${d.name}`)}"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 677,
+      "code": "toast.success(\"Đã xoá tài liệu\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 815,
+      "code": "toast.success(\"Đã cập nhật dự án\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 838,
+      "code": "toast.success(docDialog.doc ? \"Đã đổi tên\" : \"Đã thêm tài liệu\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 861,
+      "code": "toast.success(milestoneDialog.milestone ? \"Đã cập nhật milestone\" : \"Đã thêm milestone\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 916,
+      "code": "toast.success(\"Đã gửi lời mời\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.stos.tsx",
+      "line": 973,
+      "code": "toast.success(\"Đã sao chép liên kết\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1003,
+      "code": "toast.success(`Đã tải xuống ${d.file.name}`);"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1055,
+      "code": "onClick={() => toast.success(`Đang tải xuống ${d.name}`)}"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1099,
+      "code": "toast.success(`Đang vào: ${m.title}`);"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1205,
+      "code": "toast.success(\"Đã cập nhật workspace\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1269,
+      "code": "toast.success(`Đã gửi ${list.length} lời mời với quyền ${ROLE_LABEL[role]}`);"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1324,
+      "code": "toast.success(\"Đã sao chép liên kết\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1489,
+      "code": "toast.success(`Đã tạo nhiệm vụ \"${title.trim()}\" cho ${who}`);"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.$id.tsx",
+      "line": 1722,
+      "code": "toast.success(`Đã tải lên ${curr.length} tệp vào ${wsName} · ${folder} (${elapsed}s)`, {"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.index.tsx",
+      "line": 83,
+      "code": "toast.success(\"Đã tạo workspace mới\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.index.tsx",
+      "line": 97,
+      "code": "toast.success(\"Đã cập nhật workspace\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.index.tsx",
+      "line": 108,
+      "code": "toast.success(v.restore ? \"Đã khôi phục workspace\" : \"Đã lưu trữ workspace\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.index.tsx",
+      "line": 414,
+      "code": "toast.success(\"Đã cập nhật vai trò\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.index.tsx",
+      "line": 424,
+      "code": "toast.success(\"Đã gỡ thành viên\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.invite.tsx",
+      "line": 157,
+      "code": "toast.success(\"Đã sao chép nội dung email mời\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.members.tsx",
+      "line": 107,
+      "code": "toast.success(`Đã tạo lời mời cho ${r.email}`);"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.members.tsx",
+      "line": 117,
+      "code": "toast.success(\"Đã cập nhật vai trò\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.members.tsx",
+      "line": 126,
+      "code": "toast.success(\"Đã gỡ thành viên\");"
+    },
+    {
+      "file": "src/routes/_authenticated/workspace.settings.tsx",
+      "line": 108,
+      "code": "toast.success(\"Đã lưu cài đặt workspace\");"
+    },
+    {
+      "file": "src/routes/ai.tsx",
+      "line": 380,
+      "code": "else if (format === \"csv\") toast.success(`Đã tải CSV (${rows.length} hội thoại)`);"
+    },
+    {
+      "file": "src/routes/meeting.tsx",
+      "line": 522,
+      "code": "toast.success(\"Đã cập nhật cuộc họp.\");"
+    },
+    {
+      "file": "src/routes/meeting.tsx",
+      "line": 540,
+      "code": "toast.success(\"Đã hủy cuộc họp.\");"
+    },
+    {
+      "file": "src/routes/tasks.$id.tsx",
+      "line": 83,
+      "code": "onSuccess: () => { invalidate(); toast.success(\"Đã cập nhật mức ưu tiên\"); },"
+    },
+    {
+      "file": "src/routes/tasks.$id.tsx",
+      "line": 90,
+      "code": "onSuccess: () => { invalidate(); toast.success(\"Đã cập nhật nhãn\"); },"
+    },
+    {
+      "file": "src/routes/tasks.$id.tsx",
+      "line": 104,
+      "code": "onSuccess: () => { setSubtaskTitle(\"\"); invalidate(); toast.success(\"Đã thêm công việc con\"); },"
+    },
+    {
+      "file": "src/routes/tasks.tsx",
+      "line": 159,
+      "code": "toast.success(\"Đã lưu bộ lọc\");"
+    },
+    {
+      "file": "src/routes/tasks.tsx",
+      "line": 168,
+      "code": "toast.success(\"Đã xóa bộ lọc\");"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 139,
+      "code": "onSuccess: () => { toast.success(\"Đã lưu quy trình\"); setDirty(false); refresh(); },"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 145,
+      "code": "onSuccess: () => { toast.success(\"Đã phát hành quy trình\"); refresh(); },"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 151,
+      "code": "onSuccess: () => { toast.success(\"Đã tạo lượt chạy\"); refresh(); },"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 184,
+      "code": "toast.success(next ? \"Đã lưu trữ quy trình\" : \"Đã khôi phục quy trình\");"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 194,
+      "code": "toast.success(\"Đã xóa quy trình\");"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 495,
+      "code": "onSuccess: () => { toast.success(\"Đã lưu trigger\"); onChanged(); },"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 517,
+      "code": "onSuccess: () => { toast.success(\"Đã xoá trigger\"); onChanged(); },"
+    },
+    {
+      "file": "src/routes/workflows.$id.tsx",
+      "line": 686,
+      "code": "toast.success(\"Đã chạy thử (không tạo lượt chạy thật)\");"
+    },
+    {
+      "file": "src/routes/workflows_.calendar.tsx",
+      "line": 419,
+      "code": "toast.success("
+    },
+    {
+      "file": "src/routes/workflows_.runs.tsx",
+      "line": 469,
+      "code": "toast.success(`Đã sao chép ${label.toLowerCase()}`);"
+    }
+  ],
+  "routes": [
+    "src/routes/__root.tsx",
+    "src/routes/_authenticated/admin.index.tsx",
+    "src/routes/_authenticated/admin.knowledge.tsx",
+    "src/routes/_authenticated/admin.leads.tsx",
+    "src/routes/_authenticated/admin.plans.tsx",
+    "src/routes/_authenticated/admin.quota.tsx",
+    "src/routes/_authenticated/admin.rules.tsx",
+    "src/routes/_authenticated/admin.tenant.tsx",
+    "src/routes/_authenticated/admin.trace.tsx",
+    "src/routes/_authenticated/admin.tsx",
+    "src/routes/_authenticated/admin.users.tsx",
+    "src/routes/_authenticated/admin.webhooks.tsx",
+    "src/routes/_authenticated/billing.tsx",
+    "src/routes/_authenticated/calendar.tsx",
+    "src/routes/_authenticated/chat.tsx",
+    "src/routes/_authenticated/chat_.$channelId.tsx",
+    "src/routes/_authenticated/dashboard.tsx",
+    "src/routes/_authenticated/documents.$id.tsx",
+    "src/routes/_authenticated/documents.tsx",
+    "src/routes/_authenticated/email.$id.tsx",
+    "src/routes/_authenticated/email.compose.tsx",
+    "src/routes/_authenticated/email.tsx",
+    "src/routes/_authenticated/help.tsx",
+    "src/routes/_authenticated/notifications.$id.tsx",
+    "src/routes/_authenticated/notifications.tsx",
+    "src/routes/_authenticated/people.tsx",
+    "src/routes/_authenticated/people_.$id.tsx",
+    "src/routes/_authenticated/route.tsx",
+    "src/routes/_authenticated/search.tsx",
+    "src/routes/_authenticated/settings.tsx",
+    "src/routes/_authenticated/workspace.$id.stos.tsx",
+    "src/routes/_authenticated/workspace.$id.tsx",
+    "src/routes/_authenticated/workspace.audit.tsx",
+    "src/routes/_authenticated/workspace.index.tsx",
+    "src/routes/_authenticated/workspace.invite-emails.tsx",
+    "src/routes/_authenticated/workspace.invite.tsx",
+    "src/routes/_authenticated/workspace.members.tsx",
+    "src/routes/_authenticated/workspace.settings.tsx",
+    "src/routes/_authenticated/workspace.tags.tsx",
+    "src/routes/about.tsx",
+    "src/routes/ai.tsx",
+    "src/routes/api/admin/trace.$correlationId.ts",
+    "src/routes/api/public/hooks/livekit-reconcile.ts",
+    "src/routes/api/public/hooks/livekit.ts",
+    "src/routes/api/public/hooks/process-quota-exports.ts",
+    "src/routes/auth.tsx",
+    "src/routes/blog.$slug.tsx",
+    "src/routes/blog.category.$category.tsx",
+    "src/routes/blog.tsx",
+    "src/routes/contact.tsx",
+    "src/routes/index.tsx",
+    "src/routes/invite.$token.tsx",
+    "src/routes/knowledge.$slug.tsx",
+    "src/routes/knowledge.tsx",
+    "src/routes/meeting.tsx",
+    "src/routes/meeting_.$id.tsx",
+    "src/routes/meeting_.history.tsx",
+    "src/routes/onboarding.tsx",
+    "src/routes/pricing.tsx",
+    "src/routes/privacy.tsx",
+    "src/routes/reports.$type.tsx",
+    "src/routes/reports.detail.tsx",
+    "src/routes/reports.index.tsx",
+    "src/routes/reports.tsx",
+    "src/routes/tasks.$id.tsx",
+    "src/routes/tasks.tsx",
+    "src/routes/terms.tsx",
+    "src/routes/workflows.$id.tsx",
+    "src/routes/workflows.tsx",
+    "src/routes/workflows_.calendar.tsx",
+    "src/routes/workflows_.permissions.tsx",
+    "src/routes/workflows_.runs.tsx"
+  ]
+}
