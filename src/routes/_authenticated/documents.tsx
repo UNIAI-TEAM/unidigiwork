@@ -39,7 +39,12 @@ import {
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { createDocument, uploadDocumentVersion } from "@/lib/api/documents.functions";
+import {
+  archiveDocument,
+  createDocument,
+  updateDocument,
+  uploadDocumentVersion,
+} from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 
 type Doc = {
@@ -169,28 +174,28 @@ function DocumentsPage() {
       return;
     }
     setSaving(true);
-    const { data, error } = await supabase
-      .from("documents")
-      .insert({
-        title: newTitle.trim(),
-        folder: newFolder.trim() || "My Documents",
-        content: "",
-        workspace_id: currentWs.id,
-        tenant_id: currentWs.id,
-      })
-      .select()
-      .single();
-    setSaving(false);
-    if (error) {
-      toast.error("Lưu thất bại: " + error.message);
-      return;
+    try {
+      const created = (await createDocument({
+        data: {
+          workspaceId: currentWs.id,
+          title: newTitle.trim(),
+          folder: newFolder.trim() || "My Documents",
+          tags: [],
+          sizeBytes: 0,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      })) as unknown as Doc;
+      toast.success("Đã tạo tài liệu");
+      setDocs((d) => [created, ...d]);
+      setSelected(created);
+      setShowNew(false);
+      setNewTitle("");
+      setNewFolder("My Documents");
+    } catch (e) {
+      toast.error("Lưu thất bại: " + (e as Error).message);
+    } finally {
+      setSaving(false);
     }
-    toast.success("Đã tạo tài liệu");
-    setDocs((d) => [data as Doc, ...d]);
-    setSelected(data as Doc);
-    setShowNew(false);
-    setNewTitle("");
-    setNewFolder("My Documents");
   };
 
   const updateSelected = async (patch: Partial<Pick<Doc, "title" | "content">>) => {
@@ -198,20 +203,30 @@ function DocumentsPage() {
     const next = { ...selected, ...patch };
     setSelected(next);
     setDocs((d) => d.map((x) => (x.id === next.id ? next : x)));
-    const { error } = await supabase.from("documents").update(patch).eq("id", selected.id);
-    if (error) toast.error("Lưu thất bại: " + error.message);
+    try {
+      await updateDocument({
+        data: {
+          documentId: selected.id,
+          title: patch.title,
+          content: patch.content,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      });
+    } catch (e) {
+      toast.error("Lưu thất bại: " + (e as Error).message);
+    }
   };
 
   const deleteDoc = async (id: string) => {
     if (!confirm("Xoá tài liệu này?")) return;
-    const { error } = await supabase.from("documents").delete().eq("id", id);
-    if (error) {
-      toast.error("Xoá thất bại: " + error.message);
-      return;
+    try {
+      await archiveDocument({ data: { documentId: id, idempotencyKey: crypto.randomUUID() } });
+      setDocs((d) => d.filter((x) => x.id !== id));
+      if (selected?.id === id) setSelected(null);
+      toast.success("Đã xoá");
+    } catch (e) {
+      toast.error("Xoá thất bại: " + (e as Error).message);
     }
-    setDocs((d) => d.filter((x) => x.id !== id));
-    if (selected?.id === id) setSelected(null);
-    toast.success("Đã xoá");
   };
 
   // Tải tệp thật lên storage rồi tạo tài liệu qua server function (có RLS + quota).
