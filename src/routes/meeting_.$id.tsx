@@ -517,10 +517,11 @@ function MeetingDetailPage() {
         toast.success(action === "start" ? "Đã bắt đầu cuộc họp." : "Đã kết thúc cuộc họp.");
         // Đồng bộ ngay roster + thông tin phòng họp
         await syncMeetingQueries();
-        await Promise.all([meetingQuery.refetch(), refetchParticipants()]);
+        await Promise.all([meetingQuery.refetch(), refetchParticipants(), hostLogQuery.refetch()]);
         // Webhook meeting_provider_events có thể tới trễ -> sync lại lần nữa
         window.setTimeout(() => {
           void syncMeetingQueries();
+          void hostLogQuery.refetch();
         }, 2500);
       } catch {
         toast.error(
@@ -530,7 +531,7 @@ function MeetingDetailPage() {
         setLifecycleBusy(null);
       }
     },
-    [id, meetingQuery, refetchParticipants, syncMeetingQueries],
+    [id, meetingQuery, hostLogQuery, refetchParticipants, syncMeetingQueries],
   );
 
   // Thời lượng cuộc họp: suy ra từ nhật ký thao tác chủ trì (start/end thành công).
