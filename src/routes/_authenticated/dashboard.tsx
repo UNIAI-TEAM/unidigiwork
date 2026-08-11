@@ -446,7 +446,7 @@ function DashboardInner() {
       const raw = localStorage.getItem(SECTIONS_STORAGE_KEY);
       if (raw) setSections({ ...DEFAULT_SECTIONS, ...JSON.parse(raw) });
     } catch {
-      /* ignore */
+      handleStorageFailure();
     }
     setHydrated(true);
   }, []);
@@ -460,23 +460,37 @@ function DashboardInner() {
     try {
       localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(merged));
     } catch {
-      /* ignore */
+      handleStorageFailure();
     }
   }, [prefsQuery.data]);
 
-  const toggleSection = (key: SectionKey) => {
-    setSections((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      try {
-        localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      void saveDashboardPrefs({ data: { sections: next } })
-        .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
-        .catch(() => {});
-      return next;
+  // Không ghi được localStorage → báo lỗi và đưa bố cục về mặc định.
+  function handleStorageFailure() {
+    toast.error("Không lưu được tuỳ chỉnh bảng điều khiển", {
+      description: "Bộ nhớ trình duyệt không khả dụng. Đã khôi phục bố cục mặc định.",
     });
+    setSections(DEFAULT_SECTIONS);
+    try {
+      localStorage.removeItem(SECTIONS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const toggleSection = (key: SectionKey) => {
+    const next = { ...sections, [key]: !sections[key] };
+    try {
+      localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      handleStorageFailure();
+      return;
+    }
+    setSections(next);
+    void saveDashboardPrefs({ data: { sections: next } })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
+      .catch(() => {
+        toast.error("Không đồng bộ được tuỳ chỉnh lên tài khoản");
+      });
   };
 
   const resetSections = () => {
