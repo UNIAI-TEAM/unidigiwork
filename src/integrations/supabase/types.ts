@@ -5699,6 +5699,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      transfer_meeting_host: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _meeting_id: string
+          _new_host_user_id: string
+        }
+        Returns: Json
+      }
       transfer_tenant_ownership: {
         Args: {
           _correlation_id?: string
