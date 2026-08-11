@@ -105,8 +105,10 @@ function TasksPage() {
     queryKey: ["my-workspaces"],
     queryFn: () => listMyWorkspaces(),
   });
+  const { filter: urlFilter, range: rangeDays, ws: urlWs } = Route.useSearch();
   const [wsId, setWsId] = useState<string | undefined>(undefined);
-  const activeWs = wsId ?? workspaces.data?.[0]?.id;
+  // Ưu tiên workspace do dashboard truyền sang để số liệu khớp với thẻ thống kê.
+  const activeWs = wsId ?? urlWs ?? workspaces.data?.[0]?.id;
 
   const tasksQuery = useQuery({
     queryKey: ["tasks", activeWs],
@@ -117,7 +119,6 @@ function TasksPage() {
   const allTasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   // Bộ lọc phân loại: nhãn (tags) + mức ưu tiên
-  const { filter: urlFilter, range: rangeDays, ws: urlWs } = Route.useSearch();
   const navigateTasks = useNavigate();
   const overdueOnly = urlFilter === "overdue";
   const [tagFilter, setTagFilter] = useState<string[]>([]);
