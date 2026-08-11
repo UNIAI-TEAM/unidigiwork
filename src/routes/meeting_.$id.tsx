@@ -40,7 +40,13 @@ import {
   closeMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
 import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
-import { setMeetingRsvp, getMeeting, startMeeting, endMeeting } from "@/lib/api/meetings.functions";
+import {
+  setMeetingRsvp,
+  getMeeting,
+  startMeeting,
+  endMeeting,
+  listMeetingHostActions,
+} from "@/lib/api/meetings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
@@ -476,6 +482,14 @@ function MeetingDetailPage() {
     (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
   const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
   const [confirmEndOpen, setConfirmEndOpen] = useState(false);
+
+  // Nhật ký thao tác chủ trì (start/end, thành công/thất bại)
+  const hostLogQuery = useQuery({
+    queryKey: ["meeting-host-actions", id],
+    enabled: isRealRoom,
+    staleTime: 10_000,
+    queryFn: () => listMeetingHostActions({ data: { meetingId: id, limit: 50 } }),
+  });
 
   const handleLifecycle = useCallback(
     async (action: "start" | "end") => {
