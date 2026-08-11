@@ -1020,6 +1020,7 @@ function DashboardInner() {
                     <li key={it.title}>
                       <Link
                         to={it.to}
+                        search={it.search as never}
                         className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
                       >
                         <span
