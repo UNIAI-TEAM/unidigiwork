@@ -402,6 +402,29 @@ function AvatarStack({ count, seed }: { count: number; seed: string }) {
 }
 
 function DashboardPage() {
+  return <DashboardInner />;
+}
+
+const SECTIONS_STORAGE_KEY = "uniwork.dashboard.sections";
+
+const SECTION_OPTIONS = [
+  { key: "kpis", label: "Chỉ số KPI" },
+  { key: "activity", label: "Hoạt động tổng quan" },
+  { key: "donut", label: "Phân bổ công việc" },
+  { key: "projects", label: "Dự án nổi bật" },
+  { key: "recent", label: "Hoạt động gần đây" },
+  { key: "meetings", label: "Lịch họp hôm nay" },
+  { key: "workspaces", label: "Tổng quan không gian làm việc" },
+  { key: "ai", label: "Trợ lý AI (cột phải)" },
+] as const;
+
+type SectionKey = (typeof SECTION_OPTIONS)[number]["key"];
+
+const DEFAULT_SECTIONS = Object.fromEntries(
+  SECTION_OPTIONS.map((o) => [o.key, true]),
+) as Record<SectionKey, boolean>;
+
+function DashboardInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState(7);
   const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
