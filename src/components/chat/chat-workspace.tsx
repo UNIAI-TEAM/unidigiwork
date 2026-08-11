@@ -217,8 +217,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const doCreateTask = useServerFn(createTask);
   const [taskDraft, setTaskDraft] = useState<
-    { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string; assigneeId: string } | null
+    { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string; assigneeId: string; tags: string[] } | null
   >(null);
+  const [tagInput, setTagInput] = useState("");
   // Thành viên của workspace đang chọn — dùng cho ô "Người phụ trách"
   const taskMembersQ = useQuery({
     queryKey: ["workspace", "members", taskDraft?.workspaceId],
@@ -237,6 +238,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
           priority: v.priority,
           dueAt: v.dueAt ? new Date(v.dueAt).toISOString() : undefined,
           assigneeId: v.assigneeId || undefined,
+          tags: v.tags?.length ? v.tags : undefined,
         },
       });
     },
@@ -260,7 +262,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
       priority: "normal",
       dueAt: "",
       assigneeId: "",
+      tags: [],
     });
+    setTagInput("");
   };
 
   // Cấu hình mặc định của workspace đang chọn — dùng cho "Tạo nhanh"
@@ -294,6 +298,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
         priority: d?.defaultTaskPriority ?? "normal",
         dueAt: due.toISOString(),
         assigneeId: "",
+        tags: [],
       },
       { onSettled: () => setQuickBusyId(null) },
     );
