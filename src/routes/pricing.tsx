@@ -1,6 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Sparkles, Building2, Rocket, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Check, Minus, Sparkles, Building2, Rocket, ArrowRight, Loader2 } from "lucide-react";
 import { PublicShell } from "@/components/public-shell";
+import { supabase } from "@/integrations/supabase/client";
+import { listPublicPlans, type PublicPlanDto } from "@/lib/api/pricing.functions";
+import { getActiveTenant } from "@/lib/api/active-tenant.functions";
+import { getActiveSubscription } from "@/lib/api/billing.functions";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -16,59 +22,56 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const plans = [
-  {
-    name: "Starter",
-    icon: Sparkles,
-    price: "Miễn phí",
-    period: "",
-    desc: "Cho đội nhóm dưới 10 người bắt đầu thử nghiệm.",
-    cta: "Bắt đầu miễn phí",
-    highlight: false,
-    features: [
-      "Tối đa 10 nhân sự",
-      "5 GB lưu trữ",
-      "Chat, tài liệu, meeting cơ bản",
-      "1 workspace",
-      "Hỗ trợ qua email",
-    ],
-  },
-  {
-    name: "Business",
-    icon: Rocket,
-    price: "120.000đ",
-    period: "/ người / tháng",
-    desc: "Cho doanh nghiệp vận hành toàn diện trên UNIWORK.",
-    cta: "Dùng thử 14 ngày",
-    highlight: true,
-    features: [
-      "Không giới hạn nhân sự",
-      "1 TB lưu trữ / người",
-      "AI Copilot cho Meeting & Document",
-      "Workflow tự động hoá",
-      "SSO Google / Microsoft",
-      "Báo cáo & analytics",
-      "Hỗ trợ ưu tiên 8×5",
-    ],
-  },
-  {
-    name: "Enterprise",
-    icon: Building2,
-    price: "Liên hệ",
-    period: "",
-    desc: "Triển khai riêng, tuỳ chỉnh sâu cho tập đoàn lớn.",
-    cta: "Đặt lịch demo",
-    highlight: false,
-    features: [
-      "Tất cả tính năng Business",
-      "On-premise hoặc private cloud",
-      "SSO SAML / OIDC, AD",
-      "SLA 99.95% & 24×7",
-      "Audit log & DLP",
-      "Customer Success Manager",
-    ],
-  },
-];
+const PLAN_ICONS: Record<string, typeof Sparkles> = {
+  free: Sparkles,
+  pro: Rocket,
+  business: Building2,
+};
+
+function formatPrice(p: PublicPlanDto): { value: string; unit: string } {
+  if (p.priceLabel) return { value: p.priceLabel, unit: p.priceUnitLabel ?? "" };
+  if (p.priceAmount === null) return { value: "Liên hệ", unit: "" };
+  if (p.priceAmount === 0) return { value: "Miễn phí", unit: "" };
+  const formatted = new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: p.priceCurrency || "VND",
+    maximumFractionDigits: 0,
+  }).format(p.priceAmount);
+  return {
+    value: formatted,
+    unit: p.priceUnitLabel ?? (p.billingPeriod === "year" ? "/ năm" : "/ tháng"),
+  };
+}
+
+function formatQuota(value: number, unit: string | null): string {
+  if (unit === "bytes") {
+    if (value >= 1024 ** 4) return `${(value / 1024 ** 4).toFixed(0)} TB`;
+    if (value >= 1024 ** 3) return `${(value / 1024 ** 3).toFixed(0)} GB`;
+    return `${(value / 1024 ** 2).toFixed(0)} MB`;
+  }
+  const n = new Intl.NumberFormat("vi-VN").format(value);
+  const suffix =
+    unit === "minutes"
+      ? " phút"
+      : unit === "seats"
+        ? " thành viên"
+        : unit === "tokens"
+          ? " tokens"
+          : unit === "runs"
+            ? " lượt chạy"
+            : unit === "requests"
+              ? " requests"
+              : unit === "items" || unit === "count"
+                ? ""
+                : "";
+  return `${n}${suffix}`;
+}
+
+function featureLabel(f: PublicPlanDto["features"][number]): string {
+  if (f.kind === "flag") return f.name;
+  if (f.quotaLimit === null) return `${f.name}: không giới hạn`;
+  return `${f.name}: ${formatQuota(f.quotaLimit, f.unit)}`;
+}
 
 function PricingPage() {
   return (
