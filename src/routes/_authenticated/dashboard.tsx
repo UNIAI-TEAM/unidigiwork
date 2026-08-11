@@ -739,6 +739,36 @@ function DashboardInner() {
                     <option value={30}>30 ngày qua</option>
                   </select>
                 </div>
+                <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                  <RefreshCw
+                    className={`h-4 w-4 text-muted-foreground ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                  <select
+                    value={refreshMs}
+                    onChange={(e) => changeRefreshMs(Number(e.target.value))}
+                    className="bg-transparent text-sm focus:outline-none"
+                    aria-label="Tần suất tự động làm mới"
+                  >
+                    {REFRESH_INTERVALS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={refreshAll}
+                    disabled={isRefreshing}
+                    className="ml-1 border-l border-border pl-2 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                    title={
+                      lastUpdatedAt
+                        ? `Cập nhật lúc ${new Date(lastUpdatedAt).toLocaleTimeString("vi-VN")}`
+                        : undefined
+                    }
+                  >
+                    Làm mới
+                  </button>
+                </div>
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
