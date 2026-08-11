@@ -54,6 +54,131 @@ function slugify(name: string): string {
   return `${head}-${suffix}`;
 }
 
+/** Ghi nhật ký thay đổi workspace (best-effort, không chặn nghiệp vụ chính). */
+async function logWorkspaceAudit(input: {
+  tenantId: string | null;
+  actorId: string;
+  eventType: string;
+  workspaceId: string;
+  before?: Row | null;
+  after?: Row | null;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("audit_events").insert({
+      tenant_id: input.tenantId,
+      actor_id: input.actorId,
+      actor_user_id: input.actorId,
+      event_type: input.eventType,
+      action: input.eventType,
+      aggregate_type: "workspace",
+      aggregate_id: input.workspaceId,
+      resource_type: "workspace",
+      resource_id: input.workspaceId,
+      before_state: input.before ?? null,
+      after_state: input.after ?? null,
+      payload: { workspace_id: input.workspaceId },
+      source: "app",
+    });
+  } catch {
+    // audit không được phép làm hỏng thao tác chính
+  }
+}
+
+const AUDIT_FIELDS =
+  "id, name, description, timezone, visibility, default_member_role, allow_member_invites, deleted_at, tenant_id";
+
+export type WorkspaceAuditEventDTO = {
+  id: string;
+  eventType: string;
+  workspaceId: string;
+  workspaceName: string;
+  actorId: string | null;
+  actorName: string;
+  occurredAt: string;
+  changes: { field: string; before: string; after: string }[];
+};
+
+/** Nhật ký tạo/sửa/xóa workspace theo thời gian (RLS: thành viên tenant). */
+export const listWorkspaceAuditEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid().nullable().optional(),
+        limit: z.number().int().min(1).max(200).default(100),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<WorkspaceAuditEventDTO[]> => {
+    const { supabase } = context;
+    let q = supabase
+      .from("audit_events")
+      .select("id, event_type, aggregate_id, actor_id, occurred_at, before_state, after_state")
+      .eq("aggregate_type", "workspace")
+      .order("occurred_at", { ascending: false })
+      .limit(data.limit);
+    if (data.workspaceId) q = q.eq("aggregate_id", data.workspaceId);
+    const { data: rows, error } = await q;
+    if (error) fail(error, "WORKSPACE_ACCESS_DENIED");
+
+    const events = (rows ?? []) as Row[];
+    const wsIds = [...new Set(events.map((e) => e.aggregate_id as string).filter(Boolean))];
+    const actorIds = [...new Set(events.map((e) => e.actor_id as string).filter(Boolean))];
+
+    const [wsRes, profRes] = await Promise.all([
+      wsIds.length
+        ? supabase.from("workspaces").select("id, name").in("id", wsIds)
+        : Promise.resolve({ data: [] as Row[] }),
+      actorIds.length
+        ? supabase.from("profiles").select("id, display_name").in("id", actorIds)
+        : Promise.resolve({ data: [] as Row[] }),
+    ]);
+    const wsName = new Map(((wsRes.data ?? []) as Row[]).map((w) => [w.id as string, w.name as string]));
+    const actorName = new Map(
+      ((profRes.data ?? []) as Row[]).map((p) => [p.id as string, (p.display_name as string) ?? ""]),
+    );
+
+    const LABEL: Record<string, string> = {
+      name: "Tên",
+      description: "Mô tả",
+      timezone: "Múi giờ",
+      visibility: "Phạm vi hiển thị",
+      default_member_role: "Vai trò mặc định",
+      allow_member_invites: "Cho phép thành viên mời",
+      deleted_at: "Trạng thái lưu trữ",
+    };
+
+    return events.map((e) => {
+      const before = (e.before_state ?? null) as Row | null;
+      const after = (e.after_state ?? null) as Row | null;
+      const changes: { field: string; before: string; after: string }[] = [];
+      if (before && after) {
+        for (const key of Object.keys(LABEL)) {
+          const b = before[key] ?? null;
+          const a = after[key] ?? null;
+          if (JSON.stringify(b) !== JSON.stringify(a)) {
+            changes.push({
+              field: LABEL[key] ?? key,
+              before: b === null || b === "" ? "—" : String(b),
+              after: a === null || a === "" ? "—" : String(a),
+            });
+          }
+        }
+      }
+      return {
+        id: e.id as string,
+        eventType: (e.event_type as string) ?? "workspace.updated",
+        workspaceId: (e.aggregate_id as string) ?? "",
+        workspaceName: wsName.get(e.aggregate_id as string) ?? "Workspace",
+        actorId: (e.actor_id as string) ?? null,
+        actorName: actorName.get(e.actor_id as string) || "Người dùng",
+        occurredAt: (e.occurred_at as string) ?? new Date().toISOString(),
+        changes,
+      };
+    });
+  });
+
 /** Danh sách workspace của người dùng kèm số thành viên. */
 export const listWorkspaces = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
