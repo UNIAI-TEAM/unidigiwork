@@ -128,6 +128,11 @@ function WorkspaceManagePage() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" asChild>
+                <Link to="/workspace/settings">
+                  <Settings2 className="mr-1.5 h-4 w-4" /> Cài đặt workspace
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
                 <Link to="/workspace/members">
                   <UserPlus className="mr-1.5 h-4 w-4" /> Quản lý thành viên
                 </Link>

@@ -127,6 +127,10 @@ const UpdateInput = z.object({
   workspaceId: z.string().uuid(),
   name: z.string().trim().min(2).max(120).optional(),
   timezone: z.string().trim().min(1).max(64).optional(),
+  description: z.string().trim().max(500).nullable().optional(),
+  visibility: z.enum(["private", "tenant"]).optional(),
+  defaultMemberRole: z.enum(["member", "owner"]).optional(),
+  allowMemberInvites: z.boolean().optional(),
 });
 
 /** Đổi tên / múi giờ workspace — RLS chỉ cho chủ sở hữu. */
@@ -135,12 +139,25 @@ export const updateWorkspace = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpdateInput.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
-    const patch: { updated_by: string; updated_at: string; name?: string; timezone?: string } = {
+    const patch: {
+      updated_by: string;
+      updated_at: string;
+      name?: string;
+      timezone?: string;
+      description?: string | null;
+      visibility?: string;
+      default_member_role?: string;
+      allow_member_invites?: boolean;
+    } = {
       updated_by: userId,
       updated_at: new Date().toISOString(),
     };
     if (data.name) patch.name = data.name;
     if (data.timezone) patch.timezone = data.timezone;
+    if (data.description !== undefined) patch.description = data.description || null;
+    if (data.visibility) patch.visibility = data.visibility;
+    if (data.defaultMemberRole) patch.default_member_role = data.defaultMemberRole;
+    if (data.allowMemberInvites !== undefined) patch.allow_member_invites = data.allowMemberInvites;
 
     const { data: updated, error } = await supabase
       .from("workspaces")
@@ -154,6 +171,44 @@ export const updateWorkspace = createServerFn({ method: "POST" })
         message: "Chỉ chủ sở hữu workspace mới được chỉnh sửa.",
       });
     return { ok: true };
+  });
+
+export type WorkspaceSettingsDTO = {
+  id: string;
+  name: string;
+  description: string;
+  timezone: string;
+  visibility: "private" | "tenant";
+  defaultMemberRole: "member" | "owner";
+  allowMemberInvites: boolean;
+  isOwner: boolean;
+};
+
+/** Lấy cấu hình chi tiết của một workspace (đọc theo RLS thành viên). */
+export const getWorkspaceSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<WorkspaceSettingsDTO> => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("workspaces")
+      .select("*")
+      .eq("id", data.workspaceId)
+      .maybeSingle();
+    if (error) fail(error, "WORKSPACE_ACCESS_DENIED");
+    if (!row)
+      throw new ApiError({ code: "WORKSPACE_ACCESS_DENIED", message: "Không tìm thấy workspace." });
+    const w = row as Row;
+    return {
+      id: w.id as string,
+      name: (w.name as string) ?? "",
+      description: (w.description as string | null) ?? "",
+      timezone: (w.timezone as string) ?? "Asia/Ho_Chi_Minh",
+      visibility: (w.visibility as "private" | "tenant") ?? "private",
+      defaultMemberRole: (w.default_member_role as "member" | "owner") ?? "member",
+      allowMemberInvites: Boolean(w.allow_member_invites),
+      isOwner: w.owner_id === userId,
+    };
   });
 
 const ArchiveInput = z.object({

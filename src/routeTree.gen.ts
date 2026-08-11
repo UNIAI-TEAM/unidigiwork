@@ -53,6 +53,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
+import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace.settings'
 import { Route as AuthenticatedWorkspaceMembersRouteImport } from './routes/_authenticated/workspace.members'
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
@@ -298,6 +299,12 @@ const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   path: '/category/$category',
   getParentRoute: () => BlogRoute,
 } as any)
+const AuthenticatedWorkspaceSettingsRoute =
+  AuthenticatedWorkspaceSettingsRouteImport.update({
+    id: '/workspace/settings',
+    path: '/workspace/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWorkspaceMembersRoute =
   AuthenticatedWorkspaceMembersRouteImport.update({
     id: '/workspace/members',
@@ -487,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
+  '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -553,6 +561,7 @@ export interface FileRoutesByTo {
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
+  '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
@@ -623,6 +632,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/_authenticated/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
+  '/_authenticated/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -693,6 +703,7 @@ export interface FileRouteTypes {
     | '/workspace/$id'
     | '/workspace/invite'
     | '/workspace/members'
+    | '/workspace/settings'
     | '/blog/category/$category'
     | '/admin/'
     | '/workspace/'
@@ -759,6 +770,7 @@ export interface FileRouteTypes {
     | '/workspace/$id'
     | '/workspace/invite'
     | '/workspace/members'
+    | '/workspace/settings'
     | '/blog/category/$category'
     | '/admin'
     | '/workspace'
@@ -828,6 +840,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/invite'
     | '/_authenticated/workspace/members'
+    | '/_authenticated/workspace/settings'
     | '/blog/category/$category'
     | '/_authenticated/admin/'
     | '/_authenticated/workspace/'
@@ -1177,6 +1190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogCategoryCategoryRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/_authenticated/workspace/settings': {
+      id: '/_authenticated/workspace/settings'
+      path: '/workspace/settings'
+      fullPath: '/workspace/settings'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/workspace/members': {
       id: '/_authenticated/workspace/members'
       path: '/workspace/members'
@@ -1443,6 +1463,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
   AuthenticatedWorkspaceMembersRoute: typeof AuthenticatedWorkspaceMembersRoute
+  AuthenticatedWorkspaceSettingsRoute: typeof AuthenticatedWorkspaceSettingsRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
 }
 
@@ -1464,6 +1485,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
   AuthenticatedWorkspaceMembersRoute: AuthenticatedWorkspaceMembersRoute,
+  AuthenticatedWorkspaceSettingsRoute: AuthenticatedWorkspaceSettingsRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
 }
 
