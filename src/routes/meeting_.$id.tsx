@@ -118,6 +118,15 @@ function StageFallback() {
   );
 }
 
+function formatDuration(ms: number) {
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
 export const Route = createFileRoute("/meeting_/$id")({
   validateSearch: (search: Record<string, unknown>): { invite?: string } => ({
     invite: typeof search['invite'] === "string" ? (search['invite'] as string) : undefined,
@@ -517,6 +526,34 @@ function MeetingDetailPage() {
     [id, meetingQuery, refetchParticipants, syncMeetingQueries],
   );
 
+  // Thời lượng cuộc họp: suy ra từ nhật ký thao tác chủ trì (start/end thành công).
+  const hostLog = hostLogQuery.data ?? [];
+  const successStarts = hostLog.filter((e) => e.action === "start" && e.outcome === "success");
+  const successEnds = hostLog.filter((e) => e.action === "end" && e.outcome === "success");
+  const actualStartAt =
+    successStarts.length > 0
+      ? successStarts[successStarts.length - 1]!.occurredAt
+      : null;
+  const actualEndAt = successEnds.length > 0 ? successEnds[0]!.occurredAt : null;
+  const isLive = meetingStatus === "live";
+
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!isLive || !actualStartAt) return;
+    const t = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [isLive, actualStartAt]);
+
+  const elapsedMs = actualStartAt
+    ? (isLive || !actualEndAt ? nowTick : new Date(actualEndAt).getTime()) -
+      new Date(actualStartAt).getTime()
+    : null;
+  const durationLabel =
+    elapsedMs !== null && elapsedMs >= 0 ? formatDuration(elapsedMs) : null;
+  const startTimeLabel = actualStartAt
+    ? new Date(actualStartAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
@@ -537,8 +574,23 @@ function MeetingDetailPage() {
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${statusMeta.className}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} /> {statusMeta.label}
                 </span>
-                <Clock className="h-3 w-3" /> 32:14
-                <span>·</span>
+                {isRealRoom ? (
+                  durationLabel ? (
+                    <>
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Bắt đầu {startTimeLabel} · {isLive ? "Đã diễn ra" : "Tổng"}{" "}
+                        <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
+                      </span>
+                      <span>·</span>
+                    </>
+                  ) : null
+                ) : (
+                  <>
+                    <Clock className="h-3 w-3" /> 32:14
+                    <span>·</span>
+                  </>
+                )}
                 <Users className="h-3 w-3" /> {participants.length} người
               </div>
               </div>
