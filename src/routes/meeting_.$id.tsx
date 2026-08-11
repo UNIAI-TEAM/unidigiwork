@@ -380,12 +380,28 @@ function MeetingDetailPage() {
     queryFn: () => listMeetingParticipants({ data: { meetingId: id } }),
   });
 
+  const attendanceQuery = useQuery({
+    queryKey: ["meeting-attendance", id],
+    enabled: isRealRoom,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    queryFn: () => listMeetingAttendance({ data: { meetingId: id } }),
+  });
+
+  const presenceByUser = new Map<string, "online" | "left">();
+  for (const a of attendanceQuery.data ?? []) {
+    const current = presenceByUser.get(a.userId);
+    if (a.leftAt === null) presenceByUser.set(a.userId, "online");
+    else if (current !== "online") presenceByUser.set(a.userId, "left");
+  }
+
   const participants = (participantsQuery.data ?? []).map((p) => ({
     seed: p.userId,
     userId: p.userId,
     name: p.name ?? p.email ?? "Thành viên",
     role: p.role,
     rsvp: p.rsvp,
+    presence: presenceByUser.get(p.userId) ?? ("absent" as const),
     speaking: false,
   }));
 
