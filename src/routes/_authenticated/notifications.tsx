@@ -161,7 +161,7 @@ function NotifRow({
 function NotificationsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cat, setCat] = useState<Cat>("all");
-  const [tab, setTab] = useState<"inbox" | "unread" | "mentions" | "archived">("inbox");
+  const [tab, setTab] = useState<"inbox" | "unread" | "read" | "mentions" | "archived">("inbox");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
@@ -219,6 +219,7 @@ function NotificationsPage() {
     return items.filter((n) => {
       if (cat !== "all" && n.cat !== cat) return false;
       if (tab === "unread" && !n.unread) return false;
+      if (tab === "read" && n.unread) return false;
       if (tab === "mentions" && n.cat !== "mention") return false;
       if (tab === "archived") return false;
       if (q && !`${n.title} ${n.body} ${n.actor ?? ""}`.toLowerCase().includes(q.toLowerCase()))
@@ -385,6 +386,7 @@ function NotificationsPage() {
                   [
                     { k: "inbox", l: "Hộp thư" },
                     { k: "unread", l: `Chưa đọc (${unreadCount})` },
+                    { k: "read", l: `Đã đọc (${items.length - unreadCount})` },
                     { k: "mentions", l: "Nhắc tên" },
                     { k: "archived", l: "Đã lưu trữ" },
                   ] as const
