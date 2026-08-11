@@ -360,6 +360,24 @@ function MeetingDetailPage() {
     };
   }, [id, isRealRoom, syncMeetingQueries]);
 
+  // Realtime: trạng thái cuộc họp (scheduled / live / ended / canceled)
+  useEffect(() => {
+    if (!isRealRoom) return;
+    const channel = supabase
+      .channel(`meeting-status-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meetings", filter: `id=eq.${id}` },
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ["meeting", id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [id, isRealRoom, queryClient]);
+
   // RSVP của chính mình
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [rsvpSaving, setRsvpSaving] = useState<string | null>(null);
