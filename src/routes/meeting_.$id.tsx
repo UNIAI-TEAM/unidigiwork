@@ -58,7 +58,6 @@ const JOIN_ERROR_HINTS: Record<string, string> = {
   QUOTA_EXCEEDED: "Liên hệ quản trị tổ chức để tăng hạn mức phút họp hoặc chờ chu kỳ kế tiếp.",
 };
 
-function StageFallback() {
 const RSVP_LABELS: Record<string, string> = {
   pending: "Chờ phản hồi",
   accepted: "Tham gia",
@@ -66,6 +65,7 @@ const RSVP_LABELS: Record<string, string> = {
   tentative: "Chưa chắc",
 };
 
+function StageFallback() {
   return (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang kết nối phòng họp…
