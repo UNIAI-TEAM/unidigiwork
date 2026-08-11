@@ -615,7 +615,25 @@ function DashboardInner() {
   const layoutOrder = hydrated ? order : DEFAULT_ORDER;
   const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
-  const { data } = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId));
+  const [refreshMs, setRefreshMs] = useState<number>(DEFAULT_REFRESH_MS);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REFRESH_STORAGE_KEY);
+      if (saved !== null && !Number.isNaN(Number(saved))) setRefreshMs(Number(saved));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const changeRefreshMs = (ms: number) => {
+    setRefreshMs(ms);
+    try {
+      localStorage.setItem(REFRESH_STORAGE_KEY, String(ms));
+    } catch {
+      /* ignore */
+    }
+  };
+  const overviewQuery = useSuspenseQuery(dashboardQuery(rangeDays, activeWorkspaceId, refreshMs));
+  const { data } = overviewQuery;
 
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
   const aiSummaryQuery = useQuery({
@@ -625,13 +643,25 @@ function DashboardInner() {
         data: activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {},
       }),
     staleTime: 30_000,
+    refetchInterval: refreshMs > 0 ? refreshMs : false,
+    refetchOnWindowFocus: true,
   });
   const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
   const notificationsQuery = useQuery({
     queryKey: ["dashboard-notifications"],
     queryFn: () => listNotifications(),
     staleTime: 30_000,
+    refetchInterval: refreshMs > 0 ? refreshMs : false,
+    refetchOnWindowFocus: true,
   });
+  const isRefreshing =
+    overviewQuery.isFetching || aiSummaryQuery.isFetching || notificationsQuery.isFetching;
+  const lastUpdatedAt = overviewQuery.dataUpdatedAt;
+  const refreshAll = () => {
+    void overviewQuery.refetch();
+    void aiSummaryQuery.refetch();
+    void notificationsQuery.refetch();
+  };
   const importantNotifications = useMemo(() => {
     const rows = notificationsQuery.data ?? [];
     const unread = rows.filter((n: any) => !n.is_read);
