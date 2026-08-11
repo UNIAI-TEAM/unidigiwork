@@ -6,7 +6,6 @@ import {
   ArchiveRestore,
   Crown,
   Loader2,
-  MoreHorizontal,
   Pencil,
   Plus,
   Settings2,

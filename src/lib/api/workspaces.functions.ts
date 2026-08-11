@@ -135,7 +135,10 @@ export const updateWorkspace = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpdateInput.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
-    const patch: Row = { updated_by: userId, updated_at: new Date().toISOString() };
+    const patch: { updated_by: string; updated_at: string; name?: string; timezone?: string } = {
+      updated_by: userId,
+      updated_at: new Date().toISOString(),
+    };
     if (data.name) patch.name = data.name;
     if (data.timezone) patch.timezone = data.timezone;
 
