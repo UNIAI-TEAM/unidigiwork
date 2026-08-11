@@ -1484,6 +1484,7 @@ export function AppTopbar({
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
   const navigate = useNavigate();
+  const { unreadCount: topbarUnread } = useUnreadNotifications();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchValue, setSearchValue] = useState("");
   // ⌘K is owned globally by <CommandPalette />. Topbar input stays as a
@@ -1606,9 +1607,11 @@ export function AppTopbar({
           aria-expanded={notifOpen}
         >
           <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
-            12
-          </span>
+          {topbarUnread > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
+              {topbarUnread > 99 ? "99+" : topbarUnread}
+            </span>
+          )}
         </button>
         {notifOpen && <NotificationsPanel onClose={() => setNotifOpen(false)} />}
       </div>
