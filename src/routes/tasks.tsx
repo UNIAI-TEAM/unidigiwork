@@ -4,7 +4,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
@@ -121,6 +121,8 @@ function TasksPage() {
     enabled: Boolean(activeWs),
     queryFn: async () =>
       (await listTasks({ data: { workspaceId: activeWs!, limit: 200 } })) as unknown as Task[],
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
   const allTasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
@@ -560,16 +562,18 @@ function TasksPage() {
               )}
             </div>
 
-            {tasksQuery.isLoading ? (
-              <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface py-12 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Đang tải công việc…
-              </div>
+            {tasksQuery.isLoading && !tasksQuery.data ? (
+              <BoardSkeleton />
             ) : tasksQuery.isError ? (
               <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
                 Không tải được danh sách công việc. Vui lòng thử lại.
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div
+                className={`grid grid-cols-1 gap-4 transition-opacity duration-200 md:grid-cols-2 xl:grid-cols-5 ${
+                  tasksQuery.isFetching ? "opacity-70" : "opacity-100"
+                }`}
+              >
                 {columns.map((col) => (
                   <BoardColumn
                     key={col.status}
@@ -655,6 +659,26 @@ function KpiCard({
 }
 
 type QuickAddPayload = { title: string; priority: Priority };
+
+function BoardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-border bg-surface p-3">
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: 3 }).map((__, j) => (
+              <div key={j} className="rounded-lg border border-border/60 bg-surface-2/40 p-3">
+                <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function BoardColumn({
   col,

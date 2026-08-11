@@ -4,7 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { sendAiMessage } from "@/lib/api/ai-chat.functions";
 import { listNotifications } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
-import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useSuspenseQuery,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import {
   getDashboardPrefs,
   saveDashboardPrefs,
@@ -309,6 +315,7 @@ function KpiCard({ k, rangeDays }: { k: Kpi; rangeDays: number }) {
   return (
     <Link
       {...target}
+      preload="intent"
       className="block rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/40"
     >
       {body}
@@ -682,6 +689,7 @@ function DashboardInner() {
   const notificationsQuery = useQuery({
     queryKey: ["dashboard-notifications"],
     queryFn: () => listNotifications(),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchOnWindowFocus: true,
@@ -1185,6 +1193,7 @@ function DashboardInner() {
                       <Link
                         to={it.to}
                         search={it.search as never}
+                        preload="intent"
                         className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
                       >
                         <span
