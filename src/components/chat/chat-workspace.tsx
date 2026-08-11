@@ -22,6 +22,7 @@ import {
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
 import { createTask } from "@/lib/api/tasks.functions";
+import { buildChatSourceTag } from "@/lib/chat-task-link";
 import { useMyWorkspaces, useActiveWorkspace } from "@/lib/active-workspace";
 
 const BUCKET = "chat-attachments";
@@ -167,7 +168,7 @@ function AttachmentChip({ file }: { file: ChatAttachment }) {
   );
 }
 
-export function ChatWorkspace({ initialChannelId }: { initialChannelId?: string }) {
+export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initialChannelId?: string; highlightMessageId?: string }) {
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const navigate = useNavigate();
   const qc = useQueryClient();
