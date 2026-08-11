@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Hash, Lock, Plus, Search as SearchIcon, Send, Star, Users, X, Trash2, LogOut, Loader2,
-  MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield,
+  MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
