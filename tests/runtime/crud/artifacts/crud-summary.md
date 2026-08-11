@@ -1,6 +1,6 @@
 # CRUD runtime summary
 
-Run: c1ab425f · 2026-08-11T15:35:31.101Z
+Run: a71fcc64 · 2026-08-11T15:41:50.517Z
 
 | Cell | Entity | Operation | Status |
 |---|---|---|---|
@@ -43,4 +43,4 @@ Run: c1ab425f · 2026-08-11T15:35:31.101Z
 | DOC-AU-01 | document | AUDIT | PASS_REAL |
 
 Total 37 · PASS 37 · FAIL 0
-Teardown orphans: 938b0ebe-603f-4a7f-8054-21e311502915, c30a3ffc-98f4-43a2-b984-be0403009a6b, d375578c-cb2d-4764-aa18-c727754fc20c, c92aa202-355e-4534-9126-1a98d8dc616e
+Teardown orphans: f85404c2-0015-4b1f-8948-7a82de292787, 493fafcf-d20f-4b77-b799-ec16af8e460c, 09a5c151-1c31-4091-955b-deabe053f04b, 334f04bf-3164-484d-a084-8ecd7c8ce5ef
