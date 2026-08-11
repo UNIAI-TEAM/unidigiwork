@@ -574,8 +574,23 @@ function MeetingDetailPage() {
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${statusMeta.className}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} /> {statusMeta.label}
                 </span>
-                <Clock className="h-3 w-3" /> 32:14
-                <span>·</span>
+                {isRealRoom ? (
+                  durationLabel ? (
+                    <>
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Bắt đầu {startTimeLabel} · {isLive ? "Đã diễn ra" : "Tổng"}{" "}
+                        <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
+                      </span>
+                      <span>·</span>
+                    </>
+                  ) : null
+                ) : (
+                  <>
+                    <Clock className="h-3 w-3" /> 32:14
+                    <span>·</span>
+                  </>
+                )}
                 <Users className="h-3 w-3" /> {participants.length} người
               </div>
               </div>
