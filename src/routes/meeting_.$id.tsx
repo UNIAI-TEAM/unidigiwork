@@ -88,6 +88,12 @@ const RSVP_LABELS: Record<string, string> = {
   tentative: "Chưa chắc",
 };
 
+const PRESENCE_LABELS: Record<string, string> = {
+  online: "Đang online",
+  left: "Đã rời",
+  absent: "Chưa vào",
+};
+
 const HOST_ACTION_LABELS: Record<string, string> = {
   start: "Bắt đầu",
   end: "Kết thúc",
