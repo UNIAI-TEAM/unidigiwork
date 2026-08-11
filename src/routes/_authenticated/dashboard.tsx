@@ -209,32 +209,38 @@ function fmtDur(start: string, end: string) {
   return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`;
 }
 
-const AI_ITEMS = [
-  {
-    icon: FileText,
-    tint: "bg-sky-500/20 text-sky-300",
-    title: "15 tài liệu cần cập nhật",
-    action: "Xem chi tiết",
-  },
-  {
-    icon: AlertTriangle,
-    tint: "bg-rose-500/20 text-rose-300",
-    title: "3 nhiệm vụ đang quá hạn",
-    action: "Xem chi tiết",
-  },
-  {
-    icon: Video,
-    tint: "bg-emerald-500/20 text-emerald-300",
-    title: "5 cuộc họp trong hôm nay",
-    action: "Xem lịch",
-  },
-  {
-    icon: Workflow,
-    tint: "bg-amber-500/20 text-amber-300",
-    title: "2 quy trình cần phê duyệt",
-    action: "Xem chi tiết",
-  },
-];
+function buildAiItems(s: DashboardAiSummary | undefined) {
+  return [
+    {
+      icon: FileText,
+      tint: "bg-sky-500/20 text-sky-300",
+      title: `${s?.staleDocuments ?? 0} tài liệu cần cập nhật`,
+      action: "Xem chi tiết",
+      to: "/documents",
+    },
+    {
+      icon: AlertTriangle,
+      tint: "bg-rose-500/20 text-rose-300",
+      title: `${s?.overdueTasks ?? 0} nhiệm vụ đang quá hạn`,
+      action: "Xem chi tiết",
+      to: "/tasks",
+    },
+    {
+      icon: Video,
+      tint: "bg-emerald-500/20 text-emerald-300",
+      title: `${s?.meetingsToday ?? 0} cuộc họp trong hôm nay`,
+      action: "Xem lịch",
+      to: "/calendar",
+    },
+    {
+      icon: Workflow,
+      tint: "bg-amber-500/20 text-amber-300",
+      title: `${s?.pendingWorkflowApprovals ?? 0} quy trình cần phê duyệt`,
+      action: "Xem chi tiết",
+      to: "/workflows/permissions",
+    },
+  ];
+}
 
 function KpiCard({ k }: { k: Kpi }) {
   const Icon = k.icon;
