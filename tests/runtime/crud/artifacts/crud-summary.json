@@ -1,18 +1,13 @@
 {
   "summary": {
-    "runId": "a71fcc64",
-    "startedAt": "2026-08-11T15:41:50.517Z",
-    "finishedAt": "2026-08-11T15:44:44.103Z",
+    "runId": "d80aa270",
+    "startedAt": "2026-08-11T15:49:45.453Z",
+    "finishedAt": "2026-08-11T15:52:12.100Z",
     "bootError": null,
     "total": 37,
     "passed": 37,
     "failed": 0,
-    "teardownOrphans": [
-      "f85404c2-0015-4b1f-8948-7a82de292787",
-      "493fafcf-d20f-4b77-b799-ec16af8e460c",
-      "09a5c151-1c31-4091-955b-deabe053f04b",
-      "334f04bf-3164-484d-a084-8ecd7c8ce5ef"
-    ],
+    "teardownOrphans": [],
     "byStatus": {
       "PASS_REAL": 37
     }
@@ -25,13 +20,13 @@
       "status": "PASS_REAL",
       "evidence": {
         "workspace": {
-          "id": "09a5c151-1c31-4091-955b-deabe053f04b",
-          "name": "crud_e2e_a71fcc64_ws_new",
-          "tenant_id": "09a5c151-1c31-4091-955b-deabe053f04b",
-          "owner_id": "334f04bf-3164-484d-a084-8ecd7c8ce5ef"
+          "id": "9c0463e8-7609-46fa-95bd-4fc3ca9458c0",
+          "name": "crud_e2e_d80aa270_ws_new",
+          "tenant_id": "9c0463e8-7609-46fa-95bd-4fc3ca9458c0",
+          "owner_id": "e341627c-8f00-47a5-a463-e8b14c5008b7"
         },
         "tenant": {
-          "id": "09a5c151-1c31-4091-955b-deabe053f04b",
+          "id": "9c0463e8-7609-46fa-95bd-4fc3ca9458c0",
           "status": "active"
         },
         "memberCount": 1
@@ -50,7 +45,7 @@
       "op": "UPDATE",
       "status": "PASS_REAL",
       "after": {
-        "name": "crud_e2e_a71fcc64_ws_new_upd"
+        "name": "crud_e2e_d80aa270_ws_new_upd"
       }
     },
     {
@@ -72,7 +67,7 @@
       "op": "CREATE",
       "status": "PASS_REAL",
       "evidence": {
-        "id": "37c27b14-bfe5-4758-9289-d3fb4aa33450",
+        "id": "1f89ff26-9f8a-44b4-9c4f-24b05d47d4b4",
         "name": "crud_e2e_tag"
       }
     },
@@ -121,8 +116,8 @@
       "before": 0,
       "after": 1,
       "evidence": {
-        "id": "fb3377d0-f25f-4c04-8456-966c6200fbfa",
-        "tenant_id": "f85404c2-0015-4b1f-8948-7a82de292787",
+        "id": "44690109-d775-42ba-b93d-848cca25c069",
+        "tenant_id": "2e71b335-f59c-4b43-89db-9bb2ed1af3cb",
         "title": "crud_e2e_task_1",
         "priority": "high",
         "row_version": 1
@@ -155,8 +150,8 @@
       "op": "CREATE_IDEMPOTENCY",
       "status": "PASS_REAL",
       "idemCount": 1,
-      "r1": "80080e51-5c64-4750-9b44-02ad50d8bcf8",
-      "r2": "80080e51-5c64-4750-9b44-02ad50d8bcf8"
+      "r1": "ee2d6ed7-adda-43c6-8c13-6703a770c731",
+      "r2": "ee2d6ed7-adda-43c6-8c13-6703a770c731"
     },
     {
       "id": "TASK-R-01",
@@ -221,7 +216,7 @@
       "status": "PASS_REAL",
       "after": {
         "status": "done",
-        "completed_at": "2026-08-11T15:44:13.672938+00:00"
+        "completed_at": "2026-08-11T15:52:04.297157+00:00"
       }
     },
     {
@@ -259,9 +254,9 @@
       "op": "CREATE",
       "status": "PASS_REAL",
       "evidence": {
-        "id": "8a2dfcdd-a19c-4d69-aebd-bd89288b0f8f",
+        "id": "2b5d0809-f8f6-46d1-b425-cd4fefb17d99",
         "title": "crud_e2e_doc_1",
-        "tenant_id": "f85404c2-0015-4b1f-8948-7a82de292787",
+        "tenant_id": "2e71b335-f59c-4b43-89db-9bb2ed1af3cb",
         "tags": [
           "crud",
           "e2e"
@@ -313,8 +308,8 @@
       "op": "ARCHIVE",
       "status": "PASS_REAL",
       "after": {
-        "deleted_at": "2026-08-11T15:44:39.476288+00:00",
-        "updated_at": "2026-08-11T15:44:39.476288+00:00"
+        "deleted_at": "2026-08-11T15:52:08.858153+00:00",
+        "updated_at": "2026-08-11T15:52:08.858153+00:00"
       }
     },
     {
