@@ -2,12 +2,26 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Loader2, Mail, ShieldCheck, UserPlus } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  Loader2,
+  Mail,
+  RotateCcw,
+  ShieldCheck,
+  UserPlus,
+  XCircle,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
   inviteUserToWorkspace,
   listWorkspaceInvites,
+  revokeWorkspaceInvite,
+  resendWorkspaceInvite,
+  getWorkspaceInviteAccess,
   type WorkspaceInviteRow,
 } from "@/lib/api/workspace-invites.functions";
 
@@ -39,12 +53,37 @@ const TENANT_ROLES = [
   { value: "guest", label: "Khách" },
 ] as const;
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Đang chờ",
-  accepted: "Đã tham gia",
-  expired: "Hết hạn",
-  revoked: "Đã thu hồi",
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  pending: { label: "Đang chờ", cls: "border-warning/30 bg-warning/10 text-warning" },
+  accepted: { label: "Đã chấp nhận", cls: "border-success/30 bg-success/10 text-success" },
+  expired: { label: "Hết hạn", cls: "border-border bg-muted text-muted-foreground" },
+  revoked: { label: "Đã thu hồi", cls: "border-destructive/30 bg-destructive/10 text-destructive" },
 };
+
+const TENANT_ROLE_LABEL: Record<string, string> = {
+  tenant_owner: "Chủ tổ chức",
+  tenant_admin: "Quản trị tổ chức",
+  manager: "Quản lý",
+  member: "Thành viên",
+  guest: "Khách",
+};
+
+type InviteTab = "pending" | "accepted" | "closed";
+
+function fmtDateTime(v: string | null) {
+  if (!v) return "—";
+  return new Date(v).toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function effectiveStatus(i: WorkspaceInviteRow) {
+  return i.isExpired ? "expired" : i.status;
+}
 
 function WorkspaceInvitePage() {
   const [open, setOpen] = useSidebarState();
@@ -64,11 +103,48 @@ function WorkspaceInvitePage() {
   const [ttlDays, setTtlDays] = useState(7);
   const [lastLink, setLastLink] = useState<string | null>(null);
 
+  const [tab, setTab] = useState<InviteTab>("pending");
+
   const invites = useQuery({
     queryKey: ["workspace-invites", activeWs],
     enabled: Boolean(activeWs),
     queryFn: () => listWorkspaceInvites({ data: { workspaceId: activeWs! } }),
   });
+
+  const access = useQuery({
+    queryKey: ["workspace-invite-access", activeWs],
+    enabled: Boolean(activeWs),
+    queryFn: () => getWorkspaceInviteAccess({ data: { workspaceId: activeWs! } }),
+  });
+  const canManage = access.data?.canManage ?? false;
+
+  const revoke = useMutation({
+    mutationFn: (invitationId: string) => revokeWorkspaceInvite({ data: { invitationId } }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["workspace-invites", activeWs] });
+      toast.success("Đã thu hồi lời mời");
+    },
+    onError: (e: Error) => toast.error(e.message || "Không thu hồi được lời mời"),
+  });
+
+  const resend = useMutation({
+    mutationFn: (invitationId: string) => resendWorkspaceInvite({ data: { invitationId, ttlDays } }),
+    onSuccess: async (res) => {
+      setLastLink(`${window.location.origin}/invite/${res.token}`);
+      await qc.invalidateQueries({ queryKey: ["workspace-invites", activeWs] });
+      toast.success("Đã tạo lại lời mời", { description: `Gửi liên kết mới tới ${res.email}.` });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không gửi lại được lời mời"),
+  });
+
+  const grouped = useMemo(() => {
+    const all = (invites.data ?? []) as WorkspaceInviteRow[];
+    return {
+      pending: all.filter((i) => effectiveStatus(i) === "pending"),
+      accepted: all.filter((i) => effectiveStatus(i) === "accepted"),
+      closed: all.filter((i) => ["expired", "revoked"].includes(effectiveStatus(i))),
+    };
+  }, [invites.data]);
 
   const send = useMutation({
     mutationFn: () =>
@@ -95,8 +171,8 @@ function WorkspaceInvitePage() {
   });
 
   const canSubmit = useMemo(
-    () => Boolean(activeWs) && /.+@.+\..+/.test(email.trim()) && !send.isPending,
-    [activeWs, email, send.isPending],
+    () => Boolean(activeWs) && canManage && /.+@.+\..+/.test(email.trim()) && !send.isPending,
+    [activeWs, canManage, email, send.isPending],
   );
 
   return (
@@ -266,39 +342,121 @@ function WorkspaceInvitePage() {
           </section>
 
           <section className="mt-8">
-            <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-              Lời mời của workspace này
-            </h2>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-muted-foreground">
+                Lời mời của workspace này
+              </h2>
+              <div className="flex rounded-lg border border-border bg-card p-0.5 text-xs">
+                {(
+                  [
+                    { id: "pending" as const, label: "Đang chờ", n: grouped.pending.length },
+                    { id: "accepted" as const, label: "Đã chấp nhận", n: grouped.accepted.length },
+                    { id: "closed" as const, label: "Hết hạn / thu hồi", n: grouped.closed.length },
+                  ]
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTab(t.id)}
+                    className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+                      tab === t.id
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.label} ({t.n})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {!canManage && access.isFetched ? (
+              <p className="mb-3 flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5" /> Chỉ chủ tổ chức hoặc quản trị tổ chức mới có
+                thể tạo, thu hồi hoặc gửi lại lời mời.
+              </p>
+            ) : null}
+
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               {invites.isLoading ? (
                 <p className="p-6 text-sm text-muted-foreground">Đang tải…</p>
-              ) : (invites.data ?? []).length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Chưa có lời mời nào.</p>
+              ) : grouped[tab].length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">
+                  {tab === "pending"
+                    ? "Không có lời mời nào đang chờ."
+                    : tab === "accepted"
+                      ? "Chưa có ai chấp nhận lời mời."
+                      : "Không có lời mời hết hạn hoặc bị thu hồi."}
+                </p>
               ) : (
                 <ul className="divide-y divide-border">
-                  {(invites.data as WorkspaceInviteRow[]).map((i) => (
-                    <li
-                      key={i.invitationId}
-                      className="flex flex-wrap items-center justify-between gap-3 p-4"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{i.email}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {i.workspaceRole === "owner" ? "Chủ sở hữu" : "Thành viên"} ·{" "}
-                          {[
-                            i.canEdit ? "Chỉnh sửa" : null,
-                            i.canPublish ? "Phát hành" : null,
-                            i.canRun ? "Chạy" : null,
-                          ]
-                            .filter(Boolean)
-                            .join(", ") || "Không có quyền quy trình"}
-                        </p>
-                      </div>
-                      <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-                        {STATUS_LABEL[i.status] ?? i.status}
-                      </span>
-                    </li>
-                  ))}
+                  {grouped[tab].map((i) => {
+                    const st = effectiveStatus(i);
+                    const meta = STATUS_META[st] ?? STATUS_META["pending"]!;
+                    return (
+                      <li
+                        key={i.invitationId}
+                        className="flex flex-wrap items-center justify-between gap-3 p-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-2 truncate text-sm font-medium">
+                            {st === "accepted" ? (
+                              <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                            ) : (
+                              <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )}
+                            {i.email}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {TENANT_ROLE_LABEL[i.tenantRole] ?? i.tenantRole} ·{" "}
+                            {i.workspaceRole === "owner" ? "Chủ sở hữu workspace" : "Thành viên workspace"} ·{" "}
+                            {[
+                              i.canEdit ? "Chỉnh sửa" : null,
+                              i.canPublish ? "Phát hành" : null,
+                              i.canRun ? "Chạy" : null,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "Không có quyền quy trình"}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {st === "accepted"
+                              ? `Chấp nhận lúc ${fmtDateTime(i.acceptedAt)}`
+                              : `Gửi ${fmtDateTime(i.createdAt)} · Hết hạn ${fmtDateTime(i.expiresAt)}`}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full border px-2.5 py-1 text-xs ${meta.cls}`}>
+                            {meta.label}
+                          </span>
+                          {canManage && st === "pending" ? (
+                            <button
+                              type="button"
+                              onClick={() => revoke.mutate(i.invitationId)}
+                              disabled={revoke.isPending}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                            >
+                              <XCircle className="h-3.5 w-3.5" /> Thu hồi
+                            </button>
+                          ) : null}
+                          {canManage && st !== "accepted" ? (
+                            <button
+                              type="button"
+                              onClick={() => resend.mutate(i.invitationId)}
+                              disabled={resend.isPending}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                            >
+                              {resend.isPending ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-3.5 w-3.5" />
+                              )}
+                              Gửi lại
+                            </button>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
