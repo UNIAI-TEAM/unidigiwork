@@ -125,6 +125,7 @@ export const cancelMeeting = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
     });
+    await logHostAction(context.supabase, data.meetingId, "cancel", res.error, data);
     return ensureOk(res, "MEETING_NOT_FOUND");
   });
 
@@ -188,7 +189,7 @@ async function logHostAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   meetingId: string,
-  action: "start" | "end",
+  action: "start" | "end" | "cancel",
   error: { message?: string; code?: string } | null,
   meta: { idempotencyKey?: string | null; correlationId?: string | null },
 ): Promise<void> {
@@ -208,7 +209,7 @@ async function logHostAction(
 
 export interface MeetingHostActionDto {
   id: string;
-  action: "start" | "end" | string;
+  action: "start" | "end" | "cancel" | string;
   outcome: "success" | "failure" | string;
   errorCode: string | null;
   actorId: string | null;
