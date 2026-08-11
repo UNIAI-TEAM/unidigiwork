@@ -655,8 +655,10 @@ function DashboardInner() {
                   </ul>
                 )}
               </div>
+              )}
 
               {/* Recent activity */}
+              {visible.recent && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
@@ -701,8 +703,10 @@ function DashboardInner() {
                   </ul>
                 )}
               </div>
+              )}
 
               {/* Meetings today */}
+              {visible.meetings && (
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
@@ -739,9 +743,12 @@ function DashboardInner() {
                   </ul>
                 )}
               </div>
+              )}
             </div>
+            )}
 
             {/* Workspaces overview */}
+            {visible.workspaces && (
             <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
@@ -787,6 +794,7 @@ function DashboardInner() {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           {/* Right rail: AI Assistant */}
