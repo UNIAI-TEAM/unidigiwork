@@ -604,6 +604,42 @@ function DashboardInner() {
     staleTime: 30_000,
   });
   const aiItems = useMemo(() => buildAiItems(aiSummaryQuery.data), [aiSummaryQuery.data]);
+  const sendAiFn = useServerFn(sendAiMessage);
+  const [aiInput, setAiInput] = useState("");
+  const [aiSending, setAiSending] = useState(false);
+  const [aiConversationId, setAiConversationId] = useState<string | null>(null);
+  const [aiThread, setAiThread] = useState<Array<{ role: "user" | "assistant"; content: string }>>(
+    [],
+  );
+  const aiThreadRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    aiThreadRef.current?.scrollTo({ top: aiThreadRef.current.scrollHeight });
+  }, [aiThread, aiSending]);
+
+  const handleAskAi = async () => {
+    const text = aiInput.trim();
+    if (!text || aiSending) return;
+    setAiInput("");
+    setAiThread((prev) => [...prev, { role: "user", content: text }]);
+    setAiSending(true);
+    try {
+      const res = await sendAiFn({
+        data: {
+          text,
+          ...(aiConversationId ? { conversationId: aiConversationId } : {}),
+          ...(activeWorkspaceId && !aiConversationId ? { workspaceId: activeWorkspaceId } : {}),
+        },
+      });
+      setAiConversationId(res.conversationId);
+      setAiThread((prev) => [...prev, { role: "assistant", content: res.reply }]);
+    } catch (err) {
+      setAiThread((prev) => prev.slice(0, -1));
+      setAiInput(text);
+      toast.error(err instanceof Error ? err.message : "Không gửi được câu hỏi tới AI");
+    } finally {
+      setAiSending(false);
+    }
+  };
   const activity = useMemo(() => buildActivity(data.overview), [data.overview]);
   const donut = useMemo(() => buildDonut(data.overview), [data.overview]);
   const projects = data.projects;
