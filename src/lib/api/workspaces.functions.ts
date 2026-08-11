@@ -139,7 +139,16 @@ export const updateWorkspace = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpdateInput.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
-    const patch: Row = {
+    const patch: {
+      updated_by: string;
+      updated_at: string;
+      name?: string;
+      timezone?: string;
+      description?: string | null;
+      visibility?: string;
+      default_member_role?: string;
+      allow_member_invites?: boolean;
+    } = {
       updated_by: userId,
       updated_at: new Date().toISOString(),
     };
@@ -187,7 +196,8 @@ export const getWorkspaceSettings = createServerFn({ method: "POST" })
       .eq("id", data.workspaceId)
       .maybeSingle();
     if (error) fail(error, "WORKSPACE_ACCESS_DENIED");
-    if (!row) throw new ApiError({ code: "NOT_FOUND", message: "Không tìm thấy workspace." });
+    if (!row)
+      throw new ApiError({ code: "WORKSPACE_ACCESS_DENIED", message: "Không tìm thấy workspace." });
     const w = row as Row;
     return {
       id: w.id as string,
