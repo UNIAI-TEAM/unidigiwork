@@ -77,10 +77,7 @@ function WorkspaceMembersPage() {
     () => workspaces.find((w) => w.id === workspaceId) ?? null,
     [workspaces, workspaceId],
   );
-  const isOwner = Boolean(
-    (active as { role?: string; isOwner?: boolean } | null)?.isOwner ??
-      (active as { role?: string } | null)?.role === "owner",
-  );
+  const isOwner = Boolean(active?.isOwner);
 
   const membersQ = useQuery({
     queryKey: ["workspace", workspaceId, "members"],
