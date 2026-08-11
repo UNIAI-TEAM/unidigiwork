@@ -622,22 +622,41 @@ function DashboardInner() {
                     <div className="border-b border-border px-4 py-3">
                       <div className="text-sm font-semibold">Tuỳ chỉnh bảng điều khiển</div>
                       <p className="text-xs text-muted-foreground">
-                        Chọn các khối muốn hiển thị. Thiết lập được đồng bộ theo tài khoản của bạn.
+                        Chọn khối muốn hiển thị và kéo-thả để đổi thứ tự. Thiết lập đồng bộ theo
+                        tài khoản của bạn.
                       </p>
                     </div>
                     <ul className="max-h-80 space-y-1 overflow-y-auto p-2">
-                      {SECTION_OPTIONS.map((opt) => (
-                        <li key={opt.key}>
-                          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
-                            <span>{opt.label}</span>
-                            <Switch
-                              checked={visible[opt.key]}
-                              onCheckedChange={() => toggleSection(opt.key)}
-                              aria-label={opt.label}
-                            />
-                          </label>
-                        </li>
-                      ))}
+                      {layoutOrder.map((key) => {
+                        const opt = SECTION_OPTIONS.find((o) => o.key === key)!;
+                        return (
+                          <li
+                            key={key}
+                            draggable
+                            onDragStart={() => setDragKey(key)}
+                            onDragEnd={() => setDragKey(null)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (dragKey) moveSection(dragKey, key);
+                              setDragKey(null);
+                            }}
+                            className={`rounded-lg ${dragKey === key ? "opacity-50" : ""}`}
+                          >
+                            <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
+                              <span className="flex min-w-0 items-center gap-2">
+                                <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
+                                <span className="truncate">{opt.label}</span>
+                              </span>
+                              <Switch
+                                checked={visible[key]}
+                                onCheckedChange={() => toggleSection(key)}
+                                aria-label={opt.label}
+                              />
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                     <div className="border-t border-border px-3 py-2 text-right">
                       <button
