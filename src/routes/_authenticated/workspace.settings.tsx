@@ -107,7 +107,7 @@ function WorkspaceSettingsPage() {
     <div className="min-h-screen bg-background">
       <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="lg:pl-64">
-        <AppTopbar onMenu={() => setSidebarOpen(true)} />
+        <AppTopbar onOpenSidebar={() => setSidebarOpen(true)} />
         <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
           <Link
             to="/workspace"
