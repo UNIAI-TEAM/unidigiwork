@@ -36,6 +36,7 @@ import {
   TrendingUp,
   Clock,
   Bell,
+  GripVertical,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 
