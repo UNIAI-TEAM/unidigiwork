@@ -1,6 +1,6 @@
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -328,6 +328,16 @@ function MeetingDetailPage() {
 
   // Realtime: cập nhật RSVP/roster ngay khi có thay đổi
   const refetchParticipants = participantsQuery.refetch;
+  const queryClient = useQueryClient();
+  const syncMeetingQueries = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["meeting-participants", id] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["meeting", id] }),
+      queryClient.invalidateQueries({ queryKey: ["meetings"] }),
+      queryClient.invalidateQueries({ queryKey: ["calendar"] }),
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+    ]);
+  }, [id, queryClient]);
   useEffect(() => {
     if (!isRealRoom) return;
     const channel = supabase
@@ -341,14 +351,14 @@ function MeetingDetailPage() {
           filter: `meeting_id=eq.${id}`,
         },
         () => {
-          void refetchParticipants();
+          void syncMeetingQueries();
         },
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [id, isRealRoom, refetchParticipants]);
+  }, [id, isRealRoom, syncMeetingQueries]);
 
   // RSVP của chính mình
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -369,19 +379,32 @@ function MeetingDetailPage() {
     async (rsvp: "accepted" | "declined" | "tentative") => {
       if (!isRealRoom) return;
       setRsvpSaving(rsvp);
+      const key = ["meeting-participants", id] as const;
+      const previous = queryClient.getQueryData(key);
+      // Optimistic: cập nhật ngay RSVP của mình, giữ nguyên vai trò
+      if (myUserId && Array.isArray(previous)) {
+        queryClient.setQueryData(
+          key,
+          (previous as Array<{ userId: string }>).map((p) =>
+            p.userId === myUserId ? { ...p, rsvp } : p,
+          ),
+        );
+      }
       try {
         await setMeetingRsvp({
           data: { meetingId: id, rsvp, idempotencyKey: crypto.randomUUID() },
         });
         toast.success(`Đã cập nhật: ${RSVP_LABELS[rsvp]}`);
-        await participantsQuery.refetch();
+        await syncMeetingQueries();
       } catch {
+        if (previous !== undefined) queryClient.setQueryData(key, previous);
         toast.error("Không cập nhật được phản hồi tham dự.");
+        void refetchParticipants();
       } finally {
         setRsvpSaving(null);
       }
     },
-    [id, isRealRoom, participantsQuery],
+    [id, isRealRoom, myUserId, queryClient, refetchParticipants, syncMeetingQueries],
   );
 
   // Trạng thái cuộc họp + quyền chủ trì để hiện nút Bắt đầu / Kết thúc.
