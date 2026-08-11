@@ -1,0 +1,10 @@
+REVOKE INSERT, UPDATE, DELETE ON public.task_assignees FROM authenticated;
+REVOKE INSERT, UPDATE, DELETE ON public.task_comments FROM authenticated;
+REVOKE ALL ON public.task_assignees FROM anon;
+REVOKE ALL ON public.task_comments FROM anon;
+REVOKE ALL ON public.task_attachments FROM anon;
+REVOKE ALL ON public.task_saved_views FROM anon;
+GRANT ALL ON public.task_assignees TO service_role;
+GRANT ALL ON public.task_comments TO service_role;
+GRANT ALL ON public.task_attachments TO service_role;
+GRANT ALL ON public.task_saved_views TO service_role;
