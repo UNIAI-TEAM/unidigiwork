@@ -129,7 +129,7 @@ function TaskDetailPage() {
   });
 
   const task = detail.data?.task as
-    | { id: string; title: string; description: string | null; status: Status; priority: string; due_at: string | null; workspace_id: string; created_at: string }
+    | { id: string; title: string; description: string | null; status: Status; priority: string; due_at: string | null; workspace_id: string; created_at: string; tags: string[] | null }
     | undefined;
   const subtasks = (detail.data?.subtasks ?? []) as Array<{ id: string; title: string; status: Status }>;
   const comments = (detail.data?.comments ?? []) as Array<{ id: string; body: string; created_at: string; author_id: string | null; author_name: string | null }>;
