@@ -1,5 +1,6 @@
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ import {
   openMeetingAttendance,
   closeMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
+import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
