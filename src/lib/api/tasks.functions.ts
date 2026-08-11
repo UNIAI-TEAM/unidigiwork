@@ -64,7 +64,7 @@ export const createTask = createServerFn({ method: "POST" })
     const row = Array.isArray(created) ? (created as any[])[0] : (created as any);
     if (data.tags?.length && row?.id) {
       const tags = Array.from(new Set(data.tags.map((t) => t.trim()).filter(Boolean)));
-      await context.supabase.from("tasks").update({ tags }).eq("id", row.id);
+      await context.supabase.rpc("set_task_tags", { _task_id: row.id, _tags: tags });
       if (row) row.tags = tags;
     }
     return created;
@@ -81,7 +81,10 @@ export const setTaskTags = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const tags = Array.from(new Set(data.tags.map((t) => t.trim()).filter(Boolean)));
-    const { error } = await context.supabase.from("tasks").update({ tags }).eq("id", data.taskId);
+    const { error } = await context.supabase.rpc("set_task_tags", {
+      _task_id: data.taskId,
+      _tags: tags,
+    });
     if (error) mapPgError(error);
     return { ok: true as const, tags };
   });
