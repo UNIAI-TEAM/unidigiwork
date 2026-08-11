@@ -513,15 +513,32 @@ function MeetingDetailPage() {
                 ))}
               {tab === "chat" && <ChatPanel />}
               {tab === "participants" && (
-                <ul className="space-y-2">
-                  {participants.map((p) => (
-                    <li key={p.seed} className="flex items-center gap-2">
-                      <img src={avatar(p.seed)} className="h-7 w-7 rounded-full" alt="" />
-                      <span className="flex-1">{p.name}</span>
-                      {p.speaking && <Mic className="h-3 w-3 text-success" />}
-                    </li>
-                  ))}
-                </ul>
+                participantsQuery.isLoading ? (
+                  <p className="text-xs text-muted-foreground">Đang tải danh sách…</p>
+                ) : participants.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {isRealRoom
+                      ? "Chưa có người tham gia nào được mời."
+                      : "Phòng demo không có danh sách người tham gia thật."}
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {participants.map((p) => (
+                      <li key={p.seed} className="flex items-center gap-2">
+                        <img src={avatar(p.seed)} className="h-7 w-7 rounded-full" alt="" />
+                        <span className="flex-1 truncate">
+                          {p.name}
+                          {p.role === "host" && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">(Chủ trì)</span>
+                          )}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {RSVP_LABELS[p.rsvp] ?? p.rsvp}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )
               )}
               {tab === "transcript" && (
                 <div className="space-y-3 text-xs">
