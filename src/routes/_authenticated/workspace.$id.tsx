@@ -1,5 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getWorkspaceOverview } from "@/lib/api/workspace-overview.functions";
 import {
   Users,
   Calendar,
@@ -94,107 +96,119 @@ type RecentDoc = {
   uploadedAt: number;
 };
 
-const WORKSPACES: Record<string, Workspace> = {
-  stos: {
-    slug: "stos",
-    name: "STOS Project",
-    letter: "S",
-    color: "bg-emerald-500",
-    tagline: "Smart Office Transformation System",
-    description:
-      "Triển khai nền tảng văn phòng số STOS cho khối hành chính, tích hợp với UNIWORK và các hệ thống nội bộ.",
-    owner: "Nguyễn Văn A",
-    members: 24,
-    health: "Tốt",
-    progress: 68,
-    deadline: "30/09/2026",
-    tags: ["Chiến lược", "Q3", "Cross-team"],
-  },
-  "smart-university": {
-    slug: "smart-university",
-    name: "Smart University",
-    letter: "U",
-    color: "bg-sky-500",
-    tagline: "Hệ sinh thái Đại học thông minh",
-    description: "Số hoá quản trị đào tạo và trải nghiệm sinh viên.",
-    owner: "Trần Minh",
-    members: 18,
-    health: "Cần chú ý",
-    progress: 42,
-    deadline: "15/12/2026",
-    tags: ["Giáo dục", "Sản phẩm"],
-  },
-  "uni-hrm": {
-    slug: "uni-hrm",
-    name: "UNI-HRM",
-    letter: "M",
-    color: "bg-rose-500",
-    tagline: "Nền tảng nhân sự",
-    description: "Quản lý nhân sự, KPI và đào tạo nội bộ.",
-    owner: "Lê Hồng",
-    members: 12,
-    health: "Tốt",
-    progress: 81,
-    deadline: "10/07/2026",
-    tags: ["HR", "Nội bộ"],
-  },
-  "marketing-pm": {
-    slug: "marketing-pm",
-    name: "Marketing & PM",
-    letter: "H",
-    color: "bg-violet-500",
-    tagline: "Marketing và Quản lý dự án",
-    description: "Phối hợp campaign, nội dung và tiến độ dự án khách hàng.",
-    owner: "Phạm Quỳnh",
-    members: 9,
-    health: "Tốt",
-    progress: 55,
-    deadline: "Liên tục",
-    tags: ["Marketing", "Vận hành"],
-  },
-  devops: {
-    slug: "devops",
-    name: "DevOps Team",
-    letter: "D",
-    color: "bg-orange-500",
-    tagline: "Hạ tầng & vận hành",
-    description: "Vận hành hạ tầng, CI/CD và giám sát hệ thống.",
-    owner: "Hoàng Linh",
-    members: 7,
-    health: "Rủi ro",
-    progress: 73,
-    deadline: "Liên tục",
-    tags: ["Hạ tầng", "On-call"],
-  },
-};
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/_authenticated/workspace/$id")({
   loader: ({ params }) => {
-    const ws = WORKSPACES[params.id];
-    if (!ws) throw notFound();
-    return { ws };
+    if (!UUID_RE.test(params.id)) throw notFound();
+    return { workspaceId: params.id };
   },
-  head: ({ loaderData }) => ({
+  head: () => ({
     meta: [
-      { title: `${loaderData?.ws.name ?? "Workspace"} — UNIWORK` },
-      { name: "description", content: loaderData?.ws.tagline ?? "Chi tiết workspace" },
+      { title: "Workspace — UNIWORK" },
+      {
+        name: "description",
+        content: "Chi tiết workspace: nhiệm vụ, tài liệu, cuộc họp và thành viên.",
+      },
+      { property: "og:title", content: "Workspace — UNIWORK" },
+      { property: "og:description", content: "Chi tiết workspace trên UNIWORK." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
+  notFoundComponent: () => (
+    <div className="p-10 text-center text-sm text-muted-foreground">Workspace không tồn tại.</div>
+  ),
+  errorComponent: ({ error }) => (
+    <div role="alert" className="p-10 text-center text-sm text-rose-400">
+      {error.message}
+    </div>
+  ),
   component: WorkspaceDetailPage,
 });
 
-const KPIS = [
-  { label: "Thành viên", value: "24", icon: Users, tint: "bg-violet-500/15 text-violet-300" },
-  {
-    label: "Nhiệm vụ mở",
-    value: "37",
-    icon: CheckCircle2,
-    tint: "bg-emerald-500/15 text-emerald-300",
-  },
-  { label: "Tài liệu", value: "128", icon: FileText, tint: "bg-sky-500/15 text-sky-300" },
-  { label: "Cuộc họp tuần", value: "9", icon: Video, tint: "bg-rose-500/15 text-rose-300" },
-  { label: "Quy trình", value: "12", icon: GitBranch, tint: "bg-amber-500/15 text-amber-300" },
+const WS_COLORS = [
+  "bg-emerald-500",
+  "bg-sky-500",
+  "bg-violet-500",
+  "bg-amber-500",
+  "bg-orange-500",
+  "bg-rose-500",
 ];
+function wsColor(id: string) {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return WS_COLORS[h % WS_COLORS.length];
+}
+
+const TASK_STATUS_LABEL: Record<string, string> = {
+  todo: "Cần làm",
+  in_progress: "Đang làm",
+  blocked: "Bị chặn",
+  done: "Hoàn thành",
+  canceled: "Đã huỷ",
+};
+const TASK_PRIORITY_LABEL: Record<string, string> = {
+  low: "Thấp",
+  normal: "Trung bình",
+  high: "Cao",
+  urgent: "Khẩn cấp",
+};
+const MEETING_STATUS_LABEL: Record<string, string> = {
+  scheduled: "Sắp diễn ra",
+  live: "Đang diễn ra",
+  ended: "Đã kết thúc",
+  canceled: "Đã huỷ",
+};
+
+function relativeTime(iso: string | null): string {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  const abs = Math.abs(diff);
+  const mins = Math.round(abs / 60000);
+  const fmt = (v: number, unit: string) => (diff >= 0 ? `${v} ${unit} trước` : `sau ${v} ${unit}`);
+  if (mins < 1) return "vừa xong";
+  if (mins < 60) return fmt(mins, "phút");
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return fmt(hours, "giờ");
+  const days = Math.round(hours / 24);
+  if (days < 30) return fmt(days, "ngày");
+  return new Date(iso).toLocaleDateString("vi-VN");
+}
+
+function dueLabel(iso: string | null): string {
+  if (!iso) return "Không hạn";
+  const d = new Date(iso);
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  if (sameDay) return "Hôm nay";
+  const tomorrow = new Date(today.getTime() + 86400000);
+  if (d.toDateString() === tomorrow.toDateString()) return "Ngày mai";
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
+
+function formatBytes(bytes: number | null): string {
+  if (!bytes || bytes <= 0) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i += 1;
+  }
+  return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+function mimeToType(mime: string | null, title: string): string {
+  const m = (mime ?? "").toLowerCase();
+  const ext = title.split(".").pop()?.toLowerCase() ?? "";
+  if (m.includes("pdf") || ext === "pdf") return "pdf";
+  if (m.includes("sheet") || ["xlsx", "xls", "csv"].includes(ext)) return "xlsx";
+  if (m.includes("presentation") || ["pptx", "ppt"].includes(ext)) return "ppt";
+  if (m.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "image";
+  if (m.includes("word") || ["docx", "doc"].includes(ext)) return "doc";
+  return "doc";
+}
 
 const TABS = [
   { id: "overview", label: "Tổng quan" },
@@ -205,158 +219,7 @@ const TABS = [
   { id: "activity", label: "Hoạt động" },
 ];
 
-const MILESTONES = [
-  { name: "Khảo sát & phân tích", status: "done", date: "30/04" },
-  { name: "Thiết kế hệ thống", status: "done", date: "31/05" },
-  { name: "Phát triển MVP", status: "doing", date: "20/07" },
-  { name: "UAT & đào tạo", status: "todo", date: "25/08" },
-  { name: "Go-live", status: "todo", date: "30/09" },
-];
-
-const TASKS = [
-  {
-    title: "Hoàn thiện thiết kế dashboard điều hành",
-    assignee: "nguyen-van-a-1",
-    due: "Hôm nay",
-    priority: "Cao",
-    status: "Đang làm",
-  },
-  {
-    title: "Review API tích hợp HRM",
-    assignee: "tran-minh",
-    due: "Ngày mai",
-    priority: "Trung bình",
-    status: "Cần review",
-  },
-  {
-    title: "Soạn tài liệu hướng dẫn người dùng",
-    assignee: "le-hong",
-    due: "T6",
-    priority: "Thấp",
-    status: "Mới",
-  },
-  {
-    title: "Demo cho ban điều hành STOS",
-    assignee: "pham-quynh",
-    due: "Tuần sau",
-    priority: "Cao",
-    status: "Lên kế hoạch",
-  },
-];
-
 type MemberRow = { seed: string; name: string; title: string; role: MemberRole; email: string };
-const INITIAL_MEMBERS: MemberRow[] = [
-  { seed: "nguyen-van-a-1", name: "Nguyễn Văn A", title: "Project Owner", role: "owner", email: "an.nv@uniwork.vn" },
-  { seed: "tran-minh", name: "Trần Minh", title: "Tech Lead", role: "admin", email: "minh.tt@uniwork.vn" },
-  { seed: "le-hong", name: "Lê Hồng", title: "Designer", role: "member", email: "hong.lt@uniwork.vn" },
-  { seed: "pham-quynh", name: "Phạm Quỳnh", title: "PM", role: "admin", email: "quynh.pt@uniwork.vn" },
-  { seed: "hoang-linh", name: "Hoàng Linh", title: "DevOps", role: "member", email: "linh.hh@uniwork.vn" },
-  { seed: "vo-thanh", name: "Võ Thành", title: "QA", role: "viewer", email: "thanh.vv@uniwork.vn" },
-];
-
-const ACTIVITY = [
-  {
-    who: "Trần Minh",
-    what: "đã cập nhật trạng thái nhiệm vụ",
-    target: "API tích hợp HRM",
-    time: "5 phút trước",
-    icon: CheckCircle2,
-  },
-  {
-    who: "Lê Hồng",
-    what: "tải lên tài liệu",
-    target: "STOS - User Guide v0.3.pdf",
-    time: "1 giờ trước",
-    icon: FileText,
-  },
-  {
-    who: "Nguyễn Văn A",
-    what: "đã tạo cuộc họp",
-    target: "Review tiến độ sprint 9",
-    time: "3 giờ trước",
-    icon: Video,
-  },
-  {
-    who: "Phạm Quỳnh",
-    what: "thêm thành viên mới",
-    target: "Võ Thành (QA)",
-    time: "Hôm qua",
-    icon: Users,
-  },
-];
-
-const DOCS = [
-  {
-    name: "STOS - Tổng quan kiến trúc hệ thống.pdf",
-    type: "pdf",
-    size: "4.8 MB",
-    updated: "Hôm nay",
-    owner: "Trần Minh",
-  },
-  {
-    name: "Kế hoạch triển khai Q3 2026.xlsx",
-    type: "xlsx",
-    size: "1.2 MB",
-    updated: "Hôm qua",
-    owner: "Nguyễn Văn A",
-  },
-  {
-    name: "Báo cáo nghiên cứu người dùng.docx",
-    type: "doc",
-    size: "3.5 MB",
-    updated: "2 ngày trước",
-    owner: "Lê Hồng",
-  },
-  {
-    name: "API Specification v1.2.pdf",
-    type: "pdf",
-    size: "2.1 MB",
-    updated: "Tuần này",
-    owner: "Trần Minh",
-  },
-  {
-    name: "Mockup UI Dashboard v3.fig",
-    type: "image",
-    size: "18.4 MB",
-    updated: "Tuần này",
-    owner: "Lê Hồng",
-  },
-  {
-    name: "Slide họp Steering Committee.pptx",
-    type: "ppt",
-    size: "8.6 MB",
-    updated: "3 ngày trước",
-    owner: "Phạm Quỳnh",
-  },
-  {
-    name: "Báo cáo tiến độ tháng 5.pdf",
-    type: "pdf",
-    size: "2.9 MB",
-    updated: "1 tuần trước",
-    owner: "Đỗ Linh",
-  },
-  {
-    name: "Dataset khảo sát nội bộ.xlsx",
-    type: "xlsx",
-    size: "856 KB",
-    updated: "1 tuần trước",
-    owner: "Trần Minh",
-  },
-  {
-    name: "Tài liệu hướng dẫn vận hành.docx",
-    type: "doc",
-    size: "1.8 MB",
-    updated: "2 tuần trước",
-    owner: "Nguyễn Văn A",
-  },
-  {
-    name: "Infographic quy trình mới.png",
-    type: "image",
-    size: "4.2 MB",
-    updated: "2 tuần trước",
-    owner: "Lê Hồng",
-  },
-];
 
 const DOC_TYPES: { id: string; label: string }[] = [
   { id: "all", label: "Tất cả" },
@@ -397,23 +260,18 @@ function docTypeBg(type: string) {
   }
 }
 
-const MEETINGS = [
-  { title: "Standup hàng ngày", time: "09:00 - 09:15", today: true, attendees: 8 },
-  { title: "Sprint Review #9", time: "14:00 - 15:30", today: true, attendees: 12 },
-  { title: "Demo khách hàng STOS", time: "Mai · 10:00", today: false, attendees: 16 },
-  { title: "Retrospective", time: "T6 · 16:00", today: false, attendees: 9 },
-];
-
 function WorkspaceDetailPage() {
-  const { ws: initialWs } = Route.useLoaderData() as { ws: Workspace };
-  const [ws, setWs] = useState<Workspace>(initialWs);
-  useEffect(() => setWs(initialWs), [initialWs]);
+  const { workspaceId } = Route.useLoaderData();
+  const overviewQuery = useQuery({
+    queryKey: ["workspace-overview", workspaceId],
+    queryFn: () => getWorkspaceOverview({ data: { workspaceId } }),
+  });
+  const data = overviewQuery.data;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const [starred, setStarred] = useState(true);
   const [docSearch, setDocSearch] = useState("");
   const [docFilter, setDocFilter] = useState<string>("all");
-  const [members, setMembers] = useState<MemberRow[]>(INITIAL_MEMBERS);
   const [showInvite, setShowInvite] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
@@ -423,12 +281,179 @@ function WorkspaceDetailPage() {
   const [recentSearch, setRecentSearch] = useState("");
   const navigate = useNavigate();
 
+  // Dữ liệu thật -> shape hiển thị.
+  const members: MemberRow[] = useMemo(
+    () =>
+      (data?.members ?? []).map((m) => ({
+        seed: m.userId,
+        name: m.name,
+        title: m.title || m.department || "Thành viên",
+        role: (m.role === "owner"
+          ? "owner"
+          : m.role === "admin"
+            ? "admin"
+            : "member") as MemberRole,
+        email: m.email,
+      })),
+    [data],
+  );
+
+  const tasks = useMemo(
+    () =>
+      (data?.tasks ?? []).map((t) => ({
+        id: t.id,
+        title: t.title,
+        assignee: t.assignees[0] ?? t.id,
+        due: dueLabel(t.dueAt),
+        priority: TASK_PRIORITY_LABEL[t.priority] ?? t.priority,
+        status: TASK_STATUS_LABEL[t.status] ?? t.status,
+      })),
+    [data],
+  );
+
+  const openTasksView = useMemo(
+    () => (data?.tasks ?? []).filter((t) => t.status !== "done" && t.status !== "canceled"),
+    [data],
+  );
+
+  const milestones = useMemo(
+    () =>
+      [...(data?.tasks ?? [])]
+        .filter((t) => t.dueAt)
+        .sort((a, b) => new Date(a.dueAt!).getTime() - new Date(b.dueAt!).getTime())
+        .slice(0, 5)
+        .map((t) => ({
+          name: t.title,
+          status: t.status === "done" ? "done" : t.status === "in_progress" ? "doing" : "todo",
+          date: dueLabel(t.dueAt),
+        })),
+    [data],
+  );
+
+  const docs = useMemo(
+    () =>
+      (data?.documents ?? []).map((d) => ({
+        id: d.id,
+        name: d.title,
+        type: mimeToType(d.mimeType, d.title),
+        size: formatBytes(d.sizeBytes),
+        updated: relativeTime(d.updatedAt),
+        owner: data?.members.find((m) => m.userId === d.ownerId)?.name ?? "—",
+      })),
+    [data],
+  );
+
+  const meetings = useMemo(
+    () =>
+      (data?.meetings ?? []).map((m) => ({
+        id: m.id,
+        title: m.title,
+        time: `${new Date(m.startAt).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}${m.endAt ? ` - ${new Date(m.endAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}` : ""}`,
+        today: new Date(m.startAt).toDateString() === new Date().toDateString(),
+        attendees: m.attendees,
+        status: MEETING_STATUS_LABEL[m.status] ?? m.status,
+      })),
+    [data],
+  );
+
+  const activity = useMemo(
+    () =>
+      (data?.activity ?? []).map((a) => ({
+        who: a.actorName,
+        what: a.action,
+        target: a.resourceType ? `${a.resourceType}` : a.resourceLabel,
+        time: relativeTime(a.occurredAt),
+        icon:
+          a.resourceType === "task"
+            ? CheckCircle2
+            : a.resourceType === "document"
+              ? FileText
+              : a.resourceType === "meeting"
+                ? Video
+                : Activity,
+      })),
+    [data],
+  );
+
+  const totalTasks = data?.tasks.length ?? 0;
+  const progress =
+    totalTasks > 0 ? Math.round(((data?.kpis.doneTasks ?? 0) / totalTasks) * 100) : 0;
+  const health: Workspace["health"] =
+    (data?.kpis.overdueTasks ?? 0) > 3
+      ? "Rủi ro"
+      : (data?.kpis.overdueTasks ?? 0) > 0
+        ? "Cần chú ý"
+        : "Tốt";
+
+  const ws: Workspace = useMemo(
+    () => ({
+      slug: workspaceId,
+      name: data?.workspace.name ?? "Workspace",
+      letter: (data?.workspace.name ?? "W").trim().charAt(0).toUpperCase(),
+      color: wsColor(workspaceId),
+      tagline: data ? `Múi giờ ${data.workspace.timezone}` : "",
+      description: data
+        ? `Không gian làm việc với ${data.kpis.members} thành viên, ${data.kpis.openTasks} nhiệm vụ đang mở và ${data.kpis.documents} tài liệu.`
+        : "",
+      owner: data?.workspace.ownerName ?? "—",
+      members: data?.kpis.members ?? 0,
+      health,
+      progress,
+      deadline:
+        openTasksView.filter((t) => t.dueAt).length > 0
+          ? dueLabel(
+              [...openTasksView]
+                .filter((t) => t.dueAt)
+                .sort((a, b) => new Date(a.dueAt!).getTime() - new Date(b.dueAt!).getTime())[0]
+                .dueAt,
+            )
+          : "Không hạn",
+      tags: data?.workspace.isOwner ? ["Chủ sở hữu"] : [],
+    }),
+    [data, workspaceId, health, progress, openTasksView],
+  );
+
+  const kpis = useMemo(
+    () => [
+      {
+        label: "Thành viên",
+        value: String(data?.kpis.members ?? 0),
+        icon: Users,
+        tint: "bg-violet-500/15 text-violet-300",
+      },
+      {
+        label: "Nhiệm vụ mở",
+        value: String(data?.kpis.openTasks ?? 0),
+        icon: CheckCircle2,
+        tint: "bg-emerald-500/15 text-emerald-300",
+      },
+      {
+        label: "Tài liệu",
+        value: String(data?.kpis.documents ?? 0),
+        icon: FileText,
+        tint: "bg-sky-500/15 text-sky-300",
+      },
+      {
+        label: "Cuộc họp tuần",
+        value: String(data?.kpis.meetingsThisWeek ?? 0),
+        icon: Video,
+        tint: "bg-rose-500/15 text-rose-300",
+      },
+      {
+        label: "Quy trình",
+        value: String(data?.kpis.workflows ?? 0),
+        icon: GitBranch,
+        tint: "bg-amber-500/15 text-amber-300",
+      },
+    ],
+    [data],
+  );
+
   const displayRecent = useMemo(() => {
     const q = recentSearch.trim().toLowerCase();
     if (!q) return recentUploads;
-    return recentUploads.filter((d) =>
-      d.name.toLowerCase().includes(q) ||
-      d.tags.some((t) => t.toLowerCase().includes(q))
+    return recentUploads.filter(
+      (d) => d.name.toLowerCase().includes(q) || d.tags.some((t) => t.toLowerCase().includes(q)),
     );
   }, [recentUploads, recentSearch]);
 
@@ -438,6 +463,24 @@ function WorkspaceDetailPage() {
       : ws.health === "Cần chú ý"
         ? "bg-amber-500/15 text-amber-300"
         : "bg-rose-500/15 text-rose-300";
+
+  if (overviewQuery.isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Đang tải workspace...
+      </div>
+    );
+  }
+  if (overviewQuery.isError) {
+    return (
+      <div
+        role="alert"
+        className="flex min-h-screen items-center justify-center bg-background p-6 text-sm text-rose-400"
+      >
+        Không tải được workspace: {(overviewQuery.error as Error).message}
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -552,7 +595,7 @@ function WorkspaceDetailPage() {
         <div className="flex-1 space-y-4 p-4 sm:p-6">
           {/* KPIs */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-            {KPIS.map((k) => (
+            {kpis.map((k) => (
               <div key={k.label} className="rounded-xl border border-border bg-surface p-3">
                 <div className="flex items-center justify-between">
                   <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${k.tint}`}>
@@ -585,7 +628,7 @@ function WorkspaceDetailPage() {
                     />
                   </div>
                   <ol className="mt-4 space-y-2.5">
-                    {MILESTONES.map((m) => (
+                    {milestones.map((m) => (
                       <li key={m.name} className="flex items-center gap-3">
                         <span
                           className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold ${
@@ -617,9 +660,14 @@ function WorkspaceDetailPage() {
                     </button>
                   </div>
                   <ul className="divide-y divide-border">
-                    {TASKS.map((task) => (
+                    {tasks.length === 0 && (
+                      <li className="p-6 text-center text-sm text-muted-foreground">
+                        Chưa có nhiệm vụ nào
+                      </li>
+                    )}
+                    {tasks.slice(0, 5).map((task) => (
                       <li
-                        key={task.title}
+                        key={task.id}
                         className="flex items-center gap-3 p-3 hover:bg-surface-2/40"
                       >
                         <input type="checkbox" className="h-4 w-4 rounded border-border" />
@@ -668,6 +716,11 @@ function WorkspaceDetailPage() {
                     </button>
                   </div>
                   <ul className="space-y-2">
+                    {members.length === 0 && (
+                      <li className="py-4 text-center text-xs text-muted-foreground">
+                        Chưa có thành viên
+                      </li>
+                    )}
                     {members.slice(0, 5).map((m) => (
                       <li key={m.seed} className="flex items-center gap-3">
                         <img
@@ -698,9 +751,14 @@ function WorkspaceDetailPage() {
                     <Bell className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <ul className="space-y-2">
-                    {MEETINGS.map((m) => (
+                    {meetings.length === 0 && (
+                      <li className="py-4 text-center text-xs text-muted-foreground">
+                        Chưa có cuộc họp
+                      </li>
+                    )}
+                    {meetings.slice(0, 5).map((m) => (
                       <li
-                        key={m.title}
+                        key={m.id}
                         className="rounded-lg border border-border p-2.5 hover:bg-surface-2/40"
                       >
                         <div className="flex items-center gap-2">
@@ -755,11 +813,13 @@ function WorkspaceDetailPage() {
                 </button>
               </div>
               <ul className="divide-y divide-border">
-                {TASKS.map((task) => (
-                  <li
-                    key={task.title}
-                    className="flex items-center gap-3 p-3 hover:bg-surface-2/40"
-                  >
+                {tasks.length === 0 && (
+                  <li className="p-8 text-center text-sm text-muted-foreground">
+                    Chưa có nhiệm vụ nào trong workspace này
+                  </li>
+                )}
+                {tasks.map((task) => (
+                  <li key={task.id} className="flex items-center gap-3 p-3 hover:bg-surface-2/40">
                     <input type="checkbox" className="h-4 w-4 rounded border-border" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm">{task.title}</div>
@@ -889,56 +949,70 @@ function WorkspaceDetailPage() {
                             : a.uploadedAt - b.uploadedAt,
                         )
                         .map((d) => (
-                        <li key={d.name} className="flex items-center gap-3 py-2.5">
-                          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}>
-                            {docTypeIcon(d.type)}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <div className="truncate text-sm font-medium">{d.name}</div>
-                              <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${docTypeBg(d.type)}`}>
-                                {d.type === "xlsx" ? "Excel" : d.type === "ppt" ? "PPTX" : d.type === "image" ? "Image" : d.type === "pdf" ? "PDF" : d.type === "doc" ? "Word" : "File"}
+                          <li key={d.name} className="flex items-center gap-3 py-2.5">
+                            <span
+                              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${docTypeBg(d.type)}`}
+                            >
+                              {docTypeIcon(d.type)}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <div className="truncate text-sm font-medium">{d.name}</div>
+                                <span
+                                  className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${docTypeBg(d.type)}`}
+                                >
+                                  {d.type === "xlsx"
+                                    ? "Excel"
+                                    : d.type === "ppt"
+                                      ? "PPTX"
+                                      : d.type === "image"
+                                        ? "Image"
+                                        : d.type === "pdf"
+                                          ? "PDF"
+                                          : d.type === "doc"
+                                            ? "Word"
+                                            : "File"}
+                                </span>
+                              </div>
+                              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                                <span className="font-medium text-foreground/80">{d.size}</span>
+                                <span>·</span>
+                                <span>{d.folder}</span>
+                                {d.tags.length > 0 && (
+                                  <>
+                                    <span>·</span>
+                                    <span className="flex items-center gap-1">
+                                      <TagIcon className="h-3 w-3" />
+                                      {d.tags.join(", ")}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  const url = URL.createObjectURL(d.file);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = d.file.name;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  URL.revokeObjectURL(url);
+                                  toast.success(`Đã tải xuống ${d.file.name}`);
+                                }}
+                                className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                                title="Tải xuống"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </button>
+                              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">
+                                Đã xong
                               </span>
                             </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-                              <span className="font-medium text-foreground/80">{d.size}</span>
-                              <span>·</span>
-                              <span>{d.folder}</span>
-                              {d.tags.length > 0 && (
-                                <>
-                                  <span>·</span>
-                                  <span className="flex items-center gap-1">
-                                    <TagIcon className="h-3 w-3" />
-                                    {d.tags.join(", ")}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <button
-                              onClick={() => {
-                                const url = URL.createObjectURL(d.file);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = d.file.name;
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(url);
-                                toast.success(`Đã tải xuống ${d.file.name}`);
-                              }}
-                              className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-                              title="Tải xuống"
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                            </button>
-                            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">
-                              Đã xong
-                            </span>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        ))}
                     </ul>
                   )}
                 </div>
@@ -948,7 +1022,7 @@ function WorkspaceDetailPage() {
               <div className="rounded-xl border border-border bg-surface">
                 <ul className="divide-y divide-border">
                   {(() => {
-                    const filtered = DOCS.filter((d) => {
+                    const filtered = docs.filter((d) => {
                       const matchesSearch = d.name.toLowerCase().includes(docSearch.toLowerCase());
                       const matchesType = docFilter === "all" || d.type === docFilter;
                       return matchesSearch && matchesType;
@@ -962,7 +1036,7 @@ function WorkspaceDetailPage() {
                     }
                     return filtered.map((d) => (
                       <li
-                        key={d.name}
+                        key={d.id}
                         className="flex items-center gap-3 p-3 hover:bg-surface-2/40 group"
                       >
                         <span
@@ -985,7 +1059,9 @@ function WorkspaceDetailPage() {
                             <Download className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => toast.message("Thao tác tài liệu", { description: d.name })}
+                            onClick={() =>
+                              toast.message("Thao tác tài liệu", { description: d.name })
+                            }
                             className="rounded p-1.5 text-muted-foreground hover:bg-surface-2"
                           >
                             <MoreHorizontal className="h-4 w-4" />
@@ -1001,8 +1077,8 @@ function WorkspaceDetailPage() {
 
           {tab === "meetings" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              {MEETINGS.map((m) => (
-                <div key={m.title} className="rounded-xl border border-border bg-surface p-4">
+              {meetings.map((m) => (
+                <div key={m.id} className="rounded-xl border border-border bg-surface p-4">
                   <div className="flex items-center gap-2">
                     <Video className="h-4 w-4 text-primary" />
                     <h3 className="text-sm font-semibold">{m.title}</h3>
@@ -1051,7 +1127,9 @@ function WorkspaceDetailPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate text-sm font-medium">{m.name}</span>
-                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${ROLE_TINT[m.role]}`}>
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] ${ROLE_TINT[m.role]}`}
+                        >
                           {ROLE_LABEL[m.role]}
                         </span>
                       </div>
@@ -1059,25 +1137,6 @@ function WorkspaceDetailPage() {
                         {m.title} · {m.email}
                       </div>
                     </div>
-                    <select
-                      value={m.role}
-                      disabled={m.role === "owner"}
-                      onChange={(e) => {
-                        const next = e.target.value as MemberRole;
-                        setMembers((prev) =>
-                          prev.map((x) => (x.seed === m.seed ? { ...x, role: next } : x)),
-                        );
-                        toast.success(`Đã đổi quyền ${m.name} → ${ROLE_LABEL[next]}`);
-                      }}
-                      className="rounded-md border border-border bg-surface-2 px-2 py-1 text-xs disabled:opacity-50"
-                    >
-                      {(["admin", "member", "viewer"] as MemberRole[]).map((r) => (
-                        <option key={r} value={r}>
-                          {ROLE_LABEL[r]}
-                        </option>
-                      ))}
-                      {m.role === "owner" && <option value="owner">{ROLE_LABEL.owner}</option>}
-                    </select>
                     <button
                       onClick={() => navigate({ to: "/chat" })}
                       className="rounded p-1 text-muted-foreground hover:bg-surface-2"
@@ -1085,17 +1144,14 @@ function WorkspaceDetailPage() {
                     >
                       <MessageCircle className="h-4 w-4" />
                     </button>
-                    <button
-                      disabled={m.role === "owner"}
-                      onClick={() => {
-                        setMembers((prev) => prev.filter((x) => x.seed !== m.seed));
-                        toast.success(`Đã xoá ${m.name} khỏi workspace`);
-                      }}
-                      className="rounded p-1 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-30 disabled:hover:bg-transparent"
-                      aria-label="Xoá thành viên"
+                    <Link
+                      to="/people/$id"
+                      params={{ id: m.seed }}
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                      aria-label="Xem hồ sơ"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                      <Users className="h-4 w-4" />
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -1106,7 +1162,12 @@ function WorkspaceDetailPage() {
             <div className="rounded-xl border border-border bg-surface p-4">
               <h2 className="mb-3 text-sm font-semibold">Hoạt động gần đây</h2>
               <ul className="space-y-3">
-                {ACTIVITY.map((a, i) => (
+                {activity.length === 0 && (
+                  <li className="py-6 text-center text-sm text-muted-foreground">
+                    Chưa có hoạt động nào
+                  </li>
+                )}
+                {activity.map((a, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-muted-foreground">
                       <a.icon className="h-3.5 w-3.5" />
@@ -1131,16 +1192,16 @@ function WorkspaceDetailPage() {
         onOpenChange={setShowInvite}
         wsName={ws.name}
         wsSlug={ws.slug}
-        onInvite={(rows) => {
-          setMembers((prev) => [...prev, ...rows]);
+        onInvite={() => {
+          void overviewQuery.refetch();
         }}
       />
       <EditWorkspaceDialog
         open={showEdit}
         onOpenChange={setShowEdit}
         ws={ws}
-        onSave={(patch) => {
-          setWs((prev) => ({ ...prev, ...patch }));
+        onSave={() => {
+          void overviewQuery.refetch();
           toast.success("Đã cập nhật workspace");
         }}
       />
@@ -1198,7 +1259,10 @@ function InviteDialog({
       return;
     }
     const rows: MemberRow[] = list.map((email) => {
-      const name = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const name = email
+        .split("@")[0]
+        .replace(/[._-]/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
       return { seed: email, name, title: "Mới mời", role, email };
     });
     onInvite(rows);
@@ -1320,7 +1384,10 @@ function EditWorkspaceDialog({
       description: description.trim(),
       deadline: deadline.trim(),
       health,
-      tags: tagsStr.split(",").map((s) => s.trim()).filter(Boolean),
+      tags: tagsStr
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
     });
     onOpenChange(false);
   };
@@ -1623,7 +1690,10 @@ function UploadDocumentDialog({
     }
     setUploading(true);
     setItems((prev) => prev.map((i) => ({ ...i, status: "uploading" as const, progress: 0 })));
-    const tags = tagsStr.split(",").map((s) => s.trim()).filter(Boolean);
+    const tags = tagsStr
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const startedAt = Date.now();
 
     items.forEach((it) => {
@@ -1636,9 +1706,7 @@ function UploadDocumentDialog({
         const pct = Math.min(100, Math.round((step / steps) * 100));
         setItems((prev) =>
           prev.map((x) =>
-            x.id === it.id
-              ? { ...x, progress: pct, status: pct >= 100 ? "done" : "uploading" }
-              : x,
+            x.id === it.id ? { ...x, progress: pct, status: pct >= 100 ? "done" : "uploading" } : x,
           ),
         );
         if (pct >= 100) clearInterval(interval);
@@ -1651,17 +1719,10 @@ function UploadDocumentDialog({
         if (curr.every((c) => c.status === "done")) {
           clearInterval(checker);
           const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
-          toast.success(
-            `Đã tải lên ${curr.length} tệp vào ${wsName} · ${folder} (${elapsed}s)`,
-            {
-              description:
-                tags.length > 0
-                  ? `Tags: ${tags.join(", ")}`
-                  : description
-                    ? description
-                    : undefined,
-            },
-          );
+          toast.success(`Đã tải lên ${curr.length} tệp vào ${wsName} · ${folder} (${elapsed}s)`, {
+            description:
+              tags.length > 0 ? `Tags: ${tags.join(", ")}` : description ? description : undefined,
+          });
           onUploadComplete?.(
             curr.map((c) => ({
               name: c.relPath,
@@ -1702,17 +1763,13 @@ function UploadDocumentDialog({
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             className={`relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
-              dragOver
-                ? "border-primary bg-primary/5"
-                : "border-border bg-surface-2/40"
+              dragOver ? "border-primary bg-primary/5" : "border-border bg-surface-2/40"
             } ${uploading ? "opacity-60 pointer-events-none" : ""}`}
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Upload className="size-5" />
             </span>
-            <div className="text-sm font-medium">
-              Kéo thả tệp/thư mục vào đây hoặc bấm để chọn
-            </div>
+            <div className="text-sm font-medium">Kéo thả tệp/thư mục vào đây hoặc bấm để chọn</div>
             <div className="text-[11px] text-muted-foreground">
               PDF, Word, Excel, PowerPoint, hình ảnh · tối đa 50MB / tệp
             </div>
@@ -1764,10 +1821,7 @@ function UploadDocumentDialog({
                   {folders.length > 0 && ` · ${folders.length} thư mục`}
                 </span>
                 {!uploading && (
-                  <button
-                    onClick={() => setItems([])}
-                    className="text-rose-400 hover:underline"
-                  >
+                  <button onClick={() => setItems([])} className="text-rose-400 hover:underline">
                     Xoá tất cả
                   </button>
                 )}
@@ -1778,7 +1832,9 @@ function UploadDocumentDialog({
                   return (
                     <li key={it.id} className="px-3 py-2">
                       <div className="flex items-center gap-2 text-xs">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded ${docTypeBg(t)}`}>
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded ${docTypeBg(t)}`}
+                        >
                           {docTypeIcon(t)}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -1791,15 +1847,11 @@ function UploadDocumentDialog({
                         {it.status === "done" ? (
                           <CheckCircle2 className="size-4 text-emerald-400" />
                         ) : it.status === "uploading" ? (
-                          <span className="text-[10px] text-muted-foreground">
-                            {it.progress}%
-                          </span>
+                          <span className="text-[10px] text-muted-foreground">{it.progress}%</span>
                         ) : (
                           !uploading && (
                             <button
-                              onClick={() =>
-                                setItems((prev) => prev.filter((x) => x.id !== it.id))
-                              }
+                              onClick={() => setItems((prev) => prev.filter((x) => x.id !== it.id))}
                               className="rounded p-0.5 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400"
                             >
                               <X className="size-3.5" />

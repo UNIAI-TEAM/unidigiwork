@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { listMyWorkspaces } from "@/lib/api/workspace-overview.functions";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -148,6 +150,56 @@ function NavItem({
     );
   }
   return el;
+}
+
+const WS_COLORS = [
+  "bg-emerald-500",
+  "bg-sky-500",
+  "bg-rose-500",
+  "bg-violet-500",
+  "bg-orange-500",
+  "bg-teal-500",
+];
+function wsColorOf(id: string) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return WS_COLORS[h % WS_COLORS.length];
+}
+
+// Danh sách workspace thật của người dùng.
+function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-workspaces"],
+    queryFn: () => listMyWorkspaces(),
+    staleTime: 60_000,
+  });
+  if (isLoading) {
+    return (
+      <div className={collapsed ? "px-2 py-2" : "px-3 py-2"}>
+        <div className="h-5 animate-pulse rounded bg-surface-2" />
+      </div>
+    );
+  }
+  const rows = data ?? [];
+  if (rows.length === 0) {
+    return collapsed ? null : (
+      <div className="px-3 py-2 text-[11px] text-muted-foreground">Chưa có workspace</div>
+    );
+  }
+  return (
+    <>
+      {rows.map((w) => (
+        <WorkspaceItem
+          key={w.id}
+          slug={w.id}
+          letter={w.name.trim().charAt(0).toUpperCase() || "W"}
+          name={w.name}
+          color={wsColorOf(w.id)}
+          collapsed={collapsed}
+        />
+      ))}
+    </>
+  );
 }
 
 function WorkspaceItem({
@@ -409,69 +461,14 @@ export function AppSidebar({
                   <Plus className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <WorkspaceItem
-                slug="stos"
-                letter="S"
-                name="STOS Project"
-                color="bg-emerald-500"
-                active
-              />
-              <WorkspaceItem
-                slug="smart-university"
-                letter="U"
-                name="Smart University"
-                color="bg-sky-500"
-              />
-              <WorkspaceItem slug="uni-hrm" letter="M" name="UNI-HRM" color="bg-rose-500" />
-              <WorkspaceItem
-                slug="marketing-pm"
-                letter="H"
-                name="Marketing & PM"
-                color="bg-violet-500"
-              />
-              <WorkspaceItem slug="devops" letter="D" name="DevOps Team" color="bg-orange-500" />
+              <WorkspaceList />
               <NavItem icon={MoreHorizontal} label={t("nav.more")} />
             </>
           )}
           {collapsed && (
             <>
               <div className="my-2 h-px bg-border" />
-              <WorkspaceItem
-                slug="stos"
-                letter="S"
-                name="STOS Project"
-                color="bg-emerald-500"
-                active
-                collapsed
-              />
-              <WorkspaceItem
-                slug="smart-university"
-                letter="U"
-                name="Smart University"
-                color="bg-sky-500"
-                collapsed
-              />
-              <WorkspaceItem
-                slug="uni-hrm"
-                letter="M"
-                name="UNI-HRM"
-                color="bg-rose-500"
-                collapsed
-              />
-              <WorkspaceItem
-                slug="marketing-pm"
-                letter="H"
-                name="Marketing & PM"
-                color="bg-violet-500"
-                collapsed
-              />
-              <WorkspaceItem
-                slug="devops"
-                letter="D"
-                name="DevOps Team"
-                color="bg-orange-500"
-                collapsed
-              />
+              <WorkspaceList collapsed />
             </>
           )}
         </nav>
@@ -1237,8 +1234,7 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
   const list = tab === "unread" ? items.filter((n) => n.unread) : items;
   const unreadCount = items.filter((n) => n.unread).length;
 
-  const markAll = () =>
-    setItems((arr) => arr.map((n) => ({ ...n, unread: false })));
+  const markAll = () => setItems((arr) => arr.map((n) => ({ ...n, unread: false })));
 
   return (
     <div
@@ -1251,9 +1247,7 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
         <div>
           <div className="text-sm font-semibold">Thông báo</div>
           <div className="text-[11px] text-muted-foreground">
-            {unreadCount > 0
-              ? `${unreadCount} chưa đọc`
-              : "Bạn đã đọc hết thông báo"}
+            {unreadCount > 0 ? `${unreadCount} chưa đọc` : "Bạn đã đọc hết thông báo"}
           </div>
         </div>
         <button
@@ -1310,17 +1304,11 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm leading-snug">
-                    {n.actor && (
-                      <span className="font-medium">{n.actor} </span>
-                    )}
+                    {n.actor && <span className="font-medium">{n.actor} </span>}
                     <span className="text-foreground/90">{n.title}</span>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {n.body}
-                  </div>
-                  <div className="mt-1 text-[11px] text-muted-foreground">
-                    {n.time}
-                  </div>
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">{n.body}</div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">{n.time}</div>
                 </div>
                 {n.unread && (
                   <span
@@ -1443,8 +1431,7 @@ export function AppTopbar({
   useEffect(() => {
     if (!notifOpen) return;
     const onClick = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node))
-        setNotifOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setNotifOpen(false);
@@ -1576,10 +1563,7 @@ export function AppTopbar({
       <div className="relative" ref={notifRef}>
         <button
           onClick={() => setNotifOpen((v) => !v)}
-          className={cn(
-            "relative rounded-lg p-2 hover:bg-surface-2",
-            notifOpen && "bg-surface-2",
-          )}
+          className={cn("relative rounded-lg p-2 hover:bg-surface-2", notifOpen && "bg-surface-2")}
           aria-label="Thông báo"
           aria-haspopup="dialog"
           aria-expanded={notifOpen}
