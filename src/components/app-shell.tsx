@@ -99,7 +99,8 @@ type NavKey =
   | "people"
   | "email"
   | "reports"
-  | "ai";
+  | "ai"
+  | "notifications";
 
 function NavItem({
   icon: Icon,
@@ -321,6 +322,7 @@ export function AppSidebar({
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
   const [wsOpen, setWsOpen] = useState(false);
+  const { unreadCount } = useUnreadNotifications();
 
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
