@@ -660,6 +660,26 @@ function KpiCard({
 
 type QuickAddPayload = { title: string; priority: Priority };
 
+function BoardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-border bg-surface p-3">
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: 3 }).map((__, j) => (
+              <div key={j} className="rounded-lg border border-border/60 bg-surface-2/40 p-3">
+                <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function BoardColumn({
   col,
   count,
