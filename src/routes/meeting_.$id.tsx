@@ -922,6 +922,93 @@ function MeetingDetailPage() {
                 </>
               )}
             </div>
+
+            {isHost && isRealRoom && (
+              <section className="mt-6 overflow-hidden rounded-xl border border-border bg-surface text-left">
+                <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+                  <div>
+                    <h3 className="text-sm font-semibold">Danh sách người tham dự</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Trạng thái phản hồi và thời điểm cập nhật gần nhất
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 text-[11px]">
+                    {(["accepted", "tentative", "declined", "pending"] as const).map((v) => (
+                      <span
+                        key={v}
+                        className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-muted-foreground"
+                      >
+                        {RSVP_LABELS[v] ?? v}:{" "}
+                        <span className="font-medium text-foreground">
+                          {participants.filter((p) => p.rsvp === v).length}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </header>
+                {participantsQuery.isLoading ? (
+                  <p className="px-4 py-4 text-xs text-muted-foreground">Đang tải danh sách…</p>
+                ) : participants.length === 0 ? (
+                  <p className="px-4 py-4 text-xs text-muted-foreground">
+                    Chưa có người tham dự nào được mời.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-surface-2 text-muted-foreground">
+                        <tr>
+                          <th className="px-4 py-2 font-medium">Người tham dự</th>
+                          <th className="px-4 py-2 font-medium">Vai trò</th>
+                          <th className="px-4 py-2 font-medium">RSVP</th>
+                          <th className="px-4 py-2 font-medium">Hiện diện</th>
+                          <th className="px-4 py-2 font-medium">Cập nhật lúc</th>
+                          <th className="px-4 py-2 font-medium">Được mời lúc</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {participants.map((p) => (
+                          <tr key={p.userId} className="border-t border-border">
+                            <td className="px-4 py-2">
+                              <div className="font-medium text-foreground">{p.name}</div>
+                              {p.email && (
+                                <div className="text-[11px] text-muted-foreground">{p.email}</div>
+                              )}
+                            </td>
+                            <td className="px-4 py-2 text-muted-foreground">
+                              {p.role === "host" ? "Chủ trì" : "Tham dự"}
+                            </td>
+                            <td className="px-4 py-2">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[11px] ${
+                                  p.rsvp === "accepted"
+                                    ? "bg-success/10 text-success"
+                                    : p.rsvp === "declined"
+                                      ? "bg-destructive/10 text-destructive"
+                                      : p.rsvp === "tentative"
+                                        ? "bg-warning/10 text-warning"
+                                        : "bg-surface-3 text-muted-foreground"
+                                }`}
+                              >
+                                {RSVP_LABELS[p.rsvp] ?? p.rsvp}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-muted-foreground">
+                              {PRESENCE_LABELS[p.presence]}
+                            </td>
+                            <td className="px-4 py-2 text-muted-foreground">
+                              {p.rsvpAt ? new Date(p.rsvpAt).toLocaleString("vi-VN") : "—"}
+                            </td>
+                            <td className="px-4 py-2 text-muted-foreground">
+                              {p.invitedAt ? new Date(p.invitedAt).toLocaleString("vi-VN") : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
           </main>
 
           <aside className="hidden w-80 shrink-0 flex-col border-l border-border bg-surface lg:flex">
