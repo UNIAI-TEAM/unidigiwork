@@ -1,3 +1,4 @@
+import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
