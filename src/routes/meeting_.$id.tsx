@@ -326,6 +326,30 @@ function MeetingDetailPage() {
     speaking: false,
   }));
 
+  // Realtime: cập nhật RSVP/roster ngay khi có thay đổi
+  const refetchParticipants = participantsQuery.refetch;
+  useEffect(() => {
+    if (!isRealRoom) return;
+    const channel = supabase
+      .channel(`meeting-participants-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "meeting_participants",
+          filter: `meeting_id=eq.${id}`,
+        },
+        () => {
+          void refetchParticipants();
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [id, isRealRoom, refetchParticipants]);
+
   // RSVP của chính mình
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [rsvpSaving, setRsvpSaving] = useState<string | null>(null);
