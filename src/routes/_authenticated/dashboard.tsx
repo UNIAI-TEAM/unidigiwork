@@ -695,6 +695,21 @@ function DashboardInner() {
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchOnWindowFocus: true,
   });
+  const [notifSort, setNotifSort] = useState<"recent" | "priority">(() => {
+    if (typeof window === "undefined") return "recent";
+    return window.localStorage.getItem("dashboard.notifSort") === "priority"
+      ? "priority"
+      : "recent";
+  });
+  const toggleNotifSort = () => {
+    const next = notifSort === "recent" ? "priority" : "recent";
+    setNotifSort(next);
+    try {
+      window.localStorage.setItem("dashboard.notifSort", next);
+    } catch {
+      /* ignore */
+    }
+  };
   const isRefreshing =
     overviewQuery.isFetching || aiSummaryQuery.isFetching || notificationsQuery.isFetching;
   const lastUpdatedAt = overviewQuery.dataUpdatedAt;
