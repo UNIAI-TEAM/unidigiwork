@@ -539,6 +539,25 @@ function MeetingDetailPage() {
     [id, meetingQuery, hostLogQuery, refetchParticipants, syncMeetingQueries],
   );
 
+  const handleTransferHost = useCallback(
+    async (userId: string, name: string) => {
+      setTransferBusy(userId);
+      try {
+        await transferMeetingHost({
+          data: { meetingId: id, newHostUserId: userId, idempotencyKey: crypto.randomUUID() },
+        });
+        toast.success(`Đã chuyển quyền chủ trì cho ${name}.`);
+        await syncMeetingQueries();
+        await Promise.all([refetchParticipants(), hostLogQuery.refetch()]);
+      } catch {
+        toast.error("Không chuyển được quyền chủ trì.");
+      } finally {
+        setTransferBusy(null);
+      }
+    },
+    [id, hostLogQuery, refetchParticipants, syncMeetingQueries],
+  );
+
   // Thời lượng cuộc họp: suy ra từ nhật ký thao tác chủ trì (start/end thành công).
   const hostLog = hostLogQuery.data ?? [];
   const successStarts = hostLog.filter((e) => e.action === "start" && e.outcome === "success");
