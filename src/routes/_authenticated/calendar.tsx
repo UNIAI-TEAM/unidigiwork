@@ -32,6 +32,10 @@ export const Route = createFileRoute("/_authenticated/calendar")({
   validateSearch: (search: Record<string, unknown>) => ({
     view: search['view'] === "week" ? ("week" as const) : undefined,
     kind: search['kind'] === "meeting" ? ("meeting" as const) : undefined,
+    day:
+      typeof search['day'] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search['day'] as string)
+        ? (search['day'] as string)
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -146,9 +150,10 @@ function sameDay(a: Date, b: Date) {
 type ViewMode = "month" | "week";
 
 function CalendarPage() {
-  const { view: urlView, kind: urlKind } = Route.useSearch();
+  const { view: urlView, kind: urlKind, day: urlDay } = Route.useSearch();
+  const navigateCalendar = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [cursor, setCursor] = useState(() => new Date());
+  const [cursor, setCursor] = useState(() => (urlDay ? new Date(`${urlDay}T00:00:00`) : new Date()));
   const [view, setView] = useState<ViewMode>(urlView === "week" ? "week" : "month");
   const [filters, setFilters] = useState<Record<EventKind, boolean>>({
     meeting: true,
@@ -225,6 +230,7 @@ function CalendarPage() {
   const visible = useMemo(
     () =>
       events.filter((e) => {
+        if (urlDay && e.date !== urlDay) return false;
         if (!filters[e.kind]) return false;
         if (e.kind === "meeting") {
           const st = (e.meetingStatus ?? "upcoming") as MeetingStatusKey;
@@ -233,7 +239,7 @@ function CalendarPage() {
         if (q && !e.title.toLowerCase().includes(q.toLowerCase())) return false;
         return true;
       }),
-    [events, filters, meetingStatusFilter, taskLevelFilter, q],
+    [events, filters, meetingStatusFilter, taskLevelFilter, q, urlDay],
   );
 
   const today = new Date();
