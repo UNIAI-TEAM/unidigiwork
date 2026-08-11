@@ -44,6 +44,7 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid().optional(),
         search: z.string().max(200).optional(),
         state: z.enum(["all", "live", "upcoming"]).default("all"),
+        sort: z.enum(["asc", "desc"]).default("asc"),
         limit: z.number().int().min(1).max(50).default(20),
         offset: z.number().int().min(0).default(0),
       })
@@ -85,7 +86,7 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
       .from("meetings")
       .select("id, title, status, start_at, end_at, workspace_id", { count: "exact" })
       .is("deleted_at", null)
-      .order("start_at", { ascending: true })
+      .order("start_at", { ascending: data.sort === "asc" })
       .range(data.offset, data.offset + data.limit - 1)
       .limit(data.limit);
     if (data.state === "live") {

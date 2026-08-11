@@ -54,6 +54,7 @@ import {
   Download,
   Star,
   ArrowUpRight,
+  ArrowUpDown,
   CheckCircle2,
   AlertCircle,
   Send,
@@ -83,6 +84,7 @@ export const Route = createFileRoute("/meeting")({
     page?: number;
     from?: string;
     to?: string;
+    sort?: "asc" | "desc";
   } & Partial<Record<string, unknown>>): {
     ws?: string;
     q?: string;
@@ -91,6 +93,7 @@ export const Route = createFileRoute("/meeting")({
     page?: number;
     from?: string;
     to?: string;
+    sort?: "asc" | "desc";
   } => ({
     ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
@@ -109,6 +112,10 @@ export const Route = createFileRoute("/meeting")({
     to:
       typeof search["to"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["to"] as string)
         ? (search["to"] as string)
+        : undefined,
+    sort:
+      search["sort"] === "asc" || search["sort"] === "desc"
+        ? (search["sort"] as "asc" | "desc")
         : undefined,
   }),
   head: () => ({
@@ -312,22 +319,23 @@ function MeetingPage() {
     queryFn: () => listMyWorkspaces(),
   });
 
-  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa + trạng thái) giữa các lần truy cập.
+  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa + trạng thái + sắp xếp) giữa các lần truy cập.
   const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
   type RoomFilterState = "all" | "live" | "upcoming";
   const [restoredFilter, setRestoredFilter] = useState<{
     ws?: string;
     q?: string;
     state?: RoomFilterState;
+    sort?: "asc" | "desc";
   } | null>(null);
 
   useEffect(() => {
-    if (search.ws !== undefined || search.q !== undefined || search.state !== undefined) return;
+    if (search.ws !== undefined || search.q !== undefined || search.state !== undefined || search.sort !== undefined) return;
     try {
       const raw = window.localStorage.getItem(ROOM_FILTER_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { ws?: string; q?: string; state?: RoomFilterState };
-      if (!saved || (!saved.ws && !saved.q && !saved.state)) return;
+      const saved = JSON.parse(raw) as { ws?: string; q?: string; state?: RoomFilterState; sort?: "asc" | "desc" };
+      if (!saved || (!saved.ws && !saved.q && !saved.state && !saved.sort)) return;
       setRestoredFilter(saved);
       void navigate({
         to: "/meeting",
@@ -336,6 +344,7 @@ function MeetingPage() {
           ws: saved.ws,
           q: saved.q,
           state: saved.state === "all" ? undefined : saved.state,
+          sort: saved.sort === "asc" ? undefined : saved.sort,
           page: 1,
         },
         replace: true,
@@ -354,6 +363,7 @@ function MeetingPage() {
   const ROOM_PAGE_SIZE = 20;
 
   const roomState: RoomFilterState = search.state ?? restoredFilter?.state ?? "all";
+  const sortStartAt: "asc" | "desc" = search.sort ?? "asc";
 
   // Bộ lọc khoảng ngày (yyyy-mm-dd) — khi bật sẽ truy vấn qua listMeetings.
   const dateFrom = search.from;
@@ -364,12 +374,12 @@ function MeetingPage() {
     try {
       window.localStorage.setItem(
         ROOM_FILTER_KEY,
-        JSON.stringify({ ws: activeWs, q: roomQuery, state: roomState }),
+        JSON.stringify({ ws: activeWs, q: roomQuery, state: roomState, sort: sortStartAt }),
       );
     } catch {
       /* storage không khả dụng */
     }
-  }, [activeWs, roomQuery, roomState]);
+  }, [activeWs, roomQuery, roomState, sortStartAt]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
@@ -381,10 +391,12 @@ function MeetingPage() {
     state?: RoomFilterState;
     from?: string;
     to?: string;
+    sort?: "asc" | "desc";
   }) => {
     setRestoredFilter(null);
     const effectiveState = next.state ?? roomState;
-    const { state: _ignored, from: nextFrom, to: nextTo, ...rest } = next;
+    const effectiveSort = next.sort ?? sortStartAt;
+    const { state: _ignored, sort: _ignoredSort, from: nextFrom, to: nextTo, ...rest } = next;
     void navigate({
       to: "/meeting",
       search: {
@@ -395,13 +407,14 @@ function MeetingPage() {
         to: nextTo !== undefined ? nextTo || undefined : dateTo,
         ...rest,
         state: effectiveState === "all" ? undefined : effectiveState,
+        sort: effectiveSort === "asc" ? undefined : effectiveSort,
       },
       replace: true,
     });
   };
 
   const rooms = useQuery({
-    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, currentPage],
+    queryKey: ["meeting-rooms", activeWs ?? null, roomQuery, roomState, sortStartAt, currentPage],
     enabled: !!activeWs && !rangeActive,
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -410,6 +423,7 @@ function MeetingPage() {
           workspaceId: activeWs,
           search: roomQuery || undefined,
           state: roomState,
+          sort: sortStartAt,
           limit: ROOM_PAGE_SIZE,
           offset: (currentPage - 1) * ROOM_PAGE_SIZE,
         },
@@ -417,7 +431,7 @@ function MeetingPage() {
   });
 
   const rangeQuery = useQuery({
-    queryKey: ["meetings-range", activeWs ?? null, dateFrom ?? null, dateTo ?? null],
+    queryKey: ["meetings-range", activeWs ?? null, dateFrom ?? null, dateTo ?? null, sortStartAt],
     enabled: !!activeWs && rangeActive,
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -426,6 +440,7 @@ function MeetingPage() {
           workspaceId: activeWs as string,
           ...(dateFrom ? { from: new Date(`${dateFrom}T00:00:00`).toISOString() } : {}),
           ...(dateTo ? { to: new Date(`${dateTo}T23:59:59.999`).toISOString() } : {}),
+          sort: sortStartAt,
           limit: 200,
         },
       }),
@@ -746,6 +761,14 @@ function MeetingPage() {
                     </button>
                   )}
                 </div>
+                <button
+                  onClick={() => setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })}
+                  aria-label={sortStartAt === "asc" ? "Sắp xếp ngày bắt đầu tăng dần" : "Sắp xếp ngày bắt đầu giảm dần"}
+                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                  {sortStartAt === "asc" ? "Ngày bắt đầu ↑" : "Ngày bắt đầu ↓"}
+                </button>
               </div>
 
               {listLoading ? (
