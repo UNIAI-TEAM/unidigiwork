@@ -19,6 +19,7 @@ import {
   FileText,
   Clock,
   Loader2,
+  Lock,
   Video as VideoIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
