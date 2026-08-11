@@ -1,3 +1,4 @@
+import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
@@ -107,6 +108,10 @@ function TasksPage() {
     queryFn: () => listMyWorkspaces(),
   });
   const { filter: urlFilter, range: rangeDays, ws: urlWs } = Route.useSearch();
+  const tasksSearch = Route.useSearch();
+  useStickySearch("tasks", tasksSearch, (saved) =>
+    navigateTasks({ to: "/tasks", search: () => saved, replace: true }),
+  );
   const [wsId, setWsId] = useState<string | undefined>(undefined);
   // Ưu tiên workspace do dashboard truyền sang để số liệu khớp với thẻ thống kê.
   const activeWs = wsId ?? urlWs ?? workspaces.data?.[0]?.id;

@@ -1,3 +1,4 @@
+import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
 import { isStaleDocument } from "@/lib/metrics";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -90,6 +91,10 @@ function ToolbarBtn({ icon: Icon }: { icon: LucideIcon }) {
 function DocumentsPage() {
   const navigate = useNavigate();
   const { filter: docFilter } = Route.useSearch();
+  const docsSearch = Route.useSearch();
+  useStickySearch("documents", docsSearch, (saved) =>
+    navigate({ to: "/documents", search: () => saved, replace: true }),
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);

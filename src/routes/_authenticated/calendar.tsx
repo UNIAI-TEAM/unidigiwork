@@ -1,3 +1,4 @@
+import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -153,6 +154,10 @@ type ViewMode = "month" | "week";
 function CalendarPage() {
   const { view: urlView, kind: urlKind, day: urlDay } = Route.useSearch();
   const navigateCalendar = useNavigate();
+  const calendarSearch = Route.useSearch();
+  useStickySearch("calendar", calendarSearch, (saved) =>
+    navigateCalendar({ to: "/calendar", search: () => saved, replace: true }),
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cursor, setCursor] = useState(() => (urlDay ? new Date(`${urlDay}T00:00:00`) : new Date()));
   const [view, setView] = useState<ViewMode>(urlView === "week" ? "week" : "month");
@@ -555,13 +560,27 @@ function CalendarPage() {
 
               <div className="flex rounded-lg border border-border bg-surface-2 p-0.5 text-xs">
                 <button
-                  onClick={() => setView("month")}
+                  onClick={() => {
+                    setView("month");
+                    void navigateCalendar({
+                      to: "/calendar",
+                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "month" }),
+                      replace: true,
+                    });
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${view === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   <CalendarDays className="h-3.5 w-3.5" /> Tháng
                 </button>
                 <button
-                  onClick={() => setView("week")}
+                  onClick={() => {
+                    setView("week");
+                    void navigateCalendar({
+                      to: "/calendar",
+                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "week" }),
+                      replace: true,
+                    });
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${view === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   <CalendarRange className="h-3.5 w-3.5" /> Tuần
