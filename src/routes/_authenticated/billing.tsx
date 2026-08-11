@@ -138,7 +138,7 @@ function BillingPage() {
     };
   }, [invoicesQ.data]);
 
-  const tenantName = active.data?.name ?? "Tổ chức";
+  const tenantName = active.data?.tenantName ?? "Tổ chức";
 
   const handleDownloadInvoice = (inv: {
     invoiceNumber: string;
