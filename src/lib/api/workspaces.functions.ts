@@ -268,6 +268,9 @@ const UpdateInput = z.object({
   visibility: z.enum(["private", "tenant"]).optional(),
   defaultMemberRole: z.enum(["member", "owner"]).optional(),
   allowMemberInvites: z.boolean().optional(),
+  defaultTaskPriority: z.enum(["low", "normal", "high", "urgent"]).optional(),
+  defaultTaskDueDays: z.number().int().min(0).max(365).optional(),
+  defaultTaskTitlePrefix: z.string().trim().max(60).optional(),
 });
 
 /** Đổi tên / múi giờ workspace — RLS chỉ cho chủ sở hữu. */
@@ -285,6 +288,9 @@ export const updateWorkspace = createServerFn({ method: "POST" })
       visibility?: string;
       default_member_role?: string;
       allow_member_invites?: boolean;
+      default_task_priority?: string;
+      default_task_due_days?: number;
+      default_task_title_prefix?: string;
     } = {
       updated_by: userId,
       updated_at: new Date().toISOString(),
@@ -295,6 +301,10 @@ export const updateWorkspace = createServerFn({ method: "POST" })
     if (data.visibility) patch.visibility = data.visibility;
     if (data.defaultMemberRole) patch.default_member_role = data.defaultMemberRole;
     if (data.allowMemberInvites !== undefined) patch.allow_member_invites = data.allowMemberInvites;
+    if (data.defaultTaskPriority) patch.default_task_priority = data.defaultTaskPriority;
+    if (data.defaultTaskDueDays !== undefined) patch.default_task_due_days = data.defaultTaskDueDays;
+    if (data.defaultTaskTitlePrefix !== undefined)
+      patch.default_task_title_prefix = data.defaultTaskTitlePrefix;
 
     const { data: before } = await supabase
       .from("workspaces")
@@ -332,6 +342,9 @@ export type WorkspaceSettingsDTO = {
   visibility: "private" | "tenant";
   defaultMemberRole: "member" | "owner";
   allowMemberInvites: boolean;
+  defaultTaskPriority: "low" | "normal" | "high" | "urgent";
+  defaultTaskDueDays: number;
+  defaultTaskTitlePrefix: string;
   isOwner: boolean;
 };
 
@@ -358,6 +371,10 @@ export const getWorkspaceSettings = createServerFn({ method: "POST" })
       visibility: (w.visibility as "private" | "tenant") ?? "private",
       defaultMemberRole: (w.default_member_role as "member" | "owner") ?? "member",
       allowMemberInvites: Boolean(w.allow_member_invites),
+      defaultTaskPriority:
+        (w.default_task_priority as "low" | "normal" | "high" | "urgent") ?? "normal",
+      defaultTaskDueDays: Number(w.default_task_due_days ?? 3),
+      defaultTaskTitlePrefix: (w.default_task_title_prefix as string) ?? "",
       isOwner: w.owner_id === userId,
     };
   });
