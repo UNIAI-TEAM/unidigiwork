@@ -179,6 +179,7 @@ export type Database = {
           created_by: string | null
           id: string
           input_tokens: number
+          metadata: Json
           model: string | null
           output_tokens: number
           role: string
@@ -191,6 +192,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           input_tokens?: number
+          metadata?: Json
           model?: string | null
           output_tokens?: number
           role: string
@@ -203,6 +205,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           input_tokens?: number
+          metadata?: Json
           model?: string | null
           output_tokens?: number
           role?: string
