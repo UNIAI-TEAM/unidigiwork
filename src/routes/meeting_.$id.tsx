@@ -127,14 +127,6 @@ function formatDuration(ms: number) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-function UnusedStageFallback() {
-  return (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang kết nối phòng họp…
-    </div>
-  );
-}
-
 export const Route = createFileRoute("/meeting_/$id")({
   validateSearch: (search: Record<string, unknown>): { invite?: string } => ({
     invite: typeof search['invite'] === "string" ? (search['invite'] as string) : undefined,
