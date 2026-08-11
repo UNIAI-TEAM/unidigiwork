@@ -74,6 +74,31 @@ function featureLabel(f: PublicPlanDto["features"][number]): string {
 }
 
 function PricingPage() {
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+  }, []);
+
+  const plansQuery = useQuery({
+    queryKey: ["public-plans"],
+    queryFn: () => listPublicPlans(),
+  });
+
+  const tenantQuery = useQuery({
+    queryKey: ["active-tenant-pricing"],
+    enabled: signedIn,
+    queryFn: () => getActiveTenant(),
+  });
+
+  const subQuery = useQuery({
+    queryKey: ["active-subscription-pricing", tenantQuery.data?.tenantId ?? null],
+    enabled: signedIn && !!tenantQuery.data?.tenantId,
+    queryFn: () => getActiveSubscription({ data: { tenantId: tenantQuery.data!.tenantId } }),
+  });
+
+  const currentPlanCode = subQuery.data?.planCode ?? null;
+  const plans = plansQuery.data ?? [];
+
   return (
     <PublicShell active="pricing">
       <section className="border-b border-border/60">
@@ -88,47 +113,90 @@ function PricingPage() {
             Bắt đầu miễn phí, nâng cấp khi đội ngũ phát triển. Hợp đồng linh hoạt
             theo tháng hoặc năm, có hoá đơn VAT đầy đủ.
           </p>
+          {tenantQuery.data && currentPlanCode && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Tổ chức <span className="font-medium text-foreground">{tenantQuery.data.tenantName}</span>{" "}
+              đang dùng gói{" "}
+              <span className="font-medium text-primary">{subQuery.data?.planName ?? currentPlanCode}</span>.
+            </p>
+          )}
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-20">
-        <div className="grid gap-6 lg:grid-cols-3">
-          {plans.map((p) => (
-            <div
-              key={p.name}
-              className={`relative flex flex-col rounded-2xl border p-7 ${p.highlight ? "border-primary bg-gradient-to-b from-primary/10 to-transparent shadow-2xl shadow-primary/10" : "border-border bg-surface"}`}
-            >
-              {p.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
-                  Phổ biến nhất
-                </span>
-              )}
-              <div className="flex items-center gap-2">
-                <p.icon className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">{p.name}</h3>
-              </div>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-bold tracking-tight">{p.price}</span>
-                {p.period && <span className="text-sm text-muted-foreground">{p.period}</span>}
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">{p.desc}</p>
-              <ul className="mt-6 flex-1 space-y-3 text-sm">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/contact"
-                className={`mt-7 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium ${p.highlight ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border bg-surface-2 hover:bg-surface-3"}`}
-              >
-                {p.cta} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          ))}
-        </div>
+        {plansQuery.isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Đang tải bảng giá…
+          </div>
+        ) : plansQuery.isError ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            Không tải được bảng giá. Vui lòng thử lại sau.
+          </p>
+        ) : plans.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            Chưa có gói dịch vụ nào được công bố.
+          </p>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {plans.map((p) => {
+              const Icon = PLAN_ICONS[p.code] ?? Sparkles;
+              const price = formatPrice(p);
+              const isCurrent = currentPlanCode === p.code;
+              const highlight = p.isFeatured || isCurrent;
+              return (
+                <div
+                  key={p.id}
+                  className={`relative flex flex-col rounded-2xl border p-7 ${highlight ? "border-primary bg-gradient-to-b from-primary/10 to-transparent shadow-2xl shadow-primary/10" : "border-border bg-surface"}`}
+                >
+                  {(isCurrent || p.isFeatured) && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+                      {isCurrent ? "Gói hiện tại" : "Phổ biến nhất"}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">{p.name}</h3>
+                  </div>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-4xl font-bold tracking-tight">{price.value}</span>
+                    {price.unit && (
+                      <span className="text-sm text-muted-foreground">{price.unit}</span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {p.tagline ?? p.description ?? ""}
+                  </p>
+                  <ul className="mt-6 flex-1 space-y-3 text-sm">
+                    {p.features.map((f) => (
+                      <li key={f.featureKey} className="flex items-start gap-2">
+                        {f.enabled ? (
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                        ) : (
+                          <Minus className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <span className={f.enabled ? "" : "text-muted-foreground line-through"}>
+                          {featureLabel(f)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {isCurrent ? (
+                    <span className="mt-7 inline-flex items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary">
+                      Đang sử dụng
+                    </span>
+                  ) : (
+                    <Link
+                      to="/contact"
+                      className={`mt-7 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium ${highlight ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border bg-surface-2 hover:bg-surface-3"}`}
+                    >
+                      {p.ctaLabel ?? "Liên hệ tư vấn"} <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="border-t border-border/60 bg-surface/30 py-16">
