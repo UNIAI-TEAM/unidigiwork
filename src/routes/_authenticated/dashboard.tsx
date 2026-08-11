@@ -966,7 +966,7 @@ function DashboardInner() {
                 </button>
               </div>
               <div className="mt-4">
-                <div className="text-sm font-medium">Chào Nguyễn Văn A,</div>
+                <div className="text-sm font-medium">Chào {userName},</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Đây là những thông tin AI tổng hợp cho bạn hôm nay.
                 </p>
