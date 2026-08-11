@@ -30,13 +30,14 @@ export const listMeetings = createServerFn({ method: "GET" })
       workspaceId: z.string().uuid(),
       from: z.string().datetime().optional(),
       to: z.string().datetime().optional(),
+      sort: z.enum(["asc", "desc"]).default("asc"),
       limit: z.number().int().min(1).max(200).default(100),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
     let q = context.supabase.from("meetings").select("*")
       .eq("workspace_id", data.workspaceId).is("deleted_at", null)
-      .order("start_at", { ascending: true }).limit(data.limit);
+      .order("start_at", { ascending: data.sort === "asc" }).limit(data.limit);
     if (data.from) q = q.gte("start_at", data.from);
     if (data.to) q = q.lte("start_at", data.to);
     const { data: rows, error } = await q;
