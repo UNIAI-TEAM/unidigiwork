@@ -20,6 +20,8 @@ import {
   RotateCcw,
   ArrowLeft,
   ArrowUpDown,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import {
@@ -64,11 +66,15 @@ function NotifRow({
   selected,
   onToggle,
   onMarkRead,
+  pinned,
+  onTogglePin,
 }: {
   n: Notif;
   selected: boolean;
   onToggle: () => void;
   onMarkRead: () => void;
+  pinned: boolean;
+  onTogglePin: () => void;
 }) {
   const meta = catMeta(n.cat);
   const Icon = meta.icon;
@@ -156,6 +162,13 @@ function NotifRow({
         </div>
       </Link>
       <div className="hidden items-center gap-1 self-center opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+        <button
+          title={pinned ? "Bỏ ghim" : "Ghim lên đầu"}
+          onClick={onTogglePin}
+          className={`rounded p-1.5 hover:bg-surface ${pinned ? "text-primary opacity-100" : "text-muted-foreground hover:text-primary"}`}
+        >
+          {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+        </button>
         {n.unread && (
           <button
             title="Đánh dấu đã đọc"
