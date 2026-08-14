@@ -289,3 +289,55 @@ export function mapNotifRow(row: NotifRow): Notif {
     actions: Array.isArray(meta.actions) ? (meta.actions as Notif["actions"]) : undefined,
   };
 }
+// ------------------------------------------------------------------
+// Sắp xếp: Mới nhất / Ưu tiên (dùng chung dashboard + /notifications)
+// ------------------------------------------------------------------
+
+export type NotifSortMode = "recent" | "priority";
+
+const NOTIF_TYPE_WEIGHT: Record<string, number> = {
+  alert: 40,
+  quota: 35,
+  billing: 35,
+  security: 40,
+  mention: 30,
+  task: 20,
+  meeting: 20,
+  workflow: 15,
+  chat: 10,
+  system: 5,
+};
+
+/** Điểm ưu tiên của một dòng notification (row DB). */
+export function notifPriorityRank(n: {
+  type?: string | null;
+  meta?: unknown;
+  is_read?: boolean | null;
+}): number {
+  const type = String(n?.type ?? "").toLowerCase();
+  const meta = (n?.meta ?? {}) as Record<string, unknown>;
+  const metaPriority = String(meta.priority ?? "").toLowerCase();
+  const metaWeight =
+    metaPriority === "urgent" ? 60 : metaPriority === "high" ? 45 : metaPriority === "low" ? -10 : 0;
+  const important = meta.important === true ? 30 : 0;
+  const typeWeight = Object.entries(NOTIF_TYPE_WEIGHT).find(([k]) => type.includes(k))?.[1] ?? 10;
+  return typeWeight + metaWeight + important + (n?.is_read ? 0 : 25);
+}
+
+/** Sắp xếp danh sách row theo chế độ đã chọn (không mutate mảng gốc). */
+export function sortNotifRows<T extends { created_at?: string | null }>(
+  rows: T[],
+  mode: NotifSortMode,
+): T[] {
+  const time = (n: T) => new Date(n.created_at ?? 0).getTime();
+  const out = [...rows];
+  if (mode === "priority") {
+    out.sort(
+      (a, b) =>
+        notifPriorityRank(b as never) - notifPriorityRank(a as never) || time(b) - time(a),
+    );
+  } else {
+    out.sort((a, b) => time(b) - time(a));
+  }
+  return out;
+}
