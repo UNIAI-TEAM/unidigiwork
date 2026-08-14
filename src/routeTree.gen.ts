@@ -42,6 +42,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedMRouteImport } from './routes/_authenticated/m'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/email'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
@@ -62,6 +63,13 @@ import { Route as AuthenticatedWorkspaceAuditRouteImport } from './routes/_authe
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
+import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
+import { Route as AuthenticatedMMoreRouteImport } from './routes/_authenticated/m/more'
+import { Route as AuthenticatedMMeetRouteImport } from './routes/_authenticated/m/meet'
+import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
+import { Route as AuthenticatedMEmailRouteImport } from './routes/_authenticated/m/email'
+import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
+import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
@@ -80,6 +88,7 @@ import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api
 import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
+import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
@@ -246,6 +255,11 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMRoute = AuthenticatedMRouteImport.update({
+  id: '/m',
+  path: '/m',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -355,6 +369,41 @@ const AuthenticatedNotificationsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedNotificationsRoute,
   } as any)
+const AuthenticatedMTasksRoute = AuthenticatedMTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMMoreRoute = AuthenticatedMMoreRouteImport.update({
+  id: '/more',
+  path: '/more',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMMeetRoute = AuthenticatedMMeetRouteImport.update({
+  id: '/meet',
+  path: '/meet',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMHomeRoute = AuthenticatedMHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMEmailRoute = AuthenticatedMEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMComposeRoute = AuthenticatedMComposeRouteImport.update({
+  id: '/compose',
+  path: '/compose',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMChatRoute = AuthenticatedMChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedEmailComposeRoute =
   AuthenticatedEmailComposeRouteImport.update({
     id: '/compose',
@@ -455,6 +504,11 @@ const AuthenticatedWorkspaceIdStosRoute =
     path: '/stos',
     getParentRoute: () => AuthenticatedWorkspaceIdRoute,
   } as any)
+const AuthenticatedMEmailIdRoute = AuthenticatedMEmailIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedMEmailRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -480,6 +534,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
+  '/m': typeof AuthenticatedMRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
@@ -510,6 +565,13 @@ export interface FileRoutesByFullPath {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/chat': typeof AuthenticatedMChatRoute
+  '/m/compose': typeof AuthenticatedMComposeRoute
+  '/m/email': typeof AuthenticatedMEmailRouteWithChildren
+  '/m/home': typeof AuthenticatedMHomeRoute
+  '/m/meet': typeof AuthenticatedMMeetRoute
+  '/m/more': typeof AuthenticatedMMoreRoute
+  '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -522,6 +584,7 @@ export interface FileRoutesByFullPath {
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
@@ -550,6 +613,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRouteWithChildren
   '/help': typeof AuthenticatedHelpRoute
+  '/m': typeof AuthenticatedMRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
@@ -580,6 +644,13 @@ export interface FileRoutesByTo {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/chat': typeof AuthenticatedMChatRoute
+  '/m/compose': typeof AuthenticatedMComposeRoute
+  '/m/email': typeof AuthenticatedMEmailRouteWithChildren
+  '/m/home': typeof AuthenticatedMHomeRoute
+  '/m/meet': typeof AuthenticatedMMeetRoute
+  '/m/more': typeof AuthenticatedMMoreRoute
+  '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -592,6 +663,7 @@ export interface FileRoutesByTo {
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
+  '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
@@ -624,6 +696,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
   '/_authenticated/help': typeof AuthenticatedHelpRoute
+  '/_authenticated/m': typeof AuthenticatedMRouteWithChildren
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
@@ -654,6 +727,13 @@ export interface FileRoutesById {
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/_authenticated/m/chat': typeof AuthenticatedMChatRoute
+  '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
+  '/_authenticated/m/email': typeof AuthenticatedMEmailRouteWithChildren
+  '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
+  '/_authenticated/m/meet': typeof AuthenticatedMMeetRoute
+  '/_authenticated/m/more': typeof AuthenticatedMMoreRoute
+  '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -666,6 +746,7 @@ export interface FileRoutesById {
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
@@ -698,6 +779,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/email'
     | '/help'
+    | '/m'
     | '/notifications'
     | '/people'
     | '/search'
@@ -728,6 +810,13 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/chat'
+    | '/m/compose'
+    | '/m/email'
+    | '/m/home'
+    | '/m/meet'
+    | '/m/more'
+    | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
     | '/workspace/$id'
@@ -740,6 +829,7 @@ export interface FileRouteTypes {
     | '/blog/category/$category'
     | '/admin/'
     | '/workspace/'
+    | '/m/email/$id'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
@@ -768,6 +858,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/email'
     | '/help'
+    | '/m'
     | '/notifications'
     | '/people'
     | '/search'
@@ -798,6 +889,13 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/chat'
+    | '/m/compose'
+    | '/m/email'
+    | '/m/home'
+    | '/m/meet'
+    | '/m/more'
+    | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
     | '/workspace/$id'
@@ -810,6 +908,7 @@ export interface FileRouteTypes {
     | '/blog/category/$category'
     | '/admin'
     | '/workspace'
+    | '/m/email/$id'
     | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
@@ -841,6 +940,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/email'
     | '/_authenticated/help'
+    | '/_authenticated/m'
     | '/_authenticated/notifications'
     | '/_authenticated/people'
     | '/_authenticated/search'
@@ -871,6 +971,13 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/$id'
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
+    | '/_authenticated/m/chat'
+    | '/_authenticated/m/compose'
+    | '/_authenticated/m/email'
+    | '/_authenticated/m/home'
+    | '/_authenticated/m/meet'
+    | '/_authenticated/m/more'
+    | '/_authenticated/m/tasks'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
     | '/_authenticated/workspace/$id'
@@ -883,6 +990,7 @@ export interface FileRouteTypes {
     | '/blog/category/$category'
     | '/_authenticated/admin/'
     | '/_authenticated/workspace/'
+    | '/_authenticated/m/email/$id'
     | '/_authenticated/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
@@ -1152,6 +1260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/m': {
+      id: '/_authenticated/m'
+      path: '/m'
+      fullPath: '/m'
+      preLoaderRoute: typeof AuthenticatedMRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/help': {
       id: '/_authenticated/help'
       path: '/help'
@@ -1292,6 +1407,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsIdRouteImport
       parentRoute: typeof AuthenticatedNotificationsRoute
     }
+    '/_authenticated/m/tasks': {
+      id: '/_authenticated/m/tasks'
+      path: '/tasks'
+      fullPath: '/m/tasks'
+      preLoaderRoute: typeof AuthenticatedMTasksRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/more': {
+      id: '/_authenticated/m/more'
+      path: '/more'
+      fullPath: '/m/more'
+      preLoaderRoute: typeof AuthenticatedMMoreRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/meet': {
+      id: '/_authenticated/m/meet'
+      path: '/meet'
+      fullPath: '/m/meet'
+      preLoaderRoute: typeof AuthenticatedMMeetRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/home': {
+      id: '/_authenticated/m/home'
+      path: '/home'
+      fullPath: '/m/home'
+      preLoaderRoute: typeof AuthenticatedMHomeRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/email': {
+      id: '/_authenticated/m/email'
+      path: '/email'
+      fullPath: '/m/email'
+      preLoaderRoute: typeof AuthenticatedMEmailRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/compose': {
+      id: '/_authenticated/m/compose'
+      path: '/compose'
+      fullPath: '/m/compose'
+      preLoaderRoute: typeof AuthenticatedMComposeRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/chat': {
+      id: '/_authenticated/m/chat'
+      path: '/chat'
+      fullPath: '/m/chat'
+      preLoaderRoute: typeof AuthenticatedMChatRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/email/compose': {
       id: '/_authenticated/email/compose'
       path: '/compose'
@@ -1418,6 +1582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdStosRouteImport
       parentRoute: typeof AuthenticatedWorkspaceIdRoute
     }
+    '/_authenticated/m/email/$id': {
+      id: '/_authenticated/m/email/$id'
+      path: '/$id'
+      fullPath: '/m/email/$id'
+      preLoaderRoute: typeof AuthenticatedMEmailIdRouteImport
+      parentRoute: typeof AuthenticatedMEmailRoute
+    }
   }
 }
 
@@ -1477,6 +1648,41 @@ const AuthenticatedEmailRouteChildren: AuthenticatedEmailRouteChildren = {
 const AuthenticatedEmailRouteWithChildren =
   AuthenticatedEmailRoute._addFileChildren(AuthenticatedEmailRouteChildren)
 
+interface AuthenticatedMEmailRouteChildren {
+  AuthenticatedMEmailIdRoute: typeof AuthenticatedMEmailIdRoute
+}
+
+const AuthenticatedMEmailRouteChildren: AuthenticatedMEmailRouteChildren = {
+  AuthenticatedMEmailIdRoute: AuthenticatedMEmailIdRoute,
+}
+
+const AuthenticatedMEmailRouteWithChildren =
+  AuthenticatedMEmailRoute._addFileChildren(AuthenticatedMEmailRouteChildren)
+
+interface AuthenticatedMRouteChildren {
+  AuthenticatedMChatRoute: typeof AuthenticatedMChatRoute
+  AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
+  AuthenticatedMEmailRoute: typeof AuthenticatedMEmailRouteWithChildren
+  AuthenticatedMHomeRoute: typeof AuthenticatedMHomeRoute
+  AuthenticatedMMeetRoute: typeof AuthenticatedMMeetRoute
+  AuthenticatedMMoreRoute: typeof AuthenticatedMMoreRoute
+  AuthenticatedMTasksRoute: typeof AuthenticatedMTasksRoute
+}
+
+const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
+  AuthenticatedMChatRoute: AuthenticatedMChatRoute,
+  AuthenticatedMComposeRoute: AuthenticatedMComposeRoute,
+  AuthenticatedMEmailRoute: AuthenticatedMEmailRouteWithChildren,
+  AuthenticatedMHomeRoute: AuthenticatedMHomeRoute,
+  AuthenticatedMMeetRoute: AuthenticatedMMeetRoute,
+  AuthenticatedMMoreRoute: AuthenticatedMMoreRoute,
+  AuthenticatedMTasksRoute: AuthenticatedMTasksRoute,
+}
+
+const AuthenticatedMRouteWithChildren = AuthenticatedMRoute._addFileChildren(
+  AuthenticatedMRouteChildren,
+)
+
 interface AuthenticatedNotificationsRouteChildren {
   AuthenticatedNotificationsIdRoute: typeof AuthenticatedNotificationsIdRoute
 }
@@ -1514,6 +1720,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
+  AuthenticatedMRoute: typeof AuthenticatedMRouteWithChildren
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
@@ -1539,6 +1746,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
   AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
+  AuthenticatedMRoute: AuthenticatedMRouteWithChildren,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
