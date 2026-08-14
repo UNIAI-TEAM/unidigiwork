@@ -566,7 +566,7 @@ function CalendarPage() {
                     setView("month");
                     void navigateCalendar({
                       to: "/calendar",
-                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "month" }),
+                      search: (pv) => ({ ...pv, view: undefined }),
                       replace: true,
                     });
                   }}
@@ -579,7 +579,7 @@ function CalendarPage() {
                     setView("week");
                     void navigateCalendar({
                       to: "/calendar",
-                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "week" }),
+                      search: (pv) => ({ ...pv, view: "week" as const }),
                       replace: true,
                     });
                   }}
