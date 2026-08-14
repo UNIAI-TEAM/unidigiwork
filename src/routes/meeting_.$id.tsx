@@ -45,6 +45,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-request-panel";
+import {
+  SHARE_QUALITY_LABELS,
+  SHARE_QUALITY_STORAGE_KEY,
+  applyPresetToTrack,
+  degrade,
+  displayMediaConstraints,
+  resolvePreset,
+  type ShareQualityKey,
+} from "@/lib/screen-share-quality";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
   openMeetingAttendance,
@@ -173,6 +182,19 @@ function MeetingDetailPage() {
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
   const screenRef = useRef<MediaStream | null>(null);
+  // Chất lượng chia sẻ màn hình (ghi nhớ theo trình duyệt).
+  const [shareQuality, setShareQuality] = useState<ShareQualityKey>("auto");
+  const [shareQualityInfo, setShareQualityInfo] = useState<string | null>(null);
+  const autoLevelRef = useRef<Exclude<ShareQualityKey, "auto">>("balanced");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(SHARE_QUALITY_STORAGE_KEY) as ShareQualityKey | null;
+    if (saved && saved in SHARE_QUALITY_LABELS) setShareQuality(saved);
+  }, []);
+  const changeShareQuality = useCallback((key: ShareQualityKey) => {
+    setShareQuality(key);
+    if (typeof window !== "undefined") window.localStorage.setItem(SHARE_QUALITY_STORAGE_KEY, key);
+  }, []);
   const [session, setSession] = useState<{
     serverUrl: string;
     token: string;
@@ -268,18 +290,58 @@ function MeetingDetailPage() {
       return;
     }
     try {
-      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const preset = resolvePreset(shareQuality);
+      autoLevelRef.current = preset.key;
+      const s = await navigator.mediaDevices.getDisplayMedia(displayMediaConstraints(preset));
+      await applyPresetToTrack(s.getVideoTracks()[0], preset);
       screenRef.current = s;
+      setShareQualityInfo(preset.label);
       setSharing(true);
       s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
-      toast.success("Đang chia sẻ màn hình.");
+      toast.success(`Đang chia sẻ màn hình · ${preset.label}`);
     } catch (e) {
       const name = e instanceof DOMException ? e.name : "Error";
       if (name !== "NotAllowedError" && name !== "AbortError") {
         toast.error("Không chia sẻ được màn hình.");
       }
     }
-  }, [sharing, stopShare]);
+  }, [sharing, stopShare, shareQuality]);
+
+  // Đổi cấu hình khi đang chia sẻ: áp ngay cho track hiện tại.
+  useEffect(() => {
+    if (!sharing || !screenRef.current) return;
+    const preset = resolvePreset(shareQuality);
+    autoLevelRef.current = preset.key;
+    void applyPresetToTrack(screenRef.current.getVideoTracks()[0], preset);
+    setShareQualityInfo(preset.label);
+  }, [shareQuality, sharing]);
+
+  // Tự hạ bậc khi mạng yếu (chế độ "Tự động") ở màn hình chờ.
+  useEffect(() => {
+    if (!sharing || shareQuality !== "auto" || typeof navigator === "undefined") return;
+    const conn = (navigator as unknown as { connection?: EventTarget & { effectiveType?: string; downlink?: number } })
+      .connection;
+    const adjust = () => {
+      const weak =
+        !conn ||
+        ["slow-2g", "2g", "3g"].includes(conn.effectiveType ?? "") ||
+        (conn.downlink ?? 99) < 1.5;
+      if (!weak) return;
+      const next = degrade(autoLevelRef.current);
+      if (next === autoLevelRef.current) return;
+      autoLevelRef.current = next;
+      const preset = resolvePreset(next);
+      void applyPresetToTrack(screenRef.current?.getVideoTracks()[0], preset);
+      setShareQualityInfo(`${preset.label} · tự giảm do mạng yếu`);
+    };
+    adjust();
+    const timer = setInterval(adjust, 8000);
+    conn?.addEventListener?.("change", adjust);
+    return () => {
+      clearInterval(timer);
+      conn?.removeEventListener?.("change", adjust);
+    };
+  }, [sharing, shareQuality]);
 
   // Gắn luồng màn hình vào khung xem trước.
   useEffect(() => {
