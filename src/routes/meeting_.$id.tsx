@@ -281,6 +281,11 @@ function MeetingDetailPage() {
   }, []);
 
   const toggleShare = useCallback(async () => {
+    // Trong phòng: để LiveKit publish track thật (ScreenShareSync sẽ xử lý).
+    if (session) {
+      setSharing((s) => !s);
+      return;
+    }
     if (sharing) {
       stopShare();
       return;
@@ -305,20 +310,27 @@ function MeetingDetailPage() {
         toast.error("Không chia sẻ được màn hình.");
       }
     }
-  }, [sharing, stopShare, shareQuality]);
+  }, [sharing, stopShare, shareQuality, session]);
+
+  // Vào phòng: dừng luồng xem trước cục bộ, LiveKit sẽ tự lấy lại luồng để publish.
+  useEffect(() => {
+    if (!session) return;
+    screenRef.current?.getTracks().forEach((t) => t.stop());
+    screenRef.current = null;
+  }, [session]);
 
   // Đổi cấu hình khi đang chia sẻ: áp ngay cho track hiện tại.
   useEffect(() => {
-    if (!sharing || !screenRef.current) return;
+    if (session || !sharing || !screenRef.current) return;
     const preset = resolvePreset(shareQuality);
     autoLevelRef.current = preset.key;
     void applyPresetToTrack(screenRef.current.getVideoTracks()[0], preset);
     setShareQualityInfo(preset.label);
-  }, [shareQuality, sharing]);
+  }, [shareQuality, sharing, session]);
 
   // Tự hạ bậc khi mạng yếu (chế độ "Tự động") ở màn hình chờ.
   useEffect(() => {
-    if (!sharing || shareQuality !== "auto" || typeof navigator === "undefined") return;
+    if (session || !sharing || shareQuality !== "auto" || typeof navigator === "undefined") return;
     const conn = (navigator as unknown as { connection?: EventTarget & { effectiveType?: string; downlink?: number } })
       .connection;
     const adjust = () => {
@@ -341,7 +353,7 @@ function MeetingDetailPage() {
       clearInterval(timer);
       conn?.removeEventListener?.("change", adjust);
     };
-  }, [sharing, shareQuality]);
+  }, [sharing, shareQuality, session]);
 
   // Gắn luồng màn hình vào khung xem trước.
   useEffect(() => {
