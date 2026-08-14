@@ -1112,6 +1112,36 @@ function MeetingDetailPage() {
                   >
                     <PhoneOff className="h-4 w-4" /> Rời phòng
                   </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 transition-colors hover:bg-surface-3"
+                        aria-label="Chất lượng chia sẻ màn hình"
+                      >
+                        <ScreenShare className="h-5 w-5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-72">
+                      <DropdownMenuLabel>Chất lượng chia sẻ màn hình</DropdownMenuLabel>
+                      {(Object.keys(SHARE_QUALITY_LABELS) as ShareQualityKey[]).map((k) => (
+                        <DropdownMenuItem
+                          key={k}
+                          onSelect={() => changeShareQuality(k)}
+                          className={shareQuality === k ? "font-medium text-primary" : ""}
+                        >
+                          {SHARE_QUALITY_LABELS[k]}
+                        </DropdownMenuItem>
+                      ))}
+                      {shareQualityInfo && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                            Đang áp dụng: {shareQualityInfo}
+                          </DropdownMenuLabel>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               ) : (
                 <>
@@ -1184,6 +1214,18 @@ function MeetingDetailPage() {
                             </DropdownMenuItem>
                           ))
                       )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Chất lượng chia sẻ màn hình</DropdownMenuLabel>
+                      {(Object.keys(SHARE_QUALITY_LABELS) as ShareQualityKey[]).map((k) => (
+                        <DropdownMenuItem
+                          key={k}
+                          onSelect={() => changeShareQuality(k)}
+                          className={shareQuality === k ? "font-medium text-primary" : ""}
+                        >
+                          <ScreenShare className="mr-2 h-4 w-4" />
+                          <span className="truncate">{SHARE_QUALITY_LABELS[k]}</span>
+                        </DropdownMenuItem>
+                      ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <button
