@@ -58,6 +58,7 @@ import {
   resolvePreset,
   type ShareQualityKey,
   type ShareSourceKey,
+  describeDisplayMediaError,
 } from "@/lib/screen-share-quality";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
