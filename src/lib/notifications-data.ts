@@ -378,3 +378,49 @@ export function sortNotifRows<T extends { created_at?: string | null }>(
   }
   return out;
 }
+
+// ---- Chế độ sắp xếp dùng chung giữa dashboard và /notifications ----
+export const NOTIF_SORT_STORAGE_KEY = "notifications.sort";
+const NOTIF_SORT_EVENT = "uniwork:notif-sort-change";
+
+export function readNotifSortMode(): NotifSortMode {
+  if (typeof window === "undefined") return "recent";
+  try {
+    return window.localStorage.getItem(NOTIF_SORT_STORAGE_KEY) === "priority"
+      ? "priority"
+      : "recent";
+  } catch {
+    return "recent";
+  }
+}
+
+export function writeNotifSortMode(mode: NotifSortMode) {
+  try {
+    window.localStorage.setItem(NOTIF_SORT_STORAGE_KEY, mode);
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new CustomEvent(NOTIF_SORT_EVENT, { detail: mode }));
+}
+
+/** Chế độ sắp xếp thông báo, đồng bộ giữa các trang và các tab. */
+export function useNotifSortMode(): [NotifSortMode, (m: NotifSortMode) => void, () => void] {
+  const [mode, setMode] = useState<NotifSortMode>(readNotifSortMode);
+
+  useEffect(() => {
+    const sync = () => setMode(readNotifSortMode());
+    window.addEventListener(NOTIF_SORT_EVENT, sync);
+    window.addEventListener("storage", sync);
+    sync();
+    return () => {
+      window.removeEventListener(NOTIF_SORT_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const set = (m: NotifSortMode) => {
+    setMode(m);
+    writeNotifSortMode(m);
+  };
+  return [mode, set, () => set(mode === "recent" ? "priority" : "recent")];
+}
