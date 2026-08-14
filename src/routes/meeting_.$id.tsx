@@ -17,6 +17,7 @@ import {
   Hand,
   MoreHorizontal,
   MonitorUp,
+  Captions,
   Send,
   FileText,
   Clock,
@@ -60,6 +61,7 @@ import {
   type ShareSourceKey,
   describeDisplayMediaError,
 } from "@/lib/screen-share-quality";
+import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
   openMeetingAttendance,
@@ -258,6 +260,8 @@ function MeetingDetailPage() {
   }, [refreshDevices]);
   // Rời phòng chủ động thì KHÔNG auto rejoin.
   const manualLeaveRef = useRef(false);
+  // Phụ đề trực tiếp (nếu trình duyệt hỗ trợ Web Speech API).
+  const captions = useLiveCaptions("vi-VN");
   const inRoomRef = useRef(false);
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -467,6 +471,26 @@ function MeetingDetailPage() {
     manualLeaveRef.current = true;
     setAutoStatus(null);
     setSession(null);
+  }
+
+  function toggleCaptions() {
+    if (captions.enabled) {
+      captions.stop();
+      toast.info("Đã tắt phụ đề.");
+      return;
+    }
+    if (!captions.supported) {
+      toast.error("Trình duyệt không hỗ trợ phụ đề trực tiếp", {
+        description: "Phụ đề cần Chrome hoặc Edge trên máy tính (Web Speech API). Hãy thử mở lại bằng Chrome.",
+        duration: 8000,
+      });
+      return;
+    }
+    if (captions.start()) toast.success("Đã bật phụ đề (nhận giọng nói của bạn qua micro).");
+    else
+      toast.error("Không bật được phụ đề", {
+        description: "Hãy cho phép quyền micro cho trang này rồi thử lại.",
+      });
   }
 
   // Tự động xin token mới trước khi hết hạn (2 phút đệm) để không bị rớt phòng.
@@ -1151,6 +1175,15 @@ function MeetingDetailPage() {
               </div>
             )}
 
+            {captions.enabled && (
+              <div className="mt-4 rounded-lg border border-border bg-foreground/90 px-4 py-3 text-center text-sm text-background">
+                <span className="mr-2 rounded bg-background/20 px-1.5 py-0.5 text-[11px] uppercase tracking-wide">
+                  Phụ đề
+                </span>
+                {captions.text || "Đang lắng nghe…"}
+              </div>
+            )}
+
             <div className="mt-4 flex items-center justify-center gap-2">
               <span
                 className={`mr-1 hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${
@@ -1193,16 +1226,70 @@ function MeetingDetailPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-72">
-                      <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
-                      {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
-                        <DropdownMenuItem
-                          key={k}
-                          onSelect={() => changeShareSource(k)}
-                          className={shareSource === k ? "font-medium text-primary" : ""}
+                      <DropdownMenuLabel className="flex items-center justify-between gap-2">
+                        Micro
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            void refreshDevices();
+                            toast.success("Đã làm mới danh sách thiết bị.");
+                          }}
+                          className="text-xs font-normal text-primary hover:underline"
                         >
-                          {SHARE_SOURCE_LABELS[k]}
-                        </DropdownMenuItem>
-                      ))}
+                          Làm mới
+                        </button>
+                      </DropdownMenuLabel>
+                      {devices.filter((d) => d.kind === "audioinput").length === 0 ? (
+                        <DropdownMenuItem disabled>Không có micro</DropdownMenuItem>
+                      ) : (
+                        devices
+                          .filter((d) => d.kind === "audioinput")
+                          .map((d, i) => (
+                            <DropdownMenuItem
+                              key={d.deviceId || i}
+                              onSelect={() => {
+                                setMicId(d.deviceId);
+                                setMuted(false);
+                              }}
+                              className={micId === d.deviceId ? "font-medium text-primary" : ""}
+                            >
+                              <Mic className="mr-2 h-4 w-4" />
+                              <span className="truncate">{d.label || `Micro ${i + 1}`}</span>
+                            </DropdownMenuItem>
+                          ))
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Camera</DropdownMenuLabel>
+                      {devices.filter((d) => d.kind === "videoinput").length === 0 ? (
+                        <DropdownMenuItem disabled>Không có camera</DropdownMenuItem>
+                      ) : (
+                        devices
+                          .filter((d) => d.kind === "videoinput")
+                          .map((d, i) => (
+                            <DropdownMenuItem
+                              key={d.deviceId || i}
+                              onSelect={() => {
+                                setCamId(d.deviceId);
+                                setCamOff(false);
+                              }}
+                              className={camId === d.deviceId ? "font-medium text-primary" : ""}
+                            >
+                              <Video className="mr-2 h-4 w-4" />
+                              <span className="truncate">{d.label || `Camera ${i + 1}`}</span>
+                            </DropdownMenuItem>
+                          ))
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Phụ đề</DropdownMenuLabel>
+                      <DropdownMenuItem onSelect={() => toggleCaptions()}>
+                        <Captions className="mr-2 h-4 w-4" />
+                        <span className="truncate">
+                          {captions.enabled ? "Tắt phụ đề" : "Bật phụ đề trực tiếp"}
+                        </span>
+                        {!captions.supported && (
+                          <span className="ml-auto text-[11px] text-muted-foreground">Không hỗ trợ</span>
+                        )}
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
                       {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
@@ -1223,6 +1310,7 @@ function MeetingDetailPage() {
                           onSelect={() => changeShareQuality(k)}
                           className={shareQuality === k ? "font-medium text-primary" : ""}
                         >
+                          <ScreenShare className="mr-2 h-4 w-4" />
                           {SHARE_QUALITY_LABELS[k]}
                         </DropdownMenuItem>
                       ))}
@@ -1234,6 +1322,14 @@ function MeetingDetailPage() {
                           </DropdownMenuLabel>
                         </>
                       )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => leaveRoom()}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <PhoneOff className="mr-2 h-4 w-4" />
+                        Rời phòng ngay
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>
@@ -1320,6 +1416,17 @@ function MeetingDetailPage() {
                           <span className="truncate">{SHARE_QUALITY_LABELS[k]}</span>
                         </DropdownMenuItem>
                       ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Phụ đề</DropdownMenuLabel>
+                      <DropdownMenuItem onSelect={() => toggleCaptions()}>
+                        <Captions className="mr-2 h-4 w-4" />
+                        <span className="truncate">
+                          {captions.enabled ? "Tắt phụ đề" : "Bật phụ đề trực tiếp"}
+                        </span>
+                        {!captions.supported && (
+                          <span className="ml-auto text-[11px] text-muted-foreground">Không hỗ trợ</span>
+                        )}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <button
