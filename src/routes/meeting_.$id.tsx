@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
