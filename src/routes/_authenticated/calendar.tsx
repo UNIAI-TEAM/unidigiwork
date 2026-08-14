@@ -30,8 +30,10 @@ import { buildIcs, downloadIcs } from "@/lib/ics";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
+type CalendarSearch = { view?: "week"; kind?: "meeting"; day?: string };
+
 export const Route = createFileRoute("/_authenticated/calendar")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): CalendarSearch => ({
     view: search['view'] === "week" ? ("week" as const) : undefined,
     kind: search['kind'] === "meeting" ? ("meeting" as const) : undefined,
     day:
@@ -564,7 +566,7 @@ function CalendarPage() {
                     setView("month");
                     void navigateCalendar({
                       to: "/calendar",
-                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "month" }),
+                      search: (pv) => ({ ...pv, view: undefined }),
                       replace: true,
                     });
                   }}
@@ -577,7 +579,7 @@ function CalendarPage() {
                     setView("week");
                     void navigateCalendar({
                       to: "/calendar",
-                      search: (pv: Record<string, unknown>) => ({ ...pv, view: "week" }),
+                      search: (pv) => ({ ...pv, view: "week" as const }),
                       replace: true,
                     });
                   }}

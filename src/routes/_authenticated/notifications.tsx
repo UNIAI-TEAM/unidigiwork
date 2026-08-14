@@ -19,9 +19,18 @@ import {
   SearchX,
   RotateCcw,
   ArrowLeft,
+  ArrowUpDown,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
-import { CATS, catMeta, mapNotifRow, type Cat, type Notif } from "@/lib/notifications-data";
+import {
+  CATS,
+  catMeta,
+  mapNotifRow,
+  sortNotifRows,
+  type Cat,
+  type Notif,
+  type NotifSortMode,
+} from "@/lib/notifications-data";
 import { supabase } from "@/integrations/supabase/client";
 import {
   deleteNotifications,
@@ -166,13 +175,31 @@ function NotificationsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const pageSize = 6;
+  const [sortMode, setSortMode] = useState<NotifSortMode>(() => {
+    if (typeof window === "undefined") return "recent";
+    return window.localStorage.getItem("notifications.sort") === "priority"
+      ? "priority"
+      : "recent";
+  });
+  const toggleSort = () => {
+    const next: NotifSortMode = sortMode === "recent" ? "priority" : "recent";
+    setSortMode(next);
+    try {
+      window.localStorage.setItem("notifications.sort", next);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const qc = useQueryClient();
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: () => listNotifications(),
   });
-  const items = useMemo<Notif[]>(() => rows.map(mapNotifRow), [rows]);
+  const items = useMemo<Notif[]>(
+    () => sortNotifRows(rows, sortMode).map(mapNotifRow),
+    [rows, sortMode],
+  );
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["notifications"] });
 
@@ -241,12 +268,15 @@ function NotificationsPage() {
   );
 
   const groups = useMemo(() => {
-    const map = new Map<Notif["group"], Notif[]>();
+    if (sortMode === "priority") {
+      return pageItems.length ? ([["Theo ưu tiên", pageItems]] as [string, Notif[]][]) : [];
+    }
+    const map = new Map<string, Notif[]>();
     pageItems.forEach((n) => {
       map.set(n.group, [...(map.get(n.group) ?? []), n]);
     });
     return Array.from(map.entries());
-  }, [pageItems]);
+  }, [pageItems, sortMode]);
 
   const unreadCount = items.filter((n) => n.unread).length;
 
@@ -411,6 +441,18 @@ function NotificationsPage() {
               </div>
               <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-surface-2">
                 <Filter className="h-3.5 w-3.5" /> Bộ lọc
+              </button>
+              <button
+                onClick={toggleSort}
+                title={
+                  sortMode === "recent"
+                    ? "Đang sắp xếp: Mới nhất — bấm để đổi sang Ưu tiên"
+                    : "Đang sắp xếp: Ưu tiên — bấm để đổi sang Mới nhất"
+                }
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-surface-2"
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {sortMode === "recent" ? "Mới nhất" : "Ưu tiên"}
               </button>
               <button
                 onClick={markAllRead}

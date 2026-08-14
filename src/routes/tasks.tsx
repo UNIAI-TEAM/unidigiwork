@@ -40,8 +40,10 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { useI18n } from "@/lib/i18n";
 import { isOverdueTask } from "@/lib/metrics";
 
+type TasksSearch = { filter?: "overdue"; range?: number; ws?: string };
+
 export const Route = createFileRoute("/tasks")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): TasksSearch => ({
     filter: search['filter'] === "overdue" ? ("overdue" as const) : undefined,
     range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
     ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,
@@ -322,10 +324,7 @@ function TasksPage() {
                         onClear: () =>
                           navigateTasks({
                             to: "/tasks",
-                            search: (p: { filter?: "overdue"; range?: number }) => ({
-                              ...p,
-                              filter: undefined,
-                            }),
+                            search: (p) => ({ range: p.range, ws: p.ws, filter: undefined }),
                           }),
                       },
                     ]
@@ -337,10 +336,7 @@ function TasksPage() {
                         onClear: () =>
                           navigateTasks({
                             to: "/tasks",
-                            search: (p: { filter?: "overdue"; range?: number }) => ({
-                              ...p,
-                              range: undefined,
-                            }),
+                            search: (p) => ({ filter: p.filter === "overdue" ? ("overdue" as const) : undefined, ws: p.ws, range: undefined }),
                           }),
                       },
                     ]
@@ -534,7 +530,7 @@ function TasksPage() {
               )}
               {overdueOnly && (
                 <button
-                  onClick={() => navigateTasks({ to: "/tasks", search: (p: { filter?: "overdue"; range?: number }) => ({ ...p, filter: undefined }) })}
+                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ range: p.range, ws: p.ws, filter: undefined }) })}
                   className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs text-warning hover:bg-warning/25"
                 >
                   Chỉ hiển thị quá hạn <X className="h-3 w-3" />
@@ -542,7 +538,7 @@ function TasksPage() {
               )}
               {rangeDays && (
                 <button
-                  onClick={() => navigateTasks({ to: "/tasks", search: (p: { filter?: "overdue"; range?: number }) => ({ ...p, range: undefined }) })}
+                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ filter: p.filter === "overdue" ? ("overdue" as const) : undefined, ws: p.ws, range: undefined }) })}
                   className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs text-primary hover:bg-primary/25"
                 >
                   {rangeDays} ngày qua <X className="h-3 w-3" />
