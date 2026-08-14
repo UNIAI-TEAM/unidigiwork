@@ -14,6 +14,8 @@ export type NotifRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 export type Cat = "all" | "mention" | "task" | "meeting" | "document" | "workflow" | "system";
 
+export type NotifPriority = "low" | "normal" | "high" | "urgent";
+
 export type Notif = {
   id: string;
   cat: Exclude<Cat, "all">;
@@ -24,6 +26,7 @@ export type Notif = {
   group: "Hôm nay" | "Hôm qua" | "Tuần này" | "Cũ hơn";
   unread?: boolean;
   important?: boolean;
+  priority?: NotifPriority;
   /** Optional rich detail fields for the detail page */
   context?: string;
   link?: { label: string; to: string };
