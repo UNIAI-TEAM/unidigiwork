@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { useEffect, useState } from "react";
 
 export type NotifRow = Database["public"]["Tables"]["notifications"]["Row"];
 
