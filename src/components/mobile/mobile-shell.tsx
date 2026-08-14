@@ -29,7 +29,6 @@ export function MobileShell() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="p-4 text-destructive">DEBUG: MobileShell rendered</div>
       <MobileTopbar />
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <Outlet />
