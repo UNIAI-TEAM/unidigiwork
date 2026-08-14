@@ -26,9 +26,13 @@ import {
   CATS,
   catMeta,
   mapNotifRow,
+  PRIORITY_DOT,
+  PRIORITY_LABELS,
+  PRIORITY_TINT,
   sortNotifRows,
   type Cat,
   type Notif,
+  type NotifPriority,
   type NotifSortMode,
 } from "@/lib/notifications-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,6 +118,13 @@ function NotifRow({
               {n.title}
             </span>
           </div>
+          {n.priority && n.priority !== "normal" && (
+            <span
+              className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${PRIORITY_TINT[n.priority]}`}
+            >
+              {PRIORITY_LABELS[n.priority]}
+            </span>
+          )}
           {n.important && (
             <span className="inline-flex items-center gap-1 rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-medium text-rose-300">
               <AlertTriangle className="h-3 w-3" /> Quan trọng
@@ -181,6 +192,8 @@ function NotificationsPage() {
       ? "priority"
       : "recent";
   });
+  const [priorityFilter, setPriorityFilter] = useState<"all" | "important" | NotifPriority>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
   const toggleSort = () => {
     const next: NotifSortMode = sortMode === "recent" ? "priority" : "recent";
     setSortMode(next);
@@ -251,20 +264,32 @@ function NotificationsPage() {
       if (tab === "archived") return false;
       if (q && !`${n.title} ${n.body} ${n.actor ?? ""}`.toLowerCase().includes(q.toLowerCase()))
         return false;
+      if (priorityFilter === "important") return !!n.important;
+      if (priorityFilter !== "all" && n.priority !== priorityFilter) return false;
       return true;
     });
-  }, [items, cat, tab, q]);
+  }, [items, cat, tab, q, priorityFilter]);
+
+  // Khi bộ lọc ưu tiên đang hoạt động, sắp xếp từ thấp đến cao
+  const displayItems = useMemo(() => {
+    if (priorityFilter === "all") return filtered;
+    const rank: Record<NotifPriority, number> = { low: 1, normal: 2, high: 3, urgent: 4 };
+    return [...filtered].sort((a, b) => {
+      if (priorityFilter === "important") return Number(b.important) - Number(a.important);
+      return (rank[a.priority ?? "normal"] ?? 2) - (rank[b.priority ?? "normal"] ?? 2);
+    });
+  }, [filtered, priorityFilter]);
 
   // Reset to page 1 when filters change
   useMemo(() => {
     setPage(1);
-  }, [cat, tab, q]);
+  }, [cat, tab, q, priorityFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(displayItems.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = useMemo(
-    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [filtered, currentPage],
+    () => displayItems.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [displayItems, currentPage],
   );
 
   const groups = useMemo(() => {
@@ -439,9 +464,54 @@ function NotificationsPage() {
                   className="w-full rounded-lg bg-surface-2 py-1.5 pl-8 pr-3 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
                 />
               </div>
-              <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-surface-2">
-                <Filter className="h-3.5 w-3.5" /> Bộ lọc
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setFilterOpen((o) => !o)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-surface-2 ${priorityFilter !== "all" ? "border-primary/50 text-primary" : ""}`}
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  {priorityFilter === "all" ? "Bộ lọc" : `Ưu tiên: ${PRIORITY_LABELS[priorityFilter]}`}
+                </button>
+                {filterOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setFilterOpen(false)}
+                    />
+                    <div className="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-border bg-surface p-1 shadow-lg">
+                      <div className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                        Mức độ ưu tiên
+                      </div>
+                      {(
+                        [
+                          { k: "all", l: "Tất cả mức ưu tiên" },
+                          { k: "important", l: "Quan trọng" },
+                          { k: "low", l: "Thấp" },
+                          { k: "normal", l: "Bình thường" },
+                          { k: "high", l: "Cao" },
+                          { k: "urgent", l: "Khẩn cấp" },
+                        ] as const
+                      ).map((p) => (
+                        <button
+                          key={p.k}
+                          onClick={() => {
+                            setPriorityFilter(p.k as typeof priorityFilter);
+                            setFilterOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${priorityFilter === p.k ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
+                        >
+                          {p.k !== "all" && (
+                            <span
+                              className={`h-2 w-2 rounded-full ${PRIORITY_DOT[p.k as NotifPriority | "important"]}`}
+                            />
+                          )}
+                          {p.l}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
               <button
                 onClick={toggleSort}
                 title={
@@ -521,6 +591,7 @@ function NotificationsPage() {
                       setCat("all");
                       setTab("inbox");
                       setQ("");
+                      setPriorityFilter("all");
                     }}
                     className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2"
                   >

@@ -14,6 +14,8 @@ export type NotifRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 export type Cat = "all" | "mention" | "task" | "meeting" | "document" | "workflow" | "system";
 
+export type NotifPriority = "low" | "normal" | "high" | "urgent";
+
 export type Notif = {
   id: string;
   cat: Exclude<Cat, "all">;
@@ -24,6 +26,7 @@ export type Notif = {
   group: "Hôm nay" | "Hôm qua" | "Tuần này" | "Cũ hơn";
   unread?: boolean;
   important?: boolean;
+  priority?: NotifPriority;
   /** Optional rich detail fields for the detail page */
   context?: string;
   link?: { label: string; to: string };
@@ -44,6 +47,39 @@ export const CATS: { key: Cat; label: string; icon: LucideIcon; tint: string }[]
 export function catMeta(cat: Notif["cat"]) {
   return CATS.find((c) => c.key === cat)!;
 }
+
+export function getNotifPriority(n: { meta?: unknown }): NotifPriority {
+  const meta = (n?.meta ?? {}) as Record<string, unknown>;
+  const p = String(meta.priority ?? "").toLowerCase();
+  if (p === "urgent") return "urgent";
+  if (p === "high") return "high";
+  if (p === "low") return "low";
+  return "normal";
+}
+
+export const PRIORITY_LABELS: Record<NotifPriority | "important", string> = {
+  low: "Thấp",
+  normal: "Bình thường",
+  high: "Cao",
+  urgent: "Khẩn cấp",
+  important: "Quan trọng",
+};
+
+export const PRIORITY_TINT: Record<NotifPriority | "important", string> = {
+  low: "text-slate-400 bg-slate-500/10",
+  normal: "text-blue-300 bg-blue-500/10",
+  high: "text-amber-300 bg-amber-500/10",
+  urgent: "text-rose-300 bg-rose-500/10",
+  important: "text-rose-300 bg-rose-500/10",
+};
+
+export const PRIORITY_DOT: Record<NotifPriority | "important", string> = {
+  low: "bg-slate-400",
+  normal: "bg-blue-400",
+  high: "bg-amber-400",
+  urgent: "bg-rose-500",
+  important: "bg-rose-500",
+};
 
 export const NOTIFS: Notif[] = [
   {
@@ -283,6 +319,7 @@ export function mapNotifRow(row: NotifRow): Notif {
     group: groupOf(row.created_at),
     unread: !row.is_read,
     important: meta.important === true,
+    priority: getNotifPriority(row),
     context: typeof meta.context === "string" ? meta.context : undefined,
     link: row.link ? { label: linkLabel, to: row.link } : undefined,
     details: Array.isArray(meta.details) ? (meta.details as Notif["details"]) : undefined,
