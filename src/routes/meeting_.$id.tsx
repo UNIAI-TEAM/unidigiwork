@@ -321,7 +321,11 @@ function MeetingDetailPage() {
       return;
     }
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
-      toast.error("Trình duyệt không hỗ trợ chia sẻ màn hình.");
+      toast.error("Thiết bị hoặc trình duyệt không hỗ trợ chia sẻ màn hình", {
+        description:
+          "Tính năng này cần Chrome, Edge, Firefox hoặc Safari trên máy tính (trang phải chạy trên HTTPS). Trình duyệt di động chưa hỗ trợ.",
+        duration: 8000,
+      });
       return;
     }
     try {
@@ -335,10 +339,9 @@ function MeetingDetailPage() {
       setSharing(true);
       s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
     } catch (e) {
-      const name = e instanceof DOMException ? e.name : "Error";
-      if (name !== "NotAllowedError" && name !== "AbortError") {
-        toast.error("Không chia sẻ được màn hình.");
-      }
+      const info = describeDisplayMediaError(e);
+      if (info.cancelled) toast.info(info.title, { description: info.hint });
+      else toast.error(info.title, { description: info.hint, duration: 8000 });
     }
   }, [sharing, stopShare, shareQuality, shareSource, session]);
 
