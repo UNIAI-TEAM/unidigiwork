@@ -60,6 +60,7 @@ import {
   type ShareSourceKey,
   describeDisplayMediaError,
 } from "@/lib/screen-share-quality";
+import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
   openMeetingAttendance,
