@@ -525,6 +525,54 @@ function MeetingDetailPage() {
   const myRsvp =
     (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.rsvp ?? null;
 
+  // ==== Giơ tay realtime (Supabase Presence trên kênh riêng của cuộc họp) ====
+  const myName =
+    (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.name ??
+    (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.email ??
+    "Bạn";
+  const [raisedHands, setRaisedHands] = useState<Array<{ userId: string; name: string; at: number }>>([]);
+  const handsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const handRaised = raisedHands.some((h) => h.userId === myUserId);
+
+  useEffect(() => {
+    if (!isRealRoom || !myUserId) return;
+    const channel = supabase.channel(`meeting-hands-${id}`, {
+      config: { presence: { key: myUserId } },
+    });
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState<{ raised?: boolean; name?: string; at?: number }>();
+        const next: Array<{ userId: string; name: string; at: number }> = [];
+        for (const [key, metas] of Object.entries(state)) {
+          const meta = metas[metas.length - 1];
+          if (meta?.raised) next.push({ userId: key, name: meta.name ?? "Thành viên", at: meta.at ?? 0 });
+        }
+        next.sort((a, b) => a.at - b.at);
+        setRaisedHands(next);
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") void channel.track({ raised: false, name: myName });
+      });
+    handsChannelRef.current = channel;
+    return () => {
+      handsChannelRef.current = null;
+      void supabase.removeChannel(channel);
+    };
+  }, [id, isRealRoom, myUserId, myName]);
+
+  const toggleHand = useCallback(async () => {
+    const channel = handsChannelRef.current;
+    if (!channel) {
+      toast.error("Chưa kết nối được trạng thái phòng họp.");
+      return;
+    }
+    const next = !handRaised;
+    await channel.track({ raised: next, name: myName, at: Date.now() });
+    toast.success(next ? "Bạn đã giơ tay." : "Bạn đã hạ tay.");
+  }, [handRaised, myName]);
+
+  const raisedSet = new Set(raisedHands.map((h) => h.userId));
+
   const handleRsvp = useCallback(
     async (rsvp: "accepted" | "declined" | "tentative") => {
       if (!isRealRoom) return;
