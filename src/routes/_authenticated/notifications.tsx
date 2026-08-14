@@ -32,6 +32,7 @@ import {
   PRIORITY_LABELS,
   PRIORITY_TINT,
   sortNotifRows,
+  useNotifSortMode,
   type Cat,
   type Notif,
   type NotifPriority,
@@ -204,12 +205,7 @@ function NotificationsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const pageSize = 6;
-  const [sortMode, setSortMode] = useState<NotifSortMode>(() => {
-    if (typeof window === "undefined") return "recent";
-    return window.localStorage.getItem("notifications.sort") === "priority"
-      ? "priority"
-      : "recent";
-  });
+  const [sortMode, , toggleSort] = useNotifSortMode();
   const [priorityFilter, setPriorityFilter] = useState<"all" | "important" | NotifPriority>("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
@@ -233,15 +229,6 @@ function NotificationsPage() {
       }
       return next;
     });
-  };
-  const toggleSort = () => {
-    const next: NotifSortMode = sortMode === "recent" ? "priority" : "recent";
-    setSortMode(next);
-    try {
-      window.localStorage.setItem("notifications.sort", next);
-    } catch {
-      /* ignore */
-    }
   };
 
   const qc = useQueryClient();
