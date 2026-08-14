@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -695,8 +696,12 @@ function MeetingDetailPage() {
     (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.email ??
     "Bạn";
   const [raisedHands, setRaisedHands] = useState<Array<{ userId: string; name: string; at: number }>>([]);
+  // Danh sách người được chủ trì cấp quyền phát biểu (đồng bộ qua presence).
+  const [speakers, setSpeakers] = useState<Array<{ userId: string; name: string }>>([]);
   const handsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const handRaised = raisedHands.some((h) => h.userId === myUserId);
+  const canSpeak = speakers.some((s) => s.userId === myUserId);
+  const myMetaRef = useRef<{ raised: boolean; speaking: boolean }>({ raised: false, speaking: false });
 
   useEffect(() => {
     if (!isRealRoom || !myUserId) return;
@@ -705,17 +710,40 @@ function MeetingDetailPage() {
     });
     channel
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ raised?: boolean; name?: string; at?: number }>();
+        const state = channel.presenceState<{
+          raised?: boolean;
+          name?: string;
+          at?: number;
+          speaking?: boolean;
+        }>();
         const next: Array<{ userId: string; name: string; at: number }> = [];
+        const speaking: Array<{ userId: string; name: string }> = [];
         for (const [key, metas] of Object.entries(state)) {
           const meta = metas[metas.length - 1];
           if (meta?.raised) next.push({ userId: key, name: meta.name ?? "Thành viên", at: meta.at ?? 0 });
+          if (meta?.speaking) speaking.push({ userId: key, name: meta.name ?? "Thành viên" });
         }
         next.sort((a, b) => a.at - b.at);
         setRaisedHands(next);
+        setSpeakers(speaking);
+      })
+      // Chủ trì cấp/thu quyền phát biểu: chỉ người được nhắc tới mới đổi trạng thái của mình.
+      .on("broadcast", { event: "speak" }, ({ payload }) => {
+        const p = payload as { userId?: string; allow?: boolean; hostName?: string };
+        if (!p?.userId || p.userId !== myUserId) return;
+        const allow = !!p.allow;
+        myMetaRef.current = { raised: false, speaking: allow };
+        void channel.track({ raised: false, speaking: allow, name: myName, at: Date.now() });
+        setMuted(!allow);
+        if (allow)
+          toast.success("Bạn được mời phát biểu", {
+            description: `${p.hostName ?? "Chủ trì"} đã bật quyền nói cho bạn — micro đã được bật.`,
+          });
+        else toast.info("Chủ trì đã thu quyền phát biểu — micro đã tắt.");
       })
       .subscribe((status) => {
-        if (status === "SUBSCRIBED") void channel.track({ raised: false, name: myName });
+        if (status === "SUBSCRIBED")
+          void channel.track({ ...myMetaRef.current, name: myName, at: Date.now() });
       });
     handsChannelRef.current = channel;
     return () => {
@@ -731,9 +759,28 @@ function MeetingDetailPage() {
       return;
     }
     const next = !handRaised;
-    await channel.track({ raised: next, name: myName, at: Date.now() });
+    myMetaRef.current = { ...myMetaRef.current, raised: next };
+    await channel.track({ ...myMetaRef.current, name: myName, at: Date.now() });
     toast.success(next ? "Bạn đã giơ tay." : "Bạn đã hạ tay.");
   }, [handRaised, myName]);
+
+  // Chủ trì cấp / thu quyền phát biểu cho một người trong hàng đợi.
+  const setSpeakPermission = useCallback(
+    async (userId: string, name: string, allow: boolean) => {
+      const channel = handsChannelRef.current;
+      if (!channel) {
+        toast.error("Chưa kết nối được trạng thái phòng họp.");
+        return;
+      }
+      await channel.send({
+        type: "broadcast",
+        event: "speak",
+        payload: { userId, allow, hostName: myName },
+      });
+      toast.success(allow ? `Đã cho ${name} phát biểu.` : `Đã thu quyền phát biểu của ${name}.`);
+    },
+    [myName],
+  );
 
   const raisedSet = new Set(raisedHands.map((h) => h.userId));
 
@@ -1165,13 +1212,60 @@ function MeetingDetailPage() {
               </p>
             )}
 
-            {raisedHands.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
-                <Hand className="h-3.5 w-3.5 shrink-0 text-primary" />
-                <span className="font-medium text-primary">Đang giơ tay:</span>
-                <span className="min-w-0 truncate text-muted-foreground">
-                  {raisedHands.map((h, i) => `${i + 1}. ${h.userId === myUserId ? "Bạn" : h.name}`).join(" · ")}
-                </span>
+            {(raisedHands.length > 0 || speakers.length > 0) && (
+              <div className="mt-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                {raisedHands.length > 0 && (
+                  <div className="flex items-center gap-2 text-primary">
+                    <Hand className="h-3.5 w-3.5 shrink-0" />
+                    <span className="font-medium">Hàng đợi giơ tay ({raisedHands.length})</span>
+                  </div>
+                )}
+                {raisedHands.map((h, i) => (
+                  <div key={h.userId} className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-muted-foreground">
+                      {i + 1}. {h.userId === myUserId ? "Bạn" : h.name}
+                    </span>
+                    {isHost && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => void setSpeakPermission(h.userId, h.name, true)}
+                      >
+                        <Mic className="mr-1 h-3.5 w-3.5" />
+                        Cho phát biểu
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {speakers.length > 0 && (
+                  <div className="space-y-1 border-t border-primary/20 pt-2">
+                    <p className="font-medium text-primary">Đang được phát biểu</p>
+                    {speakers.map((s) => (
+                      <div key={s.userId} className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate text-muted-foreground">
+                          {s.userId === myUserId ? "Bạn" : s.name}
+                        </span>
+                        {isHost && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => void setSpeakPermission(s.userId, s.name, false)}
+                          >
+                            <MicOff className="mr-1 h-3.5 w-3.5" />
+                            Thu quyền
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {canSpeak && (
+                  <p className="text-muted-foreground">
+                    Bạn đã được chủ trì cấp quyền phát biểu — micro đã được bật.
+                  </p>
+                )}
               </div>
             )}
 
