@@ -55,6 +55,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { useNotifSortMode } from "@/lib/notifications-data";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -259,8 +260,6 @@ const NOTIF_TYPE_WEIGHT: Record<string, number> = {
   chat: 10,
   system: 5,
 };
-
-import { useNotifSortMode } from "@/lib/notifications-data";
 
 function notifPriorityRank(n: any): number {
   const type = String(n?.type ?? "").toLowerCase();
