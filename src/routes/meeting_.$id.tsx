@@ -1127,6 +1127,19 @@ function MeetingDetailPage() {
             )}
 
             <div className="mt-4 flex items-center justify-center gap-2">
+              <span
+                className={`mr-1 hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${
+                  sharing
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-border bg-surface-2 text-muted-foreground"
+                }`}
+                aria-live="polite"
+              >
+                {sharing ? <ScreenShare className="h-3.5 w-3.5" /> : <ScreenShareOff className="h-3.5 w-3.5" />}
+                {sharing
+                  ? `Đang chia sẻ màn hình${shareQualityInfo ? ` · ${shareQualityInfo}` : ""}`
+                  : "Chưa chia sẻ màn hình"}
+              </span>
               {session ? (
                 <>
                   <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
