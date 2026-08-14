@@ -8,8 +8,15 @@ import {
   useConnectionState,
   useLocalParticipant,
 } from "@livekit/components-react";
-import { ConnectionState } from "livekit-client";
-import { useEffect } from "react";
+import { ConnectionState, ConnectionQuality, Track } from "livekit-client";
+import { useEffect, useMemo, useRef } from "react";
+import {
+  applyPresetToTrack,
+  degrade,
+  resolvePreset,
+  upgrade,
+  type ShareQualityKey,
+} from "@/lib/screen-share-quality";
 
 export interface LiveKitStageProps {
   serverUrl: string;
@@ -26,6 +33,56 @@ export interface LiveKitStageProps {
   camDeviceId?: string;
   /** Báo ngược trạng thái thật (khi người dùng bấm nút trong khung LiveKit). */
   onMediaStateChange?: (state: { mic: boolean; cam: boolean }) => void;
+  /** Chất lượng chia sẻ màn hình; "auto" sẽ tự điều chỉnh khi mạng yếu. */
+  shareQuality?: ShareQualityKey;
+  /** Báo bậc chất lượng thực tế đang dùng. */
+  onShareQualityResolved?: (label: string) => void;
+}
+
+/**
+ * Ép độ phân giải/khung hình cho track màn hình đang publish và tự hạ bậc
+ * khi chất lượng kết nối kém (chống giật), tự nâng lại khi mạng hồi phục.
+ */
+function ScreenShareQuality({
+  shareQuality = "auto",
+  onShareQualityResolved,
+}: Pick<LiveKitStageProps, "shareQuality" | "onShareQualityResolved">) {
+  const { localParticipant } = useLocalParticipant();
+  const levelRef = useRef(resolvePreset(shareQuality).key);
+
+  useEffect(() => {
+    if (!localParticipant) return;
+    let stopped = false;
+
+    const tick = async () => {
+      if (stopped) return;
+      const pub = localParticipant.getTrackPublication(Track.Source.ScreenShare);
+      const track = pub?.track?.mediaStreamTrack;
+      if (!track) return;
+
+      let next = shareQuality === "auto" ? levelRef.current : resolvePreset(shareQuality).key;
+      if (shareQuality === "auto") {
+        const q = localParticipant.connectionQuality;
+        if (q === ConnectionQuality.Poor) next = degrade(next);
+        else if (q === ConnectionQuality.Excellent) next = upgrade(next);
+      }
+      const preset = resolvePreset(next);
+      if (next !== levelRef.current || !pub?.isMuted) {
+        levelRef.current = next;
+        await applyPresetToTrack(track, preset);
+        onShareQualityResolved?.(preset.label);
+      }
+    };
+
+    void tick();
+    const timer = setInterval(() => void tick(), 5000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [localParticipant, shareQuality, onShareQualityResolved]);
+
+  return null;
 }
 
 function MediaSync({
@@ -108,7 +165,10 @@ export default function LiveKitStage({
   micDeviceId,
   camDeviceId,
   onMediaStateChange,
+  shareQuality = "auto",
+  onShareQualityResolved,
 }: LiveKitStageProps) {
+  const preset = useMemo(() => resolvePreset(shareQuality), [shareQuality]);
   return (
     <div className="relative h-full w-full">
     <LiveKitRoom
@@ -118,12 +178,26 @@ export default function LiveKitStage({
       video={camEnabled ?? true}
       audio={micEnabled ?? true}
       onDisconnected={onDisconnected}
+      options={{
+        // Chỉ gửi/nhận đúng độ phân giải đang hiển thị -> đỡ giật khi mạng yếu.
+        adaptiveStream: true,
+        dynacast: true,
+        publishDefaults: {
+          screenShareEncoding: {
+            maxBitrate: preset.maxBitrate,
+            maxFramerate: preset.frameRate,
+          },
+          simulcast: true,
+          degradationPreference: "maintain-resolution",
+        },
+      }}
       data-lk-theme="default"
       style={{ height: "100%", width: "100%", borderRadius: "0.75rem", overflow: "hidden" }}
     >
       <VideoConference />
       <RoomAudioRenderer />
       <ConnectionMonitor onConnectionStateChange={onConnectionStateChange} />
+      <ScreenShareQuality shareQuality={shareQuality} onShareQualityResolved={onShareQualityResolved} />
       <MediaSync
         micEnabled={micEnabled}
         camEnabled={camEnabled}
