@@ -479,7 +479,7 @@ function DocumentsPage() {
                   onClick={() =>
                     navigate({
                       to: "/documents",
-                      search: (p: DocumentsSearch) => ({ ...p, filter: undefined }),
+                      search: (p) => ({ ...p, filter: undefined }),
                     })
                   }
                   className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-warning/15 px-2.5 py-1.5 text-xs text-warning hover:bg-warning/25"
@@ -493,7 +493,7 @@ function DocumentsPage() {
                   onClick={() =>
                     navigate({
                       to: "/documents",
-                      search: (p: DocumentsSearch) => ({ ...p, range: undefined }),
+                      search: (p) => ({ ...p, range: undefined }),
                     })
                   }
                   className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs text-primary hover:bg-primary/25"
@@ -593,7 +593,7 @@ function DocumentsPage() {
                           onClear: () =>
                             navigate({
                               to: "/documents",
-                              search: (p: DocumentsSearch) => ({
+                              search: (p) => ({
                                 ...p,
                                 filter: undefined,
                               }),
@@ -608,7 +608,7 @@ function DocumentsPage() {
                           onClear: () =>
                             navigate({
                               to: "/documents",
-                              search: (p: DocumentsSearch) => ({
+                              search: (p) => ({
                                 ...p,
                                 range: undefined,
                               }),
