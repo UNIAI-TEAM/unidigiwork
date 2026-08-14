@@ -324,10 +324,7 @@ function TasksPage() {
                         onClear: () =>
                           navigateTasks({
                             to: "/tasks",
-                            search: (p) => ({
-                              ...p,
-                              filter: undefined,
-                            }),
+                            search: (p) => ({ range: p.range, ws: p.ws, filter: undefined }),
                           }),
                       },
                     ]
@@ -339,10 +336,7 @@ function TasksPage() {
                         onClear: () =>
                           navigateTasks({
                             to: "/tasks",
-                            search: (p) => ({
-                              ...p,
-                              range: undefined,
-                            }),
+                            search: (p) => ({ filter: p.filter === "overdue" ? ("overdue" as const) : undefined, ws: p.ws, range: undefined }),
                           }),
                       },
                     ]
@@ -536,7 +530,7 @@ function TasksPage() {
               )}
               {overdueOnly && (
                 <button
-                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ ...p, filter: undefined }) })}
+                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ range: p.range, ws: p.ws, filter: undefined }) })}
                   className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs text-warning hover:bg-warning/25"
                 >
                   Chỉ hiển thị quá hạn <X className="h-3 w-3" />
@@ -544,7 +538,7 @@ function TasksPage() {
               )}
               {rangeDays && (
                 <button
-                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ ...p, range: undefined }) })}
+                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ filter: p.filter === "overdue" ? ("overdue" as const) : undefined, ws: p.ws, range: undefined }) })}
                   className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs text-primary hover:bg-primary/25"
                 >
                   {rangeDays} ngày qua <X className="h-3 w-3" />
