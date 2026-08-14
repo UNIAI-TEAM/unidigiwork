@@ -20,6 +20,8 @@ import {
   RotateCcw,
   ArrowLeft,
   ArrowUpDown,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import {
@@ -64,11 +66,15 @@ function NotifRow({
   selected,
   onToggle,
   onMarkRead,
+  pinned,
+  onTogglePin,
 }: {
   n: Notif;
   selected: boolean;
   onToggle: () => void;
   onMarkRead: () => void;
+  pinned: boolean;
+  onTogglePin: () => void;
 }) {
   const meta = catMeta(n.cat);
   const Icon = meta.icon;
@@ -135,6 +141,7 @@ function NotifRow({
             </span>
           )}
           {n.unread && <Circle className="mt-1 h-2 w-2 shrink-0 fill-primary text-primary" />}
+          {pinned && <Pin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />}
         </div>
         <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>
         <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
@@ -156,6 +163,13 @@ function NotifRow({
         </div>
       </Link>
       <div className="hidden items-center gap-1 self-center opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+        <button
+          title={pinned ? "Bỏ ghim" : "Ghim lên đầu"}
+          onClick={onTogglePin}
+          className={`rounded p-1.5 hover:bg-surface ${pinned ? "text-primary opacity-100" : "text-muted-foreground hover:text-primary"}`}
+        >
+          {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+        </button>
         {n.unread && (
           <button
             title="Đánh dấu đã đọc"
@@ -198,6 +212,28 @@ function NotificationsPage() {
   });
   const [priorityFilter, setPriorityFilter] = useState<"all" | "important" | NotifPriority>("all");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = window.localStorage.getItem("notifications.pinned");
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  const togglePin = (id: string) => {
+    setPinnedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        window.localStorage.setItem("notifications.pinned", JSON.stringify(Array.from(next)));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
   const toggleSort = () => {
     const next: NotifSortMode = sortMode === "recent" ? "priority" : "recent";
     setSortMode(next);
@@ -276,13 +312,20 @@ function NotificationsPage() {
 
   // Khi bộ lọc ưu tiên đang hoạt động, sắp xếp từ thấp đến cao
   const displayItems = useMemo(() => {
-    if (priorityFilter === "all") return filtered;
-    const rank: Record<NotifPriority, number> = { low: 1, normal: 2, high: 3, urgent: 4 };
-    return [...filtered].sort((a, b) => {
-      if (priorityFilter === "important") return Number(b.important) - Number(a.important);
-      return (rank[a.priority ?? "normal"] ?? 2) - (rank[b.priority ?? "normal"] ?? 2);
-    });
-  }, [filtered, priorityFilter]);
+    let list = filtered;
+    if (priorityFilter !== "all") {
+      const rank: Record<NotifPriority, number> = { low: 1, normal: 2, high: 3, urgent: 4 };
+      list = [...filtered].sort((a, b) => {
+        if (priorityFilter === "important") return Number(b.important) - Number(a.important);
+        return (rank[a.priority ?? "normal"] ?? 2) - (rank[b.priority ?? "normal"] ?? 2);
+      });
+    }
+    // Ghim luôn nằm trên đầu, bất kể chế độ sắp xếp
+    if (pinnedIds.size === 0) return list;
+    return [...list].sort(
+      (a, b) => Number(pinnedIds.has(b.id)) - Number(pinnedIds.has(a.id)),
+    );
+  }, [filtered, priorityFilter, pinnedIds]);
 
   // Reset to page 1 when filters change
   useMemo(() => {
@@ -297,15 +340,20 @@ function NotificationsPage() {
   );
 
   const groups = useMemo(() => {
+    const pinned = pageItems.filter((n) => pinnedIds.has(n.id));
+    const rest = pageItems.filter((n) => !pinnedIds.has(n.id));
+    const out: [string, Notif[]][] = [];
+    if (pinned.length) out.push(["Đã ghim", pinned]);
     if (sortMode === "priority") {
-      return pageItems.length ? ([["Theo ưu tiên", pageItems]] as [string, Notif[]][]) : [];
+      if (rest.length) out.push(["Theo ưu tiên", rest]);
+      return out;
     }
     const map = new Map<string, Notif[]>();
-    pageItems.forEach((n) => {
+    rest.forEach((n) => {
       map.set(n.group, [...(map.get(n.group) ?? []), n]);
     });
-    return Array.from(map.entries());
-  }, [pageItems, sortMode]);
+    return [...out, ...Array.from(map.entries())];
+  }, [pageItems, sortMode, pinnedIds]);
 
   const unreadCount = items.filter((n) => n.unread).length;
 
@@ -617,6 +665,8 @@ function NotificationsPage() {
                       selected={selected.has(n.id)}
                       onToggle={() => toggle(n.id)}
                       onMarkRead={() => markRead([n.id])}
+                      pinned={pinnedIds.has(n.id)}
+                      onTogglePin={() => togglePin(n.id)}
                     />
                   ))}
                 </div>
