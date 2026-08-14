@@ -1334,6 +1334,8 @@ function EmailHubPage() {
                 </div>
               </div>
             </div>
+              </>
+            )}
           </section>
 
           {/* Right rail */}
