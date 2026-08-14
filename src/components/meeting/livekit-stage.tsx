@@ -13,12 +13,14 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   applyPresetToTrack,
   degrade,
+  describeDisplayMediaError,
   readTrackSurface,
   resolvePreset,
   upgrade,
   type ShareQualityKey,
   type ShareSourceKey,
 } from "@/lib/screen-share-quality";
+import { toast } from "sonner";
 
 export interface LiveKitStageProps {
   serverUrl: string;
@@ -82,8 +84,11 @@ function ScreenShareSync({
         const track = localParticipant.getTrackPublication(Track.Source.ScreenShare)?.track?.mediaStreamTrack;
         onShareSourceResolved?.(readTrackSurface(track));
       })
-      .catch(() => {
-        // Người dùng hủy hộp thoại chọn màn hình -> trả nút về trạng thái tắt.
+      .catch((err: unknown) => {
+        // Người dùng hủy/từ chối hộp thoại chọn màn hình -> trả nút về trạng thái tắt + hướng dẫn.
+        const info = describeDisplayMediaError(err);
+        if (info.cancelled) toast.info(info.title, { description: info.hint });
+        else toast.error(info.title, { description: info.hint, duration: 8000 });
         onScreenShareStateChange?.(false);
       });
   }, [
