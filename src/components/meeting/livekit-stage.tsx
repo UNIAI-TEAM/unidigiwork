@@ -37,6 +37,46 @@ export interface LiveKitStageProps {
   shareQuality?: ShareQualityKey;
   /** Báo bậc chất lượng thực tế đang dùng. */
   onShareQualityResolved?: (label: string) => void;
+  /** Yêu cầu publish/ngừng publish track chia sẻ màn hình vào phòng. */
+  screenShareEnabled?: boolean;
+  /** Báo ngược trạng thái chia sẻ màn hình thật trong phòng. */
+  onScreenShareStateChange?: (enabled: boolean) => void;
+}
+
+/** Đồng bộ nút chia sẻ màn hình bên ngoài với track thật publish vào LiveKit. */
+function ScreenShareSync({
+  screenShareEnabled,
+  shareQuality = "auto",
+  onScreenShareStateChange,
+}: Pick<LiveKitStageProps, "screenShareEnabled" | "shareQuality" | "onScreenShareStateChange">) {
+  const { localParticipant, isScreenShareEnabled } = useLocalParticipant();
+
+  useEffect(() => {
+    if (!localParticipant || screenShareEnabled === undefined) return;
+    if (isScreenShareEnabled === screenShareEnabled) return;
+    const preset = resolvePreset(shareQuality);
+    void localParticipant
+      .setScreenShareEnabled(screenShareEnabled, {
+        audio: true,
+        contentHint: preset.contentHint,
+        resolution: {
+          width: preset.width,
+          height: preset.height,
+          frameRate: preset.frameRate,
+        },
+      })
+      .catch(() => {
+        // Người dùng hủy hộp thoại chọn màn hình -> trả nút về trạng thái tắt.
+        onScreenShareStateChange?.(false);
+      });
+  }, [localParticipant, screenShareEnabled, isScreenShareEnabled, shareQuality, onScreenShareStateChange]);
+
+  // Người dùng bấm "Stop sharing" của trình duyệt hoặc nút trong khung LiveKit.
+  useEffect(() => {
+    onScreenShareStateChange?.(isScreenShareEnabled);
+  }, [isScreenShareEnabled, onScreenShareStateChange]);
+
+  return null;
 }
 
 /**
@@ -167,6 +207,8 @@ export default function LiveKitStage({
   onMediaStateChange,
   shareQuality = "auto",
   onShareQualityResolved,
+  screenShareEnabled,
+  onScreenShareStateChange,
 }: LiveKitStageProps) {
   const preset = useMemo(() => resolvePreset(shareQuality), [shareQuality]);
   return (
@@ -198,6 +240,11 @@ export default function LiveKitStage({
       <RoomAudioRenderer />
       <ConnectionMonitor onConnectionStateChange={onConnectionStateChange} />
       <ScreenShareQuality shareQuality={shareQuality} onShareQualityResolved={onShareQualityResolved} />
+      <ScreenShareSync
+        screenShareEnabled={screenShareEnabled}
+        shareQuality={shareQuality}
+        onScreenShareStateChange={onScreenShareStateChange}
+      />
       <MediaSync
         micEnabled={micEnabled}
         camEnabled={camEnabled}
