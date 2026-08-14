@@ -211,6 +211,18 @@ function MeetingDetailPage() {
     setShareQuality(key);
     if (typeof window !== "undefined") window.localStorage.setItem(SHARE_QUALITY_STORAGE_KEY, key);
   }, []);
+  // Nguồn chia sẻ mong muốn (toàn màn hình / cửa sổ / tab).
+  const [shareSource, setShareSource] = useState<ShareSourceKey>("any");
+  const [activeSurface, setActiveSurface] = useState<ShareSourceKey | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(SHARE_SOURCE_STORAGE_KEY) as ShareSourceKey | null;
+    if (saved && saved in SHARE_SOURCE_LABELS) setShareSource(saved);
+  }, []);
+  const changeShareSource = useCallback((key: ShareSourceKey) => {
+    setShareSource(key);
+    if (typeof window !== "undefined") window.localStorage.setItem(SHARE_SOURCE_STORAGE_KEY, key);
+  }, []);
   const [session, setSession] = useState<{
     serverUrl: string;
     token: string;
@@ -313,9 +325,10 @@ function MeetingDetailPage() {
     try {
       const preset = resolvePreset(shareQuality);
       autoLevelRef.current = preset.key;
-      const s = await navigator.mediaDevices.getDisplayMedia(displayMediaConstraints(preset));
+      const s = await navigator.mediaDevices.getDisplayMedia(displayMediaConstraints(preset, shareSource));
       await applyPresetToTrack(s.getVideoTracks()[0], preset);
       screenRef.current = s;
+      setActiveSurface(readTrackSurface(s.getVideoTracks()[0]));
       setShareQualityInfo(preset.label);
       setSharing(true);
       s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
@@ -325,7 +338,7 @@ function MeetingDetailPage() {
         toast.error("Không chia sẻ được màn hình.");
       }
     }
-  }, [sharing, stopShare, shareQuality, session]);
+  }, [sharing, stopShare, shareQuality, shareSource, session]);
 
   // Vào phòng: dừng luồng xem trước cục bộ, LiveKit sẽ tự lấy lại luồng để publish.
   useEffect(() => {
