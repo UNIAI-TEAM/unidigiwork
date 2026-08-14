@@ -141,6 +141,7 @@ function NotifRow({
             </span>
           )}
           {n.unread && <Circle className="mt-1 h-2 w-2 shrink-0 fill-primary text-primary" />}
+          {pinned && <Pin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />}
         </div>
         <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>
         <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
