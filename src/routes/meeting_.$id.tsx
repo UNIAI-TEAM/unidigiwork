@@ -1199,6 +1199,18 @@ function MeetingDetailPage() {
                         </DropdownMenuItem>
                       ))}
                       <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
+                      {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
+                        <DropdownMenuItem
+                          key={k}
+                          onSelect={() => changeShareSource(k)}
+                          className={shareSource === k ? "font-medium text-primary" : ""}
+                        >
+                          <MonitorUp className="mr-2 h-4 w-4" />
+                          <span className="truncate">{SHARE_SOURCE_LABELS[k]}</span>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
                       <DropdownMenuLabel>Chất lượng chia sẻ màn hình</DropdownMenuLabel>
                       {(Object.keys(SHARE_QUALITY_LABELS) as ShareQualityKey[]).map((k) => (
                         <DropdownMenuItem
