@@ -258,6 +258,8 @@ function MeetingDetailPage() {
   }, [refreshDevices]);
   // Rời phòng chủ động thì KHÔNG auto rejoin.
   const manualLeaveRef = useRef(false);
+  // Phụ đề trực tiếp (nếu trình duyệt hỗ trợ Web Speech API).
+  const captions = useLiveCaptions("vi-VN");
   const inRoomRef = useRef(false);
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
