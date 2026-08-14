@@ -44,6 +44,10 @@ export const CATS: { key: Cat; label: string; icon: LucideIcon; tint: string }[]
   { key: "system", label: "Hệ thống", icon: ShieldCheck, tint: "text-primary" },
 ];
 
+export function catMeta(cat: Notif["cat"]) {
+  return CATS.find((c) => c.key === cat)!;
+}
+
 export function getNotifPriority(n: { meta?: unknown }): NotifPriority {
   const meta = (n?.meta ?? {}) as Record<string, unknown>;
   const p = String(meta.priority ?? "").toLowerCase();
