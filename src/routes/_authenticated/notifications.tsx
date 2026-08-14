@@ -26,9 +26,12 @@ import {
   CATS,
   catMeta,
   mapNotifRow,
+  PRIORITY_DOT,
+  PRIORITY_LABELS,
   sortNotifRows,
   type Cat,
   type Notif,
+  type NotifPriority,
   type NotifSortMode,
 } from "@/lib/notifications-data";
 import { supabase } from "@/integrations/supabase/client";
