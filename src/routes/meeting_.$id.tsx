@@ -1157,8 +1157,10 @@ function MeetingDetailPage() {
               >
                 {sharing ? <ScreenShare className="h-3.5 w-3.5" /> : <ScreenShareOff className="h-3.5 w-3.5" />}
                 {sharing
-                  ? `Đang chia sẻ màn hình${shareQualityInfo ? ` · ${shareQualityInfo}` : ""}`
-                  : "Chưa chia sẻ màn hình"}
+                  ? `Đang chia sẻ ${activeSurface ? SHARE_SOURCE_LABELS[activeSurface].toLowerCase() : "màn hình"}${
+                      shareQualityInfo ? ` · ${shareQualityInfo}` : ""
+                    }`
+                  : `Chưa chia sẻ · ${SHARE_SOURCE_LABELS[shareSource]}`}
               </span>
               {session ? (
                 <>
