@@ -1161,10 +1161,6 @@ function MeetingDetailPage() {
                     ? "border-primary/30 bg-primary/10 text-primary"
                     : "border-border bg-surface-2 text-muted-foreground"
                 }`}
-                  sharing
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-border bg-surface-2 text-muted-foreground"
-                }`}
                 aria-live="polite"
               >
                 {sharing ? <ScreenShare className="h-3.5 w-3.5" /> : <ScreenShareOff className="h-3.5 w-3.5" />}
