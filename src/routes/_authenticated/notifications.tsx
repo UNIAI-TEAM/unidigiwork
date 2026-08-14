@@ -275,13 +275,13 @@ function NotificationsPage() {
   // Reset to page 1 when filters change
   useMemo(() => {
     setPage(1);
-  }, [cat, tab, q]);
+  }, [cat, tab, q, priorityFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(displayItems.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = useMemo(
-    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [filtered, currentPage],
+    () => displayItems.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [displayItems, currentPage],
   );
 
   const groups = useMemo(() => {
