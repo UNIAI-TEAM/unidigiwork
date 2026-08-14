@@ -923,7 +923,7 @@ function MeetingDetailPage() {
                       <span className="truncate">{p.name}</span>
                     </span>
                     <span className="flex shrink-0 items-center gap-1">
-                      {raisedSet.has(p.userId) && <Hand className="h-3 w-3 text-warning" />}
+                      {raisedSet.has(p.userId) && <Hand className="h-3 w-3 text-primary" />}
                       {p.speaking && <Mic className="h-3 w-3 text-success" />}
                     </span>
                   </div>
@@ -1086,7 +1086,7 @@ function MeetingDetailPage() {
                                     : p.rsvp === "declined"
                                       ? "bg-destructive/10 text-destructive"
                                       : p.rsvp === "tentative"
-                                        ? "bg-warning/10 text-warning"
+                                        ? "bg-warning/10 text-primary"
                                         : "bg-surface-3 text-muted-foreground"
                                 }`}
                               >
@@ -1199,7 +1199,7 @@ function MeetingDetailPage() {
                           )}
                         </span>
                         {raisedSet.has(p.userId) && (
-                          <Hand className="h-3.5 w-3.5 shrink-0 text-warning" aria-label="Đang giơ tay" />
+                          <Hand className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Đang giơ tay" />
                         )}
                         <span
                           title={PRESENCE_LABELS[p.presence]}
