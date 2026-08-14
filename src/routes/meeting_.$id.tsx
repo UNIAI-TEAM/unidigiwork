@@ -472,6 +472,26 @@ function MeetingDetailPage() {
     setSession(null);
   }
 
+  function toggleCaptions() {
+    if (captions.enabled) {
+      captions.stop();
+      toast.info("Đã tắt phụ đề.");
+      return;
+    }
+    if (!captions.supported) {
+      toast.error("Trình duyệt không hỗ trợ phụ đề trực tiếp", {
+        description: "Phụ đề cần Chrome hoặc Edge trên máy tính (Web Speech API). Hãy thử mở lại bằng Chrome.",
+        duration: 8000,
+      });
+      return;
+    }
+    if (captions.start()) toast.success("Đã bật phụ đề (nhận giọng nói của bạn qua micro).");
+    else
+      toast.error("Không bật được phụ đề", {
+        description: "Hãy cho phép quyền micro cho trang này rồi thử lại.",
+      });
+  }
+
   // Tự động xin token mới trước khi hết hạn (2 phút đệm) để không bị rớt phòng.
   useEffect(() => {
     if (!session) return;
