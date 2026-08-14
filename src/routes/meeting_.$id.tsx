@@ -16,6 +16,7 @@ import {
   Sparkles,
   Hand,
   MoreHorizontal,
+  MonitorUp,
   Send,
   FileText,
   Clock,
@@ -48,11 +49,15 @@ import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-re
 import {
   SHARE_QUALITY_LABELS,
   SHARE_QUALITY_STORAGE_KEY,
+  SHARE_SOURCE_LABELS,
+  SHARE_SOURCE_STORAGE_KEY,
   applyPresetToTrack,
   degrade,
   displayMediaConstraints,
+  readTrackSurface,
   resolvePreset,
   type ShareQualityKey,
+  type ShareSourceKey,
 } from "@/lib/screen-share-quality";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
@@ -195,6 +200,7 @@ function MeetingDetailPage() {
     else {
       toast.info("Đã dừng chia sẻ màn hình");
       setShareQualityInfo(null);
+      setActiveSurface(null);
     }
   }, [sharing]);
   const autoLevelRef = useRef<Exclude<ShareQualityKey, "auto">>("balanced");
@@ -206,6 +212,18 @@ function MeetingDetailPage() {
   const changeShareQuality = useCallback((key: ShareQualityKey) => {
     setShareQuality(key);
     if (typeof window !== "undefined") window.localStorage.setItem(SHARE_QUALITY_STORAGE_KEY, key);
+  }, []);
+  // Nguồn chia sẻ mong muốn (toàn màn hình / cửa sổ / tab).
+  const [shareSource, setShareSource] = useState<ShareSourceKey>("any");
+  const [activeSurface, setActiveSurface] = useState<ShareSourceKey | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(SHARE_SOURCE_STORAGE_KEY) as ShareSourceKey | null;
+    if (saved && saved in SHARE_SOURCE_LABELS) setShareSource(saved);
+  }, []);
+  const changeShareSource = useCallback((key: ShareSourceKey) => {
+    setShareSource(key);
+    if (typeof window !== "undefined") window.localStorage.setItem(SHARE_SOURCE_STORAGE_KEY, key);
   }, []);
   const [session, setSession] = useState<{
     serverUrl: string;
@@ -309,9 +327,10 @@ function MeetingDetailPage() {
     try {
       const preset = resolvePreset(shareQuality);
       autoLevelRef.current = preset.key;
-      const s = await navigator.mediaDevices.getDisplayMedia(displayMediaConstraints(preset));
+      const s = await navigator.mediaDevices.getDisplayMedia(displayMediaConstraints(preset, shareSource));
       await applyPresetToTrack(s.getVideoTracks()[0], preset);
       screenRef.current = s;
+      setActiveSurface(readTrackSurface(s.getVideoTracks()[0]));
       setShareQualityInfo(preset.label);
       setSharing(true);
       s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
@@ -321,7 +340,7 @@ function MeetingDetailPage() {
         toast.error("Không chia sẻ được màn hình.");
       }
     }
-  }, [sharing, stopShare, shareQuality, session]);
+  }, [sharing, stopShare, shareQuality, shareSource, session]);
 
   // Vào phòng: dừng luồng xem trước cục bộ, LiveKit sẽ tự lấy lại luồng để publish.
   useEffect(() => {
@@ -998,6 +1017,8 @@ function MeetingDetailPage() {
                       shareQuality={shareQuality}
                       onShareQualityResolved={setShareQualityInfo}
                       screenShareEnabled={sharing}
+                      shareSource={shareSource}
+                      onShareSourceResolved={setActiveSurface}
                       onScreenShareStateChange={(on) => setSharing((s) => (s === on ? s : on))}
                       onMediaStateChange={({ mic, cam }) => {
                         setMuted((m) => (m === !mic ? m : !mic));
@@ -1137,8 +1158,10 @@ function MeetingDetailPage() {
               >
                 {sharing ? <ScreenShare className="h-3.5 w-3.5" /> : <ScreenShareOff className="h-3.5 w-3.5" />}
                 {sharing
-                  ? `Đang chia sẻ màn hình${shareQualityInfo ? ` · ${shareQualityInfo}` : ""}`
-                  : "Chưa chia sẻ màn hình"}
+                  ? `Đang chia sẻ ${activeSurface ? SHARE_SOURCE_LABELS[activeSurface].toLowerCase() : "màn hình"}${
+                      shareQualityInfo ? ` · ${shareQualityInfo}` : ""
+                    }`
+                  : `Chưa chia sẻ · ${SHARE_SOURCE_LABELS[shareSource]}`}
               </span>
               {session ? (
                 <>
@@ -1166,6 +1189,29 @@ function MeetingDetailPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-72">
+                      <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
+                      {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
+                        <DropdownMenuItem
+                          key={k}
+                          onSelect={() => changeShareSource(k)}
+                          className={shareSource === k ? "font-medium text-primary" : ""}
+                        >
+                          {SHARE_SOURCE_LABELS[k]}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
+                      {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
+                        <DropdownMenuItem
+                          key={k}
+                          onSelect={() => changeShareSource(k)}
+                          className={shareSource === k ? "font-medium text-primary" : ""}
+                        >
+                          <MonitorUp className="mr-2 h-4 w-4" />
+                          <span className="truncate">{SHARE_SOURCE_LABELS[k]}</span>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
                       <DropdownMenuLabel>Chất lượng chia sẻ màn hình</DropdownMenuLabel>
                       {(Object.keys(SHARE_QUALITY_LABELS) as ShareQualityKey[]).map((k) => (
                         <DropdownMenuItem

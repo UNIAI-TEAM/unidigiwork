@@ -86,15 +86,36 @@ export function resolvePreset(key: ShareQualityKey): ShareQualityPreset {
   return key === "auto" ? detectPreset() : SHARE_QUALITY_PRESETS[key];
 }
 
-export function displayMediaConstraints(p: ShareQualityPreset): MediaStreamConstraints {
-  return {
-    video: {
-      width: { ideal: p.width, max: p.width },
-      height: { ideal: p.height, max: p.height },
-      frameRate: { ideal: p.frameRate, max: p.frameRate },
-    },
-    audio: false,
+/** Nguồn chia sẻ ưu tiên khi mở hộp thoại chọn của trình duyệt. */
+export type ShareSourceKey = "any" | "monitor" | "window" | "browser";
+
+export const SHARE_SOURCE_LABELS: Record<ShareSourceKey, string> = {
+  any: "Để tôi chọn khi bấm",
+  monitor: "Toàn màn hình",
+  window: "Một cửa sổ ứng dụng",
+  browser: "Một tab trình duyệt",
+};
+
+export const SHARE_SOURCE_STORAGE_KEY = "uniwork.meeting.shareSource";
+
+export function displayMediaConstraints(
+  p: ShareQualityPreset,
+  source: ShareSourceKey = "any",
+): MediaStreamConstraints {
+  const video: MediaTrackConstraints & { displaySurface?: string } = {
+    width: { ideal: p.width, max: p.width },
+    height: { ideal: p.height, max: p.height },
+    frameRate: { ideal: p.frameRate, max: p.frameRate },
   };
+  // displaySurface là gợi ý: trình duyệt sẽ mở đúng nhóm nguồn tương ứng.
+  if (source !== "any") video.displaySurface = source;
+  return { video, audio: source === "browser" };
+}
+
+/** Đọc nguồn thật mà người dùng đã chọn trong hộp thoại. */
+export function readTrackSurface(track: MediaStreamTrack | undefined): ShareSourceKey | null {
+  const s = (track?.getSettings() as { displaySurface?: string } | undefined)?.displaySurface;
+  return s === "monitor" || s === "window" || s === "browser" ? s : null;
 }
 
 /** Áp cấu hình mới cho track màn hình đang chạy (không cần chọn lại màn hình). */
