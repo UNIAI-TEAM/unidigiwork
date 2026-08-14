@@ -972,6 +972,8 @@ function MeetingDetailPage() {
                       camEnabled={!camOff}
                       micDeviceId={micId || undefined}
                       camDeviceId={camId || undefined}
+                      shareQuality={shareQuality}
+                      onShareQualityResolved={setShareQualityInfo}
                       onMediaStateChange={({ mic, cam }) => {
                         setMuted((m) => (m === !mic ? m : !mic));
                         setCamOff((c) => (c === !cam ? c : !cam));
@@ -1002,7 +1004,9 @@ function MeetingDetailPage() {
                   />
                 )}
                 <div className="absolute bottom-2 left-2 right-2 rounded-md bg-black/40 px-2 py-1 text-xs backdrop-blur">
-                  {sharing ? "Bạn (đang chia sẻ màn hình)" : "Bạn (xem trước)"}
+                  {sharing
+                    ? `Bạn (đang chia sẻ màn hình${shareQualityInfo ? ` · ${shareQualityInfo}` : ""})`
+                    : "Bạn (xem trước)"}
                 </div>
               </div>
               {participants.map((p) => (
