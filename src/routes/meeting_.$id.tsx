@@ -974,6 +974,8 @@ function MeetingDetailPage() {
                       camDeviceId={camId || undefined}
                       shareQuality={shareQuality}
                       onShareQualityResolved={setShareQualityInfo}
+                      screenShareEnabled={sharing}
+                      onScreenShareStateChange={(on) => setSharing((s) => (s === on ? s : on))}
                       onMediaStateChange={({ mic, cam }) => {
                         setMuted((m) => (m === !mic ? m : !mic));
                         setCamOff((c) => (c === !cam ? c : !cam));
