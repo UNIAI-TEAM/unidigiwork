@@ -184,6 +184,8 @@ function NotificationsPage() {
       ? "priority"
       : "recent";
   });
+  const [priorityFilter, setPriorityFilter] = useState<"all" | "important" | NotifPriority>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
   const toggleSort = () => {
     const next: NotifSortMode = sortMode === "recent" ? "priority" : "recent";
     setSortMode(next);
