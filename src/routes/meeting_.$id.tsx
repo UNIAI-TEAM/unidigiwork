@@ -17,6 +17,7 @@ import {
   Hand,
   MoreHorizontal,
   MonitorUp,
+  Captions,
   Send,
   FileText,
   Clock,
