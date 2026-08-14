@@ -199,6 +199,7 @@ function MeetingDetailPage() {
     else {
       toast.info("Đã dừng chia sẻ màn hình");
       setShareQualityInfo(null);
+      setActiveSurface(null);
     }
   }, [sharing]);
   const autoLevelRef = useRef<Exclude<ShareQualityKey, "auto">>("balanced");
@@ -1015,6 +1016,8 @@ function MeetingDetailPage() {
                       shareQuality={shareQuality}
                       onShareQualityResolved={setShareQualityInfo}
                       screenShareEnabled={sharing}
+                      shareSource={shareSource}
+                      onShareSourceResolved={setActiveSurface}
                       onScreenShareStateChange={(on) => setSharing((s) => (s === on ? s : on))}
                       onMediaStateChange={({ mic, cam }) => {
                         setMuted((m) => (m === !mic ? m : !mic));
