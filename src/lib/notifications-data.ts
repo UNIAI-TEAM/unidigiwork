@@ -319,6 +319,7 @@ export function mapNotifRow(row: NotifRow): Notif {
     group: groupOf(row.created_at),
     unread: !row.is_read,
     important: meta.important === true,
+    priority: getNotifPriority(row),
     context: typeof meta.context === "string" ? meta.context : undefined,
     link: row.link ? { label: linkLabel, to: row.link } : undefined,
     details: Array.isArray(meta.details) ? (meta.details as Notif["details"]) : undefined,
