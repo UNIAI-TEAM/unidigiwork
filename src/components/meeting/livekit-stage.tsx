@@ -6,6 +6,7 @@ import {
   VideoConference,
   RoomAudioRenderer,
   useConnectionState,
+  useLocalParticipant,
 } from "@livekit/components-react";
 import { ConnectionState } from "livekit-client";
 import { useEffect } from "react";
@@ -16,6 +17,60 @@ export interface LiveKitStageProps {
   onDisconnected: () => void;
   /** Báo trạng thái kết nối ra ngoài để trang chủ động rejoin. */
   onConnectionStateChange?: (state: "connected" | "reconnecting" | "disconnected" | "connecting") => void;
+  /** Bật/tắt micro thật của người dùng trong phòng. */
+  micEnabled?: boolean;
+  /** Bật/tắt camera thật của người dùng trong phòng. */
+  camEnabled?: boolean;
+  /** Thiết bị đã chọn ở màn hình chờ. */
+  micDeviceId?: string;
+  camDeviceId?: string;
+  /** Báo ngược trạng thái thật (khi người dùng bấm nút trong khung LiveKit). */
+  onMediaStateChange?: (state: { mic: boolean; cam: boolean }) => void;
+}
+
+function MediaSync({
+  micEnabled,
+  camEnabled,
+  micDeviceId,
+  camDeviceId,
+  onMediaStateChange,
+}: Pick<LiveKitStageProps, "micEnabled" | "camEnabled" | "micDeviceId" | "camDeviceId" | "onMediaStateChange">) {
+  const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
+  const room = localParticipant?.["roomInfo" as never];
+  void room;
+
+  // Áp trạng thái nút bên ngoài vào track thật.
+  useEffect(() => {
+    if (!localParticipant || micEnabled === undefined) return;
+    if (isMicrophoneEnabled !== micEnabled) {
+      void localParticipant.setMicrophoneEnabled(micEnabled).catch(() => {});
+    }
+  }, [localParticipant, micEnabled, isMicrophoneEnabled]);
+
+  useEffect(() => {
+    if (!localParticipant || camEnabled === undefined) return;
+    if (isCameraEnabled !== camEnabled) {
+      void localParticipant.setCameraEnabled(camEnabled).catch(() => {});
+    }
+  }, [localParticipant, camEnabled, isCameraEnabled]);
+
+  // Áp thiết bị đã chọn.
+  useEffect(() => {
+    if (!micDeviceId) return;
+    void localParticipant?.["setMicrophoneEnabled"]?.(micEnabled ?? true, { deviceId: micDeviceId })?.catch?.(() => {});
+  }, [micDeviceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!camDeviceId) return;
+    void localParticipant?.["setCameraEnabled"]?.(camEnabled ?? true, { deviceId: camDeviceId })?.catch?.(() => {});
+  }, [camDeviceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Báo ngược ra ngoài khi người dùng đổi bằng nút của LiveKit.
+  useEffect(() => {
+    onMediaStateChange?.({ mic: isMicrophoneEnabled, cam: isCameraEnabled });
+  }, [isMicrophoneEnabled, isCameraEnabled, onMediaStateChange]);
+
+  return null;
 }
 
 function ConnectionMonitor({
@@ -51,6 +106,11 @@ export default function LiveKitStage({
   token,
   onDisconnected,
   onConnectionStateChange,
+  micEnabled,
+  camEnabled,
+  micDeviceId,
+  camDeviceId,
+  onMediaStateChange,
 }: LiveKitStageProps) {
   return (
     <div className="relative h-full w-full">
@@ -58,8 +118,8 @@ export default function LiveKitStage({
       serverUrl={serverUrl}
       token={token}
       connect
-      video
-      audio
+      video={camEnabled ?? true}
+      audio={micEnabled ?? true}
       onDisconnected={onDisconnected}
       data-lk-theme="default"
       style={{ height: "100%", width: "100%", borderRadius: "0.75rem", overflow: "hidden" }}
@@ -67,6 +127,13 @@ export default function LiveKitStage({
       <VideoConference />
       <RoomAudioRenderer />
       <ConnectionMonitor onConnectionStateChange={onConnectionStateChange} />
+      <MediaSync
+        micEnabled={micEnabled}
+        camEnabled={camEnabled}
+        micDeviceId={micDeviceId}
+        camDeviceId={camDeviceId}
+        onMediaStateChange={onMediaStateChange}
+      />
     </LiveKitRoom>
     </div>
   );
