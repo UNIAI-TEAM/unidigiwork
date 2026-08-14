@@ -1211,13 +1211,60 @@ function MeetingDetailPage() {
               </p>
             )}
 
-            {raisedHands.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
-                <Hand className="h-3.5 w-3.5 shrink-0 text-primary" />
-                <span className="font-medium text-primary">Đang giơ tay:</span>
-                <span className="min-w-0 truncate text-muted-foreground">
-                  {raisedHands.map((h, i) => `${i + 1}. ${h.userId === myUserId ? "Bạn" : h.name}`).join(" · ")}
-                </span>
+            {(raisedHands.length > 0 || speakers.length > 0) && (
+              <div className="mt-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                {raisedHands.length > 0 && (
+                  <div className="flex items-center gap-2 text-primary">
+                    <Hand className="h-3.5 w-3.5 shrink-0" />
+                    <span className="font-medium">Hàng đợi giơ tay ({raisedHands.length})</span>
+                  </div>
+                )}
+                {raisedHands.map((h, i) => (
+                  <div key={h.userId} className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-muted-foreground">
+                      {i + 1}. {h.userId === myUserId ? "Bạn" : h.name}
+                    </span>
+                    {isHost && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => void setSpeakPermission(h.userId, h.name, true)}
+                      >
+                        <Mic className="mr-1 h-3.5 w-3.5" />
+                        Cho phát biểu
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {speakers.length > 0 && (
+                  <div className="space-y-1 border-t border-primary/20 pt-2">
+                    <p className="font-medium text-primary">Đang được phát biểu</p>
+                    {speakers.map((s) => (
+                      <div key={s.userId} className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate text-muted-foreground">
+                          {s.userId === myUserId ? "Bạn" : s.name}
+                        </span>
+                        {isHost && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => void setSpeakPermission(s.userId, s.name, false)}
+                          >
+                            <MicOff className="mr-1 h-3.5 w-3.5" />
+                            Thu quyền
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {canSpeak && (
+                  <p className="text-muted-foreground">
+                    Bạn đã được chủ trì cấp quyền phát biểu — micro đã được bật.
+                  </p>
+                )}
               </div>
             )}
 
