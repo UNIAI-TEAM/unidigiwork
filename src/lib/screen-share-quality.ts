@@ -4,7 +4,7 @@
 export type ShareQualityKey = "auto" | "high" | "balanced" | "text";
 
 export interface ShareQualityPreset {
-  key: ShareQualityKey;
+  key: Exclude<ShareQualityKey, "auto">;
   label: string;
   hint: string;
   width: number;
