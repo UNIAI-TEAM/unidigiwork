@@ -6,9 +6,24 @@ Mục tiêu: biến UNIWORK thành app cài được trên điện thoại (Add 
 
 **Giai đoạn 1 — Cài đặt được + khung mobile**
 - Manifest + icon + splash, chạy chế độ standalone (ẩn thanh địa chỉ)
-- Bottom Tab Bar 5 mục: Trang chủ · Chat · Công việc · Lịch · Thêm
+- Bottom Tab Bar 5 mục: Trang chủ · Chat · Họp · Email · Thêm
 - Mobile Topbar: workspace switcher, tìm kiếm, chuông thông báo (badge chưa đọc)
-- Trang "Thêm": Email, Tài liệu, Knowledge, People, Workflows, Reports, AI, Cài đặt
+- Trang "Thêm": Công việc, Lịch, Tài liệu, Knowledge, People, Workflows, Reports, AI, Thông báo, Cài đặt
+
+**Meeting trên mobile (giai đoạn 1)**
+- Danh sách họp dạng thẻ: Hôm nay / Sắp tới / Đã kết thúc, hiển thị thời gian, người chủ trì, số người tham dự
+- Nút "Tham gia" nổi bật khi cuộc họp sắp/đang diễn ra; RSVP (Tham gia · Có thể · Từ chối) ngay trên thẻ
+- Phòng họp LiveKit toàn màn hình tối ưu điện thoại: camera trước/sau, tắt/bật mic, chia sẻ màn hình (nếu thiết bị hỗ trợ), danh sách người tham dự dạng bottom sheet, chat trong phòng
+- Chi tiết họp: agenda, tài liệu đính kèm, biên bản/ghi chú, nút thêm vào lịch điện thoại (ICS)
+- Tạo cuộc họp nhanh từ FAB: tiêu đề, thời gian, khách mời, tạo link phòng
+
+**Email Hub trên mobile (giai đoạn 1)**
+- Hộp thư dạng danh sách thẻ (người gửi, tiêu đề, trích đoạn, nhãn, dấu chưa đọc), cuộn vô hạn thay cho phân trang
+- Chuyển mailbox/nhãn bằng bottom sheet (Hộp đến, Quan trọng, Đã gửi, Nháp, Lưu trữ, Thùng rác)
+- Tìm kiếm và lọc chưa đọc/có đính kèm bằng chip
+- Đọc email toàn màn hình: nội dung co giãn theo màn hình, đính kèm dạng thẻ, thanh hành động dưới cùng (Trả lời · Trả lời tất cả · Chuyển tiếp · Lưu trữ · Xóa)
+- Soạn email dạng full-screen sheet, tự lưu nháp
+- Vuốt trái/phải trên thẻ để lưu trữ hoặc đánh dấu đã đọc (giai đoạn 2)
 
 **Giai đoạn 2 — Trải nghiệm native**
 - Nút hành động nổi (FAB) tạo nhanh: task, tin nhắn, cuộc họp, email
@@ -18,7 +33,7 @@ Mục tiêu: biến UNIWORK thành app cài được trên điện thoại (Add 
 
 **Giai đoạn 3 — Ngoại tuyến & thông báo (tùy chọn, cần anh duyệt riêng)**
 - Cache app shell để mở được khi mất mạng, xem dữ liệu đã tải gần nhất
-- Push notification (web push) cho mention, task deadline, lời mời họp
+- Push notification (web push) cho mention, task deadline, lời mời họp, email mới
 
 ## 2. Thiết kế giao diện (duyệt trước khi code)
 
@@ -32,10 +47,11 @@ Chuẩn mobile bổ sung:
 
 Màn hình sẽ dựng mẫu để duyệt:
 1. Trang chủ mobile (KPI cuộn ngang, việc hôm nay, cuộc họp sắp tới, thông báo)
-2. Tasks (thẻ + lọc dạng chip + FAB)
-3. Chat (danh sách hội thoại và khung chat toàn màn hình)
-4. Lịch (tháng gọn + danh sách sự kiện theo ngày)
-5. Trang "Thêm" + Cài đặt
+2. Meetings (danh sách thẻ + RSVP) và phòng họp toàn màn hình
+3. Email Hub (hộp thư, đọc email, soạn email)
+4. Chat (danh sách hội thoại và khung chat toàn màn hình)
+5. Tasks (thẻ + lọc dạng chip + FAB) và Lịch (tháng gọn + sự kiện theo ngày)
+6. Trang "Thêm" + Cài đặt
 
 ## 3. Kỹ thuật
 
@@ -44,6 +60,8 @@ Màn hình sẽ dựng mẫu để duyệt:
 - Component mới: `src/components/mobile/bottom-tab-bar.tsx`, `mobile-topbar.tsx`, `mobile-page.tsx`, `mobile-list-item.tsx`, `mobile-sheet.tsx`
 - Hook `useIsMobile` để chọn layout; desktop giữ nguyên `AppSidebar`/`AppTopbar`, không đổi logic nghiệp vụ
 - Route mới `/more` cho menu điều hướng phụ
+- Meeting và Email dùng lại server function/API hiện có (`meetings`, `emails.functions`), chỉ thay lớp trình bày mobile
+- Phòng họp mobile dùng lại LiveKit hiện tại, token vẫn cấp từ server
 - Giai đoạn 3 dùng service worker sinh tự động, chỉ đăng ký ở bản published (không chạy trong preview)
 
 ## 4. Không làm
@@ -52,5 +70,5 @@ Màn hình sẽ dựng mẫu để duyệt:
 - Không thêm màu/font mới ngoài design token hiện tại
 
 ## 5. Cần anh duyệt
-- Bộ 5 tab chính ở trên có đúng thứ tự ưu tiên không
+- Bộ 5 tab chính (Trang chủ · Chat · Họp · Email · Thêm) có đúng thứ tự ưu tiên không
 - Có làm giai đoạn 3 (offline + push) ngay không hay tách sau
