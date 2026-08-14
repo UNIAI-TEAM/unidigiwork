@@ -256,9 +256,21 @@ function NotificationsPage() {
       if (tab === "archived") return false;
       if (q && !`${n.title} ${n.body} ${n.actor ?? ""}`.toLowerCase().includes(q.toLowerCase()))
         return false;
+      if (priorityFilter === "important") return !!n.important;
+      if (priorityFilter !== "all" && n.priority !== priorityFilter) return false;
       return true;
     });
-  }, [items, cat, tab, q]);
+  }, [items, cat, tab, q, priorityFilter]);
+
+  // Khi bộ lọc ưu tiên đang hoạt động, sắp xếp từ thấp đến cao
+  const displayItems = useMemo(() => {
+    if (priorityFilter === "all") return filtered;
+    const rank: Record<NotifPriority, number> = { low: 1, normal: 2, high: 3, urgent: 4 };
+    return [...filtered].sort((a, b) => {
+      if (priorityFilter === "important") return Number(b.important) - Number(a.important);
+      return (rank[a.priority ?? "normal"] ?? 2) - (rank[b.priority ?? "normal"] ?? 2);
+    });
+  }, [filtered, priorityFilter]);
 
   // Reset to page 1 when filters change
   useMemo(() => {
