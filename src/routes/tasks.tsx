@@ -40,8 +40,10 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { useI18n } from "@/lib/i18n";
 import { isOverdueTask } from "@/lib/metrics";
 
+type TasksSearch = { filter?: "overdue"; range?: number; ws?: string };
+
 export const Route = createFileRoute("/tasks")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): TasksSearch => ({
     filter: search['filter'] === "overdue" ? ("overdue" as const) : undefined,
     range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
     ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,

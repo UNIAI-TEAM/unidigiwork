@@ -65,8 +65,10 @@ type Member = {
   profiles: { email: string; display_name: string | null } | null;
 };
 
+type DocumentsSearch = { filter?: "stale"; range?: number; ws?: string };
+
 export const Route = createFileRoute("/_authenticated/documents")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): DocumentsSearch => ({
     filter: search['filter'] === "stale" ? ("stale" as const) : undefined,
     range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
     ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,

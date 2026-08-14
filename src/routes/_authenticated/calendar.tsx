@@ -30,8 +30,10 @@ import { buildIcs, downloadIcs } from "@/lib/ics";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
+type CalendarSearch = { view?: "week"; kind?: "meeting"; day?: string };
+
 export const Route = createFileRoute("/_authenticated/calendar")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): CalendarSearch => ({
     view: search['view'] === "week" ? ("week" as const) : undefined,
     kind: search['kind'] === "meeting" ? ("meeting" as const) : undefined,
     day:
