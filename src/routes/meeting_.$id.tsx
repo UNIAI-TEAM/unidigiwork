@@ -48,11 +48,15 @@ import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-re
 import {
   SHARE_QUALITY_LABELS,
   SHARE_QUALITY_STORAGE_KEY,
+  SHARE_SOURCE_LABELS,
+  SHARE_SOURCE_STORAGE_KEY,
   applyPresetToTrack,
   degrade,
   displayMediaConstraints,
+  readTrackSurface,
   resolvePreset,
   type ShareQualityKey,
+  type ShareSourceKey,
 } from "@/lib/screen-share-quality";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
