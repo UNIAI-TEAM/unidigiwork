@@ -162,6 +162,8 @@ function MeetingDetailPage() {
   const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai" | "recording">("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const screenRef = useRef<MediaStream | null>(null);
   const [session, setSession] = useState<{
     serverUrl: string;
     token: string;
@@ -214,7 +216,46 @@ function MeetingDetailPage() {
       cancelled = true;
       stop();
     };
-  }, [camOff, session]);
+  }, [camOff, session, sharing]);
+
+  // Chia sẻ màn hình thật bằng getDisplayMedia; dừng khi người dùng bấm "Stop sharing" của trình duyệt.
+  const stopShare = useCallback(() => {
+    screenRef.current?.getTracks().forEach((t) => t.stop());
+    screenRef.current = null;
+    setSharing(false);
+  }, []);
+
+  const toggleShare = useCallback(async () => {
+    if (sharing) {
+      stopShare();
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
+      toast.error("Trình duyệt không hỗ trợ chia sẻ màn hình.");
+      return;
+    }
+    try {
+      const s = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      screenRef.current = s;
+      setSharing(true);
+      s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
+      toast.success("Đang chia sẻ màn hình.");
+    } catch (e) {
+      const name = e instanceof DOMException ? e.name : "Error";
+      if (name !== "NotAllowedError" && name !== "AbortError") {
+        toast.error("Không chia sẻ được màn hình.");
+      }
+    }
+  }, [sharing, stopShare]);
+
+  // Gắn luồng màn hình vào khung xem trước.
+  useEffect(() => {
+    if (sharing && videoRef.current && screenRef.current) {
+      videoRef.current.srcObject = screenRef.current;
+    }
+  }, [sharing]);
+
+  useEffect(() => () => stopShare(), [stopShare]);
 
   // Link mời có kiểm soát: đổi token thành quyền tham gia trước khi xin vé vào phòng.
   const [redeeming, setRedeeming] = useState(Boolean(invite));
