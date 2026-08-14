@@ -74,8 +74,13 @@ function NotifRow({
   const Icon = meta.icon;
   return (
     <div
-      className={`group flex items-start gap-3 border-b border-border/60 px-4 py-3 transition-colors hover:bg-surface-2/40 ${n.unread ? "bg-primary/[0.03]" : ""}`}
+      className={`group relative flex items-start gap-3 border-b border-border/60 pl-1 pr-4 py-3 transition-colors hover:bg-surface-2/40 ${n.unread ? "bg-primary/[0.03]" : ""}`}
     >
+      {/* Priority indicator bar */}
+      <span
+        className={`absolute left-0 top-0 bottom-0 w-1 rounded-l ${n.priority ? PRIORITY_DOT[n.priority] : "bg-transparent"}`}
+        aria-hidden="true"
+      />
       <input
         type="checkbox"
         checked={selected}
@@ -118,13 +123,12 @@ function NotifRow({
               {n.title}
             </span>
           </div>
-          {n.priority && n.priority !== "normal" && (
-            <span
-              className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${PRIORITY_TINT[n.priority]}`}
-            >
-              {PRIORITY_LABELS[n.priority]}
-            </span>
-          )}
+          <span
+            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${n.priority ? PRIORITY_TINT[n.priority] : PRIORITY_TINT["normal"]}`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${n.priority ? PRIORITY_DOT[n.priority] : PRIORITY_DOT["normal"]}`} />
+            {n.priority ? PRIORITY_LABELS[n.priority] : PRIORITY_LABELS["normal"]}
+          </span>
           {n.important && (
             <span className="inline-flex items-center gap-1 rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-medium text-rose-300">
               <AlertTriangle className="h-3 w-3" /> Quan trọng
