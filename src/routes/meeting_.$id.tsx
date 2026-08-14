@@ -839,7 +839,7 @@ function MeetingDetailPage() {
             ) : (
             <div className="grid flex-1 grid-cols-2 gap-2 overflow-hidden lg:grid-cols-3">
               <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-surface-2">
-                {camOff ? (
+                {camOff && !sharing ? (
                   <VideoOff className="h-8 w-8 text-muted-foreground" />
                 ) : (
                   <video
@@ -847,11 +847,11 @@ function MeetingDetailPage() {
                     autoPlay
                     playsInline
                     muted
-                    className="h-full w-full object-cover"
+                    className={`h-full w-full ${sharing ? "object-contain bg-black" : "object-cover"}`}
                   />
                 )}
                 <div className="absolute bottom-2 left-2 right-2 rounded-md bg-black/40 px-2 py-1 text-xs backdrop-blur">
-                  Bạn (xem trước)
+                  {sharing ? "Bạn (đang chia sẻ màn hình)" : "Bạn (xem trước)"}
                 </div>
               </div>
               {participants.map((p) => (
@@ -945,7 +945,11 @@ function MeetingDetailPage() {
                 <>
                   <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
                   <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
-                  <CtrlBtn icon={ScreenShare} />
+                  <CtrlBtn
+                    active={!sharing}
+                    onClick={() => void toggleShare()}
+                    icon={sharing ? ScreenShareOff : ScreenShare}
+                  />
                   <CtrlBtn icon={Hand} />
                   <CtrlBtn icon={MoreHorizontal} />
                   <button
