@@ -1225,16 +1225,70 @@ function MeetingDetailPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-72">
-                      <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
-                      {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
-                        <DropdownMenuItem
-                          key={k}
-                          onSelect={() => changeShareSource(k)}
-                          className={shareSource === k ? "font-medium text-primary" : ""}
+                      <DropdownMenuLabel className="flex items-center justify-between gap-2">
+                        Micro
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            void refreshDevices();
+                            toast.success("Đã làm mới danh sách thiết bị.");
+                          }}
+                          className="text-xs font-normal text-primary hover:underline"
                         >
-                          {SHARE_SOURCE_LABELS[k]}
-                        </DropdownMenuItem>
-                      ))}
+                          Làm mới
+                        </button>
+                      </DropdownMenuLabel>
+                      {devices.filter((d) => d.kind === "audioinput").length === 0 ? (
+                        <DropdownMenuItem disabled>Không có micro</DropdownMenuItem>
+                      ) : (
+                        devices
+                          .filter((d) => d.kind === "audioinput")
+                          .map((d, i) => (
+                            <DropdownMenuItem
+                              key={d.deviceId || i}
+                              onSelect={() => {
+                                setMicId(d.deviceId);
+                                setMuted(false);
+                              }}
+                              className={micId === d.deviceId ? "font-medium text-primary" : ""}
+                            >
+                              <Mic className="mr-2 h-4 w-4" />
+                              <span className="truncate">{d.label || `Micro ${i + 1}`}</span>
+                            </DropdownMenuItem>
+                          ))
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Camera</DropdownMenuLabel>
+                      {devices.filter((d) => d.kind === "videoinput").length === 0 ? (
+                        <DropdownMenuItem disabled>Không có camera</DropdownMenuItem>
+                      ) : (
+                        devices
+                          .filter((d) => d.kind === "videoinput")
+                          .map((d, i) => (
+                            <DropdownMenuItem
+                              key={d.deviceId || i}
+                              onSelect={() => {
+                                setCamId(d.deviceId);
+                                setCamOff(false);
+                              }}
+                              className={camId === d.deviceId ? "font-medium text-primary" : ""}
+                            >
+                              <Video className="mr-2 h-4 w-4" />
+                              <span className="truncate">{d.label || `Camera ${i + 1}`}</span>
+                            </DropdownMenuItem>
+                          ))
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Phụ đề</DropdownMenuLabel>
+                      <DropdownMenuItem onSelect={() => toggleCaptions()}>
+                        <Captions className="mr-2 h-4 w-4" />
+                        <span className="truncate">
+                          {captions.enabled ? "Tắt phụ đề" : "Bật phụ đề trực tiếp"}
+                        </span>
+                        {!captions.supported && (
+                          <span className="ml-auto text-[11px] text-muted-foreground">Không hỗ trợ</span>
+                        )}
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
                       {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
@@ -1255,6 +1309,7 @@ function MeetingDetailPage() {
                           onSelect={() => changeShareQuality(k)}
                           className={shareQuality === k ? "font-medium text-primary" : ""}
                         >
+                          <ScreenShare className="mr-2 h-4 w-4" />
                           {SHARE_QUALITY_LABELS[k]}
                         </DropdownMenuItem>
                       ))}
@@ -1266,6 +1321,14 @@ function MeetingDetailPage() {
                           </DropdownMenuLabel>
                         </>
                       )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => leaveRoom()}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <PhoneOff className="mr-2 h-4 w-4" />
+                        Rời phòng ngay
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>
