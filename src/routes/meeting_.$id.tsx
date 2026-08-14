@@ -906,6 +906,14 @@ function MeetingDetailPage() {
                       serverUrl={session.serverUrl}
                       token={session.token}
                       onDisconnected={handleStageDisconnected}
+                      micEnabled={!muted}
+                      camEnabled={!camOff}
+                      micDeviceId={micId || undefined}
+                      camDeviceId={camId || undefined}
+                      onMediaStateChange={({ mic, cam }) => {
+                        setMuted((m) => (m === !mic ? m : !mic));
+                        setCamOff((c) => (c === !cam ? c : !cam));
+                      }}
                       onConnectionStateChange={(s) => {
                         if (s === "connected") {
                           inRoomRef.current = true;
@@ -1029,12 +1037,16 @@ function MeetingDetailPage() {
 
             <div className="mt-4 flex items-center justify-center gap-2">
               {session ? (
-                <button
-                  onClick={leaveRoom}
-                  className="flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
-                >
-                  <PhoneOff className="h-4 w-4" /> Rời phòng
-                </button>
+                <>
+                  <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
+                  <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
+                  <button
+                    onClick={leaveRoom}
+                    className="ml-2 flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    <PhoneOff className="h-4 w-4" /> Rời phòng
+                  </button>
+                </>
               ) : (
                 <>
                   <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
