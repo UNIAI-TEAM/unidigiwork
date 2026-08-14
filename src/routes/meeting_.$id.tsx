@@ -922,7 +922,10 @@ function MeetingDetailPage() {
                       />
                       <span className="truncate">{p.name}</span>
                     </span>
-                    {p.speaking && <Mic className="h-3 w-3 text-success" />}
+                    <span className="flex shrink-0 items-center gap-1">
+                      {raisedSet.has(p.userId) && <Hand className="h-3 w-3 text-warning" />}
+                      {p.speaking && <Mic className="h-3 w-3 text-success" />}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -999,7 +1002,11 @@ function MeetingDetailPage() {
                     onClick={() => void toggleShare()}
                     icon={sharing ? ScreenShareOff : ScreenShare}
                   />
-                  <CtrlBtn icon={Hand} />
+                  <CtrlBtn
+                    active={!handRaised}
+                    onClick={() => void toggleHand()}
+                    icon={Hand}
+                  />
                   <CtrlBtn icon={MoreHorizontal} />
                   <button
                     onClick={handleJoin}
@@ -1191,6 +1198,9 @@ function MeetingDetailPage() {
                             <span className="ml-1 text-[10px] text-muted-foreground">(Chủ trì)</span>
                           )}
                         </span>
+                        {raisedSet.has(p.userId) && (
+                          <Hand className="h-3.5 w-3.5 shrink-0 text-warning" aria-label="Đang giơ tay" />
+                        )}
                         <span
                           title={PRESENCE_LABELS[p.presence]}
                           className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] ${
