@@ -185,6 +185,18 @@ function MeetingDetailPage() {
   // Chất lượng chia sẻ màn hình (ghi nhớ theo trình duyệt).
   const [shareQuality, setShareQuality] = useState<ShareQualityKey>("auto");
   const [shareQualityInfo, setShareQualityInfo] = useState<string | null>(null);
+  const prevSharingRef = useRef(false);
+  // Thông báo rõ ràng mỗi khi trạng thái chia sẻ màn hình đổi (kể cả khi
+  // người dùng bấm "Stop sharing" của trình duyệt).
+  useEffect(() => {
+    if (prevSharingRef.current === sharing) return;
+    prevSharingRef.current = sharing;
+    if (sharing) toast.success("Đang chia sẻ màn hình");
+    else {
+      toast.info("Đã dừng chia sẻ màn hình");
+      setShareQualityInfo(null);
+    }
+  }, [sharing]);
   const autoLevelRef = useRef<Exclude<ShareQualityKey, "auto">>("balanced");
   useEffect(() => {
     if (typeof window === "undefined") return;
