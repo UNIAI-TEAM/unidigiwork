@@ -1120,6 +1120,12 @@ function MeetingDetailPage() {
                 <>
                   <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
                   <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
+                  <CtrlBtn
+                    active={!sharing}
+                    onClick={() => void toggleShare()}
+                    icon={sharing ? ScreenShareOff : ScreenShare}
+                  />
+                  <CtrlBtn active={!handRaised} onClick={() => void toggleHand()} icon={Hand} />
                   <button
                     onClick={leaveRoom}
                     className="ml-2 flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
@@ -1132,7 +1138,7 @@ function MeetingDetailPage() {
                         className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 transition-colors hover:bg-surface-3"
                         aria-label="Chất lượng chia sẻ màn hình"
                       >
-                        <ScreenShare className="h-5 w-5" />
+                        <MoreHorizontal className="h-5 w-5" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-72">
