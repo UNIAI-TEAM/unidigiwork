@@ -1416,6 +1416,17 @@ function MeetingDetailPage() {
                           <span className="truncate">{SHARE_QUALITY_LABELS[k]}</span>
                         </DropdownMenuItem>
                       ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Phụ đề</DropdownMenuLabel>
+                      <DropdownMenuItem onSelect={() => toggleCaptions()}>
+                        <Captions className="mr-2 h-4 w-4" />
+                        <span className="truncate">
+                          {captions.enabled ? "Tắt phụ đề" : "Bật phụ đề trực tiếp"}
+                        </span>
+                        {!captions.supported && (
+                          <span className="ml-auto text-[11px] text-muted-foreground">Không hỗ trợ</span>
+                        )}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <button
