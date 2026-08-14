@@ -260,6 +260,8 @@ const NOTIF_TYPE_WEIGHT: Record<string, number> = {
   system: 5,
 };
 
+import { useNotifSortMode } from "@/lib/notifications-data";
+
 function notifPriorityRank(n: any): number {
   const type = String(n?.type ?? "").toLowerCase();
   const metaPriority = String(n?.meta?.priority ?? "").toLowerCase();
