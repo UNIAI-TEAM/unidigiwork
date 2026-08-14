@@ -315,7 +315,6 @@ function MeetingDetailPage() {
       setShareQualityInfo(preset.label);
       setSharing(true);
       s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
-      toast.success(`Đang chia sẻ màn hình · ${preset.label}`);
     } catch (e) {
       const name = e instanceof DOMException ? e.name : "Error";
       if (name !== "NotAllowedError" && name !== "AbortError") {
