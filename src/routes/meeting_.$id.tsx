@@ -16,6 +16,7 @@ import {
   Sparkles,
   Hand,
   MoreHorizontal,
+  MonitorUp,
   Send,
   FileText,
   Clock,
