@@ -10,6 +10,7 @@ import {
   VideoOff,
   PhoneOff,
   ScreenShare,
+  ScreenShareOff,
   MessageSquare,
   Users,
   Sparkles,
