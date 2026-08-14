@@ -702,6 +702,8 @@ function MeetingDetailPage() {
   const handRaised = raisedHands.some((h) => h.userId === myUserId);
   const canSpeak = speakers.some((s) => s.userId === myUserId);
   const myMetaRef = useRef<{ raised: boolean; speaking: boolean }>({ raised: false, speaking: false });
+  // Theo dõi thay đổi hàng đợi giơ tay để bắn toast realtime cho mọi người.
+  const prevRaisedRef = useRef<Map<string, string> | null>(null);
 
   useEffect(() => {
     if (!isRealRoom || !myUserId) return;
@@ -724,6 +726,21 @@ function MeetingDetailPage() {
           if (meta?.speaking) speaking.push({ userId: key, name: meta.name ?? "Thành viên" });
         }
         next.sort((a, b) => a.at - b.at);
+        const currentMap = new Map(next.map((h) => [h.userId, h.name]));
+        const prev = prevRaisedRef.current;
+        if (prev) {
+          for (const [uid, name] of currentMap) {
+            if (!prev.has(uid) && uid !== myUserId) {
+              toast.info(`${name} đã giơ tay`, { description: "Đang chờ được phát biểu." });
+            }
+          }
+          for (const [uid, name] of prev) {
+            if (!currentMap.has(uid) && uid !== myUserId) {
+              toast(`${name} đã hạ tay`);
+            }
+          }
+        }
+        prevRaisedRef.current = currentMap;
         setRaisedHands(next);
         setSpeakers(speaking);
       })
