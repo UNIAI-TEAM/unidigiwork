@@ -117,6 +117,13 @@ function NotifRow({
               {n.title}
             </span>
           </div>
+          {n.priority && n.priority !== "normal" && (
+            <span
+              className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${PRIORITY_TINT[n.priority]}`}
+            >
+              {PRIORITY_LABELS[n.priority]}
+            </span>
+          )}
           {n.important && (
             <span className="inline-flex items-center gap-1 rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-medium text-rose-300">
               <AlertTriangle className="h-3 w-3" /> Quan trọng
