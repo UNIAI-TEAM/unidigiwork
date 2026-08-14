@@ -13,9 +13,11 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   applyPresetToTrack,
   degrade,
+  readTrackSurface,
   resolvePreset,
   upgrade,
   type ShareQualityKey,
+  type ShareSourceKey,
 } from "@/lib/screen-share-quality";
 
 export interface LiveKitStageProps {
@@ -41,14 +43,23 @@ export interface LiveKitStageProps {
   screenShareEnabled?: boolean;
   /** Báo ngược trạng thái chia sẻ màn hình thật trong phòng. */
   onScreenShareStateChange?: (enabled: boolean) => void;
+  /** Nguồn chia sẻ ưu tiên: toàn màn hình / cửa sổ / tab. */
+  shareSource?: ShareSourceKey;
+  /** Báo nguồn thật mà người dùng đã chọn trong hộp thoại. */
+  onShareSourceResolved?: (surface: ShareSourceKey | null) => void;
 }
 
 /** Đồng bộ nút chia sẻ màn hình bên ngoài với track thật publish vào LiveKit. */
 function ScreenShareSync({
   screenShareEnabled,
   shareQuality = "auto",
+  shareSource = "any",
   onScreenShareStateChange,
-}: Pick<LiveKitStageProps, "screenShareEnabled" | "shareQuality" | "onScreenShareStateChange">) {
+  onShareSourceResolved,
+}: Pick<
+  LiveKitStageProps,
+  "screenShareEnabled" | "shareQuality" | "shareSource" | "onScreenShareStateChange" | "onShareSourceResolved"
+>) {
   const { localParticipant, isScreenShareEnabled } = useLocalParticipant();
 
   useEffect(() => {
@@ -59,17 +70,31 @@ function ScreenShareSync({
       .setScreenShareEnabled(screenShareEnabled, {
         audio: true,
         contentHint: preset.contentHint,
+        ...(shareSource !== "any" ? { video: { displaySurface: shareSource } } : {}),
         resolution: {
           width: preset.width,
           height: preset.height,
           frameRate: preset.frameRate,
         },
       })
+      .then(() => {
+        if (!screenShareEnabled) return;
+        const track = localParticipant.getTrackPublication(Track.Source.ScreenShare)?.track?.mediaStreamTrack;
+        onShareSourceResolved?.(readTrackSurface(track));
+      })
       .catch(() => {
         // Người dùng hủy hộp thoại chọn màn hình -> trả nút về trạng thái tắt.
         onScreenShareStateChange?.(false);
       });
-  }, [localParticipant, screenShareEnabled, isScreenShareEnabled, shareQuality, onScreenShareStateChange]);
+  }, [
+    localParticipant,
+    screenShareEnabled,
+    isScreenShareEnabled,
+    shareQuality,
+    shareSource,
+    onScreenShareStateChange,
+    onShareSourceResolved,
+  ]);
 
   // Người dùng bấm "Stop sharing" của trình duyệt hoặc nút trong khung LiveKit.
   useEffect(() => {
@@ -209,6 +234,8 @@ export default function LiveKitStage({
   onShareQualityResolved,
   screenShareEnabled,
   onScreenShareStateChange,
+  shareSource,
+  onShareSourceResolved,
 }: LiveKitStageProps) {
   const preset = useMemo(() => resolvePreset(shareQuality), [shareQuality]);
   return (
@@ -243,7 +270,9 @@ export default function LiveKitStage({
       <ScreenShareSync
         screenShareEnabled={screenShareEnabled}
         shareQuality={shareQuality}
+        shareSource={shareSource}
         onScreenShareStateChange={onScreenShareStateChange}
+        onShareSourceResolved={onShareSourceResolved}
       />
       <MediaSync
         micEnabled={micEnabled}
