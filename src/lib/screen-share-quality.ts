@@ -164,7 +164,7 @@ export function describeDisplayMediaError(e: unknown): { title: string; hint: st
         cancelled: false,
       };
     case "NotSupportedError":
-ようcase "TypeError":
+    case "TypeError":
       return {
         title: "Thiết bị hoặc trình duyệt không hỗ trợ chia sẻ màn hình",
         hint: "Trên iOS/Android, chia sẻ màn hình chưa được hỗ trợ. Hãy dùng Chrome, Edge hoặc Safari trên máy tính.",
