@@ -28,6 +28,7 @@ import {
   mapNotifRow,
   PRIORITY_DOT,
   PRIORITY_LABELS,
+  PRIORITY_TINT,
   sortNotifRows,
   type Cat,
   type Notif,
