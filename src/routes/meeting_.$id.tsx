@@ -986,6 +986,7 @@ function MeetingDetailPage() {
             )}
 
             <div className="mt-4 flex items-center justify-center gap-2">
+              {raisedHands.length > 0 && null}
               {session ? (
                 <button
                   onClick={leaveRoom}
