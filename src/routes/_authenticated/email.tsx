@@ -1166,9 +1166,19 @@ function EmailHubPage() {
 
           {/* Reading pane */}
           <section
-            className={`min-w-0 flex-1 overflow-y-auto bg-background ${detailOpen ? "flex" : "hidden"} lg:flex`}
+            className={`min-w-0 flex-1 flex-col overflow-hidden bg-background ${detailOpen ? "flex" : "hidden"} lg:flex`}
           >
-            <div className="flex items-center gap-1 border-b border-border px-4 py-2">
+            {!selectedEmail ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+                <Mail className="h-10 w-10 text-muted-foreground/50" />
+                <div className="text-sm font-medium">Chưa chọn email</div>
+                <p className="text-xs text-muted-foreground">
+                  Chọn một email ở danh sách bên trái để xem nội dung
+                </p>
+              </div>
+            ) : (
+              <>
+            <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-4 py-2">
               <button
                 onClick={() => setDetailOpen(false)}
                 className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 lg:hidden"
@@ -1186,7 +1196,7 @@ function EmailHubPage() {
               </button>
             </div>
 
-            <div className="px-6 py-5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h1 className="text-xl font-semibold tracking-tight">
                   {selectedEmail.subject}
@@ -1324,6 +1334,8 @@ function EmailHubPage() {
                 </div>
               </div>
             </div>
+              </>
+            )}
           </section>
 
           {/* Right rail */}
