@@ -36,9 +36,6 @@ function MediaSync({
   onMediaStateChange,
 }: Pick<LiveKitStageProps, "micEnabled" | "camEnabled" | "micDeviceId" | "camDeviceId" | "onMediaStateChange">) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
-  const room = localParticipant?.["roomInfo" as never];
-  void room;
-
   // Áp trạng thái nút bên ngoài vào track thật.
   useEffect(() => {
     if (!localParticipant || micEnabled === undefined) return;
@@ -56,13 +53,13 @@ function MediaSync({
 
   // Áp thiết bị đã chọn.
   useEffect(() => {
-    if (!micDeviceId) return;
-    void localParticipant?.["setMicrophoneEnabled"]?.(micEnabled ?? true, { deviceId: micDeviceId })?.catch?.(() => {});
+    if (!micDeviceId || !localParticipant) return;
+    void localParticipant.setMicrophoneEnabled(micEnabled ?? true, { deviceId: micDeviceId }).catch(() => {});
   }, [micDeviceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!camDeviceId) return;
-    void localParticipant?.["setCameraEnabled"]?.(camEnabled ?? true, { deviceId: camDeviceId })?.catch?.(() => {});
+    if (!camDeviceId || !localParticipant) return;
+    void localParticipant.setCameraEnabled(camEnabled ?? true, { deviceId: camDeviceId }).catch(() => {});
   }, [camDeviceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Báo ngược ra ngoài khi người dùng đổi bằng nút của LiveKit.
