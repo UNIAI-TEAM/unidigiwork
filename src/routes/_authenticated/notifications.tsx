@@ -19,9 +19,18 @@ import {
   SearchX,
   RotateCcw,
   ArrowLeft,
+  ArrowUpDown,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
-import { CATS, catMeta, mapNotifRow, type Cat, type Notif } from "@/lib/notifications-data";
+import {
+  CATS,
+  catMeta,
+  mapNotifRow,
+  sortNotifRows,
+  type Cat,
+  type Notif,
+  type NotifSortMode,
+} from "@/lib/notifications-data";
 import { supabase } from "@/integrations/supabase/client";
 import {
   deleteNotifications,
