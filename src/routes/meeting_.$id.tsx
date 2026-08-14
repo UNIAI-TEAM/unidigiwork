@@ -185,6 +185,18 @@ function MeetingDetailPage() {
   // Chất lượng chia sẻ màn hình (ghi nhớ theo trình duyệt).
   const [shareQuality, setShareQuality] = useState<ShareQualityKey>("auto");
   const [shareQualityInfo, setShareQualityInfo] = useState<string | null>(null);
+  const prevSharingRef = useRef(false);
+  // Thông báo rõ ràng mỗi khi trạng thái chia sẻ màn hình đổi (kể cả khi
+  // người dùng bấm "Stop sharing" của trình duyệt).
+  useEffect(() => {
+    if (prevSharingRef.current === sharing) return;
+    prevSharingRef.current = sharing;
+    if (sharing) toast.success("Đang chia sẻ màn hình");
+    else {
+      toast.info("Đã dừng chia sẻ màn hình");
+      setShareQualityInfo(null);
+    }
+  }, [sharing]);
   const autoLevelRef = useRef<Exclude<ShareQualityKey, "auto">>("balanced");
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -303,7 +315,6 @@ function MeetingDetailPage() {
       setShareQualityInfo(preset.label);
       setSharing(true);
       s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
-      toast.success(`Đang chia sẻ màn hình · ${preset.label}`);
     } catch (e) {
       const name = e instanceof DOMException ? e.name : "Error";
       if (name !== "NotAllowedError" && name !== "AbortError") {
@@ -1116,6 +1127,19 @@ function MeetingDetailPage() {
             )}
 
             <div className="mt-4 flex items-center justify-center gap-2">
+              <span
+                className={`mr-1 hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${
+                  sharing
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-border bg-surface-2 text-muted-foreground"
+                }`}
+                aria-live="polite"
+              >
+                {sharing ? <ScreenShare className="h-3.5 w-3.5" /> : <ScreenShareOff className="h-3.5 w-3.5" />}
+                {sharing
+                  ? `Đang chia sẻ màn hình${shareQualityInfo ? ` · ${shareQualityInfo}` : ""}`
+                  : "Chưa chia sẻ màn hình"}
+              </span>
               {session ? (
                 <>
                   <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
