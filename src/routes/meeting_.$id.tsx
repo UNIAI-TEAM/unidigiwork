@@ -24,6 +24,14 @@ import {
   Crown,
   Video as VideoIcon,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
   AlertDialog,
@@ -175,6 +183,26 @@ function MeetingDetailPage() {
   const [joinError, setJoinError] = useState<{ code: string; message: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Chọn thiết bị mic/camera và áp dụng ngay cho luồng xem trước.
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [camId, setCamId] = useState<string>("");
+  const [micId, setMicId] = useState<string>("");
+  const refreshDevices = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const list = await navigator.mediaDevices.enumerateDevices();
+      setDevices(list.filter((d) => d.kind === "videoinput" || d.kind === "audioinput"));
+    } catch {
+      toast.error("Không đọc được danh sách thiết bị.");
+    }
+  }, []);
+  useEffect(() => {
+    void refreshDevices();
+    if (typeof navigator === "undefined" || !navigator.mediaDevices) return;
+    const handler = () => void refreshDevices();
+    navigator.mediaDevices.addEventListener?.("devicechange", handler);
+    return () => navigator.mediaDevices.removeEventListener?.("devicechange", handler);
+  }, [refreshDevices]);
   // Rời phòng chủ động thì KHÔNG auto rejoin.
   const manualLeaveRef = useRef(false);
   const inRoomRef = useRef(false);
@@ -187,13 +215,17 @@ function MeetingDetailPage() {
     let cancelled = false;
     async function start() {
       try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: camId ? { deviceId: { exact: camId } } : true,
+          audio: micId ? { deviceId: { exact: micId } } : false,
+        });
         if (cancelled) {
           s.getTracks().forEach((t) => t.stop());
           return;
         }
         streamRef.current = s;
         if (videoRef.current) videoRef.current.srcObject = s;
+        void refreshDevices();
       } catch (e) {
         const name = e instanceof DOMException ? e.name : "Error";
         toast.error(
@@ -217,7 +249,7 @@ function MeetingDetailPage() {
       cancelled = true;
       stop();
     };
-  }, [camOff, session, sharing]);
+  }, [camOff, session, sharing, camId, micId, refreshDevices]);
 
   // Chia sẻ màn hình thật bằng getDisplayMedia; dừng khi người dùng bấm "Stop sharing" của trình duyệt.
   const stopShare = useCallback(() => {
@@ -1017,7 +1049,65 @@ function MeetingDetailPage() {
                     onClick={() => void toggleHand()}
                     icon={Hand}
                   />
-                  <CtrlBtn icon={MoreHorizontal} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 transition-colors hover:bg-surface-3">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-72">
+                      <DropdownMenuLabel className="flex items-center justify-between gap-2">
+                        Micro
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            void refreshDevices();
+                            toast.success("Đã làm mới danh sách thiết bị.");
+                          }}
+                          className="text-xs font-normal text-primary hover:underline"
+                        >
+                          Làm mới
+                        </button>
+                      </DropdownMenuLabel>
+                      {devices.filter((d) => d.kind === "audioinput").length === 0 ? (
+                        <DropdownMenuItem disabled>Không có micro</DropdownMenuItem>
+                      ) : (
+                        devices
+                          .filter((d) => d.kind === "audioinput")
+                          .map((d, i) => (
+                            <DropdownMenuItem
+                              key={d.deviceId || i}
+                              onSelect={() => setMicId(d.deviceId)}
+                              className={micId === d.deviceId ? "font-medium text-primary" : ""}
+                            >
+                              <Mic className="mr-2 h-4 w-4" />
+                              <span className="truncate">{d.label || `Micro ${i + 1}`}</span>
+                            </DropdownMenuItem>
+                          ))
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Camera</DropdownMenuLabel>
+                      {devices.filter((d) => d.kind === "videoinput").length === 0 ? (
+                        <DropdownMenuItem disabled>Không có camera</DropdownMenuItem>
+                      ) : (
+                        devices
+                          .filter((d) => d.kind === "videoinput")
+                          .map((d, i) => (
+                            <DropdownMenuItem
+                              key={d.deviceId || i}
+                              onSelect={() => {
+                                setCamId(d.deviceId);
+                                setCamOff(false);
+                              }}
+                              className={camId === d.deviceId ? "font-medium text-primary" : ""}
+                            >
+                              <Video className="mr-2 h-4 w-4" />
+                              <span className="truncate">{d.label || `Camera ${i + 1}`}</span>
+                            </DropdownMenuItem>
+                          ))
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <button
                     onClick={handleJoin}
                     disabled={joining || redeeming}
