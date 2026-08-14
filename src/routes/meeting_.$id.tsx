@@ -1154,6 +1154,15 @@ function MeetingDetailPage() {
               </div>
             )}
 
+            {captions.enabled && (
+              <div className="mt-4 rounded-lg border border-border bg-foreground/90 px-4 py-3 text-center text-sm text-background">
+                <span className="mr-2 rounded bg-background/20 px-1.5 py-0.5 text-[11px] uppercase tracking-wide">
+                  Phụ đề
+                </span>
+                {captions.text || "Đang lắng nghe…"}
+              </div>
+            )}
+
             <div className="mt-4 flex items-center justify-center gap-2">
               <span
                 className={`mr-1 hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${
