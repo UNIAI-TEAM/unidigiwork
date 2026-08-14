@@ -985,8 +985,17 @@ function MeetingDetailPage() {
               </p>
             )}
 
+            {raisedHands.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                <Hand className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="font-medium text-primary">Đang giơ tay:</span>
+                <span className="min-w-0 truncate text-muted-foreground">
+                  {raisedHands.map((h, i) => `${i + 1}. ${h.userId === myUserId ? "Bạn" : h.name}`).join(" · ")}
+                </span>
+              </div>
+            )}
+
             <div className="mt-4 flex items-center justify-center gap-2">
-              {raisedHands.length > 0 && null}
               {session ? (
                 <button
                   onClick={leaveRoom}
