@@ -243,13 +243,30 @@ function NotificationsPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["notifications"] });
 
-  // Realtime: khi có notification mới/sửa/xóa thì refetch danh sách
+  // Realtime: chỉ nghe thông báo của chính người dùng (PERF-004 — tránh fanout
+  // toàn bảng notifications tới mọi client đang mở trang).
+  const [uid, setUid] = useState<string | null>(null);
   useEffect(() => {
+    let alive = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (alive) setUid(data.user?.id ?? null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!uid) return;
     const channel = supabase
-      .channel("notifications-realtime")
+      .channel(`notifications:user:${uid}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "notifications" },
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${uid}`,
+        },
         () => {
           qc.invalidateQueries({ queryKey: ["notifications"] });
         },
@@ -258,7 +275,7 @@ function NotificationsPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [qc]);
+  }, [qc, uid]);
 
   const readMut = useMutation({
     mutationFn: (ids: string[]) => markNotificationsRead({ data: { ids } }),
