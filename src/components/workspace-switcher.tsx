@@ -25,8 +25,19 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed?: boolean }) {
   const onSelect = (id: string | null) => {
     select(id);
     setOpen(false);
-    // Dữ liệu theo ngữ cảnh workspace cần nạp lại.
-    void qc.invalidateQueries();
+    // PERF-005: chỉ nạp lại các nhóm query phụ thuộc workspace, không xoá toàn cache.
+    for (const key of [
+      ["dashboard"],
+      ["tasks"],
+      ["documents"],
+      ["calendar"],
+      ["chat"],
+      ["workspace-overview"],
+      ["people"],
+      ["notifications"],
+    ]) {
+      void qc.invalidateQueries({ queryKey: key });
+    }
   };
 
   const label = isLoading ? "Đang tải…" : (workspaceName ?? "Tất cả workspace");
