@@ -174,10 +174,35 @@ function DocumentsPage() {
     })();
   }, [currentWs]);
 
+  // Chia sẻ tài liệu cho thành viên workspace qua server function shareDocument
+  const submitShare = async () => {
+    if (!selected || !shareUserId) {
+      toast.error("Chọn thành viên để chia sẻ");
+      return;
+    }
+    setSharing(true);
+    try {
+      await shareDocument({
+        data: {
+          documentId: selected.id,
+          principalType: "user",
+          principalId: shareUserId,
+          level: shareLevel,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      });
+      toast.success("Đã chia sẻ tài liệu");
+      setShowShare(false);
+      setShareUserId("");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const createWorkspace = async () => {
-    // (chia sẻ tài liệu bên dưới)
     if (!newWsName.trim() || !userId) return;
-    void 0;
     setSaving(true);
     const { data, error } = await supabase
       .from("workspaces")
