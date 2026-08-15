@@ -702,6 +702,12 @@ function MeetingDetailPage() {
   // Nhịp đếm để cập nhật thời gian chờ của hàng đợi giơ tay theo thời gian thực.
   const [handsTick, setHandsTick] = useState(0);
   const handsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    if (raisedHands.length === 0) return;
+    const t = setInterval(() => setHandsTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [raisedHands.length]);
   const handRaised = raisedHands.some((h) => h.userId === myUserId);
   const canSpeak = speakers.some((s) => s.userId === myUserId);
   const myMetaRef = useRef<{ raised: boolean; speaking: boolean }>({ raised: false, speaking: false });
