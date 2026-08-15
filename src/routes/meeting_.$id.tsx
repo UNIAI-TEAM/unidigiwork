@@ -2,6 +2,7 @@ import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { playMeetingCue } from "@/lib/meeting-cues";
 import {
   ArrowLeft,
   Mic,
@@ -731,11 +732,13 @@ function MeetingDetailPage() {
         if (prev) {
           for (const [uid, name] of currentMap) {
             if (!prev.has(uid) && uid !== myUserId) {
+              playMeetingCue("raise");
               toast.info(`${name} đã giơ tay`, { description: "Đang chờ được phát biểu." });
             }
           }
           for (const [uid, name] of prev) {
             if (!currentMap.has(uid) && uid !== myUserId) {
+              playMeetingCue("lower");
               toast(`${name} đã hạ tay`);
             }
           }
