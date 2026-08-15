@@ -3,6 +3,14 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { playMeetingCue } from "@/lib/meeting-cues";
+
+/** Thời gian một người đã chờ trong hàng đợi giơ tay (tick chỉ để buộc render lại). */
+function formatWaiting(at: number, _tick: number): string {
+  if (!at) return "";
+  const s = Math.max(0, Math.floor((Date.now() - at) / 1000));
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}p${String(s % 60).padStart(2, "0")}`;
+}
 import {
   ArrowLeft,
   Mic,
