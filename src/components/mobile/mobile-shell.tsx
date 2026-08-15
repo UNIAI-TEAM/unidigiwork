@@ -205,7 +205,17 @@ function MobileTopbar() {
 }
 
 function BottomTabBar({ activeTab }: { activeTab: string }) {
-  const { chatUnread, emailUnread } = useUnreadCounts();
+  const { chatUnread, emailUnread, refreshUnread } = useUnreadCounts();
+
+  // Mở tab Chat/Email → làm mới badge ngay và sau khi trang kịp đánh dấu đã đọc.
+  useEffect(() => {
+    if (activeTab !== "chat" && activeTab !== "email") return;
+    refreshUnread();
+    const t = setTimeout(() => refreshUnread(), 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const badgeFor = (id: string) => (id === "chat" ? chatUnread : id === "email" ? emailUnread : 0);
   return (
     <nav className="sticky bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
