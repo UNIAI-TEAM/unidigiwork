@@ -9,8 +9,9 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
   getTaskDetail, commentTask, createSubtask, transitionTask,
-  addTaskAttachment, deleteTaskAttachment, updateTask, setTaskTags,
+  addTaskAttachment, deleteTaskAttachment, updateTask, setTaskTags, assignTask,
 } from "@/lib/api/tasks.functions";
+import { listWorkspaceMembers } from "@/lib/api/workspaces.functions";
 import {
   uploadTaskAttachment, getTaskAttachmentUrl, removeTaskAttachmentObject, formatBytes,
 } from "@/lib/tasks-storage";
@@ -64,6 +65,7 @@ function TaskDetailPage() {
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [uploading, setUploading] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
+  const [assigneeDraft, setAssigneeDraft] = useState("");
 
   const detail = useQuery({
     queryKey: ["task-detail", id],
