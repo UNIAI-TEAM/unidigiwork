@@ -145,6 +145,15 @@ function TaskDetailPage() {
   const comments = (detail.data?.comments ?? []) as Array<{ id: string; body: string; created_at: string; author_id: string | null; author_name: string | null }>;
   const attachments = (detail.data?.attachments ?? []) as Array<{ id: string; file_name: string; storage_path: string; size_bytes: number | null }>;
   const parent = detail.data?.parent as { id: string; title: string } | null | undefined;
+  const assignees = (detail.data?.assignees ?? []) as Array<{ user_id: string; role: string | null }>;
+
+  const membersQ = useQuery({
+    queryKey: ["workspace-members", task?.workspace_id],
+    queryFn: () => listWorkspaceMembers({ data: { workspaceId: task!.workspace_id } }),
+    enabled: !!task?.workspace_id,
+  });
+  const memberName = (uid: string) =>
+    membersQ.data?.find((m) => m.userId === uid)?.name ?? uid.slice(0, 8);
 
   const dueState = useMemo(() => {
     if (!task?.due_at || task.status === "done" || task.status === "canceled") return null;
