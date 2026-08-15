@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
+import { useEffect, useRef, useState } from "react";
 
 const TABS = [
   { id: "home", label: "Home", icon: Home, to: "/m/home" },
@@ -21,20 +22,135 @@ const TABS = [
   { id: "email", label: "Email", icon: Mail, to: "/m/email" },
 ];
 
+const SWIPE_THRESHOLD = 72;
+
 export function MobileShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const isCompose = pathname.startsWith("/m/compose") || pathname.startsWith("/m/email/");
   const hideTabBar = pathname.startsWith("/m/meet/") || isCompose;
+  const activeTab = pathname.split("/")[2] || "home";
+  const isTab = TABS.some((t) => t.id === activeTab);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <MobileTopbar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden">
+      <SwipeableMain
+        className="flex-1"
+        activeTab={activeTab}
+        enabled={isTab && !hideTabBar}
+      >
         <Outlet />
-      </main>
-      {!hideTabBar && <BottomTabBar activeTab={pathname.split("/")[2] || "home"} />}
+      </SwipeableMain>
+      {!hideTabBar && <BottomTabBar activeTab={activeTab} />}
     </div>
+  );
+}
+
+function SwipeableMain({
+  children,
+  className,
+  activeTab,
+  enabled,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  activeTab: string;
+  enabled: boolean;
+}) {
+  const navigate = useNavigate();
+  const [start, setStart] = useState<{ x: number; y: number; pointerId: number } | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const directionRef = useRef<1 | -1 | null>(null);
+  const activeIndex = TABS.findIndex((t) => t.id === activeTab);
+
+  useEffect(() => {
+    setStart(null);
+    setOffset(0);
+    setIsAnimating(false);
+    directionRef.current = null;
+  }, [activeTab]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!enabled || isAnimating || e.button !== 0) return;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    setStart({ x: e.clientX, y: e.clientY, pointerId: e.pointerId });
+    setOffset(0);
+    setIsAnimating(false);
+    directionRef.current = null;
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!enabled || !start || isAnimating || e.pointerId !== start.pointerId) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+
+    if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 8) {
+      directionRef.current = dx > 0 ? -1 : 1;
+      setOffset(dx);
+    }
+  };
+
+  const reset = (target?: HTMLElement) => {
+    setIsAnimating(true);
+    setOffset(0);
+    setTimeout(() => {
+      setIsAnimating(false);
+      setStart(null);
+      directionRef.current = null;
+    }, 220);
+    if (target) {
+      try {
+        target.releasePointerCapture(start?.pointerId ?? -1);
+      } catch {
+        // capture may already be released
+      }
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!enabled || !start || e.pointerId !== start.pointerId) return;
+    const dir = directionRef.current;
+    if (dir && Math.abs(offset) > SWIPE_THRESHOLD) {
+      const targetIndex = dir === 1 ? activeIndex + 1 : activeIndex - 1;
+      if (targetIndex >= 0 && targetIndex < TABS.length) {
+        setIsAnimating(true);
+        setOffset(0);
+        navigate({ to: TABS[targetIndex].to, replace: true });
+      } else {
+        reset(e.currentTarget as HTMLElement);
+      }
+    } else {
+      reset(e.currentTarget as HTMLElement);
+    }
+  };
+
+  const onPointerCancel = (e: React.PointerEvent) => {
+    reset(e.currentTarget as HTMLElement);
+  };
+
+  return (
+    <main
+      className={cn("overflow-y-auto overflow-x-hidden relative", className)}
+      style={{ touchAction: "pan-y" }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+    >
+      <div
+        className={cn(
+          "min-h-full",
+          isAnimating && "transition-transform duration-200 ease-out"
+        )}
+        style={{
+          transform: offset || isAnimating ? `translateX(${offset}px)` : undefined,
+        }}
+      >
+        {children}
+      </div>
+    </main>
   );
 }
 
@@ -139,5 +255,3 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
     </nav>
   );
 }
-
-
