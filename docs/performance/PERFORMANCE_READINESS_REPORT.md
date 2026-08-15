@@ -8,6 +8,17 @@ Ngày: 2026-08-15 · Môi trường: Lovable Cloud (preview DB, dataset dev nh�
 |---|---|---|---|---|---|---|---|---|
 | Smoke | 50 | 2m10s | 12.9 | 195 ms | 217 ms | 546 ms | 0.00% | **PASS** |
 | Tier-250 | 250 | 90s | 85.1 | 196 ms | 286 ms (list 267 / rpc p95 1.13 s) | 1.68 s max | 0.00% | **PASS có cảnh báo** — RPC p95 vượt ngưỡng 300 ms |
+| Tier-500 | 500 | 3m58s | 132.1 | 174 ms | 191 ms (list 190 / rpc 189 / heavy 204) | 485 ms (p99 list), max 965 ms | 0.00% | **PASS** — toàn bộ threshold đạt |
+
+Tier-500 (2026-08-15, sau khi áp dụng PERF-001…009): 31.391 request, 18.383 iteration, 0 lỗi,
+18.383/18.383 check pass. Đuôi RPC p95 1,13 s ở mốc 250 VU đã biến mất sau khi `getUnreadCounts`
+chuyển sang 1 RPC — ở 500 VU rpc p95 chỉ 189 ms. Bottleneck còn lại lúc này là RTT mạng ~165 ms,
+không phải DB. Artifact: `tests/performance/artifacts/tier-500vu.json`.
+
+Điểm nghẽn tiếp theo cần công phá (chưa đo được ở tier này):
+1. Chi phí RLS đa tenant — vẫn chỉ 1 phiên người dùng, chưa có pool ≥500 fixture users.
+2. Dataset dev nhỏ (bảng lớn nhất 1.309 dòng) → query plan chưa phản ánh tải thật.
+3. Ghi (write path): tier này chủ yếu đọc; cần chat-storm/notification-storm để đo outbox lag.
 
 Ghi chú: ~180 ms trong mọi số đo là RTT mạng từ sandbox, không phải thời gian DB. Không có
 request lỗi nào ở 250 VU; đuôi p95 của RPC tăng là dấu hiệu hàng đợi kết nối bắt đầu hình thành.
@@ -26,7 +37,7 @@ request lỗi nào ở 250 VU; đuôi p95 của RPC tăng là dấu hiệu hàng
 |---|---|---|
 | 100 users | **READY** | đo thực, 0% lỗi, p95 217 ms |
 | 250 users | **READY_WITH_CAVEATS** | đo thực, 0% lỗi; RPC p95 chạm 1.1 s ở đuôi |
-| 500 users | **NOT_VERIFIED** | chưa đo; cần pool user fixture + dataset lớn |
+| 500 users | **READY** | đo thực 2026-08-15, 0% lỗi, p95 191 ms, mọi threshold pass |
 | 1.000 users | **NOT_VERIFIED** | như trên + cần quan trắc outbox/latency |
 | 2.500 / 5.000 users | **BLOCKED — INSUFFICIENT EVIDENCE** | thiếu 3 điều kiện bắt buộc (mục 4) |
 
