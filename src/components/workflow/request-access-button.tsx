@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { KeyRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { requestWorkflowAccess } from "@/lib/api/workflows.functions";
@@ -22,6 +22,7 @@ interface Props {
 export function RequestAccessButton({ workspaceId, action, workflowId, className }: Props) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const qc = useQueryClient();
 
   const send = useMutation({
     mutationFn: () =>
@@ -33,9 +34,15 @@ export function RequestAccessButton({ workspaceId, action, workflowId, className
           message: message.trim() || null,
         },
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
       setOpen(false);
       setMessage("");
+      // Đồng bộ lại danh sách yêu cầu/quyền từ API thay vì chỉ báo toast.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["workflow-access-requests", workspaceId] }),
+        qc.invalidateQueries({ queryKey: ["workflow-my-perms", workspaceId] }),
+        qc.invalidateQueries({ queryKey: ["workflow-permissions", workspaceId] }),
+      ]);
       toast.success("Đã gửi yêu cầu cấp quyền", {
         description: "Quản trị không gian làm việc sẽ xem xét yêu cầu của bạn.",
       });
