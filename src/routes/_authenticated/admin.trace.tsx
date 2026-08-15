@@ -1742,7 +1742,7 @@ function toToLocalDatetime(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-const searchSchema = z.object({
+export const searchSchema = z.object({
   cid: z.string().trim().max(200).optional(),
   page: z.coerce.number().int().min(1).max(100000).optional(),
   limit: z.coerce.number().int().min(1).max(1000).optional(),
