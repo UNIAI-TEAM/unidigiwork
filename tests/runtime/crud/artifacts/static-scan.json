@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-08-11T14:55:31.137Z",
+  "generatedAt": "2026-08-15T08:01:04.646Z",
   "counts": {
-    "routes": 72,
-    "serverFns": 236,
-    "uiFiles": 135,
-    "buttons": 832,
-    "onClicks": 723,
+    "routes": 81,
+    "serverFns": 241,
+    "uiFiles": 148,
+    "buttons": 873,
+    "onClicks": 779,
     "forms": 19,
     "mutations": 118,
-    "directDbUi": 3,
+    "directDbUi": 2,
     "orphanFns": 33
   },
   "fns": [
@@ -495,9 +495,11 @@
       "file": "src/lib/api/ai-chat.functions.ts",
       "auth": true,
       "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx",
         "src/routes/ai.tsx"
       ],
       "anyConsumers": [
+        "src/routes/_authenticated/dashboard.tsx",
         "src/routes/ai.tsx"
       ]
     },
@@ -914,7 +916,55 @@
       ]
     },
     {
+      "name": "getDashboardPrefs",
+      "method": "POST",
+      "file": "src/lib/api/dashboard-prefs.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ]
+    },
+    {
+      "name": "saveDashboardPrefs",
+      "method": "POST",
+      "file": "src/lib/api/dashboard-prefs.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ]
+    },
+    {
+      "name": "resetDashboardPrefs",
+      "method": "POST",
+      "file": "src/lib/api/dashboard-prefs.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ]
+    },
+    {
       "name": "getDashboardOverview",
+      "method": "GET",
+      "file": "src/lib/api/dashboard.functions.ts",
+      "auth": true,
+      "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/dashboard.tsx"
+      ]
+    },
+    {
+      "name": "getDashboardAiSummary",
       "method": "GET",
       "file": "src/lib/api/dashboard.functions.ts",
       "auth": true,
@@ -999,10 +1049,12 @@
       "file": "src/lib/api/documents.functions.ts",
       "auth": true,
       "uiConsumers": [
-        "src/routes/_authenticated/documents.$id.tsx"
+        "src/routes/_authenticated/documents.$id.tsx",
+        "src/routes/_authenticated/documents.tsx"
       ],
       "anyConsumers": [
-        "src/routes/_authenticated/documents.$id.tsx"
+        "src/routes/_authenticated/documents.$id.tsx",
+        "src/routes/_authenticated/documents.tsx"
       ]
     },
     {
@@ -1032,8 +1084,12 @@
       "method": "POST",
       "file": "src/lib/api/documents.functions.ts",
       "auth": true,
-      "uiConsumers": [],
-      "anyConsumers": []
+      "uiConsumers": [
+        "src/routes/_authenticated/documents.tsx"
+      ],
+      "anyConsumers": [
+        "src/routes/_authenticated/documents.tsx"
+      ]
     },
     {
       "name": "getMyPrimaryWorkspaceId",
@@ -1684,10 +1740,13 @@
       "file": "src/lib/api/notifications.functions.ts",
       "auth": true,
       "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx",
         "src/routes/_authenticated/notifications.$id.tsx",
         "src/routes/_authenticated/notifications.tsx"
       ],
       "anyConsumers": [
+        "src/lib/use-unread-notifications.ts",
+        "src/routes/_authenticated/dashboard.tsx",
         "src/routes/_authenticated/notifications.$id.tsx",
         "src/routes/_authenticated/notifications.tsx"
       ]
@@ -1710,10 +1769,12 @@
       "file": "src/lib/api/notifications.functions.ts",
       "auth": true,
       "uiConsumers": [
+        "src/routes/_authenticated/dashboard.tsx",
         "src/routes/_authenticated/notifications.$id.tsx",
         "src/routes/_authenticated/notifications.tsx"
       ],
       "anyConsumers": [
+        "src/routes/_authenticated/dashboard.tsx",
         "src/routes/_authenticated/notifications.$id.tsx",
         "src/routes/_authenticated/notifications.tsx"
       ]
@@ -2166,6 +2227,16 @@
       "uiConsumers": [],
       "anyConsumers": [
         "src/features/tenants/hooks.ts"
+      ]
+    },
+    {
+      "name": "getUnreadCounts",
+      "method": "GET",
+      "file": "src/lib/api/unread-counts.functions.ts",
+      "auth": true,
+      "uiConsumers": [],
+      "anyConsumers": [
+        "src/lib/use-unread-counts.ts"
       ]
     },
     {
@@ -2897,33 +2968,27 @@
   "direct": [
     {
       "file": "src/routes/_authenticated/documents.tsx",
-      "line": 112,
+      "line": 132,
       "target": "workspaces",
       "op": "READ"
     },
     {
-      "file": "src/routes/_authenticated/documents.tsx",
-      "line": 201,
-      "target": "documents",
-      "op": "WRITE"
-    },
-    {
-      "file": "src/routes/_authenticated/documents.tsx",
-      "line": 207,
-      "target": "documents",
+      "file": "src/routes/_authenticated/m/compose.tsx",
+      "line": 42,
+      "target": "email_threads",
       "op": "WRITE"
     }
   ],
   "suspicious": [
     {
       "file": "src/components/app-shell.tsx",
-      "line": 286,
+      "line": 288,
       "kind": "localStorage",
       "code": "return localStorage.getItem(\"sidebarCollapsed\") === \"true\";"
     },
     {
       "file": "src/components/app-shell.tsx",
-      "line": 301,
+      "line": 303,
       "kind": "localStorage",
       "code": "localStorage.setItem(\"sidebarCollapsed\", String(next));"
     },
@@ -2958,8 +3023,44 @@
       "code": "setTimeout(() => {"
     },
     {
+      "file": "src/components/meeting/livekit-stage.tsx",
+      "line": 170,
+      "kind": "swallow catch",
+      "code": "void localParticipant.setMicrophoneEnabled(micEnabled).catch(() => {});"
+    },
+    {
+      "file": "src/components/meeting/livekit-stage.tsx",
+      "line": 177,
+      "kind": "swallow catch",
+      "code": "void localParticipant.setCameraEnabled(camEnabled).catch(() => {});"
+    },
+    {
+      "file": "src/components/meeting/livekit-stage.tsx",
+      "line": 184,
+      "kind": "swallow catch",
+      "code": "void localParticipant.setMicrophoneEnabled(micEnabled ?? true, { deviceId: micDeviceId }).catch(() => {});"
+    },
+    {
+      "file": "src/components/meeting/livekit-stage.tsx",
+      "line": 189,
+      "kind": "swallow catch",
+      "code": "void localParticipant.setCameraEnabled(camEnabled ?? true, { deviceId: camDeviceId }).catch(() => {});"
+    },
+    {
+      "file": "src/components/mobile/mobile-shell.tsx",
+      "line": 99,
+      "kind": "setTimeout fake",
+      "code": "setTimeout(() => {"
+    },
+    {
+      "file": "src/components/mobile/mobile-shell.tsx",
+      "line": 214,
+      "kind": "setTimeout fake",
+      "code": "const t = setTimeout(() => refreshUnread(), 2000);"
+    },
+    {
       "file": "src/routes/__root.tsx",
-      "line": 132,
+      "line": 142,
       "kind": "localStorage",
       "code": "__html: `try{var t=localStorage.getItem('uniwork-theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');var l=localSto"
     },
@@ -3120,6 +3221,78 @@
       "code": "window.setTimeout(() => {"
     },
     {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 574,
+      "kind": "localStorage",
+      "code": "const raw = localStorage.getItem(SECTIONS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 580,
+      "kind": "localStorage",
+      "code": "const rawOrder = localStorage.getItem(ORDER_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 596,
+      "kind": "localStorage",
+      "code": "localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(nextOrder));"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 605,
+      "kind": "localStorage",
+      "code": "localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(merged));"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 618,
+      "kind": "localStorage",
+      "code": "localStorage.removeItem(SECTIONS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 627,
+      "kind": "localStorage",
+      "code": "localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(next));"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 647,
+      "kind": "localStorage",
+      "code": "localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(next));"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 662,
+      "kind": "localStorage",
+      "code": "localStorage.removeItem(SECTIONS_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 663,
+      "kind": "localStorage",
+      "code": "localStorage.removeItem(ORDER_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 669,
+      "kind": "swallow catch",
+      "code": ".catch(() => {});"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 680,
+      "kind": "localStorage",
+      "code": "const saved = localStorage.getItem(REFRESH_STORAGE_KEY);"
+    },
+    {
+      "file": "src/routes/_authenticated/dashboard.tsx",
+      "line": 689,
+      "kind": "localStorage",
+      "code": "localStorage.setItem(REFRESH_STORAGE_KEY, String(ms));"
+    },
+    {
       "file": "src/routes/_authenticated/email.compose.tsx",
       "line": 132,
       "kind": "setTimeout fake",
@@ -3132,6 +3305,18 @@
       "code": "const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);"
     },
     {
+      "file": "src/routes/_authenticated/notifications.tsx",
+      "line": 214,
+      "kind": "localStorage",
+      "code": "const raw = window.localStorage.getItem(\"notifications.pinned\");"
+    },
+    {
+      "file": "src/routes/_authenticated/notifications.tsx",
+      "line": 226,
+      "kind": "localStorage",
+      "code": "window.localStorage.setItem(\"notifications.pinned\", JSON.stringify(Array.from(next)));"
+    },
+    {
       "file": "src/routes/_authenticated/settings.tsx",
       "line": 263,
       "kind": "setTimeout fake",
@@ -3139,19 +3324,19 @@
     },
     {
       "file": "src/routes/ai.tsx",
-      "line": 161,
+      "line": 172,
       "kind": "localStorage",
       "code": "const raw = localStorage.getItem(AI_FILTERS_KEY);"
     },
     {
       "file": "src/routes/ai.tsx",
-      "line": 184,
+      "line": 195,
       "kind": "localStorage",
       "code": "localStorage.setItem("
     },
     {
       "file": "src/routes/ai.tsx",
-      "line": 250,
+      "line": 261,
       "kind": "setTimeout fake",
       "code": "const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);"
     },
@@ -3169,19 +3354,49 @@
     },
     {
       "file": "src/routes/meeting_.$id.tsx",
-      "line": 294,
+      "line": 222,
+      "kind": "localStorage",
+      "code": "const saved = window.localStorage.getItem(SHARE_QUALITY_STORAGE_KEY) as ShareQualityKey | null;"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 227,
+      "kind": "localStorage",
+      "code": "if (typeof window !== \"undefined\") window.localStorage.setItem(SHARE_QUALITY_STORAGE_KEY, key);"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 234,
+      "kind": "localStorage",
+      "code": "const saved = window.localStorage.getItem(SHARE_SOURCE_STORAGE_KEY) as ShareSourceKey | null;"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 239,
+      "kind": "localStorage",
+      "code": "if (typeof window !== \"undefined\") window.localStorage.setItem(SHARE_SOURCE_STORAGE_KEY, key);"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 341,
+      "kind": "coming soon",
+      "code": "\"Tính năng này cần Chrome, Edge, Firefox hoặc Safari trên máy tính (trang phải chạy trên HTTPS). Trình duyệt di động chưa hỗ trợ.\","
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 510,
       "kind": "setTimeout fake",
       "code": "refreshTimerRef.current = setTimeout(async () => {"
     },
     {
       "file": "src/routes/meeting_.$id.tsx",
-      "line": 321,
+      "line": 537,
       "kind": "setTimeout fake",
       "code": "rejoinTimerRef.current = setTimeout(async () => {"
     },
     {
       "file": "src/routes/meeting_.$id.tsx",
-      "line": 553,
+      "line": 890,
       "kind": "setTimeout fake",
       "code": "window.setTimeout(() => {"
     },
@@ -3201,7 +3416,7 @@
   "toastOnly": [
     {
       "file": "src/components/app-shell.tsx",
-      "line": 601,
+      "line": 618,
       "code": "toast.success(`Đã tạo workspace \"${name.trim()}\"`);"
     },
     {
@@ -3436,7 +3651,7 @@
     },
     {
       "file": "src/routes/_authenticated/calendar.tsx",
-      "line": 315,
+      "line": 334,
       "code": "toast.success(`Đã xuất ${items.length} sự kiện ra file ICS`);"
     },
     {
@@ -3596,7 +3811,7 @@
     },
     {
       "file": "src/routes/ai.tsx",
-      "line": 380,
+      "line": 392,
       "code": "else if (format === \"csv\") toast.success(`Đã tải CSV (${rows.length} hội thoại)`);"
     },
     {
@@ -3608,6 +3823,31 @@
       "file": "src/routes/meeting.tsx",
       "line": 540,
       "code": "toast.success(\"Đã hủy cuộc họp.\");"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 212,
+      "code": "if (sharing) toast.success(\"Đang chia sẻ màn hình\");"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 499,
+      "code": "if (captions.start()) toast.success(\"Đã bật phụ đề (nhận giọng nói của bạn qua micro).\");"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 775,
+      "code": "toast.success(\"Bạn được mời phát biểu\", {"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 1383,
+      "code": "toast.success(\"Đã làm mới danh sách thiết bị.\");"
+    },
+    {
+      "file": "src/routes/meeting_.$id.tsx",
+      "line": 1511,
+      "code": "toast.success(\"Đã làm mới danh sách thiết bị.\");"
     },
     {
       "file": "src/routes/tasks.$id.tsx",
@@ -3626,12 +3866,12 @@
     },
     {
       "file": "src/routes/tasks.tsx",
-      "line": 159,
+      "line": 182,
       "code": "toast.success(\"Đã lưu bộ lọc\");"
     },
     {
       "file": "src/routes/tasks.tsx",
-      "line": 168,
+      "line": 191,
       "code": "toast.success(\"Đã xóa bộ lọc\");"
     },
     {
@@ -3709,6 +3949,15 @@
     "src/routes/_authenticated/email.compose.tsx",
     "src/routes/_authenticated/email.tsx",
     "src/routes/_authenticated/help.tsx",
+    "src/routes/_authenticated/m/chat.tsx",
+    "src/routes/_authenticated/m/compose.tsx",
+    "src/routes/_authenticated/m/email.$id.tsx",
+    "src/routes/_authenticated/m/email.tsx",
+    "src/routes/_authenticated/m/home.tsx",
+    "src/routes/_authenticated/m/meet.tsx",
+    "src/routes/_authenticated/m/more.tsx",
+    "src/routes/_authenticated/m/tasks.tsx",
+    "src/routes/_authenticated/m.tsx",
     "src/routes/_authenticated/notifications.$id.tsx",
     "src/routes/_authenticated/notifications.tsx",
     "src/routes/_authenticated/people.tsx",
