@@ -99,11 +99,11 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                 <li key={tab.id} className="relative flex flex-1 justify-center -top-4">
                   <Link
                     to={tab.to}
-                    className="relative flex flex-col items-center justify-center"
+                    className="relative flex flex-col items-center justify-center p-2 -m-2"
                     aria-label={tab.label}
                   >
                     <div className="dock-task-glow absolute -bottom-4 h-20 w-20 rounded-full blur-3xl opacity-70" />
-                    <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-gradient-to-tr from-primary via-primary to-primary-foreground/25 text-primary-foreground shadow-xl shadow-primary/40 transition-transform active:scale-95">
+                    <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-gradient-to-tr from-primary via-primary to-primary-foreground/25 text-primary-foreground shadow-xl shadow-primary/40 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/50 active:scale-90">
                       <tab.icon className="h-7 w-7" />
                     </span>
                     <span className="absolute -bottom-7 text-[10px] font-bold uppercase tracking-wider text-primary drop-shadow-sm">
@@ -118,12 +118,14 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                 <Link
                   to={tab.to}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 py-3 transition-all active:scale-95",
-                    active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                    "flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-2xl py-4 px-2 transition-all duration-200 ease-out active:scale-95",
+                    active
+                      ? "text-primary"
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-foreground active:bg-primary/15",
                   )}
                   aria-label={tab.label}
                 >
-                  <tab.icon className={cn("h-6 w-6", active && "stroke-[2.5px]")} />
+                  <tab.icon className={cn("h-6 w-6 transition-transform duration-200", active && "stroke-[2.5px]")} />
                   <span className="text-[10px] font-medium">{tab.label}</span>
                   {active && (
                     <span className="h-1 w-1 rounded-full bg-primary shadow-[0_0_12px_2px_currentColor]" />
@@ -137,4 +139,5 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
     </nav>
   );
 }
+
 
