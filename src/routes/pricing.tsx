@@ -136,7 +136,12 @@ function PricingPage() {
         },
       }),
     onSuccess: async (_res, plan) => {
-      await qc.invalidateQueries();
+      // PERF-005: chỉ làm mới dữ liệu billing/entitlement thay vì toàn bộ cache.
+      await Promise.all(
+        [["plans"], ["billing"], ["subscription"], ["entitlements"], ["tenant-context"]].map((key) =>
+          qc.invalidateQueries({ queryKey: key }),
+        ),
+      );
       setCheckoutPlan(null);
       toast.success(`Đã chuyển sang gói ${plan.name}`);
       void navigate({ to: "/billing" });
