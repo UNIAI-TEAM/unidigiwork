@@ -90,7 +90,7 @@ function MobileTopbar() {
 function BottomTabBar({ activeTab }: { activeTab: string }) {
   return (
     <nav className="sticky bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-4 mb-4 rounded-[32px] border border-border bg-surface/80 backdrop-blur-2xl shadow-2xl">
+      <div className="mx-4 mb-4 rounded-[32px] border border-border/60 bg-surface/95 backdrop-blur-3xl dock-shadow">
         <ul className="flex h-20 items-center px-2">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -102,11 +102,11 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                     className="relative flex flex-col items-center justify-center"
                     aria-label={tab.label}
                   >
-                    <div className="absolute -bottom-4 h-16 w-16 rounded-full bg-primary/20 blur-2xl" />
-                    <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-gradient-to-tr from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95">
+                    <div className="dock-task-glow absolute -bottom-4 h-20 w-20 rounded-full blur-3xl opacity-70" />
+                    <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-gradient-to-tr from-primary via-primary to-primary-foreground/25 text-primary-foreground shadow-xl shadow-primary/40 transition-transform active:scale-95">
                       <tab.icon className="h-7 w-7" />
                     </span>
-                    <span className="absolute -bottom-7 text-[10px] font-bold uppercase tracking-wider text-primary">
+                    <span className="absolute -bottom-7 text-[10px] font-bold uppercase tracking-wider text-primary drop-shadow-sm">
                       {tab.label}
                     </span>
                   </Link>
@@ -126,7 +126,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                   <tab.icon className={cn("h-6 w-6", active && "stroke-[2.5px]")} />
                   <span className="text-[10px] font-medium">{tab.label}</span>
                   {active && (
-                    <span className="h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_currentColor]" />
+                    <span className="h-1 w-1 rounded-full bg-primary shadow-[0_0_12px_2px_currentColor]" />
                   )}
                 </Link>
               </li>
@@ -137,3 +137,4 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
     </nav>
   );
 }
+

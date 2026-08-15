@@ -186,6 +186,22 @@
   min-height: var(--tile-min-h);
 }
 
+/* Mobile floating dock — tinted glow for dark mode visibility */
+@utility dock-shadow {
+  box-shadow:
+    0 24px 60px -16px color-mix(in oklab, var(--color-primary) 22%, transparent),
+    0 10px 24px -10px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 0 color-mix(in oklab, var(--color-primary-foreground) 10%, transparent);
+}
+@utility dock-task-glow {
+  background: radial-gradient(
+    circle at 50% 100%,
+    color-mix(in oklab, var(--color-primary) 35%, transparent),
+    transparent 70%
+  );
+}
+
+
 /* Subtle, thin scrollbars that blend with the background */
 * {
   scrollbar-width: thin;
