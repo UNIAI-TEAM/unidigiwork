@@ -731,11 +731,13 @@ function MeetingDetailPage() {
         if (prev) {
           for (const [uid, name] of currentMap) {
             if (!prev.has(uid) && uid !== myUserId) {
+              playMeetingCue("raise");
               toast.info(`${name} đã giơ tay`, { description: "Đang chờ được phát biểu." });
             }
           }
           for (const [uid, name] of prev) {
             if (!currentMap.has(uid) && uid !== myUserId) {
+              playMeetingCue("lower");
               toast(`${name} đã hạ tay`);
             }
           }
