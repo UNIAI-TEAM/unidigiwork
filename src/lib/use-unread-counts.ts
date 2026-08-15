@@ -55,9 +55,21 @@ export function useUnreadCounts() {
     }
   }, [query.data]);
 
-  // Realtime: tin nhắn mới, đọc kênh, và trạng thái email đổi → đồng bộ badge.
+  // PERF-001: chỉ subscribe theo phạm vi user (không nghe toàn bảng chat_messages).
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (alive) setUserId(data.user?.id ?? null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    if (!userId) return;
     const bump = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
@@ -66,17 +78,24 @@ export function useUnreadCounts() {
     };
 
     const channel = supabase
-      .channel("unread-counts-sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, bump)
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_members" }, bump)
-      .on("postgres_changes", { event: "*", schema: "public", table: "email_states" }, bump)
+      .channel(`unread:user:${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chat_members", filter: `user_id=eq.${userId}` },
+        bump,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "email_states", filter: `user_id=eq.${userId}` },
+        bump,
+      )
       .subscribe();
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, userId]);
 
   return {
     chatUnread: query.data?.chat ?? cached?.chat ?? 0,
