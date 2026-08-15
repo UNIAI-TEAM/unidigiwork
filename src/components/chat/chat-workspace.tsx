@@ -402,6 +402,12 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     return () => { void supabase.removeChannel(ch); };
   }, [activeId, qc]);
 
+  // PERF-001: thay "chat-global" (nghe toàn bảng chat_messages/chat_channels)
+  // bằng subscribe theo đúng các kênh người dùng là thành viên.
+  const myChannelIds = channels
+    .map((c: { id: string }) => c.id)
+    .slice(0, 40)
+    .join(",");
   useEffect(() => {
     // Gom sự kiện realtime của chat_members (nhiều người đọc cùng lúc) rồi làm mới 1 lần.
     let membersTimer: ReturnType<typeof setTimeout> | null = null;
@@ -414,21 +420,36 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
         qc.invalidateQueries({ queryKey: ["chat", "channels"] });
       }, 800);
     };
-    const ch = supabase
-      .channel("chat-global")
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, () => {
-        qc.invalidateQueries({ queryKey: ["chat", "channels"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_channels" }, () => {
-        qc.invalidateQueries({ queryKey: ["chat", "channels"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_members" }, flushMembers)
-      .subscribe();
+    const ids = myChannelIds ? myChannelIds.split(",") : [];
+    if (ids.length === 0) return;
+    let ch = supabase.channel(`chat:list:${ids[0]}`);
+    const bumpChannels = () => {
+      qc.invalidateQueries({ queryKey: ["chat", "channels"] });
+    };
+    for (const cid of ids) {
+      ch = ch
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "chat_messages", filter: `channel_id=eq.${cid}` },
+          bumpChannels,
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "chat_channels", filter: `id=eq.${cid}` },
+          bumpChannels,
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "chat_members", filter: `channel_id=eq.${cid}` },
+          flushMembers,
+        );
+    }
+    ch.subscribe();
     return () => {
       if (membersTimer) clearTimeout(membersTimer);
       void supabase.removeChannel(ch);
     };
-  }, [qc]);
+  }, [qc, myChannelIds]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
