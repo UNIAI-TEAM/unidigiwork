@@ -1,0 +1,121 @@
+{
+    "metrics": {
+        "checks": {
+            "passes": 0,
+            "fails": 1152,
+            "value": 0
+        },
+        "vus_max": {
+            "value": 50,
+            "min": 50,
+            "max": 50
+        },
+        "data_received": {
+            "count": 0,
+            "rate": 0
+        },
+        "http_req_duration": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 0,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "data_sent": {
+            "count": 0,
+            "rate": 0
+        },
+        "http_req_duration{kind:rpc}": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "thresholds": {
+                "p(95)<300": false
+            }
+        },
+        "iterations": {
+            "count": 1152,
+            "rate": 8.51684215622049
+        },
+        "http_req_duration{kind:list}": {
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "thresholds": {
+                "p(99)<1000": false,
+                "p(95)<500": false
+            }
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 50
+        },
+        "iteration_duration": {
+            "min": 1002.282756,
+            "med": 4432.2148375,
+            "max": 7987.828987,
+            "p(90)": 7317.7082088,
+            "p(95)": 7593.162353950001,
+            "avg": 4464.214776832462
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "email ok": {
+                    "path": "::email ok",
+                    "id": "bcaf41024822f67f443b9a17818953cf",
+                    "passes": 0,
+                    "fails": 160,
+                    "name": "email ok"
+                },
+                "dash ok": {
+                    "id": "0fd7afdc5b4d7df538d0abd003fbf256",
+                    "passes": 0,
+                    "fails": 411,
+                    "name": "dash ok",
+                    "path": "::dash ok"
+                },
+                "unread ok": {
+                    "id": "ba80097c427f443a9c0d24b5dea406c1",
+                    "passes": 0,
+                    "fails": 244,
+                    "name": "unread ok",
+                    "path": "::unread ok"
+                },
+                "tasks ok": {
+                    "name": "tasks ok",
+                    "path": "::tasks ok",
+                    "id": "a0c65ba922493ebd20f182727244f549",
+                    "passes": 0,
+                    "fails": 234
+                },
+                "docs ok": {
+                    "path": "::docs ok",
+                    "id": "5162e723e512d74cd4b5e2172077bea5",
+                    "passes": 0,
+                    "fails": 103,
+                    "name": "docs ok"
+                }
+            }
+    }
+}
