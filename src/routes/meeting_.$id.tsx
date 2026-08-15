@@ -3,6 +3,14 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { playMeetingCue } from "@/lib/meeting-cues";
+
+/** Thời gian một người đã chờ trong hàng đợi giơ tay (tick chỉ để buộc render lại). */
+function formatWaiting(at: number, _tick: number): string {
+  if (!at) return "";
+  const s = Math.max(0, Math.floor((Date.now() - at) / 1000));
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}p${String(s % 60).padStart(2, "0")}`;
+}
 import {
   ArrowLeft,
   Mic,
@@ -699,7 +707,15 @@ function MeetingDetailPage() {
   const [raisedHands, setRaisedHands] = useState<Array<{ userId: string; name: string; at: number }>>([]);
   // Danh sách người được chủ trì cấp quyền phát biểu (đồng bộ qua presence).
   const [speakers, setSpeakers] = useState<Array<{ userId: string; name: string }>>([]);
+  // Nhịp đếm để cập nhật thời gian chờ của hàng đợi giơ tay theo thời gian thực.
+  const [handsTick, setHandsTick] = useState(0);
   const handsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    if (raisedHands.length === 0) return;
+    const t = setInterval(() => setHandsTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [raisedHands.length]);
   const handRaised = raisedHands.some((h) => h.userId === myUserId);
   const canSpeak = speakers.some((s) => s.userId === myUserId);
   const myMetaRef = useRef<{ raised: boolean; speaking: boolean }>({ raised: false, speaking: false });
@@ -1232,18 +1248,36 @@ function MeetingDetailPage() {
               </p>
             )}
 
-            {(raisedHands.length > 0 || speakers.length > 0) && (
+            {(session || raisedHands.length > 0 || speakers.length > 0) && (
               <div className="mt-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
-                {raisedHands.length > 0 && (
-                  <div className="flex items-center gap-2 text-primary">
-                    <Hand className="h-3.5 w-3.5 shrink-0" />
-                    <span className="font-medium">Hàng đợi giơ tay ({raisedHands.length})</span>
-                  </div>
+                <div className="flex items-center gap-2 text-primary">
+                  <Hand className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-medium">Đang giơ tay ({raisedHands.length})</span>
+                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-normal text-muted-foreground">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                    Trực tiếp
+                  </span>
+                </div>
+                {raisedHands.length === 0 && (
+                  <p className="text-muted-foreground">Chưa có ai giơ tay.</p>
                 )}
                 {raisedHands.map((h, i) => (
-                  <div key={h.userId} className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate text-muted-foreground">
-                      {i + 1}. {h.userId === myUserId ? "Bạn" : h.name}
+                  <div
+                    key={h.userId}
+                    className={`flex items-center justify-between gap-2 rounded-md px-1.5 py-1 ${
+                      h.userId === myUserId ? "bg-primary/10" : ""
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-semibold text-primary">
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 truncate text-foreground">
+                        {h.userId === myUserId ? "Bạn" : h.name}
+                      </span>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {formatWaiting(h.at, handsTick)}
+                      </span>
                     </span>
                     {isHost && (
                       <Button
