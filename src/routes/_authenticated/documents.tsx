@@ -177,6 +177,7 @@ function DocumentsPage() {
   const createWorkspace = async () => {
     // (chia sẻ tài liệu bên dưới)
     if (!newWsName.trim() || !userId) return;
+    void 0;
     setSaving(true);
     const { data, error } = await supabase
       .from("workspaces")
