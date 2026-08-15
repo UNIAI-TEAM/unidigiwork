@@ -1240,18 +1240,36 @@ function MeetingDetailPage() {
               </p>
             )}
 
-            {(raisedHands.length > 0 || speakers.length > 0) && (
+            {(session || raisedHands.length > 0 || speakers.length > 0) && (
               <div className="mt-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
-                {raisedHands.length > 0 && (
-                  <div className="flex items-center gap-2 text-primary">
-                    <Hand className="h-3.5 w-3.5 shrink-0" />
-                    <span className="font-medium">Hàng đợi giơ tay ({raisedHands.length})</span>
-                  </div>
+                <div className="flex items-center gap-2 text-primary">
+                  <Hand className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-medium">Đang giơ tay ({raisedHands.length})</span>
+                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-normal text-muted-foreground">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                    Trực tiếp
+                  </span>
+                </div>
+                {raisedHands.length === 0 && (
+                  <p className="text-muted-foreground">Chưa có ai giơ tay.</p>
                 )}
                 {raisedHands.map((h, i) => (
-                  <div key={h.userId} className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate text-muted-foreground">
-                      {i + 1}. {h.userId === myUserId ? "Bạn" : h.name}
+                  <div
+                    key={h.userId}
+                    className={`flex items-center justify-between gap-2 rounded-md px-1.5 py-1 ${
+                      h.userId === myUserId ? "bg-primary/10" : ""
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-semibold text-primary">
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 truncate text-foreground">
+                        {h.userId === myUserId ? "Bạn" : h.name}
+                      </span>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {formatWaiting(h.at, handsTick)}
+                      </span>
                     </span>
                     {isHost && (
                       <Button
