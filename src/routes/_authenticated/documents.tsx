@@ -905,9 +905,6 @@ function DocumentsPage() {
         </Modal>
       )}
 
-      {showMembers && currentWs && (
-        <></>
-      )}
       {showShare && selected && (
         <Modal onClose={() => !sharing && setShowShare(false)}>
           <h2 className="mb-1 text-lg font-semibold">Chia sẻ tài liệu</h2>
