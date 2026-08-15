@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import {
   archiveDocument,
   createDocument,
+  shareDocument,
   updateDocument,
   uploadDocumentVersion,
 } from "@/lib/api/documents.functions";
@@ -108,6 +109,10 @@ function DocumentsPage() {
   const [showWsMenu, setShowWsMenu] = useState(false);
   const [showNewWs, setShowNewWs] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [shareUserId, setShareUserId] = useState("");
+  const [shareLevel, setShareLevel] = useState<"view" | "comment" | "edit" | "manage">("view");
+  const [sharing, setSharing] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newFolder, setNewFolder] = useState("My Documents");
   const [newWsName, setNewWsName] = useState("");
