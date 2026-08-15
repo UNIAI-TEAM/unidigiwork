@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
+import { useUnreadCounts } from "@/lib/use-unread-counts";
 import { useEffect, useRef, useState } from "react";
 
 const TABS = [
@@ -204,6 +205,8 @@ function MobileTopbar() {
 }
 
 function BottomTabBar({ activeTab }: { activeTab: string }) {
+  const { chatUnread, emailUnread } = useUnreadCounts();
+  const badgeFor = (id: string) => (id === "chat" ? chatUnread : id === "email" ? emailUnread : 0);
   return (
     <nav className="sticky bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
       <div className="mx-4 mb-4 rounded-[32px] border border-border/60 bg-surface/95 backdrop-blur-3xl dock-shadow">
@@ -234,14 +237,25 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                 <Link
                   to={tab.to}
                   className={cn(
-                    "flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-2xl py-4 px-2 transition-all duration-200 ease-out active:scale-95",
+                    "relative flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-2xl py-4 px-2 transition-all duration-200 ease-out active:scale-95",
                     active
                       ? "text-primary"
                       : "text-muted-foreground hover:bg-primary/10 hover:text-foreground active:bg-primary/15",
                   )}
-                  aria-label={tab.label}
+                  aria-label={
+                    badgeFor(tab.id) > 0
+                      ? `${tab.label}, ${badgeFor(tab.id)} chưa đọc`
+                      : tab.label
+                  }
                 >
-                  <tab.icon className={cn("h-6 w-6 transition-transform duration-200", active && "stroke-[2.5px]")} />
+                  <span className="relative">
+                    <tab.icon className={cn("h-6 w-6 transition-transform duration-200", active && "stroke-[2.5px]")} />
+                    {badgeFor(tab.id) > 0 && (
+                      <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-surface bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground shadow-sm">
+                        {badgeFor(tab.id) > 99 ? "99+" : badgeFor(tab.id)}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-[10px] font-medium">{tab.label}</span>
                   {active && (
                     <span className="h-1 w-1 rounded-full bg-primary shadow-[0_0_12px_2px_currentColor]" />
