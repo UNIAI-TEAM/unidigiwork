@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
+import { useEffect, useRef, useState } from "react";
 
 const TABS = [
   { id: "home", label: "Home", icon: Home, to: "/m/home" },
@@ -21,20 +22,131 @@ const TABS = [
   { id: "email", label: "Email", icon: Mail, to: "/m/email" },
 ];
 
+const SWIPE_THRESHOLD = 72;
+
 export function MobileShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const isCompose = pathname.startsWith("/m/compose") || pathname.startsWith("/m/email/");
   const hideTabBar = pathname.startsWith("/m/meet/") || isCompose;
+  const activeTab = pathname.split("/")[2] || "home";
+  const isTab = TABS.some((t) => t.id === activeTab);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <MobileTopbar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden">
+      <SwipeableMain
+        className="flex-1"
+        activeTab={activeTab}
+        enabled={isTab && !hideTabBar}
+      >
         <Outlet />
-      </main>
-      {!hideTabBar && <BottomTabBar activeTab={pathname.split("/")[2] || "home"} />}
+      </SwipeableMain>
+      {!hideTabBar && <BottomTabBar activeTab={activeTab} />}
     </div>
+  );
+}
+
+function SwipeableMain({
+  children,
+  className,
+  activeTab,
+  enabled,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  activeTab: string;
+  enabled: boolean;
+}) {
+  const navigate = useNavigate();
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const directionRef = useRef<1 | -1 | null>(null);
+  const activeIndex = TABS.findIndex((t) => t.id === activeTab);
+
+  useEffect(() => {
+    setTouchStart(null);
+    setOffset(0);
+    setIsAnimating(false);
+    directionRef.current = null;
+  }, [activeTab]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!enabled || isAnimating) return;
+    const t = e.touches[0];
+    setTouchStart({ x: t.clientX, y: t.clientY });
+    setOffset(0);
+    setIsAnimating(false);
+    directionRef.current = null;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!enabled || !touchStart || isAnimating) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStart.x;
+    const dy = t.clientY - touchStart.y;
+
+    if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 8) {
+      directionRef.current = dx > 0 ? -1 : 1;
+      setOffset(dx);
+    }
+  };
+
+  const reset = () => {
+    setIsAnimating(true);
+    setOffset(0);
+    setTimeout(() => {
+      setIsAnimating(false);
+      setTouchStart(null);
+      directionRef.current = null;
+    }, 220);
+  };
+
+  const onTouchEnd = () => {
+    if (!enabled || !touchStart) return;
+    const dir = directionRef.current;
+    if (dir && Math.abs(offset) > SWIPE_THRESHOLD) {
+      const targetIndex = dir === 1 ? activeIndex + 1 : activeIndex - 1;
+      if (targetIndex >= 0 && targetIndex < TABS.length) {
+        setIsAnimating(true);
+        setOffset(dir === 1 ? -window.innerWidth : window.innerWidth);
+        setTimeout(() => {
+          navigate({ to: TABS[targetIndex].to, replace: true });
+        }, 220);
+      } else {
+        reset();
+      }
+    } else {
+      reset();
+    }
+  };
+
+  const onTouchCancel = () => {
+    reset();
+  };
+
+  return (
+    <main
+      className={cn("overflow-y-auto overflow-x-hidden relative", className)}
+      style={{ touchAction: "pan-y" }}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
+    >
+      <div
+        className={cn(
+          "min-h-full",
+          isAnimating && "transition-transform duration-200 ease-out"
+        )}
+        style={{
+          transform: offset || isAnimating ? `translateX(${offset}px)` : undefined,
+        }}
+      >
+        {children}
+      </div>
+    </main>
   );
 }
 
@@ -139,5 +251,3 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
     </nav>
   );
 }
-
-
