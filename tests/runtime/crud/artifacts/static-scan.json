@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T08:01:39.395Z",
+  "generatedAt": "2026-08-15T08:04:19.295Z",
   "counts": {
     "routes": 81,
     "serverFns": 241,
@@ -8,7 +8,7 @@
     "onClicks": 779,
     "forms": 19,
     "mutations": 118,
-    "directDbUi": 2,
+    "directDbUi": 1,
     "orphanFns": 33
   },
   "fns": [
@@ -1165,10 +1165,12 @@
       "file": "src/lib/api/emails.functions.ts",
       "auth": true,
       "uiConsumers": [
-        "src/routes/_authenticated/email.compose.tsx"
+        "src/routes/_authenticated/email.compose.tsx",
+        "src/routes/_authenticated/m/compose.tsx"
       ],
       "anyConsumers": [
-        "src/routes/_authenticated/email.compose.tsx"
+        "src/routes/_authenticated/email.compose.tsx",
+        "src/routes/_authenticated/m/compose.tsx"
       ]
     },
     {
@@ -2971,12 +2973,6 @@
       "line": 132,
       "target": "workspaces",
       "op": "READ"
-    },
-    {
-      "file": "src/routes/_authenticated/m/compose.tsx",
-      "line": 42,
-      "target": "email_threads",
-      "op": "WRITE"
     }
   ],
   "suspicious": [

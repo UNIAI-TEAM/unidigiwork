@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useActiveWorkspace } from "@/lib/active-workspace";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { sendEmail } from "@/lib/api/emails.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,35 +23,33 @@ export const Route = createFileRoute("/_authenticated/m/compose")({
 
 function MobileComposePage() {
   const navigate = useNavigate();
-  const { workspaceId } = useActiveWorkspace();
+  const queryClient = useQueryClient();
+  const doSend = useServerFn(sendEmail);
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [isSending, setIsSending] = useState(false);
 
   const handleSend = async () => {
-    if (!to || !subject || !body) {
+    const recipients = to
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (recipients.length === 0 || !subject.trim() || !body.trim()) {
       toast.error("Vui lòng điền đầy đủ thông tin.");
       return;
     }
-    if (!workspaceId) {
-      toast.error("Không tìm thấy workspace.");
-      return;
-    }
     setIsSending(true);
-    const { data: user } = await supabase.auth.getUser();
-    const { error } = await supabase.from("email_threads").insert({
-      workspace_id: workspaceId,
-      tenant_id: user.user?.user_metadata?.tenant_id ?? "",
-      subject,
-    });
-    if (error) {
-      toast.error("Gửi thất bại: " + error.message);
-    } else {
+    try {
+      await doSend({ data: { to: recipients, subject: subject.trim(), body } });
+      await queryClient.invalidateQueries({ queryKey: ["emails"] });
       toast.success("Đã gửi email.");
       navigate({ to: "/m/email" });
+    } catch (err) {
+      toast.error("Gửi thất bại: " + (err instanceof Error ? err.message : "Lỗi không xác định"));
+    } finally {
+      setIsSending(false);
     }
-    setIsSending(false);
   };
 
   return (
