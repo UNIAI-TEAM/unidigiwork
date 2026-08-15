@@ -74,6 +74,7 @@ function SwipeableMain({
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!enabled || isAnimating || e.button !== 0) return;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     setStart({ x: e.clientX, y: e.clientY, pointerId: e.pointerId });
     setOffset(0);
     setIsAnimating(false);
@@ -91,7 +92,7 @@ function SwipeableMain({
     }
   };
 
-  const reset = () => {
+  const reset = (target?: HTMLElement) => {
     setIsAnimating(true);
     setOffset(0);
     setTimeout(() => {
@@ -99,6 +100,13 @@ function SwipeableMain({
       setStart(null);
       directionRef.current = null;
     }, 220);
+    if (target) {
+      try {
+        target.releasePointerCapture(start?.pointerId ?? -1);
+      } catch {
+        // capture may already be released
+      }
+    }
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
@@ -108,20 +116,18 @@ function SwipeableMain({
       const targetIndex = dir === 1 ? activeIndex + 1 : activeIndex - 1;
       if (targetIndex >= 0 && targetIndex < TABS.length) {
         setIsAnimating(true);
-        setOffset(dir === 1 ? -window.innerWidth : window.innerWidth);
-        setTimeout(() => {
-          navigate({ to: TABS[targetIndex].to, replace: true });
-        }, 220);
+        setOffset(0);
+        navigate({ to: TABS[targetIndex].to, replace: true });
       } else {
-        reset();
+        reset(e.currentTarget as HTMLElement);
       }
     } else {
-      reset();
+      reset(e.currentTarget as HTMLElement);
     }
   };
 
-  const onPointerCancel = () => {
-    reset();
+  const onPointerCancel = (e: React.PointerEvent) => {
+    reset(e.currentTarget as HTMLElement);
   };
 
   return (
