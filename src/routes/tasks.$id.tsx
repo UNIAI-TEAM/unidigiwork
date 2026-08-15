@@ -121,6 +121,14 @@ function TaskDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Giao việc cho thành viên workspace qua server function assignTask
+  const assign = useMutation({
+    mutationFn: (assigneeId: string) =>
+      assignTask({ data: { taskId: id, assigneeId, role: "assignee", idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => { setAssigneeDraft(""); invalidate(); toast.success("Đã giao việc"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const removeAttachment = useMutation({
     mutationFn: async (p: { attachmentId: string; storagePath: string }) => {
       await deleteTaskAttachment({ data: { attachmentId: p.attachmentId } });
