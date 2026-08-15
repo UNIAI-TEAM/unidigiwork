@@ -656,8 +656,14 @@ function DocumentsPage() {
                   {selected && <Star className="h-4 w-4 fill-amber-400 text-amber-400" />}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm">
-                    <Share2 className="h-4 w-4" /> Share
+                  <button
+                    onClick={() => {
+                      if (!selected) { toast.error("Chọn tài liệu trước"); return; }
+                      setShowShare(true);
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 disabled:opacity-50"
+                  >
+                    <Share2 className="h-4 w-4" /> Chia sẻ
                   </button>
                   <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm">
                     Editing <ChevronDown className="h-4 w-4" />
@@ -894,6 +900,48 @@ function DocumentsPage() {
               className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               Tạo
+            </button>
+          </Actions>
+        </Modal>
+      )}
+
+      {showMembers && currentWs && (
+        <></>
+      )}
+      {showShare && selected && (
+        <Modal onClose={() => !sharing && setShowShare(false)}>
+          <h2 className="mb-1 text-lg font-semibold">Chia sẻ tài liệu</h2>
+          <p className="mb-4 text-xs text-muted-foreground">«{selected.title}»</p>
+          <Field label="Thành viên">
+            <select
+              value={shareUserId}
+              onChange={(e) => setShareUserId(e.target.value)}
+              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">— Chọn thành viên —</option>
+              {members.map((m) => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.profiles?.display_name || m.profiles?.email || m.user_id}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Quyền">
+            <select
+              value={shareLevel}
+              onChange={(e) => setShareLevel(e.target.value as typeof shareLevel)}
+              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="view">Chỉ xem</option>
+              <option value="comment">Bình luận</option>
+              <option value="edit">Chỉnh sửa</option>
+              <option value="manage">Quản lý</option>
+            </select>
+          </Field>
+          <Actions>
+            <button onClick={() => setShowShare(false)} disabled={sharing} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">Huỷ</button>
+            <button onClick={submitShare} disabled={sharing || !shareUserId} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              {sharing ? "Đang chia sẻ…" : "Chia sẻ"}
             </button>
           </Actions>
         </Modal>
