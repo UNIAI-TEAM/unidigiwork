@@ -5007,6 +5007,13 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: Json
       }
+      get_unread_counts: {
+        Args: never
+        Returns: {
+          chat: number
+          email: number
+        }[]
+      }
       global_search: {
         Args: {
           _assignee_id?: string
