@@ -699,6 +699,8 @@ function MeetingDetailPage() {
   const [raisedHands, setRaisedHands] = useState<Array<{ userId: string; name: string; at: number }>>([]);
   // Danh sách người được chủ trì cấp quyền phát biểu (đồng bộ qua presence).
   const [speakers, setSpeakers] = useState<Array<{ userId: string; name: string }>>([]);
+  // Nhịp đếm để cập nhật thời gian chờ của hàng đợi giơ tay theo thời gian thực.
+  const [handsTick, setHandsTick] = useState(0);
   const handsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const handRaised = raisedHands.some((h) => h.userId === myUserId);
   const canSpeak = speakers.some((s) => s.userId === myUserId);
