@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { RefreshCw } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { supabase } from "@/integrations/supabase/client";
 
 const searchSchema = z.object({
   tab: z
