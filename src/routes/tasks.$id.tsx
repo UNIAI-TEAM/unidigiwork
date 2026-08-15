@@ -9,8 +9,9 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
   getTaskDetail, commentTask, createSubtask, transitionTask,
-  addTaskAttachment, deleteTaskAttachment, updateTask, setTaskTags,
+  addTaskAttachment, deleteTaskAttachment, updateTask, setTaskTags, assignTask,
 } from "@/lib/api/tasks.functions";
+import { listWorkspaceMembers } from "@/lib/api/workspaces.functions";
 import {
   uploadTaskAttachment, getTaskAttachmentUrl, removeTaskAttachmentObject, formatBytes,
 } from "@/lib/tasks-storage";
@@ -64,6 +65,7 @@ function TaskDetailPage() {
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [uploading, setUploading] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
+  const [assigneeDraft, setAssigneeDraft] = useState("");
 
   const detail = useQuery({
     queryKey: ["task-detail", id],
@@ -119,6 +121,14 @@ function TaskDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Giao việc cho thành viên workspace qua server function assignTask
+  const assign = useMutation({
+    mutationFn: (assigneeId: string) =>
+      assignTask({ data: { taskId: id, assigneeId, role: "assignee", idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => { setAssigneeDraft(""); invalidate(); toast.success("Đã giao việc"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const removeAttachment = useMutation({
     mutationFn: async (p: { attachmentId: string; storagePath: string }) => {
       await deleteTaskAttachment({ data: { attachmentId: p.attachmentId } });
@@ -135,6 +145,15 @@ function TaskDetailPage() {
   const comments = (detail.data?.comments ?? []) as Array<{ id: string; body: string; created_at: string; author_id: string | null; author_name: string | null }>;
   const attachments = (detail.data?.attachments ?? []) as Array<{ id: string; file_name: string; storage_path: string; size_bytes: number | null }>;
   const parent = detail.data?.parent as { id: string; title: string } | null | undefined;
+  const assignees = (detail.data?.assignees ?? []) as Array<{ user_id: string; role: string | null }>;
+
+  const membersQ = useQuery({
+    queryKey: ["workspace-members", task?.workspace_id],
+    queryFn: () => listWorkspaceMembers({ data: { workspaceId: task!.workspace_id } }),
+    enabled: !!task?.workspace_id,
+  });
+  const memberName = (uid: string) =>
+    membersQ.data?.find((m) => m.userId === uid)?.name ?? uid.slice(0, 8);
 
   const dueState = useMemo(() => {
     if (!task?.due_at || task.status === "done" || task.status === "canceled") return null;
@@ -360,11 +379,44 @@ function TaskDetailPage() {
 
                 <aside className="space-y-4">
                   <Field icon={User} label="Người thực hiện">
-                    <span className="text-sm">
-                      {(detail.data?.assignees ?? []).length > 0
-                        ? `${(detail.data?.assignees ?? []).length} người`
-                        : "Chưa giao"}
-                    </span>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {assignees.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">Chưa giao</span>
+                        ) : (
+                          assignees.map((a) => (
+                            <span
+                              key={a.user_id}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium"
+                            >
+                              <img src={avatar(a.user_id)} alt="" className="h-4 w-4 rounded-full" />
+                              {memberName(a.user_id)}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                      <select
+                        aria-label="Giao việc cho thành viên"
+                        value={assigneeDraft}
+                        disabled={assign.isPending || membersQ.isLoading}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setAssigneeDraft(v);
+                          if (v) assign.mutate(v);
+                        }}
+                        className="w-full rounded-lg border border-border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      >
+                        <option value="">+ Giao cho…</option>
+                        {(membersQ.data ?? [])
+                          .filter((m) => !assignees.some((a) => a.user_id === m.userId))
+                          .map((m) => (
+                            <option key={m.userId} value={m.userId}>
+                              {m.name}
+                              {m.isMe ? " (tôi)" : ""}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
                   </Field>
                   <Field icon={Flag} label="Mức ưu tiên">
                     <select
