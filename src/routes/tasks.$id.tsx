@@ -379,11 +379,44 @@ function TaskDetailPage() {
 
                 <aside className="space-y-4">
                   <Field icon={User} label="Người thực hiện">
-                    <span className="text-sm">
-                      {(detail.data?.assignees ?? []).length > 0
-                        ? `${(detail.data?.assignees ?? []).length} người`
-                        : "Chưa giao"}
-                    </span>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {assignees.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">Chưa giao</span>
+                        ) : (
+                          assignees.map((a) => (
+                            <span
+                              key={a.user_id}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium"
+                            >
+                              <img src={avatar(a.user_id)} alt="" className="h-4 w-4 rounded-full" />
+                              {memberName(a.user_id)}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                      <select
+                        aria-label="Giao việc cho thành viên"
+                        value={assigneeDraft}
+                        disabled={assign.isPending || membersQ.isLoading}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setAssigneeDraft(v);
+                          if (v) assign.mutate(v);
+                        }}
+                        className="w-full rounded-lg border border-border bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      >
+                        <option value="">+ Giao cho…</option>
+                        {(membersQ.data ?? [])
+                          .filter((m) => !assignees.some((a) => a.user_id === m.userId))
+                          .map((m) => (
+                            <option key={m.userId} value={m.userId}>
+                              {m.name}
+                              {m.isMe ? " (tôi)" : ""}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
                   </Field>
                   <Field icon={Flag} label="Mức ưu tiên">
                     <select
