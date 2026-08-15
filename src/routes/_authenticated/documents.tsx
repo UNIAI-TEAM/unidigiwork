@@ -175,6 +175,7 @@ function DocumentsPage() {
   }, [currentWs]);
 
   const createWorkspace = async () => {
+    // (chia sẻ tài liệu bên dưới)
     if (!newWsName.trim() || !userId) return;
     setSaving(true);
     const { data, error } = await supabase
