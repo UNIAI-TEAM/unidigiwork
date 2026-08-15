@@ -59,33 +59,31 @@ function SwipeableMain({
   enabled: boolean;
 }) {
   const navigate = useNavigate();
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [start, setStart] = useState<{ x: number; y: number; pointerId: number } | null>(null);
   const [offset, setOffset] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const directionRef = useRef<1 | -1 | null>(null);
   const activeIndex = TABS.findIndex((t) => t.id === activeTab);
 
   useEffect(() => {
-    setTouchStart(null);
+    setStart(null);
     setOffset(0);
     setIsAnimating(false);
     directionRef.current = null;
   }, [activeTab]);
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (!enabled || isAnimating) return;
-    const t = e.touches[0];
-    setTouchStart({ x: t.clientX, y: t.clientY });
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!enabled || isAnimating || e.button !== 0) return;
+    setStart({ x: e.clientX, y: e.clientY, pointerId: e.pointerId });
     setOffset(0);
     setIsAnimating(false);
     directionRef.current = null;
   };
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!enabled || !touchStart || isAnimating) return;
-    const t = e.touches[0];
-    const dx = t.clientX - touchStart.x;
-    const dy = t.clientY - touchStart.y;
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!enabled || !start || isAnimating || e.pointerId !== start.pointerId) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
 
     if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 8) {
       directionRef.current = dx > 0 ? -1 : 1;
@@ -98,13 +96,13 @@ function SwipeableMain({
     setOffset(0);
     setTimeout(() => {
       setIsAnimating(false);
-      setTouchStart(null);
+      setStart(null);
       directionRef.current = null;
     }, 220);
   };
 
-  const onTouchEnd = () => {
-    if (!enabled || !touchStart) return;
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!enabled || !start || e.pointerId !== start.pointerId) return;
     const dir = directionRef.current;
     if (dir && Math.abs(offset) > SWIPE_THRESHOLD) {
       const targetIndex = dir === 1 ? activeIndex + 1 : activeIndex - 1;
@@ -122,7 +120,7 @@ function SwipeableMain({
     }
   };
 
-  const onTouchCancel = () => {
+  const onPointerCancel = () => {
     reset();
   };
 
@@ -130,10 +128,10 @@ function SwipeableMain({
     <main
       className={cn("overflow-y-auto overflow-x-hidden relative", className)}
       style={{ touchAction: "pan-y" }}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchCancel}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
     >
       <div
         className={cn(
