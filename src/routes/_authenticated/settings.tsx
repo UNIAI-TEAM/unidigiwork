@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { RefreshCw } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
+import { supabase } from "@/integrations/supabase/client";
 
 const searchSchema = z.object({
   tab: z
@@ -257,19 +258,34 @@ function PasswordSection() {
     setDialogOpen(true);
   };
 
+  // Đổi mật khẩu thật qua API xác thực, sau đó đồng bộ lại phiên đăng nhập.
   const handleUpdate = async () => {
     setDialogOpen(false);
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    const ok = Math.random() > 0.2;
-    setLoading(false);
-    if (ok) {
+    try {
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      const email = userData.user?.email;
+      if (userErr || !email) throw new Error("Không xác định được tài khoản hiện tại.");
+
+      const { error: reauthErr } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPwd,
+      });
+      if (reauthErr) throw new Error("Mật khẩu hiện tại không đúng.");
+
+      const { error: updErr } = await supabase.auth.updateUser({ password: newPwd });
+      if (updErr) throw new Error(updErr.message);
+
+      await supabase.auth.refreshSession();
+      await supabase.auth.getUser();
       toast.success("Cập nhật mật khẩu thành công!");
       setCurrentPwd("");
       setNewPwd("");
       setConfirmPwd("");
-    } else {
-      toast.error("Cập nhật mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.");
+    } catch (e) {
+      toast.error((e as Error).message || "Cập nhật mật khẩu thất bại.");
+    } finally {
+      setLoading(false);
     }
   };
 

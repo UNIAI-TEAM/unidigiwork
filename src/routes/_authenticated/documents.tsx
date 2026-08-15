@@ -149,6 +149,52 @@ function DocumentsPage() {
     })();
   }, [navigate]);
 
+  // Đồng bộ lại dữ liệu từ DB (không dựa vào state cục bộ sau khi mutate).
+  const reloadDocs = async (keepSelectedId?: string | null) => {
+    if (!currentWs) return [] as Doc[];
+    const { data: d, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("workspace_id", currentWs.id)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false });
+    if (error) {
+      toast.error("Không tải lại được danh sách tài liệu");
+      return [] as Doc[];
+    }
+    const list = (d ?? []) as Doc[];
+    setDocs(list);
+    setSelected((prev) => {
+      const wantId = keepSelectedId !== undefined ? keepSelectedId : prev?.id;
+      if (!wantId) return null;
+      return list.find((x) => x.id === wantId) ?? null;
+    });
+    return list;
+  };
+
+  const reloadMembers = async () => {
+    if (!currentWs) return;
+    const { data: m } = await supabase
+      .from("workspace_members")
+      .select("user_id, role, profiles(email, display_name)")
+      .eq("workspace_id", currentWs.id);
+    setMembers((m ?? []) as unknown as Member[]);
+  };
+
+  const reloadWorkspaces = async (selectId?: string) => {
+    const { data: ws, error } = await supabase.from("workspaces").select("*").order("created_at");
+    if (error) {
+      toast.error("Không tải lại được workspace");
+      return;
+    }
+    const list = (ws ?? []) as Workspace[];
+    setWorkspaces(list);
+    if (selectId) {
+      const found = list.find((w) => w.id === selectId);
+      if (found) setCurrentWs(found);
+    }
+  };
+
   // load docs + members when workspace changes
   useEffect(() => {
     if (!currentWs) {
@@ -192,6 +238,7 @@ function DocumentsPage() {
         },
       });
       toast.success("Đã chia sẻ tài liệu");
+      await reloadDocs(selected.id);
       setShowShare(false);
       setShareUserId("");
     } catch (e) {
@@ -215,8 +262,7 @@ function DocumentsPage() {
       return;
     }
     toast.success("Đã tạo workspace");
-    setWorkspaces((w) => [...w, data as Workspace]);
-    setCurrentWs(data as Workspace);
+    await reloadWorkspaces((data as Workspace).id);
     setShowNewWs(false);
     setNewWsName("");
   };
@@ -239,8 +285,7 @@ function DocumentsPage() {
         },
       })) as unknown as Doc;
       toast.success("Đã tạo tài liệu");
-      setDocs((d) => [created, ...d]);
-      setSelected(created);
+      await reloadDocs(created?.id ?? null);
       setShowNew(false);
       setNewTitle("");
       setNewFolder("My Documents");
@@ -265,8 +310,10 @@ function DocumentsPage() {
           idempotencyKey: crypto.randomUUID(),
         },
       });
+      await reloadDocs(selected.id);
     } catch (e) {
       toast.error("Lưu thất bại: " + (e as Error).message);
+      await reloadDocs(selected.id);
     }
   };
 
@@ -274,8 +321,7 @@ function DocumentsPage() {
     if (!confirm("Xoá tài liệu này?")) return;
     try {
       await archiveDocument({ data: { documentId: id, idempotencyKey: crypto.randomUUID() } });
-      setDocs((d) => d.filter((x) => x.id !== id));
-      if (selected?.id === id) setSelected(null);
+      await reloadDocs(selected?.id === id ? null : selected?.id ?? null);
       toast.success("Đã xoá");
     } catch (e) {
       toast.error("Xoá thất bại: " + (e as Error).message);
@@ -333,13 +379,7 @@ function DocumentsPage() {
         toast.error(`${file.name}: ${(e as Error).message}`);
       }
     }
-    const { data: refreshed } = await supabase
-      .from("documents")
-      .select("*")
-      .eq("workspace_id", currentWs.id)
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false });
-    if (refreshed) setDocs(refreshed as Doc[]);
+    await reloadDocs();
     setUploading(false);
     if (ok > 0) toast.success(`Đã tải lên ${ok} tệp`);
   };
@@ -369,11 +409,7 @@ function DocumentsPage() {
     }
     toast.success("Đã thêm thành viên");
     setInviteEmail("");
-    const { data: m } = await supabase
-      .from("workspace_members")
-      .select("user_id, role, profiles(email, display_name)")
-      .eq("workspace_id", currentWs.id);
-    setMembers((m ?? []) as unknown as Member[]);
+    await reloadMembers();
   };
 
   const removeMember = async (uid: string) => {
@@ -387,7 +423,7 @@ function DocumentsPage() {
       toast.error(error.message);
       return;
     }
-    setMembers((m) => m.filter((x) => x.user_id !== uid));
+    await reloadMembers();
   };
 
   const signOut = async () => {
