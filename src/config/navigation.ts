@@ -18,6 +18,7 @@ import {
   BookOpen,
   Workflow,
   Bot,
+  BotMessageSquare,
   LayoutDashboard,
   BarChart3,
   Users,
@@ -240,6 +241,18 @@ export const NAV_ITEMS: NavItem[] = [
     visibility: "everyone",
     order: 2,
     mobile: { placement: "more", href: "/ai", order: 7 },
+  },
+
+  {
+    id: "ai-workforce",
+    labelKey: "nav.aiWorkforce",
+    icon: BotMessageSquare,
+    href: "/ai-workforce",
+    group: "automation",
+    match: ["/ai-workforce"],
+    visibility: "everyone",
+    order: 3,
+    mobile: { placement: "more", href: "/ai-workforce", order: 7.5 },
   },
 
   // INSIGHTS

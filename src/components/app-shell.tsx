@@ -102,6 +102,7 @@ type NavKey =
   | "email"
   | "reports"
   | "ai"
+  | "ai-workforce"
   | "notifications"
   | "settings"
   | "help";
