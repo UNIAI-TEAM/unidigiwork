@@ -5,10 +5,10 @@ import {
   MessageSquare,
   CheckSquare,
   Video,
-  Mail,
   LayoutGrid,
   Search,
   Bell,
+  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
@@ -18,9 +18,10 @@ import { useEffect, useRef, useState } from "react";
 const TABS = [
   { id: "home", label: "Home", icon: Home, to: "/m/home" },
   { id: "chat", label: "Chat", icon: MessageSquare, to: "/m/chat" },
-  { id: "tasks", label: "Task", icon: CheckSquare, to: "/m/tasks" },
+  // Work = tab trung tâm nổi bật (công việc của tôi).
+  { id: "tasks", label: "Work", icon: CheckSquare, to: "/m/tasks" },
   { id: "meet", label: "Meet", icon: Video, to: "/m/meet" },
-  { id: "email", label: "Email", icon: Mail, to: "/m/email" },
+  { id: "more", label: "More", icon: MoreHorizontal, to: "/m/more" },
 ];
 
 const SWIPE_THRESHOLD = 72;

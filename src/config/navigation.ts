@@ -85,7 +85,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/tasks"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "primary", href: "/m/home", order: 1 },
+    mobile: { placement: "primary", href: "/m/tasks", order: 3 },
   },
   {
     id: "inbox",
