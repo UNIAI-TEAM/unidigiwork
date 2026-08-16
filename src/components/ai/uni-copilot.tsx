@@ -6,6 +6,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2, History, CornerDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { askUniCopilot } from "@/lib/api/ai-copilot.functions";
+import { proposeAiAction } from "@/lib/api/ai-actions.functions";
+import { detectActionIntent } from "@/domain/ai-actions/contracts";
+import type { ProposedAiAction } from "@/domain/ai-actions/contracts";
+import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import type { ContextSource } from "@/domain/ai-context/contracts";
 import { validateAnswerCitations } from "@/domain/ai-context/citations";
@@ -45,7 +49,9 @@ export const useUniCopilotState = () => useSyncExternalStore(subscribe, getSnaps
 
 type Msg =
   | { id: string; role: "user"; content: string }
-  | { id: string; role: "assistant"; content: string; response: UniCopilotResponse };
+  | { id: string; role: "assistant"; content: string; response: UniCopilotResponse }
+  | { id: string; role: "action"; content: string; proposal: ProposedAiAction }
+  | { id: string; role: "note"; content: string };
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -72,6 +78,7 @@ export function UniCopilot() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const ask = useServerFn(askUniCopilot);
+  const propose = useServerFn(proposeAiAction);
   const navigate = useNavigate();
   const tenant = useActiveTenant();
   const tenantId = tenant.data?.tenantId ?? null;
@@ -183,8 +190,55 @@ export function UniCopilot() {
       setError(null);
       setLastQuery(q);
       setContextNote(null);
-      const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
+      const history = messages
+        .filter((m): m is Extract<Msg, { role: "user" | "assistant" }> => m.role === "user" || m.role === "assistant")
+        .slice(-6)
+        .map((m) => ({ role: m.role, content: m.content }));
       setMessages((prev) => [...prev, { id: uid(), role: "user", content: q }]);
+
+      // §94 — cổng ý định: chỉ khi có động từ hành động tường minh UNI mới đề xuất ghi.
+      const intent = detectActionIntent(q);
+      if (intent.kind === "BLOCKED") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: uid(),
+            role: "note",
+            content:
+              intent.reason === "SEND_EMAIL"
+                ? "UNI V1 chỉ có thể soạn thư nháp, chưa được phép gửi email thay bạn. Hãy mở nháp trong Email và tự gửi."
+                : "UNI V1 không được phép xoá dữ liệu.",
+          },
+        ]);
+        return;
+      }
+      if (intent.kind === "PROPOSE") {
+        setPending(true);
+        setPhase("context");
+        try {
+          const proposal = (await propose({
+            data: {
+              query: q,
+              actionType: intent.actionType,
+              source: "UNI_COPILOT",
+              workspaceId: workspaceId ?? null,
+              rootEntity: effectiveRoot ? { type: effectiveRoot.type, id: effectiveRoot.id } : null,
+              targetTaskId: effectiveRoot?.type === "TASK" ? effectiveRoot.id : null,
+            },
+          } as never)) as ProposedAiAction;
+          setMessages((prev) => [
+            ...prev,
+            { id: uid(), role: "action", content: proposal.title, proposal },
+          ]);
+        } catch (e) {
+          setError(e instanceof Error && e.message ? e.message : "UNI chưa thể chuẩn bị hành động này.");
+        } finally {
+          setPending(false);
+          setPhase("idle");
+        }
+        return;
+      }
+
       setPending(true);
       setPhase("context");
       const controller = new AbortController();
@@ -216,7 +270,7 @@ export function UniCopilot() {
         abortRef.current = null;
       }
     },
-    [ask, messages, pending, root, effectiveRoot, workspaceId],
+    [ask, propose, messages, pending, root, effectiveRoot, workspaceId],
   );
 
   useEffect(() => {
@@ -426,7 +480,15 @@ export function UniCopilot() {
           )}
 
           {messages.map((m) =>
-            m.role === "user" ? (
+            m.role === "action" ? (
+              <div key={m.id} id={`uni-msg-${m.id}`}>
+                <ActionProposalCard proposal={m.proposal} />
+              </div>
+            ) : m.role === "note" ? (
+              <p key={m.id} className="rounded-xl bg-surface px-3 py-2 text-[13px] text-muted-foreground">
+                {m.content}
+              </p>
+            ) : m.role === "user" ? (
               <div
                 key={m.id}
                 id={`uni-msg-${m.id}`}
@@ -493,7 +555,7 @@ export function UniCopilot() {
               </Button>
             )}
           </div>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">UNI chỉ đọc dữ liệu bạn có quyền xem và chưa thể thay đổi công việc.</p>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">UNI chỉ đọc dữ liệu bạn có quyền xem. Mọi thay đổi đều cần bạn xác nhận trước khi thực hiện.</p>
         </div>
       </aside>
     </>
