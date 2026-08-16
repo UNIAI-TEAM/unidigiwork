@@ -57,8 +57,17 @@ import {
   skillsGranting,
 } from "@/domain/workflow-agents/skills";
 import { AI_AGENT_DOMAINS, matchDomainFromSkills, skillsForDomain } from "@/domain/workflow-agents/skills";
+import {
+  AI_WORKER_PROFILES,
+  AI_WORKER_PROFILE_MAP,
+  agentDefaultsFromWorkerProfile,
+  skillsForWorkerProfile,
+} from "@/domain/ai-workforce/profiles";
 
 export const Route = createFileRoute("/workflows_/agents")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    profile: typeof s.profile === "string" ? s.profile : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Agent Builder · UNIWORK" },
@@ -80,6 +89,7 @@ type AgentRow = {
   conditions: AgentCondition[] | null;
   action_type: AiActionType;
   skills: string[] | null;
+  worker_profile: string | null;
   allowed_action_types: string[] | null;
   allowed_sources: string[] | null;
   instruction: string;
@@ -95,6 +105,7 @@ const emptyDraft = (workspaceId: string) => ({
   conditions: [] as AgentCondition[],
   actionType: "CREATE_TASK" as AiActionType,
   skills: ["PROPOSE_TASK"] as string[],
+  workerProfile: null as string | null,
   allowedActionTypes: [...AI_ACTION_TYPES] as AiActionType[],
   allowedSources: ["WORKFLOW_AGENT"] as AiActionSource[],
   instruction: "",
@@ -103,6 +114,7 @@ const emptyDraft = (workspaceId: string) => ({
 
 function AgentBuilderPage() {
   const [open, setOpen] = useSidebarState();
+  const search = Route.useSearch();
   const qc = useQueryClient();
   const [workspaceId, setWorkspaceId] = useState<string>("");
   const [draft, setDraft] = useState<ReturnType<typeof emptyDraft> | null>(null);
@@ -110,10 +122,29 @@ function AgentBuilderPage() {
   const [proposals, setProposals] = useState<ProposedAiAction[]>([]);
   const [proposing, setProposing] = useState<string | null>(null);
   const derivedAllowed = useMemo(() => deriveAllowedFromSkills(draft?.skills ?? []), [draft?.skills]);
+  const [prefilled, setPrefilled] = useState(false);
 
   const wsQuery = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const workspaces = (wsQuery.data ?? []) as { id: string; name: string }[];
   const activeWs = workspaceId || workspaces[0]?.id || "";
+
+  // Mở sẵn dialog tạo agent từ hồ sơ nhân sự AI (deep-link từ /ai-workforce).
+  if (!prefilled && activeWs && search.profile && AI_WORKER_PROFILE_MAP[search.profile]) {
+    const defaults = agentDefaultsFromWorkerProfile(search.profile)!;
+    setPrefilled(true);
+    setDraft({
+      ...emptyDraft(activeWs),
+      name: defaults.name,
+      description: defaults.description,
+      triggerType: defaults.triggerType,
+      actionType: defaults.actionType,
+      skills: defaults.skills,
+      workerProfile: defaults.profile.id,
+      allowedActionTypes: defaults.allowedActionTypes,
+      allowedSources: defaults.allowedSources as AiActionSource[],
+      instruction: defaults.instruction,
+    });
+  }
 
   const agentsQuery = useQuery({
     queryKey: ["workflow-agents", activeWs],
@@ -153,6 +184,7 @@ function AgentBuilderPage() {
           conditions: d.conditions,
           actionType: d.actionType,
           skills: d.skills,
+          workerProfile: d.workerProfile,
           allowedActionTypes: d.allowedActionTypes.length ? d.allowedActionTypes : [d.actionType],
           allowedSources: d.allowedSources.length ? d.allowedSources : ["WORKFLOW_AGENT"],
           instruction: d.instruction,
@@ -193,7 +225,12 @@ function AgentBuilderPage() {
       const proposal = await propose({
         data: {
           query: buildAgentQuery(
-            { instruction: activeAgent.instruction, actionType: activeAgent.action_type, triggerType: activeAgent.trigger_type },
+            {
+              instruction: activeAgent.instruction,
+              actionType: activeAgent.action_type,
+              triggerType: activeAgent.trigger_type,
+              persona: AI_WORKER_PROFILE_MAP[activeAgent.worker_profile ?? ""]?.persona ?? null,
+            },
             candidate,
           ),
           actionType: activeAgent.action_type,
@@ -271,6 +308,11 @@ function AgentBuilderPage() {
                         {a.description && <p className="mt-0.5 text-sm text-muted-foreground">{a.description}</p>}
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <Badge variant="secondary">{AGENT_TRIGGER_LABELS[a.trigger_type]}</Badge>
+                          {a.worker_profile && AI_WORKER_PROFILE_MAP[a.worker_profile] && (
+                            <Badge variant="outline" className="gap-1">
+                              <Bot className="h-3 w-3" /> {AI_WORKER_PROFILE_MAP[a.worker_profile]!.name}
+                            </Badge>
+                          )}
                           <Badge variant="outline">{AI_ACTION_TOOLS[a.action_type]?.label ?? a.action_type}</Badge>
                           <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" /> Cần phê duyệt</Badge>
                         </div>
@@ -327,6 +369,7 @@ function AgentBuilderPage() {
                               conditions: a.conditions ?? [],
                               actionType: a.action_type,
                               skills: normalizeSkills(a.skills),
+                              workerProfile: a.worker_profile ?? null,
                               allowedActionTypes: normalizeAllowedActionTypes(a.allowed_action_types),
                               allowedSources: normalizeAllowedSources(a.allowed_sources),
                               instruction: a.instruction ?? "",
@@ -415,6 +458,46 @@ function AgentBuilderPage() {
                 <Label>Mô tả</Label>
                 <Input value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
               </div>
+
+              <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3">
+                <Label className="text-sm">Hồ sơ nhân sự AI</Label>
+                <Select
+                  value={draft.workerProfile ?? "NONE"}
+                  onValueChange={(v) => {
+                    if (v === "NONE") {
+                      setDraft({ ...draft, workerProfile: null });
+                      return;
+                    }
+                    const defaults = agentDefaultsFromWorkerProfile(v);
+                    if (!defaults) return;
+                    setDraft({
+                      ...draft,
+                      workerProfile: defaults.profile.id,
+                      name: draft.name || defaults.name,
+                      description: draft.description || defaults.description,
+                      instruction: draft.instruction || defaults.instruction,
+                      triggerType: defaults.triggerType,
+                      skills: defaults.skills,
+                      allowedActionTypes: defaults.allowedActionTypes,
+                      allowedSources: defaults.allowedSources as AiActionSource[],
+                      actionType: defaults.actionType,
+                    });
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Không gắn hồ sơ" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Không gắn hồ sơ (tự cấu hình)</SelectItem>
+                    {AI_WORKER_PROFILES.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name} · {p.domain}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {draft.workerProfile
+                    ? `${AI_WORKER_PROFILE_MAP[draft.workerProfile]!.mission} Kỹ năng và phạm vi đề xuất lấy trực tiếp từ hồ sơ; máy chủ chặn mọi kỹ năng ngoài hồ sơ.`
+                    : "Gắn hồ sơ để agent kế thừa kỹ năng, phạm vi hành động và persona của nhân sự AI đó."}
+                </p>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Điều kiện kích hoạt</Label>
@@ -500,6 +583,8 @@ function AgentBuilderPage() {
                     </div>
                     {skillsByKind(kind).map((skill) => {
                       const on = draft.skills.includes(skill.id);
+                      const inProfile =
+                        !draft.workerProfile || skillsForWorkerProfile(draft.workerProfile).includes(skill.id);
                       return (
                         <div key={skill.id} className="flex min-h-11 items-start justify-between gap-3 rounded-md border border-border p-3">
                           <div className="min-w-0">
@@ -508,6 +593,11 @@ function AgentBuilderPage() {
                               {!on && (
                                 <Badge variant="outline" className="border-dashed text-[11px] text-muted-foreground">
                                   Chưa cấu hình
+                                </Badge>
+                              )}
+                              {!inProfile && (
+                                <Badge variant="outline" className="text-[11px] text-muted-foreground">
+                                  Ngoài hồ sơ
                                 </Badge>
                               )}
                             </div>
@@ -527,6 +617,7 @@ function AgentBuilderPage() {
                           </div>
                           <Switch
                             checked={on}
+                            disabled={!inProfile}
                             onCheckedChange={(v) => {
                               const next = ensureDefaultSkill(
                                 v ? [...draft.skills, skill.id] : draft.skills.filter((x) => x !== skill.id),

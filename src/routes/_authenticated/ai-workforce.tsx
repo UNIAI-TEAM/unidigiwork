@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { AI_SKILL_KIND_LABELS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
 import { AI_ACTION_TOOLS } from "@/domain/ai-actions/contracts";
 import { AiSkillsManager } from "@/components/ai/ai-skills-manager";
+import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 
 export const Route = createFileRoute("/_authenticated/ai-workforce")({
   head: () => ({
@@ -31,91 +32,6 @@ export const Route = createFileRoute("/_authenticated/ai-workforce")({
   component: AiWorkforcePage,
 });
 
-interface AiWorker {
-  id: string;
-  name: string;
-  domain: string;
-  mission: string;
-  skills: string[];
-  responsibilities: string[];
-  availability: string;
-}
-
-const WORKERS: AiWorker[] = [
-  {
-    id: "project",
-    name: "AI Project Assistant",
-    domain: "Quản lý dự án",
-    mission: "Theo dõi tiến độ, phát hiện rủi ro trễ hạn và đề xuất việc cần làm sau mỗi cuộc họp.",
-    skills: ["SUMMARIZE_WORK", "RISK_ANALYSIS", "PROPOSE_TASK", "PROPOSE_TASK_UPDATE"],
-    responsibilities: ["Tóm tắt tình hình dự án hằng ngày", "Cảnh báo hạng mục nguy cơ trễ", "Đề xuất task theo dõi sau họp"],
-    availability: "24/7 · theo không gian làm việc đã cấp quyền",
-  },
-  {
-    id: "research",
-    name: "AI Research Analyst",
-    domain: "Nghiên cứu & Phân tích",
-    mission: "Tổng hợp tài liệu, biên bản họp và tri thức nội bộ thành kết luận có trích dẫn nguồn.",
-    skills: ["SUMMARIZE_WORK", "MEETING_RECALL", "RISK_ANALYSIS"],
-    responsibilities: ["Tra cứu tri thức nội bộ", "Tổng hợp bối cảnh trước quyết định", "Trả lời kèm nguồn"],
-    availability: "24/7 · chỉ đọc",
-  },
-  {
-    id: "sales",
-    name: "AI Sales Assistant",
-    domain: "Kinh doanh & CRM",
-    mission: "Soạn thư theo dõi khách hàng và nhắc các cơ hội đang chững lại.",
-    skills: ["DRAFT_EMAIL", "SUMMARIZE_WORK", "PROPOSE_TASK"],
-    responsibilities: ["Soạn thư nháp cho khách hàng", "Nhắc cơ hội chưa phản hồi", "Đề xuất việc chăm sóc"],
-    availability: "Giờ làm việc · cần duyệt trước khi gửi",
-  },
-  {
-    id: "data",
-    name: "AI Data Analyst",
-    domain: "Dữ liệu & BI",
-    mission: "Phân tích khối lượng công việc và xếp ưu tiên dựa trên dữ liệu vận hành.",
-    skills: ["RISK_ANALYSIS", "WORKLOAD_TRIAGE"],
-    responsibilities: ["Chấm điểm rủi ro", "Xếp ưu tiên hàng đợi", "Gợi ý phân bổ nguồn lực"],
-    availability: "24/7 · chỉ đọc & đề xuất",
-  },
-  {
-    id: "hr",
-    name: "AI HR Assistant",
-    domain: "Nhân sự",
-    mission: "Hỗ trợ quy trình nội bộ, nhắc việc onboarding và soạn thông báo.",
-    skills: ["SUMMARIZE_WORK", "DRAFT_EMAIL", "PROPOSE_TASK"],
-    responsibilities: ["Nhắc mốc onboarding", "Soạn thông báo nội bộ", "Tổng hợp phản hồi nhân sự"],
-    availability: "Giờ làm việc",
-  },
-  {
-    id: "support",
-    name: "AI Customer Support",
-    domain: "Hỗ trợ khách hàng",
-    mission: "Phân loại yêu cầu, soạn phản hồi nháp và chuyển tiếp đúng người phụ trách.",
-    skills: ["WORKLOAD_TRIAGE", "DRAFT_EMAIL", "PROPOSE_TASK_UPDATE"],
-    responsibilities: ["Phân loại yêu cầu đến", "Soạn phản hồi nháp", "Đề xuất đổi người phụ trách"],
-    availability: "24/7 · cần duyệt trước khi gửi",
-  },
-  {
-    id: "legal",
-    name: "AI Legal Assistant",
-    domain: "Pháp lý & Tuân thủ",
-    mission: "Rà soát tài liệu, ghi nhận cam kết và nhắc mốc tuân thủ.",
-    skills: ["SUMMARIZE_WORK", "MEETING_RECALL", "PROPOSE_MEETING"],
-    responsibilities: ["Rà soát điều khoản trong tài liệu", "Ghi nhận cam kết từ cuộc họp", "Đề xuất họp rà soát"],
-    availability: "Giờ làm việc · chỉ đọc & đề xuất",
-  },
-  {
-    id: "content",
-    name: "AI Content Specialist",
-    domain: "Nội dung & Marketing",
-    mission: "Chuyển kết luận công việc thành nội dung truyền thông và bản tin nội bộ.",
-    skills: ["DRAFT_FOLLOW_UP", "DRAFT_EMAIL", "SUMMARIZE_WORK"],
-    responsibilities: ["Soạn bản tin sau họp", "Viết nội dung nháp theo ngữ cảnh", "Chuẩn hoá thông điệp"],
-    availability: "Giờ làm việc · nội dung nháp",
-  },
-];
-
 const TABS = [
   { id: "workers", label: "Nhân sự AI", icon: Bot },
   { id: "skills", label: "Kỹ năng AI", icon: Sparkles },
@@ -126,7 +42,7 @@ function AiWorkforcePage() {
   const { t } = useI18n();
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("workers");
-  const workers = useMemo(() => WORKERS, []);
+  const workers = useMemo(() => AI_WORKER_PROFILES, []);
   const [profileId, setProfileId] = useState<string | null>(null);
   const profile = useMemo(() => workers.find((w) => w.id === profileId) ?? null, [workers, profileId]);
   const profileSkills = useMemo(
@@ -303,6 +219,7 @@ function AiWorkforcePage() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Link
                     to="/workflows/agents"
+                    search={{ profile: profile.id }}
                     className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     <Plus className="h-4 w-4" /> Giao việc qua agent

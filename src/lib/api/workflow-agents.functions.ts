@@ -21,6 +21,10 @@ import {
   normalizeSkills,
   skillsFromLegacyAllowlist,
 } from "@/domain/workflow-agents/skills";
+import {
+  AI_WORKER_PROFILE_MAP,
+  skillsForWorkerProfile,
+} from "@/domain/ai-workforce/profiles";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
@@ -64,6 +68,12 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
     if (wsErr || !ws) throw fail("WORKSPACE_NOT_FOUND", "Không tìm thấy không gian làm việc.");
 
     let skills = normalizeSkills(data.skills);
+    const profile = data.workerProfile ? AI_WORKER_PROFILE_MAP[data.workerProfile] : undefined;
+    if (data.workerProfile && !profile) throw fail("AGENT_SAVE_FAILED", "Hồ sơ nhân sự AI không hợp lệ.");
+    if (!skills.length && profile) {
+      // Hồ sơ nhân sự AI là nguồn thật: kỹ năng lấy trực tiếp từ hồ sơ.
+      skills = skillsForWorkerProfile(profile.id);
+    }
     if (!skills.length) {
       // Tương thích ngược: agent còn dùng allowlist cũ → tự chuyển sang danh mục kỹ năng.
       skills = skillsFromLegacyAllowlist(
@@ -73,6 +83,18 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
     }
     // Tự động bật kỹ năng đề xuất hành động mặc định nếu agent không có kỹ năng nào được bật.
     skills = ensureDefaultSkill(skills);
+
+    if (profile) {
+      // Agent gắn hồ sơ chỉ được dùng kỹ năng nằm trong hồ sơ đó.
+      const allowedSkills = new Set(skillsForWorkerProfile(profile.id));
+      const outside = skills.filter((s) => !allowedSkills.has(s));
+      if (outside.length) {
+        throw fail(
+          "AGENT_ACTION_NOT_ALLOWED",
+          `Kỹ năng nằm ngoài hồ sơ "${profile.name}": ${outside.join(", ")}.`,
+        );
+      }
+    }
 
     const derived = deriveAllowedFromSkills(skills);
     if (!derived.actionTypes.includes(data.actionType)) {
@@ -88,6 +110,7 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
       conditions: data.conditions as never,
       action_type: data.actionType,
       skills,
+      worker_profile: profile?.id ?? null,
       allowed_action_types: derived
         ? Array.from(new Set([...derived.actionTypes, data.actionType]))
         : Array.from(new Set([...data.allowedActionTypes, data.actionType])),
@@ -321,6 +344,8 @@ export const assertAgentActionAllowed = createServerFn({ method: "POST" })
     return {
       ok: true as const,
       skills: normalizeSkills((agent as any).skills),
+      workerProfile: (agent as any).worker_profile ?? null,
+      persona: AI_WORKER_PROFILE_MAP[(agent as any).worker_profile ?? ""]?.persona ?? null,
       allowedActionTypes: normalizeAllowedActionTypes((agent as any).allowed_action_types),
       allowedSources: normalizeAllowedSources((agent as any).allowed_sources),
     };
