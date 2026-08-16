@@ -31,6 +31,8 @@ export interface MeetingDecision {
   title: string;
   detail: string;
   sourceIds: string[];
+  /** Mức chắc chắn suy ra từ ngôn ngữ transcript — không dùng số giả. */
+  confidence?: DecisionConfidence;
 }
 
 export interface MeetingActionItem {
@@ -38,6 +40,78 @@ export interface MeetingActionItem {
   owner: string | null;
   dueHint: string | null;
   sourceIds: string[];
+}
+
+export type DecisionConfidence = "EXPLICIT" | "LIKELY" | "UNCLEAR";
+
+export const DECISION_CONFIDENCE_LABEL: Record<DecisionConfidence, string> = {
+  EXPLICIT: "Đã chốt",
+  LIKELY: "Có thể",
+  UNCLEAR: "Chưa rõ",
+};
+
+export interface MeetingRisk {
+  title: string;
+  sourceIds: string[];
+}
+
+export interface MeetingOpenQuestion {
+  question: string;
+  sourceIds: string[];
+}
+
+export interface MeetingFollowUp {
+  subject: string;
+  body: string;
+}
+
+export type ActionItemStatus = "PROPOSED" | "CONVERTED_TO_TASK" | "DISMISSED";
+
+export interface ActionItemState {
+  itemKey: string;
+  status: ActionItemStatus;
+  taskId: string | null;
+  confirmedAt: string | null;
+}
+
+/** Khoá ổn định cho một action item (dùng cho idempotency khi tạo task). */
+export function actionItemKey(item: { title: string; sourceIds: string[] }): string {
+  const slug = item.title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return `${slug || "item"}#${[...item.sourceIds].sort().join(",") || "na"}`;
+}
+
+/** Khử trùng lặp theo tiêu đề chuẩn hoá + nguồn trùng nhau (heuristic tất định). */
+export function dedupeByKey<T extends { title: string; sourceIds: string[] }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const it of items) {
+    const k = actionItemKey(it);
+    const titleKey = k.split("#")[0]!;
+    if (seen.has(k) || seen.has(titleKey)) continue;
+    seen.add(k);
+    seen.add(titleKey);
+    out.push(it);
+  }
+  return out;
+}
+
+/** Checksum tất định của transcript — phát hiện artifact lỗi thời khi transcript đổi. */
+export function transcriptChecksum(segments: { id: string; content: string }[]): string {
+  let h1 = 0x811c9dc5;
+  for (const s of segments) {
+    const str = `${s.id}:${s.content}`;
+    for (let i = 0; i < str.length; i++) {
+      h1 ^= str.charCodeAt(i);
+      h1 = Math.imul(h1, 0x01000193) >>> 0;
+    }
+  }
+  return `${segments.length}-${h1.toString(16)}`;
 }
 
 export interface MeetingSummary {
@@ -51,6 +125,11 @@ export interface MeetingSummary {
   sources: SummarySource[];
   segmentCount: number;
   generatedAt: string;
+  risks: MeetingRisk[];
+  openQuestions: MeetingOpenQuestion[];
+  followUp: MeetingFollowUp | null;
+  transcriptChecksum: string | null;
+  version: number;
 }
 
 /* ------------------------------- Budget ------------------------------- */
