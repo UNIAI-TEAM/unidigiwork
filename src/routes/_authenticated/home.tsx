@@ -1,6 +1,6 @@
 // HOME V2 — Trang chủ điều hành công việc cá nhân (My Work · Upcoming · Work Inbox).
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import { transitionTask } from "@/lib/api/tasks.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { setEmailMessagesRead } from "@/lib/api/emails.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
+import { getTaskKind, TASK_KIND_META } from "@/lib/home-task-kind";
 import {
   AiBrief,
   EmptyState,
@@ -172,6 +173,62 @@ function HomePage() {
   const failed = homeQuery.isError;
   const partialSet = useMemo(() => new Set(data?.partial ?? []), [data]);
 
+  // Phím tắt My Work: J/K hoặc mũi tên để chọn dòng, C hoàn thành, O mở chi tiết, R mở trang liên quan.
+  const [selectedIdx, setSelectedIdx] = useState(-1);
+  const stateRef = useRef({ tasks: [] as HomeTask[], idx: -1 });
+  stateRef.current = { tasks: data?.myWork ?? [], idx: selectedIdx };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (
+        el &&
+        (el.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
+          el.closest("[role='dialog']"))
+      )
+        return;
+      const { tasks, idx } = stateRef.current;
+      if (!tasks.length) return;
+      const key = e.key.toLowerCase();
+      if (key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIdx((i) => Math.min(tasks.length - 1, i + 1));
+        return;
+      }
+      if (key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIdx((i) => Math.max(0, i <= 0 ? 0 : i - 1));
+        return;
+      }
+      if (idx < 0 || idx >= tasks.length) return;
+      const task = tasks[idx];
+      if (key === "c") {
+        e.preventDefault();
+        if (task.status !== "done") complete.mutate(task);
+        return;
+      }
+      if (key === "o" || e.key === "Enter") {
+        e.preventDefault();
+        void router.navigate({ to: "/tasks/$id", params: { id: task.id } });
+        return;
+      }
+      if (key === "r") {
+        e.preventDefault();
+        void router.navigate({ to: TASK_KIND_META[getTaskKind(task)].to as never });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [complete, router]);
+
+  useEffect(() => {
+    document
+      .querySelector("[data-mywork-row='selected']")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selectedIdx]);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -222,7 +279,17 @@ function HomePage() {
           )}
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <SectionCard title="Công việc của tôi" action={<ViewAll to="/tasks" />}>
+            <SectionCard
+              title="Công việc của tôi"
+              action={
+                <div className="flex items-center gap-3">
+                  <span className="hidden text-xs text-muted-foreground md:inline">
+                    J/K chọn · C hoàn thành · O mở · R trang liên quan
+                  </span>
+                  <ViewAll to="/tasks" />
+                </div>
+              }
+            >
               {partialSet.has("tasks") ? (
                 <PartialNotice
                   label="Không tải được đầy đủ danh sách công việc."
@@ -243,10 +310,11 @@ function HomePage() {
                   ]}
                 />
               ) : (
-                data.myWork.map((t) => (
+                data.myWork.map((t, i) => (
                   <MyWorkRow
                     key={t.id}
                     task={t}
+                    selected={i === selectedIdx}
                     completing={completingId === t.id}
                     onComplete={(task) => complete.mutate(task)}
                   />
