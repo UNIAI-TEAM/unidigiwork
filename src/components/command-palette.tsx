@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Search,
   LayoutDashboard,
@@ -25,6 +27,8 @@ import {
   LayoutGrid,
   ShieldCheck,
   CreditCard,
+  Briefcase,
+  Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -34,6 +38,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { universalSearch } from "@/lib/api/search-universal.functions";
+import type { SearchKind } from "@/lib/api/search-universal.server";
 
 /**
  * Global event the topbar (and any button) can dispatch to open the palette
@@ -45,7 +51,27 @@ export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent(OPEN_CMDK_EVENT));
 }
 
-type CmdGroup = "Điều hướng" | "Hành động" | "Tìm kiếm";
+type CmdGroup = "Kết quả" | "Điều hướng" | "Hành động" | "Tìm kiếm";
+
+const KIND_ICON: Record<SearchKind, LucideIcon> = {
+  project: Briefcase,
+  task: ListChecks,
+  meeting: Video,
+  document: FileText,
+  email: Mail,
+  chat: MessageSquare,
+  person: Users,
+};
+
+const KIND_LABEL: Record<SearchKind, string> = {
+  project: "Dự án",
+  task: "Công việc",
+  meeting: "Cuộc họp",
+  document: "Tài liệu",
+  email: "Email",
+  chat: "Kênh chat",
+  person: "Nhân sự",
+};
 
 type CmdItem = {
   id: string;
