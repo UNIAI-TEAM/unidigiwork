@@ -187,10 +187,12 @@ export function MyWorkRow({
   task,
   onComplete,
   completing,
+  selected,
 }: {
   task: HomeTask;
   onComplete: (t: HomeTask) => void;
   completing: boolean;
+  selected?: boolean;
 }) {
   const kind = getTaskKind(task);
   const meta = TASK_KIND_META[kind];
@@ -199,11 +201,14 @@ export function MyWorkRow({
     kind === "email" ? Mail : kind === "meeting" ? Video : kind === "chat" ? MessageSquare : kind === "document" ? FileText : ListChecks;
   return (
     <div
+      data-mywork-row={selected ? "selected" : undefined}
       className={cn(
         "flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 transition-opacity hover:bg-surface-2",
         (done || completing) && "opacity-60",
+        selected && "bg-surface-2 ring-1 ring-inset ring-ring",
       )}
       aria-busy={completing}
+      aria-selected={selected}
     >
       <button
         type="button"
