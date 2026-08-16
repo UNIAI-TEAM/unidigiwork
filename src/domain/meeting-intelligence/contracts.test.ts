@@ -49,7 +49,8 @@ describe("meeting intelligence contracts", () => {
       sources.map((s) => s.sourceId),
     );
     expect(parsed.decisions[0]?.sourceIds).toEqual(["T1"]);
-    expect(parsed.actionItems[0]?.sourceIds).toEqual([]);
+    // Grounding bắt buộc: item không còn nguồn hợp lệ bị loại bỏ hoàn toàn.
+    expect(parsed.actionItems).toEqual([]);
     expect(parsed.highlights).toEqual(["a"]);
   });
 
