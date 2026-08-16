@@ -391,9 +391,75 @@ function AgentBuilderPage() {
                   <Select value={draft.actionType} onValueChange={(v) => setDraft({ ...draft, actionType: v as AiActionType })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {AI_ACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{AI_ACTION_TOOLS[t].label}</SelectItem>)}
+                      {draft.allowedActionTypes.map((t) => <SelectItem key={t} value={t}>{AI_ACTION_TOOLS[t].label}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">Chỉ liệt kê các loại đang bật trong allowlist bên dưới.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-border p-3">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div>
+                    <Label className="text-sm">Allowlist AI Action</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Bật/tắt loại hành động và nguồn mà agent này được phép đề xuất. Ngoài danh sách này, hệ thống chặn ở cả UI và máy chủ.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Loại hành động</p>
+                  {AI_ACTION_TYPES.map((t) => {
+                    const on = draft.allowedActionTypes.includes(t);
+                    const last = on && draft.allowedActionTypes.length === 1;
+                    return (
+                      <div key={t} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm">{AI_ACTION_TOOLS[t].label}</p>
+                          <p className="text-xs text-muted-foreground">Rủi ro {AI_ACTION_TOOLS[t].risk} · luôn cần phê duyệt</p>
+                        </div>
+                        <Switch
+                          checked={on}
+                          disabled={last}
+                          onCheckedChange={(v) => {
+                            const next = v
+                              ? [...draft.allowedActionTypes, t]
+                              : draft.allowedActionTypes.filter((x) => x !== t);
+                            if (!next.length) return;
+                            setDraft({
+                              ...draft,
+                              allowedActionTypes: AI_ACTION_TYPES.filter((x) => next.includes(x)),
+                              actionType: next.includes(draft.actionType) ? draft.actionType : next[0]!,
+                            });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nguồn được phép</p>
+                  {AI_ACTION_SOURCES.map((s) => {
+                    const on = draft.allowedSources.includes(s);
+                    const last = on && draft.allowedSources.length === 1;
+                    return (
+                      <div key={s} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3">
+                        <p className="truncate text-sm">{AI_ACTION_SOURCE_LABELS[s]}</p>
+                        <Switch
+                          checked={on}
+                          disabled={last}
+                          onCheckedChange={(v) => {
+                            const next = v ? [...draft.allowedSources, s] : draft.allowedSources.filter((x) => x !== s);
+                            if (!next.length) return;
+                            setDraft({ ...draft, allowedSources: AI_ACTION_SOURCES.filter((x) => next.includes(x)) });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
