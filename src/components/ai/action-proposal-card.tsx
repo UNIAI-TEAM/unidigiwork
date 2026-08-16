@@ -3,12 +3,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Pencil, Sparkles, X, ExternalLink, AlertTriangle } from "lucide-react";
+import { Check, Loader2, Pencil, Sparkles, X, ExternalLink, AlertTriangle, RefreshCw, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cancelAiAction, confirmAiAction } from "@/lib/api/ai-actions.functions";
+import { cancelAiAction, confirmAiAction, refreshAiActionProposal } from "@/lib/api/ai-actions.functions";
+import type { RefreshedAiActionPreview } from "@/lib/api/ai-actions.functions";
 import type { AiActionExecutionResult, ProposedAiAction } from "@/domain/ai-actions/contracts";
 
 type Edits = Record<string, unknown>;
@@ -24,11 +25,17 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
   const navigate = useNavigate();
   const confirm = useServerFn(confirmAiAction);
   const cancel = useServerFn(cancelAiAction);
+  const refresh = useServerFn(refreshAiActionProposal);
   const [editing, setEditing] = useState(false);
   const [edits, setEdits] = useState<Edits>({});
   const [state, setState] = useState<"idle" | "running" | "done" | "cancelled">("idle");
   const [result, setResult] = useState<AiActionExecutionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // ACTION_STALE: dữ liệu đích đã đổi → chặn xác nhận cho tới khi người dùng xem lại preview mới.
+  const [stale, setStale] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshed, setRefreshed] = useState<RefreshedAiActionPreview | null>(null);
+  const [reviewed, setReviewed] = useState(false);
 
   const payload = useMemo(() => ({ ...proposal.payload, ...edits }) as Record<string, any>, [proposal.payload, edits]);
   const blocking = proposal.ambiguities.filter((a) => !(a.field in edits));
@@ -37,6 +44,7 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
 
   const onConfirm = async () => {
     if (state === "running" || state === "done") return;
+    if (stale && !reviewed) return;
     setState("running");
     setError(null);
     try {
@@ -44,8 +52,30 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
       setResult(res);
       setState("done");
     } catch (e) {
-      setError(e instanceof Error && e.message ? e.message : "Không thể thực hiện hành động.");
+      const msg = e instanceof Error && e.message ? e.message : "Không thể thực hiện hành động.";
+      if (/ACTION_STALE|đã thay đổi kể từ lúc UNI/i.test(msg)) {
+        setStale(true);
+        setReviewed(false);
+        setRefreshed(null);
+        setError(null);
+      } else {
+        setError(msg);
+      }
       setState("idle");
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = (await refresh({ data: { actionId: proposal.actionId } })) as RefreshedAiActionPreview;
+      setRefreshed(res);
+      setReviewed(false);
+    } catch (e) {
+      setError(e instanceof Error && e.message ? e.message : "Không tải được đề xuất mới.");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -80,6 +110,59 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
         </div>
         <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">Cần bạn xác nhận</span>
       </header>
+
+      {stale && (
+        <div className="space-y-2 rounded-lg border border-warning/50 bg-warning/10 p-2.5 text-[12px]">
+          <p className="flex items-center gap-1.5 font-medium text-foreground">
+            <AlertTriangle className="h-3.5 w-3.5" /> Dữ liệu đã thay đổi kể từ lúc UNI đề xuất
+          </p>
+          <p className="text-muted-foreground">
+            Để tránh ghi đè thay đổi của người khác, hãy tải lại bản xem trước mới và kiểm tra trước khi xác nhận lại.
+          </p>
+          {!refreshed ? (
+            <Button size="sm" variant="outline" className="min-h-9" onClick={() => void onRefresh()} disabled={refreshing}>
+              {refreshing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
+              Xem preview mới
+            </Button>
+          ) : (
+            <div className="space-y-2">
+              {refreshed.targetChanges.length > 0 ? (
+                <ul className="space-y-1">
+                  {refreshed.targetChanges.map((c) => (
+                    <li key={c.label} className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-muted-foreground">{c.label}:</span>
+                      <span className="rounded bg-surface px-1.5 py-0.5 line-through">{c.before}</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{c.after}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">Không phát hiện khác biệt hiển thị, nhưng phiên bản dữ liệu đã được làm mới.</p>
+              )}
+              <dl className="space-y-1 rounded-lg border border-border bg-background p-2">
+                {refreshed.preview.map((row) => (
+                  <div key={row.label} className="grid grid-cols-[110px_1fr] gap-2">
+                    <dt className="text-muted-foreground">{row.label}</dt>
+                    <dd className="font-medium break-words">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                  checked={reviewed}
+                  onChange={(e) => setReviewed(e.target.checked)}
+                />
+                <span className="flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5" /> Tôi đã xem bản xem trước mới và muốn xác nhận lại
+                </span>
+              </label>
+            </div>
+          )}
+        </div>
+      )}
 
       {!editing ? (
         <dl className="space-y-1.5">
@@ -132,11 +215,11 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
         <Button
           size="sm"
           onClick={() => void onConfirm()}
-          disabled={state === "running" || blocking.length > 0}
+          disabled={state === "running" || blocking.length > 0 || (stale && !reviewed)}
           className="min-h-11 flex-1 md:min-h-9"
         >
           {state === "running" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Check className="mr-1.5 h-4 w-4" />}
-          Xác nhận
+          {stale ? "Xác nhận lại" : "Xác nhận"}
         </Button>
         <Button size="sm" variant="outline" className="min-h-11 md:min-h-9" onClick={() => setEditing((v) => !v)}>
           <Pencil className="mr-1.5 h-3.5 w-3.5" /> {editing ? "Xong" : "Chỉnh sửa"}
