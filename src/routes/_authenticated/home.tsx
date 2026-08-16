@@ -173,6 +173,62 @@ function HomePage() {
   const failed = homeQuery.isError;
   const partialSet = useMemo(() => new Set(data?.partial ?? []), [data]);
 
+  // Phím tắt My Work: J/K hoặc mũi tên để chọn dòng, C hoàn thành, O mở chi tiết, R mở trang liên quan.
+  const [selectedIdx, setSelectedIdx] = useState(-1);
+  const stateRef = useRef({ tasks: [] as HomeTask[], idx: -1 });
+  stateRef.current = { tasks: data?.myWork ?? [], idx: selectedIdx };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (
+        el &&
+        (el.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
+          el.closest("[role='dialog']"))
+      )
+        return;
+      const { tasks, idx } = stateRef.current;
+      if (!tasks.length) return;
+      const key = e.key.toLowerCase();
+      if (key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIdx((i) => Math.min(tasks.length - 1, i + 1));
+        return;
+      }
+      if (key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIdx((i) => Math.max(0, i <= 0 ? 0 : i - 1));
+        return;
+      }
+      if (idx < 0 || idx >= tasks.length) return;
+      const task = tasks[idx];
+      if (key === "c") {
+        e.preventDefault();
+        if (task.status !== "done") complete.mutate(task);
+        return;
+      }
+      if (key === "o" || e.key === "Enter") {
+        e.preventDefault();
+        void router.navigate({ to: "/tasks/$id", params: { id: task.id } });
+        return;
+      }
+      if (key === "r") {
+        e.preventDefault();
+        void router.navigate({ to: TASK_KIND_META[getTaskKind(task)].to as never });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [complete, router]);
+
+  useEffect(() => {
+    document
+      .querySelector("[data-mywork-row='selected']")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selectedIdx]);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -244,10 +300,11 @@ function HomePage() {
                   ]}
                 />
               ) : (
-                data.myWork.map((t) => (
+                data.myWork.map((t, i) => (
                   <MyWorkRow
                     key={t.id}
                     task={t}
+                    selected={i === selectedIdx}
                     completing={completingId === t.id}
                     onComplete={(task) => complete.mutate(task)}
                   />
