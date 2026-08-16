@@ -740,6 +740,7 @@ function MeetingDetailPage() {
     (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.name ??
     (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.email ??
     "Bạn";
+  captionSpeakerRef.current = myName;
   const [raisedHands, setRaisedHands] = useState<Array<{ userId: string; name: string; at: number }>>([]);
   // Danh sách người được chủ trì cấp quyền phát biểu (đồng bộ qua presence).
   const [speakers, setSpeakers] = useState<Array<{ userId: string; name: string }>>([]);
