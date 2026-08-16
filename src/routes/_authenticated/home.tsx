@@ -6,7 +6,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { CalendarClock, CheckCircle2, Inbox, Plus } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
-import { getHomeSummary, type HomeTask, type WorkInboxItem } from "@/lib/api/home.functions";
+import {
+  getHomeSummary,
+  type HomeSummary,
+  type HomeTask,
+  type WorkInboxItem,
+} from "@/lib/api/home.functions";
 import { getHomeAiBrief } from "@/lib/api/home-brief.functions";
 import { transitionTask } from "@/lib/api/tasks.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
@@ -82,18 +87,46 @@ function HomePage() {
   const markEmailRead = useServerFn(setEmailMessagesRead);
   const router = useRouter();
 
+  const homeKey = ["home", "summary", tenantId] as const;
+
+  // Optimistic: đánh dấu dòng "done" ngay, rollback snapshot nếu RPC lỗi.
   const complete = useMutation({
     mutationFn: (t: HomeTask) =>
       transition({
         data: { taskId: t.id, toStatus: "done", idempotencyKey: crypto.randomUUID() },
       }),
-    onMutate: (t: HomeTask) => setCompletingId(t.id),
+    onMutate: async (t: HomeTask) => {
+      setCompletingId(t.id);
+      await qc.cancelQueries({ queryKey: homeKey });
+      const previous = qc.getQueryData<HomeSummary>(homeKey);
+      if (previous) {
+        qc.setQueryData<HomeSummary>(homeKey, {
+          ...previous,
+          myWork: previous.myWork.map((x) =>
+            x.id === t.id ? { ...x, status: "done" } : x,
+          ),
+          counts: {
+            ...previous.counts,
+            attention: Math.max(0, (previous.counts.attention ?? 0) - 1),
+            overdue: Math.max(0, (previous.counts.overdue ?? 0) - (t.overdue_days ? 1 : 0)),
+            dueToday: Math.max(
+              0,
+              (previous.counts.dueToday ?? 0) - (!t.overdue_days && t.due_at ? 1 : 0),
+            ),
+          },
+        });
+      }
+      return { previous };
+    },
     onSettled: () => setCompletingId(null),
     onSuccess: async () => {
       toast.success("Đã hoàn thành công việc");
-      await qc.invalidateQueries({ queryKey: ["home", "summary", tenantId] });
+      await qc.invalidateQueries({ queryKey: homeKey });
     },
-    onError: () => toast.error("Không thể cập nhật công việc. Thử lại sau."),
+    onError: (_e, _t, ctx) => {
+      if (ctx?.previous) qc.setQueryData(homeKey, ctx.previous);
+      toast.error("Không thể cập nhật công việc. Đã hoàn tác thay đổi.");
+    },
   });
 
   const readMutation = useMutation({
