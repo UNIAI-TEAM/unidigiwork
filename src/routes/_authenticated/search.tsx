@@ -23,6 +23,7 @@ import type { LucideIcon } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { getSearchFacets } from "@/lib/api/search.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
+import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import type {
   SearchKind,
   UniversalSearchItem,
@@ -168,12 +169,24 @@ function SearchPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setDraft(q), [q]);
+
+  // Khôi phục phạm vi dự án đã lưu khi URL chưa chỉ định.
+  const scopeRestored = useRef(false);
+  useEffect(() => {
+    if (scopeRestored.current) return;
+    scopeRestored.current = true;
+    if (project) return;
+    const saved = readSearchScope();
+    if (saved) navigate({ to: "/search", search: { ...params, project: saved }, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   const update = (patch: Partial<SearchParams>) => {
     const next: SearchParams = { ...params, ...patch };
+    if ("project" in patch) writeSearchScope(patch.project ?? null);
     const clean: Record<string, unknown> = {};
     (Object.keys(next) as (keyof SearchParams)[]).forEach((k) => {
       const v = next[k];
