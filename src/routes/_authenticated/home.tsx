@@ -279,7 +279,17 @@ function HomePage() {
           )}
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <SectionCard title="Công việc của tôi" action={<ViewAll to="/tasks" />}>
+            <SectionCard
+              title="Công việc của tôi"
+              action={
+                <div className="flex items-center gap-3">
+                  <span className="hidden text-xs text-muted-foreground md:inline">
+                    J/K chọn · C hoàn thành · O mở · R trang liên quan
+                  </span>
+                  <ViewAll to="/tasks" />
+                </div>
+              }
+            >
               {partialSet.has("tasks") ? (
                 <PartialNotice
                   label="Không tải được đầy đủ danh sách công việc."
