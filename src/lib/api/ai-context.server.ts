@@ -30,6 +30,7 @@ const SEARCH_TO_GRAPH: Record<string, AiContextEntityType> = {
   DOCUMENT: "DOCUMENT",
   EMAIL: "EMAIL",
   CHAT_CHANNEL: "CHAT_CHANNEL",
+  MEETING_ARTIFACT: "MEETING_ARTIFACT",
   PERSON: "PERSON",
 };
 const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
@@ -39,6 +40,7 @@ const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
   DOCUMENT: "DOCUMENT",
   EMAIL: "EMAIL",
   CHAT_CHANNEL: "CHAT_CHANNEL",
+  MEETING_ARTIFACT: "MEETING",
   PERSON: "PERSON",
   TENANT: "PROJECT",
 };
@@ -73,6 +75,7 @@ const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
   EMAIL: 0.45,
   DOCUMENT: 0.45,
   CHAT_CHANNEL: 0.4,
+  MEETING_ARTIFACT: 0.5,
   PERSON: 0.3,
   TENANT: 0,
 };

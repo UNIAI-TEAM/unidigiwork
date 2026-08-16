@@ -132,6 +132,7 @@ export const ROOT_LABEL: Record<AiContextEntityType, string> = {
   EMAIL: "Email",
   DOCUMENT: "Tài liệu",
   CHAT_CHANNEL: "Kênh chat",
+  MEETING_ARTIFACT: "Kết quả cuộc họp",
   PERSON: "Thành viên",
   TENANT: "Tổ chức",
 };

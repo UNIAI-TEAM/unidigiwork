@@ -17,6 +17,15 @@ type Client = SupabaseClient<any, any, any>;
 
 const key = (type: string, id: string) => `${type}:${id}`;
 
+const ARTIFACT_KIND_LABEL: Record<string, string> = {
+  SUMMARY: "Tóm tắt",
+  DECISION: "Quyết định",
+  ACTION_ITEM: "Việc cần làm",
+  RISK: "Rủi ro",
+  OPEN_QUESTION: "Câu hỏi mở",
+  FOLLOW_UP: "Thư theo dõi",
+};
+
 /**
  * Resolve display metadata for graph targets in ONE query per entity type.
  * The caller-scoped client means RLS drops anything the actor cannot see —
