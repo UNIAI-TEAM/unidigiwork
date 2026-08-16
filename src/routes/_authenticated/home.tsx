@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CalendarClock, CheckCircle2, Inbox, Plus } from "lucide-react";
+import { CalendarClock, CheckCircle2, Inbox, Plus, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getHomeSummary,
@@ -87,6 +88,17 @@ function HomePage() {
   const markRead = useServerFn(markNotificationsRead);
   const markEmailRead = useServerFn(setEmailMessagesRead);
   const router = useRouter();
+
+  const isRefreshing = homeQuery.isFetching || briefQuery.isFetching;
+
+  const refreshAll = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["home", "summary", tenantId] }),
+      qc.invalidateQueries({ queryKey: ["home", "ai-brief", tenantId] }),
+      qc.invalidateQueries({ queryKey: ["notifications"] }),
+      qc.invalidateQueries({ queryKey: ["unread-counts"] }),
+    ]);
+  };
 
   const homeKey = ["home", "summary", tenantId] as const;
 
@@ -284,6 +296,15 @@ function HomePage() {
               <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={refreshAll}
+                disabled={isRefreshing}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+                aria-label="Làm mới trang chủ"
+              >
+                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
+              </button>
               <Link
                 to="/tasks"
                 className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
