@@ -86,6 +86,7 @@ import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
+import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
 import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/api/public/hooks/process-quota-exports'
 import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/public/hooks/process-outbox'
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
@@ -495,6 +496,12 @@ const AuthenticatedAdminAiContextRoute =
     path: '/ai-context',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAiActionsRoute =
+  AuthenticatedAdminAiActionsRouteImport.update({
+    id: '/ai-actions',
+    path: '/ai-actions',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiPublicHooksProcessQuotaExportsRoute =
   ApiPublicHooksProcessQuotaExportsRouteImport.update({
     id: '/api/public/hooks/process-quota-exports',
@@ -579,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
+  '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -662,6 +670,7 @@ export interface FileRoutesByTo {
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports': typeof ReportsIndexRoute
+  '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -749,6 +758,7 @@ export interface FileRoutesById {
   '/workflows_/permissions': typeof WorkflowsPermissionsRoute
   '/workflows_/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
+  '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -836,6 +846,7 @@ export interface FileRouteTypes {
     | '/workflows/permissions'
     | '/workflows/runs'
     | '/reports/'
+    | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/knowledge'
     | '/admin/leads'
@@ -919,6 +930,7 @@ export interface FileRouteTypes {
     | '/workflows/permissions'
     | '/workflows/runs'
     | '/reports'
+    | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/knowledge'
     | '/admin/leads'
@@ -1005,6 +1017,7 @@ export interface FileRouteTypes {
     | '/workflows_/permissions'
     | '/workflows_/runs'
     | '/reports/'
+    | '/_authenticated/admin/ai-actions'
     | '/_authenticated/admin/ai-context'
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
@@ -1619,6 +1632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAiContextRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/ai-actions': {
+      id: '/_authenticated/admin/ai-actions'
+      path: '/ai-actions'
+      fullPath: '/admin/ai-actions'
+      preLoaderRoute: typeof AuthenticatedAdminAiActionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/public/hooks/process-quota-exports': {
       id: '/api/public/hooks/process-quota-exports'
       path: '/api/public/hooks/process-quota-exports'
@@ -1672,6 +1692,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAiActionsRoute: typeof AuthenticatedAdminAiActionsRoute
   AuthenticatedAdminAiContextRoute: typeof AuthenticatedAdminAiContextRoute
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
@@ -1686,6 +1707,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAiActionsRoute: AuthenticatedAdminAiActionsRoute,
   AuthenticatedAdminAiContextRoute: AuthenticatedAdminAiContextRoute,
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
