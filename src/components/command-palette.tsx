@@ -38,6 +38,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useActiveWorkspace } from "@/lib/active-workspace";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import type { SearchKind } from "@/lib/api/search-universal.server";
 
@@ -169,6 +170,10 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const { workspaceId: activeWorkspaceId, workspaceName } = useActiveWorkspace();
+  // Giới hạn kết quả trong workspace đang làm việc (nếu có).
+  const [scoped, setScoped] = useState(true);
+  const scopeId = scoped && activeWorkspaceId ? activeWorkspaceId : undefined;
 
   // Global open: ⌘K / Ctrl+K, or custom event.
   useEffect(() => {
@@ -207,8 +212,11 @@ export function CommandPalette() {
 
   const runSearch = useServerFn(universalSearch);
   const { data: live, isFetching } = useQuery({
-    queryKey: ["cmdk-search", debounced],
-    queryFn: () => runSearch({ data: { q: debounced, limit: 8, offset: 0 } }),
+    queryKey: ["cmdk-search", debounced, scopeId ?? "all"],
+    queryFn: () =>
+      runSearch({
+        data: { q: debounced, workspaceId: scopeId, limit: 8, offset: 0 },
+      }),
     enabled: open && debounced.length >= 2,
     staleTime: 30_000,
   });
@@ -238,12 +246,15 @@ export function CommandPalette() {
         icon: Search,
         hint: "Mở /search",
         run: ({ navigate, query }) =>
-          navigate({ to: "/search", search: { q: query } }),
+          navigate({
+            to: "/search",
+            search: scopeId ? { q: query, project: scopeId } : { q: query },
+          }),
       };
       return [...hits, ...base, searchItem];
     }
     return base;
-  }, [all, q, live]);
+  }, [all, q, live, scopeId]);
 
   // Clamp active when results change
   useEffect(() => {
@@ -319,6 +330,38 @@ export function CommandPalette() {
             <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
           )}
         </div>
+
+        {activeWorkspaceId && (
+          <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+            <span className="text-[11px] text-muted-foreground">Phạm vi</span>
+            <button
+              type="button"
+              onClick={() => setScoped(true)}
+              aria-pressed={scoped}
+              className={cn(
+                "max-w-[45%] truncate rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                scoped
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border bg-surface text-muted-foreground",
+              )}
+            >
+              {workspaceName ?? "Dự án hiện tại"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setScoped(false)}
+              aria-pressed={!scoped}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                !scoped
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border bg-surface text-muted-foreground",
+              )}
+            >
+              Mọi dự án
+            </button>
+          </div>
+        )}
 
         <div
           ref={listRef}
