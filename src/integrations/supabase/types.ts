@@ -53,6 +53,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_context_metrics: {
+        Row: {
+          created_at: string
+          estimated_tokens: number
+          id: string
+          latency_ms: number
+          max_tokens: number
+          operation: string
+          partial: boolean
+          request_id: string
+          root_entity_type: string | null
+          source_count: number
+          strategy: string | null
+          tenant_id: string | null
+          timings: Json
+          truncated: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_tokens?: number
+          id?: string
+          latency_ms?: number
+          max_tokens?: number
+          operation?: string
+          partial?: boolean
+          request_id: string
+          root_entity_type?: string | null
+          source_count?: number
+          strategy?: string | null
+          tenant_id?: string | null
+          timings?: Json
+          truncated?: boolean
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          estimated_tokens?: number
+          id?: string
+          latency_ms?: number
+          max_tokens?: number
+          operation?: string
+          partial?: boolean
+          request_id?: string
+          root_entity_type?: string | null
+          source_count?: number
+          strategy?: string | null
+          tenant_id?: string | null
+          timings?: Json
+          truncated?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           created_at: string
@@ -5186,6 +5240,10 @@ export type Database = {
       fire_workflow_event: {
         Args: { _event_type: string; _payload?: Json; _workspace_id: string }
         Returns: number
+      }
+      get_ai_context_budget_metrics: {
+        Args: { _hours?: number }
+        Returns: Json
       }
       get_dashboard_ai_summary: {
         Args: { _day_end?: string; _day_start?: string; _workspace_id?: string }
