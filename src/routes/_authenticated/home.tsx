@@ -175,6 +175,41 @@ function HomePage() {
 
   // Phím tắt My Work: J/K hoặc mũi tên để chọn dòng, C hoàn thành, O mở chi tiết, R mở trang liên quan.
   const [selectedIdx, setSelectedIdx] = useState(-1);
+  // Chọn nhiều dòng để hoàn thành hàng loạt qua command transitionTask.
+  const [checkedIds, setCheckedIds] = useState<string[]>([]);
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const openTasks = useMemo(
+    () => (data?.myWork ?? []).filter((t) => t.status !== "done"),
+    [data],
+  );
+  const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
+  const toggleChecked = (t: HomeTask, next: boolean) =>
+    setCheckedIds((prev) => (next ? [...new Set([...prev, t.id])] : prev.filter((x) => x !== t.id)));
+  const allChecked = openTasks.length > 0 && checkedIds.length === openTasks.length;
+
+  const bulkComplete = async () => {
+    const targets = openTasks.filter((t) => checkedSet.has(t.id));
+    if (!targets.length) return;
+    setBulkRunning(true);
+    let ok = 0;
+    let fail = 0;
+    for (const t of targets) {
+      try {
+        await transition({
+          data: { taskId: t.id, toStatus: "done", idempotencyKey: crypto.randomUUID() },
+        });
+        ok += 1;
+      } catch {
+        fail += 1;
+      }
+    }
+    setBulkRunning(false);
+    setCheckedIds([]);
+    await qc.invalidateQueries({ queryKey: homeKey });
+    if (fail === 0) toast.success(`Đã hoàn thành ${ok} công việc`);
+    else toast.error(`Hoàn thành ${ok} việc, ${fail} việc lỗi`);
+  };
+
   const stateRef = useRef({ tasks: [] as HomeTask[], idx: -1 });
   stateRef.current = { tasks: data?.myWork ?? [], idx: selectedIdx };
 
@@ -217,6 +252,13 @@ function HomePage() {
       if (key === "r") {
         e.preventDefault();
         void router.navigate({ to: TASK_KIND_META[getTaskKind(task)].to as never });
+        return;
+      }
+      if (key === "x") {
+        e.preventDefault();
+        setCheckedIds((prev) =>
+          prev.includes(task.id) ? prev.filter((x) => x !== task.id) : [...prev, task.id],
+        );
       }
     };
     window.addEventListener("keydown", onKey);
