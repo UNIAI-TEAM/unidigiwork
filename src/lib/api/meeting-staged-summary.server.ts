@@ -21,6 +21,11 @@ import {
 
 const STAGE_CONCURRENCY = 3;
 
+type ModelArg = Parameters<typeof streamText>[0]["model"];
+export interface MeetingModelProvider {
+  responses: (model: string) => ModelArg;
+}
+
 export interface StagedSummaryResult {
   parsed: {
     summary: string;
@@ -39,7 +44,7 @@ export interface StagedSummaryResult {
 }
 
 async function callModel(args: {
-  provider: { responses: (m: string) => never };
+  provider: MeetingModelProvider;
   model: string;
   system: string;
   prompt: string;
@@ -60,7 +65,7 @@ async function callModel(args: {
 
 /** Map: tóm tắt từng chunk. Reduce: tổng hợp cuối. Trích dẫn luôn là sourceId toàn cục. */
 export async function runStagedMeetingSummary(args: {
-  provider: { responses: (m: string) => never };
+  provider: MeetingModelProvider;
   model: string;
   title: string;
   startAt: string;
