@@ -19,13 +19,6 @@ export type {
   DashboardProject,
 };
 
-const overviewInput = z
-  .object({
-    rangeDays: z.number().int().min(1).max(90).default(7),
-    workspaceId: z.string().uuid().optional(),
-  })
-  .parse;
-
 export const getDashboardOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
