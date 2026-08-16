@@ -1893,6 +1893,9 @@ function MeetingDetailPage() {
                 </div>
               )}
             </div>
+            <div className="border-t border-border p-4">
+              <RelatedWorkPanel entityType="MEETING" entityId={id} />
+            </div>
           </aside>
         </div>
       </div>
