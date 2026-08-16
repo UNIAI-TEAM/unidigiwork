@@ -1,0 +1,1 @@
+ALTER TABLE public.user_ui_prefs ADD COLUMN IF NOT EXISTS font_family text NOT NULL DEFAULT 'sans' CHECK (font_family IN ('sans','serif','mono'));
