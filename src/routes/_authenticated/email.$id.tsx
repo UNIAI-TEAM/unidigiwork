@@ -8,6 +8,7 @@ import {
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { getEmailThread } from "@/lib/api/emails.functions";
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
+import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -44,6 +45,17 @@ function EmailDetailPage() {
                 <ArrowLeft className="h-4 w-4" /> Quay lại hộp thư
               </Link>
               <div className="flex items-center gap-1">
+                {isUuid ? (
+                  <AskUniPanel
+                    rootEntity={{ type: "EMAIL", id }}
+                    label="Hỏi UNI về email này"
+                    suggestions={[
+                      "Tóm tắt nội dung trao đổi",
+                      "Cần trả lời những gì?",
+                      "Liên quan công việc nào?",
+                    ]}
+                  />
+                ) : null}
                 <IconBtn icon={Archive} />
                 <IconBtn icon={Trash2} />
                 <IconBtn icon={Star} />

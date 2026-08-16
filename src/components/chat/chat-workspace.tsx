@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import {
   Hash, Lock, Plus, Search as SearchIcon, Send, Star, Users, X, Trash2, LogOut, Loader2,
   Calendar as CalendarIcon,
@@ -806,7 +807,19 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </button>
-                    {active.isMember && (
+                     {active.isMember && (
+                       <AskUniPanel
+                         rootEntity={{ type: "CHAT_CHANNEL", id: active.id }}
+                         workspaceId={activeWorkspaceId ?? null}
+                         label="Hỏi UNI"
+                         suggestions={[
+                           "Tóm tắt trao đổi gần đây",
+                           "Có việc nào cần làm từ kênh này?",
+                           "Ai đang phụ trách?",
+                         ]}
+                       />
+                     )}
+                     {active.isMember && (
                       <button
                         onClick={() => setShowMembers((v) => !v)}
                         className={`rounded-lg p-2 hover:bg-surface-2 ${showMembers ? "bg-surface-2 text-foreground" : "text-muted-foreground"}`}

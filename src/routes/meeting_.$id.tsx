@@ -1,4 +1,5 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
+import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1893,6 +1894,17 @@ function MeetingDetailPage() {
                   ))}
                 </div>
               )}
+            </div>
+            <div className="border-t border-border p-4">
+              <AskUniPanel
+                rootEntity={{ type: "MEETING", id }}
+                label="Hỏi UNI về cuộc họp này"
+                suggestions={[
+                  "Tóm tắt nội dung cuộc họp",
+                  "Có việc nào cần theo dõi sau họp?",
+                  "Ai chưa tham gia?",
+                ]}
+              />
             </div>
             <div className="border-t border-border p-4">
               <RelatedWorkPanel entityType="MEETING" entityId={id} />
