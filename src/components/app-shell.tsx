@@ -427,6 +427,22 @@ export function AppSidebar({
         )}
 
         {/* Collapse toggle */}
+        <div className={cn("space-y-1 border-t border-border", collapsed ? "px-1 py-2" : "px-3 py-2")}>
+          <NavItem
+            icon={Settings}
+            label={t("nav.settings")}
+            to="/settings"
+            active={active === "settings"}
+            collapsed={collapsed}
+          />
+          <NavItem
+            icon={HelpCircle}
+            label={t("nav.help")}
+            to="/help"
+            active={active === "help"}
+            collapsed={collapsed}
+          />
+        </div>
         <div className={cn("border-t border-border", collapsed ? "px-1 py-2" : "px-3 py-2")}>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
