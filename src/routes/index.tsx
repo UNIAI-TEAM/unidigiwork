@@ -84,7 +84,7 @@ function Landing() {
   // If already signed in, jump straight to the app
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/dashboard" });
+      if (data.user) navigate({ to: "/tasks" });
     });
   }, [navigate]);
 
@@ -102,7 +102,7 @@ function Landing() {
       return;
     }
     toast.success(t("land.signin"));
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/tasks" });
   };
 
   return (

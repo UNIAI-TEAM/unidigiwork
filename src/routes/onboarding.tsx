@@ -68,7 +68,7 @@ function OnboardingPage() {
       });
       await setActive.mutateAsync(res.tenantId);
       toast.success("Đã tạo tenant thành công");
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/tasks" });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Không thể tạo tenant";
