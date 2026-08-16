@@ -557,4 +557,93 @@ describe("domain SDK enforcement gate", () => {
       "KNOWN_DEBT_SERVER_DIRECT_SUPABASE entries no longer violate — remove them",
     ).toEqual([]);
   });
+
+  // -------------------------------------------------------------------------
+  // Security scope of the BATCH_1D_LIST_RPC waiver.
+  // The read waiver only covers RLS-scoped SELECTs made with the actor's
+  // client (`context.supabase`). Two things stay out of scope and are gated
+  // separately so a waived file cannot silently grow a privileged path:
+  //   1. Writes to domain tables outside a SECURITY DEFINER RPC.
+  //   2. Any domain-table access through the service-role client, which
+  //      bypasses RLS and tenant isolation.
+  // -------------------------------------------------------------------------
+  const lineOf = (src: string, index: number) => src.slice(0, index).split("\n").length;
+
+  function scanText(src: string, pattern: RegExp): { line: number; snippet: string }[] {
+    const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+    const out: { line: number; snippet: string }[] = [];
+    const lines = src.split("\n");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(src))) {
+      const line = lineOf(src, m.index);
+      out.push({ line, snippet: snippet(lines[line - 1] ?? m[0]) });
+      if (m.index === re.lastIndex) re.lastIndex++;
+    }
+    return out;
+  }
+
+  it("server actions do not write domain tables outside a SECURITY DEFINER RPC", () => {
+    const allowed = waiver("server-domain-write-outside-rpc");
+    const newViolations: string[] = [];
+    const paidDebt: string[] = [];
+    const seen = new Set<string>();
+
+    const writePattern = new RegExp(
+      `\\.from\\(\\s*['"\`](?:${DOMAIN_TABLES.join("|")})['"\`]\\s*\\)\\s*\\.\\s*(?:insert|update|upsert|delete)\\s*\\(`,
+      "s",
+    );
+
+    for (const f of files) {
+      if (!isServerActionSurface(f)) continue;
+      if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
+      const key = rel(f);
+      const hits = scanText(read(f), writePattern);
+      if (hits.length === 0) continue;
+      seen.add(key);
+      if (key in allowed) continue;
+      newViolations.push(...record("server-domain-write-outside-rpc", key, hits));
+    }
+    for (const key of Object.keys(allowed)) if (!seen.has(key)) paidDebt.push(key);
+
+    expect(
+      newViolations,
+      "domain writes must go through a domain RPC — the BATCH_1D_LIST_RPC waiver covers read-only queries only (ADR-1D-001 §2.6)",
+    ).toEqual([]);
+    expect(
+      paidDebt,
+      "server-domain-write-outside-rpc waivers no longer violate — remove them from the manifest",
+    ).toEqual([]);
+  });
+
+  it("service-role client never touches domain tables (RLS/tenant bypass)", () => {
+    const allowed = waiver("server-admin-client-domain-table");
+    const newViolations: string[] = [];
+    const paidDebt: string[] = [];
+    const seen = new Set<string>();
+
+    const adminPattern = new RegExp(
+      `supabaseAdmin\\s*\\.\\s*from\\(\\s*['"\`](?:${DOMAIN_TABLES.join("|")})['"\`]\\s*\\)`,
+      "s",
+    );
+
+    for (const f of files) {
+      if (f.endsWith(".test.ts") || f.endsWith(".test.tsx")) continue;
+      const key = rel(f);
+      const hits = scanText(read(f), adminPattern);
+      if (hits.length === 0) continue;
+      seen.add(key);
+      if (key in allowed) continue;
+      newViolations.push(...record("server-admin-client-domain-table", key, hits));
+    }
+    for (const key of Object.keys(allowed)) if (!seen.has(key)) paidDebt.push(key);
+
+    expect(
+      newViolations,
+      "service-role (supabaseAdmin) access to domain tables bypasses RLS and tenant isolation — use context.supabase or a domain RPC",
+    ).toEqual([]);
+    expect(
+      paidDebt,
+      "server-admin-client-domain-table waivers no longer violate — remove them from the manifest",
+    ).toEqual([]);
+  });
 });
