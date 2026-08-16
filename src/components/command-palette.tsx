@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Search,
   LayoutDashboard,
@@ -25,6 +27,8 @@ import {
   LayoutGrid,
   ShieldCheck,
   CreditCard,
+  Briefcase,
+  Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -34,6 +38,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { universalSearch } from "@/lib/api/search-universal.functions";
+import type { SearchKind } from "@/lib/api/search-universal.server";
 
 /**
  * Global event the topbar (and any button) can dispatch to open the palette
@@ -45,7 +51,27 @@ export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent(OPEN_CMDK_EVENT));
 }
 
-type CmdGroup = "Điều hướng" | "Hành động" | "Tìm kiếm";
+type CmdGroup = "Kết quả" | "Điều hướng" | "Hành động" | "Tìm kiếm";
+
+const KIND_ICON: Record<SearchKind, LucideIcon> = {
+  project: Briefcase,
+  task: ListChecks,
+  meeting: Video,
+  document: FileText,
+  email: Mail,
+  chat: MessageSquare,
+  person: Users,
+};
+
+const KIND_LABEL: Record<SearchKind, string> = {
+  project: "Dự án",
+  task: "Công việc",
+  meeting: "Cuộc họp",
+  document: "Tài liệu",
+  email: "Email",
+  chat: "Kênh chat",
+  person: "Nhân sự",
+};
 
 type CmdItem = {
   id: string;
@@ -172,6 +198,21 @@ export function CommandPalette() {
 
   const all = useMemo(() => buildItems(navigate), [navigate]);
 
+  // Debounced live search (permission-aware, Universal Search V2).
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 180);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const runSearch = useServerFn(universalSearch);
+  const { data: live, isFetching } = useQuery({
+    queryKey: ["cmdk-search", debounced],
+    queryFn: () => runSearch({ data: { q: debounced, limit: 8, offset: 0 } }),
+    enabled: open && debounced.length >= 2,
+    staleTime: 30_000,
+  });
+
   const results = useMemo<CmdItem[]>(() => {
     const needle = norm(q.trim());
     const base = needle
@@ -181,6 +222,14 @@ export function CommandPalette() {
         })
       : all;
     if (needle) {
+      const hits: CmdItem[] = (live?.items ?? []).map((r) => ({
+        id: `hit-${r.kind}-${r.id}`,
+        group: "Kết quả" as const,
+        label: r.title,
+        hint: KIND_LABEL[r.kind],
+        icon: KIND_ICON[r.kind] ?? FileText,
+        run: ({ navigate }) => navigate({ href: r.href } as never),
+      }));
       // Always offer a "search this query" affordance at the bottom.
       const searchItem: CmdItem = {
         id: "search-query",
@@ -191,10 +240,10 @@ export function CommandPalette() {
         run: ({ navigate, query }) =>
           navigate({ to: "/search", search: { q: query } }),
       };
-      return [...base, searchItem];
+      return [...hits, ...base, searchItem];
     }
     return base;
-  }, [all, q]);
+  }, [all, q, live]);
 
   // Clamp active when results change
   useEffect(() => {
@@ -266,6 +315,9 @@ export function CommandPalette() {
           <kbd className="hidden shrink-0 rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
             ESC
           </kbd>
+          {isFetching && (
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+          )}
         </div>
 
         <div
