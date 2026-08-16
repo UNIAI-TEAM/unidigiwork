@@ -290,7 +290,19 @@ function HomePage() {
 
           {data?.partial.length ? (
             <p className="text-xs text-muted-foreground">
-              Một số nguồn tạm thời không khả dụng: {data.partial.join(", ")}.
+              Một số nguồn tạm thời không khả dụng:{" "}
+              {data.partial
+                .map((p) =>
+                  p === "unread"
+                    ? "số liệu chưa đọc"
+                    : p === "tasks"
+                      ? "công việc"
+                      : p === "upcoming"
+                        ? "lịch sắp tới"
+                        : p,
+                )
+                .join(", ")}
+              . Dữ liệu còn lại vẫn hiển thị bình thường.
             </p>
           ) : null}
         </div>
