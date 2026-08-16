@@ -95,6 +95,8 @@ export async function loadHomeSummary(supabase: Db, _userId: string): Promise<Ho
     emails?: Row[];
   };
   if ((countsRes as { error?: unknown }).error) partial.push("unread");
+  if (payload.myWork == null) partial.push("tasks");
+  if (payload.meetings == null && payload.taskDeadlines == null) partial.push("upcoming");
 
   const myWork: HomeTask[] = (payload.myWork ?? []).map((t) => ({
     id: t.id as string,
