@@ -66,6 +66,7 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useAvailableTenants } from "@/features/tenants/hooks";
 import { DesktopNavigation } from "@/components/navigation/desktop-nav";
+import { NAV_ICON_CLASS, NAV_ICON_STROKE, NAV_ICON_STROKE_ACTIVE } from "@/config/navigation";
 
 /**
  * Batch 1B-UI-FINISH — Tenant switcher slot embedded in AppTopbar.
@@ -123,20 +124,40 @@ function NavItem({
   collapsed?: boolean;
 }) {
   const cls = cn(
-    "flex items-center rounded-lg transition-colors",
+    "relative flex items-center rounded-lg transition-colors",
     collapsed ? "w-full justify-center px-2 py-2.5" : "w-full gap-3 px-3 py-2 text-sm",
     active
-      ? "bg-primary/15 text-foreground"
+      ? "bg-primary/15 font-medium text-foreground"
       : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
   );
   const inner = collapsed ? (
-    <Icon className="h-[18px] w-[18px]" />
+    <>
+      {active && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+        />
+      )}
+      <Icon
+        className={cn(NAV_ICON_CLASS, active && "text-primary")}
+        strokeWidth={active ? NAV_ICON_STROKE_ACTIVE : NAV_ICON_STROKE}
+      />
+    </>
   ) : (
     <>
-      <Icon className="h-[18px] w-[18px]" />
+      {active && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+        />
+      )}
+      <Icon
+        className={cn(NAV_ICON_CLASS, active && "text-primary")}
+        strokeWidth={active ? NAV_ICON_STROKE_ACTIVE : NAV_ICON_STROKE}
+      />
       <span className="flex-1 text-left">{label}</span>
       {badge}
-      {chevron && <ChevronDown className="h-4 w-4 opacity-60" />}
+      {chevron && <ChevronDown className="h-4 w-4 opacity-60" strokeWidth={NAV_ICON_STROKE} />}
     </>
   );
   const el = to ? (
