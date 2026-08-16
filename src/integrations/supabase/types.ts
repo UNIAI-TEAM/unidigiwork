@@ -2126,6 +2126,69 @@ export type Database = {
           },
         ]
       }
+      meeting_summary_progress: {
+        Row: {
+          chunks: Json
+          completed_chunks: number
+          failed_chunks: number
+          finished_at: string | null
+          meeting_id: string
+          phase: string
+          run_id: string
+          staged: boolean
+          started_at: string
+          tenant_id: string
+          total_chunks: number
+          truncated: boolean
+          updated_at: string
+        }
+        Insert: {
+          chunks?: Json
+          completed_chunks?: number
+          failed_chunks?: number
+          finished_at?: string | null
+          meeting_id: string
+          phase?: string
+          run_id: string
+          staged?: boolean
+          started_at?: string
+          tenant_id: string
+          total_chunks?: number
+          truncated?: boolean
+          updated_at?: string
+        }
+        Update: {
+          chunks?: Json
+          completed_chunks?: number
+          failed_chunks?: number
+          finished_at?: string | null
+          meeting_id?: string
+          phase?: string
+          run_id?: string
+          staged?: boolean
+          started_at?: string
+          tenant_id?: string
+          total_chunks?: number
+          truncated?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_summary_progress_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: true
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_summary_progress_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_transcript_segments: {
         Row: {
           content: string
@@ -6353,6 +6416,37 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "meeting_summaries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_meeting_summary_progress: {
+        Args: {
+          _chunks: Json
+          _meeting_id: string
+          _phase: string
+          _run_id: string
+          _staged: boolean
+          _truncated: boolean
+        }
+        Returns: {
+          chunks: Json
+          completed_chunks: number
+          failed_chunks: number
+          finished_at: string | null
+          meeting_id: string
+          phase: string
+          run_id: string
+          staged: boolean
+          started_at: string
+          tenant_id: string
+          total_chunks: number
+          truncated: boolean
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_summary_progress"
           isOneToOne: true
           isSetofReturn: false
         }
