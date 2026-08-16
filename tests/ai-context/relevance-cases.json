@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "description": "Golden cases cho AI Context Engine V1 — kiểm tra retrieval, không so khớp văn bản chính xác.",
+  "cases": [
+    {
+      "id": "REL-1",
+      "name": "Trạng thái dự án",
+      "request": { "query": "Dự án này đang vướng gì?", "rootEntity": { "type": "WORKSPACE", "id": "<workspace>" } },
+      "expect": { "strategy": ["ROOT_CONTEXT", "MIXED"], "rootEntityType": "WORKSPACE", "mustIncludeTypes": ["TASK"], "prioritized": ["BLOCKS", "DEPENDS_ON", "overdue"], "maxSources": 20 }
+    },
+    {
+      "id": "REL-2",
+      "name": "Task quá hạn (structured facts)",
+      "request": { "query": "Có bao nhiêu task quá hạn?", "rootEntity": { "type": "WORKSPACE", "id": "<workspace>" } },
+      "expect": { "mustIncludeFacts": ["overdueTasks"], "forbidFabricatedCounts": true }
+    },
+    {
+      "id": "REL-3",
+      "name": "Cuộc họp gần nhất",
+      "request": { "query": "Cuộc họp gần nhất về dự án này quyết định gì?", "rootEntity": { "type": "WORKSPACE", "id": "<workspace>" } },
+      "expect": { "mustIncludeTypes": ["MEETING"], "orderBy": "recency" }
+    },
+    {
+      "id": "REL-4",
+      "name": "Trao đổi trong tuần",
+      "request": { "query": "Tuần này có trao đổi gì về dự án này?", "rootEntity": { "type": "WORKSPACE", "id": "<workspace>" } },
+      "expect": { "timeRangeLabel": "tuần này", "boostTypes": ["EMAIL", "CHAT_CHANNEL", "MEETING"] }
+    },
+    {
+      "id": "REL-5",
+      "name": "Tài liệu liên quan task",
+      "request": { "query": "Những tài liệu nào liên quan đến công việc này?", "rootEntity": { "type": "TASK", "id": "<task>" } },
+      "expect": { "mustIncludeTypes": ["DOCUMENT"], "graphExpansionDepth": 1 }
+    },
+    {
+      "id": "REL-6",
+      "name": "Root theo trang hiện tại",
+      "request": { "query": "Công việc này liên quan đến gì?", "rootEntity": { "type": "TASK", "id": "<task>" } },
+      "expect": { "rootEntityType": "TASK", "noBroadSearchRootOverride": true }
+    },
+    {
+      "id": "REL-7",
+      "name": "Tên dự án mơ hồ",
+      "request": { "query": "ERP đang thế nào?" },
+      "expect": { "ambiguityCandidatesMin": 2, "silentMergeForbidden": true }
+    },
+    {
+      "id": "REL-8",
+      "name": "Không có kết quả",
+      "request": { "query": "zzzz-khong-ton-tai-9182" },
+      "expect": { "sourceCount": 0, "answerMustStateInsufficient": true }
+    }
+  ]
+}

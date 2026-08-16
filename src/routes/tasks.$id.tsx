@@ -1,4 +1,5 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
+import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -515,6 +516,11 @@ function TaskDetailPage() {
                     <CheckCircle2 className="h-4 w-4" />
                     {task.status === "done" ? "Mở lại công việc" : "Đánh dấu hoàn thành"}
                   </button>
+                  <AskUniPanel
+                    rootEntity={{ type: "TASK", id }}
+                    label="Hỏi UNI về công việc này"
+                    suggestions={["Công việc này liên quan đến gì?", "Đang vướng gì?", "Tóm tắt tiến độ"]}
+                  />
                   <RelatedWorkPanel
                     entityType="TASK"
                     entityId={id}
