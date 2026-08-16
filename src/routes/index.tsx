@@ -42,7 +42,7 @@ import shotKnowledge from "@/assets/shot-knowledge.png.asset.json";
 import shotTasks from "@/assets/shot-tasks.png.asset.json";
 import shotEmail from "@/assets/shot-email.png.asset.json";
 import { useI18n, LanguageToggle } from "@/lib/i18n";
-import { ThemeToggle } from "@/lib/theme";
+import { ThemeToggle, ToneToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -141,6 +141,7 @@ function Landing() {
           </nav>
           <div className="flex items-center gap-2">
             <LanguageToggle />
+            <ToneToggle />
             <ThemeToggle />
             <Link
               to="/auth"

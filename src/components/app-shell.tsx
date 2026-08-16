@@ -48,7 +48,7 @@ import {
   CheckCircle2,
   ExternalLink,
 } from "lucide-react";
-import { ThemeToggle } from "@/lib/theme";
+import { ThemeToggle, ToneToggle } from "@/lib/theme";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -1505,6 +1505,7 @@ export function AppTopbar({
         </>
       )}
       <LanguageToggle />
+      <ToneToggle />
       <ThemeToggle />
       <Link
         to="/settings"

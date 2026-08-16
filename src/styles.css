@@ -226,3 +226,31 @@
   padding-inline: calc(var(--spacing) * 4);
   padding-block: calc(var(--spacing) * 6);
 }
+
+/* ---------------------------------------------------------------------------
+ * Tone accents — người dùng chọn tone màu nhấn (data-tone trên <html>).
+ * Chỉ ghi đè các token nhấn; nền/chữ giữ nguyên để bảo toàn độ tương phản.
+ * ------------------------------------------------------------------------- */
+:root[data-tone="violet"] { --tone-h: 285; }
+:root[data-tone="blue"]   { --tone-h: 255; }
+:root[data-tone="teal"]   { --tone-h: 195; }
+:root[data-tone="emerald"]{ --tone-h: 155; }
+:root[data-tone="amber"]  { --tone-h: 75;  }
+:root[data-tone="rose"]   { --tone-h: 15;  }
+
+:root[data-tone] {
+  --primary: oklch(0.56 0.17 var(--tone-h));
+  --accent: oklch(0.56 0.17 var(--tone-h));
+  --ring: oklch(0.56 0.17 var(--tone-h) / 55%);
+  --sidebar-primary: oklch(0.52 0.16 var(--tone-h));
+  --sidebar-ring: oklch(0.56 0.17 var(--tone-h) / 55%);
+}
+
+:root[data-tone].dark,
+.dark:root[data-tone] {
+  --primary: oklch(0.68 0.15 var(--tone-h));
+  --accent: oklch(0.68 0.15 var(--tone-h));
+  --ring: oklch(0.68 0.15 var(--tone-h) / 55%);
+  --sidebar-primary: oklch(0.68 0.15 var(--tone-h));
+  --sidebar-ring: oklch(0.68 0.15 var(--tone-h) / 55%);
+}
