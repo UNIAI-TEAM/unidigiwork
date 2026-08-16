@@ -295,6 +295,15 @@ function HomePage() {
               <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={refreshAll}
+                disabled={isRefreshing}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+                aria-label="Làm mới trang chủ"
+              >
+                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
+              </button>
               <Link
                 to="/tasks"
                 className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
