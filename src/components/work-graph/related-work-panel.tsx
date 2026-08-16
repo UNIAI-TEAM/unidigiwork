@@ -1,6 +1,6 @@
 // Work Graph V1 — "Công việc liên quan" (Related Work).
 // UX copy never mentions graph/node/edge.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -148,10 +148,7 @@ export function RelatedWorkPanel({
                       className="group flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:bg-muted/50"
                     >
                       <EntityIcon type={it.entity.type} />
-                      <Link
-                        to={it.entity.href}
-                        className="min-w-0 flex-1"
-                      >
+                      <Link {...({ to: it.entity.href } as any)} className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-foreground">{it.entity.title}</p>
                         <p className="truncate text-xs text-muted-foreground">
                           {relationshipLabel(it.relationship, it.direction)}
@@ -227,7 +224,7 @@ function LinkPicker({ open, onOpenChange, sourceType, onPick }: PickerProps) {
   const rules = useMemo(() => userCreatableFrom(sourceType), [sourceType]);
 
   // debounce 300ms, tối thiểu 2 ký tự
-  useMemo(() => {
+  useEffect(() => {
     const t = setTimeout(() => setDebounced(term.trim()), 300);
     return () => clearTimeout(t);
   }, [term]);
