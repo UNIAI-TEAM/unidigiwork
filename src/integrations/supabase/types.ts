@@ -4170,6 +4170,152 @@ export type Database = {
           },
         ]
       }
+      workflow_agent_runs: {
+        Row: {
+          agent_id: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          matched_count: number
+          matches: Json
+          proposal_id: string | null
+          status: string
+          tenant_id: string
+          workspace_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          matched_count?: number
+          matches?: Json
+          proposal_id?: string | null
+          status?: string
+          tenant_id: string
+          workspace_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          matched_count?: number
+          matches?: Json
+          proposal_id?: string | null
+          status?: string
+          tenant_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_agent_runs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_agent_runs_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "ai_action_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_agent_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_agent_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_agents: {
+        Row: {
+          action_type: string
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          instruction: string
+          name: string
+          requires_approval: boolean
+          row_version: number
+          tenant_id: string
+          trigger_type: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action_type: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          instruction?: string
+          name: string
+          requires_approval?: boolean
+          row_version?: number
+          tenant_id: string
+          trigger_type: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action_type?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          instruction?: string
+          name?: string
+          requires_approval?: boolean
+          row_version?: number
+          tenant_id?: string
+          trigger_type?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_agents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_agents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_permission_denials: {
         Row: {
           action: string

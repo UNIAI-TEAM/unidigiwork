@@ -51,6 +51,7 @@ export const AI_ACTION_SOURCES = [
   "MEETING_INTELLIGENCE",
   "EMAIL_INTELLIGENCE",
   "PROJECT_CONTEXT",
+  "WORKFLOW_AGENT",
 ] as const;
 export type AiActionSource = (typeof AI_ACTION_SOURCES)[number];
 
