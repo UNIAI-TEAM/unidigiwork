@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Sparkles } from "lucide-react";
+import { openUniCopilot } from "@/components/ai/uni-copilot";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Settings, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,22 @@ function MorePage() {
   return (
     <div className="flex min-h-full flex-col gap-5 p-4 pb-28">
       <h1 className="text-lg font-semibold">{t("nav.more")}</h1>
+
+      <button
+        type="button"
+        onClick={() => openUniCopilot()}
+        className="flex min-h-14 items-center gap-3 rounded-xl border border-border bg-surface px-4 text-left transition-colors hover:bg-surface-2 active:bg-surface-2"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <Sparkles className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium">Hỏi UNI</span>
+          <span className="block text-xs text-muted-foreground">
+            Trợ lý công việc — trả lời kèm nguồn, chỉ đọc dữ liệu bạn được xem
+          </span>
+        </span>
+      </button>
 
       {groups.map(({ group, items }) => (
         <section key={group.id} className="space-y-2">
