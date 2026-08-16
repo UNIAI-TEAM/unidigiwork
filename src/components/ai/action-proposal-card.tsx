@@ -40,6 +40,19 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
   const payload = useMemo(() => ({ ...proposal.payload, ...edits }) as Record<string, any>, [proposal.payload, edits]);
   const blocking = proposal.ambiguities.filter((a) => !(a.field in edits));
 
+  /** Preview rows kèm cờ "sẽ thay đổi" để mobile thấy rõ tác động trước khi xác nhận. */
+  const rows = useMemo(
+    () =>
+      proposal.preview.map((row) => {
+        const value = editedValue(row.label, payload) ?? row.value;
+        const inert = !value || value === "Giữ nguyên" || value === "Chưa đặt" || value === "—" || value === "Chưa giao";
+        const informational = row.label === "Trạng thái" || row.label === "Không gian làm việc";
+        return { label: row.label, value, willChange: !inert && !informational };
+      }),
+    [proposal.preview, payload],
+  );
+  const changedRows = useMemo(() => rows.filter((r) => r.willChange), [rows]);
+
   const set = (k: string, v: unknown) => setEdits((p) => ({ ...p, [k]: v }));
 
   const onConfirm = async () => {
@@ -120,7 +133,7 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
             Để tránh ghi đè thay đổi của người khác, hãy tải lại bản xem trước mới và kiểm tra trước khi xác nhận lại.
           </p>
           {!refreshed ? (
-            <Button size="sm" variant="outline" className="min-h-9" onClick={() => void onRefresh()} disabled={refreshing}>
+            <Button size="sm" variant="outline" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={() => void onRefresh()} disabled={refreshing}>
               {refreshing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
               Xem preview mới
             </Button>
@@ -151,7 +164,7 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
               <label className="flex items-start gap-2">
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                  className="mt-0.5 h-5 w-5 sm:h-4 sm:w-4 accent-[var(--primary)]"
                   checked={reviewed}
                   onChange={(e) => setReviewed(e.target.checked)}
                 />
@@ -165,14 +178,34 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
       )}
 
       {!editing ? (
-        <dl className="space-y-1.5">
-          {proposal.preview.map((row) => (
-            <div key={row.label} className="grid grid-cols-[110px_1fr] gap-2">
-              <dt className="text-[12px] text-muted-foreground">{row.label}</dt>
-              <dd className="text-[13px] font-medium break-words">{editedValue(row.label, payload) ?? row.value}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="space-y-2">
+          <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <Eye className="h-3.5 w-3.5 shrink-0" />
+            {changedRows.length > 0
+              ? `${changedRows.length} trường sẽ thay đổi khi bạn xác nhận`
+              : "Không có trường nào bị thay đổi"}
+          </p>
+          <dl className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {rows.map((row) => (
+              <div
+                key={row.label}
+                className={`grid grid-cols-1 gap-0.5 px-2.5 py-2 sm:grid-cols-[130px_minmax(0,1fr)] sm:gap-2 ${
+                  row.willChange ? "bg-primary/5" : ""
+                }`}
+              >
+                <dt className="flex min-w-0 items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <span className="truncate">{row.label}</span>
+                  {row.willChange && (
+                    <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-primary">
+                      sẽ thay đổi
+                    </span>
+                  )}
+                </dt>
+                <dd className="min-w-0 text-[13px] font-medium break-words">{row.value || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       ) : (
         <EditForm proposal={proposal} payload={payload} set={set} />
       )}
@@ -211,23 +244,25 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
 
       {error && <p className="rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-[12px] text-destructive">{error}</p>}
 
-      <footer className="sticky bottom-0 flex flex-wrap gap-2 pt-1">
+      <footer
+        className="sticky bottom-0 -mx-3 grid grid-cols-2 gap-2 border-t border-border bg-background px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:mx-0 sm:flex sm:flex-wrap sm:border-0 sm:px-0 sm:pb-0"
+      >
         <Button
           size="sm"
           onClick={() => void onConfirm()}
           disabled={state === "running" || blocking.length > 0 || (stale && !reviewed)}
-          className="min-h-11 flex-1 md:min-h-9"
+          className="col-span-2 min-h-11 w-full sm:min-h-9 sm:w-auto sm:flex-1"
         >
           {state === "running" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Check className="mr-1.5 h-4 w-4" />}
           {stale ? "Xác nhận lại" : "Xác nhận"}
         </Button>
-        <Button size="sm" variant="outline" className="min-h-11 md:min-h-9" onClick={() => setEditing((v) => !v)}>
+        <Button size="sm" variant="outline" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={() => setEditing((v) => !v)}>
           <Pencil className="mr-1.5 h-3.5 w-3.5" /> {editing ? "Xong" : "Chỉnh sửa"}
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          className="min-h-11 md:min-h-9"
+          className="min-h-11 w-full sm:min-h-9 sm:w-auto"
           onClick={() => {
             void cancel({ data: { actionId: proposal.actionId } });
             setState("cancelled");
@@ -265,7 +300,7 @@ function EditForm({
       {(t === "CREATE_TASK" || t === "UPDATE_TASK_FIELDS" || t === "CREATE_MEETING") && (
         <div className="space-y-1">
           <Label htmlFor="ai-title" className="text-[12px]">Tiêu đề</Label>
-          <Input id="ai-title" value={payload.title ?? ""} onChange={(e) => set("title", e.target.value)} />
+          <Input className="min-h-11 sm:min-h-9" id="ai-title" value={payload.title ?? ""} onChange={(e) => set("title", e.target.value)} />
         </div>
       )}
       {(t === "CREATE_TASK" || t === "UPDATE_TASK_FIELDS") && (
@@ -283,11 +318,11 @@ function EditForm({
         <>
           <div className="space-y-1">
             <Label htmlFor="ai-start" className="text-[12px]">Bắt đầu</Label>
-            <Input id="ai-start" type="datetime-local" value={toLocalInput(payload.startAt)} onChange={(e) => set("startAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-start" type="datetime-local" value={toLocalInput(payload.startAt)} onChange={(e) => set("startAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="ai-end" className="text-[12px]">Kết thúc</Label>
-            <Input id="ai-end" type="datetime-local" value={toLocalInput(payload.endAt)} onChange={(e) => set("endAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-end" type="datetime-local" value={toLocalInput(payload.endAt)} onChange={(e) => set("endAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
           </div>
         </>
       )}
@@ -295,11 +330,11 @@ function EditForm({
         <>
           <div className="space-y-1">
             <Label htmlFor="ai-to" className="text-[12px]">Người nhận (email, cách nhau dấu phẩy)</Label>
-            <Input id="ai-to" value={(payload.to ?? []).join(", ")} onChange={(e) => set("to", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-to" value={(payload.to ?? []).join(", ")} onChange={(e) => set("to", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="ai-subject" className="text-[12px]">Tiêu đề thư</Label>
-            <Input id="ai-subject" value={payload.subject ?? ""} onChange={(e) => set("subject", e.target.value)} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-subject" value={payload.subject ?? ""} onChange={(e) => set("subject", e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="ai-body" className="text-[12px]">Nội dung</Label>
