@@ -388,17 +388,13 @@ export function buildPreviewRows(
   }
 }
 
-/** Đọc trạng thái công việc đích (id + row_version) để dựng preview và kiểm tra stale. */
+/** Đọc trạng thái công việc đích qua RPC (không truy vấn thẳng bảng nghiệp vụ). */
 export async function readTaskTarget(
   ctx: Ctx,
   taskId: string,
 ): Promise<{ id: string; title: string; rowVersion: number | null } | null> {
-  const { data } = await ctx.supabase
-    .from("tasks")
-    .select("id, title, row_version")
-    .eq("id", taskId)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (!data) return null;
-  return { id: (data as any).id, title: (data as any).title, rowVersion: (data as any).row_version ?? null };
+  const { data } = await ctx.supabase.rpc("get_task_snapshot", { _task_id: taskId });
+  const row = first<any>(data ?? null);
+  if (!row) return null;
+  return { id: row.id, title: row.title, rowVersion: row.row_version ?? null };
 }
