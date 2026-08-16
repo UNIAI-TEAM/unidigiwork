@@ -10,6 +10,9 @@ import { getMyIsAdmin } from "@/lib/api/admin.functions";
 import {
   visibleNavigation,
   isNavItemActive,
+  NAV_ICON_CLASS,
+  NAV_ICON_STROKE,
+  NAV_ICON_STROKE_ACTIVE,
   type NavItem,
   type NavGroupId,
 } from "@/config/navigation";
@@ -118,12 +121,12 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                 const Icon = item.icon;
                 const label = t(item.labelKey);
                 const cls = cn(
-                  "flex items-center rounded-lg transition-colors",
+                  "relative flex items-center rounded-lg transition-colors",
                   collapsed
                     ? "w-full justify-center px-2 py-2.5"
                     : "w-full gap-3 px-3 py-2 text-sm",
                   active
-                    ? "bg-primary/15 text-foreground"
+                    ? "bg-primary/15 font-medium text-foreground"
                     : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                 );
                 const link = (
@@ -133,7 +136,19 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                     aria-current={active ? "page" : undefined}
                     title={collapsed ? label : undefined}
                   >
-                    <Icon className="h-[18px] w-[18px]" />
+                    {active && (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-primary",
+                          collapsed ? "h-5 w-[3px]" : "h-5 w-[3px]",
+                        )}
+                      />
+                    )}
+                    <Icon
+                      className={cn(NAV_ICON_CLASS, active ? "text-primary" : "text-current")}
+                      strokeWidth={active ? NAV_ICON_STROKE_ACTIVE : NAV_ICON_STROKE}
+                    />
                     {!collapsed && (
                       <>
                         <span className="flex-1 text-left">{label}</span>
