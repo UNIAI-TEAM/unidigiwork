@@ -8,9 +8,13 @@ import {
   AgentInputSchema,
   AGENT_TRIGGER_ENTITY,
   evaluateConditions,
+  isAgentActionAllowed,
+  normalizeAllowedActionTypes,
+  normalizeAllowedSources,
   type AgentCandidate,
   type AgentCondition,
 } from "@/domain/workflow-agents/contracts";
+import { AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
@@ -61,6 +65,8 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
       trigger_type: data.triggerType,
       conditions: data.conditions as never,
       action_type: data.actionType,
+      allowed_action_types: Array.from(new Set([...data.allowedActionTypes, data.actionType])),
+      allowed_sources: Array.from(new Set(data.allowedSources)),
       instruction: data.instruction,
       enabled: data.enabled,
       requires_approval: true,
@@ -266,4 +272,28 @@ export const listWorkflowAgentRuns = createServerFn({ method: "GET" })
     const { data: rows, error } = await q;
     if (error) throw fail("AGENT_RUN_LIST_FAILED", error.message);
     return rows ?? [];
+  });
+
+/** Chốt chặn server-side: agent chỉ được sinh đề xuất nằm trong allowlist của chính nó. */
+export const assertAgentActionAllowed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        agentId: z.string().uuid(),
+        actionType: z.enum(AI_ACTION_TYPES),
+        source: z.enum(AI_ACTION_SOURCES).default("WORKFLOW_AGENT"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const agent = await loadAgent(context, data.agentId);
+    if (!isAgentActionAllowed(agent as never, data.actionType as AiActionType, data.source as AiActionSource)) {
+      throw fail("AGENT_ACTION_NOT_ALLOWED", "Hành động hoặc nguồn này không nằm trong allowlist của agent.");
+    }
+    return {
+      ok: true as const,
+      allowedActionTypes: normalizeAllowedActionTypes((agent as any).allowed_action_types),
+      allowedSources: normalizeAllowedSources((agent as any).allowed_sources),
+    };
   });

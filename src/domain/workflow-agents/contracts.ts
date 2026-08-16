@@ -1,7 +1,7 @@
 // WORKFLOW & AGENT BUILDER V1 — contracts thuần (client-safe, không I/O).
 // Bất biến: ĐIỀU KIỆN → AI ĐỀ XUẤT → NGƯỜI DUYỆT. Không bao giờ tự động thực thi.
 import { z } from "zod";
-import { AI_ACTION_TYPES, type AiActionType } from "@/domain/ai-actions/contracts";
+import { AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
 
 /** Hard invariant: agent không có quyền ghi dữ liệu, chỉ sinh đề xuất chờ duyệt. */
 export const AGENT_AUTONOMOUS_EXECUTION = false as const;
@@ -97,17 +97,51 @@ export const AgentConditionSchema = z.object({
 });
 export type AgentCondition = z.infer<typeof AgentConditionSchema>;
 
-export const AgentInputSchema = z.object({
+export const AgentInputBaseSchema = z.object({
   workspaceId: z.string().uuid(),
   name: z.string().trim().min(1).max(200),
   description: z.string().max(2000).optional(),
   triggerType: z.enum(AGENT_TRIGGERS),
   conditions: z.array(AgentConditionSchema).max(10).default([]),
   actionType: z.enum(AI_ACTION_TYPES),
+  allowedActionTypes: z.array(z.enum(AI_ACTION_TYPES)).min(1).default([...AI_ACTION_TYPES]),
+  allowedSources: z.array(z.enum(AI_ACTION_SOURCES)).min(1).default(["WORKFLOW_AGENT"]),
   instruction: z.string().max(2000).default(""),
   enabled: z.boolean().default(true),
 });
+export const AgentInputSchema = AgentInputBaseSchema;
 export type AgentInput = z.infer<typeof AgentInputSchema>;
+
+export const AI_ACTION_SOURCE_LABELS: Record<AiActionSource, string> = {
+  UNI_COPILOT: "UNI Copilot",
+  MEETING_INTELLIGENCE: "Trí tuệ cuộc họp",
+  EMAIL_INTELLIGENCE: "Trí tuệ email",
+  PROJECT_CONTEXT: "Ngữ cảnh dự án",
+  WORKFLOW_AGENT: "Agent quy trình",
+};
+
+/** Allowlist mặc định khi bản ghi cũ chưa có cấu hình. */
+export const normalizeAllowedActionTypes = (v: unknown): AiActionType[] => {
+  const list = Array.isArray(v) ? v.filter((x): x is AiActionType => (AI_ACTION_TYPES as readonly string[]).includes(String(x))) : [];
+  return list.length ? list : [...AI_ACTION_TYPES];
+};
+
+export const normalizeAllowedSources = (v: unknown): AiActionSource[] => {
+  const list = Array.isArray(v) ? v.filter((x): x is AiActionSource => (AI_ACTION_SOURCES as readonly string[]).includes(String(x))) : [];
+  return list.length ? list : ["WORKFLOW_AGENT"];
+};
+
+/** Kiểm tra 1 đề xuất có được phép sinh ra từ agent này không. */
+export function isAgentActionAllowed(
+  agent: { allowed_action_types?: unknown; allowed_sources?: unknown },
+  actionType: AiActionType,
+  source: AiActionSource,
+): boolean {
+  return (
+    normalizeAllowedActionTypes(agent.allowed_action_types).includes(actionType) &&
+    normalizeAllowedSources(agent.allowed_sources).includes(source)
+  );
+}
 
 export interface AgentCandidate {
   id: string;

@@ -4244,6 +4244,8 @@ export type Database = {
       workflow_agents: {
         Row: {
           action_type: string
+          allowed_action_types: string[]
+          allowed_sources: string[]
           conditions: Json
           created_at: string
           created_by: string | null
@@ -4263,6 +4265,8 @@ export type Database = {
         }
         Insert: {
           action_type: string
+          allowed_action_types?: string[]
+          allowed_sources?: string[]
           conditions?: Json
           created_at?: string
           created_by?: string | null
@@ -4282,6 +4286,8 @@ export type Database = {
         }
         Update: {
           action_type?: string
+          allowed_action_types?: string[]
+          allowed_sources?: string[]
           conditions?: Json
           created_at?: string
           created_by?: string | null
