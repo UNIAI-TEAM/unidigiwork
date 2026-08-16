@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
+import { MobileUniCopilotButton } from "@/components/ai/uni-copilot-mobile";
 import { useEffect, useRef, useState } from "react";
 
 const TABS = [
@@ -158,7 +159,7 @@ function SwipeableMain({
 
 function MobileTopbar() {
   const navigate = useNavigate();
-  const { workspaceName, isLoading } = useActiveWorkspace();
+  const { workspaceName, workspaceId, isLoading } = useActiveWorkspace();
   const { unreadCount } = useUnreadNotifications();
 
   return (
@@ -181,6 +182,7 @@ function MobileTopbar() {
       </button>
 
       <div className="flex items-center gap-1">
+        <MobileUniCopilotButton workspaceId={workspaceId ?? null} />
         <Link
           to="/m/search"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"
