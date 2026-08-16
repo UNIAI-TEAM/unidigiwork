@@ -40,6 +40,19 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
   const payload = useMemo(() => ({ ...proposal.payload, ...edits }) as Record<string, any>, [proposal.payload, edits]);
   const blocking = proposal.ambiguities.filter((a) => !(a.field in edits));
 
+  /** Preview rows kèm cờ "sẽ thay đổi" để mobile thấy rõ tác động trước khi xác nhận. */
+  const rows = useMemo(
+    () =>
+      proposal.preview.map((row) => {
+        const value = editedValue(row.label, payload) ?? row.value;
+        const inert = !value || value === "Giữ nguyên" || value === "Chưa đặt" || value === "—" || value === "Chưa giao";
+        const informational = row.label === "Trạng thái" || row.label === "Không gian làm việc";
+        return { label: row.label, value, willChange: !inert && !informational };
+      }),
+    [proposal.preview, payload],
+  );
+  const changedRows = useMemo(() => rows.filter((r) => r.willChange), [rows]);
+
   const set = (k: string, v: unknown) => setEdits((p) => ({ ...p, [k]: v }));
 
   const onConfirm = async () => {
