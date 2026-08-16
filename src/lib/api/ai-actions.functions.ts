@@ -384,16 +384,13 @@ export const refreshAiActionProposal = createServerFn({ method: "POST" })
     if (row.target_type === "TASK" && row.target_id) {
       const task = await readTaskTarget(context as never, row.target_id);
       if (!task) throw fail("ACTION_NOT_FOUND", "Công việc không còn tồn tại.");
-      const prevTitle = typeof row.target_title === "string" ? row.target_title : null;
-      if (prevTitle && prevTitle !== task.title) {
-        targetChanges.push({ label: "Tiêu đề công việc", before: prevTitle, after: task.title });
-      }
       if (expectedRowVersion != null && task.rowVersion !== expectedRowVersion) {
         targetChanges.push({
           label: "Phiên bản dữ liệu",
           before: `v${expectedRowVersion}`,
           after: `v${task.rowVersion ?? "?"}`,
         });
+        targetChanges.push({ label: "Công việc đích", before: "—", after: task.title });
       }
       expectedRowVersion = task.rowVersion;
     }
@@ -412,20 +409,6 @@ export const refreshAiActionProposal = createServerFn({ method: "POST" })
       refreshedAt,
       status: "PROPOSED",
     };
-  });
-
-const _unusedCancelAlias = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ actionId: z.string().uuid() }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("ai_action_proposals")
-      .update({ status: "CANCELLED" })
-      .eq("id", data.actionId)
-      .eq("user_id", context.userId)
-      .in("status", ["PROPOSED", "PREVIEWED"]);
-    if (error) throw fail("ACTION_NOT_FOUND");
-    return { ok: true as const };
   });
 
 export const listAiActionProposals = createServerFn({ method: "GET" })
