@@ -4735,6 +4735,32 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      attach_meeting_recording_egress: {
+        Args: { _egress_id: string; _recording_id: string }
+        Returns: {
+          created_at: string
+          duration_seconds: number
+          egress_id: string | null
+          ended_at: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          meeting_id: string
+          provider: string
+          started_at: string
+          started_by: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_recordings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       can_manage_meeting_access: {
         Args: { _meeting_id: string; _user_id: string }
         Returns: boolean
@@ -5380,6 +5406,32 @@ export type Database = {
         Args: { _id: string; _seconds: number; _worker: string }
         Returns: boolean
       }
+      fail_meeting_recording: {
+        Args: { _error: string; _recording_id: string }
+        Returns: {
+          created_at: string
+          duration_seconds: number
+          egress_id: string | null
+          ended_at: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          meeting_id: string
+          provider: string
+          started_at: string
+          started_by: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_recordings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       fail_outbox_event: {
         Args: {
           _error: string
@@ -5396,6 +5448,39 @@ export type Database = {
           _meeting_id: string
         }
         Returns: undefined
+      }
+      finalize_meeting_recording_from_egress: {
+        Args: {
+          _duration_seconds?: number
+          _egress_id: string
+          _error?: string
+          _file_size_bytes?: number
+          _file_url?: string
+          _status: string
+        }
+        Returns: {
+          created_at: string
+          duration_seconds: number
+          egress_id: string | null
+          ended_at: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          meeting_id: string
+          provider: string
+          started_at: string
+          started_by: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_recordings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       fire_workflow_event: {
         Args: { _event_type: string; _payload?: Json; _workspace_id: string }

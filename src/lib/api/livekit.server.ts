@@ -192,3 +192,93 @@ export async function listRooms(config: LiveKitConfig): Promise<LiveKitRoom[]> {
   const data = (await res.json()) as { rooms?: LiveKitRoom[] };
   return data.rooms ?? [];
 }
+
+// ============ Egress (ghi hình thật) ============
+
+async function signEgressToken(config: LiveKitConfig, room: string, ttlSeconds = 60): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "HS256", typ: "JWT" };
+  const payload = {
+    iss: config.apiKey,
+    sub: "uniwork-egress",
+    nbf: now - 5,
+    iat: now,
+    exp: now + ttlSeconds,
+    video: { roomRecord: true, roomAdmin: true, room },
+  };
+  const signingInput = `${b64url(enc.encode(JSON.stringify(header)))}.${b64url(enc.encode(JSON.stringify(payload)))}`;
+  const sig = new Uint8Array(
+    await crypto.subtle.sign("HMAC", await hmacKey(config.apiSecret), enc.encode(signingInput)),
+  );
+  return `${signingInput}.${b64url(sig)}`;
+}
+
+async function egressRpc<T>(config: LiveKitConfig, method: string, room: string, body: unknown): Promise<T> {
+  const token = await signEgressToken(config, room);
+  const res = await fetch(`${httpBase(config.url)}/twirp/livekit.Egress/${method}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`LiveKit ${method} failed [${res.status}]: ${await res.text()}`);
+  }
+  return (await res.json()) as T;
+}
+
+export interface EgressS3Target {
+  endpoint: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
+}
+
+export interface EgressInfo {
+  egress_id?: string;
+  egressId?: string;
+  status?: string;
+  error?: string;
+  file?: { filename?: string; size?: string | number; duration?: string | number; location?: string };
+  file_results?: Array<{ filename?: string; size?: string | number; duration?: string | number; location?: string }>;
+  fileResults?: Array<{ filename?: string; size?: string | number; duration?: string | number; location?: string }>;
+}
+
+export function egressIdOf(info: EgressInfo | undefined): string | null {
+  return info?.egress_id ?? info?.egressId ?? null;
+}
+
+/** Bắt đầu ghi hình toàn phòng (room composite → MP4 lên S3). */
+export async function startRoomCompositeEgress(input: {
+  config: LiveKitConfig;
+  room: string;
+  filepath: string;
+  s3: EgressS3Target;
+  layout?: string;
+}): Promise<EgressInfo> {
+  return egressRpc<EgressInfo>(input.config, "StartRoomCompositeEgress", input.room, {
+    room_name: input.room,
+    layout: input.layout ?? "grid",
+    audio_only: false,
+    file_outputs: [
+      {
+        file_type: "MP4",
+        filepath: input.filepath,
+        disable_manifest: true,
+        s3: {
+          access_key: input.s3.accessKeyId,
+          secret: input.s3.secretAccessKey,
+          region: input.s3.region,
+          endpoint: input.s3.endpoint,
+          bucket: input.s3.bucket,
+          force_path_style: input.s3.forcePathStyle,
+        },
+      },
+    ],
+  });
+}
+
+export async function stopEgress(config: LiveKitConfig, room: string, egressId: string): Promise<EgressInfo> {
+  return egressRpc<EgressInfo>(config, "StopEgress", room, { egress_id: egressId });
+}
