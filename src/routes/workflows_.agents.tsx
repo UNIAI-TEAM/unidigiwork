@@ -57,8 +57,17 @@ import {
   skillsGranting,
 } from "@/domain/workflow-agents/skills";
 import { AI_AGENT_DOMAINS, matchDomainFromSkills, skillsForDomain } from "@/domain/workflow-agents/skills";
+import {
+  AI_WORKER_PROFILES,
+  AI_WORKER_PROFILE_MAP,
+  agentDefaultsFromWorkerProfile,
+  skillsForWorkerProfile,
+} from "@/domain/ai-workforce/profiles";
 
 export const Route = createFileRoute("/workflows_/agents")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    profile: typeof s.profile === "string" ? s.profile : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Agent Builder · UNIWORK" },
@@ -80,6 +89,7 @@ type AgentRow = {
   conditions: AgentCondition[] | null;
   action_type: AiActionType;
   skills: string[] | null;
+  worker_profile: string | null;
   allowed_action_types: string[] | null;
   allowed_sources: string[] | null;
   instruction: string;
@@ -95,6 +105,7 @@ const emptyDraft = (workspaceId: string) => ({
   conditions: [] as AgentCondition[],
   actionType: "CREATE_TASK" as AiActionType,
   skills: ["PROPOSE_TASK"] as string[],
+  workerProfile: null as string | null,
   allowedActionTypes: [...AI_ACTION_TYPES] as AiActionType[],
   allowedSources: ["WORKFLOW_AGENT"] as AiActionSource[],
   instruction: "",
@@ -103,6 +114,7 @@ const emptyDraft = (workspaceId: string) => ({
 
 function AgentBuilderPage() {
   const [open, setOpen] = useSidebarState();
+  const search = Route.useSearch();
   const qc = useQueryClient();
   const [workspaceId, setWorkspaceId] = useState<string>("");
   const [draft, setDraft] = useState<ReturnType<typeof emptyDraft> | null>(null);
@@ -110,10 +122,29 @@ function AgentBuilderPage() {
   const [proposals, setProposals] = useState<ProposedAiAction[]>([]);
   const [proposing, setProposing] = useState<string | null>(null);
   const derivedAllowed = useMemo(() => deriveAllowedFromSkills(draft?.skills ?? []), [draft?.skills]);
+  const [prefilled, setPrefilled] = useState(false);
 
   const wsQuery = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const workspaces = (wsQuery.data ?? []) as { id: string; name: string }[];
   const activeWs = workspaceId || workspaces[0]?.id || "";
+
+  // Mở sẵn dialog tạo agent từ hồ sơ nhân sự AI (deep-link từ /ai-workforce).
+  if (!prefilled && activeWs && search.profile && AI_WORKER_PROFILE_MAP[search.profile]) {
+    const defaults = agentDefaultsFromWorkerProfile(search.profile)!;
+    setPrefilled(true);
+    setDraft({
+      ...emptyDraft(activeWs),
+      name: defaults.name,
+      description: defaults.description,
+      triggerType: defaults.triggerType,
+      actionType: defaults.actionType,
+      skills: defaults.skills,
+      workerProfile: defaults.profile.id,
+      allowedActionTypes: defaults.allowedActionTypes,
+      allowedSources: defaults.allowedSources as AiActionSource[],
+      instruction: defaults.instruction,
+    });
+  }
 
   const agentsQuery = useQuery({
     queryKey: ["workflow-agents", activeWs],
@@ -153,6 +184,7 @@ function AgentBuilderPage() {
           conditions: d.conditions,
           actionType: d.actionType,
           skills: d.skills,
+          workerProfile: d.workerProfile,
           allowedActionTypes: d.allowedActionTypes.length ? d.allowedActionTypes : [d.actionType],
           allowedSources: d.allowedSources.length ? d.allowedSources : ["WORKFLOW_AGENT"],
           instruction: d.instruction,
@@ -193,7 +225,12 @@ function AgentBuilderPage() {
       const proposal = await propose({
         data: {
           query: buildAgentQuery(
-            { instruction: activeAgent.instruction, actionType: activeAgent.action_type, triggerType: activeAgent.trigger_type },
+            {
+              instruction: activeAgent.instruction,
+              actionType: activeAgent.action_type,
+              triggerType: activeAgent.trigger_type,
+              persona: AI_WORKER_PROFILE_MAP[activeAgent.worker_profile ?? ""]?.persona ?? null,
+            },
             candidate,
           ),
           actionType: activeAgent.action_type,
