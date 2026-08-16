@@ -6,6 +6,8 @@ import type {
   MeetingOpenQuestion,
   MeetingRisk,
   MeetingSummary,
+  SummaryChunkProgress,
+  SummaryProgress,
   SummarySource,
 } from "@/domain/meeting-intelligence/contracts";
 
