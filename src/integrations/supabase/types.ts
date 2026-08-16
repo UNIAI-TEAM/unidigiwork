@@ -5002,6 +5002,10 @@ export type Database = {
         Args: { _event_type: string; _payload?: Json; _workspace_id: string }
         Returns: number
       }
+      get_dashboard_ai_summary: {
+        Args: { _day_end?: string; _day_start?: string; _workspace_id?: string }
+        Returns: Json
+      }
       get_meeting_stats: { Args: { _meeting_id: string }; Returns: Json }
       get_my_workflow_permissions: {
         Args: { _workspace_id: string }
