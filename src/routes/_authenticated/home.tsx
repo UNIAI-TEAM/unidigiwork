@@ -88,6 +88,17 @@ function HomePage() {
   const markEmailRead = useServerFn(setEmailMessagesRead);
   const router = useRouter();
 
+  const isRefreshing = homeQuery.isFetching || briefQuery.isFetching;
+
+  const refreshAll = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["home", "summary", tenantId] }),
+      qc.invalidateQueries({ queryKey: ["home", "ai-brief", tenantId] }),
+      qc.invalidateQueries({ queryKey: ["notifications"] }),
+      qc.invalidateQueries({ queryKey: ["unread-counts"] }),
+    ]);
+  };
+
   const homeKey = ["home", "summary", tenantId] as const;
 
   // Optimistic: đánh dấu dòng "done" ngay, rollback snapshot nếu RPC lỗi.
