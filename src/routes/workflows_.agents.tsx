@@ -119,6 +119,7 @@ function AgentBuilderPage() {
   const evaluate = useServerFn(evaluateWorkflowAgent);
   const propose = useServerFn(proposeAiAction);
   const record = useServerFn(recordAgentProposal);
+  const assertAllowed = useServerFn(assertAgentActionAllowed);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["workflow-agents", activeWs] });
@@ -136,6 +137,8 @@ function AgentBuilderPage() {
           triggerType: d.triggerType,
           conditions: d.conditions,
           actionType: d.actionType,
+          allowedActionTypes: d.allowedActionTypes.length ? d.allowedActionTypes : [d.actionType],
+          allowedSources: d.allowedSources.length ? d.allowedSources : ["WORKFLOW_AGENT"],
           instruction: d.instruction,
           enabled: d.enabled,
         },
@@ -170,6 +173,7 @@ function AgentBuilderPage() {
     if (!candidate) return;
     setProposing(candidateId);
     try {
+      await assertAllowed({ data: { agentId: activeAgent.id, actionType: activeAgent.action_type, source: "WORKFLOW_AGENT" } });
       const proposal = await propose({
         data: {
           query: buildAgentQuery(
