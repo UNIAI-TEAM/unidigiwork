@@ -4337,6 +4337,7 @@ export type Database = {
           trigger_type: string
           updated_at: string
           updated_by: string | null
+          worker_profile: string | null
           workspace_id: string
         }
         Insert: {
@@ -4359,6 +4360,7 @@ export type Database = {
           trigger_type: string
           updated_at?: string
           updated_by?: string | null
+          worker_profile?: string | null
           workspace_id: string
         }
         Update: {
@@ -4381,6 +4383,7 @@ export type Database = {
           trigger_type?: string
           updated_at?: string
           updated_by?: string | null
+          worker_profile?: string | null
           workspace_id?: string
         }
         Relationships: [
