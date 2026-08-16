@@ -514,6 +514,11 @@ function TaskDetailPage() {
                     <CheckCircle2 className="h-4 w-4" />
                     {task.status === "done" ? "Mở lại công việc" : "Đánh dấu hoàn thành"}
                   </button>
+                  <RelatedWorkPanel
+                    entityType="TASK"
+                    entityId={id}
+                    className="rounded-xl border border-border bg-surface p-4"
+                  />
                 </aside>
               </div>
             )}
