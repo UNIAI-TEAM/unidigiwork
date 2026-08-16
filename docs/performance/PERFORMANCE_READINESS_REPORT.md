@@ -9,6 +9,21 @@ Ngày: 2026-08-15 · Môi trường: Lovable Cloud (preview DB, dataset dev nh�
 | Smoke | 50 | 2m10s | 12.9 | 195 ms | 217 ms | 546 ms | 0.00% | **PASS** |
 | Tier-250 | 250 | 90s | 85.1 | 196 ms | 286 ms (list 267 / rpc p95 1.13 s) | 1.68 s max | 0.00% | **PASS có cảnh báo** — RPC p95 vượt ngưỡng 300 ms |
 | Tier-500 | 500 | 3m58s | 132.1 | 174 ms | 191 ms (list 190 / rpc 189 / heavy 204) | 485 ms (p99 list), max 965 ms | 0.00% | **PASS** — toàn bộ threshold đạt |
+| Tier-1000 | 1000 | 4m36s | 162.8 | 193 ms | **28.4 s** (list 28.3 / rpc 28.6 / heavy 28.8) | 45.3 s (p99 list), max 60 s (timeout) | 0.15% | **FAIL** — sập đuôi latency ở steady 1.000 VU |
+
+### Tier-1000 (2026-08-16) — điểm nghẽn mới
+45.017 request, 26.419 iteration, 72 request lỗi (toàn bộ là **request timeout 60 s**), 47 check fail.
+Median vẫn 193 ms (bằng 500 VU) nhưng p90 nhảy lên 3,08 s và p95 lên 28,4 s → **không phải DB chậm mà
+là hàng đợi**: request nằm chờ, khi được phục vụ thì vẫn nhanh. Snapshot DB ngay sau test:
+connections 22/60, pool clients 1/200, disk 17%, memory 69%, 0 restart — Postgres **không** bão hoà.
+
+Kết luận điểm nghẽn: tầng **API gateway/PostgREST concurrency + egress** (mọi kind list/rpc/heavy đều
+degrade đồng đều, đúng dấu hiệu nghẽn chung một hàng đợi, không phải một query xấu). Hành động:
+1. Nâng instance Lovable Cloud (compute) rồi đo lại — đây là biến số duy nhất chưa thử.
+2. Giảm số request/người: gộp 3 call dashboard thành 1 RPC `get_dashboard_bundle`.
+3. Tăng staleTime/cache client cho list ít đổi (meetings, documents) để cắt QPS nền.
+4. Đo lại từ runner ngoài sandbox để loại bỏ nghi ngờ giới hạn egress phía load generator.
+Artifact: `tests/performance/artifacts/tier-1000vu.json` · script: `tests/performance/k6/tier-1000.js`.
 
 Tier-500 (2026-08-15, sau khi áp dụng PERF-001…009): 31.391 request, 18.383 iteration, 0 lỗi,
 18.383/18.383 check pass. Đuôi RPC p95 1,13 s ở mốc 250 VU đã biến mất sau khi `getUnreadCounts`
@@ -38,7 +53,7 @@ request lỗi nào ở 250 VU; đuôi p95 của RPC tăng là dấu hiệu hàng
 | 100 users | **READY** | đo thực, 0% lỗi, p95 217 ms |
 | 250 users | **READY_WITH_CAVEATS** | đo thực, 0% lỗi; RPC p95 chạm 1.1 s ở đuôi |
 | 500 users | **READY** | đo thực 2026-08-15, 0% lỗi, p95 191 ms, mọi threshold pass |
-| 1.000 users | **NOT_VERIFIED** | như trên + cần quan trắc outbox/latency |
+| 1.000 users | **FAIL (đo thực 2026-08-16)** | p95 28,4 s, 0,15% timeout; nghẽn ở tầng API, không phải Postgres |
 | 2.500 / 5.000 users | **BLOCKED — INSUFFICIENT EVIDENCE** | thiếu 3 điều kiện bắt buộc (mục 4) |
 
 **Giới hạn an toàn khuyến nghị hiện tại: ~250 concurrent users**, với điều kiện dataset còn nhỏ.
