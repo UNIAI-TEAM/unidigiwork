@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { LogIn } from "lucide-react";
 import { useI18n, LanguageToggle } from "@/lib/i18n";
-import { ThemeToggle } from "@/lib/theme";
+import { ThemeToggle, ToneToggle } from "@/lib/theme";
 import type { ReactNode } from "react";
 
 export function PublicShell({ children, active }: { children: ReactNode; active?: PublicNav }) {
@@ -51,7 +51,8 @@ function PublicHeader({ active }: { active?: PublicNav }) {
         </nav>
         <div className="flex items-center gap-2">
           <LanguageToggle />
-          <ThemeToggle />
+          <ToneToggle />
+      <ThemeToggle />
           <Link
             to="/auth"
             className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground sm:inline"
