@@ -236,6 +236,13 @@ export interface AiActionExecutionResult {
   href?: string;
   message: string;
   errorCode?: string;
+  /** Agent được gán tự động theo lĩnh vực công việc (nếu có). */
+  assignedAgent?: {
+    agentId: string;
+    agentName: string;
+    profileName: string | null;
+    reason: string;
+  } | null;
 }
 
 export const ACTION_ERROR_MESSAGE: Record<string, string> = {
