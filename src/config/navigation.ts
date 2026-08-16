@@ -6,6 +6,7 @@
  * (xem src/lib/architecture/navigation-config.test.ts).
  */
 import {
+  Home,
   Inbox,
   ListChecks,
   Calendar,
@@ -85,6 +86,17 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export const NAV_ITEMS: NavItem[] = [
+  // HOME V2 — trang điều hành công việc cá nhân.
+  {
+    id: "home",
+    labelKey: "nav.home",
+    icon: Home,
+    href: "/home",
+    group: "home",
+    match: ["/home"],
+    visibility: "everyone",
+    order: 0,
+  },
   // HOME — điểm bắt đầu là việc của tôi, không phải KPI dashboard.
   {
     id: "my-work",
