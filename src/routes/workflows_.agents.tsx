@@ -45,6 +45,16 @@ import {
   type AgentCondition,
   type AgentTrigger,
 } from "@/domain/workflow-agents/contracts";
+import {
+  AI_SKILL_KINDS,
+  AI_SKILL_KIND_LABELS,
+  AI_SKILL_KIND_HINTS,
+  AI_SKILL_MAP,
+  deriveAllowedFromSkills,
+  normalizeSkills,
+  skillsByKind,
+  skillsGranting,
+} from "@/domain/workflow-agents/skills";
 
 export const Route = createFileRoute("/workflows_/agents")({
   head: () => ({
@@ -67,6 +77,7 @@ type AgentRow = {
   trigger_type: AgentTrigger;
   conditions: AgentCondition[] | null;
   action_type: AiActionType;
+  skills: string[] | null;
   allowed_action_types: string[] | null;
   allowed_sources: string[] | null;
   instruction: string;
@@ -81,6 +92,7 @@ const emptyDraft = (workspaceId: string) => ({
   triggerType: "TASK_OVERDUE" as AgentTrigger,
   conditions: [] as AgentCondition[],
   actionType: "CREATE_TASK" as AiActionType,
+  skills: ["PROPOSE_TASK"] as string[],
   allowedActionTypes: [...AI_ACTION_TYPES] as AiActionType[],
   allowedSources: ["WORKFLOW_AGENT"] as AiActionSource[],
   instruction: "",
@@ -95,6 +107,7 @@ function AgentBuilderPage() {
   const [evaluation, setEvaluation] = useState<(AgentEvaluation & { agentName: string }) | null>(null);
   const [proposals, setProposals] = useState<ProposedAiAction[]>([]);
   const [proposing, setProposing] = useState<string | null>(null);
+  const derivedAllowed = useMemo(() => deriveAllowedFromSkills(draft?.skills ?? []), [draft?.skills]);
 
   const wsQuery = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const workspaces = (wsQuery.data ?? []) as { id: string; name: string }[];
@@ -137,6 +150,7 @@ function AgentBuilderPage() {
           triggerType: d.triggerType,
           conditions: d.conditions,
           actionType: d.actionType,
+          skills: d.skills,
           allowedActionTypes: d.allowedActionTypes.length ? d.allowedActionTypes : [d.actionType],
           allowedSources: d.allowedSources.length ? d.allowedSources : ["WORKFLOW_AGENT"],
           instruction: d.instruction,
@@ -259,10 +273,23 @@ function AgentBuilderPage() {
                           <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" /> Cần phê duyệt</Badge>
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground">Allowlist:</span>
-                          {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
-                            <Badge key={t} variant="secondary" className="text-[11px]">{AI_ACTION_TOOLS[t]?.label ?? t}</Badge>
-                          ))}
+                          <span className="text-xs text-muted-foreground">Kỹ năng AI:</span>
+                          {normalizeSkills(a.skills).length === 0 ? (
+                            <>
+                              <Badge variant="outline" className="text-[11px]">Chưa cấu hình</Badge>
+                              {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
+                                <Badge key={t} variant="secondary" className="text-[11px]">
+                                  {AI_ACTION_TOOLS[t]?.label ?? t}
+                                </Badge>
+                              ))}
+                            </>
+                          ) : (
+                            normalizeSkills(a.skills).map((id) => (
+                              <Badge key={id} variant="secondary" className="text-[11px]">
+                                {AI_SKILL_KIND_LABELS[AI_SKILL_MAP[id]!.kind]} · {AI_SKILL_MAP[id]!.name}
+                              </Badge>
+                            ))
+                          )}
                           {normalizeAllowedSources(a.allowed_sources).map((s) => (
                             <Badge key={s} variant="outline" className="text-[11px]">{AI_ACTION_SOURCE_LABELS[s]}</Badge>
                           ))}
@@ -297,6 +324,7 @@ function AgentBuilderPage() {
                               triggerType: a.trigger_type,
                               conditions: a.conditions ?? [],
                               actionType: a.action_type,
+                              skills: normalizeSkills(a.skills),
                               allowedActionTypes: normalizeAllowedActionTypes(a.allowed_action_types),
                               allowedSources: normalizeAllowedSources(a.allowed_sources),
                               instruction: a.instruction ?? "",
@@ -397,13 +425,21 @@ function AgentBuilderPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Hành động AI đề xuất</Label>
-                  <Select value={draft.actionType} onValueChange={(v) => setDraft({ ...draft, actionType: v as AiActionType })}>
+                  <Select
+                    value={draft.actionType}
+                    disabled={derivedAllowed.actionTypes.length === 0}
+                    onValueChange={(v) => setDraft({ ...draft, actionType: v as AiActionType })}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {draft.allowedActionTypes.map((t) => <SelectItem key={t} value={t}>{AI_ACTION_TOOLS[t].label}</SelectItem>)}
+                      {derivedAllowed.actionTypes.map((t) => <SelectItem key={t} value={t}>{AI_ACTION_TOOLS[t].label}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Chỉ liệt kê các loại đang bật trong allowlist bên dưới.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {derivedAllowed.actionTypes.length === 0
+                      ? "Bật ít nhất một kỹ năng cho phép đề xuất hành động ở phần bên dưới."
+                      : "Danh sách suy ra từ kỹ năng AI đang bật."}
+                  </p>
                 </div>
               </div>
 
@@ -411,65 +447,75 @@ function AgentBuilderPage() {
                 <div className="flex items-start gap-2">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <div>
-                    <Label className="text-sm">Allowlist AI Action</Label>
+                    <Label className="text-sm">Kỹ năng AI của agent</Label>
                     <p className="text-xs text-muted-foreground">
-                      Bật/tắt loại hành động và nguồn mà agent này được phép đề xuất. Ngoài danh sách này, hệ thống chặn ở cả UI và máy chủ.
+                      Bật từng kỹ năng agent được dùng. Nguồn dữ liệu và loại hành động được suy ra từ kỹ năng; ngoài phạm vi này hệ thống chặn ở cả giao diện và máy chủ.
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Loại hành động</p>
-                  {AI_ACTION_TYPES.map((t) => {
-                    const on = draft.allowedActionTypes.includes(t);
-                    const last = on && draft.allowedActionTypes.length === 1;
-                    return (
-                      <div key={t} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm">{AI_ACTION_TOOLS[t].label}</p>
-                          <p className="text-xs text-muted-foreground">Rủi ro {AI_ACTION_TOOLS[t].risk} · luôn cần phê duyệt</p>
+                {AI_SKILL_KINDS.map((kind) => (
+                  <div key={kind} className="space-y-2">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {AI_SKILL_KIND_LABELS[kind]}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{AI_SKILL_KIND_HINTS[kind]}</p>
+                    </div>
+                    {skillsByKind(kind).map((skill) => {
+                      const on = draft.skills.includes(skill.id);
+                      return (
+                        <div key={skill.id} className="flex min-h-11 items-start justify-between gap-3 rounded-md border border-border p-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">{skill.name}</p>
+                            <p className="text-xs text-muted-foreground">{skill.description}</p>
+                            <p className="mt-0.5 text-xs italic text-muted-foreground">Ví dụ: {skill.example}</p>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {skill.actionTypes.length === 0 ? (
+                                <Badge variant="outline" className="text-[11px]">Chỉ đọc</Badge>
+                              ) : (
+                                skill.actionTypes.map((t) => (
+                                  <Badge key={t} variant="secondary" className="text-[11px]">
+                                    {AI_ACTION_TOOLS[t].label}
+                                  </Badge>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                          <Switch
+                            checked={on}
+                            onCheckedChange={(v) => {
+                              const next = normalizeSkills(
+                                v ? [...draft.skills, skill.id] : draft.skills.filter((x) => x !== skill.id),
+                              );
+                              const allowed = deriveAllowedFromSkills(next);
+                              setDraft({
+                                ...draft,
+                                skills: next,
+                                allowedActionTypes: allowed.actionTypes.length ? allowed.actionTypes : [draft.actionType],
+                                allowedSources: allowed.sources.length ? allowed.sources : ["WORKFLOW_AGENT"],
+                                actionType: allowed.actionTypes.includes(draft.actionType)
+                                  ? draft.actionType
+                                  : allowed.actionTypes[0] ?? draft.actionType,
+                              });
+                            }}
+                          />
                         </div>
-                        <Switch
-                          checked={on}
-                          disabled={last}
-                          onCheckedChange={(v) => {
-                            const next = v
-                              ? [...draft.allowedActionTypes, t]
-                              : draft.allowedActionTypes.filter((x) => x !== t);
-                            if (!next.length) return;
-                            setDraft({
-                              ...draft,
-                              allowedActionTypes: AI_ACTION_TYPES.filter((x) => next.includes(x)),
-                              actionType: next.includes(draft.actionType) ? draft.actionType : next[0]!,
-                            });
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                ))}
 
-                <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nguồn được phép</p>
-                  {AI_ACTION_SOURCES.map((s) => {
-                    const on = draft.allowedSources.includes(s);
-                    const last = on && draft.allowedSources.length === 1;
-                    return (
-                      <div key={s} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3">
-                        <p className="truncate text-sm">{AI_ACTION_SOURCE_LABELS[s]}</p>
-                        <Switch
-                          checked={on}
-                          disabled={last}
-                          onCheckedChange={(v) => {
-                            const next = v ? [...draft.allowedSources, s] : draft.allowedSources.filter((x) => x !== s);
-                            if (!next.length) return;
-                            setDraft({ ...draft, allowedSources: AI_ACTION_SOURCES.filter((x) => next.includes(x)) });
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
+                <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-muted/50 p-2">
+                  <span className="text-xs text-muted-foreground">Nguồn dữ liệu suy ra:</span>
+                  {derivedAllowed.sources.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : (
+                    derivedAllowed.sources.map((s) => (
+                      <Badge key={s} variant="outline" className="text-[11px]">{AI_ACTION_SOURCE_LABELS[s]}</Badge>
+                    ))
+                  )}
+              </div>
               </div>
 
               <div className="space-y-2">

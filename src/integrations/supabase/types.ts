@@ -4257,6 +4257,7 @@ export type Database = {
           name: string
           requires_approval: boolean
           row_version: number
+          skills: string[]
           tenant_id: string
           trigger_type: string
           updated_at: string
@@ -4278,6 +4279,7 @@ export type Database = {
           name: string
           requires_approval?: boolean
           row_version?: number
+          skills?: string[]
           tenant_id: string
           trigger_type: string
           updated_at?: string
@@ -4299,6 +4301,7 @@ export type Database = {
           name?: string
           requires_approval?: boolean
           row_version?: number
+          skills?: string[]
           tenant_id?: string
           trigger_type?: string
           updated_at?: string
