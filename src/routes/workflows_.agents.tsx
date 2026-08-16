@@ -24,17 +24,21 @@ import {
   evaluateWorkflowAgent,
   recordAgentProposal,
   listWorkflowAgentRuns,
+  assertAgentActionAllowed,
   type AgentEvaluation,
 } from "@/lib/api/workflow-agents.functions";
 import { proposeAiAction } from "@/lib/api/ai-actions.functions";
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import type { ProposedAiAction } from "@/domain/ai-actions/contracts";
-import { AI_ACTION_TOOLS, AI_ACTION_TYPES, type AiActionType } from "@/domain/ai-actions/contracts";
+import { AI_ACTION_TOOLS, AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
 import {
   AGENT_TRIGGERS,
   AGENT_TRIGGER_LABELS,
   CONDITION_OPERATORS,
   OPERATOR_LABELS,
+  AI_ACTION_SOURCE_LABELS,
+  normalizeAllowedActionTypes,
+  normalizeAllowedSources,
   buildAgentQuery,
   conditionFieldsFor,
   describeCondition,
@@ -63,6 +67,8 @@ type AgentRow = {
   trigger_type: AgentTrigger;
   conditions: AgentCondition[] | null;
   action_type: AiActionType;
+  allowed_action_types: string[] | null;
+  allowed_sources: string[] | null;
   instruction: string;
   enabled: boolean;
 };
@@ -75,6 +81,8 @@ const emptyDraft = (workspaceId: string) => ({
   triggerType: "TASK_OVERDUE" as AgentTrigger,
   conditions: [] as AgentCondition[],
   actionType: "CREATE_TASK" as AiActionType,
+  allowedActionTypes: [...AI_ACTION_TYPES] as AiActionType[],
+  allowedSources: ["WORKFLOW_AGENT"] as AiActionSource[],
   instruction: "",
   enabled: true,
 });
