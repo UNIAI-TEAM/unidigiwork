@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Circle, Loader2, Download, Timer, Users, Video } from "lucide-react";
 import {
   getMeetingStats,
+  getMeetingRecordingDownloadUrl,
   startMeetingRecording,
   stopMeetingRecording,
   type MeetingStatsDTO,
@@ -74,6 +75,12 @@ export function MeetingRecordingPanel({ meetingId }: { meetingId: string }) {
       toast.success("Đã dừng ghi hình và lưu thống kê.");
     },
     onError: (e) => onError(e, "Không dừng được ghi hình."),
+  });
+
+  const downloadMut = useMutation({
+    mutationFn: (recordingId: string) => getMeetingRecordingDownloadUrl({ data: { recordingId } }),
+    onSuccess: (res) => window.open(res.url, "_blank", "noopener"),
+    onError: () => toast.error("Bản ghi chưa sẵn sàng để tải."),
   });
 
   if (isLoading) {
@@ -150,14 +157,19 @@ export function MeetingRecordingPanel({ meetingId }: { meetingId: string }) {
                   <p className="mt-1 text-[11px] text-destructive">{r.error_message}</p>
                 )}
                 {r.file_url && (
-                  <a
-                    href={r.file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                  <button
+                    type="button"
+                    onClick={() => downloadMut.mutate(r.id)}
+                    disabled={downloadMut.isPending}
+                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-60"
                   >
-                    <Download className="h-3 w-3" /> Tải bản ghi
-                  </a>
+                    {downloadMut.isPending && downloadMut.variables === r.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Download className="h-3 w-3" />
+                    )}
+                    Tải bản ghi
+                  </button>
                 )}
               </li>
             ))}
