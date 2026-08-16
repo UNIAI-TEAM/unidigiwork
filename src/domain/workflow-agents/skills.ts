@@ -188,6 +188,15 @@ export const normalizeSkills = (v: unknown): string[] => {
   return AI_SKILLS.filter((s) => set.has(s.id)).map((s) => s.id);
 };
 
+/** Kỹ năng đề xuất hành động mặc định — tự động bật khi agent chưa có kỹ năng nào. */
+export const DEFAULT_ACTION_SKILL = "PROPOSE_TASK";
+
+/** Đảm bảo agent luôn có ít nhất một kỹ năng. Nếu rỗng, bật kỹ năng đề xuất hành động mặc định. */
+export const ensureDefaultSkill = (skillIds: readonly string[]): string[] => {
+  const normalized = normalizeSkills(skillIds);
+  return normalized.length ? normalized : [DEFAULT_ACTION_SKILL];
+};
+
 /** Allowlist suy ra từ kỹ năng. Không có kỹ năng nào → không cho phép hành động nào. */
 export function deriveAllowedFromSkills(skillIds: readonly string[]): {
   actionTypes: AiActionType[];
