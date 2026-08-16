@@ -11,11 +11,11 @@ export interface QueryIntent {
 }
 
 const ENTITY_TERMS: Array<[RegExp, AiContextEntityType]> = [
-  [/\b(dự án|du an|project|workspace)\b/i, "WORKSPACE"],
+  [/\b(dự án|du an|projects?|workspaces?)\b/i, "WORKSPACE"],
   [/\b(task|công việc|cong viec|việc|đầu việc)\b/i, "TASK"],
-  [/\b(cuộc họp|cuoc hop|họp|meeting)\b/i, "MEETING"],
+  [/\b(cuộc họp|cuoc hop|họp|meetings?)\b/i, "MEETING"],
   [/\b(email|thư|mail)\b/i, "EMAIL"],
-  [/\b(tài liệu|tai lieu|document|file)\b/i, "DOCUMENT"],
+  [/\b(tài liệu|tai lieu|documents?|files?)\b/i, "DOCUMENT"],
   [/\b(chat|tin nhắn|tin nhan|kênh|channel)\b/i, "CHAT_CHANNEL"],
   [/\b(người|nhân sự|thành viên|people|member)\b/i, "PERSON"],
 ];
