@@ -11,10 +11,10 @@ import { usableSources, validateAnswerCitations } from "@/domain/ai-context/cita
 import type { UniCopilotResponse } from "@/domain/ai-copilot/contracts";
 import {
   buildCopilotSystemPrompt,
+  buildFollowUpSuggestions,
   detectCopilotIntent,
   isMutationRequest,
   rootContextKey,
-  suggestionsForRoot,
 } from "@/domain/ai-copilot/contracts";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
@@ -112,6 +112,31 @@ export const askUniCopilot = createServerFn({ method: "POST" })
         ? "UNI V1 chỉ đọc dữ liệu và chưa được phép thay đổi công việc."
         : "Tôi chưa tìm thấy dữ liệu UniWork đủ để trả lời câu hỏi này.");
 
+    // Giữ ngữ cảnh gốc cho lượt sau: ưu tiên root client gửi lên, nếu không có thì lấy root engine đã giải nghĩa.
+    const packRoot = pack.root ?? null;
+    const resolvedRoot: UniCopilotResponse["resolvedRoot"] = data.rootEntity
+      ? {
+          type: data.rootEntity.type,
+          id: data.rootEntity.id,
+          title: packRoot?.title ?? "",
+        }
+      : packRoot
+        ? { type: packRoot.entityType, id: packRoot.entityId, title: packRoot.title }
+        : null;
+
+    const citedSources = (validated.citedSources.length ? validated.citedSources : safeSources.slice(0, 3)).map((s) => ({
+      entityType: s.entityType,
+      title: s.title,
+    }));
+    const askedQuestions = [...(data.history ?? []).filter((t) => t.role === "user").map((t) => t.content), data.query];
+    const suggestions = buildFollowUpSuggestions({
+      intent,
+      root: resolvedRoot ? { type: resolvedRoot.type, id: resolvedRoot.id, title: resolvedRoot.title } : null,
+      citedSources,
+      askedQuestions,
+      modelSuggestions: parsed.suggestions,
+    });
+
     // Telemetry chi phí/ngân sách — fire-and-forget, không lưu nội dung nguồn (§76, §114).
     try {
       await context.supabase.from("ai_context_metrics" as never).insert({
@@ -138,10 +163,11 @@ export const askUniCopilot = createServerFn({ method: "POST" })
       answer,
       sections: parsed.sections,
       sources: validated.citedSources.length ? validated.citedSources : safeSources.slice(0, 5),
-      suggestions: parsed.suggestions.length ? parsed.suggestions : suggestionsForRoot(data.rootEntity ?? null).slice(0, 3),
+      suggestions,
       partial: pack.partial,
       ambiguity: pack.ambiguity ?? null,
-      rootContextKey: rootContextKey(data.rootEntity ?? null),
+      rootContextKey: rootContextKey(resolvedRoot ? { type: resolvedRoot.type, id: resolvedRoot.id } : null),
+      resolvedRoot,
       usage,
       timings: { contextMs, providerMs, totalMs: Date.now() - totalStart },
     };
