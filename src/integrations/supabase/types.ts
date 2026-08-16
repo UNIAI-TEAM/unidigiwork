@@ -2251,6 +2251,56 @@ export type Database = {
           },
         ]
       }
+      outbox_deliveries: {
+        Row: {
+          channel: string
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          event_id: string
+          event_type: string
+          http_status: number | null
+          id: string
+          status: string
+          target: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          event_id: string
+          event_type: string
+          http_status?: number | null
+          id?: string
+          status: string
+          target?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          event_id?: string
+          event_type?: string
+          http_status?: number | null
+          id?: string
+          status?: string
+          target?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbox_deliveries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "outbox_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outbox_events: {
         Row: {
           aggregate_id: string
@@ -3558,6 +3608,57 @@ export type Database = {
           row_version?: number
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      webhook_endpoints: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          event_types: string[]
+          failure_count: number
+          id: string
+          last_delivered_at: string | null
+          last_error: string | null
+          last_status: number | null
+          name: string
+          secret: string
+          tenant_id: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          event_types?: string[]
+          failure_count?: number
+          id?: string
+          last_delivered_at?: string | null
+          last_error?: string | null
+          last_status?: number | null
+          name: string
+          secret?: string
+          tenant_id: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          event_types?: string[]
+          failure_count?: number
+          id?: string
+          last_delivered_at?: string | null
+          last_error?: string | null
+          last_status?: number | null
+          name?: string
+          secret?: string
+          tenant_id?: string
+          updated_at?: string
+          url?: string
         }
         Relationships: []
       }
