@@ -453,6 +453,46 @@ function AgentBuilderPage() {
                 <Label>Mô tả</Label>
                 <Input value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
               </div>
+
+              <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3">
+                <Label className="text-sm">Hồ sơ nhân sự AI</Label>
+                <Select
+                  value={draft.workerProfile ?? "NONE"}
+                  onValueChange={(v) => {
+                    if (v === "NONE") {
+                      setDraft({ ...draft, workerProfile: null });
+                      return;
+                    }
+                    const defaults = agentDefaultsFromWorkerProfile(v);
+                    if (!defaults) return;
+                    setDraft({
+                      ...draft,
+                      workerProfile: defaults.profile.id,
+                      name: draft.name || defaults.name,
+                      description: draft.description || defaults.description,
+                      instruction: draft.instruction || defaults.instruction,
+                      triggerType: defaults.triggerType,
+                      skills: defaults.skills,
+                      allowedActionTypes: defaults.allowedActionTypes,
+                      allowedSources: defaults.allowedSources as AiActionSource[],
+                      actionType: defaults.actionType,
+                    });
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Không gắn hồ sơ" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">Không gắn hồ sơ (tự cấu hình)</SelectItem>
+                    {AI_WORKER_PROFILES.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name} · {p.domain}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {draft.workerProfile
+                    ? `${AI_WORKER_PROFILE_MAP[draft.workerProfile]!.mission} Kỹ năng và phạm vi đề xuất lấy trực tiếp từ hồ sơ; máy chủ chặn mọi kỹ năng ngoài hồ sơ.`
+                    : "Gắn hồ sơ để agent kế thừa kỹ năng, phạm vi hành động và persona của nhân sự AI đó."}
+                </p>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Điều kiện kích hoạt</Label>
