@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Check, Contrast, Minus, Moon, Palette, Plus, Sun, Type } from "lucide-react";
+import { Check, CaseSensitive, Contrast, Minus, Moon, Palette, Plus, Sun, Type } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUiPrefs, saveUiPrefs } from "@/lib/api/user-ui-prefs.functions";
 import {
@@ -15,6 +15,13 @@ type Theme = "light" | "dark";
 export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose";
 export type Contrast = "normal" | "high";
 export type FontScale = "sm" | "md" | "lg" | "xl";
+export type FontFamily = "sans" | "serif" | "mono";
+
+export const FONT_FAMILIES: { id: FontFamily; label: string; sample: string }[] = [
+  { id: "sans", label: "Sans (mặc định)", sample: "ui-sans-serif, system-ui, sans-serif" },
+  { id: "serif", label: "Serif", sample: "ui-serif, Georgia, serif" },
+  { id: "mono", label: "Mono", sample: "ui-monospace, Menlo, monospace" },
+];
 
 export const FONT_SCALES: { id: FontScale; label: string }[] = [
   { id: "sm", label: "Nhỏ" },
@@ -35,6 +42,7 @@ export const TONES: { id: Tone; label: string; swatch: string }[] = [
 const TONE_KEY = "uniwork-tone";
 const CONTRAST_KEY = "uniwork-contrast";
 const FONT_SCALE_KEY = "uniwork-font-scale";
+const FONT_FAMILY_KEY = "uniwork-font-family";
 
 const ThemeCtx = createContext<{
   theme: Theme;
@@ -45,6 +53,8 @@ const ThemeCtx = createContext<{
   setContrast: (c: Contrast) => void;
   fontScale: FontScale;
   setFontScale: (f: FontScale) => void;
+  fontFamily: FontFamily;
+  setFontFamily: (f: FontFamily) => void;
 }>({
   theme: "dark",
   toggle: () => {},
@@ -54,6 +64,8 @@ const ThemeCtx = createContext<{
   setContrast: () => {},
   fontScale: "md",
   setFontScale: () => {},
+  fontFamily: "sans",
+  setFontFamily: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -61,6 +73,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [tone, setTone] = useState<Tone>("violet");
   const [contrast, setContrast] = useState<Contrast>("normal");
   const [fontScale, setFontScale] = useState<FontScale>("md");
+  const [fontFamily, setFontFamily] = useState<FontFamily>("sans");
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
@@ -77,6 +90,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const savedScale = (typeof localStorage !== "undefined" &&
       localStorage.getItem(FONT_SCALE_KEY)) as FontScale | null;
     if (savedScale && FONT_SCALES.some((f) => f.id === savedScale)) setFontScale(savedScale);
+    const savedFamily = (typeof localStorage !== "undefined" &&
+      localStorage.getItem(FONT_FAMILY_KEY)) as FontFamily | null;
+    if (savedFamily && FONT_FAMILIES.some((f) => f.id === savedFamily)) setFontFamily(savedFamily);
   }, []);
 
   // Đồng bộ tuỳ chọn giao diện theo tài khoản (đa thiết bị).
@@ -97,6 +113,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             setContrast(prefs.contrast);
           if (prefs.fontScale && FONT_SCALES.some((f) => f.id === prefs.fontScale))
             setFontScale(prefs.fontScale);
+          if (prefs.fontFamily && FONT_FAMILIES.some((f) => f.id === prefs.fontFamily))
+            setFontFamily(prefs.fontFamily);
         }
         setSynced(true);
       } catch {
@@ -118,6 +136,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     tone?: Tone;
     contrast?: Contrast;
     fontScale?: FontScale;
+    fontFamily?: FontFamily;
   }) => {
     if (!synced) return;
     void saveUiPrefs({ data: patch }).catch(() => {
@@ -164,6 +183,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [fontScale]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-font-family", fontFamily);
+    try {
+      localStorage.setItem(FONT_FAMILY_KEY, fontFamily);
+    } catch {
+      /* ignore */
+    }
+  }, [fontFamily]);
+
   return (
     <ThemeCtx.Provider
       value={{
@@ -188,6 +216,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setFontScale: (f) => {
           setFontScale(f);
           persist({ fontScale: f });
+        },
+        fontFamily,
+        setFontFamily: (f) => {
+          setFontFamily(f);
+          persist({ fontFamily: f });
         },
       }}
     >
