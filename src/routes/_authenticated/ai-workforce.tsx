@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AI_SKILL_KIND_LABELS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
 import { AI_ACTION_TOOLS } from "@/domain/ai-actions/contracts";
+import { AiSkillsManager } from "@/components/ai/ai-skills-manager";
 
 export const Route = createFileRoute("/_authenticated/ai-workforce")({
   head: () => ({
@@ -203,6 +204,8 @@ function AiWorkforcePage() {
                 </li>
               ))}
             </ul>
+          ) : tab === "skills" ? (
+            <AiSkillsManager />
           ) : (
             <div className="mt-6 rounded-2xl border border-dashed border-border bg-surface p-12 text-center text-sm text-muted-foreground">
               Nội dung đang được chuẩn bị.
