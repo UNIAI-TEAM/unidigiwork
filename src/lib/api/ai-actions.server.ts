@@ -44,16 +44,25 @@ export async function listWorkspacePeople(
   ctx: Ctx,
   workspaceId: string,
 ): Promise<{ id: string; label: string; email: string }[]> {
-  const { data, error } = await ctx.supabase
+  // workspace_members.user_id trỏ tới auth.users nên không embed trực tiếp profiles được.
+  const { data: members, error } = await ctx.supabase
     .from("workspace_members")
-    .select("user_id, profiles:user_id(id, display_name, email)")
+    .select("user_id")
     .eq("workspace_id", workspaceId)
     .limit(200);
   if (error) throw new Error(error.message);
-  return (data ?? [])
-    .map((r: any) => r.profiles)
-    .filter(Boolean)
-    .map((p: any) => ({ id: p.id as string, label: (p.display_name || p.email) as string, email: p.email as string }));
+  const ids = Array.from(new Set((members ?? []).map((m: any) => m.user_id).filter(Boolean)));
+  if (ids.length === 0) return [];
+  const { data: profiles, error: pErr } = await ctx.supabase
+    .from("profiles")
+    .select("id, display_name, email")
+    .in("id", ids);
+  if (pErr) throw new Error(pErr.message);
+  return (profiles ?? []).map((p: any) => ({
+    id: p.id as string,
+    label: (p.display_name || p.email) as string,
+    email: (p.email ?? "") as string,
+  }));
 }
 
 const normalize = (s: string) =>
