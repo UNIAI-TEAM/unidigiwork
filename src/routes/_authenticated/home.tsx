@@ -6,7 +6,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { CalendarClock, CheckCircle2, Inbox, Plus } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
-import { getHomeSummary, type HomeTask, type WorkInboxItem } from "@/lib/api/home.functions";
+import {
+  getHomeSummary,
+  type HomeSummary,
+  type HomeTask,
+  type WorkInboxItem,
+} from "@/lib/api/home.functions";
 import { getHomeAiBrief } from "@/lib/api/home-brief.functions";
 import { transitionTask } from "@/lib/api/tasks.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
