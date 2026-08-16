@@ -107,6 +107,8 @@ export const AgentInputBaseSchema = z.object({
   actionType: z.enum(AI_ACTION_TYPES),
   /** Kỹ năng AI được bật cho agent. Allowlist hành động/nguồn suy ra từ đây. */
   skills: z.array(z.string().max(60)).max(30).default([]),
+  /** Hồ sơ nhân sự AI mà agent này đại diện — nguồn cấu hình kỹ năng & persona. */
+  workerProfile: z.string().max(60).nullish(),
   allowedActionTypes: z.array(z.enum(AI_ACTION_TYPES)).min(1).default([...AI_ACTION_TYPES]),
   allowedSources: z.array(z.enum(AI_ACTION_SOURCES)).min(1).default(["WORKFLOW_AGENT"]),
   instruction: z.string().max(2000).default(""),
@@ -218,7 +220,7 @@ const sanitize = (s: string) =>
 
 /** Ghép câu yêu cầu gửi cho lớp AI Action. Agent chỉ được ĐỀ XUẤT. */
 export function buildAgentQuery(
-  agent: { instruction: string; actionType: AiActionType; triggerType: AgentTrigger },
+  agent: { instruction: string; actionType: AiActionType; triggerType: AgentTrigger; persona?: string | null },
   candidate: AgentCandidate,
 ): string {
   const verb: Record<AiActionType, string> = {
@@ -229,5 +231,9 @@ export function buildAgentQuery(
   };
   const instruction = sanitize(agent.instruction || "");
   const ctx = sanitize(candidate.summary || candidate.title);
-  return `${verb[agent.actionType]}: ${instruction || AGENT_TRIGGER_LABELS[agent.triggerType]} — ngữ cảnh: ${ctx}`.slice(0, 480);
+  const persona = agent.persona ? `${sanitize(agent.persona)} ` : "";
+  return `${persona}${verb[agent.actionType]}: ${instruction || AGENT_TRIGGER_LABELS[agent.triggerType]} — ngữ cảnh: ${ctx}`.slice(
+    0,
+    600,
+  );
 }
