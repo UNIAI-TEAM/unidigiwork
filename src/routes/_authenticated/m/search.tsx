@@ -22,6 +22,8 @@ import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { SEARCH_KINDS, type SearchKind } from "@/lib/api/search-universal.server";
 
+const PAGE_SIZE = 30;
+
 export const Route = createFileRoute("/_authenticated/m/search")({
   head: () => ({
     meta: [
@@ -166,7 +168,7 @@ function MobileSearchPage() {
         {enabled && availableKinds.length > 0 && (
           <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
             <FilterChip active={kind === null} onClick={() => setKind(null)}>
-              Tất cả {data ? `(${data.total})` : ""}
+              Tất cả {firstPage ? `(${firstPage.total})` : ""}
             </FilterChip>
             {availableKinds.map((k) => (
               <FilterChip key={k} active={kind === k} onClick={() => setKind(k)}>
@@ -233,6 +235,12 @@ function MobileSearchPage() {
               />
             );
           })
+        )}
+        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
+        {isFetchingNextPage && (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
         )}
       </div>
     </div>
