@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { useActiveWorkspace } from "@/lib/active-workspace";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { SEARCH_KINDS, type SearchKind } from "@/lib/api/search-universal.server";
 
@@ -64,6 +65,15 @@ function MobileSearchPage() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const [kind, setKind] = useState<SearchKind | null>(null);
+  const { workspaceId: activeWorkspaceId, workspaces, ready } = useActiveWorkspace();
+  // null = tất cả workspace; mặc định theo workspace đang làm việc.
+  const [scope, setScope] = useState<string | null>(null);
+  const [scopeTouched, setScopeTouched] = useState(false);
+
+  useEffect(() => {
+    if (!ready || scopeTouched) return;
+    setScope(activeWorkspaceId);
+  }, [ready, activeWorkspaceId, scopeTouched]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 200);
@@ -77,12 +87,13 @@ function MobileSearchPage() {
   const runSearch = useServerFn(universalSearch);
   const enabled = debounced.length >= 2;
   const { data, isFetching } = useQuery({
-    queryKey: ["m-search", debounced, kind],
+    queryKey: ["m-search", debounced, kind, scope],
     queryFn: () =>
       runSearch({
         data: {
           q: debounced,
           kinds: kind ? [kind] : undefined,
+          workspaceId: scope ?? undefined,
           limit: 30,
           offset: 0,
           expandGraph: false,
@@ -139,6 +150,32 @@ function MobileSearchPage() {
             {availableKinds.map((k) => (
               <FilterChip key={k} active={kind === k} onClick={() => setKind(k)}>
                 {KIND_LABEL[k]} {counts?.[k] ? `(${counts[k]})` : ""}
+              </FilterChip>
+            ))}
+          </div>
+        )}
+
+        {workspaces.length > 0 && (
+          <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1">
+            <FilterChip
+              active={scope === null}
+              onClick={() => {
+                setScopeTouched(true);
+                setScope(null);
+              }}
+            >
+              Mọi dự án
+            </FilterChip>
+            {workspaces.map((w) => (
+              <FilterChip
+                key={w.id}
+                active={scope === w.id}
+                onClick={() => {
+                  setScopeTouched(true);
+                  setScope(scope === w.id ? null : w.id);
+                }}
+              >
+                {w.name}
               </FilterChip>
             ))}
           </div>
