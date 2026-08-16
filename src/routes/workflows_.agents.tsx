@@ -272,10 +272,23 @@ function AgentBuilderPage() {
                           <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" /> Cần phê duyệt</Badge>
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground">Allowlist:</span>
-                          {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
-                            <Badge key={t} variant="secondary" className="text-[11px]">{AI_ACTION_TOOLS[t]?.label ?? t}</Badge>
-                          ))}
+                          <span className="text-xs text-muted-foreground">Kỹ năng AI:</span>
+                          {normalizeSkills(a.skills).length === 0 ? (
+                            <>
+                              <Badge variant="outline" className="text-[11px]">Chưa cấu hình</Badge>
+                              {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
+                                <Badge key={t} variant="secondary" className="text-[11px]">
+                                  {AI_ACTION_TOOLS[t]?.label ?? t}
+                                </Badge>
+                              ))}
+                            </>
+                          ) : (
+                            normalizeSkills(a.skills).map((id) => (
+                              <Badge key={id} variant="secondary" className="text-[11px]">
+                                {AI_SKILL_KIND_LABELS[AI_SKILL_MAP[id]!.kind]} · {AI_SKILL_MAP[id]!.name}
+                              </Badge>
+                            ))
+                          )}
                           {normalizeAllowedSources(a.allowed_sources).map((s) => (
                             <Badge key={s} variant="outline" className="text-[11px]">{AI_ACTION_SOURCE_LABELS[s]}</Badge>
                           ))}
