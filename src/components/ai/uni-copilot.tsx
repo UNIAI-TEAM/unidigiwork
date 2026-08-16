@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2 } from "lucide-react";
+import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2, History, CornerDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { askUniCopilot } from "@/lib/api/ai-copilot.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
@@ -62,6 +62,8 @@ export function UniCopilot() {
   const [pinnedRoot, setPinnedRoot] = useState<CopilotRoot>(null);
   // Mobile bottom sheet: 'half' (mặc định) ↔ 'full', kéo xuống để đóng.
   const [snap, setSnap] = useState<"half" | "full">("half");
+  // Lịch sử follow-up đã hỏi (kèm nguồn trích dẫn) — mở/đóng bằng nút Lịch sử.
+  const [showHistory, setShowHistory] = useState(false);
   const [dragY, setDragY] = useState(0);
   const dragRef = useRef<{ startY: number; pointerId: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -83,6 +85,7 @@ export function UniCopilot() {
     setPhase("idle");
     setLastQuery(null);
     setPinnedRoot(null);
+    setShowHistory(false);
   }, []);
 
   // §84/§85 — đổi tenant (hoặc đăng xuất) phải xoá sạch hội thoại + nguồn.
@@ -225,6 +228,40 @@ export function UniCopilot() {
 
   const suggestions = useMemo(() => suggestionsForRoot(effectiveRoot), [effectiveRoot]);
 
+  // Ghép mỗi câu hỏi với câu trả lời tương ứng + nguồn thực sự được trích dẫn.
+  const askedHistory = useMemo(() => {
+    const items: {
+      id: string;
+      question: string;
+      answerId: string | null;
+      sources: ContextSource[];
+      totalSources: number;
+    }[] = [];
+    messages.forEach((m, i) => {
+      if (m.role !== "user") return;
+      const next = messages[i + 1];
+      const answer = next && next.role === "assistant" ? next : null;
+      const cited = answer
+        ? validateAnswerCitations(answer.content, answer.response.sources)
+            .segments.filter((s) => s.type === "citation" && s.source)
+            .map((s) => s.source!)
+        : [];
+      const unique = Array.from(new Map(cited.map((s) => [s.sourceId, s])).values());
+      items.push({
+        id: m.id,
+        question: m.content,
+        answerId: answer?.id ?? null,
+        sources: unique.length > 0 ? unique : (answer?.response.sources.slice(0, 3) ?? []),
+        totalSources: answer?.response.sources.length ?? 0,
+      });
+    });
+    return items;
+  }, [messages]);
+
+  const scrollToMessage = useCallback((id: string) => {
+    document.getElementById(`uni-msg-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
   if (!open) return null;
 
   return (
@@ -275,6 +312,19 @@ export function UniCopilot() {
               {snap === "full" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
             {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Lịch sử câu hỏi"
+                aria-pressed={showHistory}
+                title="Lịch sử câu hỏi đã hỏi"
+                className={showHistory ? "text-primary" : undefined}
+                onClick={() => setShowHistory((v) => !v)}
+              >
+                <History className="h-4 w-4" />
+              </Button>
+            )}
+            {messages.length > 0 && (
               <Button variant="ghost" size="icon" aria-label="Hội thoại mới" onClick={reset}>
                 <RotateCcw className="h-4 w-4" />
               </Button>
@@ -303,6 +353,57 @@ export function UniCopilot() {
           </div>
         )}
 
+        {showHistory && askedHistory.length > 0 && (
+          <div className="max-h-[45%] shrink-0 overflow-y-auto border-b border-border bg-surface/60 px-4 py-3">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Đã hỏi ({askedHistory.length})
+            </p>
+            <ul className="space-y-2">
+              {askedHistory.map((h, idx) => (
+                <li key={h.id} className="rounded-lg border border-border bg-background p-2.5">
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 text-[11px] font-medium text-muted-foreground">{idx + 1}.</span>
+                    <button
+                      onClick={() => (h.answerId ? scrollToMessage(h.answerId) : scrollToMessage(h.id))}
+                      className="min-w-0 flex-1 text-left text-[13px] font-medium hover:underline"
+                      title="Xem lại câu trả lời"
+                    >
+                      {h.question}
+                    </button>
+                    <button
+                      onClick={() => void submit(h.question)}
+                      aria-label="Hỏi lại câu này"
+                      title="Hỏi lại"
+                      className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-surface hover:text-foreground"
+                    >
+                      <CornerDownLeft className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {h.sources.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {h.sources.map((s) => (
+                        <button
+                          key={s.sourceId}
+                          onClick={() => navigate({ to: s.href })}
+                          title={`${ROOT_LABEL[s.entityType]} · ${s.title}`}
+                          className="max-w-full truncate rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface hover:text-foreground"
+                        >
+                          {s.sourceId} · {s.title}
+                        </button>
+                      ))}
+                      {h.totalSources > h.sources.length && (
+                        <span className="rounded-full px-1 py-0.5 text-[11px] text-muted-foreground">
+                          +{h.totalSources - h.sources.length} nguồn khác
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
           {contextNote && <p className="rounded-md bg-surface px-3 py-2 text-xs text-muted-foreground">{contextNote}</p>}
 
@@ -323,11 +424,17 @@ export function UniCopilot() {
 
           {messages.map((m) =>
             m.role === "user" ? (
-              <div key={m.id} className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
+              <div
+                key={m.id}
+                id={`uni-msg-${m.id}`}
+                className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
+              >
                 {m.content}
               </div>
             ) : (
-              <AnswerBlock key={m.id} response={m.response} onOpen={(href) => navigate({ to: href })} onAsk={submit} />
+              <div key={m.id} id={`uni-msg-${m.id}`}>
+                <AnswerBlock response={m.response} onOpen={(href) => navigate({ to: href })} onAsk={submit} />
+              </div>
             ),
           )}
 
