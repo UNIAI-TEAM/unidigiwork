@@ -165,14 +165,34 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
       )}
 
       {!editing ? (
-        <dl className="space-y-1.5">
-          {proposal.preview.map((row) => (
-            <div key={row.label} className="grid grid-cols-[110px_1fr] gap-2">
-              <dt className="text-[12px] text-muted-foreground">{row.label}</dt>
-              <dd className="text-[13px] font-medium break-words">{editedValue(row.label, payload) ?? row.value}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="space-y-2">
+          <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <Eye className="h-3.5 w-3.5 shrink-0" />
+            {changedRows.length > 0
+              ? `${changedRows.length} trường sẽ thay đổi khi bạn xác nhận`
+              : "Không có trường nào bị thay đổi"}
+          </p>
+          <dl className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {rows.map((row) => (
+              <div
+                key={row.label}
+                className={`grid grid-cols-1 gap-0.5 px-2.5 py-2 sm:grid-cols-[130px_minmax(0,1fr)] sm:gap-2 ${
+                  row.willChange ? "bg-primary/5" : ""
+                }`}
+              >
+                <dt className="flex min-w-0 items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <span className="truncate">{row.label}</span>
+                  {row.willChange && (
+                    <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-primary">
+                      sẽ thay đổi
+                    </span>
+                  )}
+                </dt>
+                <dd className="min-w-0 text-[13px] font-medium break-words">{row.value || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       ) : (
         <EditForm proposal={proposal} payload={payload} set={set} />
       )}
@@ -211,23 +231,25 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
 
       {error && <p className="rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-[12px] text-destructive">{error}</p>}
 
-      <footer className="sticky bottom-0 flex flex-wrap gap-2 pt-1">
+      <footer
+        className="sticky bottom-0 -mx-3 grid grid-cols-2 gap-2 border-t border-border bg-background px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:mx-0 sm:flex sm:flex-wrap sm:border-0 sm:px-0 sm:pb-0"
+      >
         <Button
           size="sm"
           onClick={() => void onConfirm()}
           disabled={state === "running" || blocking.length > 0 || (stale && !reviewed)}
-          className="min-h-11 flex-1 md:min-h-9"
+          className="col-span-2 min-h-11 w-full sm:min-h-9 sm:w-auto sm:flex-1"
         >
           {state === "running" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Check className="mr-1.5 h-4 w-4" />}
           {stale ? "Xác nhận lại" : "Xác nhận"}
         </Button>
-        <Button size="sm" variant="outline" className="min-h-11 md:min-h-9" onClick={() => setEditing((v) => !v)}>
+        <Button size="sm" variant="outline" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={() => setEditing((v) => !v)}>
           <Pencil className="mr-1.5 h-3.5 w-3.5" /> {editing ? "Xong" : "Chỉnh sửa"}
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          className="min-h-11 md:min-h-9"
+          className="min-h-11 w-full sm:min-h-9 sm:w-auto"
           onClick={() => {
             void cancel({ data: { actionId: proposal.actionId } });
             setState("cancelled");
