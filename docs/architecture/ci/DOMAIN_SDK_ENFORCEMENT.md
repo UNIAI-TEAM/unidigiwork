@@ -44,6 +44,26 @@ The gate fails when:
 - A client-reachable file declares an inline mock domain constant.
 - `src/sdk/index.ts` stops re-exporting one of the domain barrels.
 
+## Waiver scope (security)
+
+`BATCH_1D_LIST_RPC` waives **read-only** domain queries made with the actor's
+RLS-scoped client (`context.supabase`, or a client passed down from it). It does
+NOT waive:
+
+- **Writes** to domain tables outside a SECURITY DEFINER RPC — gated by rule
+  `server-domain-write-outside-rpc` (own waiver map, own tickets).
+- **Service-role access** (`supabaseAdmin`) to domain tables, which bypasses RLS
+  and tenant isolation — gated by rule `server-admin-client-domain-table`.
+
+Both rules are enforced repo-wide by the same vitest gate, so a waived read file
+cannot silently grow a privileged path. Current accepted exceptions:
+
+| File | Rule | Why it is safe |
+|---|---|---|
+| `src/lib/api/tasks.functions.ts` | write outside RPC | `task_attachments` insert/delete via the actor's RLS client; tenant + permission enforced by policy. Ticket `BATCH_1D_TASK_ATTACHMENTS`. |
+| `src/lib/api/admin.functions.ts` | service-role | `assertAdmin`-gated, `count`-only head query on `documents`, returns no rows. Ticket `ADMIN_PLATFORM_STATS_COUNT`. |
+| `src/routes/api/public/hooks/livekit-reconcile.ts` | service-role | Cron with no user session; apikey-gated read-only scan of stale `live` meetings, all writes via `ingest_meeting_provider_event` RPC (ADR-1E-001). Accepted by design. |
+
 ## Handling pre-existing debt
 
 Known violations at introduction time are recorded in the
@@ -51,12 +71,12 @@ Known violations at introduction time are recorded in the
 file, keyed by relative path with a batch reference. Do **not** add new
 entries. When a refactor lands, delete the entry — the test enforces it.
 
-Current debt:
-
-| File | Reason | Resolved by |
-|---|---|---|
-| `src/routes/_authenticated/documents.tsx` | Direct `supabase.from("documents")` | Batch 1D-API (Documents) |
-| `src/lib/api/admin.functions.ts` | Admin stats `supabase.from("documents")` count | Batch 1D-API (Documents) |
+Current debt lives in `domain-sdk-debt.manifest.json`. Read-only server debt
+(`server-supabase-from-domain`, ticket `BATCH_1D_LIST_RPC`) covers:
+`calendar.functions.ts`, `dashboard.server.ts`, `meeting-rooms.functions.ts`,
+`reports.functions.ts`, `work-graph.functions.ts`, `work-graph.server.ts`,
+`workspace-overview.functions.ts`, `tasks/documents/meetings/workflows.functions.ts`,
+`ai-context.server.ts`. Each is an RLS-scoped SELECT awaiting a list RPC.
 
 ## Server-side scope (src/lib/api, src/server)
 
