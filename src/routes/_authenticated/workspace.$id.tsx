@@ -1,4 +1,5 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
+import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -798,6 +799,12 @@ function WorkspaceDetailPage() {
                     Xem chi tiết →
                   </button>
                 </div>
+                <AskUniPanel
+                  rootEntity={{ type: "WORKSPACE", id: workspaceId }}
+                  workspaceId={workspaceId}
+                  label="Hỏi UNI về dự án này"
+                  suggestions={["Dự án này đang vướng gì?", "Tóm tắt tình trạng dự án", "Tuần này có trao đổi gì?"]}
+                />
                 <RelatedWorkPanel
                   entityType="WORKSPACE"
                   entityId={workspaceId}
