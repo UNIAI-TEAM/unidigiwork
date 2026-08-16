@@ -23,6 +23,7 @@ import type { LucideIcon } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { getSearchFacets } from "@/lib/api/search.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
+import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import type {
   SearchKind,
   UniversalSearchItem,
