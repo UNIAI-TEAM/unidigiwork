@@ -87,6 +87,7 @@ import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
 import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/api/public/hooks/process-quota-exports'
+import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/public/hooks/process-outbox'
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
 import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
@@ -500,6 +501,12 @@ const ApiPublicHooksProcessQuotaExportsRoute =
     path: '/api/public/hooks/process-quota-exports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksProcessOutboxRoute =
+  ApiPublicHooksProcessOutboxRouteImport.update({
+    id: '/api/public/hooks/process-outbox',
+    path: '/api/public/hooks/process-outbox',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksLivekitReconcileRoute =
   ApiPublicHooksLivekitReconcileRouteImport.update({
     id: '/api/public/hooks/livekit-reconcile',
@@ -611,6 +618,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
+  '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRoutesByTo {
@@ -693,6 +701,7 @@ export interface FileRoutesByTo {
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
+  '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRoutesById {
@@ -779,6 +788,7 @@ export interface FileRoutesById {
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
+  '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 export interface FileRouteTypes {
@@ -865,6 +875,7 @@ export interface FileRouteTypes {
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
+    | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -947,6 +958,7 @@ export interface FileRouteTypes {
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
+    | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
   id:
     | '__root__'
@@ -1032,6 +1044,7 @@ export interface FileRouteTypes {
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
+    | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
   fileRoutesById: FileRoutesById
 }
@@ -1061,6 +1074,7 @@ export interface RootRouteChildren {
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
+  ApiPublicHooksProcessOutboxRoute: typeof ApiPublicHooksProcessOutboxRoute
   ApiPublicHooksProcessQuotaExportsRoute: typeof ApiPublicHooksProcessQuotaExportsRoute
 }
 
@@ -1612,6 +1626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksProcessQuotaExportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/process-outbox': {
+      id: '/api/public/hooks/process-outbox'
+      path: '/api/public/hooks/process-outbox'
+      fullPath: '/api/public/hooks/process-outbox'
+      preLoaderRoute: typeof ApiPublicHooksProcessOutboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/livekit-reconcile': {
       id: '/api/public/hooks/livekit-reconcile'
       path: '/api/public/hooks/livekit-reconcile'
@@ -1918,6 +1939,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,
+  ApiPublicHooksProcessOutboxRoute: ApiPublicHooksProcessOutboxRoute,
   ApiPublicHooksProcessQuotaExportsRoute:
     ApiPublicHooksProcessQuotaExportsRoute,
 }
