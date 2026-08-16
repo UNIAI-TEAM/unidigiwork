@@ -14,6 +14,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Sparkles,
+  RefreshCw,
   Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
