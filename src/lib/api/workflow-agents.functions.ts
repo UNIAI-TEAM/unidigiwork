@@ -15,6 +15,7 @@ import {
   type AgentCondition,
 } from "@/domain/workflow-agents/contracts";
 import { AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
+import { deriveAllowedFromSkills, normalizeSkills } from "@/domain/workflow-agents/skills";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
@@ -57,6 +58,12 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
       .maybeSingle();
     if (wsErr || !ws) throw fail("WORKSPACE_NOT_FOUND", "Không tìm thấy không gian làm việc.");
 
+    const skills = normalizeSkills(data.skills);
+    const derived = skills.length ? deriveAllowedFromSkills(skills) : null;
+    if (skills.length && !derived!.actionTypes.includes(data.actionType)) {
+      throw fail("AGENT_ACTION_NOT_ALLOWED", "Hành động đã chọn không nằm trong kỹ năng AI được bật.");
+    }
+
     const row = {
       tenant_id: ws.tenant_id,
       workspace_id: data.workspaceId,
@@ -65,8 +72,13 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
       trigger_type: data.triggerType,
       conditions: data.conditions as never,
       action_type: data.actionType,
-      allowed_action_types: Array.from(new Set([...data.allowedActionTypes, data.actionType])),
-      allowed_sources: Array.from(new Set(data.allowedSources)),
+      skills,
+      allowed_action_types: derived
+        ? Array.from(new Set([...derived.actionTypes, data.actionType]))
+        : Array.from(new Set([...data.allowedActionTypes, data.actionType])),
+      allowed_sources: derived
+        ? Array.from(new Set([...derived.sources, "WORKFLOW_AGENT"]))
+        : Array.from(new Set(data.allowedSources)),
       instruction: data.instruction,
       enabled: data.enabled,
       requires_approval: true,
@@ -293,6 +305,7 @@ export const assertAgentActionAllowed = createServerFn({ method: "POST" })
     }
     return {
       ok: true as const,
+      skills: normalizeSkills((agent as any).skills),
       allowedActionTypes: normalizeAllowedActionTypes((agent as any).allowed_action_types),
       allowedSources: normalizeAllowedSources((agent as any).allowed_sources),
     };
