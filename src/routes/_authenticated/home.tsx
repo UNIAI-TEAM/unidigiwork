@@ -396,6 +396,8 @@ function HomePage() {
                     task={t}
                     selected={i === selectedIdx}
                     completing={completingId === t.id}
+                    checked={checkedSet.has(t.id)}
+                    onCheckedChange={toggleChecked}
                     onComplete={(task) => complete.mutate(task)}
                   />
                 ))
