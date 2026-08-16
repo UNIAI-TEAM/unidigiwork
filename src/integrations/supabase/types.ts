@@ -360,6 +360,81 @@ export type Database = {
           },
         ]
       }
+      ai_skills: {
+        Row: {
+          action_types: string[]
+          code: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string
+          enabled: boolean
+          example: string
+          id: string
+          is_system: boolean
+          kind: string
+          name: string
+          sources: string[]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          action_types?: string[]
+          code: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string
+          enabled?: boolean
+          example?: string
+          id?: string
+          is_system?: boolean
+          kind: string
+          name: string
+          sources?: string[]
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          action_types?: string[]
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string
+          enabled?: boolean
+          example?: string
+          id?: string
+          is_system?: boolean
+          kind?: string
+          name?: string
+          sources?: string[]
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_skills_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_skills_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_events: {
         Row: {
           conversation_id: string | null
