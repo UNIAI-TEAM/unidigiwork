@@ -74,6 +74,8 @@ import {
   describeDisplayMediaError,
 } from "@/lib/screen-share-quality";
 import { useLiveCaptions } from "@/lib/use-live-captions";
+import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
+import { appendMeetingTranscript } from "@/lib/api/meeting-intelligence.functions";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
   openMeetingAttendance,
@@ -274,6 +276,38 @@ function MeetingDetailPage() {
   const manualLeaveRef = useRef(false);
   // Phụ đề trực tiếp (nếu trình duyệt hỗ trợ Web Speech API).
   const captions = useLiveCaptions("vi-VN");
+  // Lưu phụ đề trực tiếp thành biên bản thật (gom mỗi ~10s để giảm số request).
+  const captionFlushRef = useRef<{ start: number | null; last: string }>({ start: null, last: "" });
+  const captionSpeakerRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isRealRoom || !captions.enabled) {
+      captionFlushRef.current = { start: null, last: "" };
+      return;
+    }
+    if (captionFlushRef.current.start === null) captionFlushRef.current.start = Date.now();
+    const startedAt = captionFlushRef.current.start;
+    const timer = window.setInterval(() => {
+      const text = captions.text.trim();
+      const prev = captionFlushRef.current.last;
+      const delta = text.startsWith(prev) ? text.slice(prev.length).trim() : text;
+      if (delta.length < 8) return;
+      captionFlushRef.current.last = text;
+      void appendMeetingTranscript({
+        data: {
+          meetingId: id,
+          source: "LIVE_CAPTION",
+          segments: [
+            {
+              content: delta.slice(0, 4000),
+              speakerName: captionSpeakerRef.current,
+              offsetSeconds: Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
+            },
+          ],
+        },
+      }).catch(() => undefined);
+    }, 10_000);
+    return () => window.clearInterval(timer);
+  }, [captions.enabled, captions.text, id, isRealRoom]);
   const inRoomRef = useRef(false);
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -706,6 +740,7 @@ function MeetingDetailPage() {
     (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.name ??
     (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.email ??
     "Bạn";
+  captionSpeakerRef.current = myName;
   const [raisedHands, setRaisedHands] = useState<Array<{ userId: string; name: string; at: number }>>([]);
   // Danh sách người được chủ trì cấp quyền phát biểu (đồng bộ qua presence).
   const [speakers, setSpeakers] = useState<Array<{ userId: string; name: string }>>([]);
@@ -1879,20 +1914,13 @@ function MeetingDetailPage() {
                 </div>
               )}
               {tab === "transcript" && (
-                <div className="space-y-3 text-xs">
-                  {[
-                    { who: "Minh Anh", time: "00:01:24", text: "Chào mọi người, bắt đầu sprint review." },
-                    { who: "Tuấn Nam", time: "00:02:10", text: "Backend hoàn thành 8/10 user story." },
-                    { who: "Hương Trần", time: "00:03:45", text: "Frontend còn 2 bug responsive trên mobile." },
-                  ].map((m, i) => (
-                    <div key={i}>
-                      <div className="text-[10px] text-muted-foreground">
-                        {m.who} · {m.time}
-                      </div>
-                      <div className="text-foreground">{m.text}</div>
-                    </div>
-                  ))}
-                </div>
+                isRealRoom ? (
+                  <MeetingIntelligencePanel meetingId={id} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Biên bản và tóm tắt AI chỉ khả dụng trong phòng họp thật.
+                  </p>
+                )
               )}
             </div>
             <div className="border-t border-border p-4">
