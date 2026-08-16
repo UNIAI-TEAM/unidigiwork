@@ -283,6 +283,15 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
         </Button>
       </div>
 
+      {(generate.isPending || progress) && progress && (
+        <StagedProgress progress={progress} running={generate.isPending} />
+      )}
+      {generate.isPending && !progress && (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-3 text-[11px] text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> Đang chuẩn bị tóm tắt…
+        </div>
+      )}
+
       {summary && (
         <div className="space-y-3 rounded-lg border border-border bg-surface-2 p-3">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
