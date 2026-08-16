@@ -182,7 +182,7 @@ function MobileTopbar() {
 
       <div className="flex items-center gap-1">
         <Link
-          to="/search"
+          to="/m/search"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"
           aria-label="Tìm kiếm"
         >
