@@ -5,7 +5,11 @@ import { streamText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 import { mapPgError } from "./business.server";
-import type { MeetingSummary, TranscriptSegment } from "@/domain/meeting-intelligence/contracts";
+import type {
+  ActionItemState,
+  MeetingSummary,
+  TranscriptSegment,
+} from "@/domain/meeting-intelligence/contracts";
 import {
   buildMeetingSummarySystemPrompt,
   buildMeetingSummaryUserPrompt,
@@ -13,6 +17,7 @@ import {
   parseMeetingSummaryOutput,
   renderTranscriptForModel,
   toSummarySources,
+  transcriptChecksum,
 } from "@/domain/meeting-intelligence/contracts";
 
 const MODEL = "openai/gpt-5.6-sol";
@@ -165,7 +170,76 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
       _action_items: parsed.actionItems as never,
       _sources: (citedSources.length ? citedSources : sources.slice(0, 10)) as never,
       _segment_count: segments.length,
+      _risks: parsed.risks as never,
+      _open_questions: parsed.openQuestions as never,
+      _followup: (parsed.followUp ?? {}) as never,
+      _transcript_checksum: transcriptChecksum(segments),
     });
     if (sErr) mapPgError(sErr, "MEETING_NOT_FOUND");
     return mapSummaryRow(saved as unknown as Record<string, unknown>);
+  });
+
+/* ------------------- Action item: PROPOSE → CONFIRM → TASK ------------------- */
+
+const mapStateRow = (r: Record<string, unknown>): ActionItemState => ({
+  itemKey: String(r.item_key),
+  status: (r.status as ActionItemState["status"]) ?? "PROPOSED",
+  taskId: (r.task_id as string | null) ?? null,
+  confirmedAt: (r.confirmed_at as string | null) ?? null,
+});
+
+export const listMeetingActionItemStates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => meetingIdSchema.parse(i))
+  .handler(async ({ data, context }): Promise<ActionItemState[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("meeting_action_item_states")
+      .select("item_key, status, task_id, confirmed_at")
+      .eq("meeting_id", data.meetingId);
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    return ((rows ?? []) as Array<Record<string, unknown>>).map(mapStateRow);
+  });
+
+/** Chỉ chạy khi người dùng xác nhận rõ ràng — AI không bao giờ tự tạo công việc. */
+export const confirmMeetingActionItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    meetingIdSchema
+      .extend({
+        itemKey: z.string().min(1).max(200),
+        workspaceId: z.string().uuid(),
+        title: z.string().min(1).max(200),
+        description: z.string().max(2000).nullish(),
+        dueAt: z.string().datetime().nullish(),
+        assigneeId: z.string().uuid().nullish(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<ActionItemState> => {
+    const { data: row, error } = await context.supabase.rpc("confirm_meeting_action_item", {
+      _meeting_id: data.meetingId,
+      _item_key: data.itemKey,
+      _workspace_id: data.workspaceId,
+      _title: data.title,
+      _description: data.description ?? null,
+      _due_at: data.dueAt ?? null,
+      _assignee_id: data.assigneeId ?? null,
+    });
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    return mapStateRow(row as unknown as Record<string, unknown>);
+  });
+
+export const dismissMeetingActionItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    meetingIdSchema.extend({ itemKey: z.string().min(1).max(200), title: z.string().max(200).default("") }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<ActionItemState> => {
+    const { data: row, error } = await context.supabase.rpc("dismiss_meeting_action_item", {
+      _meeting_id: data.meetingId,
+      _item_key: data.itemKey,
+      _title: data.title,
+    });
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    return mapStateRow(row as unknown as Record<string, unknown>);
   });
