@@ -44,6 +44,15 @@ const KNOWN_CODES: readonly StableErrorCode[] = [
   "WORKFLOW_RUN_DENIED",
 ];
 
+// Work Graph stable codes are raised by the graph RPCs.
+(KNOWN_CODES as StableErrorCode[]).push(
+  "WORK_GRAPH_ENTITY_NOT_FOUND",
+  "WORK_GRAPH_ENTITY_FORBIDDEN",
+  "WORK_GRAPH_CROSS_TENANT",
+  "WORK_GRAPH_RELATION_INVALID",
+  "WORK_GRAPH_EDGE_PROTECTED",
+);
+
 export function mapPgError(err: PostgrestError | Error | null, fallback: StableErrorCode = "INTERNAL_ERROR"): never {
   const raw = (err && "message" in err ? err.message : "") ?? "";
   const match = KNOWN_CODES.find((c) => raw.includes(c));
