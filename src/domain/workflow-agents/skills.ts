@@ -118,6 +118,68 @@ export const AI_SKILLS: readonly AiSkillDef[] = [
 
 export const AI_SKILL_MAP: Record<string, AiSkillDef> = Object.fromEntries(AI_SKILLS.map((s) => [s.id, s]));
 
+/** Lĩnh vực làm việc của agent — chọn lĩnh vực sẽ bật sẵn bộ kỹ năng phù hợp. */
+export interface AiAgentDomainDef {
+  id: string;
+  name: string;
+  description: string;
+  skills: readonly string[];
+}
+
+export const AI_AGENT_DOMAINS: readonly AiAgentDomainDef[] = [
+  {
+    id: "PROJECT_DELIVERY",
+    name: "Quản trị dự án & tiến độ",
+    description: "Theo dõi tiến độ, cảnh báo rủi ro trễ hạn và đề xuất cập nhật công việc.",
+    skills: ["SUMMARIZE_WORK", "RISK_ANALYSIS", "WORKLOAD_TRIAGE", "PROPOSE_TASK_UPDATE"],
+  },
+  {
+    id: "MEETING_FOLLOW_UP",
+    name: "Cuộc họp & theo dõi sau họp",
+    description: "Tra cứu biên bản, soạn nội dung theo dõi và đề xuất task/lịch họp tiếp theo.",
+    skills: ["MEETING_RECALL", "DRAFT_FOLLOW_UP", "PROPOSE_TASK", "PROPOSE_MEETING"],
+  },
+  {
+    id: "CUSTOMER_COMMS",
+    name: "Chăm sóc khách hàng & thư từ",
+    description: "Nắm ngữ cảnh trao đổi và soạn thư nháp chờ bạn duyệt.",
+    skills: ["SUMMARIZE_WORK", "DRAFT_EMAIL", "PROPOSE_TASK"],
+  },
+  {
+    id: "OPS_TRIAGE",
+    name: "Vận hành & phân loại việc đến",
+    description: "Xếp ưu tiên việc mới, đề xuất người phụ trách và tạo task theo dõi.",
+    skills: ["SUMMARIZE_WORK", "WORKLOAD_TRIAGE", "PROPOSE_TASK", "PROPOSE_TASK_UPDATE"],
+  },
+  {
+    id: "KNOWLEDGE_RESEARCH",
+    name: "Tra cứu & tổng hợp tri thức",
+    description: "Chỉ đọc: tổng hợp thông tin từ công việc và cuộc họp, kèm trích dẫn.",
+    skills: ["SUMMARIZE_WORK", "MEETING_RECALL", "RISK_ANALYSIS"],
+  },
+  {
+    id: "CUSTOM",
+    name: "Tự cấu hình",
+    description: "Tự bật/tắt từng kỹ năng theo nhu cầu riêng.",
+    skills: [],
+  },
+] as const;
+
+export const AI_AGENT_DOMAIN_MAP: Record<string, AiAgentDomainDef> = Object.fromEntries(
+  AI_AGENT_DOMAINS.map((d) => [d.id, d]),
+);
+
+/** Kỹ năng mặc định của một lĩnh vực (đã chuẩn hoá theo catalogue). */
+export const skillsForDomain = (domainId: string): string[] =>
+  normalizeSkills(AI_AGENT_DOMAIN_MAP[domainId]?.skills ?? []);
+
+/** Suy ra lĩnh vực khớp chính xác với tập kỹ năng hiện tại (nếu có). */
+export function matchDomainFromSkills(skillIds: readonly string[]): string {
+  const cur = normalizeSkills(skillIds).join("|");
+  const found = AI_AGENT_DOMAINS.find((d) => d.id !== "CUSTOM" && skillsForDomain(d.id).join("|") === cur);
+  return found?.id ?? "CUSTOM";
+}
+
 export const skillsByKind = (kind: AiSkillKind): AiSkillDef[] => AI_SKILLS.filter((s) => s.kind === kind);
 
 /** Chỉ giữ id kỹ năng hợp lệ, theo thứ tự catalogue. */
