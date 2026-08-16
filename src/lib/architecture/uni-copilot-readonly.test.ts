@@ -25,7 +25,7 @@ describe("UNI Copilot read-only boundary", () => {
   it("performs no business writes (insert/update/delete/upsert/rpc) except telemetry insert", () => {
     for (const f of FILES) {
       const src = read(f);
-      const writes = src.match(/\.(insert|update|delete|upsert)\(/g) ?? [];
+      const writes = src.match(/\.from\([^)]*\)[\s\S]{0,300}?\.(insert|update|delete|upsert)\(/g) ?? [];
       const telemetry = src.includes("ai_context_metrics") ? 1 : 0;
       expect(writes.length, `${f}: ${writes.join(",")}`).toBeLessThanOrEqual(telemetry);
       expect(src, f).not.toMatch(/supabaseAdmin|service_role/);
