@@ -311,3 +311,11 @@
   outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* ---------------------------------------------------------------------------
+ * Cỡ chữ toàn cục (data-font-scale trên <html>) — scale theo rem.
+ * ------------------------------------------------------------------------- */
+html[data-font-scale="sm"] { font-size: 93.75%; }
+html[data-font-scale="md"] { font-size: 100%; }
+html[data-font-scale="lg"] { font-size: 112.5%; }
+html[data-font-scale="xl"] { font-size: 125%; }

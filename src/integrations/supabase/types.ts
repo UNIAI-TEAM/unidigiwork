@@ -3460,6 +3460,7 @@ export type Database = {
         Row: {
           contrast: string
           created_at: string
+          font_scale: string
           theme: string
           tone: string
           updated_at: string
@@ -3468,6 +3469,7 @@ export type Database = {
         Insert: {
           contrast?: string
           created_at?: string
+          font_scale?: string
           theme?: string
           tone?: string
           updated_at?: string
@@ -3476,6 +3478,7 @@ export type Database = {
         Update: {
           contrast?: string
           created_at?: string
+          font_scale?: string
           theme?: string
           tone?: string
           updated_at?: string
