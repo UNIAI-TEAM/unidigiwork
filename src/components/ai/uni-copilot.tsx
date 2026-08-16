@@ -9,6 +9,8 @@ import { askUniCopilot } from "@/lib/api/ai-copilot.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import type { ContextSource } from "@/domain/ai-context/contracts";
 import { validateAnswerCitations } from "@/domain/ai-context/citations";
+import { SourceFreshnessBadge } from "@/components/ai/source-freshness-badge";
+import { getSourceFreshness } from "@/domain/ai-context/freshness";
 import type { CopilotRoot, UniCopilotResponse } from "@/domain/ai-copilot/contracts";
 import { ROOT_LABEL, rootContextKey, suggestionsForRoot } from "@/domain/ai-copilot/contracts";
 
@@ -385,10 +387,11 @@ export function UniCopilot() {
                         <button
                           key={s.sourceId}
                           onClick={() => navigate({ to: s.href })}
-                          title={`${ROOT_LABEL[s.entityType]} · ${s.title}`}
-                          className="max-w-full truncate rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface hover:text-foreground"
+                          title={`${ROOT_LABEL[s.entityType]} · ${s.title} — ${getSourceFreshness(s.updatedAt).description}`}
+                          className="flex max-w-full items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface hover:text-foreground"
                         >
-                          {s.sourceId} · {s.title}
+                          <span className="truncate">{s.sourceId} · {s.title}</span>
+                          <SourceFreshnessBadge updatedAt={s.updatedAt} />
                         </button>
                       ))}
                       {h.totalSources > h.sources.length && (
@@ -573,8 +576,11 @@ function AnswerBlock({
                     className="flex min-h-[44px] w-full flex-col rounded-lg px-2 py-1.5 text-left hover:bg-background"
                   >
                     <span className="text-[13px] font-medium">{s.title}</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {ROOT_LABEL[s.entityType]} · {s.sourceId}
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <span>
+                        {ROOT_LABEL[s.entityType]} · {s.sourceId}
+                      </span>
+                      <SourceFreshnessBadge updatedAt={s.updatedAt} />
                     </span>
                   </button>
                 </li>
