@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette } from "@/components/command-palette";
+import { UniCopilot, openUniCopilot } from "@/components/ai/uni-copilot";
 import { useActiveTenant } from "@/features/tenants/hooks";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -63,6 +64,16 @@ function AuthenticatedLayout() {
       )}
       <Outlet />
       <CommandPalette />
+      <UniCopilot />
+      <button
+        type="button"
+        onClick={() => openUniCopilot()}
+        title="Hỏi UNI (⌘J)"
+        aria-label="Hỏi UNI"
+        className="fixed bottom-5 right-5 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background shadow-lg transition hover:bg-surface"
+      >
+        <Sparkles className="h-5 w-5 text-primary" />
+      </button>
     </>
   );
 }

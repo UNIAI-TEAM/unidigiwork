@@ -1,0 +1,438 @@
+// UNI WORKSPACE COPILOT V1 — panel toàn cục (desktop: side panel, mobile: bottom sheet).
+// Read-only. Chỉ gọi AI khi người dùng chủ động gửi câu hỏi (không auto-call khi load trang).
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { askUniCopilot } from "@/lib/api/ai-copilot.functions";
+import { useActiveTenant } from "@/features/tenants/hooks";
+import type { ContextSource } from "@/domain/ai-context/contracts";
+import { validateAnswerCitations } from "@/domain/ai-context/citations";
+import type { CopilotRoot, UniCopilotResponse } from "@/domain/ai-copilot/contracts";
+import { ROOT_LABEL, rootContextKey, suggestionsForRoot } from "@/domain/ai-copilot/contracts";
+
+/* ------------------------------- Store ------------------------------- */
+
+type CopilotState = { open: boolean; root: CopilotRoot; workspaceId: string | null; seed: string | null };
+let state: CopilotState = { open: false, root: null, workspaceId: null, seed: null };
+const listeners = new Set<() => void>();
+const emit = () => listeners.forEach((l) => l());
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => listeners.delete(l);
+};
+const getSnapshot = () => state;
+
+export function openUniCopilot(opts?: { root?: CopilotRoot; workspaceId?: string | null; seed?: string | null }) {
+  state = {
+    open: true,
+    root: opts?.root ?? null,
+    workspaceId: opts?.workspaceId ?? null,
+    seed: opts?.seed ?? null,
+  };
+  emit();
+}
+export function closeUniCopilot() {
+  state = { ...state, open: false, seed: null };
+  emit();
+}
+export const useUniCopilotState = () => useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+/* ------------------------------ Messages ------------------------------ */
+
+type Msg =
+  | { id: string; role: "user"; content: string }
+  | { id: string; role: "assistant"; content: string; response: UniCopilotResponse };
+
+const uid = () => Math.random().toString(36).slice(2);
+
+/* ------------------------------- Panel ------------------------------- */
+
+export function UniCopilot() {
+  const { open, root, workspaceId, seed } = useUniCopilotState();
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [pending, setPending] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "context" | "generating">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [lastQuery, setLastQuery] = useState<string | null>(null);
+  const [contextNote, setContextNote] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const ask = useServerFn(askUniCopilot);
+  const navigate = useNavigate();
+  const tenant = useActiveTenant();
+  const tenantId = tenant.data?.tenantId ?? null;
+  const currentRootKey = rootContextKey(root);
+
+  const reset = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setMessages([]);
+    setError(null);
+    setPending(false);
+    setPhase("idle");
+    setLastQuery(null);
+  }, []);
+
+  // §84/§85 — đổi tenant (hoặc đăng xuất) phải xoá sạch hội thoại + nguồn.
+  const tenantRef = useRef<string | null>(tenantId);
+  useEffect(() => {
+    if (tenantRef.current !== tenantId) {
+      tenantRef.current = tenantId;
+      reset();
+      setContextNote(null);
+    }
+  }, [tenantId, reset]);
+
+  // §57/§58 — đổi ngữ cảnh gốc: bắt đầu luồng mới, không trộn ngầm.
+  const rootRef = useRef<string | null>(currentRootKey);
+  useEffect(() => {
+    if (rootRef.current !== currentRootKey) {
+      const previous = rootRef.current;
+      rootRef.current = currentRootKey;
+      reset();
+      setContextNote(
+        currentRootKey
+          ? `Đã chuyển ngữ cảnh sang ${root?.title ?? ROOT_LABEL[root!.type]}`
+          : previous
+            ? "Đã chuyển sang ngữ cảnh toàn workspace"
+            : null,
+      );
+    }
+  }, [currentRootKey, root, reset]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        if (state.open) closeUniCopilot();
+        else openUniCopilot({ root: state.root, workspaceId: state.workspaceId });
+      }
+      if (e.key === "Escape" && state.open) closeUniCopilot();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 60);
+  }, [open]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, pending]);
+
+  const submit = useCallback(
+    async (raw: string) => {
+      const q = raw.trim();
+      if (q.length < 2 || pending) return;
+      setInput("");
+      setError(null);
+      setLastQuery(q);
+      setContextNote(null);
+      const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
+      setMessages((prev) => [...prev, { id: uid(), role: "user", content: q }]);
+      setPending(true);
+      setPhase("context");
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const timer = setTimeout(() => setPhase("generating"), 900);
+      try {
+        const res = (await ask({
+          data: { query: q, rootEntity: root ? { type: root.type, id: root.id } : null, workspaceId: workspaceId ?? null, history },
+          signal: controller.signal,
+        } as never)) as UniCopilotResponse;
+        if (controller.signal.aborted) return;
+        setMessages((prev) => [...prev, { id: uid(), role: "assistant", content: res.answer, response: res }]);
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          setError(e instanceof Error && e.message ? e.message : "UNI hiện chưa thể trả lời. Vui lòng thử lại.");
+        }
+      } finally {
+        clearTimeout(timer);
+        setPending(false);
+        setPhase("idle");
+        abortRef.current = null;
+      }
+    },
+    [ask, messages, pending, root, workspaceId],
+  );
+
+  useEffect(() => {
+    if (open && seed) {
+      const q = seed;
+      state = { ...state, seed: null };
+      void submit(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, seed]);
+
+  const suggestions = useMemo(() => suggestionsForRoot(root), [root]);
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-foreground/20 md:hidden" onClick={closeUniCopilot} aria-hidden />
+      <aside
+        role="dialog"
+        aria-label="UNI — Workspace Copilot"
+        className="fixed inset-x-0 bottom-0 top-16 z-50 flex flex-col border-l border-border bg-background shadow-xl md:inset-y-0 md:left-auto md:right-0 md:top-0 md:w-[420px]"
+      >
+        <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div className="leading-tight">
+              <p className="text-sm font-semibold">UNI</p>
+              <p className="text-[11px] text-muted-foreground">Workspace Copilot</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {messages.length > 0 && (
+              <Button variant="ghost" size="icon" aria-label="Hội thoại mới" onClick={reset}>
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" aria-label="Đóng UNI" onClick={closeUniCopilot}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
+
+        {root && (
+          <div className="flex items-center gap-2 border-b border-border bg-surface/60 px-4 py-2 text-xs">
+            <span className="text-muted-foreground">Ngữ cảnh:</span>
+            <span className="truncate rounded-md bg-background px-2 py-0.5 font-medium">
+              {ROOT_LABEL[root.type]} · {root.title ?? "Đang xem"}
+            </span>
+            <button
+              className="ml-auto text-muted-foreground hover:text-foreground"
+              onClick={() => openUniCopilot({ root: null, workspaceId })}
+            >
+              Bỏ
+            </button>
+          </div>
+        )}
+
+        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+          {contextNote && <p className="rounded-md bg-surface px-3 py-2 text-xs text-muted-foreground">{contextNote}</p>}
+
+          {messages.length === 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Gợi ý</p>
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => void submit(s)}
+                  className="block w-full rounded-lg border border-border px-3 py-2 text-left text-sm hover:bg-surface"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {messages.map((m) =>
+            m.role === "user" ? (
+              <div key={m.id} className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
+                {m.content}
+              </div>
+            ) : (
+              <AnswerBlock key={m.id} response={m.response} onOpen={(href) => navigate({ to: href })} onAsk={submit} />
+            ),
+          )}
+
+          {pending && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {phase === "context" ? "Đang kiểm tra dữ liệu liên quan..." : "Đang tổng hợp..."}
+            </div>
+          )}
+
+          {error && (
+            <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              <p>{error}</p>
+              {lastQuery && (
+                <Button size="sm" variant="outline" onClick={() => void submit(lastQuery)}>
+                  Thử lại
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-end gap-2 rounded-xl border border-border px-3 py-2">
+            <textarea
+              ref={inputRef}
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void submit(input);
+                }
+              }}
+              placeholder="Hỏi về công việc của bạn"
+              aria-label="Câu hỏi cho UNI"
+              className="max-h-32 flex-1 resize-none bg-transparent text-sm outline-none"
+            />
+            {pending ? (
+              <Button size="icon" variant="ghost" aria-label="Dừng" onClick={() => abortRef.current?.abort()}>
+                <Square className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button size="icon" aria-label="Gửi câu hỏi" disabled={input.trim().length < 2} onClick={() => void submit(input)}>
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">UNI chỉ đọc dữ liệu bạn có quyền xem và chưa thể thay đổi công việc.</p>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+/* ---------------------------- Answer render ---------------------------- */
+
+function AnswerBlock({
+  response,
+  onOpen,
+  onAsk,
+}: {
+  response: UniCopilotResponse;
+  onOpen: (href: string) => void;
+  onAsk: (q: string) => void;
+}) {
+  const [showSources, setShowSources] = useState(false);
+  const validated = useMemo(
+    () => validateAnswerCitations(response.answer, response.sources),
+    [response.answer, response.sources],
+  );
+
+  return (
+    <div className="space-y-3 rounded-2xl rounded-bl-sm bg-surface px-3 py-3 text-sm">
+      <p className="whitespace-pre-wrap leading-relaxed">
+        {validated.segments.map((seg, i) =>
+          seg.type === "citation" && seg.source ? (
+            <button
+              key={i}
+              onClick={() => onOpen(seg.source!.href)}
+              className="mx-0.5 rounded bg-primary/10 px-1 text-[11px] font-medium text-primary align-baseline"
+              title={seg.source.title}
+            >
+              {seg.text}
+            </button>
+          ) : (
+            <span key={i}>{seg.text}</span>
+          ),
+        )}
+      </p>
+
+      {response.sections.map((s, i) => (
+        <div key={i} className="rounded-lg border border-border bg-background p-2.5">
+          {s.title && <p className="mb-1 text-xs font-semibold">{s.title}</p>}
+          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-muted-foreground">{s.content}</p>
+        </div>
+      ))}
+
+      {response.ambiguity && response.ambiguity.candidates.length > 0 && (
+        <div className="space-y-1 rounded-lg border border-border bg-background p-2.5 text-[13px]">
+          <p className="font-medium">Có nhiều đối tượng phù hợp:</p>
+          {response.ambiguity.candidates.slice(0, 5).map((c) => (
+            <button key={c.entityId} onClick={() => onOpen(c.href)} className="block text-left text-primary hover:underline">
+              {c.title}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {response.partial && (
+        <p className="text-[12px] text-muted-foreground">Một phần dữ liệu chưa truy xuất được, câu trả lời có thể chưa đầy đủ.</p>
+      )}
+
+      {response.sources.length > 0 && (
+        <div className="border-t border-border pt-2">
+          <button
+            onClick={() => setShowSources((v) => !v)}
+            className="text-xs font-medium text-muted-foreground hover:text-foreground"
+            aria-expanded={showSources}
+          >
+            Nguồn · đã tham chiếu {response.sources.length} nguồn
+          </button>
+          {showSources && (
+            <ul className="mt-2 space-y-1">
+              {response.sources.map((s: ContextSource) => (
+                <li key={s.sourceId}>
+                  <button
+                    onClick={() => onOpen(s.href)}
+                    className="flex min-h-[44px] w-full flex-col rounded-lg px-2 py-1.5 text-left hover:bg-background"
+                  >
+                    <span className="text-[13px] font-medium">{s.title}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {ROOT_LABEL[s.entityType]} · {s.sourceId}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {response.suggestions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {response.suggestions.slice(0, 3).map((s) => (
+            <button
+              key={s}
+              onClick={() => onAsk(s)}
+              className="rounded-full border border-border px-2.5 py-1 text-[12px] hover:bg-background"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={() => void navigator.clipboard?.writeText(response.answer)}
+        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+      >
+        <Copy className="h-3 w-3" /> Sao chép
+      </button>
+    </div>
+  );
+}
+
+/* --------------------------- Entry buttons --------------------------- */
+
+export function UniCopilotButton({
+  root,
+  workspaceId,
+  label = "Hỏi UNI",
+  className,
+}: {
+  root?: CopilotRoot;
+  workspaceId?: string | null;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className={className}
+      title="Hỏi UNI (⌘J)"
+      onClick={() => openUniCopilot({ root: root ?? null, workspaceId: workspaceId ?? null })}
+    >
+      <Sparkles className="mr-1.5 h-4 w-4" /> {label}
+    </Button>
+  );
+}
