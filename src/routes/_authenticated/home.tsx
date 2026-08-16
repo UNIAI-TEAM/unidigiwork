@@ -137,6 +137,7 @@ function HomePage() {
   }, [data]);
 
   const failed = homeQuery.isError;
+  const partialSet = useMemo(() => new Set(data?.partial ?? []), [data]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
