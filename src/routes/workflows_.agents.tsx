@@ -578,6 +578,8 @@ function AgentBuilderPage() {
                     </div>
                     {skillsByKind(kind).map((skill) => {
                       const on = draft.skills.includes(skill.id);
+                      const inProfile =
+                        !draft.workerProfile || skillsForWorkerProfile(draft.workerProfile).includes(skill.id);
                       return (
                         <div key={skill.id} className="flex min-h-11 items-start justify-between gap-3 rounded-md border border-border p-3">
                           <div className="min-w-0">
@@ -586,6 +588,11 @@ function AgentBuilderPage() {
                               {!on && (
                                 <Badge variant="outline" className="border-dashed text-[11px] text-muted-foreground">
                                   Chưa cấu hình
+                                </Badge>
+                              )}
+                              {!inProfile && (
+                                <Badge variant="outline" className="text-[11px] text-muted-foreground">
+                                  Ngoài hồ sơ
                                 </Badge>
                               )}
                             </div>
@@ -605,6 +612,7 @@ function AgentBuilderPage() {
                           </div>
                           <Switch
                             checked={on}
+                            disabled={!inProfile}
                             onCheckedChange={(v) => {
                               const next = ensureDefaultSkill(
                                 v ? [...draft.skills, skill.id] : draft.skills.filter((x) => x !== skill.id),
