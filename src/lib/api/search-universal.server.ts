@@ -6,6 +6,7 @@ export const SEARCH_ENTITY_TYPES = [
   "PROJECT",
   "TASK",
   "MEETING",
+  "MEETING_ARTIFACT",
   "DOCUMENT",
   "EMAIL",
   "CHAT_CHANNEL",
@@ -18,6 +19,7 @@ export const SEARCH_KINDS = [
   "project",
   "task",
   "meeting",
+  "artifact",
   "document",
   "email",
   "chat",
@@ -29,6 +31,7 @@ const KIND_BY_ENTITY: Record<SearchEntityType, SearchKind> = {
   PROJECT: "project",
   TASK: "task",
   MEETING: "meeting",
+  MEETING_ARTIFACT: "artifact",
   DOCUMENT: "document",
   EMAIL: "email",
   CHAT_CHANNEL: "chat",
@@ -39,6 +42,7 @@ const ENTITY_BY_KIND: Record<SearchKind, SearchEntityType> = {
   project: "PROJECT",
   task: "TASK",
   meeting: "MEETING",
+  artifact: "MEETING_ARTIFACT",
   document: "DOCUMENT",
   email: "EMAIL",
   chat: "CHAT_CHANNEL",
@@ -60,6 +64,9 @@ export function searchHref(entityType: string, id: string): string {
       return `/tasks/${id}`;
     case "MEETING":
       return `/meeting/${id}`;
+    case "MEETING_ARTIFACT":
+      // Provenance-safe fallback; mapRow builds the meeting-scoped link.
+      return `/meeting?artifact=${id}`;
     case "DOCUMENT":
       return `/documents/${id}`;
     case "EMAIL":
@@ -86,6 +93,8 @@ export interface UniversalSearchItem {
   occurredAt: string | null;
   score: number;
   matchType: "EXACT" | "PREFIX" | "LEXICAL" | "FUZZY";
+  /** Provenance: thực thể gốc sinh ra kết quả này (vd. artifact ← cuộc họp). */
+  source: { type: SearchEntityType; id: string; title: string; href: string } | null;
 }
 
 export interface UniversalSearchResult {
@@ -103,6 +112,21 @@ type Row = Record<string, unknown>;
 export function mapRow(r: Row): UniversalSearchItem {
   const entityType = String(r["entity_type"]) as SearchEntityType;
   const id = String(r["entity_id"]);
+  const parentType = (r["parent_type"] as string | null) ?? null;
+  const parentId = (r["parent_id"] as string | null) ?? null;
+  const source =
+    parentType && parentId
+      ? {
+          type: parentType as SearchEntityType,
+          id: parentId,
+          title: String(r["parent_title"] ?? "Nguồn"),
+          href: searchHref(parentType, parentId),
+        }
+      : null;
+  const href =
+    entityType === "MEETING_ARTIFACT" && parentId
+      ? `/meeting/${parentId}?artifact=${id}`
+      : searchHref(entityType, id);
   return {
     id,
     entityType,
@@ -110,7 +134,8 @@ export function mapRow(r: Row): UniversalSearchItem {
     title: String(r["title"] ?? "(Không tiêu đề)"),
     subtitle: String(r["subtitle"] ?? ""),
     snippet: String(r["snippet"] ?? ""),
-    href: searchHref(entityType, id),
+    href,
+    source,
     workspaceId: (r["workspace_id"] as string | null) ?? null,
     workspaceName: (r["workspace_name"] as string | null) ?? null,
     occurredAt: (r["updated_at"] as string | null) ?? null,
@@ -123,6 +148,7 @@ export const emptyCounts = (): Record<SearchKind, number> => ({
   project: 0,
   task: 0,
   meeting: 0,
+  artifact: 0,
   document: 0,
   email: 0,
   chat: 0,

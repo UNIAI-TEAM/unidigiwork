@@ -124,6 +124,7 @@ export const universalSearch = createServerFn({ method: "GET" })
               occurredAt: e.updatedAt ?? null,
               score: 0,
               matchType: "LEXICAL" as const,
+              source: null,
             };
           })
           .filter((e) => !seen.has(`${e.entityType}:${e.id}`))

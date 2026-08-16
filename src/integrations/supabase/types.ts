@@ -6457,6 +6457,9 @@ export type Database = {
           entity_type: string
           kind_counts: Json
           match_type: string
+          parent_id: string
+          parent_title: string
+          parent_type: string
           score: number
           snippet: string
           subtitle: string
