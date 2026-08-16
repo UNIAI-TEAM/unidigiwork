@@ -1,6 +1,6 @@
 // HOME V2 — Trang chủ điều hành công việc cá nhân (My Work · Upcoming · Work Inbox).
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import { transitionTask } from "@/lib/api/tasks.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { setEmailMessagesRead } from "@/lib/api/emails.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
+import { getTaskKind, TASK_KIND_META } from "@/lib/home-task-kind";
 import {
   AiBrief,
   EmptyState,
