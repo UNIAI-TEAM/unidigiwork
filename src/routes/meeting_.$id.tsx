@@ -74,6 +74,8 @@ import {
   describeDisplayMediaError,
 } from "@/lib/screen-share-quality";
 import { useLiveCaptions } from "@/lib/use-live-captions";
+import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
+import { appendMeetingTranscript } from "@/lib/api/meeting-intelligence.functions";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
   openMeetingAttendance,
@@ -1879,20 +1881,13 @@ function MeetingDetailPage() {
                 </div>
               )}
               {tab === "transcript" && (
-                <div className="space-y-3 text-xs">
-                  {[
-                    { who: "Minh Anh", time: "00:01:24", text: "Chào mọi người, bắt đầu sprint review." },
-                    { who: "Tuấn Nam", time: "00:02:10", text: "Backend hoàn thành 8/10 user story." },
-                    { who: "Hương Trần", time: "00:03:45", text: "Frontend còn 2 bug responsive trên mobile." },
-                  ].map((m, i) => (
-                    <div key={i}>
-                      <div className="text-[10px] text-muted-foreground">
-                        {m.who} · {m.time}
-                      </div>
-                      <div className="text-foreground">{m.text}</div>
-                    </div>
-                  ))}
-                </div>
+                isRealRoom ? (
+                  <MeetingIntelligencePanel meetingId={id} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Biên bản và tóm tắt AI chỉ khả dụng trong phòng họp thật.
+                  </p>
+                )
               )}
             </div>
             <div className="border-t border-border p-4">
