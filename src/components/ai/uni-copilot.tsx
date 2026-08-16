@@ -58,6 +58,8 @@ export function UniCopilot() {
   const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState<string | null>(null);
   const [contextNote, setContextNote] = useState<string | null>(null);
+  // Ngữ cảnh gốc UNI tự giữ giữa các lượt follow-up (khi người dùng không ghim sẵn root).
+  const [pinnedRoot, setPinnedRoot] = useState<CopilotRoot>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -66,6 +68,7 @@ export function UniCopilot() {
   const tenant = useActiveTenant();
   const tenantId = tenant.data?.tenantId ?? null;
   const currentRootKey = rootContextKey(root);
+  const effectiveRoot = root ?? pinnedRoot;
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
@@ -75,6 +78,7 @@ export function UniCopilot() {
     setPending(false);
     setPhase("idle");
     setLastQuery(null);
+    setPinnedRoot(null);
   }, []);
 
   // §84/§85 — đổi tenant (hoặc đăng xuất) phải xoá sạch hội thoại + nguồn.
@@ -142,10 +146,18 @@ export function UniCopilot() {
       const timer = setTimeout(() => setPhase("generating"), 900);
       try {
         const res = (await ask({
-          data: { query: q, rootEntity: root ? { type: root.type, id: root.id } : null, workspaceId: workspaceId ?? null, history },
+          data: {
+            query: q,
+            rootEntity: effectiveRoot ? { type: effectiveRoot.type, id: effectiveRoot.id } : null,
+            workspaceId: workspaceId ?? null,
+            history,
+          },
           signal: controller.signal,
         } as never)) as UniCopilotResponse;
         if (controller.signal.aborted) return;
+        if (!root && res.resolvedRoot) {
+          setPinnedRoot({ type: res.resolvedRoot.type, id: res.resolvedRoot.id, title: res.resolvedRoot.title || undefined });
+        }
         setMessages((prev) => [...prev, { id: uid(), role: "assistant", content: res.answer, response: res }]);
       } catch (e) {
         if (!controller.signal.aborted) {
@@ -158,7 +170,7 @@ export function UniCopilot() {
         abortRef.current = null;
       }
     },
-    [ask, messages, pending, root, workspaceId],
+    [ask, messages, pending, root, effectiveRoot, workspaceId],
   );
 
   useEffect(() => {
@@ -170,7 +182,7 @@ export function UniCopilot() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, seed]);
 
-  const suggestions = useMemo(() => suggestionsForRoot(root), [root]);
+  const suggestions = useMemo(() => suggestionsForRoot(effectiveRoot), [effectiveRoot]);
 
   if (!open) return null;
 
@@ -204,15 +216,18 @@ export function UniCopilot() {
           </div>
         </header>
 
-        {root && (
+        {effectiveRoot && (
           <div className="flex items-center gap-2 border-b border-border bg-surface/60 px-4 py-2 text-xs">
-            <span className="text-muted-foreground">Ngữ cảnh:</span>
+            <span className="text-muted-foreground">{root ? "Ngữ cảnh:" : "Đang theo dõi:"}</span>
             <span className="truncate rounded-md bg-background px-2 py-0.5 font-medium">
-              {ROOT_LABEL[root.type]} · {root.title ?? "Đang xem"}
+              {ROOT_LABEL[effectiveRoot.type]} · {effectiveRoot.title ?? "Đang xem"}
             </span>
             <button
               className="ml-auto text-muted-foreground hover:text-foreground"
-              onClick={() => openUniCopilot({ root: null, workspaceId })}
+              onClick={() => {
+                setPinnedRoot(null);
+                if (root) openUniCopilot({ root: null, workspaceId });
+              }}
             >
               Bỏ
             </button>
