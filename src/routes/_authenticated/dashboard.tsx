@@ -2,14 +2,13 @@ import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { sendAiMessage } from "@/lib/api/ai-chat.functions";
-import { listNotifications, markNotificationsRead } from "@/lib/api/notifications.functions";
+import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
 import {
   queryOptions,
   useSuspenseQuery,
   useQuery,
   useQueryClient,
-  keepPreviousData,
 } from "@tanstack/react-query";
 import {
   getDashboardPrefs,
@@ -19,7 +18,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { getDashboardOverview, getDashboardAiSummary } from "@/lib/api/dashboard.functions";
+import { getDashboardBundle } from "@/lib/api/dashboard.functions";
 import type {
   DashboardOverview as DashboardData,
   DashboardAiSummary,
@@ -92,11 +91,20 @@ const dashboardQuery = (
   refreshMs: number = DEFAULT_REFRESH_MS,
 ) =>
   queryOptions({
-    queryKey: ["dashboard-overview", rangeDays, workspaceId ?? "all"],
-    queryFn: () =>
-      getDashboardOverview({
-        data: { rangeDays, ...(workspaceId ? { workspaceId } : {}) },
-      }),
+    queryKey: ["dashboard-bundle", rangeDays, workspaceId ?? "all"],
+    queryFn: () => {
+      const s = new Date();
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(s.getTime() + 86400_000);
+      return getDashboardBundle({
+        data: {
+          rangeDays,
+          ...(workspaceId ? { workspaceId } : {}),
+          dayStart: s.toISOString(),
+          dayEnd: e.toISOString(),
+        },
+      });
+    },
     staleTime: 30_000,
     refetchInterval: refreshMs > 0 ? refreshMs : false,
     refetchIntervalInBackground: false,
@@ -695,47 +703,36 @@ function DashboardInner() {
   const { data } = overviewQuery;
 
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
-  const aiSummaryQuery = useQuery({
-    queryKey: ["dashboard-ai-summary", activeWorkspaceId ?? "all"],
-    queryFn: () => {
-      const s = new Date();
-      s.setHours(0, 0, 0, 0);
-      const e = new Date(s.getTime() + 86400_000);
-      return getDashboardAiSummary({
-        data: {
-          ...(activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {}),
-          dayStart: s.toISOString(),
-          dayEnd: e.toISOString(),
-        },
-      });
-    },
-    staleTime: 30_000,
-    refetchInterval: refreshMs > 0 ? refreshMs : false,
-    refetchOnWindowFocus: true,
-  });
+  // 1 request duy nhất: overview + AI summary + notifications đến từ getDashboardBundle.
+  // Các view con đọc từ cùng một query; giữ shape cũ để UI không phải đổi.
+  const aiSummaryQuery = {
+    data: data.ai,
+    isPending: false as boolean,
+    isError: overviewQuery.isError as boolean,
+    error: overviewQuery.error as Error | null,
+    isFetching: overviewQuery.isFetching,
+    refetch: () => void overviewQuery.refetch(),
+  };
+  const notificationsQuery = {
+    data: data.notifications,
+    isPending: false as boolean,
+    isError: overviewQuery.isError as boolean,
+    error: overviewQuery.error as Error | null,
+    isFetching: overviewQuery.isFetching,
+    refetch: () => void overviewQuery.refetch(),
+  };
   const aiItems = useMemo(
-    () => buildAiItems(aiSummaryQuery.data, activeWorkspaceId ?? undefined),
-    [aiSummaryQuery.data, activeWorkspaceId],
+    () => buildAiItems(data.ai, activeWorkspaceId ?? undefined),
+    [data.ai, activeWorkspaceId],
   );
-  const notificationsQuery = useQuery({
-    queryKey: ["dashboard-notifications"],
-    queryFn: () => listNotifications(),
-    placeholderData: keepPreviousData,
-    staleTime: 30_000,
-    refetchInterval: refreshMs > 0 ? refreshMs : false,
-    refetchOnWindowFocus: true,
-  });
   const [notifSort, , toggleNotifSort] = useNotifSortMode();
-  const isRefreshing =
-    overviewQuery.isFetching || aiSummaryQuery.isFetching || notificationsQuery.isFetching;
+  const isRefreshing = overviewQuery.isFetching;
   const lastUpdatedAt = overviewQuery.dataUpdatedAt;
   const refreshAll = () => {
     void overviewQuery.refetch();
-    void aiSummaryQuery.refetch();
-    void notificationsQuery.refetch();
   };
   const importantNotifications = useMemo(() => {
-    const rows = notificationsQuery.data ?? [];
+    const rows = data.notifications ?? [];
     const unread = rows.filter((n: any) => !n.is_read);
     const base = [...(unread.length ? unread : rows)];
     const time = (n: any) => new Date(n.created_at ?? 0).getTime();
@@ -747,7 +744,7 @@ function DashboardInner() {
       base.sort((a: any, b: any) => time(b) - time(a));
     }
     return base.slice(0, 3);
-  }, [notificationsQuery.data, notifSort]);
+  }, [data.notifications, notifSort]);
   const markReadFn = useServerFn(markNotificationsRead);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const handleMarkRead = async (id: string) => {
@@ -755,7 +752,7 @@ function DashboardInner() {
     setMarkingId(id);
     try {
       await markReadFn({ data: { ids: [id] } });
-      await notificationsQuery.refetch();
+      await overviewQuery.refetch();
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("Đã đánh dấu là đã đọc");
     } catch (e) {
