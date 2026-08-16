@@ -18,6 +18,14 @@ import {
   Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getTaskKind, TASK_KIND_META } from "@/lib/home-task-kind";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { HomeSummary, HomeTask, HomeUpcoming, WorkInboxItem } from "@/lib/api/home.functions";
 
 const timeFmt = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" });
