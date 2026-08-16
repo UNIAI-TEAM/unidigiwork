@@ -174,8 +174,8 @@ function AgentBuilderPage() {
           targetTaskId: activeAgent.action_type === "UPDATE_TASK_FIELDS" ? candidate.id : null,
         },
       });
-      setProposals((p) => [proposal, ...p.filter((x) => x.id !== proposal.id)]);
-      await record({ data: { agentId: activeAgent.id, proposalId: proposal.id, status: "PROPOSED" } });
+      setProposals((p) => [proposal, ...p.filter((x) => x.actionId !== proposal.actionId)]);
+      await record({ data: { agentId: activeAgent.id, proposalId: proposal.actionId, status: "PROPOSED" } });
       invalidate();
     } catch (e: any) {
       toast.error(e?.message ?? "Không tạo được đề xuất");
@@ -325,7 +325,7 @@ function AgentBuilderPage() {
               {proposals.length > 0 && (
                 <section className="space-y-3">
                   <h3 className="font-semibold">Đề xuất chờ bạn phê duyệt</h3>
-                  {proposals.map((p) => <ActionProposalCard key={p.id} proposal={p} />)}
+                  {proposals.map((p) => <ActionProposalCard key={p.actionId} proposal={p} />)}
                 </section>
               )}
             </section>
