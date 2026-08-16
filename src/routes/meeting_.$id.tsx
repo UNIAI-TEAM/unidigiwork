@@ -1,3 +1,4 @@
+import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1892,6 +1893,9 @@ function MeetingDetailPage() {
                   ))}
                 </div>
               )}
+            </div>
+            <div className="border-t border-border p-4">
+              <RelatedWorkPanel entityType="MEETING" entityId={id} />
             </div>
           </aside>
         </div>

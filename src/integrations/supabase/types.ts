@@ -3309,6 +3309,155 @@ export type Database = {
         }
         Relationships: []
       }
+      work_edges: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          origin: string
+          relationship_type: string
+          source_node_id: string
+          target_node_id: string
+          tenant_id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          origin?: string
+          relationship_type: string
+          source_node_id: string
+          target_node_id: string
+          tenant_id: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          origin?: string
+          relationship_type?: string
+          source_node_id?: string
+          target_node_id?: string
+          tenant_id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_edges_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "work_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_edges_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "work_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_edges_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_edges_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_nodes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json
+          tenant_id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json
+          tenant_id: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          tenant_id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_nodes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_nodes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_relationship_types: {
+        Row: {
+          code: string
+          created_at: string
+          source_type: string
+          system_creatable: boolean
+          target_type: string
+          user_creatable: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          source_type: string
+          system_creatable?: boolean
+          target_type: string
+          user_creatable?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          source_type?: string
+          system_creatable?: boolean
+          target_type?: string
+          user_creatable?: boolean
+        }
+        Relationships: []
+      }
       workflow_access_requests: {
         Row: {
           action: string
@@ -4179,6 +4328,34 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      _work_entity_scope: {
+        Args: { _entity_id: string; _entity_type: string }
+        Returns: {
+          tenant_id: string
+          workspace_id: string
+        }[]
+      }
+      _work_graph_link_system: {
+        Args: {
+          _metadata?: Json
+          _relationship: string
+          _source_id: string
+          _source_type: string
+          _target_id: string
+          _target_type: string
+        }
+        Returns: string
+      }
+      _work_graph_reconcile_single: {
+        Args: {
+          _relationship: string
+          _source_id: string
+          _source_type: string
+          _target_id: string
+          _target_type: string
+        }
+        Returns: undefined
+      }
       _workflow_next_run: {
         Args: {
           _at_hour: number
@@ -4354,6 +4531,10 @@ export type Database = {
       }
       can_view_chat_channel: {
         Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_work_entity: {
+        Args: { _entity_id: string; _entity_type: string }
         Returns: boolean
       }
       cancel_meeting: {
@@ -4965,6 +5146,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      ensure_work_node: {
+        Args: { _entity_id: string; _entity_type: string }
+        Returns: string
+      }
       evaluate_quota_alert: {
         Args: {
           _correlation_id: string
@@ -5018,6 +5203,10 @@ export type Database = {
           chat: number
           email: number
         }[]
+      }
+      get_work_context: {
+        Args: { _entity_id: string; _entity_type: string; _limit?: number }
+        Returns: Json
       }
       global_search: {
         Args: {
@@ -5107,6 +5296,17 @@ export type Database = {
           _idempotency_key?: string
           _meeting_id: string
           _token_fingerprint: string
+        }
+        Returns: Json
+      }
+      link_work_entities: {
+        Args: {
+          _metadata?: Json
+          _relationship: string
+          _source_id: string
+          _source_type: string
+          _target_id: string
+          _target_type: string
         }
         Returns: Json
       }
@@ -5825,6 +6025,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      unlink_work_entities: { Args: { _edge_id: string }; Returns: Json }
       update_document: {
         Args: {
           _content?: string
@@ -6047,6 +6248,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      work_graph_backfill: {
+        Args: { _batch?: number; _dry_run?: boolean }
+        Returns: Json
+      }
+      work_graph_health: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

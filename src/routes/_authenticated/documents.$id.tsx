@@ -1,3 +1,4 @@
+import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -379,6 +380,8 @@ function DocumentDetailPage() {
                 Chưa có bình luận
               </div>
             </div>
+
+            <RelatedWorkPanel entityType="DOCUMENT" entityId={id} className="mt-6" />
           </aside>
         </div>
       </div>

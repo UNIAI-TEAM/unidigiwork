@@ -1,3 +1,4 @@
+import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -514,6 +515,11 @@ function TaskDetailPage() {
                     <CheckCircle2 className="h-4 w-4" />
                     {task.status === "done" ? "Mở lại công việc" : "Đánh dấu hoàn thành"}
                   </button>
+                  <RelatedWorkPanel
+                    entityType="TASK"
+                    entityId={id}
+                    className="rounded-xl border border-border bg-surface p-4"
+                  />
                 </aside>
               </div>
             )}

@@ -1,3 +1,4 @@
+import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -797,6 +798,11 @@ function WorkspaceDetailPage() {
                     Xem chi tiết →
                   </button>
                 </div>
+                <RelatedWorkPanel
+                  entityType="WORKSPACE"
+                  entityId={workspaceId}
+                  className="rounded-xl border border-border bg-surface p-4"
+                />
               </div>
             </div>
           )}
