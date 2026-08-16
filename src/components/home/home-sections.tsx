@@ -214,16 +214,29 @@ const INBOX_ICON: Record<WorkInboxItem["type"], typeof Bell> = {
 export function InboxRow({
   item,
   onMarkRead,
+  onOpen,
 }: {
   item: WorkInboxItem;
   onMarkRead?: (item: WorkInboxItem) => void;
+  onOpen?: (item: WorkInboxItem) => void;
 }) {
   const Icon = INBOX_ICON[item.type];
   return (
     <div className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-surface-2">
       <Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
-      <a href={item.href} className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{item.title}</span>
+      <a
+        href={item.href}
+        onClick={(e) => {
+          if (!onOpen || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+          e.preventDefault();
+          onOpen(item);
+        }}
+        className="min-w-0 flex-1 text-left"
+      >
+        <span className="flex items-center gap-2">
+          {!item.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />}
+          <span className="block truncate text-sm font-medium">{item.title}</span>
+        </span>
         {item.summary && (
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">{item.summary}</span>
         )}
