@@ -2,6 +2,7 @@
 // Bất biến: ĐIỀU KIỆN → AI ĐỀ XUẤT → NGƯỜI DUYỆT. Không bao giờ tự động thực thi.
 import { z } from "zod";
 import { AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
+import { deriveAllowedFromSkills, normalizeSkills } from "./skills";
 
 /** Hard invariant: agent không có quyền ghi dữ liệu, chỉ sinh đề xuất chờ duyệt. */
 export const AGENT_AUTONOMOUS_EXECUTION = false as const;
@@ -104,6 +105,8 @@ export const AgentInputBaseSchema = z.object({
   triggerType: z.enum(AGENT_TRIGGERS),
   conditions: z.array(AgentConditionSchema).max(10).default([]),
   actionType: z.enum(AI_ACTION_TYPES),
+  /** Kỹ năng AI được bật cho agent. Allowlist hành động/nguồn suy ra từ đây. */
+  skills: z.array(z.string().max(60)).max(30).default([]),
   allowedActionTypes: z.array(z.enum(AI_ACTION_TYPES)).min(1).default([...AI_ACTION_TYPES]),
   allowedSources: z.array(z.enum(AI_ACTION_SOURCES)).min(1).default(["WORKFLOW_AGENT"]),
   instruction: z.string().max(2000).default(""),
@@ -133,10 +136,15 @@ export const normalizeAllowedSources = (v: unknown): AiActionSource[] => {
 
 /** Kiểm tra 1 đề xuất có được phép sinh ra từ agent này không. */
 export function isAgentActionAllowed(
-  agent: { allowed_action_types?: unknown; allowed_sources?: unknown },
+  agent: { allowed_action_types?: unknown; allowed_sources?: unknown; skills?: unknown },
   actionType: AiActionType,
   source: AiActionSource,
 ): boolean {
+  const skills = normalizeSkills(agent.skills);
+  if (skills.length > 0) {
+    const derived = deriveAllowedFromSkills(skills);
+    return derived.actionTypes.includes(actionType) && derived.sources.includes(source);
+  }
   return (
     normalizeAllowedActionTypes(agent.allowed_action_types).includes(actionType) &&
     normalizeAllowedSources(agent.allowed_sources).includes(source)
