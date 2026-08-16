@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.tg_work_edges_validate() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_nodes_fill_scope() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_nodes_person_tenant() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_graph_project_task() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_graph_project_meeting() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_graph_project_document() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_graph_project_email_thread() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_graph_project_channel() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_graph_project_task_assignee() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_work_graph_project_meeting_participant() FROM PUBLIC;
