@@ -161,6 +161,7 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
     let degraded = false;
     const runId = crypto.randomUUID();
     const staged = shouldUseStagedSummary(segments);
+    let lastChunks: SummaryChunkProgress[] = [];
     await writeSummaryProgress(context.supabase, {
       meetingId: data.meetingId,
       runId,
@@ -179,15 +180,17 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
         title: "Cuộc họp",
         startAt,
         segments,
-        onProgress: ({ phase, chunks }) =>
-          writeSummaryProgress(context.supabase, {
+        onProgress: ({ phase, chunks }) => {
+          lastChunks = chunks;
+          return writeSummaryProgress(context.supabase, {
             meetingId: data.meetingId,
             runId,
             phase,
             staged: true,
             truncated: false,
             chunks,
-          }),
+          });
+        },
       });
       if (staged.failedStages > 0 && staged.parsed.decisions.length === 0 && !staged.parsed.summary) {
         await writeSummaryProgress(context.supabase, {
@@ -264,7 +267,7 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
       phase: "DONE",
       staged,
       truncated,
-      chunks: [],
+      chunks: lastChunks,
     });
 
     const { validateGroundedSummary } = await import("@/domain/meeting-intelligence/grounding");
