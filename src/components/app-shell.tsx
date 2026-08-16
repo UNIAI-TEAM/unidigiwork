@@ -65,6 +65,7 @@ import { TenantSwitcher } from "@/components/tenant-switcher";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useAvailableTenants } from "@/features/tenants/hooks";
+import { DesktopNavigation } from "@/components/navigation/desktop-nav";
 
 /**
  * Batch 1B-UI-FINISH — Tenant switcher slot embedded in AppTopbar.
