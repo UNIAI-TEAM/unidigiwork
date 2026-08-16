@@ -194,21 +194,42 @@ export function MyWorkRow({
 }) {
   const kind = getTaskKind(task);
   const meta = TASK_KIND_META[kind];
+  const done = task.status === "done";
   const KindIcon =
     kind === "email" ? Mail : kind === "meeting" ? Video : kind === "chat" ? MessageSquare : kind === "document" ? FileText : ListChecks;
   return (
-    <div className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-surface-2">
+    <div
+      className={cn(
+        "flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 transition-opacity hover:bg-surface-2",
+        (done || completing) && "opacity-60",
+      )}
+      aria-busy={completing}
+    >
       <button
         type="button"
         onClick={() => onComplete(task)}
-        disabled={completing}
+        disabled={completing || done}
         aria-label={`Hoàn thành: ${task.title}`}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+        className={cn(
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50",
+          done ? "text-success" : "text-muted-foreground",
+        )}
       >
-        <CheckCircle2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
+        {completing ? (
+          <Loader2 className="h-[18px] w-[18px] animate-spin" strokeWidth={1.75} />
+        ) : (
+          <CheckCircle2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
+        )}
       </button>
       <Link to="/tasks/$id" params={{ id: task.id }} className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{task.title}</span>
+        <span
+          className={cn(
+            "block truncate text-sm font-medium",
+            done && "text-muted-foreground line-through",
+          )}
+        >
+          {task.title}
+        </span>
         <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
           {task.workspace_name && <span className="truncate">{task.workspace_name}</span>}
           <span className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-1.5 py-0.5">
@@ -227,7 +248,7 @@ export function MyWorkRow({
         <button
           type="button"
           onClick={() => onComplete(task)}
-          disabled={completing}
+          disabled={completing || done}
           aria-label={`Hoàn thành: ${task.title}`}
           className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-success/40 hover:bg-success/10 hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
         >
@@ -236,7 +257,7 @@ export function MyWorkRow({
           ) : (
             <CheckCircle2 className="h-[14px] w-[14px]" strokeWidth={1.75} />
           )}
-          <span className="hidden sm:inline">Hoàn thành</span>
+          <span className="hidden sm:inline">{done ? "Đã xong" : "Hoàn thành"}</span>
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -266,7 +287,7 @@ export function MyWorkRow({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={completing} onSelect={() => onComplete(task)}>
+            <DropdownMenuItem disabled={completing || done} onSelect={() => onComplete(task)}>
               <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} /> Hoàn thành công việc
             </DropdownMenuItem>
           </DropdownMenuContent>
