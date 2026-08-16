@@ -1506,6 +1506,70 @@ export type Database = {
           },
         ]
       }
+      meeting_action_item_states: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          item_key: string
+          meeting_id: string
+          status: string
+          task_id: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          item_key: string
+          meeting_id: string
+          status?: string
+          task_id?: string | null
+          tenant_id: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          id?: string
+          item_key?: string
+          meeting_id?: string
+          status?: string
+          task_id?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_action_item_states_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_action_item_states_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_action_item_states_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_attendance: {
         Row: {
           created_at: string
@@ -1910,52 +1974,67 @@ export type Database = {
           action_items: Json
           created_at: string
           decisions: Json
+          followup: Json
           generated_at: string
           generated_by: string | null
           highlights: Json
           id: string
           meeting_id: string
           model: string | null
+          open_questions: Json
+          risks: Json
           segment_count: number
           sources: Json
           status: string
           summary: string
           tenant_id: string
+          transcript_checksum: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           action_items?: Json
           created_at?: string
           decisions?: Json
+          followup?: Json
           generated_at?: string
           generated_by?: string | null
           highlights?: Json
           id?: string
           meeting_id: string
           model?: string | null
+          open_questions?: Json
+          risks?: Json
           segment_count?: number
           sources?: Json
           status?: string
           summary?: string
           tenant_id: string
+          transcript_checksum?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           action_items?: Json
           created_at?: string
           decisions?: Json
+          followup?: Json
           generated_at?: string
           generated_by?: string | null
           highlights?: Json
           id?: string
           meeting_id?: string
           model?: string | null
+          open_questions?: Json
+          risks?: Json
           segment_count?: number
           sources?: Json
           status?: string
           summary?: string
           tenant_id?: string
+          transcript_checksum?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -5212,6 +5291,36 @@ export type Database = {
         Args: { _id: string; _worker: string }
         Returns: boolean
       }
+      confirm_meeting_action_item: {
+        Args: {
+          _assignee_id?: string
+          _description?: string
+          _due_at?: string
+          _item_key: string
+          _meeting_id: string
+          _title: string
+          _workspace_id: string
+        }
+        Returns: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          item_key: string
+          meeting_id: string
+          status: string
+          task_id: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_action_item_states"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_chat_mention_notifications: {
         Args: { _message_id: string; _user_ids: string[] }
         Returns: number
@@ -5491,6 +5600,28 @@ export type Database = {
       delete_workflow_trigger: {
         Args: { _trigger_id: string }
         Returns: boolean
+      }
+      dismiss_meeting_action_item: {
+        Args: { _item_key: string; _meeting_id: string; _title?: string }
+        Returns: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          item_key: string
+          meeting_id: string
+          status: string
+          task_id: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_action_item_states"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       dispatch_task_due_reminders: { Args: never; Returns: number }
       dispatch_workflow_schedules: { Args: never; Returns: number }
@@ -6090,30 +6221,39 @@ export type Database = {
         Args: {
           _action_items: Json
           _decisions: Json
+          _followup?: Json
           _highlights: Json
           _meeting_id: string
           _model: string
+          _open_questions?: Json
+          _risks?: Json
           _segment_count: number
           _sources: Json
           _status: string
           _summary: string
+          _transcript_checksum?: string
         }
         Returns: {
           action_items: Json
           created_at: string
           decisions: Json
+          followup: Json
           generated_at: string
           generated_by: string | null
           highlights: Json
           id: string
           meeting_id: string
           model: string | null
+          open_questions: Json
+          risks: Json
           segment_count: number
           sources: Json
           status: string
           summary: string
           tenant_id: string
+          transcript_checksum: string | null
           updated_at: string
+          version: number
         }
         SetofOptions: {
           from: "*"

@@ -2,6 +2,9 @@
 import type {
   MeetingActionItem,
   MeetingDecision,
+  MeetingFollowUp,
+  MeetingOpenQuestion,
+  MeetingRisk,
   MeetingSummary,
   SummarySource,
 } from "@/domain/meeting-intelligence/contracts";
@@ -37,5 +40,13 @@ export function mapSummaryRow(row: Record<string, unknown>): MeetingSummary {
     sources: arr<SummarySource>(row.sources),
     segmentCount: Number(row.segment_count ?? 0),
     generatedAt: String(row.generated_at ?? row.created_at ?? new Date().toISOString()),
+    risks: arr<MeetingRisk>(row.risks),
+    openQuestions: arr<MeetingOpenQuestion>(row.open_questions),
+    followUp:
+      row.followup && typeof row.followup === "object" && (row.followup as MeetingFollowUp).subject
+        ? (row.followup as MeetingFollowUp)
+        : null,
+    transcriptChecksum: (row.transcript_checksum as string | null) ?? null,
+    version: Number(row.version ?? 1),
   };
 }

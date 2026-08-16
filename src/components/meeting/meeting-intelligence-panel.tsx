@@ -1,20 +1,56 @@
 // Meeting Intelligence V1 — biên bản trực tiếp + tóm tắt AI có nguồn trích dẫn.
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Gavel, ListTodo, Loader2, Quote, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  Gavel,
+  HelpCircle,
+  ListTodo,
+  Loader2,
+  Mail,
+  Quote,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  actionItemKey,
+  DECISION_CONFIDENCE_LABEL,
   formatOffset,
+  transcriptChecksum,
   TRANSCRIPT_SOURCE_LABEL,
+  type MeetingActionItem,
   type MeetingSummary,
   type SummarySource,
 } from "@/domain/meeting-intelligence/contracts";
 import {
+  confirmMeetingActionItem,
+  dismissMeetingActionItem,
   generateMeetingSummary,
   getMeetingSummary,
+  listMeetingActionItemStates,
   listMeetingTranscript,
 } from "@/lib/api/meeting-intelligence.functions";
+import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 
 function CitationChips({
   ids,
@@ -50,6 +86,10 @@ function CitationChips({
 export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const queryClient = useQueryClient();
   const [activeSource, setActiveSource] = useState<SummarySource | null>(null);
+  const [pending, setPending] = useState<{ item: MeetingActionItem; key: string } | null>(null);
+  const [formTitle, setFormTitle] = useState("");
+  const [formWorkspace, setFormWorkspace] = useState("");
+  const [formDue, setFormDue] = useState("");
 
   const transcriptQuery = useQuery({
     queryKey: ["meeting-transcript", meetingId],
@@ -60,6 +100,16 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     queryKey: ["meeting-summary", meetingId],
     staleTime: 30_000,
     queryFn: () => getMeetingSummary({ data: { meetingId } }),
+  });
+  const statesQuery = useQuery({
+    queryKey: ["meeting-action-item-states", meetingId],
+    staleTime: 10_000,
+    queryFn: () => listMeetingActionItemStates({ data: { meetingId } }),
+  });
+  const workspacesQuery = useQuery({
+    queryKey: ["my-workspaces"],
+    staleTime: 300_000,
+    queryFn: () => listMyWorkspaces(),
   });
 
   const generate = useMutation({
@@ -74,13 +124,58 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     },
   });
 
+  const confirmItem = useMutation({
+    mutationFn: (input: { itemKey: string; title: string; workspaceId: string; dueAt: string | null }) =>
+      confirmMeetingActionItem({
+        data: {
+          meetingId,
+          itemKey: input.itemKey,
+          title: input.title,
+          workspaceId: input.workspaceId,
+          dueAt: input.dueAt,
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-action-item-states", meetingId] });
+      setPending(null);
+      toast.success("Đã tạo công việc từ cuộc họp.");
+    },
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "Không tạo được công việc."),
+  });
+
+  const dismissItem = useMutation({
+    mutationFn: (input: { itemKey: string; title: string }) =>
+      dismissMeetingActionItem({ data: { meetingId, itemKey: input.itemKey, title: input.title } }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-action-item-states", meetingId] });
+      toast.success("Đã bỏ qua đề xuất.");
+    },
+  });
+
   const segments = transcriptQuery.data ?? [];
   const summary = summaryQuery.data ?? null;
   const hasTranscript = segments.length > 0;
+  const workspaces = workspacesQuery.data ?? [];
+  const stateByKey = useMemo(
+    () => new Map((statesQuery.data ?? []).map((s) => [s.itemKey, s])),
+    [statesQuery.data],
+  );
+  const isStale = useMemo(() => {
+    if (!summary?.transcriptChecksum || segments.length === 0) return false;
+    return summary.transcriptChecksum !== transcriptChecksum(segments);
+  }, [summary, segments]);
   const generatedAt = useMemo(
     () => (summary ? new Date(summary.generatedAt).toLocaleString("vi-VN") : null),
     [summary],
   );
+
+  const openConfirm = (item: MeetingActionItem) => {
+    setPending({ item, key: actionItemKey(item) });
+    setFormTitle(item.title);
+    setFormWorkspace(workspaces[0]?.id ?? "");
+    setFormDue("");
+  };
 
   return (
     <div className="space-y-4 text-xs">
@@ -107,10 +202,16 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
             <span>
               {summary.status === "partial" ? "Tóm tắt một phần" : "Tóm tắt"} ·{" "}
-              {summary.segmentCount} đoạn
+              {summary.segmentCount} đoạn · v{summary.version}
             </span>
             {generatedAt && <span>{generatedAt}</span>}
           </div>
+          {isStale && (
+            <div className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 p-2 text-[11px] text-foreground">
+              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-warning" />
+              <span>Biên bản đã thay đổi sau lần tổng hợp này. Hãy tạo lại tóm tắt để cập nhật.</span>
+            </div>
+          )}
           {summary.summary && (
             <p className="whitespace-pre-wrap leading-relaxed text-foreground">{summary.summary}</p>
           )}
@@ -133,7 +234,20 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
               </div>
               {summary.decisions.map((d, i) => (
                 <div key={i} className="rounded-md border border-border bg-background p-2">
-                  <div className="font-medium text-foreground">{d.title}</div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-medium text-foreground">{d.title}</div>
+                    <span
+                      className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] ${
+                        d.confidence === "EXPLICIT"
+                          ? "bg-success/15 text-success"
+                          : d.confidence === "LIKELY"
+                            ? "bg-warning/15 text-warning"
+                            : "bg-surface-3 text-muted-foreground"
+                      }`}
+                    >
+                      {DECISION_CONFIDENCE_LABEL[d.confidence ?? "UNCLEAR"]}
+                    </span>
+                  </div>
                   {d.detail && <div className="mt-0.5 text-muted-foreground">{d.detail}</div>}
                   <CitationChips ids={d.sourceIds} sources={summary.sources} onPick={setActiveSource} />
                 </div>
@@ -146,16 +260,102 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
               <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 <ListTodo className="h-3 w-3" /> Việc cần làm
               </div>
-              {summary.actionItems.map((a, i) => (
-                <div key={i} className="rounded-md border border-border bg-background p-2">
-                  <div className="font-medium text-foreground">{a.title}</div>
-                  <div className="mt-0.5 text-[10px] text-muted-foreground">
-                    {a.owner ? `Phụ trách: ${a.owner}` : "Chưa rõ người phụ trách"}
-                    {a.dueHint ? ` · Hạn: ${a.dueHint}` : ""}
+              {summary.actionItems.map((a, i) => {
+                const key = actionItemKey(a);
+                const state = stateByKey.get(key);
+                return (
+                  <div key={i} className="rounded-md border border-border bg-background p-2">
+                    <div className="font-medium text-foreground">{a.title}</div>
+                    <div className="mt-0.5 text-[10px] text-muted-foreground">
+                      {a.owner ? `Đề xuất: ${a.owner}` : "Chưa rõ người phụ trách"}
+                      {a.dueHint ? ` · Hạn: ${a.dueHint}` : ""}
+                    </div>
+                    <CitationChips ids={a.sourceIds} sources={summary.sources} onPick={setActiveSource} />
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      {state?.status === "CONVERTED_TO_TASK" ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-success">
+                          <CheckCircle2 className="h-3 w-3" /> Đã tạo công việc
+                        </span>
+                      ) : state?.status === "DISMISSED" ? (
+                        <span className="text-[10px] text-muted-foreground">Đã bỏ qua</span>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[10px]"
+                            disabled={workspaces.length === 0}
+                            onClick={() => openConfirm(a)}
+                          >
+                            Tạo công việc
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 gap-1 text-[10px] text-muted-foreground"
+                            onClick={() => dismissItem.mutate({ itemKey: key, title: a.title })}
+                          >
+                            <X className="h-3 w-3" /> Bỏ qua
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <CitationChips ids={a.sourceIds} sources={summary.sources} onPick={setActiveSource} />
+                );
+              })}
+            </div>
+          )}
+
+          {summary.risks.length > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <AlertTriangle className="h-3 w-3" /> Rủi ro (nhận định)
+              </div>
+              {summary.risks.map((r, i) => (
+                <div key={i} className="rounded-md border border-border bg-background p-2">
+                  <div className="text-foreground">{r.title}</div>
+                  <CitationChips ids={r.sourceIds} sources={summary.sources} onPick={setActiveSource} />
                 </div>
               ))}
+            </div>
+          )}
+
+          {summary.openQuestions.length > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <HelpCircle className="h-3 w-3" /> Chưa thống nhất
+              </div>
+              {summary.openQuestions.map((q, i) => (
+                <div key={i} className="rounded-md border border-border bg-background p-2">
+                  <div className="text-foreground">{q.question}</div>
+                  <CitationChips ids={q.sourceIds} sources={summary.sources} onPick={setActiveSource} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {summary.followUp && (
+            <div className="space-y-1 rounded-md border border-border bg-background p-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <Mail className="h-3 w-3" /> Thư theo dõi (bản nháp)
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 gap-1 text-[10px]"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(
+                      `${summary.followUp?.subject ?? ""}\n\n${summary.followUp?.body ?? ""}`,
+                    );
+                    toast.success("Đã sao chép bản nháp. Hệ thống không tự gửi thư.");
+                  }}
+                >
+                  <Copy className="h-3 w-3" /> Sao chép
+                </Button>
+              </div>
+              <div className="font-medium text-foreground">{summary.followUp.subject}</div>
+              <p className="whitespace-pre-wrap text-muted-foreground">{summary.followUp.body}</p>
             </div>
           )}
 
@@ -191,6 +391,65 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
           </div>
         ))}
       </div>
+
+      <Dialog open={Boolean(pending)} onOpenChange={(o) => !o && setPending(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Xác nhận tạo công việc</DialogTitle>
+            <DialogDescription>
+              Công việc được tạo từ cuộc họp này và giữ liên kết nguồn. Bấm hai lần cũng chỉ tạo một
+              công việc.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-xs">
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Tiêu đề</label>
+              <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Không gian làm việc</label>
+              <Select value={formWorkspace} onValueChange={setFormWorkspace}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn không gian làm việc" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">
+                Hạn hoàn thành (tuỳ chọn){pending?.item.dueHint ? ` · gợi ý: ${pending.item.dueHint}` : ""}
+              </label>
+              <Input type="date" value={formDue} onChange={(e) => setFormDue(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPending(null)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={!formTitle.trim() || !formWorkspace || confirmItem.isPending}
+              onClick={() =>
+                pending &&
+                confirmItem.mutate({
+                  itemKey: pending.key,
+                  title: formTitle.trim(),
+                  workspaceId: formWorkspace,
+                  dueAt: formDue ? new Date(`${formDue}T17:00:00`).toISOString() : null,
+                })
+              }
+            >
+              {confirmItem.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              Xác nhận tạo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
