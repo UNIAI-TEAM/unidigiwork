@@ -38,6 +38,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { openUniCopilot } from "@/components/ai/uni-copilot";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import { universalSearch } from "@/lib/api/search-universal.functions";
