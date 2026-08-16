@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square } from "lucide-react";
+import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { askUniCopilot } from "@/lib/api/ai-copilot.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
@@ -60,6 +60,10 @@ export function UniCopilot() {
   const [contextNote, setContextNote] = useState<string | null>(null);
   // Ngữ cảnh gốc UNI tự giữ giữa các lượt follow-up (khi người dùng không ghim sẵn root).
   const [pinnedRoot, setPinnedRoot] = useState<CopilotRoot>(null);
+  // Mobile bottom sheet: 'half' (mặc định) ↔ 'full', kéo xuống để đóng.
+  const [snap, setSnap] = useState<"half" | "full">("half");
+  const [dragY, setDragY] = useState(0);
+  const dragRef = useRef<{ startY: number; pointerId: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -122,8 +126,45 @@ export function UniCopilot() {
   }, []);
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 60);
+    if (!open) return;
+    setDragY(0);
+    // Trên mobile không auto-focus để bàn phím không che nội dung ngay khi mở.
+    const isTouch = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+    if (!isTouch) setTimeout(() => inputRef.current?.focus(), 60);
   }, [open]);
+
+  // Khoá scroll nền khi sheet mở trên mobile.
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const prev = document.body.style.overflow;
+    if (window.matchMedia("(max-width: 767px)").matches) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  const onHandleDown = useCallback((e: React.PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { startY: e.clientY, pointerId: e.pointerId };
+  }, []);
+  const onHandleMove = useCallback((e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    setDragY(Math.max(-80, e.clientY - d.startY));
+  }, []);
+  const onHandleUp = useCallback(
+    (e: React.PointerEvent) => {
+      const d = dragRef.current;
+      if (!d || d.pointerId !== e.pointerId) return;
+      const delta = e.clientY - d.startY;
+      dragRef.current = null;
+      setDragY(0);
+      if (delta < -48) setSnap("full");
+      else if (delta > 120) closeUniCopilot();
+      else if (delta > 48) setSnap((s) => (s === "full" ? "half" : s));
+    },
+    [],
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -188,12 +229,31 @@ export function UniCopilot() {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-foreground/20 md:hidden" onClick={closeUniCopilot} aria-hidden />
+      <div className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-[2px] md:hidden" onClick={closeUniCopilot} aria-hidden />
       <aside
         role="dialog"
         aria-label="UNI — Workspace Copilot"
-        className="fixed inset-x-0 bottom-0 top-16 z-50 flex flex-col border-l border-border bg-background shadow-xl md:inset-y-0 md:left-auto md:right-0 md:top-0 md:w-[420px]"
+        style={{ transform: dragY ? `translateY(${dragY}px)` : undefined }}
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-border bg-background shadow-xl transition-[top,transform] duration-200 ease-out md:inset-y-0 md:left-auto md:right-0 md:w-[420px] md:rounded-none md:border-y-0 md:border-r-0 ${
+          snap === "full" ? "top-4" : "top-[38vh]"
+        } md:top-0`}
       >
+        {/* Tay nắm kéo — chỉ mobile: kéo lên mở rộng, kéo xuống thu nhỏ/đóng. */}
+        <div
+          className="flex shrink-0 justify-center py-2 md:hidden"
+          style={{ touchAction: "none" }}
+          onPointerDown={onHandleDown}
+          onPointerMove={onHandleMove}
+          onPointerUp={onHandleUp}
+          onPointerCancel={() => {
+            dragRef.current = null;
+            setDragY(0);
+          }}
+          role="separator"
+          aria-label="Kéo để thay đổi kích thước UNI"
+        >
+          <span className="h-1.5 w-10 rounded-full bg-border" />
+        </div>
         <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -205,6 +265,15 @@ export function UniCopilot() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label={snap === "full" ? "Thu nhỏ UNI" : "Mở rộng UNI"}
+              onClick={() => setSnap((s) => (s === "full" ? "half" : "full"))}
+            >
+              {snap === "full" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
             {messages.length > 0 && (
               <Button variant="ghost" size="icon" aria-label="Hội thoại mới" onClick={reset}>
                 <RotateCcw className="h-4 w-4" />
