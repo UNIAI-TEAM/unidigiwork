@@ -127,16 +127,12 @@ export const proposeAiAction = createServerFn({ method: "POST" })
     } else if (actionType === "UPDATE_TASK_FIELDS") {
       const taskId = data.targetTaskId ?? (data.rootEntity?.type === "TASK" ? data.rootEntity.id : null);
       if (!taskId) throw fail("ACTION_NOT_FOUND", "Hãy mở công việc cần cập nhật rồi yêu cầu UNI.");
-      const { data: task } = await context.supabase
-        .from("tasks")
-        .select("id, title, row_version, workspace_id")
-        .eq("id", taskId)
-        .is("deleted_at", null)
-        .maybeSingle();
+      const { readTaskTarget } = await import("./ai-actions.server");
+      const task = await readTaskTarget(context as never, taskId);
       if (!task) throw fail("ACTION_NOT_FOUND");
       targetType = "TASK";
       targetId = task.id;
-      expectedRowVersion = (task as any).row_version ?? null;
+      expectedRowVersion = task.rowVersion;
       payload = {
         taskId: task.id,
         title: fields.title && fields.title !== task.title ? fields.title : undefined,
@@ -295,9 +291,10 @@ export const confirmAiAction = createServerFn({ method: "POST" })
 
     // Kiểm tra trạng thái cũ của target (row version) trước khi ghi.
     if (row.target_type === "TASK" && row.target_id) {
-      const { data: task } = await sb.from("tasks").select("id, row_version").eq("id", row.target_id).is("deleted_at", null).maybeSingle();
+      const { readTaskTarget } = await import("./ai-actions.server");
+      const task = await readTaskTarget(context as never, row.target_id);
       if (!task) throw fail("ACTION_NOT_FOUND", "Công việc không còn tồn tại.");
-      if (row.expected_row_version != null && (task as any).row_version !== row.expected_row_version) {
+      if (row.expected_row_version != null && task.rowVersion !== row.expected_row_version) {
         await sb.from("ai_action_proposals").update({ status: "FAILED", error_code: "ACTION_STALE" }).eq("id", row.id);
         throw fail("ACTION_STALE");
       }
