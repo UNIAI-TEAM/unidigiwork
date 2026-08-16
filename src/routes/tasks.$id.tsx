@@ -1,3 +1,4 @@
+import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
