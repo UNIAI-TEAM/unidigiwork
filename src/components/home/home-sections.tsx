@@ -7,7 +7,9 @@ import {
   Bell,
   CalendarClock,
   CheckCircle2,
+  ExternalLink,
   ListChecks,
+  Loader2,
   Mail,
   MessageSquare,
   ShieldCheck,
@@ -140,13 +142,32 @@ export function MyWorkRow({
           <span>{PRIORITY_LABEL[task.priority] ?? task.priority}</span>
         </span>
       </Link>
-      <Link
-        to="/tasks/$id"
-        params={{ id: task.id }}
-        className="hidden shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground sm:inline-flex"
-      >
-        Mở
-      </Link>
+      {/* Quick actions: hoàn thành qua command transitionTask, hoặc mở đúng trang task. */}
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onComplete(task)}
+          disabled={completing}
+          aria-label={`Hoàn thành: ${task.title}`}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-success/40 hover:bg-success/10 hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+        >
+          {completing ? (
+            <Loader2 className="h-[14px] w-[14px] animate-spin" strokeWidth={1.75} />
+          ) : (
+            <CheckCircle2 className="h-[14px] w-[14px]" strokeWidth={1.75} />
+          )}
+          <span className="hidden sm:inline">Hoàn thành</span>
+        </button>
+        <Link
+          to="/tasks/$id"
+          params={{ id: task.id }}
+          aria-label={`Mở: ${task.title}`}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+        >
+          <ExternalLink className="h-[14px] w-[14px]" strokeWidth={1.75} />
+          <span className="hidden sm:inline">Mở</span>
+        </Link>
+      </div>
     </div>
   );
 }
