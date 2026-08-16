@@ -71,8 +71,11 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
         data.allowedSources,
       );
     }
-    const derived = skills.length ? deriveAllowedFromSkills(skills) : null;
-    if (skills.length && !derived!.actionTypes.includes(data.actionType)) {
+    // Tự động bật kỹ năng đề xuất hành động mặc định nếu agent không có kỹ năng nào được bật.
+    skills = ensureDefaultSkill(skills);
+
+    const derived = deriveAllowedFromSkills(skills);
+    if (!derived.actionTypes.includes(data.actionType)) {
       throw fail("AGENT_ACTION_NOT_ALLOWED", "Hành động đã chọn không nằm trong kỹ năng AI được bật.");
     }
 
