@@ -859,7 +859,7 @@ function SettingsPage() {
       <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
-        <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
           <div className="mb-5">
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Cài đặt</h1>
             <p className="text-sm text-muted-foreground">

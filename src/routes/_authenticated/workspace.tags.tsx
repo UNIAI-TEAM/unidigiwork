@@ -119,7 +119,7 @@ function WorkspaceTagsPage() {
       <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="lg:pl-64">
         <AppTopbar onOpenSidebar={() => setSidebarOpen(true)} />
-        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-none px-4 py-8 sm:px-6 lg:px-8">
           <Link
             to="/workspace"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"

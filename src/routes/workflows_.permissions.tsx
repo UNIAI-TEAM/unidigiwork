@@ -566,7 +566,7 @@ function WorkflowPermissionsPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-5xl space-y-4 p-4 sm:p-6">
+          <div className="mx-auto max-w-none space-y-4 p-4 sm:p-6">
             <div className="rounded-xl border border-border bg-card p-4 md:p-6">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-primary" />

@@ -449,7 +449,7 @@ function NotificationsPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
-        <div className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[240px_1fr]">
+        <div className="mx-auto grid w-full max-w-none flex-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[240px_1fr]">
           {/* Left filter rail */}
           <aside className="space-y-4">
             <div>

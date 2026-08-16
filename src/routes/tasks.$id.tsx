@@ -200,7 +200,7 @@ function TaskDetailPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-none px-4 py-6 sm:px-6 lg:px-8">
             <Link to="/tasks" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Quay lại Bảng công việc
             </Link>

@@ -73,7 +73,7 @@ function PersonDetailPage() {
               </button>
             </div>
           ) : (
-            <div className="mx-auto max-w-4xl space-y-6">
+            <div className="mx-auto max-w-none space-y-6">
               <header className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-surface p-6">
                 <img
                   src={avatar(person.seed)}
