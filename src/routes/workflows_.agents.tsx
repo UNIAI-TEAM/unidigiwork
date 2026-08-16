@@ -528,7 +528,7 @@ function AgentBuilderPage() {
                           <Switch
                             checked={on}
                             onCheckedChange={(v) => {
-                              const next = normalizeSkills(
+                              const next = ensureDefaultSkill(
                                 v ? [...draft.skills, skill.id] : draft.skills.filter((x) => x !== skill.id),
                               );
                               const allowed = deriveAllowedFromSkills(next);
