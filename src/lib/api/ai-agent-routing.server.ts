@@ -50,7 +50,7 @@ export async function autoAssignAgentForTask(args: {
             agent: a,
             overlap: (Array.isArray(a.skills) ? a.skills : []).filter((s: string) => wanted.has(s)).length,
           }))
-          .sort((x, y) => y.overlap - x.overlap);
+          .sort((x: { overlap: number }, y: { overlap: number }) => y.overlap - x.overlap);
         if (ranked[0]?.overlap) {
           chosen = ranked[0].agent;
           reason = `Kỹ năng gần nhất với lĩnh vực "${match.profileName}"`;
