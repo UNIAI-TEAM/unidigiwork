@@ -46,9 +46,20 @@ export const getDashboardAiSummary = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => loadAiSummary(context.supabase, data));
 
+export type DashboardNotification = {
+  id: string;
+  title: string | null;
+  body: string | null;
+  type: string | null;
+  priority: string | null;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+};
+
 export type DashboardBundle = DashboardOverview & {
   ai: DashboardAiSummary;
-  notifications: Array<Record<string, unknown>>;
+  notifications: DashboardNotification[];
 };
 
 /**
@@ -80,5 +91,5 @@ export const getDashboardBundle = createServerFn({ method: "GET" })
       }),
       loadNotifications(context.supabase, context.userId),
     ]);
-    return { ...overview, ai, notifications: notifications as Array<Record<string, unknown>> };
+    return { ...overview, ai, notifications: notifications as DashboardNotification[] };
   });
