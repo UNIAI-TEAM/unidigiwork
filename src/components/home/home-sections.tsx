@@ -190,6 +190,10 @@ export function MyWorkRow({
   onComplete: (t: HomeTask) => void;
   completing: boolean;
 }) {
+  const kind = getTaskKind(task);
+  const meta = TASK_KIND_META[kind];
+  const KindIcon =
+    kind === "email" ? Mail : kind === "meeting" ? Video : kind === "chat" ? MessageSquare : kind === "document" ? FileText : ListChecks;
   return (
     <div className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-surface-2">
       <button
@@ -205,6 +209,9 @@ export function MyWorkRow({
         <span className="block truncate text-sm font-medium">{task.title}</span>
         <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
           {task.workspace_name && <span className="truncate">{task.workspace_name}</span>}
+          <span className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-1.5 py-0.5">
+            <KindIcon className="h-3 w-3" strokeWidth={1.75} /> {meta.label}
+          </span>
           {task.overdue_days ? (
             <span className="text-destructive">Quá hạn {task.overdue_days} ngày</span>
           ) : task.due_at ? (
@@ -229,15 +236,39 @@ export function MyWorkRow({
           )}
           <span className="hidden sm:inline">Hoàn thành</span>
         </button>
-        <Link
-          to="/tasks/$id"
-          params={{ id: task.id }}
-          aria-label={`Mở: ${task.title}`}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-        >
-          <ExternalLink className="h-[14px] w-[14px]" strokeWidth={1.75} />
-          <span className="hidden sm:inline">Mở</span>
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label={`Thao tác nhanh: ${task.title}`}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+          >
+            <ExternalLink className="h-[14px] w-[14px]" strokeWidth={1.75} />
+            <span className="hidden sm:inline">Mở</span>
+            <ChevronDown className="h-3 w-3" strokeWidth={1.75} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem asChild>
+              <Link to="/tasks/$id" params={{ id: task.id }}>
+                <ListChecks className="h-4 w-4" strokeWidth={1.75} /> Mở chi tiết công việc
+              </Link>
+            </DropdownMenuItem>
+            {kind !== "task" ? (
+              <DropdownMenuItem asChild>
+                <Link to={meta.to}>
+                  <KindIcon className="h-4 w-4" strokeWidth={1.75} /> {meta.openLabel}
+                </Link>
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem asChild>
+              <Link to="/calendar">
+                <CalendarClock className="h-4 w-4" strokeWidth={1.75} /> Xem trên lịch
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={completing} onSelect={() => onComplete(task)}>
+              <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} /> Hoàn thành công việc
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
