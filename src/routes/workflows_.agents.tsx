@@ -284,6 +284,8 @@ function AgentBuilderPage() {
                               triggerType: a.trigger_type,
                               conditions: a.conditions ?? [],
                               actionType: a.action_type,
+                              allowedActionTypes: normalizeAllowedActionTypes(a.allowed_action_types),
+                              allowedSources: normalizeAllowedSources(a.allowed_sources),
                               instruction: a.instruction ?? "",
                               enabled: a.enabled,
                             })
