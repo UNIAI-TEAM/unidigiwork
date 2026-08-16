@@ -278,6 +278,7 @@ function MeetingDetailPage() {
   const captions = useLiveCaptions("vi-VN");
   // Lưu phụ đề trực tiếp thành biên bản thật (gom mỗi ~10s để giảm số request).
   const captionFlushRef = useRef<{ start: number | null; last: string }>({ start: null, last: "" });
+  const captionSpeakerRef = useRef<string | null>(null);
   useEffect(() => {
     if (!isRealRoom || !captions.enabled) {
       captionFlushRef.current = { start: null, last: "" };
@@ -298,7 +299,7 @@ function MeetingDetailPage() {
           segments: [
             {
               content: delta.slice(0, 4000),
-              speakerName: myName ?? null,
+              speakerName: captionSpeakerRef.current,
               offsetSeconds: Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
             },
           ],
@@ -306,7 +307,7 @@ function MeetingDetailPage() {
       }).catch(() => undefined);
     }, 10_000);
     return () => window.clearInterval(timer);
-  }, [captions.enabled, captions.text, id, isRealRoom, myName]);
+  }, [captions.enabled, captions.text, id, isRealRoom]);
   const inRoomRef = useRef(false);
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
