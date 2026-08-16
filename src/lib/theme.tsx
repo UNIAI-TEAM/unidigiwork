@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Check, Contrast, Moon, Palette, Sun } from "lucide-react";
+import { Check, Contrast, Minus, Moon, Palette, Plus, Sun, Type } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUiPrefs, saveUiPrefs } from "@/lib/api/user-ui-prefs.functions";
 import {
@@ -14,6 +14,14 @@ import {
 type Theme = "light" | "dark";
 export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose";
 export type Contrast = "normal" | "high";
+export type FontScale = "sm" | "md" | "lg" | "xl";
+
+export const FONT_SCALES: { id: FontScale; label: string }[] = [
+  { id: "sm", label: "Nhỏ" },
+  { id: "md", label: "Mặc định" },
+  { id: "lg", label: "Lớn" },
+  { id: "xl", label: "Rất lớn" },
+];
 
 export const TONES: { id: Tone; label: string; swatch: string }[] = [
   { id: "violet", label: "Tím Uni", swatch: "oklch(0.60 0.17 285)" },
@@ -26,6 +34,7 @@ export const TONES: { id: Tone; label: string; swatch: string }[] = [
 
 const TONE_KEY = "uniwork-tone";
 const CONTRAST_KEY = "uniwork-contrast";
+const FONT_SCALE_KEY = "uniwork-font-scale";
 
 const ThemeCtx = createContext<{
   theme: Theme;
@@ -34,6 +43,8 @@ const ThemeCtx = createContext<{
   setTone: (t: Tone) => void;
   contrast: Contrast;
   setContrast: (c: Contrast) => void;
+  fontScale: FontScale;
+  setFontScale: (f: FontScale) => void;
 }>({
   theme: "dark",
   toggle: () => {},
@@ -41,12 +52,15 @@ const ThemeCtx = createContext<{
   setTone: () => {},
   contrast: "normal",
   setContrast: () => {},
+  fontScale: "md",
+  setFontScale: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [tone, setTone] = useState<Tone>("violet");
   const [contrast, setContrast] = useState<Contrast>("normal");
+  const [fontScale, setFontScale] = useState<FontScale>("md");
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
@@ -60,6 +74,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const savedContrast = (typeof localStorage !== "undefined" &&
       localStorage.getItem(CONTRAST_KEY)) as Contrast | null;
     if (savedContrast === "high" || savedContrast === "normal") setContrast(savedContrast);
+    const savedScale = (typeof localStorage !== "undefined" &&
+      localStorage.getItem(FONT_SCALE_KEY)) as FontScale | null;
+    if (savedScale && FONT_SCALES.some((f) => f.id === savedScale)) setFontScale(savedScale);
   }, []);
 
   // Đồng bộ tuỳ chọn giao diện theo tài khoản (đa thiết bị).
@@ -78,6 +95,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           if (TONES.some((t) => t.id === prefs.tone)) setTone(prefs.tone);
           if (prefs.contrast === "high" || prefs.contrast === "normal")
             setContrast(prefs.contrast);
+          if (prefs.fontScale && FONT_SCALES.some((f) => f.id === prefs.fontScale))
+            setFontScale(prefs.fontScale);
         }
         setSynced(true);
       } catch {
@@ -94,7 +113,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const persist = (patch: { theme?: Theme; tone?: Tone; contrast?: Contrast }) => {
+  const persist = (patch: {
+    theme?: Theme;
+    tone?: Tone;
+    contrast?: Contrast;
+    fontScale?: FontScale;
+  }) => {
     if (!synced) return;
     void saveUiPrefs({ data: patch }).catch(() => {
       /* bỏ qua lỗi mạng, localStorage vẫn giữ */
@@ -131,6 +155,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [contrast]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-font-scale", fontScale);
+    try {
+      localStorage.setItem(FONT_SCALE_KEY, fontScale);
+    } catch {
+      /* ignore */
+    }
+  }, [fontScale]);
+
   return (
     <ThemeCtx.Provider
       value={{
@@ -150,6 +183,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setContrast: (c) => {
           setContrast(c);
           persist({ contrast: c });
+        },
+        fontScale,
+        setFontScale: (f) => {
+          setFontScale(f);
+          persist({ fontScale: f });
         },
       }}
     >
@@ -179,8 +217,13 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 }
 
 export function ToneToggle({ className = "" }: { className?: string }) {
-  const { tone, setTone, contrast, setContrast } = useTheme();
+  const { tone, setTone, contrast, setContrast, fontScale, setFontScale } = useTheme();
   const active = TONES.find((t) => t.id === tone) ?? TONES[0];
+  const scaleIndex = FONT_SCALES.findIndex((f) => f.id === fontScale);
+  const step = (delta: number) => {
+    const next = FONT_SCALES[Math.min(FONT_SCALES.length - 1, Math.max(0, scaleIndex + delta))];
+    if (next) setFontScale(next.id);
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -212,6 +255,36 @@ export function ToneToggle({ className = "" }: { className?: string }) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Khả năng đọc</DropdownMenuLabel>
+        <DropdownMenuItem
+          onSelect={(e) => e.preventDefault()}
+          className="gap-2 focus:bg-transparent"
+        >
+          <Type className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1">Cỡ chữ</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="Giảm cỡ chữ"
+              disabled={scaleIndex <= 0}
+              onClick={() => step(-1)}
+              className="rounded-md border border-border p-1 hover:bg-surface-2 disabled:opacity-40"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="w-16 text-center text-xs text-muted-foreground">
+              {FONT_SCALES[scaleIndex]?.label ?? "Mặc định"}
+            </span>
+            <button
+              type="button"
+              aria-label="Tăng cỡ chữ"
+              disabled={scaleIndex >= FONT_SCALES.length - 1}
+              onClick={() => step(1)}
+              className="rounded-md border border-border p-1 hover:bg-surface-2 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) => {
             e.preventDefault();
