@@ -55,6 +55,7 @@ import {
   skillsByKind,
   skillsGranting,
 } from "@/domain/workflow-agents/skills";
+import { AI_AGENT_DOMAINS, matchDomainFromSkills, skillsForDomain } from "@/domain/workflow-agents/skills";
 
 export const Route = createFileRoute("/workflows_/agents")({
   head: () => ({
