@@ -465,6 +465,12 @@ function SearchPage() {
                                 <Briefcase className="h-3.5 w-3.5" /> {r.workspaceName}
                               </span>
                             )}
+                            {r.source && (
+                              <span className="flex items-center gap-1.5">
+                                <Video className="h-3.5 w-3.5" />
+                                <span className="truncate">Nguồn: {r.source.title}</span>
+                              </span>
+                            )}
                             <span className="flex items-center gap-1.5">
                               <CalendarIcon className="h-3.5 w-3.5" />{" "}
                               {fmtDate(r.occurredAt)}
