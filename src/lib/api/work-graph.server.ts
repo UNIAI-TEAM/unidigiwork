@@ -34,7 +34,7 @@ export async function resolveWorkEntities(
     byType.set(r.type, list);
   }
 
-  const jobs: Promise<void>[] = [];
+  const jobs: PromiseLike<void>[] = [];
 
   const add = (type: WorkEntityType, id: string, title: string, subtitle?: string | null, updatedAt?: string | null) => {
     out.set(key(type, id), { type, id, title, subtitle: subtitle ?? null, href: workEntityHref(type, id), updatedAt: updatedAt ?? null });
