@@ -14,6 +14,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Sparkles,
+  RefreshCw,
   Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -262,21 +263,73 @@ export function InboxRow({
   );
 }
 
-export function AiBrief({ brief }: { brief: string[] }) {
-  if (!brief.length) return null;
+export function AiBrief({
+  aiBullets,
+  factBrief,
+  loading,
+  unavailableMessage,
+  onRefresh,
+  generatedAt,
+}: {
+  aiBullets: string[];
+  factBrief: string[];
+  loading: boolean;
+  unavailableMessage: string | null;
+  onRefresh: () => void;
+  generatedAt: string | null;
+}) {
+  const isAi = aiBullets.length > 0;
+  const items = isAi ? aiBullets : factBrief;
+  if (!loading && !items.length && !unavailableMessage) return null;
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
-      <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-        <Sparkles className="h-[18px] w-[18px] text-primary" strokeWidth={1.75} /> Tóm tắt hôm nay
-      </h2>
-      <ol className="mt-3 space-y-2 text-sm text-muted-foreground">
-        {brief.map((b, i) => (
-          <li key={i} className="flex gap-2">
-            <span className="text-xs font-semibold text-primary">{i + 1}.</span>
-            <span>{b}</span>
-          </li>
-        ))}
-      </ol>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+          <Sparkles className="h-[18px] w-[18px] text-primary" strokeWidth={1.75} /> Tóm tắt hôm nay
+          <span
+            className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+              isAi ? "bg-primary/10 text-primary" : "bg-surface-2 text-muted-foreground"
+            }`}
+          >
+            {isAi ? "AI · dữ liệu thật" : "Từ dữ liệu thật"}
+          </span>
+        </h2>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} strokeWidth={1.75} />
+          Làm mới
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="mt-3 space-y-2">
+          <div className="h-3 w-3/4 animate-pulse rounded bg-surface-2" />
+          <div className="h-3 w-2/3 animate-pulse rounded bg-surface-2" />
+        </div>
+      ) : items.length ? (
+        <ol className="mt-3 space-y-2 text-sm text-muted-foreground">
+          {items.map((b, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="text-xs font-semibold text-primary">{i + 1}.</span>
+              <span>{b}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+
+      {!loading && unavailableMessage ? (
+        <p className="mt-3 text-xs text-muted-foreground">{unavailableMessage}</p>
+      ) : null}
+      {!loading && isAi && generatedAt ? (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Tạo lúc {new Date(generatedAt).toLocaleTimeString("vi-VN")} · chỉ dựa trên dữ liệu công
+          việc của bạn.
+        </p>
+      ) : null}
     </section>
   );
 }
