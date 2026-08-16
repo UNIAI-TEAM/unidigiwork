@@ -38,7 +38,7 @@ export const buildAiContext = createServerFn({ method: "POST" })
         maxTokens: data.maxTokens,
       });
     } catch (e) {
-      const code = e instanceof Error && e.message.startsWith("AI_CONTEXT_") ? e.message : "AI_CONTEXT_INSUFFICIENT";
+      const code = e instanceof Error && e.message === "AI_CONTEXT_ROOT_NOT_FOUND" ? ("AI_CONTEXT_ROOT_NOT_FOUND" as const) : ("AI_CONTEXT_INSUFFICIENT" as const);
       throw new ApiError({ code, message: "Không thể dựng ngữ cảnh cho yêu cầu này." });
     }
   });
@@ -74,7 +74,7 @@ export const askUni = createServerFn({ method: "POST" })
         maxTokens: data.maxTokens,
       });
     } catch (e) {
-      const code = e instanceof Error && e.message.startsWith("AI_CONTEXT_") ? e.message : "AI_CONTEXT_INSUFFICIENT";
+      const code = e instanceof Error && e.message === "AI_CONTEXT_ROOT_NOT_FOUND" ? ("AI_CONTEXT_ROOT_NOT_FOUND" as const) : ("AI_CONTEXT_INSUFFICIENT" as const);
       throw new ApiError({ code, message: "Không tìm thấy đối tượng gốc hoặc bạn không có quyền xem." });
     }
 
