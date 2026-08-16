@@ -313,7 +313,7 @@ export function UniCopilot() {
                 <button
                   key={s}
                   onClick={() => void submit(s)}
-                  className="block w-full rounded-lg border border-border px-3 py-2 text-left text-sm hover:bg-surface"
+                  className="block min-h-11 w-full rounded-lg border border-border px-3 py-2.5 text-left text-sm hover:bg-surface active:bg-surface-2"
                 >
                   {s}
                 </button>
@@ -368,11 +368,17 @@ export function UniCopilot() {
               className="max-h-32 flex-1 resize-none bg-transparent text-sm outline-none"
             />
             {pending ? (
-              <Button size="icon" variant="ghost" aria-label="Dừng" onClick={() => abortRef.current?.abort()}>
+              <Button size="icon" variant="ghost" className="h-11 w-11 md:h-9 md:w-9" aria-label="Dừng" onClick={() => abortRef.current?.abort()}>
                 <Square className="h-4 w-4" />
               </Button>
             ) : (
-              <Button size="icon" aria-label="Gửi câu hỏi" disabled={input.trim().length < 2} onClick={() => void submit(input)}>
+              <Button
+                size="icon"
+                className="h-11 w-11 md:h-9 md:w-9"
+                aria-label="Gửi câu hỏi"
+                disabled={input.trim().length < 2}
+                onClick={() => void submit(input)}
+              >
                 <ArrowUp className="h-4 w-4" />
               </Button>
             )}
