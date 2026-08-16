@@ -46,6 +46,68 @@ export function EmptyRow({ label }: { label: string }) {
   return <p className="px-4 py-8 text-center text-sm text-muted-foreground">{label}</p>;
 }
 
+/** Empty state đầy đủ: icon + thông điệp + điều hướng gợi ý (không để ô trống). */
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  actions,
+}: {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  title: string;
+  description: string;
+  actions?: Array<{ label: string; to: string }>;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2">
+        <Icon className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
+      </span>
+      <p className="text-sm font-medium">{title}</p>
+      <p className="max-w-xs text-xs text-muted-foreground">{description}</p>
+      {actions?.length ? (
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          {actions.map((a) => (
+            <Link
+              key={a.to + a.label}
+              to={a.to}
+              className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border border-border px-2.5 text-xs font-medium hover:bg-surface-2"
+            >
+              {a.label} <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Cảnh báo nguồn dữ liệu lỗi một phần, kèm nút thử lại. */
+export function PartialNotice({
+  label,
+  onRetry,
+  retrying,
+}: {
+  label: string;
+  onRetry: () => void;
+  retrying?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-border bg-warning/10 px-4 py-2 text-xs text-muted-foreground">
+      <AlertTriangle className="h-3.5 w-3.5 text-warning" strokeWidth={1.75} />
+      <span className="min-w-0 flex-1">{label}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        disabled={retrying}
+        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-medium hover:bg-surface-2 disabled:opacity-50"
+      >
+        <RefreshCw className={cn("h-3 w-3", retrying && "animate-spin")} strokeWidth={1.75} /> Thử lại
+      </button>
+    </div>
+  );
+}
+
 export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   return (
     <div className="space-y-2 p-4">
