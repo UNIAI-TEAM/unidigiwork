@@ -160,3 +160,62 @@ export const askUni = createServerFn({ method: "POST" })
   });
 
 export const AI_CONTEXT_LIMITS = AI_CONTEXT_POLICY;
+/* ----------------------- Telemetry (admin read) ----------------------- */
+
+export interface AiContextBudgetPercentiles {
+  p50: number;
+  p95: number;
+  p99: number;
+  max: number;
+}
+
+export interface AiContextBudgetMetrics {
+  windowHours: number;
+  requestCount: number;
+  truncatedRate: number;
+  partialRate: number;
+  avgSources: number;
+  tokens: AiContextBudgetPercentiles;
+  latencyMs: AiContextBudgetPercentiles;
+  byOperation: { operation: string; count: number; tokens_p50: number; tokens_p95: number; latency_p95: number }[];
+}
+
+export interface AiContextMetricRow {
+  id: string;
+  created_at: string;
+  operation: string;
+  strategy: string | null;
+  root_entity_type: string | null;
+  estimated_tokens: number;
+  max_tokens: number;
+  source_count: number;
+  truncated: boolean;
+  partial: boolean;
+  latency_ms: number;
+}
+
+const WindowSchema = z.object({ hours: z.number().int().min(1).max(720).optional() });
+
+export const getAiContextBudgetMetrics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => WindowSchema.parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<AiContextBudgetMetrics> => {
+    const { data: rpc, error } = await context.supabase.rpc("get_ai_context_budget_metrics" as never, {
+      _hours: data.hours ?? 24,
+    } as never);
+    if (error) throw new ApiError({ code: "AI_CONTEXT_INSUFFICIENT", message: "Không đọc được số liệu ngữ cảnh." });
+    return rpc as unknown as AiContextBudgetMetrics;
+  });
+
+export const listAiContextMetrics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ limit: z.number().int().min(1).max(200).optional() }).parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<AiContextMetricRow[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("ai_context_metrics" as never)
+      .select("id, created_at, operation, strategy, root_entity_type, estimated_tokens, max_tokens, source_count, truncated, partial, latency_ms")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 50);
+    if (error) throw new ApiError({ code: "AI_CONTEXT_INSUFFICIENT", message: "Không đọc được nhật ký ngữ cảnh." });
+    return (rows ?? []) as unknown as AiContextMetricRow[];
+  });
