@@ -28,10 +28,7 @@ type DebtManifest = {
   tickets: Record<string, { title: string; owner: string; targetBatch: string }>;
   waivers: Record<string, Record<string, string>>;
 };
-const MANIFEST_PATH = join(
-  process.cwd(),
-  "docs/architecture/ci/domain-sdk-debt.manifest.json",
-);
+const MANIFEST_PATH = join(process.cwd(), "docs/architecture/ci/domain-sdk-debt.manifest.json");
 const MANIFEST: DebtManifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
 const waiver = (rule: string): Record<string, string> => MANIFEST.waivers[rule] ?? {};
 
@@ -56,15 +53,32 @@ const rel = (f: string) => relative(process.cwd(), f).replace(/\\/g, "/");
 // ---------------------------------------------------------------------------
 const NONSRC_EXT = /\.(json|jsonc|yml|yaml|toml|js|cjs|mjs)$/i;
 const NONSRC_SKIP_DIRS = new Set([
-  "node_modules", ".git", "dist", "build", ".next", ".turbo", ".cache",
-  "coverage", ".lovable", "tests", "src", // src covered by the other rules
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  ".next",
+  ".turbo",
+  ".cache",
+  "coverage",
+  ".lovable",
+  "tests",
+  "src", // src covered by the other rules
   "supabase", // migrations own seeds legitimately (Blueprint §25)
 ]);
 const NONSRC_SKIP_FILES = new Set<string>([
   "docs/architecture/ci/domain-sdk-debt.manifest.json", // the waiver list itself
-  "package-lock.json", "bun.lockb", "bun.lock", "yarn.lock", "pnpm-lock.yaml",
-  ".prettierrc", "components.json", "tsconfig.json", "vite.config.ts",
-  "vitest.config.ts", "eslint.config.js",
+  "package-lock.json",
+  "bun.lockb",
+  "bun.lock",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+  ".prettierrc",
+  "components.json",
+  "tsconfig.json",
+  "vite.config.ts",
+  "vitest.config.ts",
+  "eslint.config.js",
 ]);
 
 function walkNonSrc(dir: string, out: string[] = []): string[] {
@@ -103,7 +117,10 @@ function snippet(line: string): string {
 function scanLines(src: string, pattern: RegExp): { line: number; snippet: string }[] {
   const out: { line: number; snippet: string }[] = [];
   const lines = src.split("\n");
-  const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+  const re = new RegExp(
+    pattern.source,
+    pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g",
+  );
   for (let i = 0; i < lines.length; i++) {
     re.lastIndex = 0;
     if (re.test(lines[i])) out.push({ line: i + 1, snippet: snippet(lines[i]) });
@@ -126,7 +143,10 @@ afterAll(() => {
   mkdirSync(reportDir, { recursive: true });
   const jsonPath = join(reportDir, "domain-sdk-violations.json");
   const mdPath = join(reportDir, "domain-sdk-violations.md");
-  writeFileSync(jsonPath, JSON.stringify({ generatedAt: new Date().toISOString(), hits: ALL_HITS }, null, 2));
+  writeFileSync(
+    jsonPath,
+    JSON.stringify({ generatedAt: new Date().toISOString(), hits: ALL_HITS }, null, 2),
+  );
 
   const byRule = new Map<string, Hit[]>();
   for (const h of ALL_HITS) {
@@ -144,7 +164,8 @@ afterAll(() => {
   ];
   for (const [rule, hits] of byRule) {
     md.push(`## ${rule} (${hits.length})`, "");
-    for (const h of hits) md.push(`- \`${h.file}:${h.line}\` — \`${h.snippet.replace(/`/g, "\\`")}\``);
+    for (const h of hits)
+      md.push(`- \`${h.file}:${h.line}\` — \`${h.snippet.replace(/`/g, "\\`")}\``);
     md.push("");
   }
   writeFileSync(mdPath, md.join("\n"));
@@ -449,10 +470,9 @@ describe("domain SDK enforcement gate", () => {
       newViolations,
       "domain-typed inline fixtures forbidden — hydrate via @/sdk/* or a loader",
     ).toEqual([]);
-    expect(
-      paidDebt,
-      "KNOWN_DEBT_INLINE_FIXTURE entries no longer violate — remove them",
-    ).toEqual([]);
+    expect(paidDebt, "KNOWN_DEBT_INLINE_FIXTURE entries no longer violate — remove them").toEqual(
+      [],
+    );
   });
 
   it("client-reachable files do not import faker / mock-data libraries", () => {
@@ -481,9 +501,7 @@ describe("domain SDK enforcement gate", () => {
     // inline fixture even if the variable name is neutral (e.g. `data`).
     const commentTag =
       /\/\/\s*(?:@?(?:mock|fake|demo|sample|seed|stub|dummy|fixture|hardcoded|placeholder|todo[:\s].*replace|replace\s+with\s+api)\b)/i;
-    const domainRef = new RegExp(
-      `\\b(${[...DOMAIN_TABLES, ...DOMAIN_TYPES].join("|")})\\b`,
-    );
+    const domainRef = new RegExp(`\\b(${[...DOMAIN_TABLES, ...DOMAIN_TYPES].join("|")})\\b`);
     const violations: string[] = [];
     for (const f of files) {
       if (!isClientReachable(f)) continue;
@@ -496,9 +514,7 @@ describe("domain SDK enforcement gate", () => {
         const window = lines.slice(i, Math.min(i + 6, lines.length)).join("\n");
         if (domainRef.test(window)) {
           violations.push(
-            ...record("fixture-tagged-comment", key, [
-              { line: i + 1, snippet: snippet(lines[i]) },
-            ]),
+            ...record("fixture-tagged-comment", key, [{ line: i + 1, snippet: snippet(lines[i]) }]),
           );
           break;
         }
@@ -570,7 +586,10 @@ describe("domain SDK enforcement gate", () => {
   const lineOf = (src: string, index: number) => src.slice(0, index).split("\n").length;
 
   function scanText(src: string, pattern: RegExp): { line: number; snippet: string }[] {
-    const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+    const re = new RegExp(
+      pattern.source,
+      pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g",
+    );
     const out: { line: number; snippet: string }[] = [];
     const lines = src.split("\n");
     let m: RegExpExecArray | null;
