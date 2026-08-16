@@ -17,6 +17,7 @@ import {
 import { AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
 import {
   deriveAllowedFromSkills,
+  ensureDefaultSkill,
   normalizeSkills,
   skillsFromLegacyAllowlist,
 } from "@/domain/workflow-agents/skills";
