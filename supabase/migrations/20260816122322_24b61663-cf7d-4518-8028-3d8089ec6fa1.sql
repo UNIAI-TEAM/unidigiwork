@@ -1,0 +1,1 @@
+ALTER TABLE public.workflow_agents ADD COLUMN IF NOT EXISTS skills text[] NOT NULL DEFAULT '{}'::text[];
