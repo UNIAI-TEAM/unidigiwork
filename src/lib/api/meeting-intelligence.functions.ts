@@ -93,14 +93,6 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
       throw new ApiError({ code: "RATE_LIMITED", message: "Bạn đang tạo tóm tắt quá nhanh. Thử lại sau ít phút." });
     }
 
-    const { data: meeting, error: mErr } = await context.supabase
-      .from("meetings")
-      .select("id, title, agenda, start_at")
-      .eq("id", data.meetingId)
-      .maybeSingle();
-    if (mErr) mapPgError(mErr, "MEETING_NOT_FOUND");
-    if (!meeting) throw new ApiError({ code: "MEETING_NOT_FOUND", message: "Không tìm thấy cuộc họp." });
-
     const { data: rows, error: tErr } = await context.supabase
       .from("meeting_transcript_segments")
       .select("id, speaker_name, offset_seconds, content, source, created_at")
@@ -139,9 +131,9 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
         model: provider.responses(MODEL),
         system: buildMeetingSummarySystemPrompt(),
         prompt: buildMeetingSummaryUserPrompt({
-          title: String(meeting.title ?? "Cuộc họp"),
-          startAt: String(meeting.start_at ?? ""),
-          agenda: (meeting.agenda as string | null) ?? null,
+          title: "Cuộc họp",
+          startAt: segments[0]?.createdAt ?? "",
+          agenda: null,
           transcriptBlock: renderTranscriptForModel(window),
           truncated,
         }),
