@@ -66,7 +66,46 @@ export const startMeetingRecording = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey ?? undefined,
       _correlation_id: data.correlationId ?? undefined,
     });
-    return ensureOk(res, "MEETING_NOT_FOUND") as unknown as MeetingRecordingDTO;
+    const rec = ensureOk(res, "MEETING_NOT_FOUND") as unknown as MeetingRecordingDTO & {
+      egress_id?: string | null;
+      meeting_id?: string;
+    };
+    if (rec.egress_id) return rec; // đã có phiên ghi hình đang chạy
+
+    const { readLiveKitConfig, startRoomCompositeEgress, egressIdOf } = await import("./livekit.server");
+    const { readRecordingStorageConfig, recordingObjectKey } = await import("./recording-storage.server");
+    const lk = readLiveKitConfig();
+    const storage = readRecordingStorageConfig();
+    if (!lk || !storage) return rec; // chưa cấu hình Egress ⇒ giữ hành vi ghi nhận metadata
+
+    const key = recordingObjectKey(data.meetingId, rec.id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    try {
+      const info = await startRoomCompositeEgress({
+        config: lk,
+        room: `mtg_${data.meetingId}`,
+        filepath: key,
+        s3: {
+          endpoint: storage.endpoint,
+          region: storage.region,
+          bucket: storage.bucket,
+          accessKeyId: storage.accessKeyId,
+          secretAccessKey: storage.secretAccessKey,
+          forcePathStyle: storage.forcePathStyle,
+        },
+      });
+      const egressId = egressIdOf(info);
+      if (!egressId) throw new Error("Egress không trả về mã phiên");
+      const { data: updated } = await supabaseAdmin.rpc("attach_meeting_recording_egress", {
+        _recording_id: rec.id,
+        _egress_id: egressId,
+      });
+      return (updated ?? rec) as unknown as MeetingRecordingDTO;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      await supabaseAdmin.rpc("fail_meeting_recording", { _recording_id: rec.id, _error: message });
+      throw new Error("MEETING_RECORDING_PROVIDER_ERROR");
+    }
   });
 
 export const stopMeetingRecording = createServerFn({ method: "POST" })
@@ -82,6 +121,25 @@ export const stopMeetingRecording = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { data: active } = await context.supabase
+      .from("meeting_recordings")
+      .select("id, egress_id, status")
+      .eq("meeting_id", data.meetingId)
+      .in("status", ["starting", "recording"])
+      .maybeSingle();
+
+    if (active?.egress_id) {
+      const { readLiveKitConfig, stopEgress } = await import("./livekit.server");
+      const lk = readLiveKitConfig();
+      if (lk) {
+        try {
+          await stopEgress(lk, `mtg_${data.meetingId}`, active.egress_id);
+        } catch {
+          // Egress có thể đã tự kết thúc; webhook sẽ chốt trạng thái file.
+        }
+      }
+    }
+
     const res = await context.supabase.rpc("stop_meeting_recording", {
       _meeting_id: data.meetingId,
       _file_url: data.fileUrl ?? undefined,
@@ -90,6 +148,29 @@ export const stopMeetingRecording = createServerFn({ method: "POST" })
       _correlation_id: data.correlationId ?? undefined,
     });
     return ensureOk(res, "MEETING_NOT_FOUND") as unknown as MeetingRecordingDTO;
+  });
+
+/** Link tải bản ghi có chữ ký, hết hạn sau 10 phút. */
+export const getMeetingRecordingDownloadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ recordingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ url: string }> => {
+    const { data: row, error } = await context.supabase
+      .from("meeting_recordings")
+      .select("id, file_url")
+      .eq("id", data.recordingId)
+      .maybeSingle();
+    if (error) mapPgError(error, "MEETING_RECORDING_NOT_FOUND");
+    if (!row?.file_url) throw new Error("MEETING_RECORDING_FILE_NOT_READY");
+
+    const { parseS3Url, presignGetUrl, readRecordingStorageConfig } = await import(
+      "./recording-storage.server"
+    );
+    const parsed = parseS3Url(row.file_url);
+    if (!parsed) return { url: row.file_url };
+    const storage = readRecordingStorageConfig();
+    if (!storage) throw new Error("MEETING_RECORDING_STORAGE_NOT_CONFIGURED");
+    return { url: await presignGetUrl({ ...storage, bucket: parsed.bucket }, parsed.key) };
   });
 
 export const openMeetingAttendance = createServerFn({ method: "POST" })
