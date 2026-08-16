@@ -1,4 +1,5 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
+import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -379,6 +380,18 @@ function DocumentDetailPage() {
                 <MessageSquare className="h-3.5 w-3.5" />
                 Chưa có bình luận
               </div>
+            </div>
+
+            <div className="mt-6">
+              <AskUniPanel
+                rootEntity={{ type: "DOCUMENT", id }}
+                label="Hỏi UNI về tài liệu này"
+                suggestions={[
+                  "Tóm tắt nội dung tài liệu",
+                  "Ai đang tham gia chỉnh sửa?",
+                  "Liên quan công việc nào?",
+                ]}
+              />
             </div>
 
             <RelatedWorkPanel entityType="DOCUMENT" entityId={id} className="mt-6" />
