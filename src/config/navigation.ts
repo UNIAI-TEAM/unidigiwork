@@ -252,7 +252,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/ai-workforce"],
     visibility: "everyone",
     order: 3,
-    mobile: { placement: "more", href: "/ai-workforce", order: 7.5 },
+    mobile: { placement: "more", href: "/m/ai-workforce", order: 7.5 },
   },
 
   // INSIGHTS
