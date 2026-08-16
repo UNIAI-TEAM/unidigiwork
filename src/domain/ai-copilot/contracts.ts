@@ -95,6 +95,8 @@ export interface UniCopilotResponse {
   partial: boolean;
   ambiguity: { candidates: { entityType: AiContextEntityType; entityId: string; title: string; href: string }[] } | null;
   rootContextKey: string | null;
+  /** Ngữ cảnh gốc UNI đã khoá cho lượt sau (§57) — client ghim để follow-up không mất ngữ cảnh. */
+  resolvedRoot: { type: AiContextEntityType; id: string; title: string } | null;
   usage: { inputTokens: number; outputTokens: number; model: string } | null;
   timings: { contextMs: number; providerMs: number; totalMs: number };
 }
@@ -160,6 +162,65 @@ const ROOT_SUGGESTIONS: Partial<Record<AiContextEntityType, string[]>> = {
 export function suggestionsForRoot(root: CopilotRoot): string[] {
   if (!root) return GLOBAL_SUGGESTIONS;
   return ROOT_SUGGESTIONS[root.type] ?? GLOBAL_SUGGESTIONS;
+}
+
+/* --------------------------- Follow-up flow --------------------------- */
+
+const normalizeQuestion = (q: string) =>
+  q.toLowerCase().replace(/\s+/g, " ").replace(/[?.!]+$/g, "").trim();
+
+/** Câu hỏi tiếp theo suy ra từ intent vừa dùng (deterministic, read-only). */
+const INTENT_FOLLOW_UPS: Record<CopilotIntent, string[]> = {
+  ASK: ["Có rủi ro nào liên quan không?", "Việc này liên quan đến ai?"],
+  SUMMARIZE: ["Điểm rủi ro lớn nhất là gì?", "Bước tiếp theo nên là gì?"],
+  EXPLAIN: ["Có dữ liệu nào chứng minh nhận định này?", "Ai cần biết thông tin này?"],
+  COMPARE: ["Bên nào đang rủi ro hơn?", "Nên ưu tiên xử lý bên nào trước?"],
+  PRIORITIZE: ["Vì sao mục đầu tiên quan trọng nhất?", "Có việc nào đang bị chặn không?"],
+  RECOMMEND: ["Dựa trên nguồn nào để đề xuất như vậy?", "Có rủi ro gì nếu làm theo đề xuất?"],
+};
+
+/** Câu hỏi đào sâu theo loại nguồn đã trích dẫn. */
+const SOURCE_FOLLOW_UPS: Partial<Record<AiContextEntityType, (title: string) => string>> = {
+  TASK: (t) => `Task “${t}” đang ở trạng thái nào?`,
+  MEETING: (t) => `Cuộc họp “${t}” đã kết luận gì?`,
+  EMAIL: (t) => `Email “${t}” cần phản hồi gì?`,
+  DOCUMENT: (t) => `Tài liệu “${t}” nói gì về việc này?`,
+  CHAT_CHANNEL: (t) => `Kênh “${t}” đang trao đổi vấn đề gì?`,
+  WORKSPACE: (t) => `Dự án “${t}” đang vướng gì?`,
+  PERSON: (t) => `${t} đang phụ trách việc gì?`,
+};
+
+const shortTitle = (t: string) => (t.length > 42 ? `${t.slice(0, 42).trim()}…` : t);
+
+/**
+ * Gợi ý follow-up dựa trên: gợi ý của model → nguồn đã trích dẫn → intent → ngữ cảnh gốc.
+ * Luôn loại các câu đã hỏi và các câu trùng nhau; chỉ trả về câu hỏi read-only.
+ */
+export function buildFollowUpSuggestions(args: {
+  intent: CopilotIntent;
+  root: CopilotRoot;
+  citedSources: { entityType: AiContextEntityType; title: string }[];
+  askedQuestions: string[];
+  modelSuggestions?: string[];
+  max?: number;
+}): string[] {
+  const max = args.max ?? 3;
+  const seen = new Set(args.askedQuestions.map(normalizeQuestion));
+  const out: string[] = [];
+  const push = (q?: string | null) => {
+    const value = (q ?? "").trim();
+    if (!value || out.length >= max) return;
+    const key = normalizeQuestion(value);
+    if (!key || seen.has(key) || isMutationRequest(value)) return;
+    seen.add(key);
+    out.push(value);
+  };
+
+  for (const s of args.modelSuggestions ?? []) push(s);
+  for (const s of args.citedSources.slice(0, 3)) push(SOURCE_FOLLOW_UPS[s.entityType]?.(shortTitle(s.title)));
+  for (const s of INTENT_FOLLOW_UPS[args.intent]) push(s);
+  for (const s of suggestionsForRoot(args.root)) push(s);
+  return out;
 }
 
 /* --------------------------- System prompt --------------------------- */
