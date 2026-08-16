@@ -189,10 +189,25 @@ function HomePage() {
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <SectionCard title="Công việc của tôi" action={<ViewAll to="/tasks" />}>
+              {partialSet.has("tasks") ? (
+                <PartialNotice
+                  label="Không tải được đầy đủ danh sách công việc."
+                  onRetry={() => homeQuery.refetch()}
+                  retrying={homeQuery.isFetching}
+                />
+              ) : null}
               {homeQuery.isLoading ? (
                 <SkeletonRows rows={4} />
               ) : !data?.myWork.length ? (
-                <EmptyRow label="Không có việc cần xử lý 🎉" />
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="Không có việc cần xử lý"
+                  description="Bạn không còn công việc quá hạn hay đến hạn hôm nay. Tạo việc mới hoặc xem toàn bộ danh sách."
+                  actions={[
+                    { label: "Tạo công việc", to: "/tasks" },
+                    { label: "Xem tất cả công việc", to: "/tasks" },
+                  ]}
+                />
               ) : (
                 data.myWork.map((t) => (
                   <MyWorkRow
@@ -206,10 +221,25 @@ function HomePage() {
             </SectionCard>
 
             <SectionCard title="Sắp tới" action={<ViewAll to="/calendar" />}>
+              {partialSet.has("upcoming") ? (
+                <PartialNotice
+                  label="Không tải được lịch họp/deadline."
+                  onRetry={() => homeQuery.refetch()}
+                  retrying={homeQuery.isFetching}
+                />
+              ) : null}
               {homeQuery.isLoading ? (
                 <SkeletonRows rows={3} />
               ) : !data?.upcoming.length ? (
-                <EmptyRow label="Không có lịch trong hôm nay và ngày mai" />
+                <EmptyState
+                  icon={CalendarClock}
+                  title="Không có cuộc họp hay deadline"
+                  description="Lịch của bạn trống trong hôm nay và ngày mai. Tạo cuộc họp hoặc mở lịch để xem xa hơn."
+                  actions={[
+                    { label: "Tạo cuộc họp", to: "/meeting" },
+                    { label: "Mở lịch", to: "/calendar" },
+                  ]}
+                />
               ) : (
                 data.upcoming.map((u) => <UpcomingRow key={u.id} item={u} />)
               )}
@@ -217,10 +247,25 @@ function HomePage() {
           </div>
 
           <SectionCard title="Hộp việc" action={<ViewAll to="/notifications" />}>
+            {partialSet.has("unread") ? (
+              <PartialNotice
+                label="Không lấy được số liệu chưa đọc (nhắc đến, email). Danh sách có thể chưa đầy đủ."
+                onRetry={() => homeQuery.refetch()}
+                retrying={homeQuery.isFetching}
+              />
+            ) : null}
             {homeQuery.isLoading ? (
               <SkeletonRows rows={4} />
             ) : !data?.inbox.length ? (
-              <EmptyRow label="Không có gì cần bạn xử lý" />
+              <EmptyState
+                icon={Inbox}
+                title="Hộp việc trống"
+                description="Không có thông báo, nhắc đến hay email nào đang chờ bạn xử lý."
+                actions={[
+                  { label: "Xem thông báo", to: "/notifications" },
+                  { label: "Mở email", to: "/email" },
+                ]}
+              />
             ) : (
               data.inbox.map((i) => (
                 <InboxRow
