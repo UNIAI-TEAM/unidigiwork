@@ -22,6 +22,7 @@ import {
   History,
   ShieldCheck,
   Archive,
+  Bot,
   ArchiveRestore,
   Trash2,
 } from "lucide-react";
