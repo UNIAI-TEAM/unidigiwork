@@ -102,6 +102,12 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
         <p className="flex items-center gap-1.5 font-medium">
           <Check className="h-4 w-4 text-success" /> {result.message}
         </p>
+        {result.assignedAgent && (
+          <p className="text-[12px] text-muted-foreground">
+            Agent phụ trách: <span className="font-medium text-foreground">{result.assignedAgent.agentName}</span>
+            {result.assignedAgent.profileName ? ` · ${result.assignedAgent.profileName}` : ""} — {result.assignedAgent.reason}
+          </p>
+        )}
         {result.href && (
           <Button size="sm" variant="outline" onClick={() => navigate({ to: result.href! })}>
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Mở
