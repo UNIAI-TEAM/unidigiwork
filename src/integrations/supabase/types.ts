@@ -1905,6 +1905,129 @@ export type Database = {
           },
         ]
       }
+      meeting_summaries: {
+        Row: {
+          action_items: Json
+          created_at: string
+          decisions: Json
+          generated_at: string
+          generated_by: string | null
+          highlights: Json
+          id: string
+          meeting_id: string
+          model: string | null
+          segment_count: number
+          sources: Json
+          status: string
+          summary: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json
+          created_at?: string
+          decisions?: Json
+          generated_at?: string
+          generated_by?: string | null
+          highlights?: Json
+          id?: string
+          meeting_id: string
+          model?: string | null
+          segment_count?: number
+          sources?: Json
+          status?: string
+          summary?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json
+          created_at?: string
+          decisions?: Json
+          generated_at?: string
+          generated_by?: string | null
+          highlights?: Json
+          id?: string
+          meeting_id?: string
+          model?: string | null
+          segment_count?: number
+          sources?: Json
+          status?: string
+          summary?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_summaries_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_summaries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_transcript_segments: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          meeting_id: string
+          offset_seconds: number
+          source: string
+          speaker_name: string | null
+          speaker_user_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_id: string
+          offset_seconds?: number
+          source?: string
+          speaker_name?: string | null
+          speaker_user_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meeting_id?: string
+          offset_seconds?: number
+          source?: string
+          speaker_name?: string | null
+          speaker_user_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_transcript_segments_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_transcript_segments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetings: {
         Row: {
           agenda: string | null
@@ -4476,6 +4599,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      append_meeting_transcript: {
+        Args: { _meeting_id: string; _segments: Json; _source?: string }
+        Returns: number
+      }
       archive_document: {
         Args: {
           _correlation_id?: string
@@ -5694,6 +5821,42 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "tenant_invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_meeting_summary: {
+        Args: {
+          _action_items: Json
+          _decisions: Json
+          _highlights: Json
+          _meeting_id: string
+          _model: string
+          _segment_count: number
+          _sources: Json
+          _status: string
+          _summary: string
+        }
+        Returns: {
+          action_items: Json
+          created_at: string
+          decisions: Json
+          generated_at: string
+          generated_by: string | null
+          highlights: Json
+          id: string
+          meeting_id: string
+          model: string | null
+          segment_count: number
+          sources: Json
+          status: string
+          summary: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meeting_summaries"
           isOneToOne: true
           isSetofReturn: false
         }
