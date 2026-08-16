@@ -8,6 +8,7 @@ import { ArrowLeft, Reply, Trash2, Archive } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import { MobileAskUniChip } from "@/components/ai/uni-copilot-mobile";
 
 type Message = Database["public"]["Tables"]["email_messages"]["Row"];
 
@@ -69,6 +70,13 @@ function MobileEmailDetailPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="min-w-0 flex-1 truncate text-base font-semibold">{first.subject}</h1>
+        </div>
+        <div className="mt-2 flex items-center gap-2 overflow-x-auto">
+          <MobileAskUniChip
+            root={{ type: "EMAIL", id, title: first.subject ?? undefined }}
+            workspaceId={workspaceId ?? null}
+            label="Hỏi UNI về email này"
+          />
         </div>
       </header>
 
