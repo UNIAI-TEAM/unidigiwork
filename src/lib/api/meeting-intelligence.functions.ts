@@ -16,6 +16,7 @@ import {
   buildTranscriptWindow,
   parseMeetingSummaryOutput,
   renderTranscriptForModel,
+  shouldUseStagedSummary,
   toSummarySources,
   transcriptChecksum,
 } from "@/domain/meeting-intelligence/contracts";
