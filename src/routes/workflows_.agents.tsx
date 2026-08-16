@@ -462,7 +462,7 @@ function AgentBuilderPage() {
                     value={matchDomainFromSkills(draft.skills)}
                     onValueChange={(domainId) => {
                       if (domainId === "CUSTOM") return;
-                      const next = skillsForDomain(domainId);
+                      const next = ensureDefaultSkill(skillsForDomain(domainId));
                       const allowed = deriveAllowedFromSkills(next);
                       setDraft({
                         ...draft,
@@ -486,7 +486,7 @@ function AgentBuilderPage() {
                     {AI_AGENT_DOMAINS.find((d) => d.id === matchDomainFromSkills(draft.skills))?.description}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Chọn lĩnh vực sẽ tự bật bộ kỹ năng phù hợp; bạn vẫn có thể chỉnh từng kỹ năng bên dưới.
+                    Chọn lĩnh vực sẽ tự bật bộ kỹ năng phù hợp; bạn vẫn có thể chỉnh từng kỹ năng bên dưới. Nếu tắt hết, kỹ năng Đề xuất tạo công việc sẽ tự động bật lại.
                   </p>
                 </div>
 
