@@ -71,7 +71,7 @@ export function mapProgressRow(row: Record<string, unknown>): SummaryProgress {
   };
 }
 
-type ProgressClient = { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: unknown }> };
+type ProgressClient = { rpc: (...args: never[]) => unknown };
 
 /** Ghi tiến độ; lỗi ghi không bao giờ làm hỏng việc tạo tóm tắt. */
 export async function writeSummaryProgress(
@@ -86,7 +86,11 @@ export async function writeSummaryProgress(
   },
 ): Promise<void> {
   try {
-    await client.rpc("save_meeting_summary_progress", {
+    const rpc = client.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ error: unknown }>;
+    await rpc("save_meeting_summary_progress", {
       _meeting_id: args.meetingId,
       _run_id: args.runId,
       _phase: args.phase,
