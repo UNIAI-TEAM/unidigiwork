@@ -93,8 +93,8 @@ export function PartialNotice({
   retrying?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border bg-warning/10 px-4 py-2 text-xs text-muted-foreground">
-      <AlertTriangle className="h-3.5 w-3.5 text-warning" strokeWidth={1.75} />
+    <div className="flex flex-wrap items-center gap-2 border-b border-border bg-destructive/10 px-4 py-2 text-xs text-muted-foreground">
+      <AlertTriangle className="h-3.5 w-3.5 text-destructive" strokeWidth={1.75} />
       <span className="min-w-0 flex-1">{label}</span>
       <button
         type="button"
