@@ -305,7 +305,7 @@ function WorkflowBuilderPage() {
               <Link to="/workflows" className="mt-3 inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground">Về danh sách</Link>
             </div>
           ) : (
-            <div className="mx-auto grid max-w-7xl gap-6 p-4 sm:p-6 xl:grid-cols-3">
+            <div className="mx-auto grid max-w-none gap-6 p-4 sm:p-6 xl:grid-cols-3">
               {!permsQuery.isLoading && !perms.can_edit && (
                 <div className="xl:col-span-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs text-warning">
                   <div className="flex items-start gap-2">

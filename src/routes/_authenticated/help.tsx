@@ -191,7 +191,7 @@ function HelpPage() {
             <div className="absolute -top-24 left-1/3 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
             <div className="absolute -bottom-16 right-10 h-64 w-64 rounded-full bg-violet-500/20 blur-3xl" />
           </div>
-          <div className="relative mx-auto w-full max-w-5xl px-4 py-12 text-center sm:px-6 sm:py-16">
+          <div className="relative mx-auto w-full max-w-none px-4 py-12 text-center sm:px-6 sm:py-16">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
               <LifeBuoy className="h-3.5 w-3.5 text-primary" />
               Trung tâm trợ giúp UNIWORK
@@ -236,7 +236,7 @@ function HelpPage() {
           </div>
         </section>
 
-        <div className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr_300px]">
+        <div className="mx-auto grid w-full max-w-none flex-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr_300px]">
           {/* Left: categories */}
           <aside className="space-y-4">
             <nav className="rounded-2xl border border-border bg-surface p-2">

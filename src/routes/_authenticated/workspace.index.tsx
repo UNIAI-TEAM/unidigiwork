@@ -120,7 +120,7 @@ function WorkspaceManagePage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
 
-        <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
           <header className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Không gian làm việc</h1>

@@ -135,7 +135,7 @@ function WorkspaceMembersPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
-        <div className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-none flex-1 space-y-5 px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">

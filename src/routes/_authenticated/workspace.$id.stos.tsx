@@ -403,7 +403,7 @@ function StosDetailPage() {
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end pt-12 pb-6">
+            <div className="relative h-full max-w-none mx-auto px-4 sm:px-6 lg:px-8 flex items-end pt-12 pb-6">
               <Link
                 to="/workspace/$id"
                 params={{ id: "stos" }}
@@ -475,7 +475,7 @@ function StosDetailPage() {
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: 2/3 */}
             <div className="lg:col-span-2 space-y-6 min-w-0">
               {/* About */}

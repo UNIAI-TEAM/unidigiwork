@@ -500,7 +500,7 @@ function AIPage() {
                     <p className="mt-1 text-sm text-muted-foreground">{t("ai.how")}</p>
                   </div>
 
-                  <div className="mx-auto mb-6 grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="mx-auto mb-6 grid max-w-none grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {suggestions.map((s) => (
                       <button
                         key={s.k}
@@ -520,7 +520,7 @@ function AIPage() {
                     ))}
                   </div>
 
-                  <div className="mx-auto max-w-5xl space-y-4">
+                  <div className="mx-auto max-w-none space-y-4">
                     {msgs.map((m) =>
                       m.role === "user" ? (
                         <UserBubble key={m.id} m={m} t={t} onHistory={() => setHistoryMsgId(m.id)} />
@@ -552,7 +552,7 @@ function AIPage() {
 
             {/* Composer */}
             <div className="border-t border-border bg-surface px-4 py-3 sm:px-6">
-              <div className="mx-auto max-w-5xl">
+              <div className="mx-auto max-w-none">
                 <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-2 px-3 py-2">
                   <button className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground">
                     <Paperclip className="h-4 w-4" />
@@ -1198,7 +1198,7 @@ function AssistantsPanel() {
     [a.title, a.desc, a.tag].join(" ").toLowerCase().includes(q.toLowerCase()),
   );
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-none">
       <PanelHeader
         title="Thư viện trợ lý AI"
         subtitle="Chọn trợ lý chuyên biệt cho từng tác vụ hoặc tạo trợ lý tuỳ chỉnh của riêng bạn."
@@ -1305,7 +1305,7 @@ function PromptsPanel() {
       [p.title, p.body, p.cat].join(" ").toLowerCase().includes(q.toLowerCase()),
   );
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-none">
       <PanelHeader
         title="Thư viện lời nhắc"
         subtitle="Các mẫu prompt được tối ưu cho công việc thường ngày."
@@ -1402,7 +1402,7 @@ const KNOWLEDGE_SOURCES = [
 
 function KnowledgePanel() {
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-none">
       <PanelHeader
         title="Kho tri thức của AI"
         subtitle="Quản lý các nguồn dữ liệu mà trợ lý AI có thể truy cập và trích dẫn."
@@ -1531,7 +1531,7 @@ function ToolsPanel() {
   const toggle = (i: number) =>
     setTools((arr) => arr.map((t, idx) => (idx === i ? { ...t, on: !t.on } : t)));
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-none">
       <PanelHeader
         title="Công cụ của AI"
         subtitle="Bật/tắt các công cụ mà trợ lý có thể sử dụng khi xử lý yêu cầu."

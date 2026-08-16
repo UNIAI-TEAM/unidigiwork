@@ -41,7 +41,7 @@ function AdminLayout() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
-        <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
           <div className="mb-6 flex flex-col gap-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5 text-primary" />
