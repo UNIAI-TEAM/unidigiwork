@@ -8,6 +8,7 @@ import { mapPgError } from "./business.server";
 import type {
   ActionItemState,
   MeetingSummary,
+  SummaryProgress,
   TranscriptSegment,
 } from "@/domain/meeting-intelligence/contracts";
 import {
@@ -89,11 +90,27 @@ export const getMeetingSummary = createServerFn({ method: "POST" })
     return row ? mapSummaryRow(row as Record<string, unknown>) : null;
   });
 
+export const getMeetingSummaryProgress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => meetingIdSchema.parse(i))
+  .handler(async ({ data, context }): Promise<SummaryProgress | null> => {
+    const { mapProgressRow } = await import("./meeting-intelligence.server");
+    const { data: row, error } = await context.supabase
+      .from("meeting_summary_progress")
+      .select("*")
+      .eq("meeting_id", data.meetingId)
+      .maybeSingle();
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    return row ? mapProgressRow(row as Record<string, unknown>) : null;
+  });
+
 export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => meetingIdSchema.parse(i))
   .handler(async ({ data, context }): Promise<MeetingSummary> => {
-    const { mapSummaryRow, checkMeetingSummaryRateLimit } = await import("./meeting-intelligence.server");
+    const { mapSummaryRow, checkMeetingSummaryRateLimit, writeSummaryProgress } = await import(
+      "./meeting-intelligence.server"
+    );
 
     if (!checkMeetingSummaryRateLimit(context.userId)) {
       throw new ApiError({ code: "RATE_LIMITED", message: "Bạn đang tạo tóm tắt quá nhanh. Thử lại sau ít phút." });
