@@ -15,6 +15,10 @@ export function workEntityHref(type: string, id: string, mobile = false): string
       return mobile ? `/m/email` : `/email/${id}`;
     case "CHAT_CHANNEL":
       return mobile ? `/m/chat` : `/chat/${id}`;
+    case "MEETING_ARTIFACT":
+      // Artifacts live inside their meeting page; the server resolver supplies
+      // the precise meeting-scoped href when the parent meeting is known.
+      return `/meeting?artifact=${id}`;
     case "PERSON":
       return `/people/${id}`;
     default:

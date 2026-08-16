@@ -10,6 +10,7 @@ export const WORK_ENTITY_TYPES = [
   "CHAT_CHANNEL",
   "DOCUMENT",
   "EMAIL",
+  "MEETING_ARTIFACT",
 ] as const;
 export type WorkEntityType = (typeof WORK_ENTITY_TYPES)[number];
 
@@ -75,6 +76,12 @@ export const RELATIONSHIP_RULES: readonly RelationshipRule[] = [
   { code: "RELATED_TO", source: "MEETING", target: "DOCUMENT", userCreatable: true },
   { code: "RELATED_TO", source: "DOCUMENT", target: "DOCUMENT", userCreatable: true },
   { code: "SHARED_IN", source: "DOCUMENT", target: "CHAT_CHANNEL", userCreatable: true },
+  // Meeting Intelligence artifacts (summary / decision / action item / risk / follow-up)
+  { code: "GENERATES", source: "MEETING", target: "MEETING_ARTIFACT", userCreatable: false },
+  { code: "BELONGS_TO", source: "MEETING_ARTIFACT", target: "WORKSPACE", userCreatable: false },
+  { code: "GENERATES", source: "MEETING_ARTIFACT", target: "TASK", userCreatable: false },
+  { code: "REFERENCES", source: "MEETING_ARTIFACT", target: "DOCUMENT", userCreatable: true },
+  { code: "RELATED_TO", source: "MEETING_ARTIFACT", target: "TASK", userCreatable: true },
 ];
 
 export function isRelationshipAllowed(
@@ -152,6 +159,7 @@ const ENTITY_LABELS: Record<WorkEntityType, { vi: string; en: string }> = {
   CHAT_CHANNEL: { vi: "Kênh chat", en: "Channel" },
   DOCUMENT: { vi: "Tài liệu", en: "Document" },
   EMAIL: { vi: "Email", en: "Email" },
+  MEETING_ARTIFACT: { vi: "Kết quả cuộc họp", en: "Meeting artifact" },
 };
 
 export function entityTypeLabel(type: string, lang: "vi" | "en" = "vi"): string {

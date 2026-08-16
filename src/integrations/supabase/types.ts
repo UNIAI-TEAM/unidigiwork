@@ -1570,6 +1570,79 @@ export type Database = {
           },
         ]
       }
+      meeting_artifacts: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          item_key: string
+          kind: string
+          meeting_id: string
+          source_ids: string[]
+          summary_version: number
+          tenant_id: string
+          title: string
+          transcript_checksum: string | null
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          detail?: string | null
+          id: string
+          item_key: string
+          kind: string
+          meeting_id: string
+          source_ids?: string[]
+          summary_version?: number
+          tenant_id: string
+          title: string
+          transcript_checksum?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          item_key?: string
+          kind?: string
+          meeting_id?: string
+          source_ids?: string[]
+          summary_version?: number
+          tenant_id?: string
+          title?: string
+          transcript_checksum?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_artifacts_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_artifacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_artifacts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_attendance: {
         Row: {
           created_at: string
@@ -4695,6 +4768,10 @@ export type Database = {
         }
         Returns: string
       }
+      _meeting_artifact_id: {
+        Args: { _item_key: string; _kind: string; _meeting_id: string }
+        Returns: string
+      }
       _meeting_host_guard: {
         Args: { _meeting_id: string }
         Returns: {
@@ -4724,6 +4801,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      _meeting_item_key: {
+        Args: { _source_ids: string[]; _title: string }
+        Returns: string
       }
       _raise_quota_exceeded: {
         Args: { _delta: number; _meter_key: string; _tenant_id: string }
@@ -4759,6 +4840,20 @@ export type Database = {
       _test_unconfirm_auth_email: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      _upsert_meeting_artifact: {
+        Args: {
+          _checksum: string
+          _confidence: string
+          _detail: string
+          _item_key: string
+          _kind: string
+          _meeting_id: string
+          _source_ids: string[]
+          _title: string
+          _version: number
+        }
+        Returns: string
       }
       _work_entity_scope: {
         Args: { _entity_id: string; _entity_type: string }
@@ -6620,6 +6715,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      sync_meeting_artifacts: { Args: { _meeting_id: string }; Returns: number }
       transfer_meeting_host: {
         Args: {
           _correlation_id?: string

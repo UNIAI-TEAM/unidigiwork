@@ -17,6 +17,15 @@ type Client = SupabaseClient<any, any, any>;
 
 const key = (type: string, id: string) => `${type}:${id}`;
 
+const ARTIFACT_KIND_LABEL: Record<string, string> = {
+  SUMMARY: "Tóm tắt",
+  DECISION: "Quyết định",
+  ACTION_ITEM: "Việc cần làm",
+  RISK: "Rủi ro",
+  OPEN_QUESTION: "Câu hỏi mở",
+  FOLLOW_UP: "Thư theo dõi",
+};
+
 /**
  * Resolve display metadata for graph targets in ONE query per entity type.
  * The caller-scoped client means RLS drops anything the actor cannot see —
@@ -90,6 +99,27 @@ export async function resolveWorkEntities(
           supabase.from("users").select("id,display_name,primary_email").in("id", ids).then(({ data }) => {
             (data ?? []).forEach((r: any) => add("PERSON", r.id, r.display_name ?? r.primary_email ?? "Thành viên", r.primary_email));
           }),
+        );
+        break;
+      case "MEETING_ARTIFACT":
+        jobs.push(
+          supabase
+            .from("meeting_artifacts")
+            .select("id,title,kind,meeting_id,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) => {
+                out.set(key("MEETING_ARTIFACT", r.id), {
+                  type: "MEETING_ARTIFACT",
+                  id: r.id,
+                  title: r.title ?? ARTIFACT_KIND_LABEL[r.kind as string] ?? "Kết quả cuộc họp",
+                  subtitle: ARTIFACT_KIND_LABEL[r.kind as string] ?? null,
+                  // Provenance: artifact luôn deep-link về đúng cuộc họp gốc.
+                  href: `/meeting/${r.meeting_id}?artifact=${r.id}`,
+                  updatedAt: r.updated_at ?? null,
+                });
+              });
+            }),
         );
         break;
       default:
