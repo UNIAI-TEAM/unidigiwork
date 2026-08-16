@@ -368,6 +368,15 @@ function AdminAiActionsPage() {
                     </ul>
                   )}
                 </section>
+
+                {detailQ.data?.action.payloadJson && (
+                  <details className="mt-6 rounded-xl border border-border bg-card p-3">
+                    <summary className="cursor-pointer text-sm font-semibold">Dữ liệu đã xác nhận</summary>
+                    <pre className="mt-2 overflow-x-auto rounded-lg bg-muted p-3 text-xs">
+                      {detailQ.data.action.payloadJson}
+                    </pre>
+                  </details>
+                )}
               </>
             )}
           </aside>
