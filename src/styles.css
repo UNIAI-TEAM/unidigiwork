@@ -319,3 +319,16 @@ html[data-font-scale="sm"] { font-size: 93.75%; }
 html[data-font-scale="md"] { font-size: 100%; }
 html[data-font-scale="lg"] { font-size: 112.5%; }
 html[data-font-scale="xl"] { font-size: 125%; }
+
+/* ---------------------------------------------------------------------------
+ * Kiểu chữ toàn cục (data-font-family trên <html>).
+ * ------------------------------------------------------------------------- */
+html[data-font-family="sans"] body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+html[data-font-family="serif"] body {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+html[data-font-family="mono"] body {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
