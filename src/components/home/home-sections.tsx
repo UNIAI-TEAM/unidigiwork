@@ -188,11 +188,15 @@ export function MyWorkRow({
   onComplete,
   completing,
   selected,
+  checked,
+  onCheckedChange,
 }: {
   task: HomeTask;
   onComplete: (t: HomeTask) => void;
   completing: boolean;
   selected?: boolean;
+  checked?: boolean;
+  onCheckedChange?: (t: HomeTask, next: boolean) => void;
 }) {
   const kind = getTaskKind(task);
   const meta = TASK_KIND_META[kind];
@@ -210,6 +214,16 @@ export function MyWorkRow({
       aria-busy={completing}
       aria-selected={selected}
     >
+      {onCheckedChange ? (
+        <input
+          type="checkbox"
+          checked={!!checked}
+          disabled={done}
+          onChange={(e) => onCheckedChange(task, e.target.checked)}
+          aria-label={`Chọn: ${task.title}`}
+          className="h-4 w-4 shrink-0 cursor-pointer accent-[hsl(var(--primary))] disabled:opacity-40"
+        />
+      ) : null}
       <button
         type="button"
         onClick={() => onComplete(task)}
