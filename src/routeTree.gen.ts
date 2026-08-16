@@ -29,6 +29,7 @@ import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as WorkflowsRunsRouteImport } from './routes/workflows_.runs'
 import { Route as WorkflowsPermissionsRouteImport } from './routes/workflows_.permissions'
 import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calendar'
+import { Route as WorkflowsAgentsRouteImport } from './routes/workflows_.agents'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks.$id'
 import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
@@ -192,6 +193,11 @@ const WorkflowsPermissionsRoute = WorkflowsPermissionsRouteImport.update({
 const WorkflowsCalendarRoute = WorkflowsCalendarRouteImport.update({
   id: '/workflows_/calendar',
   path: '/workflows/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowsAgentsRoute = WorkflowsAgentsRouteImport.update({
+  id: '/workflows_/agents',
+  path: '/workflows/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowsIdRoute = WorkflowsIdRouteImport.update({
@@ -582,6 +588,7 @@ export interface FileRoutesByFullPath {
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
+  '/workflows/agents': typeof WorkflowsAgentsRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
@@ -666,6 +673,7 @@ export interface FileRoutesByTo {
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
+  '/workflows/agents': typeof WorkflowsAgentsRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
@@ -754,6 +762,7 @@ export interface FileRoutesById {
   '/reports/detail': typeof ReportsDetailRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
+  '/workflows_/agents': typeof WorkflowsAgentsRoute
   '/workflows_/calendar': typeof WorkflowsCalendarRoute
   '/workflows_/permissions': typeof WorkflowsPermissionsRoute
   '/workflows_/runs': typeof WorkflowsRunsRoute
@@ -842,6 +851,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
+    | '/workflows/agents'
     | '/workflows/calendar'
     | '/workflows/permissions'
     | '/workflows/runs'
@@ -926,6 +936,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
+    | '/workflows/agents'
     | '/workflows/calendar'
     | '/workflows/permissions'
     | '/workflows/runs'
@@ -1013,6 +1024,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tasks/$id'
     | '/workflows/$id'
+    | '/workflows_/agents'
     | '/workflows_/calendar'
     | '/workflows_/permissions'
     | '/workflows_/runs'
@@ -1081,6 +1093,7 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
+  WorkflowsAgentsRoute: typeof WorkflowsAgentsRoute
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
@@ -1231,6 +1244,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows/calendar'
       fullPath: '/workflows/calendar'
       preLoaderRoute: typeof WorkflowsCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows_/agents': {
+      id: '/workflows_/agents'
+      path: '/workflows/agents'
+      fullPath: '/workflows/agents'
+      preLoaderRoute: typeof WorkflowsAgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workflows/$id': {
@@ -1955,6 +1975,7 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
+  WorkflowsAgentsRoute: WorkflowsAgentsRoute,
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
