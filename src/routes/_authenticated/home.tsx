@@ -52,7 +52,7 @@ function greeting() {
 }
 
 function HomePage() {
-  const { sidebarOpen, setSidebarOpen } = useSidebarState();
+  const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const qc = useQueryClient();
   const { data: tenant } = useActiveTenant();
   const tenantId = (tenant as { tenantId?: string } | undefined)?.tenantId ?? "none";
