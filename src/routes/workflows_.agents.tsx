@@ -258,6 +258,15 @@ function AgentBuilderPage() {
                           <Badge variant="outline">{AI_ACTION_TOOLS[a.action_type]?.label ?? a.action_type}</Badge>
                           <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" /> Cần phê duyệt</Badge>
                         </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">Allowlist:</span>
+                          {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
+                            <Badge key={t} variant="secondary" className="text-[11px]">{AI_ACTION_TOOLS[t]?.label ?? t}</Badge>
+                          ))}
+                          {normalizeAllowedSources(a.allowed_sources).map((s) => (
+                            <Badge key={s} variant="outline" className="text-[11px]">{AI_ACTION_SOURCE_LABELS[s]}</Badge>
+                          ))}
+                        </div>
                         {conds.length > 0 && (
                           <p className="mt-2 text-xs text-muted-foreground">
                             Điều kiện: {conds.map((c) => describeCondition(c, fields)).join(" và ")}
