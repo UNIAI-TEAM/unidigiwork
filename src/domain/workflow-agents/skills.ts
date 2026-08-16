@@ -147,3 +147,41 @@ export function deriveAllowedFromSkills(skillIds: readonly string[]): {
 /** Kỹ năng nào cấp quyền cho một loại action — dùng để giải thích trong UI/lỗi. */
 export const skillsGranting = (actionType: AiActionType): AiSkillDef[] =>
   AI_SKILLS.filter((s) => s.actionTypes.includes(actionType));
+
+/**
+ * Chuyển allowlist cũ (allowed_action_types + allowed_sources) sang danh mục kỹ năng,
+ * giữ nguyên hành động và nguồn dữ liệu đã được bật.
+ */
+export function skillsFromLegacyAllowlist(
+  allowedActionTypes: readonly string[],
+  allowedSources: readonly string[],
+): string[] {
+  const actions = new Set(allowedActionTypes);
+  const sources = new Set(allowedSources);
+  const picked = new Set<string>();
+
+  for (const action of actions) {
+    const candidates = AI_SKILLS.filter((s) => s.actionTypes.includes(action as AiActionType));
+    if (!candidates.length) continue;
+    // Ưu tiên kỹ năng có nguồn trùng với allowlist cũ; nếu không có thì lấy kỹ năng đầu tiên.
+    const matched = candidates.filter((s) =>
+      s.sources.some((src) => src !== "WORKFLOW_AGENT" && sources.has(src)),
+    );
+    (matched.length ? matched : [candidates[0]!]).forEach((s) => picked.add(s.id));
+  }
+
+  // Nguồn dữ liệu đã bật nhưng chưa được kỹ năng action nào phủ → thêm kỹ năng chỉ-đọc tương ứng.
+  const readOnlyBySource: Record<string, string> = {
+    MEETING_INTELLIGENCE: "MEETING_RECALL",
+    PROJECT_CONTEXT: "SUMMARIZE_WORK",
+    EMAIL_INTELLIGENCE: "SUMMARIZE_WORK",
+  };
+  for (const src of sources) {
+    if (src === "WORKFLOW_AGENT") continue;
+    const covered = Array.from(picked).some((id) => AI_SKILL_MAP[id]?.sources.includes(src as AiActionSource));
+    const fallback = readOnlyBySource[src];
+    if (!covered && fallback) picked.add(fallback);
+  }
+
+  return normalizeSkills(Array.from(picked));
+}
