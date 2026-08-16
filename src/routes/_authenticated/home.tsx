@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { CalendarClock, CheckCircle2, Inbox, Plus } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { getHomeSummary, type HomeTask, type WorkInboxItem } from "@/lib/api/home.functions";
 import { getHomeAiBrief } from "@/lib/api/home-brief.functions";
@@ -14,9 +14,10 @@ import { setEmailMessagesRead } from "@/lib/api/emails.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import {
   AiBrief,
-  EmptyRow,
+  EmptyState,
   InboxRow,
   MyWorkRow,
+  PartialNotice,
   SectionCard,
   SkeletonRows,
   TodaySummary,
