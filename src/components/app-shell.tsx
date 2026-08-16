@@ -101,7 +101,9 @@ type NavKey =
   | "email"
   | "reports"
   | "ai"
-  | "notifications";
+  | "notifications"
+  | "settings"
+  | "help";
 
 function NavItem({
   icon: Icon,
