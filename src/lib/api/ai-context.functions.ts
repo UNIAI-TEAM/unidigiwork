@@ -9,6 +9,7 @@ import { ApiError } from "@/contracts/errors";
 import { WORK_ENTITY_TYPES } from "@/domain/work-graph/relationship-types";
 import type { AiContextPack, AiGroundedResponse } from "@/domain/ai-context/contracts";
 import { AI_CONTEXT_POLICY } from "@/domain/ai-context/contracts";
+import { usableSources, validateAnswerCitations } from "@/domain/ai-context/citations";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
 const MODEL = "openai/gpt-5.6-sol";
@@ -106,16 +107,19 @@ export const askUni = createServerFn({ method: "POST" })
     }
 
     const { answer, citations } = parseModelJson(raw);
-    // §54 — chỉ giữ citation trỏ tới source đã cung cấp.
-    const valid = new Map(pack.sources.map((s) => [s.sourceId, s]));
-    const cited = citations
-      .map((c) => (c.sourceId ? valid.get(c.sourceId) : undefined))
-      .filter((s): s is NonNullable<typeof s> => Boolean(s));
-    const unique = Array.from(new Map(cited.map((s) => [s.sourceId, s])).values());
+    // §54 — validate citation IDs: gỡ ID bịa, chỉ giữ nguồn có deep link nội bộ an toàn.
+    const safeSources = usableSources(pack.sources);
+    const validated = validateAnswerCitations(
+      answer,
+      safeSources,
+      citations.map((c) => c.sourceId ?? "").filter(Boolean),
+    );
 
     return {
-      answer: answer.trim() || "Tôi chưa đủ dữ liệu trong quyền truy cập của bạn để trả lời câu hỏi này.",
-      sources: unique.length ? unique : pack.sources.slice(0, 5),
+      answer:
+        validated.answer ||
+        "Tôi chưa đủ dữ liệu trong quyền truy cập của bạn để trả lời câu hỏi này.",
+      sources: validated.citedSources.length ? validated.citedSources : safeSources.slice(0, 5),
       contextRequestId: pack.requestId,
       partial: pack.partial,
       ambiguous: Boolean(pack.ambiguity),
