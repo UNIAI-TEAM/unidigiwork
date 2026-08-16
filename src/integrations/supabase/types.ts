@@ -6010,6 +6010,14 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: Json
       }
+      get_task_snapshot: {
+        Args: { _task_id: string }
+        Returns: {
+          id: string
+          row_version: number
+          title: string
+        }[]
+      }
       get_unread_counts: {
         Args: never
         Returns: {
