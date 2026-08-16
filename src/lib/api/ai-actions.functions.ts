@@ -355,6 +355,62 @@ export const cancelAiAction = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export interface RefreshedAiActionPreview {
+  actionId: string;
+  preview: { label: string; value: string }[];
+  /** Những gì đã đổi ở dữ liệu đích kể từ lúc UNI đề xuất. */
+  targetChanges: { label: string; before: string; after: string }[];
+  refreshedAt: string;
+  status: "PROPOSED";
+}
+
+/** ACTION_STALE → dựng lại preview theo dữ liệu đích mới nhất, người dùng phải xem lại rồi xác nhận lại. */
+export const refreshAiActionProposal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ actionId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<RefreshedAiActionPreview> => {
+    const sb = context.supabase;
+    const { data: row } = await sb.from("ai_action_proposals").select("*").eq("id", data.actionId).maybeSingle();
+    if (!row || row.user_id !== context.userId) throw fail("ACTION_NOT_FOUND");
+    if (row.status === "SUCCEEDED") throw fail("ACTION_ALREADY_DONE");
+    if (row.status === "CANCELLED") throw fail("ACTION_NOT_FOUND", "Đề xuất đã bị huỷ.");
+    if (new Date(row.expires_at).getTime() < Date.now()) throw fail("ACTION_EXPIRED");
+
+    const { buildPreviewRows, readTaskTarget } = await import("./ai-actions.server");
+    const payload = (row.payload ?? {}) as Record<string, unknown>;
+    const targetChanges: RefreshedAiActionPreview["targetChanges"] = [];
+    let expectedRowVersion: number | null = row.expected_row_version ?? null;
+
+    if (row.target_type === "TASK" && row.target_id) {
+      const task = await readTaskTarget(context as never, row.target_id);
+      if (!task) throw fail("ACTION_NOT_FOUND", "Công việc không còn tồn tại.");
+      if (expectedRowVersion != null && task.rowVersion !== expectedRowVersion) {
+        targetChanges.push({
+          label: "Phiên bản dữ liệu",
+          before: `v${expectedRowVersion}`,
+          after: `v${task.rowVersion ?? "?"}`,
+        });
+        targetChanges.push({ label: "Công việc đích", before: "—", after: task.title });
+      }
+      expectedRowVersion = task.rowVersion;
+    }
+
+    const refreshedAt = new Date().toISOString();
+    await sb
+      .from("ai_action_proposals")
+      .update({ status: "PROPOSED", error_code: null, expected_row_version: expectedRowVersion })
+      .eq("id", row.id)
+      .eq("user_id", context.userId);
+
+    return {
+      actionId: row.id as string,
+      preview: buildPreviewRows(row.action_type as never, payload as never, {}),
+      targetChanges,
+      refreshedAt,
+      status: "PROPOSED",
+    };
+  });
+
 export const listAiActionProposals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ limit: z.number().int().min(1).max(50).default(10) }).parse(i ?? {}))
