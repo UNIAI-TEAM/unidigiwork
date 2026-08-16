@@ -19,7 +19,6 @@ const toLocalInput = (iso?: string | null) => {
   const d = new Date(new Date(iso).getTime() + 7 * 3600_000);
   return d.toISOString().slice(0, 16);
 };
-const fromLocalInput = (v: string) => (v ? new Date(new Date(v).getTime() - 7 * 3600_000 + new Date().getTimezoneOffset() * -60_000 * 0).toISOString() : null);
 
 export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction }) {
   const navigate = useNavigate();
@@ -107,7 +106,7 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
       )}
 
       {blocking.map((a) => (
-        <div key={a.field} className="space-y-1.5 rounded-lg border border-warning/40 bg-warning/5 p-2.5 text-[12px]">
+        <div key={a.field} className="space-y-1.5 rounded-lg border border-border bg-surface p-2.5 text-[12px]">
           <p className="flex items-center gap-1.5 font-medium text-foreground">
             <AlertTriangle className="h-3.5 w-3.5" /> {a.message}
           </p>
