@@ -31,6 +31,7 @@ const dict = {
     "nav.group.insights": "Phân tích",
     "nav.group.admin": "Quản trị",
     // nav v2 — items
+    "nav.home": "Trang chủ",
     "nav.mywork": "Công việc của tôi",
     "nav.inbox": "Hộp việc",
     "nav.projects": "Không gian làm việc",
@@ -636,6 +637,7 @@ const dict = {
     "nav.group.insights": "Insights",
     "nav.group.admin": "Admin",
     // nav v2 — items
+    "nav.home": "Home",
     "nav.mywork": "My Work",
     "nav.inbox": "Inbox",
     "nav.projects": "Workspaces",

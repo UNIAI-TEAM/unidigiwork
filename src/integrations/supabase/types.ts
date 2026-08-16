@@ -5006,6 +5006,7 @@ export type Database = {
         Args: { _day_end?: string; _day_start?: string; _workspace_id?: string }
         Returns: Json
       }
+      get_home_summary: { Args: never; Returns: Json }
       get_meeting_stats: { Args: { _meeting_id: string }; Returns: Json }
       get_my_workflow_permissions: {
         Args: { _workspace_id: string }
