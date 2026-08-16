@@ -797,6 +797,11 @@ function WorkspaceDetailPage() {
                     Xem chi tiết →
                   </button>
                 </div>
+                <RelatedWorkPanel
+                  entityType="WORKSPACE"
+                  entityId={id}
+                  className="rounded-xl border border-border bg-surface p-4"
+                />
               </div>
             </div>
           )}
