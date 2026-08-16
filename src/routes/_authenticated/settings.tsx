@@ -46,6 +46,7 @@ import {
 import { RefreshCw } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
+import { PushDevicesPanel } from "@/components/push-devices-panel";
 
 const searchSchema = z.object({
   tab: z
@@ -357,7 +358,12 @@ function PasswordSection() {
 }
 
 function NotificationsSection() {
-  return <NotificationsPrefsPanel />;
+  return (
+    <div className="space-y-8">
+      <PushDevicesPanel />
+      <NotificationsPrefsPanel />
+    </div>
+  );
 }
 
 const CAT_LABELS: { key: "mention" | "task" | "meeting" | "document" | "workflow" | "system"; label: string; desc: string }[] = [

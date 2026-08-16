@@ -150,5 +150,16 @@ export const createNotification = createServerFn({ method: "POST" })
       meta: (data.meta ?? {}) as never,
     });
     if (error) throw new Error(error.message);
+    try {
+      const { sendPushToUsers } = await import("./push-dispatch.server");
+      await sendPushToUsers([data.user_id], {
+        title: data.title,
+        body: data.body ?? "",
+        url: data.link ?? "/notifications",
+        tag: `notif-${data.type}`,
+      });
+    } catch {
+      // push delivery is best-effort; never block notification creation
+    }
     return { ok: true };
   });
