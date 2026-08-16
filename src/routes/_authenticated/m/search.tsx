@@ -7,6 +7,7 @@ import {
   X,
   Loader2,
   Briefcase,
+  Sparkles,
   ListChecks,
   Video,
   FileText,
