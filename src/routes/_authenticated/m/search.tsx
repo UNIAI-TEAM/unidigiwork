@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Search,
@@ -88,30 +88,49 @@ function MobileSearchPage() {
 
   const runSearch = useServerFn(universalSearch);
   const enabled = debounced.length >= 2;
-  const { data, isFetching } = useQuery({
-    queryKey: ["m-search", debounced, kind, scope],
-    queryFn: () =>
-      runSearch({
-        data: {
-          q: debounced,
-          kinds: kind ? [kind] : undefined,
-          workspaceId: scope ?? undefined,
-          limit: 30,
-          offset: 0,
-          expandGraph: false,
-        },
-      }),
-    enabled,
-    staleTime: 30_000,
-  });
+  const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteQuery({
+      queryKey: ["m-search", debounced, kind, scope],
+      initialPageParam: 0,
+      queryFn: ({ pageParam }) =>
+        runSearch({
+          data: {
+            q: debounced,
+            kinds: kind ? [kind] : undefined,
+            workspaceId: scope ?? undefined,
+            limit: PAGE_SIZE,
+            offset: pageParam as number,
+            expandGraph: false,
+          },
+        }),
+      getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
+      enabled,
+      staleTime: 30_000,
+    });
 
-  const counts = data?.counts;
+  const firstPage = data?.pages?.[0];
+  const counts = firstPage?.counts;
   const availableKinds = useMemo(
     () => SEARCH_KINDS.filter((k) => (counts?.[k] ?? 0) > 0 || k === kind),
     [counts, kind],
   );
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.items), [data]);
+
+  // Tự tải thêm khi cuộn tới cuối danh sách.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
 
   return (
     <div className="flex min-h-full flex-col pb-24">
