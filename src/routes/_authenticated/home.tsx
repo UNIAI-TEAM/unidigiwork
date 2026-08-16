@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { getHomeSummary, type HomeTask, type WorkInboxItem } from "@/lib/api/home.functions";
+import { getHomeAiBrief } from "@/lib/api/home-brief.functions";
 import { transitionTask } from "@/lib/api/tasks.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { setEmailMessagesRead } from "@/lib/api/emails.functions";
@@ -66,6 +67,14 @@ function HomePage() {
     staleTime: 60_000,
   });
   const data = homeQuery.data;
+
+  const fetchBrief = useServerFn(getHomeAiBrief);
+  const briefQuery = useQuery({
+    queryKey: ["home", "ai-brief", tenantId],
+    queryFn: () => fetchBrief(),
+    staleTime: 5 * 60_000,
+  });
+  const brief = briefQuery.data;
 
   const transition = useServerFn(transitionTask);
   const markRead = useServerFn(markNotificationsRead);
@@ -223,7 +232,14 @@ function HomePage() {
             )}
           </SectionCard>
 
-          {data?.brief.length ? <AiBrief brief={data.brief} /> : null}
+          <AiBrief
+            aiBullets={brief?.available ? brief.bullets : []}
+            factBrief={data?.brief ?? []}
+            loading={briefQuery.isLoading || briefQuery.isFetching}
+            unavailableMessage={brief && !brief.available ? brief.message : null}
+            onRefresh={() => briefQuery.refetch()}
+            generatedAt={brief?.generatedAt ?? null}
+          />
 
           {data?.partial.length ? (
             <p className="text-xs text-muted-foreground">
