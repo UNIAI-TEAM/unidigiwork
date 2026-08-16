@@ -221,7 +221,7 @@ export function MyWorkRow({
           disabled={done}
           onChange={(e) => onCheckedChange(task, e.target.checked)}
           aria-label={`Chọn: ${task.title}`}
-          className="h-4 w-4 shrink-0 cursor-pointer accent-[hsl(var(--primary))] disabled:opacity-40"
+          className="h-4 w-4 shrink-0 cursor-pointer accent-primary disabled:opacity-40"
         />
       ) : null}
       <button
