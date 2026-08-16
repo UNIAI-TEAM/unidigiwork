@@ -800,7 +800,7 @@ function WorkspaceDetailPage() {
                 </div>
                 <RelatedWorkPanel
                   entityType="WORKSPACE"
-                  entityId={id}
+                  entityId={workspaceId}
                   className="rounded-xl border border-border bg-surface p-4"
                 />
               </div>
