@@ -12,8 +12,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "UNIWORK";
   const options = {
     body: payload.body || "",
-    icon: payload.icon || "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    icon: payload.icon || "/icons/icon-192x192.png",
+    badge: "/icons/icon-192x192.png",
     tag: payload.tag || undefined,
     data: { url: payload.url || "/notifications", ...(payload.data || {}) },
     renotify: Boolean(payload.tag),
