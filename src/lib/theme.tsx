@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Check, Moon, Palette, Sun } from "lucide-react";
+import { Check, Contrast, Moon, Palette, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUiPrefs, saveUiPrefs } from "@/lib/api/user-ui-prefs.functions";
 import {
@@ -7,11 +7,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 type Theme = "light" | "dark";
 export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose";
+export type Contrast = "normal" | "high";
 
 export const TONES: { id: Tone; label: string; swatch: string }[] = [
   { id: "violet", label: "Tím Uni", swatch: "oklch(0.60 0.17 285)" },
@@ -23,22 +25,28 @@ export const TONES: { id: Tone; label: string; swatch: string }[] = [
 ];
 
 const TONE_KEY = "uniwork-tone";
+const CONTRAST_KEY = "uniwork-contrast";
 
 const ThemeCtx = createContext<{
   theme: Theme;
   toggle: () => void;
   tone: Tone;
   setTone: (t: Tone) => void;
+  contrast: Contrast;
+  setContrast: (c: Contrast) => void;
 }>({
   theme: "dark",
   toggle: () => {},
   tone: "violet",
   setTone: () => {},
+  contrast: "normal",
+  setContrast: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [tone, setTone] = useState<Tone>("violet");
+  const [contrast, setContrast] = useState<Contrast>("normal");
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
@@ -49,6 +57,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const savedTone = (typeof localStorage !== "undefined" &&
       localStorage.getItem(TONE_KEY)) as Tone | null;
     if (savedTone && TONES.some((t) => t.id === savedTone)) setTone(savedTone);
+    const savedContrast = (typeof localStorage !== "undefined" &&
+      localStorage.getItem(CONTRAST_KEY)) as Contrast | null;
+    if (savedContrast === "high" || savedContrast === "normal") setContrast(savedContrast);
   }, []);
 
   // Đồng bộ tuỳ chọn giao diện theo tài khoản (đa thiết bị).
@@ -65,6 +76,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (prefs) {
           setTheme(prefs.theme);
           if (TONES.some((t) => t.id === prefs.tone)) setTone(prefs.tone);
+          if (prefs.contrast === "high" || prefs.contrast === "normal")
+            setContrast(prefs.contrast);
         }
         setSynced(true);
       } catch {
@@ -81,7 +94,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const persist = (patch: { theme?: Theme; tone?: Tone }) => {
+  const persist = (patch: { theme?: Theme; tone?: Tone; contrast?: Contrast }) => {
     if (!synced) return;
     void saveUiPrefs({ data: patch }).catch(() => {
       /* bỏ qua lỗi mạng, localStorage vẫn giữ */
@@ -107,6 +120,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [tone]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (contrast === "high") root.setAttribute("data-contrast", "high");
+    else root.removeAttribute("data-contrast");
+    try {
+      localStorage.setItem(CONTRAST_KEY, contrast);
+    } catch {
+      /* ignore */
+    }
+  }, [contrast]);
+
   return (
     <ThemeCtx.Provider
       value={{
@@ -121,6 +145,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setTone: (t) => {
           setTone(t);
           persist({ tone: t });
+        },
+        contrast,
+        setContrast: (c) => {
+          setContrast(c);
+          persist({ contrast: c });
         },
       }}
     >
@@ -150,7 +179,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 }
 
 export function ToneToggle({ className = "" }: { className?: string }) {
-  const { tone, setTone } = useTheme();
+  const { tone, setTone, contrast, setContrast } = useTheme();
   const active = TONES.find((t) => t.id === tone) ?? TONES[0];
   return (
     <DropdownMenu>
@@ -181,6 +210,19 @@ export function ToneToggle({ className = "" }: { className?: string }) {
             {t.id === tone && <Check className="h-4 w-4 text-primary" />}
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Khả năng đọc</DropdownMenuLabel>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setContrast(contrast === "high" ? "normal" : "high");
+          }}
+          className="gap-2"
+        >
+          <Contrast className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1">Tương phản cao</span>
+          {contrast === "high" && <Check className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
