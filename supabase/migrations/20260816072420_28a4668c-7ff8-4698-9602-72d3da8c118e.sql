@@ -1,0 +1,1 @@
+ALTER TABLE public.user_ui_prefs ADD COLUMN IF NOT EXISTS contrast text NOT NULL DEFAULT 'normal' CHECK (contrast IN ('normal','high'));

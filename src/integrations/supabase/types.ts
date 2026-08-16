@@ -3458,6 +3458,7 @@ export type Database = {
       }
       user_ui_prefs: {
         Row: {
+          contrast: string
           created_at: string
           theme: string
           tone: string
@@ -3465,6 +3466,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          contrast?: string
           created_at?: string
           theme?: string
           tone?: string
@@ -3472,6 +3474,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          contrast?: string
           created_at?: string
           theme?: string
           tone?: string

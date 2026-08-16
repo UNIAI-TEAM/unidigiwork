@@ -6,25 +6,42 @@ import { ApiError } from "@/contracts/errors";
 
 const themeSchema = z.enum(["light", "dark"]);
 const toneSchema = z.enum(["violet", "blue", "teal", "emerald", "amber", "rose"]);
+const contrastSchema = z.enum(["normal", "high"]);
 
-export type UiPrefs = { theme: z.infer<typeof themeSchema>; tone: z.infer<typeof toneSchema> };
+export type UiPrefs = {
+  theme: z.infer<typeof themeSchema>;
+  tone: z.infer<typeof toneSchema>;
+  contrast: z.infer<typeof contrastSchema>;
+};
 
 export const getUiPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<UiPrefs | null> => {
     const { data, error } = await context.supabase
       .from("user_ui_prefs")
-      .select("theme, tone")
+      .select("theme, tone, contrast")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new ApiError({ code: "INTERNAL_ERROR", message: error.message });
-    return data ? { theme: data.theme as UiPrefs["theme"], tone: data.tone as UiPrefs["tone"] } : null;
+    return data
+      ? {
+          theme: data.theme as UiPrefs["theme"],
+          tone: data.tone as UiPrefs["tone"],
+          contrast: (data.contrast as UiPrefs["contrast"]) ?? "normal",
+        }
+      : null;
   });
 
 export const saveUiPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: Partial<UiPrefs>) =>
-    z.object({ theme: themeSchema.optional(), tone: toneSchema.optional() }).parse(i),
+    z
+      .object({
+        theme: themeSchema.optional(),
+        tone: toneSchema.optional(),
+        contrast: contrastSchema.optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase

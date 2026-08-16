@@ -254,3 +254,60 @@
   --sidebar-primary: oklch(0.68 0.15 var(--tone-h));
   --sidebar-ring: oklch(0.68 0.15 var(--tone-h) / 55%);
 }
+
+/* ---------------------------------------------------------------------------
+ * Chế độ tương phản cao (data-contrast="high" trên <html>).
+ * Tăng độ tương phản chữ, viền và focus ring để dễ đọc hơn (WCAG AAA-ish).
+ * ------------------------------------------------------------------------- */
+:root[data-contrast="high"] {
+  --background: oklch(1 0 0);
+  --surface: oklch(0.985 0.003 260);
+  --surface-2: oklch(0.965 0.004 260);
+  --foreground: oklch(0.14 0.02 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0.02 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.14 0.02 260);
+  --muted-foreground: oklch(0.34 0.015 260);
+  --secondary-foreground: oklch(0.14 0.02 260);
+  --border: oklch(0.14 0.02 260 / 32%);
+  --input: oklch(0.14 0.02 260 / 45%);
+  --primary: oklch(0.44 0.19 var(--tone-h, 285));
+  --accent: oklch(0.44 0.19 var(--tone-h, 285));
+  --primary-foreground: oklch(1 0 0);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.46 0.20 25);
+  --ring: oklch(0.30 0.05 var(--tone-h, 285) / 90%);
+  --sidebar-foreground: oklch(0.14 0.02 260);
+  --sidebar-border: oklch(0.14 0.02 260 / 30%);
+  --sidebar-primary: oklch(0.40 0.18 var(--tone-h, 285));
+}
+
+:root[data-contrast="high"].dark,
+.dark:root[data-contrast="high"] {
+  --background: oklch(0.12 0.01 260);
+  --surface: oklch(0.16 0.012 260);
+  --surface-2: oklch(0.21 0.012 260);
+  --foreground: oklch(0.99 0 0);
+  --card: oklch(0.16 0.012 260);
+  --card-foreground: oklch(0.99 0 0);
+  --popover: oklch(0.16 0.012 260);
+  --popover-foreground: oklch(0.99 0 0);
+  --muted-foreground: oklch(0.82 0.01 260);
+  --secondary-foreground: oklch(0.99 0 0);
+  --border: oklch(0.99 0 0 / 38%);
+  --input: oklch(0.99 0 0 / 50%);
+  --primary: oklch(0.82 0.14 var(--tone-h, 285));
+  --accent: oklch(0.82 0.14 var(--tone-h, 285));
+  --primary-foreground: oklch(0.12 0.01 260);
+  --accent-foreground: oklch(0.12 0.01 260);
+  --destructive: oklch(0.72 0.18 25);
+  --ring: oklch(0.92 0.05 var(--tone-h, 285) / 90%);
+  --sidebar-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(0.99 0 0 / 35%);
+}
+
+:root[data-contrast="high"] *:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
