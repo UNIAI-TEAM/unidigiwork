@@ -467,7 +467,14 @@ function AgentBuilderPage() {
                       return (
                         <div key={skill.id} className="flex min-h-11 items-start justify-between gap-3 rounded-md border border-border p-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium">{skill.name}</p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <p className="text-sm font-medium">{skill.name}</p>
+                              {!on && (
+                                <Badge variant="outline" className="border-dashed text-[11px] text-muted-foreground">
+                                  Chưa cấu hình
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground">{skill.description}</p>
                             <p className="mt-0.5 text-xs italic text-muted-foreground">Ví dụ: {skill.example}</p>
                             <div className="mt-1 flex flex-wrap gap-1">
