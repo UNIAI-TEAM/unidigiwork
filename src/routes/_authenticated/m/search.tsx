@@ -18,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { useActiveWorkspace } from "@/lib/active-workspace";
+import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { SEARCH_KINDS, type SearchKind } from "@/lib/api/search-universal.server";
 
@@ -72,7 +73,8 @@ function MobileSearchPage() {
 
   useEffect(() => {
     if (!ready || scopeTouched) return;
-    setScope(activeWorkspaceId);
+    const saved = readSearchScope();
+    setScope(saved === undefined ? activeWorkspaceId : saved);
   }, [ready, activeWorkspaceId, scopeTouched]);
 
   useEffect(() => {
@@ -162,6 +164,7 @@ function MobileSearchPage() {
               onClick={() => {
                 setScopeTouched(true);
                 setScope(null);
+                writeSearchScope(null);
               }}
             >
               Mọi dự án
@@ -172,7 +175,9 @@ function MobileSearchPage() {
                 active={scope === w.id}
                 onClick={() => {
                   setScopeTouched(true);
-                  setScope(scope === w.id ? null : w.id);
+                  const next = scope === w.id ? null : w.id;
+                  setScope(next);
+                  writeSearchScope(next);
                 }}
               >
                 {w.name}
