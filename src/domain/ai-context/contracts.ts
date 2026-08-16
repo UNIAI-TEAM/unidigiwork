@@ -103,6 +103,7 @@ export const AI_CONTEXT_POLICY = {
   perTypeLimits: {
     TASK: 10,
     MEETING: 5,
+    MEETING_ARTIFACT: 8,
     DOCUMENT: 5,
     EMAIL: 5,
     CHAT_CHANNEL: 5,
