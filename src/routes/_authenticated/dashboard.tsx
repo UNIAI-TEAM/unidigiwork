@@ -2,14 +2,13 @@ import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { sendAiMessage } from "@/lib/api/ai-chat.functions";
-import { listNotifications, markNotificationsRead } from "@/lib/api/notifications.functions";
+import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
 import {
   queryOptions,
   useSuspenseQuery,
   useQuery,
   useQueryClient,
-  keepPreviousData,
 } from "@tanstack/react-query";
 import {
   getDashboardPrefs,
@@ -705,6 +704,23 @@ function DashboardInner() {
 
   const kpis = useMemo(() => buildKpis(data.overview), [data.overview]);
   // 1 request duy nhất: overview + AI summary + notifications đến từ getDashboardBundle.
+  // Các view con đọc từ cùng một query; giữ shape cũ để UI không phải đổi.
+  const aiSummaryQuery = {
+    data: data.ai,
+    isPending: false as boolean,
+    isError: overviewQuery.isError as boolean,
+    error: overviewQuery.error as Error | null,
+    isFetching: overviewQuery.isFetching,
+    refetch: () => void overviewQuery.refetch(),
+  };
+  const notificationsQuery = {
+    data: data.notifications,
+    isPending: false as boolean,
+    isError: overviewQuery.isError as boolean,
+    error: overviewQuery.error as Error | null,
+    isFetching: overviewQuery.isFetching,
+    refetch: () => void overviewQuery.refetch(),
+  };
   const aiItems = useMemo(
     () => buildAiItems(data.ai, activeWorkspaceId ?? undefined),
     [data.ai, activeWorkspaceId],
