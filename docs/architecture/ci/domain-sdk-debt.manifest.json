@@ -26,6 +26,11 @@
       "title": "Platform-wide admin counters use the service-role client (count-only, assertAdmin-gated). Replace with an admin metrics RPC.",
       "owner": "@uniwork/platform",
       "targetBatch": "1D-ADMIN-METRICS"
+    },
+    "SYSTEM_CRON_RECONCILE": {
+      "title": "LiveKit reconcile cron runs without a user session: service-role SELECT on meetings (read-only scan, apikey-gated, all writes via ingest_meeting_provider_event RPC). Accepted by design (ADR-1E-001).",
+      "owner": "@uniwork/meetings",
+      "targetBatch": "accepted"
     }
   },
   "waivers": {
@@ -49,7 +54,8 @@
       "src/lib/api/tasks.functions.ts": "BATCH_1D_TASK_ATTACHMENTS"
     },
     "server-admin-client-domain-table": {
-      "src/lib/api/admin.functions.ts": "ADMIN_PLATFORM_STATS_COUNT"
+      "src/lib/api/admin.functions.ts": "ADMIN_PLATFORM_STATS_COUNT",
+      "src/routes/api/public/hooks/livekit-reconcile.ts": "SYSTEM_CRON_RECONCILE"
     },
     "inline-mock-name": {
       "src/routes/tasks.tsx": "BATCH_1D_TASKS",
