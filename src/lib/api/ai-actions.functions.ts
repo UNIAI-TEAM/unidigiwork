@@ -324,6 +324,31 @@ export const confirmAiAction = createServerFn({ method: "POST" })
         expectedRowVersion: row.expected_row_version ?? null,
       });
       const final: AiActionExecutionResult = { ...result, actionId: row.id as string };
+      // Gán agent tự động theo lĩnh vực công việc — không cần người dùng chọn tay.
+      if (row.action_type === "CREATE_TASK" && result.status === "SUCCEEDED") {
+        const { autoAssignAgentForTask } = await import("./ai-agent-routing.server");
+        const assigned = await autoAssignAgentForTask({
+          supabase: sb,
+          userId: context.userId,
+          tenantId: row.tenant_id as string,
+          workspaceId: scope.workspaceId,
+          proposalId: row.id as string,
+          actionType: row.action_type as string,
+          task: {
+            title: (payload["title"] as string) ?? null,
+            description: (payload["description"] as string) ?? null,
+          },
+        });
+        if (assigned) {
+          final.assignedAgent = {
+            agentId: assigned.agentId,
+            agentName: assigned.agentName,
+            profileName: assigned.profileName,
+            reason: assigned.reason,
+          };
+          final.message = `${final.message} · Đã gán agent "${assigned.agentName}"`;
+        }
+      }
       await sb
         .from("ai_action_proposals")
         .update({ status: "SUCCEEDED", executed_at: new Date().toISOString(), result: final as never })
