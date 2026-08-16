@@ -194,15 +194,13 @@ async function deliverWebhooks(admin: SupabaseClient, ev: OutboxEvent): Promise<
         });
         clearTimeout(timer);
         const errText = res.ok ? null : (await res.text()).slice(0, 500);
-        await admin
-          .from("webhook_endpoints")
-          .update({
-            last_status: res.status,
-            last_error: errText,
-            last_delivered_at: new Date().toISOString(),
-            failure_count: res.ok ? 0 : (undefined as never),
-          })
-          .eq("id", ep.id);
+        const patch: Record<string, unknown> = {
+          last_status: res.status,
+          last_error: errText,
+          last_delivered_at: new Date().toISOString(),
+        };
+        if (res.ok) patch["failure_count"] = 0;
+        await admin.from("webhook_endpoints").update(patch as never).eq("id", ep.id);
         return {
           ...base,
           status: res.ok ? ("sent" as const) : ("failed" as const),
