@@ -31,7 +31,7 @@ export interface AiActionAuditRow {
 }
 
 export interface AiActionAuditDetail {
-  action: AiActionAuditRow & { payload: Record<string, unknown> | null; message: string | null };
+  action: AiActionAuditRow & { payloadJson: string | null; message: string | null };
   auditEvents: Array<{
     id: string;
     action: string;
@@ -227,7 +227,7 @@ export const getAiActionAuditDetail = createServerFn({ method: "POST" })
         executedAt: r.executed_at ?? null,
         auditCount: (audits ?? []).length,
         outboxCount: outboxRows.length,
-        payload: (r.payload ?? null) as Record<string, unknown> | null,
+        payloadJson: r.payload ? JSON.stringify(r.payload, null, 2) : null,
         message: (r.result?.message as string) ?? null,
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
