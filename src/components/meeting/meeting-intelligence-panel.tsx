@@ -36,10 +36,14 @@ import {
   actionItemKey,
   DECISION_CONFIDENCE_LABEL,
   formatOffset,
+  summaryProgressPercent,
+  SUMMARY_CHUNK_STATUS_LABEL,
+  SUMMARY_PHASE_LABEL,
   transcriptChecksum,
   TRANSCRIPT_SOURCE_LABEL,
   type MeetingActionItem,
   type MeetingSummary,
+  type SummaryProgress,
   type SummarySource,
 } from "@/domain/meeting-intelligence/contracts";
 import {
@@ -47,6 +51,7 @@ import {
   dismissMeetingActionItem,
   generateMeetingSummary,
   getMeetingSummary,
+  getMeetingSummaryProgress,
   listMeetingActionItemStates,
   listMeetingTranscript,
 } from "@/lib/api/meeting-intelligence.functions";
@@ -79,6 +84,77 @@ function CitationChips({
           {formatOffset(s.offsetSeconds)}
         </button>
       ))}
+    </div>
+  );
+}
+
+const CHUNK_STATUS_CLASS: Record<string, string> = {
+  PENDING: "border-border bg-surface-2 text-muted-foreground",
+  RUNNING: "border-primary/40 bg-primary/10 text-primary",
+  DONE: "border-success/40 bg-success/10 text-success",
+  FAILED: "border-destructive/40 bg-destructive/10 text-destructive",
+};
+
+function StagedProgress({ progress, running }: { progress: SummaryProgress; running: boolean }) {
+  const percent = running || progress.phase !== "DONE" ? summaryProgressPercent(progress) : 100;
+  const active = progress.phase === "MAPPING" || progress.phase === "SYNTHESIS";
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-surface-2 p-3">
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span className="flex items-center gap-1.5 font-medium text-foreground">
+          {active && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+          {SUMMARY_PHASE_LABEL[progress.phase]}
+          {progress.staged && (
+            <span className="rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              Chia giai đoạn
+            </span>
+          )}
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {progress.totalChunks > 0
+            ? `${progress.completedChunks + progress.failedChunks}/${progress.totalChunks} phần · ${percent}%`
+            : `${percent}%`}
+        </span>
+      </div>
+
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-500"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      {progress.chunks.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {progress.chunks.map((c) => (
+            <span
+              key={c.index}
+              title={`Phần ${c.index + 1} · ${formatOffset(c.startOffsetSeconds)}–${formatOffset(
+                c.endOffsetSeconds,
+              )} · ${c.segmentCount} đoạn · ${c.charCount.toLocaleString("vi-VN")} ký tự · ${
+                SUMMARY_CHUNK_STATUS_LABEL[c.status]
+              }`}
+              className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] ${
+                CHUNK_STATUS_CLASS[c.status] ?? CHUNK_STATUS_CLASS.PENDING
+              }`}
+            >
+              {c.status === "RUNNING" && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
+              #{c.index + 1} · {formatOffset(c.startOffsetSeconds)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {progress.failedChunks > 0 && (
+        <div className="text-[10px] text-warning">
+          {progress.failedChunks} phần transcript xử lý lỗi — kết quả có thể thiếu nội dung của các phần đó.
+        </div>
+      )}
+      {progress.truncated && (
+        <div className="text-[10px] text-muted-foreground">
+          Transcript quá dài: hệ thống ưu tiên các phần cuối cuộc họp.
+        </div>
+      )}
     </div>
   );
 }
@@ -116,13 +192,23 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     mutationFn: () => generateMeetingSummary({ data: { meetingId } }),
     onSuccess: (data: MeetingSummary) => {
       queryClient.setQueryData(["meeting-summary", meetingId], data);
+      void queryClient.invalidateQueries({ queryKey: ["meeting-summary-progress", meetingId] });
       toast.success("Đã tạo tóm tắt cuộc họp.");
     },
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : "Không tạo được tóm tắt.";
+      void queryClient.invalidateQueries({ queryKey: ["meeting-summary-progress", meetingId] });
       toast.error(message);
     },
   });
+
+  const progressQuery = useQuery({
+    queryKey: ["meeting-summary-progress", meetingId],
+    queryFn: () => getMeetingSummaryProgress({ data: { meetingId } }),
+    refetchInterval: generate.isPending ? 1500 : false,
+    staleTime: 0,
+  });
+  const progress = progressQuery.data ?? null;
 
   const confirmItem = useMutation({
     mutationFn: (input: { itemKey: string; title: string; workspaceId: string; dueAt: string | null }) =>
