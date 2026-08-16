@@ -194,7 +194,7 @@ export const proposeAiAction = createServerFn({ method: "POST" })
         source: data.source,
         title: def.label,
         description: data.query.slice(0, 500),
-        payload,
+        payload: payload as never,
         target_type: targetType,
         target_id: targetId,
         source_refs: sourceRefs,
@@ -214,7 +214,7 @@ export const proposeAiAction = createServerFn({ method: "POST" })
       title: def.label,
       description: data.query.slice(0, 500),
       target: targetType && targetId ? { entityType: targetType, entityId: targetId } : null,
-      payload,
+      payload: payload as never,
       preview: buildPreviewRows(actionType, payload as never, {
         assignee: assigneeLabel,
         workspace: (wsRow.data as any)?.name ?? null,
@@ -261,7 +261,7 @@ export const confirmAiAction = createServerFn({ method: "POST" })
     if (!row || row.user_id !== context.userId) throw fail("ACTION_NOT_FOUND");
 
     // Replay: cùng actionId đã chạy xong → trả kết quả cũ, không tạo bản ghi mới (§47).
-    if (row.status === "SUCCEEDED" && row.result) return row.result as AiActionExecutionResult;
+    if (row.status === "SUCCEEDED" && row.result) return row.result as unknown as AiActionExecutionResult;
     if (row.status === "CANCELLED") throw fail("ACTION_NOT_FOUND", "Đề xuất đã bị huỷ.");
     if (row.status === "EXECUTING") throw fail("ACTION_ALREADY_DONE", "Hành động đang được thực hiện.");
     if (new Date(row.expires_at).getTime() < Date.now()) {
@@ -306,14 +306,14 @@ export const confirmAiAction = createServerFn({ method: "POST" })
     // Khoá trạng thái: chỉ một lượt xác nhận thắng (chống double-click §46).
     const { data: locked } = await sb
       .from("ai_action_proposals")
-      .update({ status: "EXECUTING", confirmed_at: new Date().toISOString(), payload })
+      .update({ status: "EXECUTING", confirmed_at: new Date().toISOString(), payload: payload as never })
       .eq("id", row.id)
       .in("status", ["PROPOSED", "PREVIEWED", "FAILED"])
       .select("id")
       .maybeSingle();
     if (!locked) {
       const { data: again } = await sb.from("ai_action_proposals").select("status, result").eq("id", row.id).maybeSingle();
-      if (again?.status === "SUCCEEDED" && again.result) return again.result as AiActionExecutionResult;
+      if (again?.status === "SUCCEEDED" && again.result) return again.result as unknown as AiActionExecutionResult;
       throw fail("ACTION_ALREADY_DONE");
     }
 
@@ -329,7 +329,7 @@ export const confirmAiAction = createServerFn({ method: "POST" })
       const final: AiActionExecutionResult = { ...result, actionId: row.id as string };
       await sb
         .from("ai_action_proposals")
-        .update({ status: "SUCCEEDED", executed_at: new Date().toISOString(), result: final })
+        .update({ status: "SUCCEEDED", executed_at: new Date().toISOString(), result: final as never })
         .eq("id", row.id);
       return final;
     } catch (e) {

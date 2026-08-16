@@ -217,7 +217,7 @@ export interface ProposedAiAction {
   title: string;
   description: string | null;
   target: { entityType: string; entityId: string } | null;
-  payload: Record<string, unknown>;
+  payload: Record<string, string | number | boolean | string[] | null | undefined>;
   /** Nhãn hiển thị đã giải nghĩa (người, dự án, hạn) để preview không lộ UUID. */
   preview: { label: string; value: string }[];
   ambiguities: { field: string; message: string; candidates: { id: string; label: string }[] }[];
