@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { getEmailThread } from "@/lib/api/emails.functions";
+import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -105,6 +106,11 @@ function EmailDetailPage() {
                     <Forward className="h-4 w-4" /> Chuyển tiếp
                   </button>
                 </div>
+                <RelatedWorkPanel
+                  entityType="EMAIL"
+                  entityId={id}
+                  className="mt-6 rounded-2xl border border-border bg-surface p-5"
+                />
               </>
             )}
           </div>
