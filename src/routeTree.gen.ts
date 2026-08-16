@@ -65,6 +65,7 @@ import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
+import { Route as AuthenticatedMSearchRouteImport } from './routes/_authenticated/m/search'
 import { Route as AuthenticatedMMoreRouteImport } from './routes/_authenticated/m/more'
 import { Route as AuthenticatedMMeetRouteImport } from './routes/_authenticated/m/meet'
 import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
@@ -380,6 +381,11 @@ const AuthenticatedMTasksRoute = AuthenticatedMTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMSearchRoute = AuthenticatedMSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMMoreRoute = AuthenticatedMMoreRouteImport.update({
   id: '/more',
   path: '/more',
@@ -578,6 +584,7 @@ export interface FileRoutesByFullPath {
   '/m/home': typeof AuthenticatedMHomeRoute
   '/m/meet': typeof AuthenticatedMMeetRoute
   '/m/more': typeof AuthenticatedMMoreRoute
+  '/m/search': typeof AuthenticatedMSearchRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
@@ -658,6 +665,7 @@ export interface FileRoutesByTo {
   '/m/home': typeof AuthenticatedMHomeRoute
   '/m/meet': typeof AuthenticatedMMeetRoute
   '/m/more': typeof AuthenticatedMMoreRoute
+  '/m/search': typeof AuthenticatedMSearchRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
@@ -742,6 +750,7 @@ export interface FileRoutesById {
   '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
   '/_authenticated/m/meet': typeof AuthenticatedMMeetRoute
   '/_authenticated/m/more': typeof AuthenticatedMMoreRoute
+  '/_authenticated/m/search': typeof AuthenticatedMSearchRoute
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
@@ -826,6 +835,7 @@ export interface FileRouteTypes {
     | '/m/home'
     | '/m/meet'
     | '/m/more'
+    | '/m/search'
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
@@ -906,6 +916,7 @@ export interface FileRouteTypes {
     | '/m/home'
     | '/m/meet'
     | '/m/more'
+    | '/m/search'
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
@@ -989,6 +1000,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/home'
     | '/_authenticated/m/meet'
     | '/_authenticated/m/more'
+    | '/_authenticated/m/search'
     | '/_authenticated/m/tasks'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
@@ -1433,6 +1445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMTasksRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/search': {
+      id: '/_authenticated/m/search'
+      path: '/search'
+      fullPath: '/m/search'
+      preLoaderRoute: typeof AuthenticatedMSearchRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/more': {
       id: '/_authenticated/m/more'
       path: '/more'
@@ -1685,6 +1704,7 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMHomeRoute: typeof AuthenticatedMHomeRoute
   AuthenticatedMMeetRoute: typeof AuthenticatedMMeetRoute
   AuthenticatedMMoreRoute: typeof AuthenticatedMMoreRoute
+  AuthenticatedMSearchRoute: typeof AuthenticatedMSearchRoute
   AuthenticatedMTasksRoute: typeof AuthenticatedMTasksRoute
 }
 
@@ -1695,6 +1715,7 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMHomeRoute: AuthenticatedMHomeRoute,
   AuthenticatedMMeetRoute: AuthenticatedMMeetRoute,
   AuthenticatedMMoreRoute: AuthenticatedMMoreRoute,
+  AuthenticatedMSearchRoute: AuthenticatedMSearchRoute,
   AuthenticatedMTasksRoute: AuthenticatedMTasksRoute,
 }
 
