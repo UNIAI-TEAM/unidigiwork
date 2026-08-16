@@ -52,6 +52,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
+import { Route as AuthenticatedAiWorkforceRouteImport } from './routes/_authenticated/ai-workforce'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
@@ -311,6 +312,12 @@ const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAiWorkforceRoute =
+  AuthenticatedAiWorkforceRouteImport.update({
+    id: '/ai-workforce',
+    path: '/ai-workforce',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -566,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/ai-workforce': typeof AuthenticatedAiWorkforceRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
@@ -651,6 +659,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof TasksRouteWithChildren
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
+  '/ai-workforce': typeof AuthenticatedAiWorkforceRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/chat': typeof AuthenticatedChatRoute
@@ -740,6 +749,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/ai-workforce': typeof AuthenticatedAiWorkforceRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
@@ -829,6 +839,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/workflows'
     | '/admin'
+    | '/ai-workforce'
     | '/billing'
     | '/calendar'
     | '/chat'
@@ -914,6 +925,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/terms'
     | '/workflows'
+    | '/ai-workforce'
     | '/billing'
     | '/calendar'
     | '/chat'
@@ -1002,6 +1014,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/workflows'
     | '/_authenticated/admin'
+    | '/_authenticated/ai-workforce'
     | '/_authenticated/billing'
     | '/_authenticated/calendar'
     | '/_authenticated/chat'
@@ -1405,6 +1418,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-workforce': {
+      id: '/_authenticated/ai-workforce'
+      path: '/ai-workforce'
+      fullPath: '/ai-workforce'
+      preLoaderRoute: typeof AuthenticatedAiWorkforceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
@@ -1838,6 +1858,7 @@ const AuthenticatedWorkspaceIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedAiWorkforceRoute: typeof AuthenticatedAiWorkforceRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
@@ -1865,6 +1886,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedAiWorkforceRoute: AuthenticatedAiWorkforceRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
