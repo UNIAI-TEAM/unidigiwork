@@ -455,6 +455,40 @@ function AgentBuilderPage() {
                   </div>
                 </div>
 
+                <div className="space-y-1.5 rounded-md border border-border bg-muted/30 p-3">
+                  <Label className="text-sm">Lĩnh vực làm việc</Label>
+                  <Select
+                    value={matchDomainFromSkills(draft.skills)}
+                    onValueChange={(domainId) => {
+                      if (domainId === "CUSTOM") return;
+                      const next = skillsForDomain(domainId);
+                      const allowed = deriveAllowedFromSkills(next);
+                      setDraft({
+                        ...draft,
+                        skills: next,
+                        allowedActionTypes: allowed.actionTypes.length ? allowed.actionTypes : [draft.actionType],
+                        allowedSources: allowed.sources.length ? allowed.sources : ["WORKFLOW_AGENT"],
+                        actionType: allowed.actionTypes.includes(draft.actionType)
+                          ? draft.actionType
+                          : allowed.actionTypes[0] ?? draft.actionType,
+                      });
+                    }}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Chọn lĩnh vực" /></SelectTrigger>
+                    <SelectContent>
+                      {AI_AGENT_DOMAINS.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {AI_AGENT_DOMAINS.find((d) => d.id === matchDomainFromSkills(draft.skills))?.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Chọn lĩnh vực sẽ tự bật bộ kỹ năng phù hợp; bạn vẫn có thể chỉnh từng kỹ năng bên dưới.
+                  </p>
+                </div>
+
                 {AI_SKILL_KINDS.map((kind) => (
                   <div key={kind} className="space-y-2">
                     <div>
