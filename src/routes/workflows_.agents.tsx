@@ -308,6 +308,11 @@ function AgentBuilderPage() {
                         {a.description && <p className="mt-0.5 text-sm text-muted-foreground">{a.description}</p>}
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <Badge variant="secondary">{AGENT_TRIGGER_LABELS[a.trigger_type]}</Badge>
+                          {a.worker_profile && AI_WORKER_PROFILE_MAP[a.worker_profile] && (
+                            <Badge variant="outline" className="gap-1">
+                              <Bot className="h-3 w-3" /> {AI_WORKER_PROFILE_MAP[a.worker_profile]!.name}
+                            </Badge>
+                          )}
                           <Badge variant="outline">{AI_ACTION_TOOLS[a.action_type]?.label ?? a.action_type}</Badge>
                           <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" /> Cần phê duyệt</Badge>
                         </div>
