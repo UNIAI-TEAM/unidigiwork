@@ -8,6 +8,8 @@ import { mapPgError } from "./business.server";
 import type {
   ActionItemState,
   MeetingSummary,
+  SummaryChunkProgress,
+  SummaryProgress,
   TranscriptSegment,
 } from "@/domain/meeting-intelligence/contracts";
 import {
@@ -89,11 +91,27 @@ export const getMeetingSummary = createServerFn({ method: "POST" })
     return row ? mapSummaryRow(row as Record<string, unknown>) : null;
   });
 
+export const getMeetingSummaryProgress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => meetingIdSchema.parse(i))
+  .handler(async ({ data, context }): Promise<SummaryProgress | null> => {
+    const { mapProgressRow } = await import("./meeting-intelligence.server");
+    const { data: row, error } = await context.supabase
+      .from("meeting_summary_progress")
+      .select("*")
+      .eq("meeting_id", data.meetingId)
+      .maybeSingle();
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    return row ? mapProgressRow(row as Record<string, unknown>) : null;
+  });
+
 export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => meetingIdSchema.parse(i))
   .handler(async ({ data, context }): Promise<MeetingSummary> => {
-    const { mapSummaryRow, checkMeetingSummaryRateLimit } = await import("./meeting-intelligence.server");
+    const { mapSummaryRow, checkMeetingSummaryRateLimit, writeSummaryProgress } = await import(
+      "./meeting-intelligence.server"
+    );
 
     if (!checkMeetingSummaryRateLimit(context.userId)) {
       throw new ApiError({ code: "RATE_LIMITED", message: "Bạn đang tạo tóm tắt quá nhanh. Thử lại sau ít phút." });
@@ -142,8 +160,19 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
     let sources: ReturnType<typeof toSummarySources>;
     let truncated: boolean;
     let degraded = false;
+    const runId = crypto.randomUUID();
+    const staged = shouldUseStagedSummary(segments);
+    let lastChunks: SummaryChunkProgress[] = [];
+    await writeSummaryProgress(context.supabase, {
+      meetingId: data.meetingId,
+      runId,
+      phase: "PREPARING",
+      staged,
+      truncated: false,
+      chunks: [],
+    });
 
-    if (shouldUseStagedSummary(segments)) {
+    if (staged) {
       // Họp dài: map theo chunk → reduce synthesis (trích dẫn vẫn là sourceId toàn cục).
       const { runStagedMeetingSummary } = await import("./meeting-staged-summary.server");
       const staged = await runStagedMeetingSummary({
@@ -152,8 +181,27 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
         title: "Cuộc họp",
         startAt,
         segments,
+        onProgress: ({ phase, chunks }) => {
+          lastChunks = chunks;
+          return writeSummaryProgress(context.supabase, {
+            meetingId: data.meetingId,
+            runId,
+            phase,
+            staged: true,
+            truncated: false,
+            chunks,
+          });
+        },
       });
       if (staged.failedStages > 0 && staged.parsed.decisions.length === 0 && !staged.parsed.summary) {
+        await writeSummaryProgress(context.supabase, {
+          meetingId: data.meetingId,
+          runId,
+          phase: "FAILED",
+          staged: true,
+          truncated: staged.truncated,
+          chunks: [],
+        });
         throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể tạo tóm tắt. Vui lòng thử lại." });
       }
       parsed = staged.parsed;
@@ -166,6 +214,23 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
       truncated = built.truncated;
       let raw = "";
       try {
+        await writeSummaryProgress(context.supabase, {
+          meetingId: data.meetingId,
+          runId,
+          phase: "MAPPING",
+          staged: false,
+          truncated,
+          chunks: [
+            {
+              index: 0,
+              status: "RUNNING",
+              startOffsetSeconds: built.window[0]?.offsetSeconds ?? 0,
+              endOffsetSeconds: built.window.at(-1)?.offsetSeconds ?? 0,
+              segmentCount: built.window.length,
+              charCount: built.window.reduce((n, s) => n + s.content.length, 0),
+            },
+          ],
+        });
         const result = streamText({
           model: provider.responses(MODEL),
           system: buildMeetingSummarySystemPrompt(),
@@ -184,10 +249,27 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
         });
         raw = await result.text;
       } catch {
+        await writeSummaryProgress(context.supabase, {
+          meetingId: data.meetingId,
+          runId,
+          phase: "FAILED",
+          staged: false,
+          truncated,
+          chunks: [],
+        });
         throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể tạo tóm tắt. Vui lòng thử lại." });
       }
       parsed = parseMeetingSummaryOutput(raw, sources.map((s) => s.sourceId));
     }
+
+    await writeSummaryProgress(context.supabase, {
+      meetingId: data.meetingId,
+      runId,
+      phase: "DONE",
+      staged,
+      truncated,
+      chunks: lastChunks,
+    });
 
     const { validateGroundedSummary } = await import("@/domain/meeting-intelligence/grounding");
     const grounded = validateGroundedSummary(parsed, sources);

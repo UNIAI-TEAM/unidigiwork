@@ -485,3 +485,66 @@ export function parseMeetingSummaryOutput(
     };
   }
 }
+
+/* --------------------- Tiến độ staged summarization (UI) --------------------- */
+
+export type SummaryChunkStatus = "PENDING" | "RUNNING" | "DONE" | "FAILED";
+export type SummaryProgressPhase = "PREPARING" | "MAPPING" | "SYNTHESIS" | "DONE" | "FAILED";
+
+export interface SummaryChunkProgress {
+  index: number;
+  status: SummaryChunkStatus;
+  startOffsetSeconds: number;
+  endOffsetSeconds: number;
+  segmentCount: number;
+  charCount: number;
+}
+
+export interface SummaryProgress {
+  meetingId: string;
+  runId: string;
+  phase: SummaryProgressPhase;
+  staged: boolean;
+  truncated: boolean;
+  totalChunks: number;
+  completedChunks: number;
+  failedChunks: number;
+  chunks: SummaryChunkProgress[];
+  startedAt: string;
+  updatedAt: string;
+  finishedAt: string | null;
+}
+
+export const SUMMARY_PHASE_LABEL: Record<SummaryProgressPhase, string> = {
+  PREPARING: "Đang chuẩn bị",
+  MAPPING: "Đang tóm tắt từng phần",
+  SYNTHESIS: "Đang tổng hợp cuối",
+  DONE: "Hoàn tất",
+  FAILED: "Thất bại",
+};
+
+export const SUMMARY_CHUNK_STATUS_LABEL: Record<SummaryChunkStatus, string> = {
+  PENDING: "Chờ xử lý",
+  RUNNING: "Đang xử lý",
+  DONE: "Xong",
+  FAILED: "Lỗi",
+};
+
+/** Khởi tạo danh sách tiến độ từ các chunk đã chia (chưa chạy). */
+export function initChunkProgress(chunks: TranscriptChunk[]): SummaryChunkProgress[] {
+  return chunks.map((c) => ({
+    index: c.index,
+    status: "PENDING" as SummaryChunkStatus,
+    startOffsetSeconds: c.startOffsetSeconds,
+    endOffsetSeconds: c.endOffsetSeconds,
+    segmentCount: c.window.length,
+    charCount: c.window.reduce((n, s) => n + s.content.length, 0),
+  }));
+}
+
+export function summaryProgressPercent(p: SummaryProgress | null): number {
+  if (!p || p.totalChunks === 0) return p?.phase === "DONE" ? 100 : 0;
+  if (p.phase === "DONE") return 100;
+  const mapped = ((p.completedChunks + p.failedChunks) / p.totalChunks) * 90;
+  return Math.min(99, Math.round(p.phase === "SYNTHESIS" ? Math.max(mapped, 90) : mapped));
+}

@@ -6,6 +6,7 @@ import {
   buildSynthesisSystemPrompt,
   buildSynthesisUserPrompt,
   buildTranscriptChunks,
+  initChunkProgress,
   mergeStageResults,
   parseMeetingSummaryOutput,
   renderTranscriptForModel,
@@ -15,6 +16,8 @@ import {
   type MeetingOpenQuestion,
   type MeetingRisk,
   type StageResult,
+  type SummaryChunkProgress,
+  type SummaryProgressPhase,
   type SummarySource,
   type TranscriptSegment,
 } from "@/domain/meeting-intelligence/contracts";
@@ -70,15 +73,31 @@ export async function runStagedMeetingSummary(args: {
   title: string;
   startAt: string;
   segments: TranscriptSegment[];
+  /** Báo tiến độ theo từng chunk để UI hiển thị. */
+  onProgress?: (p: { phase: SummaryProgressPhase; chunks: SummaryChunkProgress[] }) => void | Promise<void>;
 }): Promise<StagedSummaryResult> {
   const { chunks, sources, truncated } = buildTranscriptChunks(args.segments);
   const validIds = sources.map((s) => s.sourceId);
 
   const stages: StageResult[] = [];
   let failedStages = 0;
+  const progress = initChunkProgress(chunks);
+  const report = async (phase: SummaryProgressPhase) => {
+    try {
+      await args.onProgress?.({ phase, chunks: progress.map((c) => ({ ...c })) });
+    } catch {
+      /* tiến độ chỉ để hiển thị — không được làm hỏng pipeline */
+    }
+  };
+  await report("MAPPING");
 
   for (let i = 0; i < chunks.length; i += STAGE_CONCURRENCY) {
     const batch = chunks.slice(i, i + STAGE_CONCURRENCY);
+    for (const chunk of batch) {
+      const p = progress[chunk.index];
+      if (p) p.status = "RUNNING";
+    }
+    await report("MAPPING");
     const settled = await Promise.allSettled(
       batch.map(async (chunk) => {
         const raw = await callModel({
@@ -111,10 +130,18 @@ export async function runStagedMeetingSummary(args: {
       if (r.status === "fulfilled") stages.push(r.value);
       else failedStages++;
     }
+    settled.forEach((r, k) => {
+      const chunk = batch[k];
+      if (!chunk) return;
+      const p = progress[chunk.index];
+      if (p) p.status = r.status === "fulfilled" ? "DONE" : "FAILED";
+    });
+    await report("MAPPING");
   }
 
   const merged = mergeStageResults(stages);
   if (stages.length === 0) {
+    await report("FAILED");
     return {
       parsed: { ...merged, followUp: null },
       sources,
@@ -126,6 +153,7 @@ export async function runStagedMeetingSummary(args: {
   }
 
   try {
+    await report("SYNTHESIS");
     const raw = await callModel({
       provider: args.provider,
       model: args.model,

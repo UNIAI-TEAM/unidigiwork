@@ -6,6 +6,8 @@ import type {
   MeetingOpenQuestion,
   MeetingRisk,
   MeetingSummary,
+  SummaryChunkProgress,
+  SummaryProgress,
   SummarySource,
 } from "@/domain/meeting-intelligence/contracts";
 
@@ -49,4 +51,54 @@ export function mapSummaryRow(row: Record<string, unknown>): MeetingSummary {
     transcriptChecksum: (row.transcript_checksum as string | null) ?? null,
     version: Number(row.version ?? 1),
   };
+}
+/* ---------------- Tiến độ staged summarization ---------------- */
+
+export function mapProgressRow(row: Record<string, unknown>): SummaryProgress {
+  return {
+    meetingId: String(row.meeting_id),
+    runId: String(row.run_id),
+    phase: (row.phase as SummaryProgress["phase"]) ?? "PREPARING",
+    staged: Boolean(row.staged),
+    truncated: Boolean(row.truncated),
+    totalChunks: Number(row.total_chunks ?? 0),
+    completedChunks: Number(row.completed_chunks ?? 0),
+    failedChunks: Number(row.failed_chunks ?? 0),
+    chunks: Array.isArray(row.chunks) ? (row.chunks as SummaryChunkProgress[]) : [],
+    startedAt: String(row.started_at),
+    updatedAt: String(row.updated_at),
+    finishedAt: (row.finished_at as string | null) ?? null,
+  };
+}
+
+type ProgressClient = { rpc: (...args: never[]) => unknown };
+
+/** Ghi tiến độ; lỗi ghi không bao giờ làm hỏng việc tạo tóm tắt. */
+export async function writeSummaryProgress(
+  client: ProgressClient,
+  args: {
+    meetingId: string;
+    runId: string;
+    phase: SummaryProgress["phase"];
+    staged: boolean;
+    truncated: boolean;
+    chunks: SummaryChunkProgress[];
+  },
+): Promise<void> {
+  try {
+    const rpc = client.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ error: unknown }>;
+    await rpc("save_meeting_summary_progress", {
+      _meeting_id: args.meetingId,
+      _run_id: args.runId,
+      _phase: args.phase,
+      _staged: args.staged,
+      _truncated: args.truncated,
+      _chunks: args.chunks,
+    });
+  } catch {
+    /* bỏ qua */
+  }
 }
