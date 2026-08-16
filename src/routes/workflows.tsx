@@ -295,6 +295,12 @@ function WorkflowsPage() {
                   <CalendarRange className="h-4 w-4" /> Lịch chạy
                 </Link>
                 <Link
+                  to="/workflows/agents"
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface"
+                >
+                  <Bot className="h-4 w-4" /> Agent Builder
+                </Link>
+                <Link
                   to="/workflows/runs"
                   className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface"
                 >
