@@ -373,118 +373,7 @@ export function AppSidebar({
           <WorkspaceSwitcher collapsed={collapsed} />
         </div>
         <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-1" : "px-3")}>
-          <NavItem
-            icon={LayoutDashboard}
-            label={t("nav.dashboard")}
-            to="/dashboard"
-            active={active === "dashboard"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={MessageSquare}
-            label={t("nav.chat")}
-            to="/chat"
-            active={active === "chat"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Video}
-            label={t("nav.meetings")}
-            to="/meeting"
-            active={active === "meetings"}
-            badge={
-              !collapsed ? (
-                <span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-medium text-success">
-                  {t("nav.live")}
-                </span>
-              ) : undefined
-            }
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Calendar}
-            label={t("nav.calendar")}
-            to="/calendar"
-            active={active === "calendar"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Bell}
-            label={t("nav.notifications")}
-            to="/notifications"
-            active={active === "notifications"}
-            badge={
-              !collapsed && unreadCount > 0 ? (
-                <span className="rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              ) : undefined
-            }
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={ListChecks}
-            label={t("nav.tasks")}
-            to="/tasks"
-            active={active === "tasks"}
-            badge={
-              !collapsed ? (
-                <span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted-foreground">
-                  7
-                </span>
-              ) : undefined
-            }
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={FileText}
-            label={t("nav.documents")}
-            to="/documents"
-            active={active === "documents"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={BookOpen}
-            label={t("nav.knowledge")}
-            to="/knowledge"
-            active={active === "knowledge"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Workflow}
-            label={t("nav.workflows")}
-            to="/workflows"
-            active={active === "workflows"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Users}
-            label={t("nav.people")}
-            to="/people"
-            active={active === "people"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Mail}
-            label={t("nav.email")}
-            to="/email"
-            active={active === "email"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={BarChart3}
-            label={t("nav.reports")}
-            to="/reports"
-            active={active === "reports"}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={Bot}
-            label={t("nav.ai")}
-            to="/ai"
-            active={active === "ai"}
-            collapsed={collapsed}
-          />
+          <DesktopNavigation collapsed={collapsed} />
 
           {!collapsed && (
             <>
@@ -499,7 +388,6 @@ export function AppSidebar({
                 </button>
               </div>
               <WorkspaceList />
-              <NavItem icon={MoreHorizontal} label={t("nav.more")} />
             </>
           )}
           {collapsed && (
