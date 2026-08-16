@@ -133,7 +133,7 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
             Để tránh ghi đè thay đổi của người khác, hãy tải lại bản xem trước mới và kiểm tra trước khi xác nhận lại.
           </p>
           {!refreshed ? (
-            <Button size="sm" variant="outline" className="min-h-9" onClick={() => void onRefresh()} disabled={refreshing}>
+            <Button size="sm" variant="outline" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={() => void onRefresh()} disabled={refreshing}>
               {refreshing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
               Xem preview mới
             </Button>
@@ -164,7 +164,7 @@ export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction })
               <label className="flex items-start gap-2">
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                  className="mt-0.5 h-5 w-5 sm:h-4 sm:w-4 accent-[var(--primary)]"
                   checked={reviewed}
                   onChange={(e) => setReviewed(e.target.checked)}
                 />
@@ -300,7 +300,7 @@ function EditForm({
       {(t === "CREATE_TASK" || t === "UPDATE_TASK_FIELDS" || t === "CREATE_MEETING") && (
         <div className="space-y-1">
           <Label htmlFor="ai-title" className="text-[12px]">Tiêu đề</Label>
-          <Input id="ai-title" value={payload.title ?? ""} onChange={(e) => set("title", e.target.value)} />
+          <Input className="min-h-11 sm:min-h-9" id="ai-title" value={payload.title ?? ""} onChange={(e) => set("title", e.target.value)} />
         </div>
       )}
       {(t === "CREATE_TASK" || t === "UPDATE_TASK_FIELDS") && (
@@ -318,11 +318,11 @@ function EditForm({
         <>
           <div className="space-y-1">
             <Label htmlFor="ai-start" className="text-[12px]">Bắt đầu</Label>
-            <Input id="ai-start" type="datetime-local" value={toLocalInput(payload.startAt)} onChange={(e) => set("startAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-start" type="datetime-local" value={toLocalInput(payload.startAt)} onChange={(e) => set("startAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="ai-end" className="text-[12px]">Kết thúc</Label>
-            <Input id="ai-end" type="datetime-local" value={toLocalInput(payload.endAt)} onChange={(e) => set("endAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-end" type="datetime-local" value={toLocalInput(payload.endAt)} onChange={(e) => set("endAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
           </div>
         </>
       )}
@@ -330,11 +330,11 @@ function EditForm({
         <>
           <div className="space-y-1">
             <Label htmlFor="ai-to" className="text-[12px]">Người nhận (email, cách nhau dấu phẩy)</Label>
-            <Input id="ai-to" value={(payload.to ?? []).join(", ")} onChange={(e) => set("to", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-to" value={(payload.to ?? []).join(", ")} onChange={(e) => set("to", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="ai-subject" className="text-[12px]">Tiêu đề thư</Label>
-            <Input id="ai-subject" value={payload.subject ?? ""} onChange={(e) => set("subject", e.target.value)} />
+            <Input className="min-h-11 sm:min-h-9" id="ai-subject" value={payload.subject ?? ""} onChange={(e) => set("subject", e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="ai-body" className="text-[12px]">Nội dung</Label>
