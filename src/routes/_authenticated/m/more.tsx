@@ -1,29 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Calendar,
-  FileText,
-  BookOpen,
-  Users,
-  Workflow,
-  BarChart3,
-  Sparkles,
-  Bell,
-  Settings,
-  ChevronRight,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronRight, Settings, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const MENU = [
-  { icon: Calendar, label: "Lịch", to: "/calendar", color: "text-orange-400" },
-  { icon: FileText, label: "Tài liệu", to: "/documents", color: "text-blue-400" },
-  { icon: BookOpen, label: "Knowledge Base", to: "/knowledge", color: "text-emerald-400" },
-  { icon: Users, label: "People", to: "/people", color: "text-violet-400" },
-  { icon: Workflow, label: "Workflows", to: "/workflows", color: "text-amber-400" },
-  { icon: BarChart3, label: "Reports", to: "/reports", color: "text-cyan-400" },
-  { icon: Sparkles, label: "AI Assistant", to: "/ai", color: "text-primary" },
-  { icon: Bell, label: "Thông báo", to: "/notifications", color: "text-rose-400" },
-  { icon: Settings, label: "Cài đặt", to: "/settings", color: "text-muted-foreground" },
-];
+import { useI18n } from "@/lib/i18n";
+import { getMyIsAdmin } from "@/lib/api/admin.functions";
+import { MOBILE_MORE_ITEMS, NAV_GROUPS, isNavItemVisible } from "@/config/navigation";
 
 export const Route = createFileRoute("/_authenticated/m/more")({
   head: () => ({
@@ -31,32 +12,88 @@ export const Route = createFileRoute("/_authenticated/m/more")({
       { title: "Thêm · UNIWORK" },
       { name: "description", content: "Truy cập nhanh các tính năng khác trên UNIWORK mobile." },
       { property: "og:title", content: "Thêm · UNIWORK" },
-      { property: "og:description", content: "Truy cập nhanh các tính năng khác trên UNIWORK mobile." },
+      {
+        property: "og:description",
+        content: "Truy cập nhanh các tính năng khác trên UNIWORK mobile.",
+      },
     ],
   }),
   component: MorePage,
 });
 
 function MorePage() {
+  const { t } = useI18n();
+  const { data } = useQuery({
+    queryKey: ["admin", "isAdmin"],
+    queryFn: () => getMyIsAdmin(),
+    staleTime: 5 * 60_000,
+  });
+  const isAdmin = data?.isAdmin === true;
+
+  const groups = NAV_GROUPS.map((group) => ({
+    group,
+    items: MOBILE_MORE_ITEMS.filter((i) => i.group === group.id && isNavItemVisible(i, { isAdmin })),
+  })).filter((g) => g.items.length > 0);
+
   return (
-    <div className="flex min-h-full flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">Thêm</h1>
-      <ul className="grid gap-2">
-        {MENU.map((item) => (
-          <li key={item.label}>
-            <Link
-              to={item.to}
-              className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:bg-surface-2"
-            >
-              <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2", item.color)}>
-                <item.icon className="h-4 w-4" />
-              </span>
-              <span className="flex-1 font-medium">{item.label}</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </Link>
+    <div className="flex min-h-full flex-col gap-5 p-4 pb-28">
+      <h1 className="text-lg font-semibold">{t("nav.more")}</h1>
+
+      {groups.map(({ group, items }) => (
+        <section key={group.id} className="space-y-2">
+          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {t(group.labelKey)}
+          </h2>
+          <ul className="grid gap-2">
+            {items.map((item) => (
+              <li key={item.id}>
+                <Row to={item.mobile!.href} label={t(item.labelKey)} icon={item.icon} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+
+      <section className="space-y-2">
+        <h2 className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t("nav.settings")}
+        </h2>
+        <ul className="grid gap-2">
+          <li>
+            <Row to="/settings" label={t("nav.settings")} icon={Settings} />
           </li>
-        ))}
-      </ul>
+          <li>
+            <Row to="/help" label={t("nav.help")} icon={HelpCircle} />
+          </li>
+        </ul>
+      </section>
     </div>
+  );
+}
+
+function Row({
+  to,
+  label,
+  icon: Icon,
+}: {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 hover:bg-surface-2"
+    >
+      <span
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-primary",
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="flex-1 font-medium">{label}</span>
+      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+    </Link>
   );
 }

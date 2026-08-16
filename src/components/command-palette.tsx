@@ -22,6 +22,9 @@ import {
   ArrowRight,
   CornerDownLeft,
   Command as CommandIcon,
+  LayoutGrid,
+  ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -54,21 +57,25 @@ type CmdItem = {
   run: (ctx: { navigate: ReturnType<typeof useNavigate>; query: string }) => void;
 };
 
+// Nhãn nhóm khớp Information Architecture V2 (xem src/config/navigation.ts).
 const NAV_ITEMS: Omit<CmdItem, "run">[] = [
-  { id: "dashboard", group: "Điều hướng", label: "Dashboard", icon: LayoutDashboard, keywords: "trang chu home tong quan" },
-  { id: "chat", group: "Điều hướng", label: "Chat", icon: MessageSquare, keywords: "tin nhan message" },
-  { id: "meeting", group: "Điều hướng", label: "Phòng họp", icon: Video, keywords: "meeting hop video" },
-  { id: "calendar", group: "Điều hướng", label: "Lịch", icon: Calendar, keywords: "lich calendar deadline" },
-  { id: "tasks", group: "Điều hướng", label: "Nhiệm vụ", icon: ListChecks, keywords: "task cong viec to do" },
-  { id: "documents", group: "Điều hướng", label: "Tài liệu", icon: FileText, keywords: "document file" },
-  { id: "knowledge", group: "Điều hướng", label: "Kho tri thức", icon: BookOpen, keywords: "knowledge wiki tri thuc" },
-  { id: "workflows", group: "Điều hướng", label: "Quy trình", icon: Workflow, keywords: "workflow automation quy trinh" },
-  { id: "people", group: "Điều hướng", label: "Nhân sự", icon: Users, keywords: "people nhan su team" },
-  { id: "email", group: "Điều hướng", label: "Email", icon: Mail, keywords: "mail thu" },
-  { id: "reports", group: "Điều hướng", label: "Báo cáo", icon: BarChart3, keywords: "report bao cao analytics" },
-  { id: "ai", group: "Điều hướng", label: "AI Assistant", icon: Bot, keywords: "ai tro ly assistant" },
-  { id: "notifications", group: "Điều hướng", label: "Thông báo", icon: Bell, keywords: "notification thong bao" },
-  { id: "settings", group: "Điều hướng", label: "Cài đặt", icon: Settings, keywords: "settings cai dat" },
+  { id: "tasks", group: "Điều hướng", label: "Công việc của tôi", hint: "Trang chủ", icon: ListChecks, keywords: "task cong viec my work to do" },
+  { id: "notifications", group: "Điều hướng", label: "Hộp việc", hint: "Trang chủ", icon: Bell, keywords: "inbox notification thong bao" },
+  { id: "workspace", group: "Điều hướng", label: "Không gian làm việc", hint: "Công việc", icon: LayoutGrid, keywords: "workspace project du an" },
+  { id: "calendar", group: "Điều hướng", label: "Lịch", hint: "Công việc", icon: Calendar, keywords: "lich calendar deadline" },
+  { id: "people", group: "Điều hướng", label: "Nhân sự", hint: "Công việc", icon: Users, keywords: "people nhan su team" },
+  { id: "chat", group: "Điều hướng", label: "Chat", hint: "Trao đổi", icon: MessageSquare, keywords: "tin nhan message" },
+  { id: "meeting", group: "Điều hướng", label: "Phòng họp", hint: "Trao đổi", icon: Video, keywords: "meeting hop video" },
+  { id: "email", group: "Điều hướng", label: "Email Hub", hint: "Trao đổi", icon: Mail, keywords: "mail thu" },
+  { id: "documents", group: "Điều hướng", label: "Tài liệu", hint: "Tri thức", icon: FileText, keywords: "document file docs" },
+  { id: "knowledge", group: "Điều hướng", label: "Kho tri thức", hint: "Tri thức", icon: BookOpen, keywords: "knowledge wiki tri thuc" },
+  { id: "workflows", group: "Điều hướng", label: "Quy trình", hint: "Tự động hoá", icon: Workflow, keywords: "workflow automation quy trinh" },
+  { id: "ai", group: "Điều hướng", label: "AI Assistant", hint: "Tự động hoá", icon: Bot, keywords: "ai tro ly assistant agent" },
+  { id: "dashboard", group: "Điều hướng", label: "Dashboard", hint: "Phân tích", icon: LayoutDashboard, keywords: "trang chu home tong quan" },
+  { id: "reports", group: "Điều hướng", label: "Báo cáo", hint: "Phân tích", icon: BarChart3, keywords: "report bao cao analytics workload" },
+  { id: "admin", group: "Điều hướng", label: "Quản trị hệ thống", hint: "Quản trị", icon: ShieldCheck, keywords: "admin quan tri console" },
+  { id: "billing", group: "Điều hướng", label: "Gói & Thanh toán", hint: "Quản trị", icon: CreditCard, keywords: "billing goi thanh toan invoice" },
+  { id: "settings", group: "Điều hướng", label: "Cài đặt", hint: "Quản trị", icon: Settings, keywords: "settings cai dat" },
   { id: "help", group: "Điều hướng", label: "Trợ giúp", icon: HelpCircle, keywords: "help support tro giup" },
 ];
 
@@ -88,6 +95,9 @@ const NAV_TO: Record<string, string> = {
   notifications: "/notifications",
   settings: "/settings",
   help: "/help",
+  workspace: "/workspace",
+  admin: "/admin",
+  billing: "/billing",
 };
 
 const ACTION_ITEMS: Omit<CmdItem, "run">[] = [

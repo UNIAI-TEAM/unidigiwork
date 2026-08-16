@@ -292,7 +292,7 @@ function TasksPage() {
             {/* Title row */}
             <FilterPageHeader
               crumbs={[
-                { label: "Dashboard", to: "/dashboard" },
+                { label: "Trang chủ", to: "/tasks" },
                 { label: "Công việc", to: "/tasks" },
                 {
                   label: overdueOnly

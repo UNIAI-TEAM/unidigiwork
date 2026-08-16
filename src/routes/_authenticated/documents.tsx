@@ -628,7 +628,7 @@ function DocumentsPage() {
             <div className="border-b border-border px-4 py-3 sm:px-8">
               <FilterPageHeader
                 crumbs={[
-                  { label: "Dashboard", to: "/dashboard" },
+                  { label: "Trang chủ", to: "/tasks" },
                   { label: "Tài liệu", to: "/documents" },
                   {
                     label:
