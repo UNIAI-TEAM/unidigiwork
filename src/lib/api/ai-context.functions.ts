@@ -14,6 +14,33 @@ import { usableSources, validateAnswerCitations } from "@/domain/ai-context/cita
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
 const MODEL = "openai/gpt-5.6-sol";
 
+/** Telemetry ngân sách ngữ cảnh — fire-and-forget, không bao giờ chặn câu trả lời. */
+async function recordContextBudget(
+  supabase: { from: (t: string) => { insert: (v: unknown) => Promise<{ error: unknown }> } },
+  pack: AiContextPack,
+  operation: "BUILD" | "ASK",
+  latencyMs: number,
+): Promise<void> {
+  try {
+    await supabase.from("ai_context_metrics").insert({
+      tenant_id: pack.tenantId || null,
+      request_id: pack.requestId,
+      operation,
+      strategy: pack.retrieval.strategy,
+      root_entity_type: pack.root?.entityType ?? null,
+      estimated_tokens: pack.budget.estimatedTokens,
+      max_tokens: pack.budget.maxTokens,
+      source_count: pack.sources.length,
+      truncated: pack.retrieval.truncated,
+      partial: pack.partial,
+      latency_ms: Math.round(latencyMs),
+      timings: pack.retrieval.timings,
+    });
+  } catch {
+    /* telemetry không được phép làm hỏng request */
+  }
+}
+
 const RequestSchema = z.object({
   query: z.string().min(1).max(500),
   rootEntity: z
@@ -30,14 +57,17 @@ export const buildAiContext = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => RequestSchema.parse(i))
   .handler(async ({ data, context }): Promise<AiContextPack> => {
     const { buildAiContextPack } = await import("./ai-context.server");
+    const startedAt = Date.now();
     try {
-      return await buildAiContextPack(context.supabase, context.userId, getCookie(ACTIVE_TENANT_COOKIE) ?? null, {
+      const pack = await buildAiContextPack(context.supabase, context.userId, getCookie(ACTIVE_TENANT_COOKIE) ?? null, {
         query: data.query,
         rootEntity: data.rootEntity ?? null,
         workspaceId: data.workspaceId ?? null,
         maxSources: data.maxSources,
         maxTokens: data.maxTokens,
       });
+      await recordContextBudget(context.supabase as never, pack, "BUILD", Date.now() - startedAt);
+      return pack;
     } catch (e) {
       const code = e instanceof Error && e.message === "AI_CONTEXT_ROOT_NOT_FOUND" ? ("AI_CONTEXT_ROOT_NOT_FOUND" as const) : ("AI_CONTEXT_INSUFFICIENT" as const);
       throw new ApiError({ code, message: "Không thể dựng ngữ cảnh cho yêu cầu này." });
@@ -66,6 +96,7 @@ export const askUni = createServerFn({ method: "POST" })
     const { buildAiContextPack, renderContextForModel, GROUNDED_SYSTEM_PROMPT } = await import("./ai-context.server");
 
     let pack: AiContextPack;
+    const startedAt = Date.now();
     try {
       pack = await buildAiContextPack(context.supabase, context.userId, getCookie(ACTIVE_TENANT_COOKIE) ?? null, {
         query: data.query,
@@ -114,6 +145,7 @@ export const askUni = createServerFn({ method: "POST" })
       safeSources,
       citations.map((c) => c.sourceId ?? "").filter(Boolean),
     );
+    await recordContextBudget(context.supabase as never, pack, "ASK", Date.now() - startedAt);
 
     return {
       answer:
