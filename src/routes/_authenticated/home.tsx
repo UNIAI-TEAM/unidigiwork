@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { CalendarClock, CheckCircle2, Inbox, Plus, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getHomeSummary,
