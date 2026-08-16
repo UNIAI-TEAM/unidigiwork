@@ -46,17 +46,9 @@ export const Route = createFileRoute("/api/public/hooks/livekit")({
           return new Response("Bad request", { status: 400 });
         }
 
-        const meetingId = meetingIdFromRoom(event.room?.name);
-        // Sự kiện của ứng dụng khác trên cùng cụm ⇒ bỏ qua, không log payload.
-        if (!meetingId) return Response.json({ ok: true, ignored: true });
-
-        const eventId = event.id ?? `${event.event ?? "unknown"}:${event.room?.sid ?? ""}:${event.createdAt ?? ""}`;
-        const correlationId = `livekit:${event.room?.sid ?? meetingId}`;
-        const eventType = event.event ?? "unknown";
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-        // ==== Egress: chốt file bản ghi khi nhà cung cấp xuất xong ====
-        if (EGRESS_FINAL.has(eventType)) {
+        const eventTypeRaw = event.event ?? "unknown";
+        // Egress: khớp theo egress_id nên không cần room name.
+        if (EGRESS_FINAL.has(eventTypeRaw)) {
           const info = event.egressInfo;
           const egressId = info?.egressId ?? info?.egress_id;
           const status = (info?.status ?? "").toUpperCase();
@@ -69,7 +61,8 @@ export const Route = createFileRoute("/api/public/hooks/livekit")({
           const bucket = process.env["RECORDING_S3_BUCKET"];
           const fileUrl = first?.filename && bucket ? `s3://${bucket}/${first.filename}` : null;
           const durationNs = num(first?.duration);
-          const { error: egErr } = await supabaseAdmin.rpc("finalize_meeting_recording_from_egress", {
+          const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+          const { error: egErr } = await admin.rpc("finalize_meeting_recording_from_egress", {
             _egress_id: egressId,
             _status: status === "EGRESS_COMPLETE" ? "completed" : "failed",
             _file_url: fileUrl ?? undefined,
@@ -80,6 +73,15 @@ export const Route = createFileRoute("/api/public/hooks/livekit")({
           if (egErr) return Response.json({ ok: false, error: egErr.message }, { status: 500 });
           return Response.json({ ok: true });
         }
+
+        const meetingId = meetingIdFromRoom(event.room?.name);
+        // Sự kiện của ứng dụng khác trên cùng cụm ⇒ bỏ qua, không log payload.
+        if (!meetingId) return Response.json({ ok: true, ignored: true });
+
+        const eventId = event.id ?? `${event.event ?? "unknown"}:${event.room?.sid ?? ""}:${event.createdAt ?? ""}`;
+        const correlationId = `livekit:${event.room?.sid ?? meetingId}`;
+        const eventType = event.event ?? "unknown";
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         if (!HANDLED.has(eventType)) return Response.json({ ok: true, ignored: true });
 
