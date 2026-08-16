@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Check, Moon, Palette, Sun } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { getUiPrefs, saveUiPrefs } from "@/lib/api/user-ui-prefs.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +39,7 @@ const ThemeCtx = createContext<{
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [tone, setTone] = useState<Tone>("violet");
+  const [synced, setSynced] = useState(false);
 
   useEffect(() => {
     const saved = (typeof localStorage !== "undefined" &&
@@ -47,6 +50,43 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       localStorage.getItem(TONE_KEY)) as Tone | null;
     if (savedTone && TONES.some((t) => t.id === savedTone)) setTone(savedTone);
   }, []);
+
+  // Đồng bộ tuỳ chọn giao diện theo tài khoản (đa thiết bị).
+  useEffect(() => {
+    let cancelled = false;
+    const load = async (hasSession: boolean) => {
+      if (!hasSession) {
+        if (!cancelled) setSynced(false);
+        return;
+      }
+      try {
+        const prefs = await getUiPrefs({ data: undefined as never });
+        if (cancelled) return;
+        if (prefs) {
+          setTheme(prefs.theme);
+          if (TONES.some((t) => t.id === prefs.tone)) setTone(prefs.tone);
+        }
+        setSynced(true);
+      } catch {
+        /* offline hoặc chưa đăng nhập */
+      }
+    };
+    supabase.auth.getSession().then(({ data }) => load(Boolean(data.session)));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      load(Boolean(session));
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const persist = (patch: { theme?: Theme; tone?: Tone }) => {
+    if (!synced) return;
+    void saveUiPrefs({ data: patch }).catch(() => {
+      /* bỏ qua lỗi mạng, localStorage vẫn giữ */
+    });
+  };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -71,9 +111,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     <ThemeCtx.Provider
       value={{
         theme,
-        toggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+        toggle: () =>
+          setTheme((t) => {
+            const next: Theme = t === "dark" ? "light" : "dark";
+            persist({ theme: next });
+            return next;
+          }),
         tone,
-        setTone,
+        setTone: (t) => {
+          setTone(t);
+          persist({ tone: t });
+        },
       }}
     >
       {children}
