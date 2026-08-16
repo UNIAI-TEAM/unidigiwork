@@ -92,6 +92,27 @@ export async function resolveWorkEntities(
           }),
         );
         break;
+      case "MEETING_ARTIFACT":
+        jobs.push(
+          supabase
+            .from("meeting_artifacts")
+            .select("id,title,kind,meeting_id,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) => {
+                out.set(key("MEETING_ARTIFACT", r.id), {
+                  type: "MEETING_ARTIFACT",
+                  id: r.id,
+                  title: r.title ?? ARTIFACT_KIND_LABEL[r.kind as string] ?? "Kết quả cuộc họp",
+                  subtitle: ARTIFACT_KIND_LABEL[r.kind as string] ?? null,
+                  // Provenance: artifact luôn deep-link về đúng cuộc họp gốc.
+                  href: `/meeting/${r.meeting_id}?artifact=${r.id}`,
+                  updatedAt: r.updated_at ?? null,
+                });
+              });
+            }),
+        );
+        break;
       default:
         break;
     }
