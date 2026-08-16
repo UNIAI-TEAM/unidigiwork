@@ -8,12 +8,17 @@ export interface QueryIntent {
   wantsCommunication: boolean;
   wantsCounts: boolean;
   wantsLatestMeeting: boolean;
+  wantsMeetingOutcome: boolean;
 }
 
 const ENTITY_TERMS: Array<[RegExp, AiContextEntityType]> = [
   [/\b(dự án|du an|projects?|workspaces?)\b/i, "WORKSPACE"],
   [/\b(task|công việc|cong viec|việc|đầu việc)\b/i, "TASK"],
   [/\b(cuộc họp|cuoc hop|họp|meetings?)\b/i, "MEETING"],
+  [
+    /\b(quyết định|quyet dinh|decision|action items?|việc cần làm|tóm tắt|tom tat|summary|biên bản|bien ban|rủi ro|rui ro|risk|kết luận|ket luan|chốt)\b/i,
+    "MEETING_ARTIFACT",
+  ],
   [/\b(email|thư|mail)\b/i, "EMAIL"],
   [/\b(tài liệu|tai lieu|documents?|files?)\b/i, "DOCUMENT"],
   [/\b(chat|tin nhắn|tin nhan|kênh|channel)\b/i, "CHAT_CHANNEL"],
@@ -70,6 +75,10 @@ export function parseQueryIntent(
     wantsBlockers: /\b(vướng|vuong|chặn|chan|blocker|blocked|quá hạn|qua han|overdue|trễ|tre|rủi ro)\b/.test(q),
     wantsCommunication: /\b(trao đổi|trao doi|thảo luận|thao luan|communication|liên hệ|phản hồi|bàn)\b/.test(q),
     wantsCounts: /\b(bao nhiêu|bao nhieu|how many|số lượng|đếm)\b/.test(q),
+    wantsMeetingOutcome:
+      /\b(quyết định|quyet dinh|decision|action items?|việc cần làm|viec can lam|tóm tắt|tom tat|summary|biên bản|bien ban|rủi ro|rui ro|risk|kết luận|ket luan|chốt|follow[- ]?up)\b/.test(
+        q,
+      ),
     wantsLatestMeeting: /\b(gần nhất|gan nhat|mới nhất|latest|recent)\b/.test(q) && /\b(họp|meeting)\b/.test(q),
   };
 }

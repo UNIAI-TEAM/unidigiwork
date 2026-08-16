@@ -40,7 +40,7 @@ const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
   DOCUMENT: "DOCUMENT",
   EMAIL: "EMAIL",
   CHAT_CHANNEL: "CHAT_CHANNEL",
-  MEETING_ARTIFACT: "MEETING",
+  MEETING_ARTIFACT: "MEETING_ARTIFACT",
   PERSON: "PERSON",
   TENANT: "PROJECT",
 };
@@ -75,9 +75,19 @@ const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
   EMAIL: 0.45,
   DOCUMENT: 0.45,
   CHAT_CHANNEL: 0.4,
-  MEETING_ARTIFACT: 0.5,
+  MEETING_ARTIFACT: 0.72,
   PERSON: 0.3,
   TENANT: 0,
+};
+
+export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
+  SUMMARY: "Tóm tắt cuộc họp",
+  KEY_POINT: "Ý chính",
+  DECISION: "Quyết định",
+  ACTION_ITEM: "Việc cần làm",
+  RISK: "Rủi ro",
+  OPEN_QUESTION: "Câu hỏi mở",
+  FOLLOW_UP: "Thư theo dõi",
 };
 
 function recencyBoost(iso: string | null): number {
@@ -276,6 +286,33 @@ async function hydrateSelected(
         }
         for (const [id, msgs] of grouped) put("CHAT_CHANNEL", id, `tin nhắn gần đây: ${msgs.join(" | ")}`);
       })(),
+    );
+  }
+
+  const artifactIds = byType.get("MEETING_ARTIFACT") ?? [];
+  if (artifactIds.length) {
+    jobs.push(
+      supabase
+        .from("meeting_artifacts")
+        .select("id,kind,title,detail,source_ids,summary_version,meeting_id,updated_at")
+        .eq("tenant_id", tenantId)
+        .in("id", artifactIds)
+        .then(({ data }) => {
+          for (const a of (data ?? []) as Array<Record<string, any>>)
+            put(
+              "MEETING_ARTIFACT",
+              a["id"],
+              [
+                `loại: ${MEETING_ARTIFACT_LABEL[String(a["kind"])] ?? a["kind"]}`,
+                `nội dung: ${cleanExcerpt(a["title"], 300)}`,
+                a["detail"] ? `chi tiết: ${cleanExcerpt(a["detail"], 400)}` : null,
+                `nguồn transcript: ${(Array.isArray(a["source_ids"]) ? a["source_ids"] : []).join(",") || "-"}`,
+                `phiên bản tóm tắt: ${a["summary_version"] ?? "-"}`,
+              ]
+                .filter(Boolean)
+                .join(" · "),
+            );
+        }),
     );
   }
 
