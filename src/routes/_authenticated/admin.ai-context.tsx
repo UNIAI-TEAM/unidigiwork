@@ -191,7 +191,7 @@ function AdminAiContextPage() {
                     <td className="px-3 py-2">
                       <span className="flex gap-1">
                         {r.truncated && (
-                          <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] text-warning-foreground">truncated</span>
+                          <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive">truncated</span>
                         )}
                         {r.partial && (
                           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">partial</span>
