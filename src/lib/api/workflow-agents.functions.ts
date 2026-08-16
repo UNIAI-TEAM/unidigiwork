@@ -15,7 +15,11 @@ import {
   type AgentCondition,
 } from "@/domain/workflow-agents/contracts";
 import { AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
-import { deriveAllowedFromSkills, normalizeSkills } from "@/domain/workflow-agents/skills";
+import {
+  deriveAllowedFromSkills,
+  normalizeSkills,
+  skillsFromLegacyAllowlist,
+} from "@/domain/workflow-agents/skills";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
@@ -58,7 +62,14 @@ export const saveWorkflowAgent = createServerFn({ method: "POST" })
       .maybeSingle();
     if (wsErr || !ws) throw fail("WORKSPACE_NOT_FOUND", "Không tìm thấy không gian làm việc.");
 
-    const skills = normalizeSkills(data.skills);
+    let skills = normalizeSkills(data.skills);
+    if (!skills.length) {
+      // Tương thích ngược: agent còn dùng allowlist cũ → tự chuyển sang danh mục kỹ năng.
+      skills = skillsFromLegacyAllowlist(
+        Array.from(new Set([...data.allowedActionTypes, data.actionType])),
+        data.allowedSources,
+      );
+    }
     const derived = skills.length ? deriveAllowedFromSkills(skills) : null;
     if (skills.length && !derived!.actionTypes.includes(data.actionType)) {
       throw fail("AGENT_ACTION_NOT_ALLOWED", "Hành động đã chọn không nằm trong kỹ năng AI được bật.");
