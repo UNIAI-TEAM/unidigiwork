@@ -19,23 +19,20 @@
     }
   },
   "waivers": {
-    "client-supabase-from-domain": {
-      "src/routes/_authenticated/documents.tsx": "BATCH_1D_DOCS"
-    },
+    "client-supabase-from-domain": {},
     "server-supabase-from-domain": {
       "src/lib/api/admin.functions.ts": "BATCH_1D_DOCS",
       "src/lib/api/tasks.functions.ts": "BATCH_1D_LIST_RPC",
       "src/lib/api/documents.functions.ts": "BATCH_1D_LIST_RPC",
       "src/lib/api/meetings.functions.ts": "BATCH_1D_LIST_RPC",
-      "src/lib/api/workflows.functions.ts": "BATCH_1D_LIST_RPC"
+      "src/lib/api/workflows.functions.ts": "BATCH_1D_LIST_RPC",
+      "src/lib/api/ai-context.server.ts": "BATCH_1D_LIST_RPC"
     },
     "inline-mock-name": {
       "src/routes/tasks.tsx": "BATCH_1D_TASKS",
       "src/routes/_authenticated/workspace.$id.stos.tsx": "BATCH_1D_TASKS"
     },
-    "typed-inline-fixture": {
-      "src/routes/tasks.tsx": "BATCH_1D_TASKS"
-    },
+    "typed-inline-fixture": {},
     "forbidden-mock-lib-import": {},
     "fixture-tagged-comment": {},
     "nonsrc-mock-data": {}
