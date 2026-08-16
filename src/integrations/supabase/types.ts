@@ -53,6 +53,84 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_action_proposals: {
+        Row: {
+          action_type: string
+          confirmed_at: string | null
+          created_at: string
+          description: string | null
+          error_code: string | null
+          executed_at: string | null
+          expected_row_version: number | null
+          expires_at: string
+          id: string
+          idempotency_key: string
+          payload: Json
+          result: Json | null
+          risk: string
+          source: string
+          source_refs: Json
+          status: string
+          target_id: string | null
+          target_type: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          action_type: string
+          confirmed_at?: string | null
+          created_at?: string
+          description?: string | null
+          error_code?: string | null
+          executed_at?: string | null
+          expected_row_version?: number | null
+          expires_at?: string
+          id?: string
+          idempotency_key?: string
+          payload?: Json
+          result?: Json | null
+          risk?: string
+          source?: string
+          source_refs?: Json
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          confirmed_at?: string | null
+          created_at?: string
+          description?: string | null
+          error_code?: string | null
+          executed_at?: string | null
+          expected_row_version?: number | null
+          expires_at?: string
+          id?: string
+          idempotency_key?: string
+          payload?: Json
+          result?: Json | null
+          risk?: string
+          source?: string
+          source_refs?: Json
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       ai_context_metrics: {
         Row: {
           created_at: string
@@ -5931,6 +6009,14 @@ export type Database = {
       get_my_workflow_permissions: {
         Args: { _workspace_id: string }
         Returns: Json
+      }
+      get_task_snapshot: {
+        Args: { _task_id: string }
+        Returns: {
+          id: string
+          row_version: number
+          title: string
+        }[]
       }
       get_unread_counts: {
         Args: never

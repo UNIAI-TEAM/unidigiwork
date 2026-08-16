@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { EmailCtx } from "./email-draft.server";
 
 /** Return the current user's primary workspace id (first membership). */
 export const getMyPrimaryWorkspaceId = createServerFn({ method: "GET" })
@@ -125,63 +126,6 @@ export const getEmailThread = createServerFn({ method: "GET" })
   });
 
 
-type EmailCtx = { supabase: any; userId: string };
-
-/** Resolve caller's primary workspace + its tenant. */
-async function resolveWorkspace(ctx: EmailCtx): Promise<{ workspaceId: string; tenantId: string }> {
-  const { data: wm, error } = await ctx.supabase
-    .from("workspace_members")
-    .select("workspace_id, workspaces!inner(id, tenant_id)")
-    .eq("user_id", ctx.userId)
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const ws = (wm as any)?.workspaces;
-  if (!ws?.id || !ws?.tenant_id) throw new Error("Bạn cần tham gia workspace trước khi gửi email");
-  return { workspaceId: ws.id as string, tenantId: ws.tenant_id as string };
-}
-
-/** Map email addresses to internal user ids (profiles). */
-async function resolveRecipients(
-  ctx: EmailCtx,
-  to: string[],
-  cc: string[],
-): Promise<{ toUserIds: string[]; ccUserIds: string[]; unknown: string[] }> {
-  const all = Array.from(new Set([...to, ...cc]));
-  if (all.length === 0) return { toUserIds: [], ccUserIds: [], unknown: [] };
-  const { data: profs, error } = await ctx.supabase.from("profiles").select("id, email").in("email", all);
-  if (error) throw new Error(error.message);
-  const map = new Map((profs ?? []).map((p: { email: string; id: string }) => [p.email, p.id] as const));
-  return {
-    toUserIds: to.map((e) => map.get(e)).filter((v): v is string => !!v),
-    ccUserIds: cc.map((e) => map.get(e)).filter((v): v is string => !!v),
-    unknown: all.filter((e) => !map.has(e)),
-  };
-}
-
-/** Ensure a thread exists for a draft/message. */
-async function ensureThread(
-  ctx: EmailCtx,
-  scope: { workspaceId: string; tenantId: string },
-  threadId: string | null | undefined,
-  subject: string,
-): Promise<string> {
-  if (threadId) return threadId;
-  const { data: t, error } = await ctx.supabase
-    .from("email_threads")
-    .insert({
-      workspace_id: scope.workspaceId,
-      tenant_id: scope.tenantId,
-      subject: subject || "(Không tiêu đề)",
-      created_by: ctx.userId,
-      updated_by: ctx.userId,
-    })
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
-  return t.id as string;
-}
-
 const draftSchema = z.object({
   draft_id: z.string().uuid().optional(),
   thread_id: z.string().uuid().optional(),
@@ -197,8 +141,9 @@ export const saveEmailDraft = createServerFn({ method: "POST" })
   .inputValidator((input) => draftSchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as EmailCtx;
-    const scope = await resolveWorkspace(ctx);
-    const { toUserIds, ccUserIds } = await resolveRecipients(ctx, data.to, data.cc);
+    const { resolveEmailWorkspace, resolveEmailRecipients, ensureEmailThread } = await import("./email-draft.server");
+    const scope = await resolveEmailWorkspace(ctx);
+    const { toUserIds, ccUserIds } = await resolveEmailRecipients(ctx, data.to, data.cc);
 
     if (data.draft_id) {
       const { data: existing, error: exErr } = await ctx.supabase
@@ -230,7 +175,7 @@ export const saveEmailDraft = createServerFn({ method: "POST" })
       return { ok: true, draft_id: data.draft_id as string, thread_id: existing.thread_id as string };
     }
 
-    const threadId = await ensureThread(ctx, scope, data.thread_id, data.subject);
+    const threadId = await ensureEmailThread(ctx, scope, data.thread_id, data.subject);
     const { data: msg, error } = await ctx.supabase
       .from("email_messages")
       .insert({
@@ -322,8 +267,9 @@ export const sendEmail = createServerFn({ method: "POST" })
   .inputValidator((input) => sendSchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as EmailCtx;
-    const scope = await resolveWorkspace(ctx);
-    const { toUserIds, ccUserIds, unknown } = await resolveRecipients(ctx, data.to, data.cc ?? []);
+    const { resolveEmailWorkspace, resolveEmailRecipients, ensureEmailThread } = await import("./email-draft.server");
+    const scope = await resolveEmailWorkspace(ctx);
+    const { toUserIds, ccUserIds, unknown } = await resolveEmailRecipients(ctx, data.to, data.cc ?? []);
     if (toUserIds.length === 0) {
       throw new Error(
         unknown.length
@@ -369,7 +315,7 @@ export const sendEmail = createServerFn({ method: "POST" })
         .eq("user_id", ctx.userId);
       if (msErr) throw new Error(msErr.message);
     } else {
-      threadId = await ensureThread(ctx, scope, threadId, data.subject);
+      threadId = await ensureEmailThread(ctx, scope, threadId, data.subject);
       const { data: msg, error: mErr } = await ctx.supabase
         .from("email_messages")
         .insert({
