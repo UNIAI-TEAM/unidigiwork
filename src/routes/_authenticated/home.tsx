@@ -1,5 +1,5 @@
 // HOME V2 — Trang chủ điều hành công việc cá nhân (My Work · Upcoming · Work Inbox).
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,6 +9,7 @@ import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { getHomeSummary, type HomeTask, type WorkInboxItem } from "@/lib/api/home.functions";
 import { transitionTask } from "@/lib/api/tasks.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
+import { setEmailMessagesRead } from "@/lib/api/emails.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import {
   AiBrief,
@@ -68,6 +69,8 @@ function HomePage() {
 
   const transition = useServerFn(transitionTask);
   const markRead = useServerFn(markNotificationsRead);
+  const markEmailRead = useServerFn(setEmailMessagesRead);
+  const router = useRouter();
 
   const complete = useMutation({
     mutationFn: (t: HomeTask) =>
@@ -92,6 +95,29 @@ function HomePage() {
     },
     onError: () => toast.error("Không đánh dấu được. Thử lại sau."),
   });
+
+  // Mở item Work Inbox: đánh dấu đã đọc đúng nguồn rồi điều hướng tới deep link.
+  const openInboxItem = async (item: WorkInboxItem) => {
+    try {
+      if (!item.read) {
+        if (item.source === "notification") {
+          await markRead({ data: { ids: [item.id.replace("notif-", "")] } });
+        } else if (item.source === "email") {
+          await markEmailRead({
+            data: { message_ids: [item.id.replace("email-", "")], is_read: true },
+          });
+        }
+        await Promise.all([
+          qc.invalidateQueries({ queryKey: ["home", "summary", tenantId] }),
+          qc.invalidateQueries({ queryKey: ["notifications"] }),
+          qc.invalidateQueries({ queryKey: ["unread-counts"] }),
+        ]);
+      }
+    } catch {
+      toast.error("Không cập nhật được trạng thái đã đọc.");
+    }
+    await router.navigate({ to: item.href as never });
+  };
 
   const subtitle = useMemo(() => {
     if (!data) return "Đây là công việc của bạn hôm nay";
@@ -187,7 +213,12 @@ function HomePage() {
               <EmptyRow label="Không có gì cần bạn xử lý" />
             ) : (
               data.inbox.map((i) => (
-                <InboxRow key={i.id} item={i} onMarkRead={(item) => readMutation.mutate(item)} />
+                <InboxRow
+                    key={i.id}
+                    item={i}
+                    onOpen={openInboxItem}
+                    onMarkRead={(item) => readMutation.mutate(item)}
+                  />
               ))
             )}
           </SectionCard>

@@ -149,8 +149,49 @@ export async function loadHomeSummary(supabase: Db, _userId: string): Promise<Ho
   const notifPriority = (t: WorkInboxItem["type"]): WorkInboxItem["priority"] =>
     t === "APPROVAL" || t === "MENTION" ? "urgent" : t === "TASK" || t === "MEETING" ? "high" : "normal";
 
+  // Deep link theo nguồn: ưu tiên id thực thể trong meta, sau đó tới link đã lưu,
+  // cuối cùng mới fallback về trang chi tiết thông báo.
+  const deepLink = (type: WorkInboxItem["type"], meta: Record<string, unknown>, link: string | null, id: string) => {
+    const pick = (...keys: string[]) => {
+      for (const k of keys) {
+        const v = meta[k];
+        if (typeof v === "string" && v.length > 0) return v;
+      }
+      return null;
+    };
+    const taskId = pick("task_id", "taskId");
+    const meetingId = pick("meeting_id", "meetingId");
+    const channelId = pick("channel_id", "channelId");
+    const messageId = pick("message_id", "messageId", "email_message_id");
+    const docId = pick("document_id", "documentId");
+
+    if (type === "TASK" && taskId) return `/tasks/${taskId}`;
+    if (type === "MEETING" && meetingId) return `/meeting/${meetingId}`;
+    if (type === "CHAT" && channelId)
+      return `/chat/${channelId}${messageId ? `?m=${messageId}` : ""}`;
+    if (type === "MENTION") {
+      if (channelId) return `/chat/${channelId}${messageId ? `?m=${messageId}` : ""}`;
+      if (taskId) return `/tasks/${taskId}`;
+    }
+    if (type === "EMAIL" && messageId) return `/email/${messageId}`;
+    if (type === "APPROVAL") return link && !link.startsWith("/m/") ? link : "/workflows";
+    if (docId) return `/documents?doc=${docId}`;
+
+    // Link đã lưu có thể trỏ tới bản mobile (/m/...) — quy về route desktop tương ứng.
+    if (link) {
+      const desktop = link.startsWith("/m/") ? link.replace(/^\/m/, "") : link;
+      return desktop === "/tasks" || desktop === "/chat" || desktop === "/email" || desktop === "/meet"
+        ? desktop === "/meet"
+          ? "/meetings"
+          : desktop
+        : desktop;
+    }
+    return `/notifications/${id}`;
+  };
+
   for (const n of payload.notifications ?? []) {
     const type = notifType(n.type as string | null);
+    const meta = (n.meta as Record<string, unknown> | null) ?? {};
     inbox.push({
       id: `notif-${n.id}`,
       type,
@@ -159,7 +200,7 @@ export async function loadHomeSummary(supabase: Db, _userId: string): Promise<Ho
       source: "notification",
       timestamp: n.created_at as string,
       priority: notifPriority(type),
-      href: (n.link as string | null) ?? `/notifications/${n.id}`,
+      href: deepLink(type, meta, (n.link as string | null) ?? null, n.id as string),
       read: Boolean(n.is_read),
       actor: null,
     });
