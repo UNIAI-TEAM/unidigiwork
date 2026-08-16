@@ -8,6 +8,7 @@ import { mapPgError } from "./business.server";
 import type {
   ActionItemState,
   MeetingSummary,
+  SummaryChunkProgress,
   SummaryProgress,
   TranscriptSegment,
 } from "@/domain/meeting-intelligence/contracts";
