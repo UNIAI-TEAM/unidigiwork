@@ -95,6 +95,8 @@ export interface UniCopilotResponse {
   partial: boolean;
   ambiguity: { candidates: { entityType: AiContextEntityType; entityId: string; title: string; href: string }[] } | null;
   rootContextKey: string | null;
+  /** Ngữ cảnh gốc UNI đã khoá cho lượt sau (§57) — client ghim để follow-up không mất ngữ cảnh. */
+  resolvedRoot: { type: AiContextEntityType; id: string; title: string } | null;
   usage: { inputTokens: number; outputTokens: number; model: string } | null;
   timings: { contextMs: number; providerMs: number; totalMs: number };
 }
