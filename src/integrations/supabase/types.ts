@@ -5725,6 +5725,30 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      search_norm: { Args: { _t: string }; Returns: string }
+      search_universal: {
+        Args: {
+          _entity_types?: string[]
+          _limit?: number
+          _offset?: number
+          _q: string
+          _tenant_id: string
+          _workspace_id?: string
+        }
+        Returns: {
+          entity_id: string
+          entity_type: string
+          match_type: string
+          score: number
+          snippet: string
+          subtitle: string
+          title: string
+          total_count: number
+          updated_at: string
+          workspace_id: string
+          workspace_name: string
+        }[]
+      }
       set_chat_message_pin: {
         Args: { _message_id: string; _pinned: boolean }
         Returns: boolean
