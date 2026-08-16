@@ -51,6 +51,7 @@ import {
   AI_SKILL_KIND_HINTS,
   AI_SKILL_MAP,
   deriveAllowedFromSkills,
+  ensureDefaultSkill,
   normalizeSkills,
   skillsByKind,
   skillsGranting,
