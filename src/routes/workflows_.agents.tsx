@@ -45,6 +45,16 @@ import {
   type AgentCondition,
   type AgentTrigger,
 } from "@/domain/workflow-agents/contracts";
+import {
+  AI_SKILL_KINDS,
+  AI_SKILL_KIND_LABELS,
+  AI_SKILL_KIND_HINTS,
+  AI_SKILL_MAP,
+  deriveAllowedFromSkills,
+  normalizeSkills,
+  skillsByKind,
+  skillsGranting,
+} from "@/domain/workflow-agents/skills";
 
 export const Route = createFileRoute("/workflows_/agents")({
   head: () => ({
@@ -67,6 +77,7 @@ type AgentRow = {
   trigger_type: AgentTrigger;
   conditions: AgentCondition[] | null;
   action_type: AiActionType;
+  skills: string[] | null;
   allowed_action_types: string[] | null;
   allowed_sources: string[] | null;
   instruction: string;
@@ -81,6 +92,7 @@ const emptyDraft = (workspaceId: string) => ({
   triggerType: "TASK_OVERDUE" as AgentTrigger,
   conditions: [] as AgentCondition[],
   actionType: "CREATE_TASK" as AiActionType,
+  skills: ["PROPOSE_TASK"] as string[],
   allowedActionTypes: [...AI_ACTION_TYPES] as AiActionType[],
   allowedSources: ["WORKFLOW_AGENT"] as AiActionSource[],
   instruction: "",
