@@ -160,7 +160,7 @@ export const getMeetingRecordingDownloadUrl = createServerFn({ method: "POST" })
       .select("id, file_url")
       .eq("id", data.recordingId)
       .maybeSingle();
-    if (error) mapPgError(error, "MEETING_RECORDING_NOT_FOUND");
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
     if (!row?.file_url) throw new Error("MEETING_RECORDING_FILE_NOT_READY");
 
     const { parseS3Url, presignGetUrl, readRecordingStorageConfig } = await import(
