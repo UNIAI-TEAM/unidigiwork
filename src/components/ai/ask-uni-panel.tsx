@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { askUni } from "@/lib/api/ai-context.functions";
 import type { AiContextEntityType, AiGroundedResponse } from "@/domain/ai-context/contracts";
+import { validateAnswerCitations } from "@/domain/ai-context/citations";
 
 const KIND_LABEL: Record<AiContextEntityType, string> = {
   WORKSPACE: "Dự án",
@@ -114,7 +115,26 @@ export function AskUniPanel({
 
         {result && (
           <div className="max-h-[50vh] space-y-4 overflow-y-auto">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">{result.answer}</p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              {validateAnswerCitations(result.answer, result.sources).segments.map((seg, i) =>
+                seg.type === "citation" && seg.source ? (
+                  <button
+                    key={`${seg.source.sourceId}-${i}`}
+                    type="button"
+                    title={seg.source.title}
+                    className="mx-0.5 rounded bg-primary/10 px-1 align-baseline text-xs font-medium text-primary hover:bg-primary/20"
+                    onClick={() => {
+                      setOpen(false);
+                      navigate({ href: seg.source!.href } as never);
+                    }}
+                  >
+                    {seg.text}
+                  </button>
+                ) : (
+                  <span key={`t-${i}`}>{seg.text}</span>
+                ),
+              )}
+            </p>
             {result.partial && (
               <p className="text-xs text-muted-foreground">
                 Một số nguồn chưa kiểm tra được trong lần này.
