@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useActiveWorkspace } from "@/lib/active-workspace";
+import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import type { SearchKind } from "@/lib/api/search-universal.server";
 
@@ -174,6 +175,17 @@ export function CommandPalette() {
   // Giới hạn kết quả trong workspace đang làm việc (nếu có).
   const [scoped, setScoped] = useState(true);
   const scopeId = scoped && activeWorkspaceId ? activeWorkspaceId : undefined;
+
+  // Khôi phục lựa chọn phạm vi đã lưu.
+  useEffect(() => {
+    const saved = readSearchScope();
+    if (saved !== undefined) setScoped(saved !== null);
+  }, []);
+
+  const chooseScope = (next: boolean) => {
+    setScoped(next);
+    writeSearchScope(next ? (activeWorkspaceId ?? null) : null);
+  };
 
   // Global open: ⌘K / Ctrl+K, or custom event.
   useEffect(() => {
@@ -336,7 +348,7 @@ export function CommandPalette() {
             <span className="text-[11px] text-muted-foreground">Phạm vi</span>
             <button
               type="button"
-              onClick={() => setScoped(true)}
+              onClick={() => chooseScope(true)}
               aria-pressed={scoped}
               className={cn(
                 "max-w-[45%] truncate rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
@@ -349,7 +361,7 @@ export function CommandPalette() {
             </button>
             <button
               type="button"
-              onClick={() => setScoped(false)}
+              onClick={() => chooseScope(false)}
               aria-pressed={!scoped}
               className={cn(
                 "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
