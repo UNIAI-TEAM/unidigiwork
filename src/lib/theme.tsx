@@ -250,7 +250,8 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 }
 
 export function ToneToggle({ className = "" }: { className?: string }) {
-  const { tone, setTone, contrast, setContrast, fontScale, setFontScale } = useTheme();
+  const { tone, setTone, contrast, setContrast, fontScale, setFontScale, fontFamily, setFontFamily } =
+    useTheme();
   const active = TONES.find((t) => t.id === tone) ?? TONES[0];
   const scaleIndex = FONT_SCALES.findIndex((f) => f.id === fontScale);
   const step = (delta: number) => {
@@ -288,6 +289,15 @@ export function ToneToggle({ className = "" }: { className?: string }) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Khả năng đọc</DropdownMenuLabel>
+        {FONT_FAMILIES.map((f) => (
+          <DropdownMenuItem key={f.id} onSelect={() => setFontFamily(f.id)} className="gap-2">
+            <CaseSensitive className="h-4 w-4 text-muted-foreground" />
+            <span className="flex-1" style={{ fontFamily: f.sample }}>
+              {f.label}
+            </span>
+            {f.id === fontFamily && <Check className="h-4 w-4 text-primary" />}
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuItem
           onSelect={(e) => e.preventDefault()}
           className="gap-2 focus:bg-transparent"
