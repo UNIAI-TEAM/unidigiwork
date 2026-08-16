@@ -66,6 +66,7 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useAvailableTenants } from "@/features/tenants/hooks";
 import { DesktopNavigation } from "@/components/navigation/desktop-nav";
+import { NAV_ICON_CLASS, NAV_ICON_STROKE, NAV_ICON_STROKE_ACTIVE } from "@/config/navigation";
 
 /**
  * Batch 1B-UI-FINISH — Tenant switcher slot embedded in AppTopbar.
