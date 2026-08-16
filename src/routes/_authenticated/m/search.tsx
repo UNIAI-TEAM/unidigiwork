@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Search,
@@ -21,6 +21,8 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { SEARCH_KINDS, type SearchKind } from "@/lib/api/search-universal.server";
+
+const PAGE_SIZE = 30;
 
 export const Route = createFileRoute("/_authenticated/m/search")({
   head: () => ({
@@ -88,30 +90,49 @@ function MobileSearchPage() {
 
   const runSearch = useServerFn(universalSearch);
   const enabled = debounced.length >= 2;
-  const { data, isFetching } = useQuery({
-    queryKey: ["m-search", debounced, kind, scope],
-    queryFn: () =>
-      runSearch({
-        data: {
-          q: debounced,
-          kinds: kind ? [kind] : undefined,
-          workspaceId: scope ?? undefined,
-          limit: 30,
-          offset: 0,
-          expandGraph: false,
-        },
-      }),
-    enabled,
-    staleTime: 30_000,
-  });
+  const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteQuery({
+      queryKey: ["m-search", debounced, kind, scope],
+      initialPageParam: 0,
+      queryFn: ({ pageParam }) =>
+        runSearch({
+          data: {
+            q: debounced,
+            kinds: kind ? [kind] : undefined,
+            workspaceId: scope ?? undefined,
+            limit: PAGE_SIZE,
+            offset: pageParam as number,
+            expandGraph: false,
+          },
+        }),
+      getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
+      enabled,
+      staleTime: 30_000,
+    });
 
-  const counts = data?.counts;
+  const firstPage = data?.pages?.[0];
+  const counts = firstPage?.counts;
   const availableKinds = useMemo(
     () => SEARCH_KINDS.filter((k) => (counts?.[k] ?? 0) > 0 || k === kind),
     [counts, kind],
   );
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.items), [data]);
+
+  // Tự tải thêm khi cuộn tới cuối danh sách.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
 
   return (
     <div className="flex min-h-full flex-col pb-24">
@@ -147,7 +168,7 @@ function MobileSearchPage() {
         {enabled && availableKinds.length > 0 && (
           <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
             <FilterChip active={kind === null} onClick={() => setKind(null)}>
-              Tất cả {data ? `(${data.total})` : ""}
+              Tất cả {firstPage ? `(${firstPage.total})` : ""}
             </FilterChip>
             {availableKinds.map((k) => (
               <FilterChip key={k} active={kind === k} onClick={() => setKind(k)}>
@@ -214,6 +235,12 @@ function MobileSearchPage() {
               />
             );
           })
+        )}
+        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
+        {isFetchingNextPage && (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
         )}
       </div>
     </div>
