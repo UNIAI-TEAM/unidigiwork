@@ -806,7 +806,19 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </button>
-                    {active.isMember && (
+                     {active.isMember && (
+                       <AskUniPanel
+                         rootEntity={{ type: "CHAT_CHANNEL", id: active.id }}
+                         workspaceId={activeWorkspaceId ?? null}
+                         label="Hỏi UNI"
+                         suggestions={[
+                           "Tóm tắt trao đổi gần đây",
+                           "Có việc nào cần làm từ kênh này?",
+                           "Ai đang phụ trách?",
+                         ]}
+                       />
+                     )}
+                     {active.isMember && (
                       <button
                         onClick={() => setShowMembers((v) => !v)}
                         className={`rounded-lg p-2 hover:bg-surface-2 ${showMembers ? "bg-surface-2 text-foreground" : "text-muted-foreground"}`}
