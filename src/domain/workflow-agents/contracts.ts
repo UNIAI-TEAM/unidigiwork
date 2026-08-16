@@ -97,7 +97,7 @@ export const AgentConditionSchema = z.object({
 });
 export type AgentCondition = z.infer<typeof AgentConditionSchema>;
 
-export const AgentInputSchema = z.object({
+export const AgentInputBaseSchema = z.object({
   workspaceId: z.string().uuid(),
   name: z.string().trim().min(1).max(200),
   description: z.string().max(2000).optional(),
@@ -108,10 +108,8 @@ export const AgentInputSchema = z.object({
   allowedSources: z.array(z.enum(AI_ACTION_SOURCES)).min(1).default(["WORKFLOW_AGENT"]),
   instruction: z.string().max(2000).default(""),
   enabled: z.boolean().default(true),
-}).refine((v) => v.allowedActionTypes.includes(v.actionType), {
-  message: "Hành động mặc định phải nằm trong danh sách được phép.",
-  path: ["actionType"],
 });
+export const AgentInputSchema = AgentInputBaseSchema;
 export type AgentInput = z.infer<typeof AgentInputSchema>;
 
 export const AI_ACTION_SOURCE_LABELS: Record<AiActionSource, string> = {
