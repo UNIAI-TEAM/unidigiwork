@@ -154,9 +154,11 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
     }
 
     const parsed = parseMeetingSummaryOutput(raw, sources.map((s) => s.sourceId));
+    const { validateGroundedSummary } = await import("@/domain/meeting-intelligence/grounding");
+    const grounded = validateGroundedSummary(parsed, sources);
     const usedIds = new Set([
-      ...parsed.decisions.flatMap((d) => d.sourceIds),
-      ...parsed.actionItems.flatMap((a) => a.sourceIds),
+      ...grounded.decisions.flatMap((d) => d.sourceIds),
+      ...grounded.actionItems.flatMap((a) => a.sourceIds),
     ]);
     const citedSources = sources.filter((s) => usedIds.has(s.sourceId));
 
@@ -166,13 +168,13 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
       _model: MODEL,
       _summary: parsed.summary,
       _highlights: parsed.highlights as never,
-      _decisions: parsed.decisions as never,
-      _action_items: parsed.actionItems as never,
+      _decisions: grounded.decisions as never,
+      _action_items: grounded.actionItems as never,
       _sources: (citedSources.length ? citedSources : sources.slice(0, 10)) as never,
       _segment_count: segments.length,
-      _risks: parsed.risks as never,
-      _open_questions: parsed.openQuestions as never,
-      _followup: (parsed.followUp ?? {}) as never,
+      _risks: grounded.risks as never,
+      _open_questions: grounded.openQuestions as never,
+      _followup: (grounded.followUp ?? {}) as never,
       _transcript_checksum: transcriptChecksum(segments),
     });
     if (sErr) mapPgError(sErr, "MEETING_NOT_FOUND");
