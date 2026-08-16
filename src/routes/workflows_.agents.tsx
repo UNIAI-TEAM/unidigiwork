@@ -107,6 +107,7 @@ function AgentBuilderPage() {
   const [evaluation, setEvaluation] = useState<(AgentEvaluation & { agentName: string }) | null>(null);
   const [proposals, setProposals] = useState<ProposedAiAction[]>([]);
   const [proposing, setProposing] = useState<string | null>(null);
+  const derivedAllowed = useMemo(() => deriveAllowedFromSkills(draft?.skills ?? []), [draft?.skills]);
 
   const wsQuery = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
   const workspaces = (wsQuery.data ?? []) as { id: string; name: string }[];
