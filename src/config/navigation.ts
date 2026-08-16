@@ -22,9 +22,19 @@ import {
   Users,
   ShieldCheck,
   CreditCard,
+  ScrollText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
+
+/**
+ * Icon system — nguồn duy nhất cho mọi icon điều hướng.
+ * Toàn bộ icon dùng cùng family (lucide), cùng kích thước 18px và cùng độ dày nét.
+ */
+export const NAV_ICON_SIZE = 18;
+export const NAV_ICON_CLASS = "h-[18px] w-[18px] shrink-0";
+export const NAV_ICON_STROKE = 1.75;
+export const NAV_ICON_STROKE_ACTIVE = 2.25;
 
 export type NavGroupId =
   | "home"
@@ -259,7 +269,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     id: "audit",
     labelKey: "nav.security",
-    icon: ShieldCheck,
+    icon: ScrollText,
     href: "/workspace/audit",
     group: "admin",
     match: ["/workspace/audit"],
