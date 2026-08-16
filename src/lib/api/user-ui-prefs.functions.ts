@@ -7,11 +7,13 @@ import { ApiError } from "@/contracts/errors";
 const themeSchema = z.enum(["light", "dark"]);
 const toneSchema = z.enum(["violet", "blue", "teal", "emerald", "amber", "rose"]);
 const contrastSchema = z.enum(["normal", "high"]);
+const fontScaleSchema = z.enum(["sm", "md", "lg", "xl"]);
 
 export type UiPrefs = {
   theme: z.infer<typeof themeSchema>;
   tone: z.infer<typeof toneSchema>;
   contrast: z.infer<typeof contrastSchema>;
+  fontScale: z.infer<typeof fontScaleSchema>;
 };
 
 export const getUiPrefs = createServerFn({ method: "POST" })
@@ -19,7 +21,7 @@ export const getUiPrefs = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<UiPrefs | null> => {
     const { data, error } = await context.supabase
       .from("user_ui_prefs")
-      .select("theme, tone, contrast")
+      .select("theme, tone, contrast, font_scale")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new ApiError({ code: "INTERNAL_ERROR", message: error.message });
@@ -28,6 +30,8 @@ export const getUiPrefs = createServerFn({ method: "POST" })
           theme: data.theme as UiPrefs["theme"],
           tone: data.tone as UiPrefs["tone"],
           contrast: (data.contrast as UiPrefs["contrast"]) ?? "normal",
+          fontScale: ((data as { font_scale?: string }).font_scale ??
+            "md") as UiPrefs["fontScale"],
         }
       : null;
   });
@@ -40,13 +44,22 @@ export const saveUiPrefs = createServerFn({ method: "POST" })
         theme: themeSchema.optional(),
         tone: toneSchema.optional(),
         contrast: contrastSchema.optional(),
+        fontScale: fontScaleSchema.optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { fontScale, ...rest } = data;
     const { error } = await context.supabase
       .from("user_ui_prefs")
-      .upsert({ user_id: context.userId, ...data }, { onConflict: "user_id" });
+      .upsert(
+        {
+          user_id: context.userId,
+          ...rest,
+          ...(fontScale ? { font_scale: fontScale } : {}),
+        },
+        { onConflict: "user_id" },
+      );
     if (error) throw new ApiError({ code: "INTERNAL_ERROR", message: error.message });
     return { ok: true as const };
   });
