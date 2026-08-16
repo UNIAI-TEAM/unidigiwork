@@ -198,6 +198,21 @@ export function CommandPalette() {
 
   const all = useMemo(() => buildItems(navigate), [navigate]);
 
+  // Debounced live search (permission-aware, Universal Search V2).
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 180);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const runSearch = useServerFn(universalSearch);
+  const { data: live, isFetching } = useQuery({
+    queryKey: ["cmdk-search", debounced],
+    queryFn: () => runSearch({ data: { q: debounced, limit: 8, offset: 0 } }),
+    enabled: open && debounced.length >= 2,
+    staleTime: 30_000,
+  });
+
   const results = useMemo<CmdItem[]>(() => {
     const needle = norm(q.trim());
     const base = needle
@@ -207,6 +222,14 @@ export function CommandPalette() {
         })
       : all;
     if (needle) {
+      const hits: CmdItem[] = (live?.items ?? []).map((r) => ({
+        id: `hit-${r.kind}-${r.id}`,
+        group: "Kết quả" as const,
+        label: r.title,
+        hint: KIND_LABEL[r.kind],
+        icon: KIND_ICON[r.kind] ?? FileText,
+        run: ({ navigate }) => navigate({ href: r.href } as never),
+      }));
       // Always offer a "search this query" affordance at the bottom.
       const searchItem: CmdItem = {
         id: "search-query",
@@ -217,10 +240,10 @@ export function CommandPalette() {
         run: ({ navigate, query }) =>
           navigate({ to: "/search", search: { q: query } }),
       };
-      return [...base, searchItem];
+      return [...hits, ...base, searchItem];
     }
     return base;
-  }, [all, q]);
+  }, [all, q, live]);
 
   // Clamp active when results change
   useEffect(() => {
