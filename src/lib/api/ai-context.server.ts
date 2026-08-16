@@ -44,7 +44,7 @@ const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
 };
 
 /** Làm sạch HTML/markdown và cắt cứng độ dài mỗi source (§145, §146). */
-export function cleanExcerpt(raw: unknown, cap = AI_CONTEXT_POLICY.excerptCharCap): string {
+export function cleanExcerpt(raw: unknown, cap: number = AI_CONTEXT_POLICY.excerptCharCap): string {
   const text = String(raw ?? "")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
