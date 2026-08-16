@@ -133,7 +133,7 @@ const ACTION_ITEMS: Omit<CmdItem, "run">[] = [
   { id: "new-task", group: "Hành động", label: "Tạo nhiệm vụ", icon: ListChecks, keywords: "new task tao cong viec" },
   { id: "new-doc", group: "Hành động", label: "Tạo tài liệu", icon: FileText, keywords: "new document tao tai lieu" },
   { id: "compose-email", group: "Hành động", label: "Soạn email", icon: Mail, keywords: "compose email soan thu" },
-  { id: "ask-ai", group: "Hành động", label: "Hỏi AI Assistant", icon: Sparkles, keywords: "ai hoi assistant" },
+  { id: "ask-uni", group: "Hành động", label: "Hỏi UNI…", icon: Sparkles, keywords: "ai uni copilot hoi assistant" },
 ];
 
 const ACTION_TO: Record<string, string> = {
@@ -141,7 +141,6 @@ const ACTION_TO: Record<string, string> = {
   "new-task": "/tasks",
   "new-doc": "/documents",
   "compose-email": "/email/compose",
-  "ask-ai": "/ai",
 };
 
 // crude diacritics-insensitive normalize
@@ -159,7 +158,8 @@ function buildItems(navigate: ReturnType<typeof useNavigate>): CmdItem[] {
   }));
   const act = ACTION_ITEMS.map<CmdItem>((i) => ({
     ...i,
-    run: () => navigate({ to: ACTION_TO[i.id] as never }),
+    run: () =>
+      i.id === "ask-uni" ? openUniCopilot() : navigate({ to: ACTION_TO[i.id] as never }),
   }));
   return [...nav, ...act];
 }
