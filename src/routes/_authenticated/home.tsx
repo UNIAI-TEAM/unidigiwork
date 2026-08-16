@@ -326,12 +326,50 @@ function HomePage() {
               action={
                 <div className="flex items-center gap-3">
                   <span className="hidden text-xs text-muted-foreground md:inline">
-                    J/K chọn · C hoàn thành · O mở · R trang liên quan
+                    J/K di chuyển · X chọn · C hoàn thành · O mở · R trang liên quan
                   </span>
                   <ViewAll to="/tasks" />
                 </div>
               }
             >
+              {openTasks.length ? (
+                <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-2/60 px-4 py-2">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 cursor-pointer accent-primary"
+                      checked={allChecked}
+                      onChange={(e) =>
+                        setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])
+                      }
+                      aria-label="Chọn tất cả công việc"
+                    />
+                    Chọn tất cả
+                  </label>
+                  <span className="text-xs text-muted-foreground">
+                    Đã chọn {checkedIds.length}/{openTasks.length}
+                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    {checkedIds.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setCheckedIds([])}
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-surface-2"
+                      >
+                        Bỏ chọn
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={bulkComplete}
+                      disabled={!checkedIds.length || bulkRunning}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+                    >
+                      {bulkRunning ? "Đang xử lý…" : `Hoàn thành ${checkedIds.length || ""}`.trim()}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {partialSet.has("tasks") ? (
                 <PartialNotice
                   label="Không tải được đầy đủ danh sách công việc."
