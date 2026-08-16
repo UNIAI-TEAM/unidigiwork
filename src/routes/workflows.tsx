@@ -297,6 +297,7 @@ function WorkflowsPage() {
                 </Link>
                 <Link
                   to="/workflows/agents"
+                  search={{ profile: undefined }}
                   className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface"
                 >
                   <Bot className="h-4 w-4" /> Agent Builder
