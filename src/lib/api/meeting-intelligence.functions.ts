@@ -159,8 +159,18 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
     let sources: ReturnType<typeof toSummarySources>;
     let truncated: boolean;
     let degraded = false;
+    const runId = crypto.randomUUID();
+    const staged = shouldUseStagedSummary(segments);
+    await writeSummaryProgress(context.supabase, {
+      meetingId: data.meetingId,
+      runId,
+      phase: "PREPARING",
+      staged,
+      truncated: false,
+      chunks: [],
+    });
 
-    if (shouldUseStagedSummary(segments)) {
+    if (staged) {
       // Họp dài: map theo chunk → reduce synthesis (trích dẫn vẫn là sourceId toàn cục).
       const { runStagedMeetingSummary } = await import("./meeting-staged-summary.server");
       const staged = await runStagedMeetingSummary({
@@ -169,8 +179,25 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
         title: "Cuộc họp",
         startAt,
         segments,
+        onProgress: ({ phase, chunks }) =>
+          writeSummaryProgress(context.supabase, {
+            meetingId: data.meetingId,
+            runId,
+            phase,
+            staged: true,
+            truncated: false,
+            chunks,
+          }),
       });
       if (staged.failedStages > 0 && staged.parsed.decisions.length === 0 && !staged.parsed.summary) {
+        await writeSummaryProgress(context.supabase, {
+          meetingId: data.meetingId,
+          runId,
+          phase: "FAILED",
+          staged: true,
+          truncated: staged.truncated,
+          chunks: [],
+        });
         throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể tạo tóm tắt. Vui lòng thử lại." });
       }
       parsed = staged.parsed;
