@@ -221,9 +221,9 @@ export const confirmMeetingActionItem = createServerFn({ method: "POST" })
       _item_key: data.itemKey,
       _workspace_id: data.workspaceId,
       _title: data.title,
-      _description: data.description ?? null,
-      _due_at: data.dueAt ?? null,
-      _assignee_id: data.assigneeId ?? null,
+      _description: data.description ?? undefined,
+      _due_at: data.dueAt ?? undefined,
+      _assignee_id: data.assigneeId ?? undefined,
     });
     if (error) mapPgError(error, "MEETING_NOT_FOUND");
     return mapStateRow(row as unknown as Record<string, unknown>);
