@@ -276,6 +276,37 @@ function MeetingDetailPage() {
   const manualLeaveRef = useRef(false);
   // Phụ đề trực tiếp (nếu trình duyệt hỗ trợ Web Speech API).
   const captions = useLiveCaptions("vi-VN");
+  // Lưu phụ đề trực tiếp thành biên bản thật (gom mỗi ~10s để giảm số request).
+  const captionFlushRef = useRef<{ start: number | null; last: string }>({ start: null, last: "" });
+  useEffect(() => {
+    if (!isRealRoom || !captions.enabled) {
+      captionFlushRef.current = { start: null, last: "" };
+      return;
+    }
+    if (captionFlushRef.current.start === null) captionFlushRef.current.start = Date.now();
+    const startedAt = captionFlushRef.current.start;
+    const timer = window.setInterval(() => {
+      const text = captions.text.trim();
+      const prev = captionFlushRef.current.last;
+      const delta = text.startsWith(prev) ? text.slice(prev.length).trim() : text;
+      if (delta.length < 8) return;
+      captionFlushRef.current.last = text;
+      void appendMeetingTranscript({
+        data: {
+          meetingId: id,
+          source: "LIVE_CAPTION",
+          segments: [
+            {
+              content: delta.slice(0, 4000),
+              speakerName: myName ?? null,
+              offsetSeconds: Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
+            },
+          ],
+        },
+      }).catch(() => undefined);
+    }, 10_000);
+    return () => window.clearInterval(timer);
+  }, [captions.enabled, captions.text, id, isRealRoom, myName]);
   const inRoomRef = useRef(false);
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
