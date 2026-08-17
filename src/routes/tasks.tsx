@@ -337,9 +337,33 @@ function TasksPage() {
                   </button>
                 ))}
               </nav>
-              <button onClick={() => notifyComingSoon()} className="ml-auto rounded-lg p-2 hover:bg-surface-2">
-                <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="ml-auto rounded-lg p-2 hover:bg-surface-2">
+                    <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      void queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] });
+                      toast.success("Đã làm mới danh sách công việc");
+                    }}
+                  >
+                    Làm mới dữ liệu
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => exportTasksCsv(tasks)}>
+                    Xuất CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigateTasks({ to: "/workspace/settings" })}>
+                    Cài đặt dự án
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigateTasks({ to: "/workspace/members" })}>
+                    Thành viên
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Title row */}
