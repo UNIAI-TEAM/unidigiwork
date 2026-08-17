@@ -55,6 +55,7 @@ import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAiWorkforceRouteImport } from './routes/_authenticated/ai-workforce'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
+import { Route as AuthenticatedAiMarketIndexRouteImport } from './routes/_authenticated/ai-market.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceTagsRouteImport } from './routes/_authenticated/workspace.tags'
@@ -329,6 +330,12 @@ const AuthenticatedWorkspaceIndexRoute =
   AuthenticatedWorkspaceIndexRouteImport.update({
     id: '/workspace/',
     path: '/workspace/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAiMarketIndexRoute =
+  AuthenticatedAiMarketIndexRouteImport.update({
+    id: '/ai-market/',
+    path: '/ai-market/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -650,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -738,6 +746,7 @@ export interface FileRoutesByTo {
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/ai-market': typeof AuthenticatedAiMarketIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -830,6 +839,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -922,6 +932,7 @@ export interface FileRouteTypes {
     | '/workspace/tags'
     | '/blog/category/$category'
     | '/admin/'
+    | '/ai-market/'
     | '/workspace/'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
@@ -1010,6 +1021,7 @@ export interface FileRouteTypes {
     | '/workspace/tags'
     | '/blog/category/$category'
     | '/admin'
+    | '/ai-market'
     | '/workspace'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
@@ -1101,6 +1113,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/tags'
     | '/blog/category/$category'
     | '/_authenticated/admin/'
+    | '/_authenticated/ai-market/'
     | '/_authenticated/workspace/'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/email/$id'
@@ -1465,6 +1478,13 @@ declare module '@tanstack/react-router' {
       path: '/workspace'
       fullPath: '/workspace/'
       preLoaderRoute: typeof AuthenticatedWorkspaceIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-market/': {
+      id: '/_authenticated/ai-market/'
+      path: '/ai-market'
+      fullPath: '/ai-market/'
+      preLoaderRoute: typeof AuthenticatedAiMarketIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/': {
@@ -1937,6 +1957,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWorkspaceMembersRoute: typeof AuthenticatedWorkspaceMembersRoute
   AuthenticatedWorkspaceSettingsRoute: typeof AuthenticatedWorkspaceSettingsRoute
   AuthenticatedWorkspaceTagsRoute: typeof AuthenticatedWorkspaceTagsRoute
+  AuthenticatedAiMarketIndexRoute: typeof AuthenticatedAiMarketIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
 }
 
@@ -1966,6 +1987,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWorkspaceMembersRoute: AuthenticatedWorkspaceMembersRoute,
   AuthenticatedWorkspaceSettingsRoute: AuthenticatedWorkspaceSettingsRoute,
   AuthenticatedWorkspaceTagsRoute: AuthenticatedWorkspaceTagsRoute,
+  AuthenticatedAiMarketIndexRoute: AuthenticatedAiMarketIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
 }
 
