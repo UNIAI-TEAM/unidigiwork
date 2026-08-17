@@ -1119,15 +1119,25 @@ function DonutChart({
   );
 }
 
-function BurndownChart() {
+function BurndownChart({ tasks }: { tasks: Task[] }) {
   const { t } = useI18n();
-  // SVG burndown
+  // SVG burndown dựng từ dữ liệu thật: 6 mốc theo 6 tuần gần nhất.
   const w = 320,
     h = 140,
     pad = 24;
-  const ideal = [100, 80, 60, 40, 20, 0];
-  const remaining = [100, 86, 72, 58, 40, 28];
-  const completed = [0, 14, 28, 42, 60, 72];
+  const steps = 6;
+  const totalCount = tasks.length || 1;
+  const now = Date.now();
+  const week = 7 * 86_400_000;
+  const ideal = Array.from({ length: steps }, (_, i) => 100 - (i * 100) / (steps - 1));
+  const completed = Array.from({ length: steps }, (_, i) => {
+    const cutoff = now - (steps - 1 - i) * week;
+    const done = tasks.filter(
+      (tk) => tk.status === "done" && new Date(tk.updated_at).getTime() <= cutoff,
+    ).length;
+    return Math.round((done / totalCount) * 100);
+  });
+  const remaining = completed.map((c) => 100 - c);
   const xs = (i: number) => pad + (i * (w - pad * 2)) / (ideal.length - 1);
   const ys = (v: number) => h - pad - (v / 100) * (h - pad * 2);
   const path = (vals: number[]) =>
@@ -1166,7 +1176,7 @@ function BurndownChart() {
   );
 }
 
-function MyTasks({ tasks }: { tasks: Task[] }) {
+function MyTasks({ tasks, onViewAll }: { tasks: Task[]; onViewAll: () => void }) {
   const { t } = useI18n();
   const list = tasks.slice(0, 5);
   return (
@@ -1175,7 +1185,9 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
         <h3 className="text-sm font-semibold">
           {t("tasks.mytasks")} ({list.length})
         </h3>
-        <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">{t("tasks.viewall")}</button>
+        <button onClick={onViewAll} className="text-xs text-primary hover:underline">
+          {t("tasks.viewall")}
+        </button>
       </div>
       <div className="mt-2 divide-y divide-border">
         {list.map((tk) => (
@@ -1192,7 +1204,7 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
           </div>
         ))}
       </div>
-      <button onClick={() => notifyComingSoon()} className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10">
+      <button onClick={onViewAll} className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10">
         {t("tasks.viewalltasks")}
       </button>
     </section>
