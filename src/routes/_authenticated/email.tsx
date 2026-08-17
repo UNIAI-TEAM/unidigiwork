@@ -1170,8 +1170,11 @@ function EmailHubPage() {
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="text-sm font-semibold">Ưu tiên xử lý</div>
               <ul className="mt-3 space-y-3">
-                {PRIORITY.map((p, i) => (
-                  <li key={i} className="flex gap-2">
+                {priorityEmails.length === 0 ? (
+                  <li className="text-xs text-muted-foreground">Không có email cần ưu tiên.</li>
+                ) : null}
+                {priorityEmails.map((p) => (
+                  <li key={p.id} className="flex gap-2">
                     <img
                       src={avatar(p.from)}
                       alt=""
@@ -1181,9 +1184,9 @@ function EmailHubPage() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="line-clamp-2 text-sm font-medium">{p.subject}</div>
                         <span
-                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${p.tint}`}
+                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${p.unread && p.starred ? "bg-rose-500/15 text-rose-300" : "bg-amber-500/15 text-amber-300"}`}
                         >
-                          {p.level}
+                          {p.unread && p.starred ? "Cao" : "Trung bình"}
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
