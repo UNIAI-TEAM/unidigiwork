@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bot, ChevronRight } from "lucide-react";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 
-export const Route = createFileRoute("/_authenticated/m/ai-workforce")({
+export const Route = createFileRoute("/_authenticated/m/ai-workforce/")({
   head: () => ({
     meta: [
       { title: "Nhân sự AI · UNIWORK" },

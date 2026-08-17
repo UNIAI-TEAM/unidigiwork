@@ -21,7 +21,7 @@ const folderIcons: Record<string, React.ReactNode> = {
   drafts: <FileText className="h-4 w-4" />,
 };
 
-export const Route = createFileRoute("/_authenticated/m/email")({
+export const Route = createFileRoute("/_authenticated/m/email/")({
   head: () => ({
     meta: [
       { title: "Email · UNIWORK" },

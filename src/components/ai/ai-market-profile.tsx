@@ -1,6 +1,6 @@
 // Hồ sơ ứng viên AI trên chợ tuyển dụng — dùng chung cho desktop và mobile.
 // Luồng: phỏng vấn (case chuẩn + chat) → đàm phán lương → thử việc → chính thức.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -62,6 +62,18 @@ export function AiMarketProfile({
   const agent = data?.agent;
   const employment = data?.employment as any | null;
   const status = (employment?.status ?? null) as AiEmploymentStatus | null;
+
+  // Điền sẵn mức lương đề nghị theo hợp đồng hiện tại hoặc mức sàn của ứng viên,
+  // để nút "Gửi đề nghị" không bị khoá khi vừa mở hồ sơ.
+  useEffect(() => {
+    if (!agent) return;
+    setSalary((prev) => {
+      if (prev) return prev;
+      const current = Number(employment?.salary_amount ?? 0);
+      return String(current > 0 ? current : Number(agent.salary_min));
+    });
+    setTerm((prev) => (prev ? prev : Number(employment?.term_months ?? 0)));
+  }, [agent, employment?.id, employment?.salary_amount, employment?.term_months]);
 
   const { data: events } = useQuery({
     queryKey: ["ai-employment-events", employment?.id],
@@ -259,7 +271,13 @@ export function AiMarketProfile({
             <span className="text-xs text-muted-foreground">Đã dùng {turns.used}/{turns.max} lượt</span>
           ) : (
             <Button size="sm" onClick={() => beginInterview.mutate()} disabled={beginInterview.isPending}>
-              {beginInterview.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Bắt đầu phỏng vấn"}
+              {beginInterview.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : employment ? (
+                "Tiếp tục phỏng vấn"
+              ) : (
+                "Bắt đầu phỏng vấn"
+              )}
             </Button>
           )}
         </div>
