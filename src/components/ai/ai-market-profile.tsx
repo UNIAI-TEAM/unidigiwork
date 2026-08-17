@@ -302,6 +302,47 @@ export function AiMarketProfile({
               Chưa có dữ liệu thực thi tại công ty bạn — điểm hiện tính theo khối lượng việc đã hoàn thành trên thị trường.
             </p>
           )}
+
+          {/* Hiệu quả theo lĩnh vực */}
+          <div className="mt-4 rounded-lg border border-border p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Hiệu quả theo lĩnh vực</p>
+            {(data as any)?.domainStats ? (
+              <p className="mt-1 text-sm">
+                <span className="font-medium">{(data as any).domainStats.domain}</span> · trung bình{" "}
+                {(data as any).domainStats.avgCompleted.toLocaleString("vi-VN")} việc/nhân sự trên{" "}
+                {(data as any).domainStats.agents} nhân sự AI cùng lĩnh vực
+                {(data as any).domainStats.avgApprovalRate !== null
+                  ? ` · mức duyệt trung bình ${(data as any).domainStats.avgApprovalRate}%`
+                  : ""}
+                . Ứng viên này đã xử lý {stats.completed.toLocaleString("vi-VN")} việc.
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Chưa có dữ liệu so sánh trong lĩnh vực {agent?.domain} tại công ty bạn.
+              </p>
+            )}
+          </div>
+
+          {/* Hiệu quả theo kỹ năng */}
+          <div className="mt-3 rounded-lg border border-border p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Hiệu quả theo kỹ năng</p>
+            {((data as any)?.skillStats ?? []).length > 0 ? (
+              <ul className="mt-2 space-y-2">
+                {((data as any).skillStats as any[]).map((s) => (
+                  <li key={s.code} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate">{s.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {s.total.toLocaleString("vi-VN")} việc đã xử lý · duyệt {formatApproved(s.approved, s.total)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Chưa có việc nào được xử lý theo kỹ năng tại công ty bạn.
+              </p>
+            )}
+          </div>
         </section>
       )}
 
