@@ -5,7 +5,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 import {
-  AI_EMPLOYMENT_STATUSES,
   INTERVIEW_MAX_TURNS,
   TRIAL_DAYS,
   canTransition,
@@ -660,5 +659,3 @@ export const listEmploymentEvents = createServerFn({ method: "GET" })
     if (error) throw fail("AI_MARKET_LIST_FAILED", error.message);
     return rows ?? [];
   });
-
-export const AI_EMPLOYMENT_STATUS_LIST = AI_EMPLOYMENT_STATUSES;
