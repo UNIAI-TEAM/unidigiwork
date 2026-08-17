@@ -89,6 +89,7 @@ import { Route as AuthenticatedAdminQuotaRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
+import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenticated/admin.backup'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
 import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
 import { Route as AuthenticatedMEmailIndexRouteImport } from './routes/_authenticated/m/email.index'
@@ -522,6 +523,12 @@ const AuthenticatedAdminKnowledgeRoute =
     path: '/knowledge',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBackupRoute =
+  AuthenticatedAdminBackupRouteImport.update({
+    id: '/backup',
+    path: '/backup',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAiContextRoute =
   AuthenticatedAdminAiContextRouteImport.update({
     id: '/ai-context',
@@ -652,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/reports/': typeof ReportsIndexRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
+  '/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
@@ -745,6 +753,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsIndexRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
+  '/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
@@ -842,6 +851,7 @@ export interface FileRoutesById {
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
+  '/_authenticated/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
@@ -939,6 +949,7 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/admin/ai-actions'
     | '/admin/ai-context'
+    | '/admin/backup'
     | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/plans'
@@ -1032,6 +1043,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/admin/ai-actions'
     | '/admin/ai-context'
+    | '/admin/backup'
     | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/plans'
@@ -1128,6 +1140,7 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/_authenticated/admin/ai-actions'
     | '/_authenticated/admin/ai-context'
+    | '/_authenticated/admin/backup'
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/plans'
@@ -1770,6 +1783,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminKnowledgeRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/backup': {
+      id: '/_authenticated/admin/backup'
+      path: '/backup'
+      fullPath: '/admin/backup'
+      preLoaderRoute: typeof AuthenticatedAdminBackupRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/ai-context': {
       id: '/_authenticated/admin/ai-context'
       path: '/ai-context'
@@ -1874,6 +1894,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAiActionsRoute: typeof AuthenticatedAdminAiActionsRoute
   AuthenticatedAdminAiContextRoute: typeof AuthenticatedAdminAiContextRoute
+  AuthenticatedAdminBackupRoute: typeof AuthenticatedAdminBackupRoute
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
@@ -1889,6 +1910,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAiActionsRoute: AuthenticatedAdminAiActionsRoute,
   AuthenticatedAdminAiContextRoute: AuthenticatedAdminAiContextRoute,
+  AuthenticatedAdminBackupRoute: AuthenticatedAdminBackupRoute,
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
