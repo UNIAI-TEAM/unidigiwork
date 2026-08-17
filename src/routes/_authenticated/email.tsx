@@ -459,6 +459,29 @@ function EmailHubPage() {
     bulkMoveMut.mutate({ ids, folder });
   }
 
+  // Mở email = đọc thật: cập nhật trạng thái đã đọc trong database.
+  function openEmail(id: string) {
+    setSelected(id);
+    setDetailOpen(true);
+    const target = dbEmails.find((e) => e.id === id);
+    if (!target?.unread) return;
+    if (!UUID_RE.test(id)) return;
+    doSetRead({ data: { message_ids: [id], is_read: true } })
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["emails"] });
+      })
+      .catch((e: Error) => toast.error(e.message));
+  }
+
+  function unusedMessageAction(folder: "archive" | "trash") {
+    const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
+    if (!ids.length) {
+      toast.info("Email mẫu không thể thao tác");
+      return;
+    }
+    bulkMoveMut.mutate({ ids, folder });
+  }
+
   function openCompose(to: string, subject: string, body = "", cc = "") {
     setComposePrefill({ to, subject, body, cc });
     setComposeOpen(true);
