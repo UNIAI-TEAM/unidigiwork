@@ -1133,10 +1133,77 @@ function MeetingPage() {
         />
       ) : null}
 
-      <Dialog open={!!editRoom} onOpenChange={(o) => !o && setEditRoom(null)}>
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Sửa cuộc họp</DialogTitle>
+            <DialogTitle>Lên lịch cuộc họp</DialogTitle>
+            <DialogDescription>Tạo cuộc họp có thời gian cụ thể trong workspace hiện tại.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="sch-title">Tiêu đề</Label>
+              <Input id="sch-title" value={schTitle} onChange={(e) => setSchTitle(e.target.value)} placeholder="Họp review sprint" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="sch-start">Bắt đầu</Label>
+                <Input id="sch-start" type="datetime-local" value={schStart} onChange={(e) => setSchStart(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sch-end">Kết thúc</Label>
+                <Input id="sch-end" type="datetime-local" value={schEnd} onChange={(e) => setSchEnd(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sch-agenda">Nội dung (tùy chọn)</Label>
+              <Input id="sch-agenda" value={schAgenda} onChange={(e) => setSchAgenda(e.target.value)} placeholder="Chương trình họp" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleOpen(false)}>Đóng</Button>
+            <Button
+              onClick={() => scheduleMutation.mutate()}
+              disabled={
+                scheduleMutation.isPending || !activeWs || !schTitle.trim() || !schStart || !schEnd
+              }
+            >
+              {scheduleMutation.isPending ? "Đang lưu…" : "Lên lịch"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Tham gia bằng mã</DialogTitle>
+            <DialogDescription>Nhập mã mời để vào phòng họp.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="join-code">Mã mời</Label>
+            <Input
+              id="join-code"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              placeholder="Dán mã mời tại đây"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && joinCode.trim().length >= 10) joinByCode.mutate();
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJoinOpen(false)}>Đóng</Button>
+            <Button
+              onClick={() => joinByCode.mutate()}
+              disabled={joinByCode.isPending || joinCode.trim().length < 10}
+            >
+              {joinByCode.isPending ? "Đang kiểm tra…" : "Tham gia"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editRoom} onOpenChange={(o) => !o && setEditRoom(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Sửa cuộc họp</DialogTitle>
