@@ -95,6 +95,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 const LiveKitStage = lazy(() => import("@/components/meeting/livekit-stage"));
 
@@ -2023,7 +2024,7 @@ function ChatPanel() {
           placeholder="Nhập tin nhắn…"
           className="flex-1 bg-transparent text-xs focus:outline-none"
         />
-        <button className="rounded p-1 hover:bg-surface-3">
+        <button onClick={() => notifyComingSoon()} className="rounded p-1 hover:bg-surface-3">
           <Send className="h-3.5 w-3.5" />
         </button>
       </div>

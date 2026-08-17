@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 const TYPES = [
   "overview",
@@ -185,13 +186,13 @@ function ReportDetailPage() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
+                <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Save className="h-4 w-4" /> {t("rp.det.save")}
                 </button>
-                <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
+                <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Share2 className="h-4 w-4" /> {t("rp.det.share")}
                 </button>
-                <button className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
                   <Download className="h-4 w-4" /> {t("rp.det.export")}
                 </button>
               </div>
@@ -203,7 +204,7 @@ function ReportDetailPage() {
                 <span className="flex items-center gap-1 text-xs font-medium uppercase text-muted-foreground">
                   <Filter className="h-3.5 w-3.5" /> {t("rp.det.filters")}
                 </span>
-                <button className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:text-foreground">
+                <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:text-foreground">
                   <Calendar className="h-3.5 w-3.5" /> 01/06/2026 – 10/06/2026
                 </button>
                 <Select
@@ -253,7 +254,7 @@ function ReportDetailPage() {
                   />
                   {t("rp.det.compare")}
                 </label>
-                <button className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground">
+                <button onClick={() => notifyComingSoon()} className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground">
                   <RefreshCw className="h-3.5 w-3.5" /> {t("rp.det.reset")}
                 </button>
               </div>
@@ -352,7 +353,7 @@ function ReportDetailPage() {
                 <CardHeader
                   title={t("rp.det.top")}
                   right={
-                    <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground">
+                    <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground">
                       <TableIcon className="h-3 w-3" /> {t("rp.det.viewraw")}
                     </button>
                   }
@@ -541,7 +542,7 @@ function Select({
 }
 function ExportBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <button className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70">
+    <button onClick={() => notifyComingSoon()} className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-2/70">
       <span className="flex items-center gap-2">
         <Icon className="h-4 w-4 text-muted-foreground" />
         {label}

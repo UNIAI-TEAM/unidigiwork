@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/workspace/$id/stos")({
   component: StosDetailPage,
@@ -695,7 +696,7 @@ function StosDetailPage() {
                             <Trash2 className="size-4" />
                           </button>
                         ) : (
-                          <button className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600">
+                          <button onClick={() => notifyComingSoon()} className="size-8 inline-flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-600">
                             <MoreHorizontal className="size-4" />
                           </button>
                         )}
@@ -704,7 +705,7 @@ function StosDetailPage() {
                   ))}
                 </div>
                 {docs.length > 5 && (
-                  <button className="w-full mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center justify-center gap-1">
+                  <button onClick={() => notifyComingSoon()} className="w-full mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center justify-center gap-1">
                     Xem tất cả tài liệu <ChevronRight className="size-4" />
                   </button>
                 )}
@@ -763,7 +764,7 @@ function StosDetailPage() {
                     </div>
                   ))}
                 </div>
-                <button className="w-full mt-3 text-xs text-slate-500 hover:text-slate-700 inline-flex items-center justify-center gap-1">
+                <button onClick={() => notifyComingSoon()} className="w-full mt-3 text-xs text-slate-500 hover:text-slate-700 inline-flex items-center justify-center gap-1">
                   <Users className="size-3.5" /> Xem tất cả thành viên
                 </button>
               </section>
@@ -778,7 +779,7 @@ function StosDetailPage() {
                   Dự án đang vượt 4% so với kế hoạch. Cần chú ý milestone <b>Kiểm thử & UAT</b> —
                   mới đạt 20% nhưng deadline còn 6 tuần.
                 </p>
-                <button className="mt-3 text-xs font-medium text-violet-700 hover:text-violet-900 inline-flex items-center gap-1">
+                <button onClick={() => notifyComingSoon()} className="mt-3 text-xs font-medium text-violet-700 hover:text-violet-900 inline-flex items-center gap-1">
                   Xem khuyến nghị <ChevronRight className="size-3.5" />
                 </button>
               </section>

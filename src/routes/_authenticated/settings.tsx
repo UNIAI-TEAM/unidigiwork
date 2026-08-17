@@ -47,6 +47,7 @@ import { RefreshCw } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { PushDevicesPanel } from "@/components/push-devices-panel";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 const searchSchema = z.object({
   tab: z
@@ -169,7 +170,7 @@ function ProfileSection() {
             alt=""
             className="h-16 w-16 rounded-xl bg-surface object-cover ring-1 ring-border"
           />
-          <button className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+          <button onClick={() => notifyComingSoon()} className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
             <Camera className="h-3 w-3" />
           </button>
         </div>
@@ -179,7 +180,7 @@ function ProfileSection() {
             Ảnh đại diện hiển thị trên hồ sơ và các bình luận
           </div>
         </div>
-        <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-2">
+        <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-2">
           Tải lên
         </button>
       </div>
@@ -232,7 +233,7 @@ function AccountSection() {
         <p className="text-xs text-muted-foreground">
           Xóa tài khoản sẽ gỡ toàn bộ dữ liệu cá nhân khỏi workspace.
         </p>
-        <button className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-destructive/60 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10">
+        <button onClick={() => notifyComingSoon()} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-destructive/60 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10">
           <Trash2 className="h-3.5 w-3.5" /> Xóa tài khoản
         </button>
       </div>
@@ -653,7 +654,7 @@ function IntegrationsSection() {
             <div className="text-sm font-medium">{i.n}</div>
             <div className="truncate text-xs text-muted-foreground">{i.d}</div>
           </div>
-          <button
+          <button onClick={() => notifyComingSoon()}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium ${i.on ? "border border-border bg-surface text-foreground hover:bg-surface-2" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
           >
             {i.on ? "Đã kết nối" : "Kết nối"}
@@ -678,7 +679,7 @@ function TeamSection() {
         <p className="text-xs text-muted-foreground">
           5 thành viên · 12 chỗ còn lại trong gói Business
         </p>
-        <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+        <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
           <Plus className="h-3.5 w-3.5" /> Mời thành viên
         </button>
       </div>
@@ -702,7 +703,7 @@ function TeamSection() {
               <option>Member</option>
               <option>Guest</option>
             </select>
-            <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-destructive">
+            <button onClick={() => notifyComingSoon()} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-destructive">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -750,14 +751,14 @@ function SecuritySection() {
                 <div className="text-[11px] text-muted-foreground">{s.l}</div>
               </div>
               {!s.cur && (
-                <button className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-destructive">
+                <button onClick={() => notifyComingSoon()} className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-destructive">
                   Đăng xuất
                 </button>
               )}
             </div>
           ))}
         </div>
-        <button className="mt-3 inline-flex items-center gap-1.5 text-xs text-destructive hover:underline">
+        <button onClick={() => notifyComingSoon()} className="mt-3 inline-flex items-center gap-1.5 text-xs text-destructive hover:underline">
           <LogOut className="h-3.5 w-3.5" /> Đăng xuất khỏi tất cả thiết bị khác
         </button>
       </div>
@@ -778,7 +779,7 @@ function BillingSection() {
           <div className="text-2xl font-semibold">
             9.900.000 ₫<span className="text-xs text-muted-foreground">/tháng</span>
           </div>
-          <button className="mt-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <button onClick={() => notifyComingSoon()} className="mt-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
             Nâng cấp Enterprise
           </button>
         </div>
@@ -799,7 +800,7 @@ function BillingSection() {
             <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-300">
               {r.s}
             </span>
-            <button className="text-xs text-primary hover:underline">Tải PDF</button>
+            <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Tải PDF</button>
           </div>
         ))}
       </div>
@@ -817,7 +818,7 @@ function DataSection() {
             Tải xuống toàn bộ dữ liệu workspace dạng ZIP
           </div>
         </div>
-        <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-2">
+        <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-2">
           Tạo bản xuất
         </button>
       </div>
@@ -892,7 +893,7 @@ function SettingsPage() {
                   <h2 className="text-lg font-semibold">{current.label}</h2>
                   <p className="text-xs text-muted-foreground">{current.desc}</p>
                 </div>
-                <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                <button onClick={() => notifyComingSoon()} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                   Lưu thay đổi
                 </button>
               </div>

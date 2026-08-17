@@ -9,6 +9,7 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { getEmailThread } from "@/lib/api/emails.functions";
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -111,10 +112,10 @@ function EmailDetailPage() {
                   >
                     <Reply className="h-4 w-4" /> Trả lời
                   </Link>
-                  <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                     <ReplyAll className="h-4 w-4" /> Trả lời tất cả
                   </button>
-                  <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                     <Forward className="h-4 w-4" /> Chuyển tiếp
                   </button>
                 </div>
@@ -202,7 +203,7 @@ function EmptyState({
 
 function IconBtn({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
   return (
-    <button className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button onClick={() => notifyComingSoon()} className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />
     </button>
   );

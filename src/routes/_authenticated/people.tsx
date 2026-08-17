@@ -72,6 +72,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({
@@ -273,10 +274,10 @@ function PeoplePage() {
                 <p className="mt-1 text-sm text-muted-foreground">{t("people.sub")}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                   <Upload className="h-4 w-4" /> {t("people.import")}
                 </button>
-                <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
                   <Download className="h-4 w-4" /> {t("people.export")}
                 </button>
                 <Link
@@ -317,7 +318,7 @@ function PeoplePage() {
                 options={locations}
                 label={t("people.filter.location")}
               />
-              <button className="flex items-center gap-1 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-3">
+              <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-3">
                 {t("people.filter.more")} <ChevronDown className="h-4 w-4" />
               </button>
               <div className="ml-auto flex items-center gap-1 rounded-lg bg-surface-2 p-1">
@@ -403,7 +404,7 @@ function PeoplePage() {
               </div>
               <div className="flex items-center gap-1">
                 {["‹", "1", "2", "3", "4", "5", "…", "11", "›"].map((p, i) => (
-                  <button
+                  <button onClick={() => notifyComingSoon()}
                     key={i}
                     className={`h-8 min-w-8 rounded-lg px-2 text-xs ${p === "1" ? "bg-primary text-primary-foreground" : "bg-surface-2 hover:bg-surface-3"}`}
                   >
@@ -465,7 +466,7 @@ function PeoplePage() {
 
 function Tab({ label, count, active }: { label: string; count?: number; active?: boolean }) {
   return (
-    <button
+    <button onClick={() => notifyComingSoon()}
       className={`-mb-px flex items-center gap-2 border-b-2 px-1 py-2.5 text-sm transition-colors ${
         active
           ? "border-primary text-foreground"
@@ -661,7 +662,7 @@ function PersonRow({
 
 function IconBtn({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <button
+    <button onClick={() => notifyComingSoon()}
       className={`rounded-md p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground ${className}`}
     >
       {children}
@@ -718,7 +719,7 @@ function PersonPanel({
           <div className="mt-0.5 text-sm text-muted-foreground">{person.title}</div>
           <div className="text-xs text-muted-foreground">{person.team}</div>
         </div>
-        <button className="rounded-md p-1 text-muted-foreground hover:bg-surface-2">
+        <button onClick={() => notifyComingSoon()} className="rounded-md p-1 text-muted-foreground hover:bg-surface-2">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -959,7 +960,7 @@ function ProfileTab({ person }: { person: Person }) {
           ))}
         </div>
       </section>
-      <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs hover:bg-surface-3">
+      <button onClick={() => notifyComingSoon()} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs hover:bg-surface-3">
         <Edit3 className="h-3.5 w-3.5" /> Chỉnh sửa hồ sơ
       </button>
     </>
@@ -1036,7 +1037,7 @@ function ActivityTab() {
             </li>
           ))}
         </ol>
-        <button className="mt-4 w-full rounded-lg border border-border bg-surface-2 py-2 text-xs text-muted-foreground hover:text-foreground">
+        <button onClick={() => notifyComingSoon()} className="mt-4 w-full rounded-lg border border-border bg-surface-2 py-2 text-xs text-muted-foreground hover:text-foreground">
           Xem thêm hoạt động
         </button>
       </section>
@@ -1101,7 +1102,7 @@ function FilesTab() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <SectionTitle>Tệp đã chia sẻ ({files.length})</SectionTitle>
-          <button className="text-[11px] text-primary hover:underline">Xem tất cả</button>
+          <button onClick={() => notifyComingSoon()} className="text-[11px] text-primary hover:underline">Xem tất cả</button>
         </div>
         <ul className="space-y-1.5">
           {files.map((f) => (
@@ -1118,7 +1119,7 @@ function FilesTab() {
                   {f.size} · {f.time} · {f.shared}
                 </div>
               </div>
-              <button className="rounded p-1 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100">
+              <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100">
                 <Download className="h-3.5 w-3.5" />
               </button>
             </li>
@@ -1234,7 +1235,7 @@ function TasksTab() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <SectionTitle>Công việc được giao</SectionTitle>
-          <button className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+          <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
             <ExternalLink className="h-3 w-3" /> Mở Tasks
           </button>
         </div>

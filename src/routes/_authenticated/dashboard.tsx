@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { useNotifSortMode } from "@/lib/notifications-data";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -1037,7 +1038,7 @@ function DashboardInner() {
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
-                  <button className="text-xs text-primary hover:underline">Xem tất cả</button>
+                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem tất cả</button>
                 </div>
                 {projects.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">Chưa có dự án nào.</p>
@@ -1077,7 +1078,7 @@ function DashboardInner() {
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
-                  <button className="text-xs text-primary hover:underline">Xem tất cả</button>
+                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem tất cả</button>
                 </div>
                 {recent.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
@@ -1123,7 +1124,7 @@ function DashboardInner() {
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
-                  <button className="text-xs text-primary hover:underline">Xem lịch đầy đủ</button>
+                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem lịch đầy đủ</button>
                 </div>
                 {meetings.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">Hôm nay không có cuộc họp.</p>
@@ -1148,7 +1149,7 @@ function DashboardInner() {
                             <AvatarStack count={m.participants} seed={m.id} />
                           </div>
                         </div>
-                        <button className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20">
+                        <button onClick={() => notifyComingSoon()} className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20">
                           Tham gia
                         </button>
                       </li>
@@ -1161,7 +1162,7 @@ function DashboardInner() {
             <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
-                <button className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                   <TrendingUp className="h-3.5 w-3.5" /> So sánh
                 </button>
               </div>
@@ -1508,7 +1509,7 @@ function DashboardInner() {
                 </Link>
               </div>
 
-              <button className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2">
+              <button onClick={() => notifyComingSoon()} className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2">
                 <BookOpen className="h-3.5 w-3.5" /> Hướng dẫn sử dụng
               </button>
             </aside>

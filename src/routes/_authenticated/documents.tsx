@@ -50,6 +50,7 @@ import {
   uploadDocumentVersion,
 } from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 type Doc = {
   id: string;
@@ -85,7 +86,7 @@ export const Route = createFileRoute("/_authenticated/documents")({
 
 function ToolbarBtn({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button onClick={() => notifyComingSoon()} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />
     </button>
   );
@@ -701,10 +702,10 @@ function DocumentsPage() {
                   >
                     <Share2 className="h-4 w-4" /> Chia sẻ
                   </button>
-                  <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm">
+                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm">
                     Editing <ChevronDown className="h-4 w-4" />
                   </button>
-                  <button className="rounded-lg bg-surface-2 p-2">
+                  <button onClick={() => notifyComingSoon()} className="rounded-lg bg-surface-2 p-2">
                     <MoreHorizontal className="h-4 w-4" />
                   </button>
                 </div>
@@ -736,10 +737,10 @@ function DocumentsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-muted-foreground">
-                  <button className="rounded p-1.5 hover:bg-surface-2">
+                  <button onClick={() => notifyComingSoon()} className="rounded p-1.5 hover:bg-surface-2">
                     <MessageSquare className="h-4 w-4" />
                   </button>
-                  <button className="rounded p-1.5 hover:bg-surface-2">
+                  <button onClick={() => notifyComingSoon()} className="rounded p-1.5 hover:bg-surface-2">
                     <History className="h-4 w-4" />
                   </button>
                 </div>
@@ -768,7 +769,7 @@ function DocumentsPage() {
             <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-border bg-background/95 px-4 py-2 backdrop-blur sm:px-8">
               <ToolbarBtn icon={ChevronDown} />
               <ToolbarBtn icon={ChevronRight} />
-              <button className="mx-1 flex items-center gap-1 rounded bg-surface-2 px-2 py-1 text-xs">
+              <button onClick={() => notifyComingSoon()} className="mx-1 flex items-center gap-1 rounded bg-surface-2 px-2 py-1 text-xs">
                 Heading 1 <ChevronDown className="h-3 w-3" />
               </button>
               <span className="mx-1 h-5 w-px bg-border" />
@@ -832,8 +833,8 @@ function DocumentsPage() {
           {/* Right AI panel */}
           <aside className="flex w-full shrink-0 flex-col border-t border-border bg-surface xl:w-80 xl:border-l xl:border-t-0 2xl:w-96">
             <div className="flex gap-5 overflow-x-auto border-b border-border px-5 pt-4 text-sm">
-              <button className="border-b-2 border-primary pb-3 font-medium">AI Copilot</button>
-              <button className="pb-3 text-muted-foreground">Comments</button>
+              <button onClick={() => notifyComingSoon()} className="border-b-2 border-primary pb-3 font-medium">AI Copilot</button>
+              <button onClick={() => notifyComingSoon()} className="pb-3 text-muted-foreground">Comments</button>
               <button onClick={() => setShowMembers(true)} className="pb-3 text-muted-foreground">
                 Members
               </button>
@@ -858,7 +859,7 @@ function DocumentsPage() {
                     placeholder="Ask anything…"
                     className="flex-1 bg-transparent text-xs placeholder:text-muted-foreground focus:outline-none"
                   />
-                  <button className="rounded-md bg-primary p-1.5 text-primary-foreground">
+                  <button onClick={() => notifyComingSoon()} className="rounded-md bg-primary p-1.5 text-primary-foreground">
                     <Send className="h-3.5 w-3.5" />
                   </button>
                 </div>
