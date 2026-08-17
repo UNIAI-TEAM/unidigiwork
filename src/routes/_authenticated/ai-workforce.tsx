@@ -17,6 +17,7 @@ import {
   AiWorkerProfileBody,
   AiWorkerProfileHeader,
 } from "@/components/ai/ai-worker-profile";
+import { AiWorkerKpiSection } from "@/components/ai/ai-worker-kpi";
 import { AiSkillsManager } from "@/components/ai/ai-skills-manager";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 
@@ -142,7 +143,8 @@ function AiWorkforcePage() {
                 <AiWorkerProfileHeader profile={profile} />
                 <AiWorkerProfileBadges />
               </SheetHeader>
-              <div className="mt-4 pb-6">
+              <div className="mt-4 space-y-4 pb-6">
+                <AiWorkerKpiSection name={profile.name} domain={profile.domain} />
                 <AiWorkerProfileBody profile={profile} />
               </div>
             </>
