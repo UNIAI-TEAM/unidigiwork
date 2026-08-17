@@ -905,7 +905,7 @@ function LeadForm({ variant }: { variant: "demo" | "hire" }) {
 }
 
 function HireEstimator() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const roles = [
     { key: "assistant", label: t("land.hire.r1.t"), price: 1900000 },
     { key: "analyst", label: t("land.hire.r2.t"), price: 2900000 },
@@ -929,8 +929,7 @@ function HireEstimator() {
   const discountAmount = baseTotal * selectedDuration.discount;
   const total = baseTotal - discountAmount;
 
-  const formatVnd = (n: number) =>
-    n.toLocaleString("vi-VN", { maximumFractionDigits: 0 }).replace(/,/g, ".") + "đ";
+  const formatVnd = (n: number) => formatMoney(n, lang);
 
   const changeQty = (delta: number) => {
     setQty((prev) => Math.max(1, prev + delta));
