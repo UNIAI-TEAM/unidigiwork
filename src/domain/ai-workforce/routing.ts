@@ -3,7 +3,7 @@
 import { AI_WORKER_PROFILES } from "./profiles";
 
 /** Từ khoá nhận diện lĩnh vực cho từng hồ sơ nhân sự AI (tiếng Việt có/không dấu + tiếng Anh). */
-const PROFILE_KEYWORDS: Record<string, readonly string[]> = {
+export const PROFILE_KEYWORDS: Record<string, readonly string[]> = {
   project: ["dự án", "du an", "tiến độ", "tien do", "sprint", "milestone", "deadline", "kế hoạch", "ke hoach", "project", "release", "bàn giao", "ban giao"],
   research: ["nghiên cứu", "nghien cuu", "phân tích tài liệu", "tổng hợp", "tong hop", "khảo sát", "khao sat", "research", "benchmark", "tra cứu", "tra cuu"],
   sales: ["khách hàng", "khach hang", "báo giá", "bao gia", "hợp đồng bán", "cơ hội", "co hoi", "deal", "sales", "crm", "chốt đơn", "chot don", "lead"],
@@ -42,4 +42,17 @@ export function inferWorkerProfileForTask(input: {
     }
   }
   return best;
+}
+
+/** Suy ra lĩnh vực (domain) của công việc — dùng cho gợi ý ứng viên AI trong chợ. */
+export function inferDomainForTask(input: {
+  title?: string | null;
+  description?: string | null;
+  tags?: readonly string[] | null;
+}): { domain: string; matched: string[]; score: number } | null {
+  const match = inferWorkerProfileForTask(input);
+  if (!match) return null;
+  const profile = AI_WORKER_PROFILES.find((p) => p.id === match.profileId);
+  if (!profile) return null;
+  return { domain: profile.domain, matched: match.matched, score: match.score };
 }
