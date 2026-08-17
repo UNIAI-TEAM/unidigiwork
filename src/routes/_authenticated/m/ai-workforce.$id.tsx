@@ -6,6 +6,7 @@ import {
   AiWorkerProfileBody,
   AiWorkerProfileHeader,
 } from "@/components/ai/ai-worker-profile";
+import { AiWorkerKpiSection } from "@/components/ai/ai-worker-kpi";
 
 export const Route = createFileRoute("/_authenticated/m/ai-workforce/$id")({
   head: () => ({
@@ -40,6 +41,7 @@ function MobileAiWorkerProfilePage() {
         <>
           <AiWorkerProfileHeader profile={profile} />
           <AiWorkerProfileBadges />
+          <AiWorkerKpiSection name={profile.name} domain={profile.domain} />
           <AiWorkerProfileBody profile={profile} />
         </>
       )}
