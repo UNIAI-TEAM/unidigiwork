@@ -848,26 +848,27 @@ function NewPanel({ onClose }: { onClose: () => void }) {
 }
 
 function AIPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const suggestions = [
     {
       icon: FileSearch,
-      title: "Tóm tắt cuộc họp hôm nay",
-      desc: "Lấy điểm chính từ 3 cuộc họp gần nhất",
+      title: t("sh.ai.s1"),
+      desc: t("sh.ai.s1d"),
     },
-    { icon: Wand2, title: "Soạn email cảm ơn khách hàng", desc: "Gửi đến STOS sau buổi demo" },
-    { icon: ListChecks, title: "Lập kế hoạch tuần", desc: "Dựa trên task đang mở và lịch" },
+    { icon: Wand2, title: t("sh.ai.s2"), desc: t("sh.ai.s2d") },
+    { icon: ListChecks, title: t("sh.ai.s3"), desc: t("sh.ai.s3d") },
     {
       icon: Languages,
-      title: "Dịch tài liệu sang tiếng Anh",
-      desc: "Văn bản đang xem trong Documents",
+      title: t("sh.ai.s4"),
+      desc: t("sh.ai.s4d"),
     },
   ];
-  const recent = ["Phân tích tiến độ Dự án Alpha", "Tạo OKR Q3 cho phòng Marketing"];
+  const recent = [t("sh.ai.r1"), t("sh.ai.r2")];
 
   return (
     <div
       role="dialog"
-      aria-label="Trợ lý AI"
+      aria-label={t("sh.ai.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[380px]"
     >
       <div className="flex items-center gap-3 border-b border-border bg-gradient-to-br from-primary/20 via-surface to-surface px-4 py-3">
@@ -875,14 +876,14 @@ function AIPanel({ onClose }: { onClose: () => void }) {
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold">Trợ lý Uniwork AI</div>
+          <div className="text-sm font-semibold">{t("sh.ai.title")}</div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Sẵn sàng · Gemini 3 Flash
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t("sh.ai.ready")}
           </div>
         </div>
         <button
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t("sh.ai.close")}
           className="rounded-md p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
           <X className="h-4 w-4" />
@@ -893,11 +894,11 @@ function AIPanel({ onClose }: { onClose: () => void }) {
         <div className="relative">
           <textarea
             rows={3}
-            placeholder="Hỏi AI bất kỳ điều gì về công việc, tài liệu, cuộc họp..."
+            placeholder={t("sh.ai.ph")}
             className="w-full resize-none rounded-xl border border-border bg-surface-2 p-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
           <button
-            aria-label="Gửi"
+            aria-label={t("sh.ai.send")}
             className="absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <ArrowUp className="h-4 w-4" />
@@ -905,9 +906,9 @@ function AIPanel({ onClose }: { onClose: () => void }) {
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {[
-            { icon: FileText, label: "Tài liệu hiện tại" },
-            { icon: Calendar, label: "Lịch tuần" },
-            { icon: ListChecks, label: "Task của tôi" },
+            { icon: FileText, label: t("sh.ai.chip.doc") },
+            { icon: Calendar, label: t("sh.ai.chip.week") },
+            { icon: ListChecks, label: t("sh.ai.chip.tasks") },
           ].map((c) => (
             <button
               key={c.label}
@@ -921,7 +922,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
 
       <div className="px-3 pt-3">
         <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          <Lightbulb className="h-3.5 w-3.5" /> Gợi ý cho bạn
+          <Lightbulb className="h-3.5 w-3.5" /> {t("sh.ai.suggest")}
         </div>
         <ul className="space-y-1">
           {suggestions.map((s) => (
@@ -942,7 +943,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
 
       <div className="mt-2 border-t border-border px-3 py-2">
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Lịch sử gần đây
+          {t("sh.ai.recent")}
         </div>
         <ul className="space-y-0.5">
           {recent.map((r) => (
@@ -957,9 +958,9 @@ function AIPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2 text-[11px] text-muted-foreground">
-        <span>AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng.</span>
+        <span>{t("sh.ai.disclaimer")}</span>
         <button className="rounded-md px-1.5 py-0.5 hover:bg-surface-2 hover:text-foreground">
-          Mở rộng
+          {t("sh.ai.expand")}
         </button>
       </div>
     </div>
