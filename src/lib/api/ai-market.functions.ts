@@ -232,30 +232,18 @@ export const getMarketAgent = createServerFn({ method: "GET" })
     // KPI thật của ứng viên trong chính tenant này (nếu đã từng làm việc).
     let tenantStats = { proposals: 0, approved: 0, runs: 0, completed: 0 };
     if (employment?.workflow_agent_id) {
-      const { data: runs } = await context.supabase
-        .from("workflow_agent_runs")
-        .select("id, proposal_id, status")
+      const { data: perf } = await context.supabase
+        .from("ai_agent_performance")
+        .select("proposals_sent, proposals_approved, tasks_completed, runs_total")
         .eq("tenant_id", tenantId)
         .eq("agent_id", employment.workflow_agent_id)
-        .limit(500);
-      const proposalIds = (runs ?? [])
-        .map((r: any) => r.proposal_id)
-        .filter((v: string | null): v is string => !!v);
-      let approved = 0;
-      if (proposalIds.length) {
-        const { data: proposals } = await context.supabase
-          .from("ai_action_proposals")
-          .select("status")
-          .eq("tenant_id", tenantId)
-          .in("id", proposalIds);
-        approved = (proposals ?? []).filter(
-          (p: any) => p.status === "EXECUTED" || p.status === "CONFIRMED",
-        ).length;
-      }
-      const completed = (runs ?? []).filter(
-        (r: any) => r.status === "succeeded" || r.status === "SUCCEEDED",
-      ).length;
-      tenantStats = { runs: (runs ?? []).length, proposals: proposalIds.length, approved, completed };
+        .maybeSingle();
+      tenantStats = {
+        runs: Number(perf?.runs_total) || 0,
+        proposals: Number(perf?.proposals_sent) || 0,
+        approved: Number(perf?.proposals_approved) || 0,
+        completed: Number(perf?.tasks_completed) || 0,
+      };
     }
 
     const kpi = computeAiKpi({
