@@ -24,7 +24,7 @@ import {
   type AiEmploymentStatus,
 } from "@/domain/ai-market/contracts";
 import { AI_SKILL_KIND_LABELS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
-import { formatApprovalRate } from "@/domain/ai-market/kpi";
+import { formatApproved, formatKpiScore } from "@/domain/ai-market/kpi";
 
 const TERMS = [0, 6, 12, 24];
 
@@ -269,7 +269,7 @@ export function AiMarketProfile({
             <h3 className="flex items-center gap-1.5 text-sm font-semibold">
               <TrendingUp className="h-4 w-4 text-primary" /> Hiệu suất (KPI)
             </h3>
-            <Badge variant="secondary">{kpi.score}/100 điểm</Badge>
+            <Badge variant="secondary">{formatKpiScore(kpi.score)} điểm</Badge>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
             <div className="rounded-lg border border-border p-3">
@@ -285,9 +285,9 @@ export function AiMarketProfile({
               </p>
             </div>
             <div className="rounded-lg border border-border p-3">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Tỉ lệ duyệt</p>
-              <p className="mt-1 text-lg font-semibold">{formatApprovalRate(kpi.approvalRate)}</p>
-              <p className="text-xs text-muted-foreground">60% trọng số KPI</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Mức duyệt</p>
+              <p className="mt-1 text-lg font-semibold">{formatApproved(stats.approved, stats.proposals)}</p>
+              <p className="text-xs text-muted-foreground">trọng số chính của điểm KPI</p>
             </div>
             <div className="rounded-lg border border-border p-3">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Việc đã hoàn thành</p>
