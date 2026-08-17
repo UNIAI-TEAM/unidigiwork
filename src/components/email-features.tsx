@@ -40,18 +40,22 @@ export function ComposeEmailDialog({
   onOpenChange,
   initialTo = "",
   initialSubject = "",
+  initialCc = "",
+  initialBody = "",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initialTo?: string;
   initialSubject?: string;
+  initialCc?: string;
+  initialBody?: string;
 }) {
   const [to, setTo] = useState(initialTo);
-  const [showCc, setShowCc] = useState(false);
-  const [cc, setCc] = useState("");
+  const [showCc, setShowCc] = useState(Boolean(initialCc));
+  const [cc, setCc] = useState(initialCc);
   const [bcc, setBcc] = useState("");
   const [subject, setSubject] = useState(initialSubject);
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(initialBody);
   const [attachments, setAttachments] = useState<{ name: string; size: string }[]>([]);
   const [aiBusy, setAiBusy] = useState(false);
 
