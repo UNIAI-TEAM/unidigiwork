@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { sendEmail } from "@/lib/api/emails.functions";
 import { useState } from "react";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +32,8 @@ function MobileEmailDetailPage() {
   const navigate = useNavigate();
   const { workspaceId } = useActiveWorkspace();
   const [replyBody, setReplyBody] = useState("");
+  const queryClient = useQueryClient();
+  const send = useServerFn(sendEmail);
 
   const { data: messages } = useSuspenseQuery({
     queryKey: ["mobile-email-detail", id],
