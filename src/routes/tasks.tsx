@@ -291,13 +291,34 @@ function TasksPage() {
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
             {/* Project header row */}
             <div className="mb-5 flex flex-wrap items-center gap-3">
-              <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
-                  S
-                </span>
-                {t("tasks.project")}
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
+                    <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
+                      {(activeWsName || "S").slice(0, 1).toUpperCase()}
+                    </span>
+                    {activeWsName || t("tasks.project")}
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-60">
+                  {(workspaces.data ?? []).map((w) => (
+                    <DropdownMenuItem
+                      key={w.id}
+                      onSelect={() => {
+                        setWsId(w.id);
+                        navigateTasks({ to: "/tasks", search: (s) => ({ ...s, ws: w.id }) });
+                      }}
+                    >
+                      {w.name}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigateTasks({ to: "/workspace" })}>
+                    Quản lý workspace
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <nav className="flex items-center gap-5 text-sm">
                 {(
