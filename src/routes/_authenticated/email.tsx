@@ -725,6 +725,92 @@ function EmailHubPage() {
     setCheckedIds(new Set());
   }
 
+  // --- Real actions (DB-backed messages only) --------------------------------
+  const qc = useQueryClient();
+  const doMove = useServerFn(moveEmailMessages);
+  const doSetRead = useServerFn(setEmailMessagesRead);
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  function realIds(ids: string[]) {
+    return ids.filter((id) => UUID_RE.test(id));
+  }
+
+  const bulkMoveMut = useMutation({
+    mutationFn: (v: { ids: string[]; folder: "inbox" | "archive" | "trash" }) =>
+      doMove({ data: { message_ids: v.ids, folder: v.folder } }),
+    onSuccess: (_r, v) => {
+      toast.success(
+        v.folder === "archive"
+          ? "Đã lưu trữ"
+          : v.folder === "trash"
+            ? "Đã chuyển vào thùng rác"
+            : "Đã chuyển về hộp đến",
+      );
+      qc.invalidateQueries({ queryKey: ["emails"] });
+      clearChecked();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkReadMut = useMutation({
+    mutationFn: (v: { ids: string[]; is_read: boolean }) =>
+      doSetRead({ data: { message_ids: v.ids, is_read: v.is_read } }),
+    onSuccess: (_r, v) => {
+      toast.success(v.is_read ? "Đã đánh dấu đã đọc" : "Đã đánh dấu chưa đọc");
+      qc.invalidateQueries({ queryKey: ["emails"] });
+      clearChecked();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function bulkMove(folder: "inbox" | "archive" | "trash") {
+    const ids = realIds([...checkedIds]);
+    if (!ids.length) {
+      toast.info("Chỉ áp dụng cho email thật trong hộp thư");
+      clearChecked();
+      return;
+    }
+    bulkMoveMut.mutate({ ids, folder });
+  }
+
+  function bulkRead(is_read: boolean) {
+    const ids = realIds([...checkedIds]);
+    if (!ids.length) {
+      toast.info("Chỉ áp dụng cho email thật trong hộp thư");
+      clearChecked();
+      return;
+    }
+    bulkReadMut.mutate({ ids, is_read });
+  }
+
+  function messageAction(folder: "archive" | "trash") {
+    const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
+    if (!ids.length) {
+      toast.info("Email mẫu không thể thao tác");
+      return;
+    }
+    bulkMoveMut.mutate({ ids, folder });
+  }
+
+  function openCompose(to: string, subject: string) {
+    setComposePrefill({ to, subject });
+    setComposeOpen(true);
+  }
+
+  function replySelected(all: boolean) {
+    if (!selectedEmail) return;
+    const from =
+      selectedEmail.fromEmail ||
+      `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`;
+    const cc = all && selectedEmail.cc ? `, ${selectedEmail.cc}` : "";
+    openCompose(`${from}${cc}`, `Re: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+  }
+
+  function forwardSelected() {
+    if (!selectedEmail) return;
+    openCompose("", `Fwd: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+  }
+
   const groups: Record<string, Email[]> = {};
   if (sortBy === "priority") {
     groups["Theo mức độ ưu tiên"] = pagedEmails;
