@@ -427,20 +427,6 @@ export function AppSidebar({
         {/* Bottom section */}
         {!collapsed && (
           <>
-            <div className="m-3 rounded-xl bg-surface-2 p-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
-                  <MessageCircle className="h-4 w-4" />
-                </div>
-                <div className="text-sm">
-                  <div className="font-medium">Mattermost</div>
-                  <div className="flex items-center gap-1 text-[11px] text-success">
-                    <Circle className="h-1.5 w-1.5 fill-current" /> Connected
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-sm">
               <Cloud className="h-5 w-5 text-sky-400" />
               <div>

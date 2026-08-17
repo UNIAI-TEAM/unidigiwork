@@ -97,7 +97,7 @@ const SECTIONS: { key: SectionKey; label: string; desc: string; icon: LucideIcon
   { key: "notifications", label: "Thông báo", desc: "Email, in-app, push", icon: Bell },
   { key: "appearance", label: "Giao diện", desc: "Chủ đề sáng/tối, mật độ", icon: Palette },
   { key: "language", label: "Ngôn ngữ & múi giờ", desc: "Tiếng Việt, GMT+7", icon: Languages },
-  { key: "integrations", label: "Tích hợp", desc: "Google, Slack, Mattermost", icon: Plug },
+  { key: "integrations", label: "Tích hợp", desc: "Google, Slack, GitHub", icon: Plug },
   { key: "team", label: "Thành viên & vai trò", desc: "Quản lý quyền truy cập", icon: UsersIcon },
   { key: "security", label: "Bảo mật", desc: "2FA, phiên đăng nhập", icon: ShieldCheck },
   { key: "billing", label: "Gói & thanh toán", desc: "Gói hiện tại, hóa đơn", icon: CreditCard },
@@ -630,12 +630,6 @@ function IntegrationsSection() {
       d: "Đồng bộ tin nhắn và thông báo",
       on: false,
       c: "bg-violet-500/20 text-violet-300",
-    },
-    {
-      n: "Mattermost",
-      d: "Đã kết nối với workspace chính",
-      on: true,
-      c: "bg-emerald-500/20 text-emerald-300",
     },
     { n: "GitHub", d: "Liên kết commit với nhiệm vụ", on: true, c: "bg-zinc-500/20 text-zinc-300" },
     {
