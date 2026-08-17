@@ -244,16 +244,18 @@ function EmailHubPage() {
     setPage(1);
   }, [debouncedSearch, activeMailbox]);
 
-  // Wire DB-backed folders to the server; other mailboxes stay on mock data.
-  const dbMode = DB_FOLDERS.includes(activeMailbox as DbFolder);
+  // Danh sách email thật theo workspace đang chọn (không còn dữ liệu mock).
+  const starredMode = activeMailbox === "starred";
+  const folder: DbFolder = starredMode ? "inbox" : (activeMailbox as DbFolder);
   const dbQuery = useQuery({
-    enabled: dbMode,
-    queryKey: ["emails", activeMailbox, debouncedSearch, page],
+    queryKey: ["emails", workspaceId, activeMailbox, debouncedSearch, page],
     queryFn: () =>
       listEmailMessages({
         data: {
-          folder: activeMailbox as DbFolder,
+          folder,
           search: debouncedSearch,
+          workspace_id: workspaceId ?? null,
+          starred_only: starredMode,
           limit: PAGE_SIZE,
           offset: (page - 1) * PAGE_SIZE,
         },
@@ -261,8 +263,14 @@ function EmailHubPage() {
     placeholderData: (prev) => prev,
     staleTime: 15_000,
   });
+  const countsQuery = useQuery({
+    queryKey: ["emails", "counts", workspaceId],
+    queryFn: () => getEmailFolderCounts({ data: { workspace_id: workspaceId ?? null } }),
+    staleTime: 30_000,
+  });
+
   const dbEmails: Email[] = useMemo(() => {
-    if (!dbMode || !dbQuery.data) return [];
+    if (!dbQuery.data) return [];
     return dbQuery.data.items.map((r) => {
       const m = r.message as {
         id: string;
@@ -288,27 +296,7 @@ function EmailHubPage() {
         mailbox: r.folder as Email["mailbox"],
       } satisfies Email;
     });
-  }, [dbMode, dbQuery.data]);
-  const selectedEmail =
-    dbEmails.find((e) => e.id === selected) ??
-    EMAILS.find((e) => e.id === selected) ??
-    dbEmails[0] ??
-    EMAILS[0];
-
-  function timeSortValue(e: Email): number {
-    const groupWeight = e.group === "Hôm nay" ? 3 : e.group === "Hôm qua" ? 2 : 1;
-    if (e.time.includes("AM") || e.time.includes("PM")) {
-      const m = e.time.match(/(\d+):(\d+)/);
-      if (m) {
-        let hour = parseInt(m[1]);
-        const minute = parseInt(m[2]);
-        if (e.time.includes("PM") && hour !== 12) hour += 12;
-        if (e.time.includes("AM") && hour === 12) hour = 0;
-        return groupWeight * 10000 + hour * 60 + minute;
-      }
-    }
-    return groupWeight * 10000;
-  }
+  }, [dbQuery.data]);
 
   function prioritySortValue(e: Email): number {
     if (e.unread && e.starred) return 3;
@@ -317,56 +305,65 @@ function EmailHubPage() {
     return 0;
   }
 
-  const filteredEmails = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const list = EMAILS.filter((e) => {
-      const matchMailbox = (e.mailbox ?? "inbox") === activeMailbox;
-      const matchQuery =
-        !q ||
-        e.from.toLowerCase().includes(q) ||
-        e.subject.toLowerCase().includes(q) ||
-        e.preview.toLowerCase().includes(q);
-      const matchLabel = !filterLabel || (e.labels?.includes(filterLabel) ?? false);
-      const matchUnread = !filterUnread || e.unread;
-      const a = advanced;
+  // Lọc phía client trên dữ liệu thật của trang hiện tại.
+  const pagedEmails = useMemo(() => {
+    const a = advanced;
+    const list = dbEmails.filter((e) => {
+      const matchUnread = !filterUnread || !!e.unread;
       const matchAdvKeyword =
         !a.keyword ||
         e.subject.toLowerCase().includes(a.keyword.toLowerCase()) ||
-        e.preview.toLowerCase().includes(a.keyword.toLowerCase());
+        (e.preview ?? "").toLowerCase().includes(a.keyword.toLowerCase());
       const matchAdvFrom = !a.from || e.from.toLowerCase().includes(a.from.toLowerCase());
-      const matchAdvAttach = !a.hasAttachment || !!e.hasAttachment;
-      const matchAdvLabels = a.labels.length === 0 || a.labels.every((l) => e.labels?.includes(l));
-      return (
-        matchMailbox &&
-        matchQuery &&
-        matchLabel &&
-        matchUnread &&
-        matchAdvKeyword &&
-        matchAdvFrom &&
-        matchAdvAttach &&
-        matchAdvLabels
-      );
+      return matchUnread && matchAdvKeyword && matchAdvFrom;
     });
-    return list.slice().sort((a, b) => {
-      if (sortBy === "priority") {
-        return prioritySortValue(b) - prioritySortValue(a);
-      }
-      return timeSortValue(b) - timeSortValue(a);
-    });
-  }, [searchQuery, filterLabel, filterUnread, sortBy, activeMailbox, advanced]);
+    return list
+      .slice()
+      .sort((x, y) => (sortBy === "priority" ? prioritySortValue(y) - prioritySortValue(x) : 0));
+  }, [dbEmails, filterUnread, advanced, sortBy]);
 
-  const mockTotalPages = Math.max(1, Math.ceil(filteredEmails.length / PAGE_SIZE));
-  const mockCurrentPage = Math.min(page, mockTotalPages);
-  const mockPagedEmails = useMemo(
-    () => filteredEmails.slice((mockCurrentPage - 1) * PAGE_SIZE, mockCurrentPage * PAGE_SIZE),
-    [filteredEmails, mockCurrentPage],
-  );
-  const effectiveTotal = dbMode ? (dbQuery.data?.total ?? 0) : filteredEmails.length;
-  const totalPages = dbMode
-    ? Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE))
-    : mockTotalPages;
+  const selectedEmail = dbEmails.find((e) => e.id === selected) ?? dbEmails[0] ?? null;
+
+  const effectiveTotal = dbQuery.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pagedEmails = dbMode ? dbEmails : mockPagedEmails;
+
+  const folderCounts = countsQuery.data?.counts ?? {};
+  const mailboxes = useMemo(
+    () => MAILBOXES.map((m) => ({ ...m, count: folderCounts[m.key] ?? 0 })),
+    [folderCounts],
+  );
+
+  const quickSummary = useMemo(
+    () => [
+      { label: "Chưa đọc trong hộp đến", value: countsQuery.data?.unreadInbox ?? 0 },
+      { label: "Quan trọng", value: folderCounts.starred ?? 0 },
+      { label: "Bản nháp", value: folderCounts.drafts ?? 0 },
+      { label: "Tổng email", value: countsQuery.data?.total ?? 0 },
+    ],
+    [countsQuery.data, folderCounts],
+  );
+
+  const priorityEmails = useMemo(
+    () =>
+      dbEmails
+        .slice()
+        .sort((x, y) => prioritySortValue(y) - prioritySortValue(x))
+        .filter((e) => e.unread || e.starred)
+        .slice(0, 3),
+    [dbEmails],
+  );
+
+  const statSlices: StatSlice[] = useMemo(() => {
+    const raw = [
+      { label: "Đã nhận", value: folderCounts.inbox ?? 0, color: "#7c3aed" },
+      { label: "Đã gửi", value: folderCounts.sent ?? 0, color: "#10b981" },
+      { label: "Lưu trữ", value: folderCounts.archive ?? 0, color: "#f59e0b" },
+      { label: "Khác", value: (folderCounts.drafts ?? 0) + (folderCounts.trash ?? 0), color: "#94a3b8" },
+    ];
+    const total = raw.reduce((s, x) => s + x.value, 0) || 1;
+    return raw.map((r) => ({ ...r, pct: Math.round((r.value / total) * 100) }));
+  }, [folderCounts]);
 
   // Reset paging + selection when mailbox/filters change
   function changeMailbox(key: string) {
