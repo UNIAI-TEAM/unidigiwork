@@ -106,6 +106,31 @@ function fmtDate(v: string | null) {
   return new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 }
 
+// Xuất danh sách công việc đang hiển thị ra CSV (dữ liệu thật, không mock).
+function exportTasksCsv(rows: Task[]) {
+  if (!rows.length) {
+    toast.error("Không có công việc để xuất");
+    return;
+  }
+  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const header = ["id", "title", "status", "priority", "due_at", "tags", "updated_at"];
+  const csv = [
+    header.join(","),
+    ...rows.map((r) =>
+      [r.id, r.title, r.status, r.priority, r.due_at ?? "", (r.tags ?? []).join("|"), r.updated_at]
+        .map(esc)
+        .join(","),
+    ),
+  ].join("\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `tasks-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success(`Đã xuất ${rows.length} công việc`);
+}
+
 function TasksPage() {
   const [open, setOpen] = useSidebarState();
   const { t } = useI18n();
