@@ -156,8 +156,8 @@ function bucketEmailWhen(iso: string): Email["group"] {
 
 type StatSlice = { label: string; value: number; pct: number; color: string };
 
-function DonutChart() {
-  const total = STATS.reduce((s, x) => s + x.value, 0);
+function DonutChart({ stats }: { stats: StatSlice[] }) {
+  const total = stats.reduce((s, x) => s + x.value, 0) || 1;
   let acc = 0;
   const r = 42,
     c = 2 * Math.PI * r;
@@ -165,7 +165,7 @@ function DonutChart() {
     <div className="relative h-[140px] w-[140px]">
       <svg viewBox="0 0 120 120" className="-rotate-90">
         <circle cx="60" cy="60" r={r} fill="none" stroke="hsl(var(--surface-2))" strokeWidth="14" />
-        {STATS.map((s, i) => {
+        {stats.map((s, i) => {
           const len = (s.value / total) * c;
           const off = (acc / total) * c;
           acc += s.value;
