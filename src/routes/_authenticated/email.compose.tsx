@@ -16,6 +16,8 @@ const searchSchema = z.object({
   thread: z.string().uuid().optional(),
   to: z.string().optional(),
   subject: z.string().optional(),
+  cc: z.string().optional(),
+  body: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/email/compose")({
@@ -50,10 +52,10 @@ function ComposePage() {
   const [draftId, setDraftId] = useState<string | undefined>(search.draft);
   const [threadId, setThreadId] = useState<string | undefined>(search.thread);
   const [to, setTo] = useState(search.to ?? "");
-  const [cc, setCc] = useState("");
-  const [showCc, setShowCc] = useState(false);
+  const [cc, setCc] = useState(search.cc ?? "");
+  const [showCc, setShowCc] = useState(Boolean(search.cc));
   const [subject, setSubject] = useState(search.subject ?? "");
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(search.body ?? "");
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const dirty = useRef(false);
