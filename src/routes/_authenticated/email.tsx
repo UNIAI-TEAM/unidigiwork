@@ -1360,13 +1360,21 @@ function EmailHubPage() {
                     <span className="ml-auto text-xs text-muted-foreground">
                       {selectedEmail.time}
                     </span>
-                    <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                    <button
+                      onClick={() => notifyComingSoon()}
+                      title="Đánh dấu quan trọng"
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                    >
                       <Star
                         className={`h-4 w-4 ${selectedEmail.starred ? "fill-amber-400 text-amber-400" : ""}`}
                       />
                     </button>
-                    <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground hover:bg-surface-2">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <button
+                      onClick={() => replySelected(false)}
+                      title="Trả lời"
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                    >
+                      <Reply className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="text-xs text-muted-foreground">
