@@ -459,6 +459,19 @@ function StosDetailPage() {
                   <Button
                     variant="secondary"
                     size="sm"
+                    onClick={async () => {
+                      const url = typeof window !== "undefined" ? window.location.href : "";
+                      try {
+                        if (navigator.share) {
+                          await navigator.share({ title: project.name, url });
+                        } else {
+                          await navigator.clipboard.writeText(url);
+                          toast.success("Đã sao chép liên kết dự án");
+                        }
+                      } catch {
+                        /* user cancelled */
+                      }
+                    }}
                     className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border-0"
                   >
                     <Share2 className="size-4" /> Chia sẻ

@@ -1763,7 +1763,11 @@ export function AppTopbar({
 
             <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2 text-[10px] text-muted-foreground">
               <span>UNIWORK v2.4.1</span>
-              <a href="#" className="hover:text-foreground">
+              <a
+                href="/terms"
+                className="hover:text-foreground"
+                onClick={() => setUserOpen(false)}
+              >
                 {t("sh.user.legal")}
               </a>
             </div>

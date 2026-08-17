@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { sendEmail } from "@/lib/api/emails.functions";
 import { useState } from "react";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +32,8 @@ function MobileEmailDetailPage() {
   const navigate = useNavigate();
   const { workspaceId } = useActiveWorkspace();
   const [replyBody, setReplyBody] = useState("");
+  const queryClient = useQueryClient();
+  const send = useServerFn(sendEmail);
 
   const { data: messages } = useSuspenseQuery({
     queryKey: ["mobile-email-detail", id],
@@ -41,6 +46,34 @@ function MobileEmailDetailPage() {
         .order("sent_at", { ascending: true });
       return data ?? [];
     },
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: async () => {
+      const last = messages[messages.length - 1];
+      if (!last) throw new Error("Không tìm thấy email");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", last.from_user_id as string)
+        .maybeSingle();
+      if (!profile?.email) throw new Error("Không tìm thấy địa chỉ người nhận");
+      const subject = last.subject?.startsWith("Re:") ? last.subject : `Re: ${last.subject ?? ""}`;
+      return send({
+        data: {
+          to: [profile.email],
+          subject: subject || "Re:",
+          body: replyBody,
+          thread_id: id,
+        },
+      });
+    },
+    onSuccess: () => {
+      setReplyBody("");
+      toast.success("Đã gửi trả lời");
+      queryClient.invalidateQueries({ queryKey: ["mobile-email-detail", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   if (!messages?.length) {
@@ -115,9 +148,13 @@ function MobileEmailDetailPage() {
           >
             Hủy
           </Button>
-          <Button size="sm" onClick={() => {}} disabled={!replyBody.trim()}>
+          <Button
+            size="sm"
+            onClick={() => replyMutation.mutate()}
+            disabled={!replyBody.trim() || replyMutation.isPending}
+          >
             <Reply className="mr-2 h-4 w-4" />
-            Gửi
+            {replyMutation.isPending ? "Đang gửi..." : "Gửi"}
           </Button>
         </div>
       </div>
