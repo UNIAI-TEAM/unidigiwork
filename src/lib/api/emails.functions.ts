@@ -25,6 +25,8 @@ export const listEmailMessages = createServerFn({ method: "GET" })
       .object({
         folder: z.enum(["inbox", "sent", "drafts", "archive", "trash"]).default("inbox"),
         search: z.string().default(""),
+        workspace_id: z.string().uuid().nullish(),
+        starred_only: z.boolean().default(false),
         limit: z.number().int().min(1).max(100).default(20),
         offset: z.number().int().min(0).default(0),
       })
@@ -40,6 +42,12 @@ export const listEmailMessages = createServerFn({ method: "GET" })
       })
       .eq("user_id", context.userId)
       .eq("folder", data.folder);
+    if (data.workspace_id) {
+      q = q.eq("email_messages.workspace_id", data.workspace_id);
+    }
+    if (data.starred_only) {
+      q = q.eq("is_starred", true);
+    }
     if (s) {
       q = q.or(`subject.ilike.%${s}%,body.ilike.%${s}%`, {
         referencedTable: "email_messages",
