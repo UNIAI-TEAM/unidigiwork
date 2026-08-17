@@ -1,9 +1,8 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { LayoutGrid, ShieldCheck, Users, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
-import { getMyIsAdmin } from "@/lib/api/admin.functions";
+import { useAdminAccess } from "@/features/admin/access";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -32,11 +31,7 @@ const TABS = [
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin", "isAdmin"],
-    queryFn: () => getMyIsAdmin(),
-    staleTime: 30_000,
-  });
+  const { access, isLoading } = useAdminAccess();
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -60,7 +55,7 @@ function AdminLayout() {
             <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
               Đang kiểm tra quyền truy cập…
             </div>
-          ) : !data?.isAdmin ? (
+          ) : !access.canRead ? (
             <ForbiddenPanel />
           ) : (
             <>
@@ -82,7 +77,14 @@ function AdminLayout() {
                   );
                 })}
               </nav>
-              {data.bootstrapped && (
+              {access.level === "read" && (
+                <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-500">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Bạn có quyền <strong className="font-semibold">chỉ đọc</strong> (vai trò Điều phối). Mọi
+                  thao tác thay đổi cấu hình đều bị khóa.
+                </div>
+              )}
+              {access.bootstrapped && (
                 <div className="mb-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-xs text-primary">
                   Bạn vừa được cấp quyền quản trị viên đầu tiên của workspace.
                 </div>
