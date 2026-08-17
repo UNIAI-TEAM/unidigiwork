@@ -35,7 +35,6 @@ import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functi
 import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
 import { Table2, RefreshCw } from "lucide-react";
-import { notifyComingSoon } from "@/lib/coming-soon";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
