@@ -157,7 +157,6 @@ export const listMarketAgents = createServerFn({ method: "GET" })
         tenantCompleted: s?.completed ?? 0,
         tenantProposals: s?.proposals ?? 0,
         tenantApproved: s?.approved ?? 0,
-        rating: Number(r.rating) || 0,
       });
       return { ...r, employment, kpi };
     });
@@ -233,7 +232,6 @@ export const getMarketAgent = createServerFn({ method: "GET" })
       tenantCompleted: tenantStats.completed,
       tenantProposals: tenantStats.proposals,
       tenantApproved: tenantStats.approved,
-      rating: Number((agent as any).rating) || 0,
     });
 
     return {
