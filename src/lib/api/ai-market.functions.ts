@@ -176,39 +176,7 @@ export const listMarketAgents = createServerFn({ method: "GET" })
     const workflowAgentIds = (employments ?? [])
       .map((e: any) => e.workflow_agent_id)
       .filter((v: string | null): v is string => !!v);
-    const statsByWorkflowAgent = new Map<string, { completed: number; proposals: number; approved: number }>();
-    if (workflowAgentIds.length) {
-      const { data: runs } = await context.supabase
-        .from("workflow_agent_runs")
-        .select("agent_id, proposal_id, status")
-        .eq("tenant_id", tenantId)
-        .in("agent_id", workflowAgentIds)
-        .limit(2000);
-      const proposalIds = (runs ?? [])
-        .map((r: any) => r.proposal_id)
-        .filter((v: string | null): v is string => !!v);
-      const approvedIds = new Set<string>();
-      if (proposalIds.length) {
-        const { data: proposals } = await context.supabase
-          .from("ai_action_proposals")
-          .select("id, status")
-          .eq("tenant_id", tenantId)
-          .in("id", proposalIds);
-        for (const p of proposals ?? []) {
-          if (p.status === "EXECUTED" || p.status === "CONFIRMED") approvedIds.add(p.id as string);
-        }
-      }
-      for (const r of runs ?? []) {
-        const key = r.agent_id as string;
-        const cur = statsByWorkflowAgent.get(key) ?? { completed: 0, proposals: 0, approved: 0 };
-        if (r.status === "succeeded" || r.status === "SUCCEEDED") cur.completed += 1;
-        if (r.proposal_id) {
-          cur.proposals += 1;
-          if (approvedIds.has(r.proposal_id)) cur.approved += 1;
-        }
-        statsByWorkflowAgent.set(key, cur);
-      }
-    }
+    const statsByWorkflowAgent = await loadTenantAgentStats(context, tenantId, workflowAgentIds);
 
     const withKpi = (rows ?? []).map((r: any) => {
       const employment = byAgent.get(r.id) ?? null;
