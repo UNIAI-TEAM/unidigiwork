@@ -232,9 +232,26 @@ function AiMarketSearchPage() {
                     value={[maxSalary ?? salaryCeiling]}
                     min={0}
                     max={salaryCeiling}
-                    step={Math.max(100_000, Math.round(salaryCeiling / 40))}
+                    step={100_000}
                     onValueChange={(v) => setMaxSalary(v[0] ?? null)}
                   />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      step={100}
+                      inputMode="numeric"
+                      value={maxSalary === null ? "" : Math.round(maxSalary / 1000)}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        setMaxSalary(raw === "" ? null : Math.max(0, Number(raw)) * 1000);
+                      }}
+                      placeholder="Nhập số tiền"
+                      aria-label="Ngân sách lương tối đa (nghìn đồng)"
+                      className="h-8 w-32"
+                    />
+                    <span className="text-xs text-muted-foreground">nghìn đ / tháng</span>
+                  </div>
                   {maxSalary !== null && (
                     <button
                       type="button"
