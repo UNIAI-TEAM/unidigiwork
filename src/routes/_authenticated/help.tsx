@@ -658,12 +658,12 @@ function HelpPage() {
             <div className="rounded-2xl border border-border bg-surface p-2">
               {[
                 { icon: SettingsIcon, label: "Cài đặt tài khoản", to: "/settings" },
-                { icon: Github, label: "Changelog & Roadmap" },
-                { icon: BookOpen, label: "Tài liệu API" },
+                { icon: Github, label: "Changelog & Roadmap", to: "/blog" },
+                { icon: BookOpen, label: "Tài liệu API", to: "/knowledge" },
               ].map((l) => (
                 <a
                   key={l.label}
-                  href="#"
+                  href={l.to}
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                 >
                   <l.icon className="h-4 w-4" /> <span className="flex-1">{l.label}</span>{" "}
