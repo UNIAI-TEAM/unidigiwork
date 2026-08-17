@@ -117,14 +117,6 @@ function AiMarketSearchPage() {
     return pool[0] ?? null;
   }, [agents.length, all, maxSalary, minRating, minTasks]);
 
-  const unusedActiveFilters =
-    (domain !== "all" ? 1 : 0) +
-    (skill !== "all" ? 1 : 0) +
-    (contract !== "all" ? 1 : 0) +
-    (minRating > 0 ? 1 : 0) +
-    (minTasks > 0 ? 1 : 0) +
-    (maxSalary !== null ? 1 : 0);
-
   const resetFilters = () => {
     setDomain("all");
     setSkill("all");
