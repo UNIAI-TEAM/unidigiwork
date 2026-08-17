@@ -38,6 +38,13 @@ import {
   X,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/lib/i18n";
 import { isOverdueTask } from "@/lib/metrics";
 
@@ -391,10 +398,44 @@ function TasksPage() {
                     <option value="">Chưa có workspace</option>
                   )}
                 </select>
-                <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
-                  <Settings2 className="h-4 w-4" /> {t("tasks.settings")}{" "}
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      disabled={!activeWs}
+                      className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 disabled:opacity-50"
+                    >
+                      <Settings2 className="h-4 w-4" /> {t("tasks.settings")}{" "}
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        activeWs && navigateTasks({ to: "/workspace/settings", search: { ws: activeWs } })
+                      }
+                    >
+                      {t("tasks.settings.general")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        activeWs && navigateTasks({ to: "/workspace/members", search: { ws: activeWs } })
+                      }
+                    >
+                      {t("tasks.settings.members")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navigateTasks({ to: "/workspace/audit" })}>
+                      {t("tasks.settings.audit")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        activeWs && navigateTasks({ to: "/workspace/$id", params: { id: activeWs } })
+                      }
+                    >
+                      {t("tasks.settings.overview")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
