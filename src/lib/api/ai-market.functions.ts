@@ -13,6 +13,7 @@ import {
 } from "@/domain/ai-market/contracts";
 import { deriveAllowedFromSkills, ensureDefaultSkill, normalizeSkills } from "@/domain/workflow-agents/skills";
 import { AI_WORKER_PROFILE_MAP } from "@/domain/ai-workforce/profiles";
+import { computeAiKpi } from "@/domain/ai-market/kpi";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
@@ -76,7 +77,7 @@ export const listMarketAgents = createServerFn({ method: "GET" })
         domain: z.string().trim().max(120).default(""),
         skill: z.string().trim().max(60).default(""),
         maxSalary: z.number().nonnegative().nullish(),
-        sort: z.enum(["rating", "salary_asc", "salary_desc", "tasks"]).default("rating"),
+        sort: z.enum(["kpi", "rating", "salary_asc", "salary_desc", "tasks"]).default("kpi"),
       })
       .parse(i),
   )
@@ -99,15 +100,70 @@ export const listMarketAgents = createServerFn({ method: "GET" })
 
     const { data: employments } = await context.supabase
       .from("ai_employments")
-      .select("id, market_agent_id, status, salary_amount")
+      .select("id, market_agent_id, status, salary_amount, workflow_agent_id")
       .eq("tenant_id", tenantId)
       .in("status", ["INTERVIEW", "OFFER", "TRIAL", "HIRED"]);
 
     const byAgent = new Map<string, any>((employments ?? []).map((e: any) => [e.market_agent_id, e]));
     const domains = Array.from(new Set((rows ?? []).map((r: any) => r.domain))).sort();
 
+    // KPI khách quan: đếm run thành công + tỉ lệ đề xuất được duyệt trong chính tenant này.
+    const workflowAgentIds = (employments ?? [])
+      .map((e: any) => e.workflow_agent_id)
+      .filter((v: string | null): v is string => !!v);
+    const statsByWorkflowAgent = new Map<string, { completed: number; proposals: number; approved: number }>();
+    if (workflowAgentIds.length) {
+      const { data: runs } = await context.supabase
+        .from("workflow_agent_runs")
+        .select("agent_id, proposal_id, status")
+        .eq("tenant_id", tenantId)
+        .in("agent_id", workflowAgentIds)
+        .limit(2000);
+      const proposalIds = (runs ?? [])
+        .map((r: any) => r.proposal_id)
+        .filter((v: string | null): v is string => !!v);
+      const approvedIds = new Set<string>();
+      if (proposalIds.length) {
+        const { data: proposals } = await context.supabase
+          .from("ai_action_proposals")
+          .select("id, status")
+          .eq("tenant_id", tenantId)
+          .in("id", proposalIds);
+        for (const p of proposals ?? []) {
+          if (p.status === "EXECUTED" || p.status === "CONFIRMED") approvedIds.add(p.id as string);
+        }
+      }
+      for (const r of runs ?? []) {
+        const key = r.agent_id as string;
+        const cur = statsByWorkflowAgent.get(key) ?? { completed: 0, proposals: 0, approved: 0 };
+        if (r.status === "succeeded" || r.status === "SUCCEEDED") cur.completed += 1;
+        if (r.proposal_id) {
+          cur.proposals += 1;
+          if (approvedIds.has(r.proposal_id)) cur.approved += 1;
+        }
+        statsByWorkflowAgent.set(key, cur);
+      }
+    }
+
+    const withKpi = (rows ?? []).map((r: any) => {
+      const employment = byAgent.get(r.id) ?? null;
+      const s = employment?.workflow_agent_id
+        ? statsByWorkflowAgent.get(employment.workflow_agent_id)
+        : undefined;
+      const kpi = computeAiKpi({
+        marketCompleted: Number(r.completed_tasks) || 0,
+        tenantCompleted: s?.completed ?? 0,
+        tenantProposals: s?.proposals ?? 0,
+        tenantApproved: s?.approved ?? 0,
+        rating: Number(r.rating) || 0,
+      });
+      return { ...r, employment, kpi };
+    });
+
+    if (data.sort === "kpi") withKpi.sort((a: any, b: any) => b.kpi.score - a.kpi.score);
+
     return {
-      agents: (rows ?? []).map((r: any) => ({ ...r, employment: byAgent.get(r.id) ?? null })),
+      agents: withKpi,
       domains,
     };
   });

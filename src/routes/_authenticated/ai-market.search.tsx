@@ -19,6 +19,7 @@ import {
   type AiEmploymentStatus,
 } from "@/domain/ai-market/contracts";
 import { AI_SKILLS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
+import { formatApprovalRate } from "@/domain/ai-market/kpi";
 
 export const Route = createFileRoute("/_authenticated/ai-market/search")({
   head: () => ({
@@ -59,9 +60,11 @@ function AiMarketSearchPage() {
   const [domain, setDomain] = useState("all");
   const [skill, setSkill] = useState("all");
   const [contract, setContract] = useState("all");
-  const [sort, setSort] = useState<"rating" | "salary_asc" | "salary_desc" | "tasks">("rating");
+  const [sort, setSort] = useState<"kpi" | "rating" | "salary_asc" | "salary_desc" | "tasks">("kpi");
   const [minRating, setMinRating] = useState(0);
   const [minTasks, setMinTasks] = useState(0);
+  const [minApproval, setMinApproval] = useState(0);
+  const [minKpi, setMinKpi] = useState(0);
   const [maxSalary, setMaxSalary] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -90,14 +93,16 @@ function AiMarketSearchPage() {
     () =>
       all.filter((a: any) => {
         if (Number(a.rating) < minRating) return false;
-        if (Number(a.completed_tasks) < minTasks) return false;
+        if ((a.kpi?.completed ?? Number(a.completed_tasks)) < minTasks) return false;
+        if (minKpi > 0 && (a.kpi?.score ?? 0) < minKpi) return false;
+        if (minApproval > 0 && (a.kpi?.approvalRate ?? -1) < minApproval) return false;
         if (maxSalary !== null && Number(a.salary_min) > maxSalary) return false;
         const status = a.employment?.status ?? null;
         if (contract === "none" && status) return false;
         if (contract !== "all" && contract !== "none" && status !== contract) return false;
         return true;
       }),
-    [all, minRating, minTasks, maxSalary, contract],
+    [all, minRating, minTasks, minApproval, minKpi, maxSalary, contract],
   );
 
   const activeFilters =
@@ -106,13 +111,18 @@ function AiMarketSearchPage() {
     (contract !== "all" ? 1 : 0) +
     (minRating > 0 ? 1 : 0) +
     (minTasks > 0 ? 1 : 0) +
+    (minApproval > 0 ? 1 : 0) +
+    (minKpi > 0 ? 1 : 0) +
     (maxSalary !== null ? 1 : 0);
 
   // Khi không có kết quả vì ngân sách quá thấp, gợi ý ứng viên rẻ nhất còn lại.
   const cheapestFallback = useMemo(() => {
     if (agents.length > 0 || maxSalary === null) return null;
     const pool = all
-      .filter((a: any) => Number(a.rating) >= minRating && Number(a.completed_tasks) >= minTasks)
+      .filter(
+        (a: any) =>
+          Number(a.rating) >= minRating && (a.kpi?.completed ?? Number(a.completed_tasks)) >= minTasks,
+      )
       .sort((a: any, b: any) => Number(a.salary_min) - Number(b.salary_min));
     return pool[0] ?? null;
   }, [agents.length, all, maxSalary, minRating, minTasks]);
@@ -123,6 +133,8 @@ function AiMarketSearchPage() {
     setContract("all");
     setMinRating(0);
     setMinTasks(0);
+    setMinApproval(0);
+    setMinKpi(0);
     setMaxSalary(null);
   };
 
@@ -208,7 +220,41 @@ function AiMarketSearchPage() {
 
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">
-                    KPI — đánh giá tối thiểu: {minRating.toFixed(1)}
+                    KPI — điểm tối thiểu: {minKpi}
+                  </Label>
+                  <Slider
+                    value={[minKpi]}
+                    min={0}
+                    max={100}
+                    step={5}
+                    onValueChange={(v) => setMinKpi(v[0] ?? 0)}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Điểm KPI = 55% tỉ lệ đề xuất được duyệt + 30% khối lượng việc hoàn thành + 15% đánh giá.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">
+                    KPI — tỉ lệ được duyệt tối thiểu: {minApproval}%
+                  </Label>
+                  <Slider
+                    value={[minApproval]}
+                    min={0}
+                    max={100}
+                    step={5}
+                    onValueChange={(v) => setMinApproval(v[0] ?? 0)}
+                  />
+                  {minApproval > 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Chỉ hiện ứng viên đã có dữ liệu đề xuất thực tế trong không gian làm việc này.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Đánh giá chủ quan tối thiểu: {minRating.toFixed(1)}
                   </Label>
                   <Slider
                     value={[minRating]}
@@ -298,6 +344,7 @@ function AiMarketSearchPage() {
                 <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
                   <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="kpi">Điểm KPI cao nhất</SelectItem>
                     <SelectItem value="rating">Đánh giá cao nhất</SelectItem>
                     <SelectItem value="tasks">Nhiều việc đã hoàn thành</SelectItem>
                     <SelectItem value="salary_asc">Lương thấp → cao</SelectItem>
@@ -353,10 +400,25 @@ function AiMarketSearchPage() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold">{a.name}</p>
                             <p className="truncate text-xs text-muted-foreground">{a.title}</p>
-                            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                              <Star className="h-3 w-3 fill-warning text-warning" /> {Number(a.rating).toFixed(1)} ·{" "}
-                              {Number(a.completed_tasks).toLocaleString("vi-VN")} việc
-                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
+                                KPI {a.kpi?.score ?? 0}/100
+                              </span>
+                              <span>{(a.kpi?.completed ?? Number(a.completed_tasks)).toLocaleString("vi-VN")} việc hoàn thành</span>
+                              <span>· Duyệt {formatApprovalRate(a.kpi?.approvalRate ?? null)}</span>
+                              <span className="flex items-center gap-1">
+                                · <Star className="h-3 w-3 fill-warning text-warning" /> {Number(a.rating).toFixed(1)}
+                              </span>
+                            </div>
+                            {a.kpi?.hasEvidence ? (
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {a.kpi.approved}/{a.kpi.proposals} đề xuất được duyệt tại không gian này
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                Chưa có dữ liệu thực thi tại không gian này
+                              </p>
+                            )}
                           </div>
                         </div>
 
