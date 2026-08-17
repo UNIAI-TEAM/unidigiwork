@@ -1146,9 +1146,9 @@ function BurndownChart({ tasks }: { tasks: Task[] }) {
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("tasks.burndown")}</h3>
-        <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
-          Sprint 6 <ChevronDown className="h-3 w-3" />
-        </button>
+        <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
+          6 tuần gần nhất
+        </span>
       </div>
       <svg viewBox={`0 0 ${w} ${h}`} className="mt-3 h-36 w-full">
         <path
