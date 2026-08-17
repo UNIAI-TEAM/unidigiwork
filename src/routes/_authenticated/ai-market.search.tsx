@@ -19,6 +19,7 @@ import {
   type AiEmploymentStatus,
 } from "@/domain/ai-market/contracts";
 import { AI_SKILLS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
+import { formatApprovalRate } from "@/domain/ai-market/kpi";
 
 export const Route = createFileRoute("/_authenticated/ai-market/search")({
   head: () => ({
@@ -59,9 +60,11 @@ function AiMarketSearchPage() {
   const [domain, setDomain] = useState("all");
   const [skill, setSkill] = useState("all");
   const [contract, setContract] = useState("all");
-  const [sort, setSort] = useState<"rating" | "salary_asc" | "salary_desc" | "tasks">("rating");
+  const [sort, setSort] = useState<"kpi" | "rating" | "salary_asc" | "salary_desc" | "tasks">("kpi");
   const [minRating, setMinRating] = useState(0);
   const [minTasks, setMinTasks] = useState(0);
+  const [minApproval, setMinApproval] = useState(0);
+  const [minKpi, setMinKpi] = useState(0);
   const [maxSalary, setMaxSalary] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -90,14 +93,16 @@ function AiMarketSearchPage() {
     () =>
       all.filter((a: any) => {
         if (Number(a.rating) < minRating) return false;
-        if (Number(a.completed_tasks) < minTasks) return false;
+        if ((a.kpi?.completed ?? Number(a.completed_tasks)) < minTasks) return false;
+        if (minKpi > 0 && (a.kpi?.score ?? 0) < minKpi) return false;
+        if (minApproval > 0 && (a.kpi?.approvalRate ?? -1) < minApproval) return false;
         if (maxSalary !== null && Number(a.salary_min) > maxSalary) return false;
         const status = a.employment?.status ?? null;
         if (contract === "none" && status) return false;
         if (contract !== "all" && contract !== "none" && status !== contract) return false;
         return true;
       }),
-    [all, minRating, minTasks, maxSalary, contract],
+    [all, minRating, minTasks, minApproval, minKpi, maxSalary, contract],
   );
 
   const activeFilters =
@@ -106,13 +111,18 @@ function AiMarketSearchPage() {
     (contract !== "all" ? 1 : 0) +
     (minRating > 0 ? 1 : 0) +
     (minTasks > 0 ? 1 : 0) +
+    (minApproval > 0 ? 1 : 0) +
+    (minKpi > 0 ? 1 : 0) +
     (maxSalary !== null ? 1 : 0);
 
   // Khi không có kết quả vì ngân sách quá thấp, gợi ý ứng viên rẻ nhất còn lại.
   const cheapestFallback = useMemo(() => {
     if (agents.length > 0 || maxSalary === null) return null;
     const pool = all
-      .filter((a: any) => Number(a.rating) >= minRating && Number(a.completed_tasks) >= minTasks)
+      .filter(
+        (a: any) =>
+          Number(a.rating) >= minRating && (a.kpi?.completed ?? Number(a.completed_tasks)) >= minTasks,
+      )
       .sort((a: any, b: any) => Number(a.salary_min) - Number(b.salary_min));
     return pool[0] ?? null;
   }, [agents.length, all, maxSalary, minRating, minTasks]);
@@ -123,6 +133,8 @@ function AiMarketSearchPage() {
     setContract("all");
     setMinRating(0);
     setMinTasks(0);
+    setMinApproval(0);
+    setMinKpi(0);
     setMaxSalary(null);
   };
 
