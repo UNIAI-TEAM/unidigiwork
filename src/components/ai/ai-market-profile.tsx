@@ -24,6 +24,7 @@ import {
   type AiEmploymentStatus,
 } from "@/domain/ai-market/contracts";
 import { AI_SKILL_KIND_LABELS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
+import { formatApprovalRate } from "@/domain/ai-market/kpi";
 
 const TERMS = [0, 6, 12, 24];
 
@@ -61,6 +62,12 @@ export function AiMarketProfile({
 
   const agent = data?.agent;
   const employment = data?.employment as any | null;
+  const kpi = (data as any)?.kpi as
+    | { score: number; approvalRate: number | null; completed: number; hasEvidence: boolean }
+    | undefined;
+  const stats = ((data as any)?.tenantStats ?? { proposals: 0, approved: 0, runs: 0, completed: 0 }) as {
+    proposals: number; approved: number; runs: number; completed: number;
+  };
   const status = (employment?.status ?? null) as AiEmploymentStatus | null;
 
   // Điền sẵn mức lương đề nghị theo hợp đồng hiện tại hoặc mức sàn của ứng viên,
@@ -252,14 +259,51 @@ export function AiMarketProfile({
               </li>
             ))}
           </ul>
-          {data?.tenantStats && data.tenantStats.proposals > 0 && (
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <TrendingUp className="h-3.5 w-3.5" /> Tại công ty bạn: {data.tenantStats.proposals} đề xuất ·{" "}
-              {data.tenantStats.approved} được duyệt
+        </section>
+      </div>
+
+      {/* KPI khách quan */}
+      {kpi && (
+        <section className="rounded-2xl border border-border bg-surface p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+              <TrendingUp className="h-4 w-4 text-primary" /> Hiệu suất (KPI)
+            </h3>
+            <Badge variant="secondary">{kpi.score}/100 điểm</Badge>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Đề xuất đã gửi</p>
+              <p className="mt-1 text-lg font-semibold">{stats.proposals.toLocaleString("vi-VN")}</p>
+              <p className="text-xs text-muted-foreground">tại công ty bạn</p>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Được duyệt</p>
+              <p className="mt-1 text-lg font-semibold">{stats.approved.toLocaleString("vi-VN")}</p>
+              <p className="text-xs text-muted-foreground">
+                {stats.proposals > 0 ? `${stats.approved}/${stats.proposals} đề xuất` : "chưa có đề xuất"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Tỉ lệ duyệt</p>
+              <p className="mt-1 text-lg font-semibold">{formatApprovalRate(kpi.approvalRate)}</p>
+              <p className="text-xs text-muted-foreground">55% trọng số KPI</p>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Việc đã hoàn thành</p>
+              <p className="mt-1 text-lg font-semibold">{kpi.completed.toLocaleString("vi-VN")}</p>
+              <p className="text-xs text-muted-foreground">
+                {stats.completed > 0 ? `${stats.completed.toLocaleString("vi-VN")} tại công ty bạn` : "toàn thị trường"}
+              </p>
+            </div>
+          </div>
+          {!kpi.hasEvidence && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Chưa có dữ liệu thực thi tại công ty bạn — điểm hiện tính theo khối lượng việc và đánh giá thị trường.
             </p>
           )}
         </section>
-      </div>
+      )}
 
       {/* Phỏng vấn */}
       <section className="rounded-2xl border border-border bg-surface p-5">

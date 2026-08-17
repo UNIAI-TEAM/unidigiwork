@@ -200,7 +200,7 @@ export const getMarketAgent = createServerFn({ method: "GET" })
     ]);
 
     // KPI thật của ứng viên trong chính tenant này (nếu đã từng làm việc).
-    let tenantStats = { proposals: 0, approved: 0, runs: 0 };
+    let tenantStats = { proposals: 0, approved: 0, runs: 0, completed: 0 };
     if (employment?.workflow_agent_id) {
       const { data: runs } = await context.supabase
         .from("workflow_agent_runs")
@@ -222,8 +222,19 @@ export const getMarketAgent = createServerFn({ method: "GET" })
           (p: any) => p.status === "EXECUTED" || p.status === "CONFIRMED",
         ).length;
       }
-      tenantStats = { runs: (runs ?? []).length, proposals: proposalIds.length, approved };
+      const completed = (runs ?? []).filter(
+        (r: any) => r.status === "succeeded" || r.status === "SUCCEEDED",
+      ).length;
+      tenantStats = { runs: (runs ?? []).length, proposals: proposalIds.length, approved, completed };
     }
+
+    const kpi = computeAiKpi({
+      marketCompleted: Number((agent as any).completed_tasks) || 0,
+      tenantCompleted: tenantStats.completed,
+      tenantProposals: tenantStats.proposals,
+      tenantApproved: tenantStats.approved,
+      rating: Number((agent as any).rating) || 0,
+    });
 
     return {
       agent,
@@ -231,6 +242,7 @@ export const getMarketAgent = createServerFn({ method: "GET" })
       cases: cases ?? [],
       employment: employment ?? null,
       tenantStats,
+      kpi,
     };
   });
 
