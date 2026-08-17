@@ -144,23 +144,27 @@ export const getMarketAgent = createServerFn({ method: "GET" })
     // KPI thật của ứng viên trong chính tenant này (nếu đã từng làm việc).
     let tenantStats = { proposals: 0, approved: 0, runs: 0 };
     if (employment?.workflow_agent_id) {
-      const [{ count: runs }, { data: proposals }] = await Promise.all([
-        context.supabase
-          .from("workflow_agent_runs")
-          .select("id", { count: "exact", head: true })
-          .eq("agent_id", employment.workflow_agent_id),
-        context.supabase
+      const { data: runs } = await context.supabase
+        .from("workflow_agent_runs")
+        .select("id, proposal_id, status")
+        .eq("tenant_id", tenantId)
+        .eq("agent_id", employment.workflow_agent_id)
+        .limit(500);
+      const proposalIds = (runs ?? [])
+        .map((r: any) => r.proposal_id)
+        .filter((v: string | null): v is string => !!v);
+      let approved = 0;
+      if (proposalIds.length) {
+        const { data: proposals } = await context.supabase
           .from("ai_action_proposals")
           .select("status")
           .eq("tenant_id", tenantId)
-          .eq("agent_id", employment.workflow_agent_id)
-          .limit(500),
-      ]);
-      tenantStats = {
-        runs: runs ?? 0,
-        proposals: proposals?.length ?? 0,
-        approved: (proposals ?? []).filter((p: any) => p.status === "EXECUTED" || p.status === "CONFIRMED").length,
-      };
+          .in("id", proposalIds);
+        approved = (proposals ?? []).filter(
+          (p: any) => p.status === "EXECUTED" || p.status === "CONFIRMED",
+        ).length;
+      }
+      tenantStats = { runs: (runs ?? []).length, proposals: proposalIds.length, approved };
     }
 
     return {

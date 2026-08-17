@@ -186,7 +186,7 @@ function AiContractsTab() {
               <span className="block truncate text-sm font-medium">{e.agent?.name ?? "Nhân sự AI"}</span>
               <span className="block truncate text-xs text-muted-foreground">{e.agent?.title}</span>
             </span>
-            <Badge variant="secondary">{AI_EMPLOYMENT_STATUS_LABELS[e.status] ?? e.status}</Badge>
+            <Badge variant="secondary">{AI_EMPLOYMENT_STATUS_LABELS[e.status as keyof typeof AI_EMPLOYMENT_STATUS_LABELS] ?? e.status}</Badge>
             <span className="text-sm font-medium">
               {formatMoney(Number(e.salary_amount ?? 0), e.currency)}/tháng
             </span>

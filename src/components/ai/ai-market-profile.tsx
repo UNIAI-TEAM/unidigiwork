@@ -214,7 +214,7 @@ export function AiMarketProfile({
               <li key={s.id} className="rounded-lg border border-border p-3">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-sm font-medium">{s.name}</span>
-                  <Badge variant="outline" className="text-[11px]">{AI_SKILL_KIND_LABELS[s.kind]}</Badge>
+                  <Badge variant="outline" className="text-[11px]">{AI_SKILL_KIND_LABELS[s.kind as keyof typeof AI_SKILL_KIND_LABELS]}</Badge>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>
               </li>
