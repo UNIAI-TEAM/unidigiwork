@@ -708,75 +708,76 @@ function CreateWorkspaceDialog({
 }
 
 function NewPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const groups: {
     label: string;
     items: { icon: LucideIcon; title: string; desc: string; kbd?: string; color: string }[];
   }[] = [
     {
-      label: "Công việc",
+      label: t("sh.new.g.work"),
       items: [
         {
           icon: ListChecks,
-          title: "Nhiệm vụ mới",
-          desc: "Tạo task, gán người, đặt deadline",
+          title: t("sh.new.task"),
+          desc: t("sh.new.taskDesc"),
           kbd: "T",
           color: "bg-primary/15 text-primary",
         },
         {
           icon: Workflow,
-          title: "Quy trình",
-          desc: "Khởi tạo workflow tự động",
+          title: t("sh.new.flow"),
+          desc: t("sh.new.flowDesc"),
           kbd: "W",
           color: "bg-violet-500/15 text-violet-300",
         },
       ],
     },
     {
-      label: "Giao tiếp",
+      label: t("sh.new.g.comm"),
       items: [
         {
           icon: Video,
-          title: "Cuộc họp",
-          desc: "Bắt đầu hoặc lên lịch họp",
+          title: t("sh.new.meeting"),
+          desc: t("sh.new.meetingDesc"),
           kbd: "M",
           color: "bg-rose-500/15 text-rose-300",
         },
         {
           icon: MessageSquare,
-          title: "Tin nhắn",
-          desc: "Mở hội thoại nhóm mới",
+          title: t("sh.new.msg"),
+          desc: t("sh.new.msgDesc"),
           kbd: "C",
           color: "bg-emerald-500/15 text-emerald-300",
         },
         {
           icon: Mail,
-          title: "Soạn email",
-          desc: "Gửi email từ Email Hub",
+          title: t("sh.new.email"),
+          desc: t("sh.new.emailDesc"),
           kbd: "E",
           color: "bg-sky-500/15 text-sky-300",
         },
       ],
     },
     {
-      label: "Nội dung",
+      label: t("sh.new.g.content"),
       items: [
         {
           icon: FileText,
-          title: "Tài liệu",
-          desc: "Tạo tài liệu cộng tác",
+          title: t("sh.new.doc"),
+          desc: t("sh.new.docDesc"),
           kbd: "D",
           color: "bg-amber-500/15 text-amber-300",
         },
         {
           icon: BookOpen,
-          title: "Trang Wiki",
-          desc: "Ghi chú kiến thức nội bộ",
+          title: t("sh.new.wiki"),
+          desc: t("sh.new.wikiDesc"),
           color: "bg-teal-500/15 text-teal-300",
         },
         {
           icon: Calendar,
-          title: "Sự kiện lịch",
-          desc: "Thêm vào lịch cá nhân",
+          title: t("sh.new.event"),
+          desc: t("sh.new.eventDesc"),
           color: "bg-indigo-500/15 text-indigo-300",
         },
       ],
@@ -786,13 +787,13 @@ function NewPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="dialog"
-      aria-label="Tạo mới"
+      aria-label={t("sh.new.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]"
     >
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/15 via-surface to-surface px-4 py-3">
         <div>
-          <div className="text-sm font-semibold">Tạo nhanh</div>
-          <div className="text-[11px] text-muted-foreground">Chọn một loại để bắt đầu</div>
+          <div className="text-sm font-semibold">{t("sh.new.title")}</div>
+          <div className="text-[11px] text-muted-foreground">{t("sh.new.sub")}</div>
         </div>
         <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
           N
@@ -836,11 +837,11 @@ function NewPanel({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <div className="border-t border-border bg-surface-2/40 px-3 py-2 text-[11px] text-muted-foreground">
-        Gõ{" "}
+        {t("sh.new.hintA")}{" "}
         <span className="rounded border border-border bg-surface px-1 font-mono text-[10px]">
           /
         </span>{" "}
-        trong bất kỳ ô nào để mở lệnh nhanh.
+        {t("sh.new.hintB")}
       </div>
     </div>
   );
