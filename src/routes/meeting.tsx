@@ -11,6 +11,7 @@ import {
   listMyMeetingRooms,
   listMyWorkspaces,
   listMeetingParticipants,
+  redeemMeetingInviteLink,
 } from "@/lib/api/meeting-rooms.functions";
 import {
   cancelMeeting,
@@ -18,7 +19,6 @@ import {
   scheduleMeeting,
   updateMeeting,
 } from "@/lib/api/meetings.functions";
-import { redeemMeetingInviteLink } from "@/lib/api/meeting-rooms.functions";
 import {
   Dialog,
   DialogContent,
