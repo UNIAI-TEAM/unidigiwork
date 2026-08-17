@@ -273,10 +273,12 @@ export const listAiEmployments = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const tenantId = await resolveTenant(context, data.workspaceId);
+    await sweepExpiredTrials(context, tenantId);
     const { data: rows, error } = await context.supabase
       .from("ai_employments")
       .select("*, agent:ai_market_agents(*)")
       .eq("tenant_id", tenantId)
+      .not("status", "in", "(TERMINATED,REJECTED)")
       .order("created_at", { ascending: false });
     if (error) throw fail("AI_MARKET_LIST_FAILED", error.message);
     return rows ?? [];
