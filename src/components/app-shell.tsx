@@ -64,6 +64,7 @@ import { toast } from "sonner";
 import { TenantSwitcher } from "@/components/tenant-switcher";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
+import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-create-dialog";
 import { useAvailableTenants } from "@/features/tenants/hooks";
 import { DesktopNavigation } from "@/components/navigation/desktop-nav";
 import { NAV_ICON_CLASS, NAV_ICON_STROKE, NAV_ICON_STROKE_ACTIVE } from "@/config/navigation";
@@ -709,14 +710,8 @@ function CreateWorkspaceDialog({
 
 function NewPanel({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
-  const navigate = useNavigate();
-  const go = useCallback(
-    (to: string) => {
-      onClose();
-      void navigate({ to });
-    },
-    [navigate, onClose],
-  );
+  const [quickKind, setQuickKind] = useState<QuickCreateKind | null>(null);
+
   const groups: {
     label: string;
     items: {
@@ -725,7 +720,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
       desc: string;
       kbd?: string;
       color: string;
-      to: string;
+      kind: QuickCreateKind;
     }[];
   }[] = [
     {
@@ -737,7 +732,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.taskDesc"),
           kbd: "T",
           color: "bg-primary/15 text-primary",
-          to: "/tasks",
+          kind: "task",
         },
         {
           icon: Workflow,
@@ -745,7 +740,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.flowDesc"),
           kbd: "W",
           color: "bg-violet-500/15 text-violet-300",
-          to: "/workflows",
+          kind: "workflow",
         },
       ],
     },
@@ -758,7 +753,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.meetingDesc"),
           kbd: "M",
           color: "bg-rose-500/15 text-rose-300",
-          to: "/meeting",
+          kind: "meeting",
         },
         {
           icon: MessageSquare,
@@ -766,7 +761,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.msgDesc"),
           kbd: "C",
           color: "bg-emerald-500/15 text-emerald-300",
-          to: "/chat",
+          kind: "message",
         },
         {
           icon: Mail,
@@ -774,7 +769,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.emailDesc"),
           kbd: "E",
           color: "bg-sky-500/15 text-sky-300",
-          to: "/email/compose",
+          kind: "email",
         },
       ],
     },
@@ -787,35 +782,35 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.docDesc"),
           kbd: "D",
           color: "bg-amber-500/15 text-amber-300",
-          to: "/documents",
+          kind: "doc",
         },
         {
           icon: BookOpen,
           title: t("sh.new.wiki"),
           desc: t("sh.new.wikiDesc"),
           color: "bg-teal-500/15 text-teal-300",
-          to: "/knowledge",
+          kind: "wiki",
         },
         {
           icon: Calendar,
           title: t("sh.new.event"),
           desc: t("sh.new.eventDesc"),
           color: "bg-indigo-500/15 text-indigo-300",
-          to: "/calendar",
+          kind: "event",
         },
       ],
     },
   ];
 
-  // Phím tắt trong panel: T/W/M/C/E/D điều hướng nhanh tới trang tương ứng.
+  // Phím tắt trong panel: T/W/M/C/E/D mở dialog tạo thật (panel vẫn mở).
   useEffect(() => {
-    const map: Record<string, string> = {
-      t: "/tasks",
-      w: "/workflows",
-      m: "/meeting",
-      c: "/chat",
-      e: "/email/compose",
-      d: "/documents",
+    const map: Record<string, QuickCreateKind> = {
+      t: "task",
+      w: "workflow",
+      m: "meeting",
+      c: "message",
+      e: "email",
+      d: "doc",
     };
     const onKey = (ev: KeyboardEvent) => {
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
@@ -823,17 +818,19 @@ function NewPanel({ onClose }: { onClose: () => void }) {
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
       if (target?.isContentEditable) return;
       if (ev.key === "Escape") {
-        onClose();
+        if (quickKind) setQuickKind(null);
+        else onClose();
         return;
       }
-      const to = map[ev.key.toLowerCase()];
-      if (!to) return;
+      if (quickKind) return;
+      const kind = map[ev.key.toLowerCase()];
+      if (!kind) return;
       ev.preventDefault();
-      go(to);
+      setQuickKind(kind);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, onClose]);
+  }, [onClose, quickKind]);
 
   return (
     <div
@@ -860,7 +857,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
               {g.items.map((it) => (
                 <li key={it.title}>
                   <button
-                    onClick={() => go(it.to)}
+                    onClick={() => setQuickKind(it.kind)}
                     className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-2"
                   >
                     <span
@@ -894,6 +891,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
         </span>{" "}
         {t("sh.new.hintB")}
       </div>
+      <QuickCreateDialog kind={quickKind} onOpenChange={(o) => !o && setQuickKind(null)} />
     </div>
   );
 }
