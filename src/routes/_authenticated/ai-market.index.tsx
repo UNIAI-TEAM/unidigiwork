@@ -75,12 +75,20 @@ function AiMarketPage() {
                 Chợ tuyển dụng nhân sự AI — tìm ứng viên, phỏng vấn, đàm phán lương rồi cho thử việc.
               </p>
             </div>
-            <Link
-              to="/ai-workforce"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-surface-2"
-            >
-              <Briefcase className="h-4 w-4" /> Nhân sự đã tuyển
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/ai-market/search"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-surface-2"
+              >
+                <Search className="h-4 w-4" /> Tìm kiếm nâng cao
+              </Link>
+              <Link
+                to="/ai-workforce"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-surface-2"
+              >
+                <Briefcase className="h-4 w-4" /> Nhân sự đã tuyển
+              </Link>
+            </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">

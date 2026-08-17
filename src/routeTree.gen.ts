@@ -81,6 +81,7 @@ import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authent
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
+import { Route as AuthenticatedAiMarketSearchRouteImport } from './routes/_authenticated/ai-market.search'
 import { Route as AuthenticatedAiMarketIdRouteImport } from './routes/_authenticated/ai-market.$id'
 import { Route as AuthenticatedAdminWebhooksRouteImport } from './routes/_authenticated/admin.webhooks'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
@@ -478,6 +479,12 @@ const AuthenticatedChatChannelIdRoute =
     path: '/chat/$channelId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAiMarketSearchRoute =
+  AuthenticatedAiMarketSearchRouteImport.update({
+    id: '/ai-market/search',
+    path: '/ai-market/search',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiMarketIdRoute = AuthenticatedAiMarketIdRouteImport.update({
   id: '/ai-market/$id',
   path: '/ai-market/$id',
@@ -653,6 +660,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
+  '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -745,6 +753,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
+  '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -841,6 +850,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
   '/_authenticated/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
+  '/_authenticated/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
@@ -937,6 +947,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/webhooks'
     | '/ai-market/$id'
+    | '/ai-market/search'
     | '/chat/$channelId'
     | '/documents/$id'
     | '/email/$id'
@@ -1029,6 +1040,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/webhooks'
     | '/ai-market/$id'
+    | '/ai-market/search'
     | '/chat/$channelId'
     | '/documents/$id'
     | '/email/$id'
@@ -1124,6 +1136,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/webhooks'
     | '/_authenticated/ai-market/$id'
+    | '/_authenticated/ai-market/search'
     | '/_authenticated/chat_/$channelId'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email/$id'
@@ -1699,6 +1712,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatChannelIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ai-market/search': {
+      id: '/_authenticated/ai-market/search'
+      path: '/ai-market/search'
+      fullPath: '/ai-market/search'
+      preLoaderRoute: typeof AuthenticatedAiMarketSearchRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-market/$id': {
       id: '/_authenticated/ai-market/$id'
       path: '/ai-market/$id'
@@ -2023,6 +2043,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
+  AuthenticatedAiMarketSearchRoute: typeof AuthenticatedAiMarketSearchRoute
   AuthenticatedChatChannelIdRoute: typeof AuthenticatedChatChannelIdRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -2053,6 +2074,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,
+  AuthenticatedAiMarketSearchRoute: AuthenticatedAiMarketSearchRoute,
   AuthenticatedChatChannelIdRoute: AuthenticatedChatChannelIdRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
