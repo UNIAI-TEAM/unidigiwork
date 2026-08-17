@@ -48,6 +48,34 @@ function MobileEmailDetailPage() {
     },
   });
 
+  const replyMutation = useMutation({
+    mutationFn: async () => {
+      const last = messages[messages.length - 1];
+      if (!last) throw new Error("Không tìm thấy email");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", last.from_user_id as string)
+        .maybeSingle();
+      if (!profile?.email) throw new Error("Không tìm thấy địa chỉ người nhận");
+      const subject = last.subject?.startsWith("Re:") ? last.subject : `Re: ${last.subject ?? ""}`;
+      return send({
+        data: {
+          to: [profile.email],
+          subject: subject || "Re:",
+          body: replyBody,
+          thread_id: id,
+        },
+      });
+    },
+    onSuccess: () => {
+      setReplyBody("");
+      toast.success("Đã gửi trả lời");
+      queryClient.invalidateQueries({ queryKey: ["mobile-email-detail", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (!messages?.length) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center p-8 text-center">
@@ -120,9 +148,13 @@ function MobileEmailDetailPage() {
           >
             Hủy
           </Button>
-          <Button size="sm" onClick={() => {}} disabled={!replyBody.trim()}>
+          <Button
+            size="sm"
+            onClick={() => replyMutation.mutate()}
+            disabled={!replyBody.trim() || replyMutation.isPending}
+          >
             <Reply className="mr-2 h-4 w-4" />
-            Gửi
+            {replyMutation.isPending ? "Đang gửi..." : "Gửi"}
           </Button>
         </div>
       </div>
