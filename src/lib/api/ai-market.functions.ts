@@ -225,12 +225,21 @@ export const getMarketAgent = createServerFn({ method: "GET" })
       tenantStats = { runs: (runs ?? []).length, proposals: proposalIds.length, approved };
     }
 
+    const kpi = computeAiKpi({
+      marketCompleted: Number((agent as any).completed_tasks) || 0,
+      tenantCompleted: tenantStats.runs,
+      tenantProposals: tenantStats.proposals,
+      tenantApproved: tenantStats.approved,
+      rating: Number((agent as any).rating) || 0,
+    });
+
     return {
       agent,
       experiences: experiences ?? [],
       cases: cases ?? [],
       employment: employment ?? null,
       tenantStats,
+      kpi,
     };
   });
 
