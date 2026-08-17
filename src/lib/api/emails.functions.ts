@@ -93,6 +93,38 @@ export const listEmailMessages = createServerFn({ method: "GET" })
   });
 
 /** Get a thread with all its messages. */
+export const getEmailFolderCounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ workspace_id: z.string().uuid().nullish() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("email_states")
+      .select("folder, is_read, is_starred, email_messages!inner(workspace_id)")
+      .eq("user_id", context.userId)
+      .limit(5000);
+    if (data.workspace_id) q = q.eq("email_messages.workspace_id", data.workspace_id);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const counts: Record<string, number> = {
+      inbox: 0,
+      sent: 0,
+      drafts: 0,
+      archive: 0,
+      trash: 0,
+      starred: 0,
+    };
+    let unreadInbox = 0;
+    for (const r of rows ?? []) {
+      const f = r.folder as string;
+      if (f in counts) counts[f] += 1;
+      if (r.is_starred) counts.starred += 1;
+      if (f === "inbox" && !r.is_read) unreadInbox += 1;
+    }
+    return { counts, unreadInbox, total: (rows ?? []).length };
+  });
+
 export const getEmailThread = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
