@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Search, ShieldCheck, UserX, X } from "lucide-react";
 import { avatar } from "@/components/app-shell";
+import { useAdminAccess } from "@/features/admin/access";
 import { grantUserRole, listAllUsers, revokeUserRole } from "@/lib/api/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
@@ -24,6 +25,8 @@ const ROLES: { key: Role; label: string; tint: string }[] = [
 
 function AdminUsersPage() {
   const qc = useQueryClient();
+  const { access } = useAdminAccess();
+  const canWrite = access.canWrite;
   const [q, setQ] = useState("");
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin", "users"],
@@ -103,7 +106,7 @@ function AdminUsersPage() {
             </thead>
             <tbody>
               {filtered.map((u) => {
-                const busy = grantMut.isPending || revokeMut.isPending;
+                const busy = grantMut.isPending || revokeMut.isPending || !canWrite;
                 return (
                   <tr key={u.id} className="border-b border-border/60 hover:bg-surface-2/30">
                     <td className="px-4 py-3">
@@ -172,7 +175,13 @@ function AdminUsersPage() {
                                   ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
                                   : "border-border bg-surface text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                               } disabled:cursor-not-allowed disabled:opacity-50`}
-                              title={has ? `Thu hồi ${r.label}` : `Cấp ${r.label}`}
+                              title={
+                                !canWrite
+                                  ? "Bạn chỉ có quyền đọc"
+                                  : has
+                                    ? `Thu hồi ${r.label}`
+                                    : `Cấp ${r.label}`
+                              }
                             >
                               {has ? "− " : "+ "}
                               {r.label}
@@ -190,7 +199,10 @@ function AdminUsersPage() {
       )}
       <div className="flex items-center gap-2 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
         <ShieldCheck className="h-3.5 w-3.5" />
-        <span>Không thể thu hồi vai trò quản trị viên cuối cùng để tránh khóa hệ thống.</span>
+        <span>
+          Quản trị viên: đọc + ghi · Điều phối: chỉ đọc. Không thể thu hồi vai trò quản trị viên cuối
+          cùng để tránh khóa hệ thống.
+        </span>
       </div>
     </section>
   );

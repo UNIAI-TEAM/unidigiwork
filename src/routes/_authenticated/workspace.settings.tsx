@@ -179,12 +179,22 @@ function WorkspaceSettingsPage() {
                 if (canSave) saveM.mutate();
               }}
             >
-              {!isOwner && (
-                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                  <ShieldCheck className="mt-0.5 h-4 w-4" />
-                  Chỉ chủ sở hữu workspace mới được chỉnh sửa các thiết lập này.
-                </div>
-              )}
+              <div
+                className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
+                  isOwner
+                    ? "border-primary/30 bg-primary/5 text-foreground"
+                    : "border-border bg-muted/40 text-muted-foreground"
+                }`}
+              >
+                <ShieldCheck className="mt-0.5 h-4 w-4" />
+                <span>
+                  Quyền của bạn:{" "}
+                  <strong className="font-semibold">
+                    {isOwner ? "Đọc và ghi (chủ sở hữu)" : "Chỉ đọc (thành viên)"}
+                  </strong>
+                  {!isOwner && " — chỉ chủ sở hữu workspace mới được chỉnh sửa các thiết lập này."}
+                </span>
+              </div>
 
               <section className="rounded-xl border border-border bg-card p-5">
                 <h2 className="text-sm font-semibold">Thông tin chung</h2>

@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Download, Upload, Database, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAccess } from "@/features/admin/access";
 import {
   exportAiWorkforceBackup,
   restoreAiWorkforceBackup,
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/_authenticated/admin/backup")({
 type RestoreMode = "merge" | "replace";
 
 function AdminBackupPage() {
+  const { access } = useAdminAccess();
+  const canWrite = access.canWrite;
   const [mode, setMode] = useState<RestoreMode>("merge");
   const [lastCounts, setLastCounts] = useState<Record<string, number> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,6 +98,12 @@ function AdminBackupPage() {
         <p className="mb-4 text-sm text-muted-foreground">
           Chọn tệp JSON đã sao lưu trước đó để phục hồi dữ liệu nhân sự AI.
         </p>
+        {!canWrite && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-surface-2 p-3 text-[12px] text-muted-foreground">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Chỉ quản trị viên (quyền ghi) mới được khôi phục dữ liệu. Bạn chỉ có quyền đọc.</span>
+          </div>
+        )}
 
         <div className="mb-4 grid gap-2 sm:grid-cols-2">
           <label
@@ -106,6 +115,7 @@ function AdminBackupPage() {
               type="radio"
               name="restore-mode"
               className="sr-only"
+              disabled={!canWrite}
               checked={mode === "merge"}
               onChange={() => setMode("merge")}
             />
@@ -123,6 +133,7 @@ function AdminBackupPage() {
               type="radio"
               name="restore-mode"
               className="sr-only"
+              disabled={!canWrite}
               checked={mode === "replace"}
               onChange={() => setMode("replace")}
             />
@@ -163,7 +174,7 @@ function AdminBackupPage() {
         />
         <button
           onClick={() => fileRef.current?.click()}
-          disabled={restoreMut.isPending}
+          disabled={restoreMut.isPending || !canWrite}
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3.5 py-2 text-sm font-medium hover:bg-surface-2/70 disabled:opacity-60"
         >
           <Upload className="h-4 w-4" />
