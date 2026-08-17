@@ -234,6 +234,30 @@ export const getMarketAgent = createServerFn({ method: "GET" })
     };
   });
 
+/** Danh mục kỹ năng AI: bản dùng chung (tenant_id NULL) + kỹ năng riêng của tenant. */
+export const listMarketSkills = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenant(context, data.workspaceId);
+    const { data: rows, error } = await context.supabase
+      .from("ai_market_skills")
+      .select("id, tenant_id, code, name, kind, description, example, action_types, sources, sort_order")
+      .or(`tenant_id.is.null,tenant_id.eq.${tenantId}`)
+      .order("sort_order", { ascending: true });
+    if (error) throw fail("AI_MARKET_LIST_FAILED", error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.code as string,
+      name: r.name as string,
+      kind: r.kind as string,
+      description: r.description as string,
+      example: r.example as string,
+      actionTypes: (r.action_types ?? []) as string[],
+      sources: (r.sources ?? []) as string[],
+      tenantOwned: !!r.tenant_id,
+    }));
+  });
+
 export const listAiEmployments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(i))
