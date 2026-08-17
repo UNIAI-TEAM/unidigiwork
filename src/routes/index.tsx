@@ -488,10 +488,10 @@ function Landing() {
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {([
-              { icon: Calendar, t: "land.hire.r1.t", d: "land.hire.r1.d", price: "1.900.000đ" },
-              { icon: BarChart3, t: "land.hire.r2.t", d: "land.hire.r2.d", price: "2.900.000đ" },
-              { icon: Headphones, t: "land.hire.r3.t", d: "land.hire.r3.d", price: "2.400.000đ" },
-              { icon: Settings2, t: "land.hire.r4.t", d: "land.hire.r4.d", price: "3.500.000đ" },
+              { icon: Calendar, t: "land.hire.r1.t", d: "land.hire.r1.d", price: 1900000 },
+              { icon: BarChart3, t: "land.hire.r2.t", d: "land.hire.r2.d", price: 2900000 },
+              { icon: Headphones, t: "land.hire.r3.t", d: "land.hire.r3.d", price: 2400000 },
+              { icon: Settings2, t: "land.hire.r4.t", d: "land.hire.r4.d", price: 3500000 },
             ] as const).map((r) => (
               <article
                 key={r.t}
@@ -505,7 +505,7 @@ function Landing() {
                 <div className="mt-4 border-t border-border pt-4">
                   <div className="text-xs text-muted-foreground">{t("land.hire.price")}</div>
                   <div className="text-lg font-semibold tracking-tight">
-                    {r.price}
+                    {formatMoney(r.price, lang)}
                     <span className="ml-1 text-xs font-normal text-muted-foreground">
                       {t("land.hire.unit")}
                     </span>
