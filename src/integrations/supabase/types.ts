@@ -248,6 +248,436 @@ export type Database = {
           },
         ]
       }
+      ai_employment_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          employment_id: string
+          from_status: string | null
+          id: string
+          note: string
+          salary_amount: number | null
+          tenant_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          employment_id: string
+          from_status?: string | null
+          id?: string
+          note?: string
+          salary_amount?: number | null
+          tenant_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          employment_id?: string
+          from_status?: string | null
+          id?: string
+          note?: string
+          salary_amount?: number | null
+          tenant_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_employment_events_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "ai_employments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_employment_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_employments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          ended_at: string | null
+          fee_per_action: number
+          hired_at: string | null
+          id: string
+          market_agent_id: string
+          salary_amount: number
+          status: string
+          tenant_id: string
+          term_months: number
+          terms: string
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+          updated_by: string | null
+          workflow_agent_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          ended_at?: string | null
+          fee_per_action?: number
+          hired_at?: string | null
+          id?: string
+          market_agent_id: string
+          salary_amount?: number
+          status?: string
+          tenant_id: string
+          term_months?: number
+          terms?: string
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workflow_agent_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          ended_at?: string | null
+          fee_per_action?: number
+          hired_at?: string | null
+          id?: string
+          market_agent_id?: string
+          salary_amount?: number
+          status?: string
+          tenant_id?: string
+          term_months?: number
+          terms?: string
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workflow_agent_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_employments_market_agent_id_fkey"
+            columns: ["market_agent_id"]
+            isOneToOne: false
+            referencedRelation: "ai_market_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_employments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_employments_workflow_agent_id_fkey"
+            columns: ["workflow_agent_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_employments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_interview_messages: {
+        Row: {
+          case_id: string | null
+          content: string
+          created_at: string
+          id: string
+          interview_id: string
+          role: string
+          score: number | null
+          tenant_id: string
+        }
+        Insert: {
+          case_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          interview_id: string
+          role: string
+          score?: number | null
+          tenant_id: string
+        }
+        Update: {
+          case_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          interview_id?: string
+          role?: string
+          score?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_interview_messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "ai_market_interview_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interview_messages_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "ai_interviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interview_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_interviews: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employment_id: string | null
+          id: string
+          market_agent_id: string
+          max_score: number | null
+          max_turns: number
+          score: number | null
+          tenant_id: string
+          turns_used: number
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employment_id?: string | null
+          id?: string
+          market_agent_id: string
+          max_score?: number | null
+          max_turns?: number
+          score?: number | null
+          tenant_id: string
+          turns_used?: number
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employment_id?: string | null
+          id?: string
+          market_agent_id?: string
+          max_score?: number | null
+          max_turns?: number
+          score?: number | null
+          tenant_id?: string
+          turns_used?: number
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_interviews_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "ai_employments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interviews_market_agent_id_fkey"
+            columns: ["market_agent_id"]
+            isOneToOne: false
+            referencedRelation: "ai_market_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interviews_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_market_agents: {
+        Row: {
+          bio: string
+          code: string
+          completed_tasks: number
+          created_at: string
+          currency: string
+          domain: string
+          fee_per_action: number
+          hires_count: number
+          id: string
+          languages: string[]
+          mission: string
+          name: string
+          persona: string
+          published: boolean
+          rating: number
+          salary_max: number
+          salary_min: number
+          seniority: string
+          skills: string[]
+          sort_order: number
+          title: string
+          updated_at: string
+          worker_profile: string | null
+        }
+        Insert: {
+          bio?: string
+          code: string
+          completed_tasks?: number
+          created_at?: string
+          currency?: string
+          domain: string
+          fee_per_action?: number
+          hires_count?: number
+          id?: string
+          languages?: string[]
+          mission?: string
+          name: string
+          persona?: string
+          published?: boolean
+          rating?: number
+          salary_max?: number
+          salary_min?: number
+          seniority?: string
+          skills?: string[]
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          worker_profile?: string | null
+        }
+        Update: {
+          bio?: string
+          code?: string
+          completed_tasks?: number
+          created_at?: string
+          currency?: string
+          domain?: string
+          fee_per_action?: number
+          hires_count?: number
+          id?: string
+          languages?: string[]
+          mission?: string
+          name?: string
+          persona?: string
+          published?: boolean
+          rating?: number
+          salary_max?: number
+          salary_min?: number
+          seniority?: string
+          skills?: string[]
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          worker_profile?: string | null
+        }
+        Relationships: []
+      }
+      ai_market_experiences: {
+        Row: {
+          company_label: string
+          completed_tasks: number
+          created_at: string
+          duration_months: number
+          id: string
+          industry: string
+          market_agent_id: string
+          sort_order: number
+          summary: string
+        }
+        Insert: {
+          company_label?: string
+          completed_tasks?: number
+          created_at?: string
+          duration_months?: number
+          id?: string
+          industry: string
+          market_agent_id: string
+          sort_order?: number
+          summary?: string
+        }
+        Update: {
+          company_label?: string
+          completed_tasks?: number
+          created_at?: string
+          duration_months?: number
+          id?: string
+          industry?: string
+          market_agent_id?: string
+          sort_order?: number
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_market_experiences_market_agent_id_fkey"
+            columns: ["market_agent_id"]
+            isOneToOne: false
+            referencedRelation: "ai_market_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_market_interview_cases: {
+        Row: {
+          code: string
+          created_at: string
+          domain: string
+          id: string
+          max_score: number
+          prompt: string
+          rubric: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          domain: string
+          id?: string
+          max_score?: number
+          prompt: string
+          rubric?: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          domain?: string
+          id?: string
+          max_score?: number
+          prompt?: string
+          rubric?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       ai_message_versions: {
         Row: {
           content: string

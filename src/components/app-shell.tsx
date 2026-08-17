@@ -90,6 +90,7 @@ export const avatar = (seed: string) =>
   `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear`;
 
 type NavKey =
+  | "ai-market"
   | "dashboard"
   | "chat"
   | "meetings"

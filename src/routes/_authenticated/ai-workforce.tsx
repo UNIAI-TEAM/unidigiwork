@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Bot, Plus, Sparkles, Users } from "lucide-react";
+import { Bot, BriefcaseBusiness, Plus, Sparkles, Users } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { listAiEmployments } from "@/lib/api/ai-market.functions";
+import { AI_EMPLOYMENT_STATUS_LABELS, formatMoney } from "@/domain/ai-market/contracts";
+import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
+import { Badge } from "@/components/ui/badge";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -35,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/ai-workforce")({
 
 const TABS = [
   { id: "workers", label: "Nhân sự AI", icon: Bot },
+  { id: "contracts", label: "Hợp đồng AI", icon: BriefcaseBusiness },
   { id: "skills", label: "Kỹ năng AI", icon: Sparkles },
   { id: "workspaces", label: "Không gian làm việc", icon: Users },
 ] as const;
@@ -61,12 +68,12 @@ function AiWorkforcePage() {
                 Xây dựng, quản lý và làm việc cùng đội ngũ AI của bạn.
               </p>
             </div>
-            <button
-              type="button"
+            <Link
+              to="/ai-market"
               className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              <Plus className="h-4 w-4" /> Thuê nhân sự AI
-            </button>
+              <Plus className="h-4 w-4" /> Tuyển nhân sự AI
+            </Link>
           </div>
 
           <nav className="mt-5 flex gap-1 border-b border-border text-sm">
@@ -112,6 +119,8 @@ function AiWorkforcePage() {
                 </li>
               ))}
             </ul>
+          ) : tab === "contracts" ? (
+            <AiContractsTab />
           ) : tab === "skills" ? (
             <AiSkillsManager />
           ) : (
@@ -140,5 +149,50 @@ function AiWorkforcePage() {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+function AiContractsTab() {
+  const { workspaceId } = useActiveWorkspace();
+  const { data: workspaces } = useMyWorkspaces();
+  const activeWorkspaceId = workspaceId ?? workspaces?.[0]?.id ?? "";
+  const { data, isLoading } = useQuery({
+    queryKey: ["ai-employments", activeWorkspaceId],
+    queryFn: () => listAiEmployments({ data: { workspaceId: activeWorkspaceId } }),
+    enabled: !!activeWorkspaceId,
+  });
+
+  if (isLoading) return <p className="mt-6 text-sm text-muted-foreground">Đang tải hợp đồng…</p>;
+  if (!data?.length) {
+    return (
+      <div className="mt-6 rounded-2xl border border-dashed border-border bg-surface p-12 text-center text-sm text-muted-foreground">
+        Chưa có nhân sự AI nào được tuyển.{" "}
+        <Link to="/ai-market" className="font-medium text-primary hover:underline">
+          Tới chợ nhân sự AI
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="mt-6 grid gap-3">
+      {data.map((e: any) => (
+        <li key={e.id} className="rounded-xl border border-border bg-surface p-4">
+          <Link to="/ai-market/$id" params={{ id: e.market_agent_id }} className="flex flex-wrap items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+              <Bot className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">{e.agent?.name ?? "Nhân sự AI"}</span>
+              <span className="block truncate text-xs text-muted-foreground">{e.agent?.title}</span>
+            </span>
+            <Badge variant="secondary">{AI_EMPLOYMENT_STATUS_LABELS[e.status as keyof typeof AI_EMPLOYMENT_STATUS_LABELS] ?? e.status}</Badge>
+            <span className="text-sm font-medium">
+              {formatMoney(Number(e.salary_amount ?? 0), e.currency)}/tháng
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
