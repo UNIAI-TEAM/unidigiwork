@@ -710,14 +710,6 @@ function CreateWorkspaceDialog({
 
 function NewPanel({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
-  const navigate = useNavigate();
-  const go = useCallback(
-    (to: string) => {
-      onClose();
-      void navigate({ to });
-    },
-    [navigate, onClose],
-  );
   const [quickKind, setQuickKind] = useState<QuickCreateKind | null>(null);
 
   const groups: {
@@ -899,6 +891,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
         </span>{" "}
         {t("sh.new.hintB")}
       </div>
+      <QuickCreateDialog kind={quickKind} onOpenChange={(o) => !o && setQuickKind(null)} />
     </div>
   );
 }
