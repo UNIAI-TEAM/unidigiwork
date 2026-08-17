@@ -169,7 +169,11 @@ function NavItem({
       {inner}
     </Link>
   ) : (
-    <button className={cls} title={collapsed ? label : undefined}>
+    <button
+      onClick={() => notifyComingSoon(label)}
+      className={cls}
+      title={collapsed ? label : undefined}
+    >
       {inner}
     </button>
   );
@@ -296,7 +300,11 @@ function WorkspaceItem({
       {inner}
     </Link>
   ) : (
-    <button className={cls} title={collapsed ? name : undefined}>
+    <button
+      onClick={() => notifyComingSoon(name)}
+      className={cls}
+      title={collapsed ? name : undefined}
+    >
       {inner}
     </button>
   );
