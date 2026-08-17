@@ -1136,9 +1136,9 @@ type PanelNotif = {
   icon: LucideIcon;
   tint: string;
   actor?: string;
-  title: string;
-  body: string;
-  time: string;
+  titleKey: Key;
+  bodyKey: Key;
+  timeKey: Key;
   unread?: boolean;
 };
 
@@ -1148,9 +1148,9 @@ const PANEL_NOTIFS: PanelNotif[] = [
     icon: AtSign,
     tint: "text-violet-400 bg-violet-500/15",
     actor: "Trần Thị B",
-    title: "đã nhắc bạn trong #dev-team",
-    body: "@Nguyễn Văn A vui lòng review PR #482 trước 17:00.",
-    time: "5 phút trước",
+    titleKey: "sh.notif.n1t",
+    bodyKey: "sh.notif.n1b",
+    timeKey: "sh.notif.n1time",
     unread: true,
   },
   {
@@ -1158,18 +1158,18 @@ const PANEL_NOTIFS: PanelNotif[] = [
     icon: CheckCircle2,
     tint: "text-emerald-400 bg-emerald-500/15",
     actor: "Phạm Minh C",
-    title: "đã giao nhiệm vụ cho bạn",
-    body: "Thiết kế API Gateway v2.2 — hạn 15/06/2026.",
-    time: "32 phút trước",
+    titleKey: "sh.notif.n2t",
+    bodyKey: "sh.notif.n2b",
+    timeKey: "sh.notif.n2time",
     unread: true,
   },
   {
     id: "3",
     icon: Video,
     tint: "text-rose-400 bg-rose-500/15",
-    title: "Sắp diễn ra: Sprint 6 Daily Standup",
-    body: "Bắt đầu lúc 09:30 · 5 người tham gia.",
-    time: "1 giờ trước",
+    titleKey: "sh.notif.n3t",
+    bodyKey: "sh.notif.n3b",
+    timeKey: "sh.notif.n3time",
     unread: true,
   },
   {
@@ -1177,23 +1177,24 @@ const PANEL_NOTIFS: PanelNotif[] = [
     icon: FileText,
     tint: "text-sky-400 bg-sky-500/15",
     actor: "Phạm Minh C",
-    title: "đã cập nhật tài liệu",
-    body: "API_Gateway_Spec_v2.1.docx trong STOS Project.",
-    time: "2 giờ trước",
+    titleKey: "sh.notif.n4t",
+    bodyKey: "sh.notif.n4b",
+    timeKey: "sh.notif.n4time",
   },
   {
     id: "5",
     icon: Workflow,
     tint: "text-amber-400 bg-amber-500/15",
     actor: "Lê Hoàng D",
-    title: "cần bạn phê duyệt",
-    body: "Leave Request — Nguyễn Hương (3 ngày).",
-    time: "3 giờ trước",
+    titleKey: "sh.notif.n5t",
+    bodyKey: "sh.notif.n5b",
+    timeKey: "sh.notif.n5time",
     unread: true,
   },
 ];
 
 function NotificationsPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [items, setItems] = useState(PANEL_NOTIFS);
   const list = tab === "unread" ? items.filter((n) => n.unread) : items;
@@ -1204,15 +1205,17 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="dialog"
-      aria-label="Thông báo"
+      aria-label={t("sh.notif.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[380px]"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 via-surface to-surface px-4 py-3">
         <div>
-          <div className="text-sm font-semibold">Thông báo</div>
+          <div className="text-sm font-semibold">{t("sh.notif.title")}</div>
           <div className="text-[11px] text-muted-foreground">
-            {unreadCount > 0 ? `${unreadCount} chưa đọc` : "Bạn đã đọc hết thông báo"}
+            {unreadCount > 0
+              ? `${unreadCount} ${t("sh.notif.unreadSuffix")}`
+              : t("sh.notif.allRead")}
           </div>
         </div>
         <button
@@ -1220,7 +1223,7 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
           disabled={unreadCount === 0}
           className="rounded-md px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
         >
-          Đánh dấu đã đọc
+          {t("sh.notif.markAll")}
         </button>
       </div>
 
@@ -1237,7 +1240,9 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {k === "all" ? "Tất cả" : `Chưa đọc${unreadCount ? ` (${unreadCount})` : ""}`}
+            {k === "all"
+              ? t("sh.notif.all")
+              : `${t("sh.notif.unread")}${unreadCount ? ` (${unreadCount})` : ""}`}
           </button>
         ))}
       </div>
@@ -1246,7 +1251,7 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
       <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto">
         {list.length === 0 ? (
           <li className="px-6 py-10 text-center text-sm text-muted-foreground">
-            Không có thông báo nào
+            {t("sh.notif.empty")}
           </li>
         ) : (
           list.map((n) => {
@@ -1270,14 +1275,16 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm leading-snug">
                     {n.actor && <span className="font-medium">{n.actor} </span>}
-                    <span className="text-foreground/90">{n.title}</span>
+                    <span className="text-foreground/90">{t(n.titleKey)}</span>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">{n.body}</div>
-                  <div className="mt-1 text-[11px] text-muted-foreground">{n.time}</div>
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {t(n.bodyKey)}
+                  </div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">{t(n.timeKey)}</div>
                 </div>
                 {n.unread && (
                   <span
-                    aria-label="Chưa đọc"
+                    aria-label={t("sh.notif.unread")}
                     className="absolute right-3 top-3.5 h-2 w-2 rounded-full bg-primary"
                   />
                 )}
@@ -1294,14 +1301,14 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10"
         >
-          <ExternalLink className="h-3.5 w-3.5" /> Xem tất cả
+          <ExternalLink className="h-3.5 w-3.5" /> {t("sh.notif.viewAll")}
         </Link>
         <Link
           to="/settings"
           onClick={onClose}
           className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
-          <Settings className="h-3.5 w-3.5" /> Cài đặt
+          <Settings className="h-3.5 w-3.5" /> {t("sh.notif.settings")}
         </Link>
       </div>
     </div>
