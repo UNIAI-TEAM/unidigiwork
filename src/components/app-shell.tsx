@@ -49,7 +49,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { ThemeToggle, ToneToggle } from "@/lib/theme";
-import { LanguageToggle, useI18n } from "@/lib/i18n";
+import { LanguageToggle, useI18n, type Key } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
