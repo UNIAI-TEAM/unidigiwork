@@ -102,18 +102,24 @@ function AiMarketSearchPage() {
 
   const agents = useMemo(
     () =>
-      all.filter((a: any) => {
-        if (Number(a.rating) < minRating) return false;
-        if ((a.kpi?.completed ?? Number(a.completed_tasks)) < minTasks) return false;
-        if (minKpi > 0 && (a.kpi?.score ?? 0) < minKpi) return false;
-        if (minApproval > 0 && (a.kpi?.approvalRate ?? -1) < minApproval) return false;
-        if (maxSalary !== null && Number(a.salary_min) > maxSalary) return false;
-        const status = a.employment?.status ?? null;
-        if (contract === "none" && status) return false;
-        if (contract !== "all" && contract !== "none" && status !== contract) return false;
-        return true;
-      }),
-    [all, minRating, minTasks, minApproval, minKpi, maxSalary, contract],
+      all
+        .filter((a: any) => {
+          if (Number(a.rating) < minRating) return false;
+          if ((a.kpi?.completed ?? Number(a.completed_tasks)) < minTasks) return false;
+          if (minKpi > 0 && (a.kpi?.score ?? 0) < minKpi) return false;
+          if (minApproval > 0 && (a.kpi?.approvalRate ?? -1) < minApproval) return false;
+          if (maxSalary !== null && Number(a.salary_min) > maxSalary) return false;
+          const status = a.employment?.status ?? null;
+          if (contract === "none" && status) return false;
+          if (contract !== "all" && contract !== "none" && status !== contract) return false;
+          return true;
+        })
+        .sort((a: any, b: any) => {
+          if (sort === "kpi") return (b.kpi?.score ?? 0) - (a.kpi?.score ?? 0);
+          if (sort === "tasks") return (b.kpi?.completed ?? 0) - (a.kpi?.completed ?? 0);
+          return 0;
+        }),
+    [all, minRating, minTasks, minApproval, minKpi, maxSalary, contract, sort],
   );
 
   const activeFilters =
