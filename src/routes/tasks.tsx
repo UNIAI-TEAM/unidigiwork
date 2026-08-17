@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
+import { suggestCandidatesForTask } from "@/lib/api/ai-market.functions";
 import {
   listTaskViews,
   saveTaskView,
@@ -233,7 +234,7 @@ function TasksPage() {
               description: top.reasons.join(" · "),
               action: {
                 label: "Xem hồ sơ",
-                onClick: () => navigate({ to: "/ai-market/$id", params: { id: top.id } }),
+                onClick: () => navigateTasks({ to: "/ai-market/$id", params: { id: top.id } }),
               },
             });
           }
