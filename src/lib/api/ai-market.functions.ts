@@ -663,3 +663,73 @@ export const listEmploymentEvents = createServerFn({ method: "GET" })
     if (error) throw fail("AI_MARKET_LIST_FAILED", error.message);
     return rows ?? [];
   });
+
+/* --------------------- Gợi ý ứng viên AI cho công việc mới --------------------- */
+
+/**
+ * Khi có công việc mới: tự động đề xuất ứng viên/nhân sự AI phù hợp
+ * theo hồ sơ (lĩnh vực suy ra từ nội dung việc) và kỹ năng.
+ */
+export const suggestCandidatesForTask = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ taskId: z.string().uuid(), limit: z.number().int().min(1).max(5).default(3) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { suggestCandidates } = await import("@/domain/ai-market/matching");
+
+    const { data: task, error: taskErr } = await context.supabase
+      .from("tasks")
+      .select("id, workspace_id, title, description, tags, priority")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (taskErr || !task) throw fail("TASK_NOT_FOUND", "Không tìm thấy công việc.");
+
+    const tenantId = await resolveTenant(context, (task as any).workspace_id);
+
+    const [{ data: agents }, { data: employments }] = await Promise.all([
+      context.supabase.from("ai_market_agents").select("*").eq("published", true).limit(200),
+      context.supabase
+        .from("ai_employments")
+        .select("id, market_agent_id, status")
+        .eq("tenant_id", tenantId)
+        .in("status", ["INTERVIEW", "OFFER", "TRIAL", "HIRED"]),
+    ]);
+
+    const byAgent = new Map<string, any>((employments ?? []).map((e: any) => [e.market_agent_id, e]));
+    const pool = (agents ?? []).map((a: any) => ({
+      ...a,
+      employmentStatus: byAgent.get(a.id)?.status ?? null,
+      employmentId: byAgent.get(a.id)?.id ?? null,
+    }));
+
+    const result = suggestCandidates(
+      {
+        title: (task as any).title,
+        description: (task as any).description,
+        tags: (task as any).tags ?? [],
+        priority: (task as any).priority,
+      },
+      pool,
+      data.limit,
+    );
+
+    return {
+      workspaceId: (task as any).workspace_id as string,
+      domain: result.domain,
+      matchedKeywords: result.matchedKeywords,
+      suggestions: result.suggestions.map((s) => ({
+        id: s.candidate.id,
+        name: s.candidate.name,
+        title: s.candidate.title ?? "",
+        domain: s.candidate.domain,
+        rating: s.candidate.rating,
+        completedTasks: s.candidate.completed_tasks,
+        salaryMin: s.candidate.salary_min,
+        employmentStatus: (s.candidate as any).employmentStatus as string | null,
+        score: s.score,
+        reasons: s.reasons,
+        matchedSkills: s.matchedSkills,
+      })),
+    };
+  });
