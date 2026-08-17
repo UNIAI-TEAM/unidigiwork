@@ -101,7 +101,7 @@ export const getEmailFolderCounts = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("email_states")
-      .select("folder, is_read, is_starred, email_messages!inner(workspace_id)")
+      .select("folder, is_read, is_starred, email_messages!inner(workspace_id, subject)")
       .eq("user_id", context.userId)
       .limit(5000);
     if (data.workspace_id) q = q.eq("email_messages.workspace_id", data.workspace_id);
@@ -116,13 +116,31 @@ export const getEmailFolderCounts = createServerFn({ method: "GET" })
       starred: 0,
     };
     let unreadInbox = 0;
+    let read = 0;
+    let unread = 0;
+    let forwarded = 0;
     for (const r of rows ?? []) {
       const f = r.folder as string;
       if (f in counts) counts[f] += 1;
       if (r.is_starred) counts.starred += 1;
       if (f === "inbox" && !r.is_read) unreadInbox += 1;
+      if (r.is_read) read += 1;
+      else unread += 1;
+      const subject =
+        ((r as unknown as { email_messages?: { subject?: string } }).email_messages?.subject ?? "");
+      if (/^\s*(fwd|fw)\s*:/i.test(subject)) forwarded += 1;
     }
-    return { counts, unreadInbox, total: (rows ?? []).length };
+    return {
+      counts,
+      unreadInbox,
+      read,
+      unread,
+      forwarded,
+      cancelled: counts.trash,
+      resolved: counts.archive,
+      sent: counts.sent,
+      total: (rows ?? []).length,
+    };
   });
 
 export const getEmailThread = createServerFn({ method: "GET" })
