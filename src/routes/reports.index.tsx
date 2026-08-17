@@ -446,9 +446,25 @@ function ReportsPage() {
                 <CardHeader
                   title={t("rp.act.title")}
                   right={
-                    <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
-                      {days} {t("rp.dd.days")} <ChevronDown className="h-3 w-3" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
+                          {days} {t("rp.dd.days")} <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {[7, 30, 90].map((d) => (
+                          <DropdownMenuItem
+                            key={d}
+                            onSelect={() =>
+                              setRange({ from: shiftDay(todayKey(), -(d - 1)), to: todayKey() })
+                            }
+                          >
+                            {d} {t("rp.dd.days")}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   }
                 />
                 <LineChart data={report?.activity ?? []} />
@@ -780,27 +796,36 @@ function ReportsPage() {
                     color="bg-emerald-500/20 text-emerald-300"
                     title={t("rp.short.exec")}
                     sub={t("rp.short.execd")}
+                    onClick={() => navigate({ to: "/reports/$type", params: { type: "overview" } })}
                   />
                   <ShortcutRow
                     icon={BarChart3}
                     color="bg-violet-500/20 text-violet-300"
                     title={t("rp.short.team")}
                     sub={t("rp.short.teamd")}
+                    onClick={() => navigate({ to: "/reports/$type", params: { type: "team" } })}
                   />
                   <ShortcutRow
                     icon={Folder}
                     color="bg-sky-500/20 text-sky-300"
                     title={t("rp.short.proj")}
                     sub={t("rp.short.projd")}
+                    onClick={() => navigate({ to: "/reports/$type", params: { type: "projects" } })}
                   />
                   <ShortcutRow
                     icon={UsersIcon}
                     color="bg-amber-500/20 text-amber-300"
                     title={t("rp.short.user")}
                     sub={t("rp.short.userd")}
+                    onClick={() =>
+                      navigate({ to: "/reports/$type", params: { type: "productivity" } })
+                    }
                   />
                 </div>
-                <button onClick={() => notifyComingSoon()} className="mt-3 block w-full text-center text-xs text-primary hover:underline">
+                <button
+                  onClick={() => navigate({ to: "/reports/$type", params: { type: tab } })}
+                  className="mt-3 block w-full text-center text-xs text-primary hover:underline"
+                >
                   {t("rp.short.viewall")}
                 </button>
               </Card>
