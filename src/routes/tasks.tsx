@@ -1016,9 +1016,13 @@ function TaskCard({
 function ProjectOverview({
   counts,
   total,
+  rangeDays,
+  onRangeChange,
 }: {
   counts: Record<Status, number>;
   total: number;
+  rangeDays?: number | undefined;
+  onRangeChange: (d: number | undefined) => void;
 }) {
   const { t } = useI18n();
   const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
@@ -1047,12 +1051,23 @@ function ProjectOverview({
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("tasks.overview")}</h3>
-        <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
-          {t("tasks.sprint")} <ChevronDown className="h-3 w-3" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
+              {rangeDays ? `${rangeDays} ngày` : t("tasks.sprint")}{" "}
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => onRangeChange(undefined)}>Tất cả</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onRangeChange(7)}>7 ngày</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onRangeChange(30)}>30 ngày</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onRangeChange(90)}>90 ngày</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="mt-4 flex items-center gap-5">
-        <DonutChart />
+        <DonutChart segments={segs} total={total} />
         <div className="flex-1 space-y-2 text-xs">
           {segs.map((s) => (
             <div key={s.label} className="flex items-center gap-2">
@@ -1069,17 +1084,35 @@ function ProjectOverview({
   );
 }
 
-function DonutChart() {
-  // simple conic-gradient donut
-  const style = {
-    background:
-      "conic-gradient(hsl(var(--success)) 0% 72%, hsl(var(--primary)) 72% 92%, hsl(var(--muted-foreground)) 92% 96%, hsl(var(--destructive)) 96% 100%)",
-  } as React.CSSProperties;
+function DonutChart({
+  segments,
+  total,
+}: {
+  segments: { pct: number; color: string }[];
+  total: number;
+}) {
   const { t } = useI18n();
+  // Donut dựng từ số liệu thật của workspace đang chọn.
+  const varOf: Record<string, string> = {
+    "bg-success": "hsl(var(--success))",
+    "bg-sky-500": "hsl(var(--primary))",
+    "bg-muted-foreground": "hsl(var(--muted-foreground))",
+    "bg-destructive": "hsl(var(--destructive))",
+  };
+  let acc = 0;
+  const stops = segments
+    .map((s) => {
+      const from = acc;
+      acc += s.pct;
+      return `${varOf[s.color] ?? "hsl(var(--muted))"} ${from}% ${acc}%`;
+    })
+    .concat(`hsl(var(--surface-2)) ${acc}% 100%`)
+    .join(", ");
+  const style = { background: `conic-gradient(${stops})` } as React.CSSProperties;
   return (
     <div className="relative h-28 w-28 shrink-0 rounded-full" style={style}>
       <div className="absolute inset-2 flex flex-col items-center justify-center rounded-full bg-surface">
-        <div className="text-lg font-bold">128</div>
+        <div className="text-lg font-bold tabular-nums">{total}</div>
         <div className="text-[10px] text-muted-foreground">{t("tasks.total")}</div>
       </div>
     </div>
