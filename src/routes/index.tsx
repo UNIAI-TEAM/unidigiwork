@@ -110,49 +110,51 @@ function Landing() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link to="/" className="flex min-w-0 items-center gap-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
               U
             </div>
-            <div className="leading-tight">
-              <div className="text-base font-bold tracking-wide">UNIWORK</div>
-              <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
+            <div className="min-w-0 leading-tight">
+              <div className="truncate text-base font-bold tracking-wide">UNIWORK</div>
+              <div className="hidden truncate text-[10px] text-muted-foreground sm:block">
+                Digital Workplace Platform
+              </div>
             </div>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-            <a href="#features" className="hover:text-foreground">
+          <nav className="hidden min-w-0 items-center gap-4 text-sm text-muted-foreground lg:flex xl:gap-6">
+            <a href="#features" className="whitespace-nowrap hover:text-foreground">
               {t("land.nav.features")}
             </a>
-            <a href="#preview" className="hover:text-foreground">
+            <a href="#preview" className="whitespace-nowrap hover:text-foreground">
               {t("land.nav.preview")}
             </a>
-            <a href="#hire-ai" className="hover:text-foreground">
+            <a href="#hire-ai" className="hidden whitespace-nowrap hover:text-foreground xl:inline">
               {t("land.hire.badge")}
             </a>
-            <a href="#ai-skills" className="hover:text-foreground">
+            <a href="#ai-skills" className="hidden whitespace-nowrap hover:text-foreground xl:inline">
               {t("land.skill.badge")}
             </a>
-            <a href="#login" className="hover:text-foreground">
+            <a href="#login" className="whitespace-nowrap hover:text-foreground">
               {t("land.nav.login")}
             </a>
-            <Link to="/meeting" className="hover:text-foreground">
+            <Link to="/meeting" className="whitespace-nowrap hover:text-foreground">
               {t("land.nav.demo")}
             </Link>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <LanguageToggle />
             <ToneToggle />
             <ThemeToggle />
             <Link
               to="/auth"
-              className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground sm:inline"
+              className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground md:inline"
             >
               {t("land.nav.signup")}
             </Link>
             <a
               href="#login"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               <LogIn className="h-4 w-4" /> {t("land.nav.login")}
             </a>
