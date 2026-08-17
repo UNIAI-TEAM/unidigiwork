@@ -21,6 +21,7 @@ import {
   listNotifications,
   markNotificationsRead,
 } from "@/lib/api/notifications.functions";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/notifications/$id")({
   head: () => ({
@@ -123,7 +124,7 @@ function NotificationDetailPage() {
                   <CheckCircle2 className="h-3.5 w-3.5" /> Đã đọc
                 </span>
               )}
-              <button
+              <button onClick={() => notifyComingSoon()}
                 title="Lưu trữ"
                 className="rounded-lg border border-border bg-surface p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               >
@@ -240,7 +241,7 @@ function NotificationDetailPage() {
                           ? "bg-destructive/10 text-destructive hover:bg-destructive/15"
                           : "border border-border bg-surface hover:bg-surface-2";
                     return (
-                      <button
+                      <button onClick={() => notifyComingSoon()}
                         key={a.label}
                         className={`rounded-lg px-3 py-1.5 text-sm font-medium ${cls}`}
                       >

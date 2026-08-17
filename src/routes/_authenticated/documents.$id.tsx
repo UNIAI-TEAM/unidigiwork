@@ -30,6 +30,7 @@ import {
   isStorageRef,
   uploadDocumentFile,
 } from "@/lib/documents-storage";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/documents/$id")({
   head: ({ params }) => ({
@@ -404,7 +405,7 @@ function DocumentDetailPage() {
 
 function IconBtn({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
   return (
-    <button className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button onClick={() => notifyComingSoon()} className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />
     </button>
   );

@@ -61,6 +61,7 @@ import {
   type LabelDef,
   type RuleDef,
 } from "@/components/email-features";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
@@ -759,7 +760,7 @@ function EmailHubPage() {
                 >
                   <FileEdit className="h-4 w-4" /> Soạn email
                 </button>
-                <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90">
+                <button onClick={() => notifyComingSoon()} className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90">
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </div>
@@ -798,7 +799,7 @@ function EmailHubPage() {
 
               <div className="flex items-center justify-between px-2 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>Labels</span>
-                <button className="rounded p-0.5 hover:bg-surface-2">
+                <button onClick={() => notifyComingSoon()} className="rounded p-0.5 hover:bg-surface-2">
                   <ChevronDown className="h-3 w-3" />
                 </button>
               </div>
@@ -819,7 +820,7 @@ function EmailHubPage() {
                   );
                 })}
                 <li>
-                  <button className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                  <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                     <Plus className="h-3.5 w-3.5" />
                     <span
                       onClick={(e) => {
@@ -835,14 +836,14 @@ function EmailHubPage() {
 
               <div className="flex items-center justify-between px-2 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>Accounts</span>
-                <button className="rounded p-0.5 hover:bg-surface-2">
+                <button onClick={() => notifyComingSoon()} className="rounded p-0.5 hover:bg-surface-2">
                   <Plus className="h-3 w-3" />
                 </button>
               </div>
               <ul className="space-y-0.5">
                 {ACCOUNTS.map((a, i) => (
                   <li key={i}>
-                    <button className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                    <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                       <span
                         className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-semibold text-white ${a.color}`}
                       >
@@ -995,7 +996,7 @@ function EmailHubPage() {
                   </button>
                 </div>
               ) : (
-                <button
+                <button onClick={() => notifyComingSoon()}
                   className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
                   title="Làm mới"
                 >
@@ -1191,7 +1192,7 @@ function EmailHubPage() {
               <ToolBtn icon={Archive} label="Lưu trữ" />
               <ToolBtn icon={Trash2} label="Xóa" />
               <ToolBtn icon={Tag} label="Đánh dấu" />
-              <button className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2">
+              <button onClick={() => notifyComingSoon()} className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </div>
@@ -1226,12 +1227,12 @@ function EmailHubPage() {
                     <span className="ml-auto text-xs text-muted-foreground">
                       {selectedEmail.time}
                     </span>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                    <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground hover:bg-surface-2">
                       <Star
                         className={`h-4 w-4 ${selectedEmail.starred ? "fill-amber-400 text-amber-400" : ""}`}
                       />
                     </button>
-                    <button className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                    <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground hover:bg-surface-2">
                       <MoreHorizontal className="h-4 w-4" />
                     </button>
                   </div>
@@ -1328,7 +1329,7 @@ function EmailHubPage() {
               <div className="mt-6">
                 <div className="text-sm font-medium">Email liên quan</div>
                 <div className="mt-3 flex items-center justify-center">
-                  <button className="text-sm text-primary hover:underline">
+                  <button onClick={() => notifyComingSoon()} className="text-sm text-primary hover:underline">
                     Xem 8 email liên quan
                   </button>
                 </div>
@@ -1386,7 +1387,7 @@ function EmailHubPage() {
                   </li>
                 ))}
               </ul>
-              <button className="mt-3 w-full text-center text-xs text-primary hover:underline">
+              <button onClick={() => notifyComingSoon()} className="mt-3 w-full text-center text-xs text-primary hover:underline">
                 Xem tất cả (12)
               </button>
             </div>
@@ -1394,7 +1395,7 @@ function EmailHubPage() {
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold">Thống kê email</div>
-                <button className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface">
+                <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface">
                   Tuần này <ChevronDown className="h-3 w-3" />
                 </button>
               </div>
@@ -1436,7 +1437,7 @@ function EmailHubPage() {
                   </li>
                 ))}
               </ul>
-              <button className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-xs text-primary hover:bg-surface-2">
+              <button onClick={() => notifyComingSoon()} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-xs text-primary hover:bg-surface-2">
                 <Plus className="h-3.5 w-3.5" /> Thêm tài khoản email
               </button>
             </div>
@@ -1475,7 +1476,7 @@ function EmailHubPage() {
 
 function ToolBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <button className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button onClick={() => notifyComingSoon()} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />
       <span>{label}</span>
     </button>
@@ -1505,7 +1506,7 @@ function BulkBtn({
 
 function ActionBtn({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
-    <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
+    <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
       <Icon className="h-4 w-4" /> {children}
     </button>
   );
@@ -1531,7 +1532,7 @@ function AttachmentCard({
         <div className="truncate text-sm font-medium">{name}</div>
         <div className="text-[11px] text-muted-foreground">{size}</div>
       </div>
-      <button className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
+      <button onClick={() => notifyComingSoon()} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
         <Download className="h-4 w-4" />
       </button>
     </div>
@@ -1548,7 +1549,7 @@ function SuggestBtn({
   desc: string;
 }) {
   return (
-    <button className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 text-left hover:border-primary/40">
+    <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 text-left hover:border-primary/40">
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
         <Icon className="h-4 w-4" />
       </span>

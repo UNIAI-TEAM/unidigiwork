@@ -48,6 +48,7 @@ import {
   unmarkNotificationsRead,
 } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
@@ -180,13 +181,13 @@ function NotifRow({
             <CheckCircle2 className="h-3.5 w-3.5" />
           </button>
         )}
-        <button
+        <button onClick={() => notifyComingSoon()}
           title="Lưu trữ"
           className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground"
         >
           <Archive className="h-3.5 w-3.5" />
         </button>
-        <button
+        <button onClick={() => notifyComingSoon()}
           title="Xóa"
           className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-destructive"
         >
@@ -600,7 +601,7 @@ function NotificationsPage() {
                 >
                   Đánh dấu đã đọc
                 </button>
-                <button className="text-muted-foreground hover:text-foreground">Lưu trữ</button>
+                <button onClick={() => notifyComingSoon()} className="text-muted-foreground hover:text-foreground">Lưu trữ</button>
                 <button
                   onClick={() => removeItems(Array.from(selected))}
                   className="text-destructive hover:underline"

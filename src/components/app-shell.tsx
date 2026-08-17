@@ -68,6 +68,7 @@ import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-crea
 import { useAvailableTenants } from "@/features/tenants/hooks";
 import { DesktopNavigation } from "@/components/navigation/desktop-nav";
 import { NAV_ICON_CLASS, NAV_ICON_STROKE, NAV_ICON_STROKE_ACTIVE } from "@/config/navigation";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 /**
  * Batch 1B-UI-FINISH — Tenant switcher slot embedded in AppTopbar.
@@ -168,7 +169,11 @@ function NavItem({
       {inner}
     </Link>
   ) : (
-    <button className={cls} title={collapsed ? label : undefined}>
+    <button
+      onClick={() => notifyComingSoon(label)}
+      className={cls}
+      title={collapsed ? label : undefined}
+    >
       {inner}
     </button>
   );
@@ -295,7 +300,11 @@ function WorkspaceItem({
       {inner}
     </Link>
   ) : (
-    <button className={cls} title={collapsed ? name : undefined}>
+    <button
+      onClick={() => notifyComingSoon(name)}
+      className={cls}
+      title={collapsed ? name : undefined}
+    >
       {inner}
     </button>
   );
@@ -946,7 +955,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
             placeholder={t("sh.ai.ph")}
             className="w-full resize-none rounded-xl border border-border bg-surface-2 p-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
-          <button
+          <button onClick={() => notifyComingSoon()}
             aria-label={t("sh.ai.send")}
             className="absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
           >
@@ -959,7 +968,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
             { icon: Calendar, label: t("sh.ai.chip.week") },
             { icon: ListChecks, label: t("sh.ai.chip.tasks") },
           ].map((c) => (
-            <button
+            <button onClick={() => notifyComingSoon()}
               key={c.label}
               className="flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
             >
@@ -976,7 +985,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
         <ul className="space-y-1">
           {suggestions.map((s) => (
             <li key={s.title}>
-              <button className="flex w-full items-start gap-2.5 rounded-lg p-2 text-left hover:bg-surface-2">
+              <button onClick={() => notifyComingSoon()} className="flex w-full items-start gap-2.5 rounded-lg p-2 text-left hover:bg-surface-2">
                 <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                   <s.icon className="h-4 w-4" />
                 </span>
@@ -997,7 +1006,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
         <ul className="space-y-0.5">
           {recent.map((r) => (
             <li key={r}>
-              <button className="flex w-full items-center gap-2 truncate rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+              <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-2 truncate rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                 <MessageCircle className="h-3.5 w-3.5 shrink-0" />{" "}
                 <span className="truncate">{r}</span>
               </button>
@@ -1008,7 +1017,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
 
       <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2 text-[11px] text-muted-foreground">
         <span>{t("sh.ai.disclaimer")}</span>
-        <button className="rounded-md px-1.5 py-0.5 hover:bg-surface-2 hover:text-foreground">
+        <button onClick={() => notifyComingSoon()} className="rounded-md px-1.5 py-0.5 hover:bg-surface-2 hover:text-foreground">
           {t("sh.ai.expand")}
         </button>
       </div>
@@ -1166,7 +1175,7 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2">
-        <button className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+        <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
           <Plus className="h-3.5 w-3.5" /> {t("sh.cal.new")}
         </button>
         <button
@@ -1578,7 +1587,7 @@ export function AppTopbar({
         <Settings className="h-5 w-5 text-muted-foreground" />
       </Link>
       {variant === "meeting" && (
-        <button className="hidden items-center gap-1 rounded-lg p-2 hover:bg-surface-2 md:flex">
+        <button onClick={() => notifyComingSoon()} className="hidden items-center gap-1 rounded-lg p-2 hover:bg-surface-2 md:flex">
           <Users className="h-5 w-5 text-muted-foreground" />
           <span className="text-sm">16</span>
         </button>
@@ -1682,7 +1691,7 @@ export function AppTopbar({
                 <Circle className="h-2 w-2 fill-emerald-400 text-emerald-400" />
                 <span>{t("sh.user.online")}</span>
               </div>
-              <button className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground">
+              <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground">
                 <Moon className="h-3 w-3" /> {t("sh.user.setStatus")}
               </button>
             </div>

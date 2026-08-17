@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { deleteEmailDraft, getEmailDraft, saveEmailDraft, sendEmail } from "@/lib/api/emails.functions";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 const searchSchema = z.object({
   draft: z.string().uuid().optional(),
@@ -214,11 +215,11 @@ function ComposePage() {
               <div className="flex items-center justify-between border-t border-border px-5 py-3">
                 <div className="flex items-center gap-1">
                   {[Bold, Italic, List, Link2, Paperclip, ImageIcon].map((I, i) => (
-                    <button key={i} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                    <button onClick={() => notifyComingSoon()} key={i} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
                       <I className="h-4 w-4" />
                     </button>
                   ))}
-                  <button className="ml-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/15">
+                  <button onClick={() => notifyComingSoon()} className="ml-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/15">
                     <Sparkles className="h-3.5 w-3.5" /> Viết với AI
                   </button>
                 </div>

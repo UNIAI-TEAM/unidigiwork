@@ -35,6 +35,7 @@ import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functi
 import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
 import { Table2, RefreshCw } from "lucide-react";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
@@ -244,7 +245,7 @@ function ReportsPage() {
                   days={days}
                   t={t}
                 />
-                <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
+                <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> {t("rp.customize")}
                 </button>
                 <button
@@ -288,7 +289,7 @@ function ReportsPage() {
                 >
                   <ArrowUpRight className="h-4 w-4" /> {t("rp.drill")}
                 </Link>
-                <button className="rounded-lg bg-surface p-2 text-muted-foreground hover:text-foreground">
+                <button onClick={() => notifyComingSoon()} className="rounded-lg bg-surface p-2 text-muted-foreground hover:text-foreground">
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
               </div>
@@ -370,7 +371,7 @@ function ReportsPage() {
                 <CardHeader
                   title={t("rp.act.title")}
                   right={
-                    <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
+                    <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
                       {days} {t("rp.dd.days")} <ChevronDown className="h-3 w-3" />
                     </button>
                   }
@@ -724,7 +725,7 @@ function ReportsPage() {
                     sub={t("rp.short.userd")}
                   />
                 </div>
-                <button className="mt-3 block w-full text-center text-xs text-primary hover:underline">
+                <button onClick={() => notifyComingSoon()} className="mt-3 block w-full text-center text-xs text-primary hover:underline">
                   {t("rp.short.viewall")}
                 </button>
               </Card>
@@ -778,7 +779,7 @@ function ReportsPage() {
             <div className="border-b border-border px-4 py-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">{t("rp.flt.title")}</h3>
-                <button className="text-xs text-primary hover:underline">
+                <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">
                   {t("rp.flt.clear")}
                 </button>
               </div>
@@ -787,7 +788,7 @@ function ReportsPage() {
               <FilterField label={t("rp.flt.dep")} value={t("rp.flt.alldep")} />
               <FilterField label={t("rp.flt.team")} value={t("rp.flt.allteam")} />
               <FilterField label={t("rp.flt.user")} value={t("rp.flt.alluser")} />
-              <button className="mt-2 w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <button onClick={() => notifyComingSoon()} className="mt-2 w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                 {t("rp.flt.apply")}
               </button>
             </div>
@@ -806,7 +807,7 @@ function ReportsPage() {
                     <div className="text-sm font-medium">{t("rp.exp.sched")}</div>
                     <div className="text-[11px] text-muted-foreground">{t("rp.exp.schedsub")}</div>
                   </div>
-                  <button className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                     <Plus className="h-3 w-3" /> {t("rp.schedule")}
                   </button>
                 </div>
@@ -1181,7 +1182,7 @@ function ShortcutRow({
   sub: string;
 }) {
   return (
-    <button className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
+    <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
       <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
         <Icon className="h-4 w-4" />
       </div>
@@ -1207,7 +1208,7 @@ function Insight({
   t: (k: Key) => string;
 }) {
   return (
-    <button className="block w-full rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
+    <button onClick={() => notifyComingSoon()} className="block w-full rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
       <div className="flex items-start gap-2">
         <Icon className={`mt-0.5 h-4 w-4 ${color}`} />
         <div className="min-w-0 flex-1">
@@ -1224,7 +1225,7 @@ function FilterField({ label, value }: { label: string; value: string }) {
   return (
     <div className="mb-3">
       <div className="mb-1 text-[11px] text-muted-foreground">{label}</div>
-      <button className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
+      <button onClick={() => notifyComingSoon()} className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
         <span className="truncate">{value}</span>
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
       </button>
@@ -1242,7 +1243,7 @@ function ExportBtn({
   color: string;
 }) {
   return (
-    <button className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
+    <button onClick={() => notifyComingSoon()} className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
       <Icon className={`h-3.5 w-3.5 ${color}`} /> {label}
     </button>
   );

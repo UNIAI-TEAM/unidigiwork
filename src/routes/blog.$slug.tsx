@@ -6,6 +6,7 @@ import { avatar } from "@/components/app-shell";
 import { getBlogPost } from "@/lib/api/blog.functions";
 import { categorySlug } from "@/lib/blog-categories";
 import { formatDate } from "./blog";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/blog/$slug")({
   head: ({ params }) => ({
@@ -123,7 +124,7 @@ function BlogDetailPage() {
 
 function ActionBtn({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label?: string }) {
   return (
-    <button className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
       <Icon className="h-4 w-4" />
       {label}
     </button>

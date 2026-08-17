@@ -71,6 +71,7 @@ import {
   restoreAiConversation,
   purgeAiConversation,
 } from "@/lib/api/ai-chat.functions";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/ai")({
   head: () => ({
@@ -554,7 +555,7 @@ function AIPage() {
             <div className="border-t border-border bg-surface px-4 py-3 sm:px-6">
               <div className="mx-auto max-w-none">
                 <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-2 px-3 py-2">
-                  <button className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground">
+                  <button onClick={() => notifyComingSoon()} className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground">
                     <Paperclip className="h-4 w-4" />
                   </button>
                   <input
@@ -593,7 +594,7 @@ function AIPage() {
                       </div>
                     </button>
                   ))}
-                  <button className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground">
+                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground">
                     <Grid3x3 className="h-3.5 w-3.5" /> {t("ai.cmd.more")}
                   </button>
                 </div>
@@ -610,7 +611,7 @@ function AIPage() {
             <Section title={t("ai.panel.assistants")} action={t("ai.panel.viewall")}>
               <div className="space-y-2">
                 {assistants.map((a) => (
-                  <button
+                  <button onClick={() => notifyComingSoon()}
                     key={a.k}
                     className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40"
                   >
@@ -629,7 +630,7 @@ function AIPage() {
                     </div>
                   </button>
                 ))}
-                <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-primary/50 bg-primary/5 py-2.5 text-sm font-medium text-primary hover:bg-primary/10">
+                <button onClick={() => notifyComingSoon()} className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-primary/50 bg-primary/5 py-2.5 text-sm font-medium text-primary hover:bg-primary/10">
                   <Plus className="h-4 w-4" /> {t("ai.panel.create")}
                 </button>
               </div>
@@ -638,7 +639,7 @@ function AIPage() {
             <Section title={t("ai.panel.prompts")} action={t("ai.panel.viewall")}>
               <div className="space-y-2">
                 {prompts.map((p) => (
-                  <button
+                  <button onClick={() => notifyComingSoon()}
                     key={p.k}
                     className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40"
                   >
@@ -1002,7 +1003,7 @@ function AssistantBubble({
 
       <div className="mt-3 flex items-center gap-1 text-muted-foreground">
         {[Copy, ThumbsUp, ThumbsDown, RotateCw].map((Icon, i) => (
-          <button key={i} className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
+          <button onClick={() => notifyComingSoon()} key={i} className="rounded p-1.5 hover:bg-surface-2 hover:text-foreground">
             <Icon className="h-3.5 w-3.5" />
           </button>
         ))}
@@ -1095,7 +1096,7 @@ function Section({
     <div className="border-b border-border px-4 py-4 last:border-0">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">{title}</h3>
-        {action && <button className="text-xs text-primary hover:underline">{action}</button>}
+        {action && <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">{action}</button>}
       </div>
       {children}
     </div>
@@ -1215,7 +1216,7 @@ function AssistantsPanel() {
               <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${a.color}`}>
                 <a.icon className="h-5 w-5" />
               </div>
-              <button
+              <button onClick={() => notifyComingSoon()}
                 className={`rounded p-1.5 ${a.fav ? "text-amber-300" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <Star className={`h-4 w-4 ${a.fav ? "fill-current" : ""}`} />
@@ -1227,7 +1228,7 @@ function AssistantsPanel() {
               <span className="rounded-md bg-surface-2 px-2 py-0.5">{a.tag}</span>
               <span>{a.uses} lượt dùng</span>
             </div>
-            <button className="mt-3 w-full rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40 hover:text-primary">
+            <button onClick={() => notifyComingSoon()} className="mt-3 w-full rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40 hover:text-primary">
               Bắt đầu trò chuyện
             </button>
           </div>
@@ -1346,10 +1347,10 @@ function PromptsPanel() {
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{p.body}</p>
                 <div className="mt-3 flex items-center gap-2">
-                  <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                  <button onClick={() => notifyComingSoon()} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                     Dùng ngay
                   </button>
-                  <button className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs hover:border-primary/40">
+                  <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs hover:border-primary/40">
                     Sao chép
                   </button>
                 </div>
@@ -1431,7 +1432,7 @@ function KnowledgePanel() {
 
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">Nguồn dữ liệu đã kết nối</h3>
-        <button className="text-xs text-primary hover:underline">+ Thêm nguồn</button>
+        <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">+ Thêm nguồn</button>
       </div>
       <div className="space-y-2">
         {KNOWLEDGE_SOURCES.map((k) => (
@@ -1457,7 +1458,7 @@ function KnowledgePanel() {
             >
               {k.status}
             </span>
-            <button className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+            <button onClick={() => notifyComingSoon()} className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -1592,7 +1593,7 @@ function PanelHeader({
           <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
         </div>
         {action && (
-          <button className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <action.icon className="h-4 w-4" />
             {action.label}
           </button>

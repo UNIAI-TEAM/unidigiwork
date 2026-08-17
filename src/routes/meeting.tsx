@@ -74,6 +74,7 @@ import {
   Mail,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/meeting")({
   validateSearch: (search: {
@@ -600,10 +601,10 @@ function MeetingPage() {
                     )}
                     Bắt đầu họp ngay
                   </button>
-                  <button className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
+                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
                     <Calendar className="h-4 w-4" /> Lên lịch
                   </button>
-                  <button className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
+                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
                     <Link2 className="h-4 w-4" /> Tham gia bằng mã
                   </button>
                   <Link
@@ -896,7 +897,7 @@ function MeetingPage() {
                     className="w-56 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
-                <button className="rounded-lg border border-border bg-surface p-2 text-muted-foreground hover:text-foreground">
+                <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border bg-surface p-2 text-muted-foreground hover:text-foreground">
                   <Filter className="h-4 w-4" />
                 </button>
               </div>
@@ -927,13 +928,13 @@ function MeetingPage() {
             <div className="border-t border-border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Sắp diễn ra</h3>
-                <button className="text-xs text-primary hover:underline">Tất cả</button>
+                <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Tất cả</button>
               </div>
               <div className="space-y-2">
                 {MEETINGS.filter((m) => m.status === "upcoming")
                   .slice(0, 3)
                   .map((m) => (
-                    <button
+                    <button onClick={() => notifyComingSoon()}
                       key={m.id}
                       className="w-full rounded-lg border border-border bg-bg p-3 text-left hover:border-primary/40"
                     >
@@ -1789,10 +1790,10 @@ function MeetingRow({ m, onJoin }: { m: (typeof MEETINGS)[number]; onJoin: () =>
       <div className="flex items-center gap-2">
         {ended ? (
           <>
-            <button className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:border-primary/40">
+            <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:border-primary/40">
               <PlayCircle className="h-3.5 w-3.5" /> Xem lại
             </button>
-            <button className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:border-primary/40">
+            <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:border-primary/40">
               <FileText className="h-3.5 w-3.5" /> Tóm tắt
             </button>
           </>
@@ -1804,7 +1805,7 @@ function MeetingRow({ m, onJoin }: { m: (typeof MEETINGS)[number]; onJoin: () =>
             >
               <ArrowUpRight className="h-3.5 w-3.5" /> {live ? "Tham gia" : "Vào phòng"}
             </button>
-            <button className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground">
+            <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground">
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
           </>
@@ -1843,13 +1844,13 @@ function RoomsGrid() {
             ))}
           </div>
           <div className="mt-4 flex gap-2">
-            <button
+            <button onClick={() => notifyComingSoon()}
               disabled={!r.free}
               className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
             >
               Đặt phòng
             </button>
-            <button className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary/40">
+            <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary/40">
               Lịch sử
             </button>
           </div>
@@ -1868,10 +1869,10 @@ function MiniCalendar() {
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">Tháng 6, 2026</h3>
         <div className="flex items-center gap-1">
-          <button className="rounded p-1 hover:bg-surface-2">
+          <button onClick={() => notifyComingSoon()} className="rounded p-1 hover:bg-surface-2">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button className="rounded p-1 hover:bg-surface-2">
+          <button onClick={() => notifyComingSoon()} className="rounded p-1 hover:bg-surface-2">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -1888,7 +1889,7 @@ function MiniCalendar() {
           const isToday = d === today;
           const has = events[d];
           return (
-            <button
+            <button onClick={() => notifyComingSoon()}
               key={d}
               className={`relative aspect-square rounded text-xs ${
                 isToday
@@ -1919,7 +1920,7 @@ function VideoTile({ name, seed, highlight }: { name: string; seed: string; high
         <span>{name}</span>
       </div>
       {highlight && (
-        <button className="absolute right-2 top-2 rounded-md bg-black/50 p-1.5 text-white hover:bg-black/70">
+        <button onClick={() => notifyComingSoon()} className="absolute right-2 top-2 rounded-md bg-black/50 p-1.5 text-white hover:bg-black/70">
           <Maximize2 className="h-3.5 w-3.5" />
         </button>
       )}
@@ -2164,10 +2165,10 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <button onClick={() => notifyComingSoon()} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               Mời
             </button>
-            <button className="rounded-lg bg-surface-2 p-2">
+            <button onClick={() => notifyComingSoon()} className="rounded-lg bg-surface-2 p-2">
               <MoreHorizontal className="h-5 w-5" />
             </button>
           </div>
@@ -2247,7 +2248,7 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                   <span className="text-muted-foreground">{when}</span>
                 </div>
               ))}
-              <button className="mt-2 flex items-center gap-1 text-xs text-primary">
+              <button onClick={() => notifyComingSoon()} className="mt-2 flex items-center gap-1 text-xs text-primary">
                 <Plus className="h-3 w-3" /> Thêm việc
               </button>
             </div>
@@ -2279,7 +2280,7 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                 </span>
                 <span className="font-mono">00:28:45</span>
               </div>
-              <button className="mt-2 w-full rounded-lg border border-primary/40 bg-primary/10 py-2 text-sm font-medium text-primary hover:bg-primary/20">
+              <button onClick={() => notifyComingSoon()} className="mt-2 w-full rounded-lg border border-primary/40 bg-primary/10 py-2 text-sm font-medium text-primary hover:bg-primary/20">
                 <Download className="mr-1 inline h-3.5 w-3.5" /> Tải bản ghi
               </button>
             </div>
@@ -2314,13 +2315,13 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
             </div>
             <div className="border-t border-border p-3">
               <div className="flex items-end gap-1 rounded-xl border border-border bg-surface-2 px-2 py-1.5">
-                <button
+                <button onClick={() => notifyComingSoon()}
                   className="rounded p-1.5 text-muted-foreground hover:bg-surface"
                   title="Đính kèm"
                 >
                   <Paperclip className="h-4 w-4" />
                 </button>
-                <button
+                <button onClick={() => notifyComingSoon()}
                   className="rounded p-1.5 text-muted-foreground hover:bg-surface"
                   title="Emoji"
                 >
@@ -2363,7 +2364,7 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                   className="w-full rounded-lg border border-border bg-surface-2 py-1.5 pl-8 pr-2 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
-              <button className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+              <button onClick={() => notifyComingSoon()} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                 <UserPlus className="h-3.5 w-3.5" /> Mời thêm người
               </button>
             </div>
@@ -2404,7 +2405,7 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                       <VideoIcon
                         className={`h-3.5 w-3.5 ${p.cam ? "text-emerald-400" : "text-muted-foreground/50"}`}
                       />
-                      <button
+                      <button onClick={() => notifyComingSoon()}
                         className="opacity-0 group-hover:opacity-100 rounded p-0.5 hover:bg-surface"
                         title="Thêm"
                       >
@@ -2435,10 +2436,10 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                       <div className="truncate text-sm font-medium">{g.name}</div>
                       <div className="text-[11px] text-muted-foreground">Đang chờ vào phòng</div>
                     </div>
-                    <button className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90">
+                    <button onClick={() => notifyComingSoon()} className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90">
                       Duyệt
                     </button>
-                    <button className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface">
+                    <button onClick={() => notifyComingSoon()} className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface">
                       Từ chối
                     </button>
                   </li>
@@ -2459,14 +2460,14 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                     className="w-full rounded-lg border border-border bg-surface-2 py-1.5 pl-8 pr-2 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                   />
                 </div>
-                <button
+                <button onClick={() => notifyComingSoon()}
                   className="rounded-lg border border-border bg-surface-2 p-1.5 text-muted-foreground hover:bg-surface"
                   title="Lọc"
                 >
                   <Filter className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <button className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 py-2 text-xs text-primary hover:bg-surface-2">
+              <button onClick={() => notifyComingSoon()} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 py-2 text-xs text-primary hover:bg-surface-2">
                 <Plus className="h-3.5 w-3.5" /> Tải tệp lên phòng họp
               </button>
             </div>
@@ -2493,19 +2494,19 @@ function LiveMeetingRoom({ onExit }: { onExit: () => void }) {
                           {f.by} · {f.time} · {f.size}
                         </div>
                       </div>
-                      <button
+                      <button onClick={() => notifyComingSoon()}
                         className="rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-surface"
                         title="Xem"
                       >
                         <Eye className="h-3.5 w-3.5" />
                       </button>
-                      <button
+                      <button onClick={() => notifyComingSoon()}
                         className="rounded p-1 text-muted-foreground hover:bg-surface"
                         title="Tải về"
                       >
                         <Download className="h-3.5 w-3.5" />
                       </button>
-                      <button
+                      <button onClick={() => notifyComingSoon()}
                         className="rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-surface"
                         title="Ghim"
                       >

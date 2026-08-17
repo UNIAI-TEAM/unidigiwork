@@ -174,7 +174,10 @@ function MobileTopbar() {
         </span>
       </button>
 
-      <button className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm">
+      <button
+        onClick={() => navigate({ to: "/workspace" })}
+        className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+      >
         <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 truncate font-medium">
           {isLoading ? "Đang tải…" : workspaceName ?? "Workspace"}

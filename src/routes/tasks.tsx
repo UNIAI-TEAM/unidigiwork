@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/lib/i18n";
 import { isOverdueTask } from "@/lib/metrics";
+import { notifyComingSoon } from "@/lib/coming-soon";
 
 type TasksSearch = { filter?: "overdue"; range?: number; ws?: string };
 
@@ -290,7 +291,7 @@ function TasksPage() {
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
             {/* Project header row */}
             <div className="mb-5 flex flex-wrap items-center gap-3">
-              <button className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
+              <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
                 <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
                   S
                 </span>
@@ -311,7 +312,7 @@ function TasksPage() {
                   </button>
                 ))}
               </nav>
-              <button className="ml-auto rounded-lg p-2 hover:bg-surface-2">
+              <button onClick={() => notifyComingSoon()} className="ml-auto rounded-lg p-2 hover:bg-surface-2">
                 <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
@@ -958,7 +959,7 @@ function ProjectOverview({
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("tasks.overview")}</h3>
-        <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
+        <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
           {t("tasks.sprint")} <ChevronDown className="h-3 w-3" />
         </button>
       </div>
@@ -1014,7 +1015,7 @@ function BurndownChart() {
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("tasks.burndown")}</h3>
-        <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
+        <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
           Sprint 6 <ChevronDown className="h-3 w-3" />
         </button>
       </div>
@@ -1053,7 +1054,7 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
         <h3 className="text-sm font-semibold">
           {t("tasks.mytasks")} ({list.length})
         </h3>
-        <button className="text-xs text-primary hover:underline">{t("tasks.viewall")}</button>
+        <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">{t("tasks.viewall")}</button>
       </div>
       <div className="mt-2 divide-y divide-border">
         {list.map((tk) => (
@@ -1070,7 +1071,7 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
           </div>
         ))}
       </div>
-      <button className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10">
+      <button onClick={() => notifyComingSoon()} className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10">
         {t("tasks.viewalltasks")}
       </button>
     </section>
@@ -1097,7 +1098,7 @@ function CopilotPanel() {
         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
           BETA
         </span>
-        <button className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2">
+        <button onClick={() => notifyComingSoon()} className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2">
           <Plus className="h-4 w-4" />
         </button>
       </div>
@@ -1143,7 +1144,7 @@ function CopilotPanel() {
       <section className="border-t border-border px-5 py-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-xs font-semibold">{t("tasks.activity")}</h3>
-          <button className="text-[11px] text-primary hover:underline">{t("tasks.viewall")}</button>
+          <button onClick={() => notifyComingSoon()} className="text-[11px] text-primary hover:underline">{t("tasks.viewall")}</button>
         </div>
         <div className="space-y-3 text-xs">
           <Activity
@@ -1228,7 +1229,7 @@ function Activity({
 
 function QuickAction({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <button className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
+    <button onClick={() => notifyComingSoon()} className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
       <Icon className="h-4 w-4" />
       <span className="text-center leading-tight">{label}</span>
     </button>
