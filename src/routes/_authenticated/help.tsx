@@ -605,7 +605,9 @@ function HelpPage() {
                   <Activity className="h-4 w-4 text-success" /> Trạng thái hệ thống
                 </div>
                 <a
-                  href="#"
+                  href="https://status.uniwork.vn"
+                  target="_blank"
+                  rel="noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
                 >
                   status.uniwork.vn <ExternalLink className="h-3 w-3" />
