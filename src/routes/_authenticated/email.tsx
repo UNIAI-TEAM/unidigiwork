@@ -68,6 +68,7 @@ import {
   type LabelDef,
   type RuleDef,
 } from "@/components/email-features";
+import { buildForwardBody, buildReplyBody, stripPrefix } from "@/lib/email-quote";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 
@@ -223,7 +224,7 @@ function EmailHubPage() {
     },
   ]);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [composePrefill, setComposePrefill] = useState({ to: "", subject: "" });
+  const [composePrefill, setComposePrefill] = useState({ to: "", subject: "", body: "", cc: "" });
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -458,8 +459,8 @@ function EmailHubPage() {
     bulkMoveMut.mutate({ ids, folder });
   }
 
-  function openCompose(to: string, subject: string) {
-    setComposePrefill({ to, subject });
+  function openCompose(to: string, subject: string, body = "", cc = "") {
+    setComposePrefill({ to, subject, body, cc });
     setComposeOpen(true);
   }
 
@@ -469,12 +470,34 @@ function EmailHubPage() {
       selectedEmail.fromEmail ||
       `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`;
     const cc = all && selectedEmail.cc ? `, ${selectedEmail.cc}` : "";
-    openCompose(`${from}${cc}`, `Re: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+    openCompose(
+      `${from}${cc}`,
+      `Re: ${stripPrefix(selectedEmail.subject)}`,
+      buildReplyBody({
+        from: selectedEmail.from,
+        fromEmail: selectedEmail.fromEmail,
+        subject: selectedEmail.subject,
+        date: selectedEmail.time,
+        body: selectedEmail.body || selectedEmail.preview,
+      }),
+    );
   }
 
   function forwardSelected() {
     if (!selectedEmail) return;
-    openCompose("", `Fwd: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+    openCompose(
+      "",
+      `Fwd: ${stripPrefix(selectedEmail.subject)}`,
+      buildForwardBody({
+        from: selectedEmail.from,
+        fromEmail: selectedEmail.fromEmail,
+        to: selectedEmail.to,
+        cc: selectedEmail.cc,
+        subject: selectedEmail.subject,
+        date: selectedEmail.time,
+        body: selectedEmail.body || selectedEmail.preview,
+      }),
+    );
   }
 
   const groups: Record<string, Email[]> = {};
@@ -1093,9 +1116,15 @@ function EmailHubPage() {
               )}
 
               <div className="mt-6 flex flex-wrap gap-2">
-                <ActionBtn icon={Reply}>Trả lời</ActionBtn>
-                <ActionBtn icon={ReplyAll}>Trả lời tất cả</ActionBtn>
-                <ActionBtn icon={Forward}>Chuyển tiếp</ActionBtn>
+                <ActionBtn icon={Reply} onClick={() => replySelected(false)}>
+                  Trả lời
+                </ActionBtn>
+                <ActionBtn icon={ReplyAll} onClick={() => replySelected(true)}>
+                  Trả lời tất cả
+                </ActionBtn>
+                <ActionBtn icon={Forward} onClick={forwardSelected}>
+                  Chuyển tiếp
+                </ActionBtn>
               </div>
 
               {/* AI Assistant inline */}
@@ -1256,11 +1285,13 @@ function EmailHubPage() {
       </main>
 
       <ComposeEmailDialog
-        key={`${composePrefill.to}|${composePrefill.subject}`}
+        key={`${composePrefill.to}|${composePrefill.subject}|${composePrefill.body.length}`}
         open={composeOpen}
         onOpenChange={setComposeOpen}
         initialTo={composePrefill.to}
         initialSubject={composePrefill.subject}
+        initialBody={composePrefill.body}
+        initialCc={composePrefill.cc}
       />
       <AdvancedFilterDialog
         open={advancedOpen}
@@ -1332,9 +1363,9 @@ function BulkBtn({
   );
 }
 
-function ActionBtn({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
+function ActionBtn({ icon: Icon, children, onClick }: { icon: LucideIcon; children: React.ReactNode; onClick?: () => void }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
+    <button onClick={onClick ?? (() => notifyComingSoon())} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
       <Icon className="h-4 w-4" /> {children}
     </button>
   );

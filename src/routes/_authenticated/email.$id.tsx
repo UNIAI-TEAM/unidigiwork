@@ -10,6 +10,7 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { getEmailThread, moveEmailMessages, setEmailMessagesRead } from "@/lib/api/emails.functions";
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
+import { buildReplyBody, buildThreadForwardBody } from "@/lib/email-quote";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -42,6 +43,25 @@ function EmailDetailPage() {
     new Set(messages.map((m) => m.sender?.email).filter(Boolean) as string[]),
   ).join(", ");
   const baseSubject = (thread?.subject ?? "").replace(/^((re|fwd):\s*)+/i, "");
+  const replyBody = lastMessage
+    ? buildReplyBody({
+        from: lastMessage.sender?.display_name ?? lastMessage.sender?.email,
+        fromEmail: lastMessage.sender?.email,
+        subject: lastMessage.subject ?? thread?.subject,
+        date: new Date(lastMessage.sent_at ?? lastMessage.created_at).toLocaleString("vi-VN"),
+        body: lastMessage.body,
+      })
+    : "";
+  const forwardBody = buildThreadForwardBody(
+    thread?.subject,
+    messages.map((m) => ({
+      from: m.sender?.display_name ?? m.sender?.email,
+      fromEmail: m.sender?.email,
+      subject: m.subject,
+      date: new Date(m.sent_at ?? m.created_at).toLocaleString("vi-VN"),
+      body: m.body,
+    })),
+  );
 
   const moveMut = useMutation({
     mutationFn: (folder: "archive" | "trash") =>
@@ -139,21 +159,26 @@ function EmailDetailPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     to="/email/compose"
-                    search={{ thread: id, to: replyTo, subject: `Re: ${baseSubject}` }}
+                    search={{ thread: id, to: replyTo, subject: `Re: ${baseSubject}`, body: replyBody }}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                   >
                     <Reply className="h-4 w-4" /> Trả lời
                   </Link>
                   <Link
                     to="/email/compose"
-                    search={{ thread: id, to: allParticipants, subject: `Re: ${baseSubject}` }}
+                    search={{
+                      thread: id,
+                      to: allParticipants,
+                      subject: `Re: ${baseSubject}`,
+                      body: replyBody,
+                    }}
                     className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3"
                   >
                     <ReplyAll className="h-4 w-4" /> Trả lời tất cả
                   </Link>
                   <Link
                     to="/email/compose"
-                    search={{ subject: `Fwd: ${baseSubject}` }}
+                    search={{ subject: `Fwd: ${baseSubject}`, body: forwardBody }}
                     className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3"
                   >
                     <Forward className="h-4 w-4" /> Chuyển tiếp
