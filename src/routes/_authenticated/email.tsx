@@ -554,6 +554,7 @@ function EmailHubPage() {
     },
   ]);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [composePrefill, setComposePrefill] = useState({ to: "", subject: "" });
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
