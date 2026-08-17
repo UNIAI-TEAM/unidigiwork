@@ -1358,15 +1358,17 @@ function Insight({
   title,
   sub,
   t,
+  onClick,
 }: {
   icon: LucideIcon;
   color: string;
   title: string;
   sub: string;
   t: (k: Key) => string;
+  onClick: () => void;
 }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="block w-full rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
+    <button onClick={onClick} className="block w-full rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
       <div className="flex items-start gap-2">
         <Icon className={`mt-0.5 h-4 w-4 ${color}`} />
         <div className="min-w-0 flex-1">
