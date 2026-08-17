@@ -108,6 +108,23 @@ function AiMarketSearchPage() {
     (minTasks > 0 ? 1 : 0) +
     (maxSalary !== null ? 1 : 0);
 
+  // Khi không có kết quả vì ngân sách quá thấp, gợi ý ứng viên rẻ nhất còn lại.
+  const cheapestFallback = useMemo(() => {
+    if (agents.length > 0 || maxSalary === null) return null;
+    const pool = all
+      .filter((a: any) => Number(a.rating) >= minRating && Number(a.completed_tasks) >= minTasks)
+      .sort((a: any, b: any) => Number(a.salary_min) - Number(b.salary_min));
+    return pool[0] ?? null;
+  }, [agents.length, all, maxSalary, minRating, minTasks]);
+
+  const unusedActiveFilters =
+    (domain !== "all" ? 1 : 0) +
+    (skill !== "all" ? 1 : 0) +
+    (contract !== "all" ? 1 : 0) +
+    (minRating > 0 ? 1 : 0) +
+    (minTasks > 0 ? 1 : 0) +
+    (maxSalary !== null ? 1 : 0);
+
   const resetFilters = () => {
     setDomain("all");
     setSkill("all");
