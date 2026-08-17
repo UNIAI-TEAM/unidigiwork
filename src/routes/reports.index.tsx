@@ -1275,14 +1275,16 @@ function ShortcutRow({
   color,
   title,
   sub,
+  onClick,
 }: {
   icon: LucideIcon;
   color: string;
   title: string;
   sub: string;
+  onClick: () => void;
 }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
+    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
       <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
         <Icon className="h-4 w-4" />
       </div>
