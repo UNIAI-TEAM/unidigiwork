@@ -60,7 +60,9 @@ function AiMarketSearchPage() {
   const [domain, setDomain] = useState("all");
   const [skill, setSkill] = useState("all");
   const [contract, setContract] = useState("all");
-  const [sort, setSort] = useState<"kpi" | "rating" | "salary_asc" | "salary_desc" | "tasks">("kpi");
+  const [sort, setSort] = useState<
+    "kpi" | "rating" | "salary_asc" | "salary_desc" | "tasks" | "kpi_salary"
+  >("kpi");
   const [minRating, setMinRating] = useState(0);
   const [minTasks, setMinTasks] = useState(0);
   const [minApproval, setMinApproval] = useState(0);
@@ -115,8 +117,20 @@ function AiMarketSearchPage() {
           return true;
         })
         .sort((a: any, b: any) => {
-          if (sort === "kpi") return (b.kpi?.score ?? 0) - (a.kpi?.score ?? 0);
+          const kpiA = a.kpi?.score ?? 0;
+          const kpiB = b.kpi?.score ?? 0;
+          const salA = Number(a.salary_min) || 0;
+          const salB = Number(b.salary_min) || 0;
+          if (sort === "kpi") return kpiB - kpiA || salA - salB;
           if (sort === "tasks") return (b.kpi?.completed ?? 0) - (a.kpi?.completed ?? 0);
+          if (sort === "salary_asc") return salA - salB;
+          if (sort === "salary_desc") return salB - salA;
+          if (sort === "kpi_salary") {
+            // Ưu tiên hiệu suất trên mỗi triệu đồng lương.
+            const valueA = kpiA / Math.max(1, salA / 1_000_000);
+            const valueB = kpiB / Math.max(1, salB / 1_000_000);
+            return valueB - valueA || kpiB - kpiA;
+          }
           return 0;
         }),
     [all, minRating, minTasks, minApproval, minKpi, maxSalary, contract, sort],
@@ -369,8 +383,30 @@ function AiMarketSearchPage() {
                     <SelectItem value="tasks">Nhiều việc đã hoàn thành</SelectItem>
                     <SelectItem value="salary_asc">Lương thấp → cao</SelectItem>
                     <SelectItem value="salary_desc">Lương cao → thấp</SelectItem>
+                    <SelectItem value="kpi_salary">KPI cao nhất &amp; lương rẻ nhất</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground">Sắp xếp nhanh:</span>
+                {[
+                  { value: "kpi", label: "KPI" },
+                  { value: "salary_asc", label: "Lương" },
+                  { value: "kpi", label: "KPI cao nhất" },
+                  { value: "salary_asc", label: "Lương rẻ nhất" },
+                  { value: "kpi_salary", label: "KPI cao nhất & lương rẻ nhất" },
+                ].map((opt, i) => (
+                  <Button
+                    key={`${opt.value}-${i}`}
+                    type="button"
+                    size="sm"
+                    variant={sort === opt.value ? "default" : "outline"}
+                    onClick={() => setSort(opt.value as typeof sort)}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
               </div>
 
               {!activeWorkspaceId ? (
