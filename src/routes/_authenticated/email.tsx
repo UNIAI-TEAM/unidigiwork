@@ -186,7 +186,9 @@ function DonutChart({ stats }: { stats: StatSlice[] }) {
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="text-xl font-bold tabular-nums">{total + 20}</div>
+        <div className="text-xl font-bold tabular-nums">
+          {stats.reduce((s, x) => s + x.value, 0)}
+        </div>
         <div className="text-[10px] text-muted-foreground">Email</div>
       </div>
     </div>
