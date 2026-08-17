@@ -1435,7 +1435,7 @@ export function AppTopbar({
         <Menu className="h-5 w-5" />
       </button>
       <button
-        aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+        aria-label={collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
         className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"
         onClick={toggleCollapsed}
       >
@@ -1504,7 +1504,7 @@ export function AppTopbar({
           </div>
           <Link
             to="/help"
-            aria-label="Trợ giúp"
+            aria-label={t("sh.aria.help")}
             className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"
           >
             <HelpCircle className="h-5 w-5 text-muted-foreground" />
@@ -1517,14 +1517,14 @@ export function AppTopbar({
       <Link
         to="/settings"
         className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"
-        aria-label="Bảo mật"
+        aria-label={t("sh.aria.security")}
       >
         <ShieldCheck className="h-5 w-5 text-muted-foreground" />
       </Link>
       <Link
         to="/settings"
         className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"
-        aria-label="Cài đặt"
+        aria-label={t("sh.aria.settings")}
       >
         <Settings className="h-5 w-5 text-muted-foreground" />
       </Link>
@@ -1538,7 +1538,7 @@ export function AppTopbar({
         <button
           onClick={() => setNotifOpen((v) => !v)}
           className={cn("relative rounded-lg p-2 hover:bg-surface-2", notifOpen && "bg-surface-2")}
-          aria-label="Thông báo"
+          aria-label={t("sh.notif.aria")}
           aria-haspopup="dialog"
           aria-expanded={notifOpen}
         >
@@ -1554,7 +1554,7 @@ export function AppTopbar({
       <div className="relative" ref={calRef}>
         <button
           onClick={() => setCalOpen((v) => !v)}
-          aria-label="Lịch"
+          aria-label={t("sh.cal.aria")}
           aria-haspopup="dialog"
           aria-expanded={calOpen}
           className={cn("rounded-lg p-2 hover:bg-surface-2", calOpen && "bg-surface-2")}
@@ -1584,7 +1584,7 @@ export function AppTopbar({
           <div className="hidden text-left leading-tight sm:block">
             <div className="whitespace-nowrap text-sm font-semibold">Nguyễn Văn A</div>
             <div className="whitespace-nowrap text-[11px] text-muted-foreground">
-              Giám đốc Điều hành
+              {t("sh.user.role")}
             </div>
           </div>
           <ChevronDown
@@ -1618,7 +1618,7 @@ export function AppTopbar({
                   </span>
                 </div>
                 <div className="truncate text-[11px] text-muted-foreground">
-                  Giám đốc Điều hành · STOS
+                  {t("sh.user.roleOrg")}
                 </div>
                 <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Mail className="h-3 w-3" />
@@ -1631,10 +1631,10 @@ export function AppTopbar({
             <div className="flex items-center justify-between border-b border-border px-3 py-2 text-xs">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Circle className="h-2 w-2 fill-emerald-400 text-emerald-400" />
-                <span>Đang trực tuyến</span>
+                <span>{t("sh.user.online")}</span>
               </div>
               <button className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground">
-                <Moon className="h-3 w-3" /> Đặt trạng thái
+                <Moon className="h-3 w-3" /> {t("sh.user.setStatus")}
               </button>
             </div>
 
@@ -1646,7 +1646,7 @@ export function AppTopbar({
                 onClick={() => setUserOpen(false)}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary/15 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/25"
               >
-                <KeyRound className="h-3.5 w-3.5" /> Đổi mật khẩu
+                <KeyRound className="h-3.5 w-3.5" /> {t("sh.user.changePw")}
               </Link>
             </div>
 
@@ -1654,47 +1654,47 @@ export function AppTopbar({
             <div className="p-1.5">
               <MenuItem
                 icon={UserCircle2}
-                label="Hồ sơ cá nhân"
-                desc="Xem & chỉnh sửa thông tin"
+                label={t("sh.user.profile")}
+                desc={t("sh.user.profileDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "profile" }}
               />
               <MenuItem
                 icon={Settings}
-                label="Cài đặt tài khoản"
-                desc="Email, tên đăng nhập"
+                label={t("sh.user.account")}
+                desc={t("sh.user.accountDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "account" }}
               />
               <MenuItem
                 icon={KeyRound}
-                label="Đổi mật khẩu"
-                desc="Cập nhật & bật 2FA"
+                label={t("sh.user.changePw")}
+                desc={t("sh.user.pwDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "password" }}
               />
               <MenuItem
                 icon={ShieldCheck}
-                label="Quyền riêng tư & bảo mật"
-                desc="Phiên đăng nhập, thiết bị"
+                label={t("sh.user.privacy")}
+                desc={t("sh.user.privacyDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "security" }}
               />
               <MenuItem
                 icon={CreditCard}
-                label="Gói dịch vụ"
-                desc="Xem, nâng cấp hoặc hủy gói"
+                label={t("sh.user.plan")}
+                desc={t("sh.user.planDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/billing"
               />
               <MenuItem
                 icon={HelpCircle}
-                label="Trợ giúp & hỗ trợ"
-                desc="Tài liệu, hotline 1900 6996"
+                label={t("sh.user.help")}
+                desc={t("sh.user.helpDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/help"
               />
@@ -1707,7 +1707,7 @@ export function AppTopbar({
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="flex-1 text-left font-medium">Đăng xuất</span>
+                <span className="flex-1 text-left font-medium">{t("sh.user.logout")}</span>
                 <span className="text-[11px] text-muted-foreground">⇧⌘Q</span>
               </button>
             </div>
@@ -1715,7 +1715,7 @@ export function AppTopbar({
             <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2 text-[10px] text-muted-foreground">
               <span>UNIWORK v2.4.1</span>
               <a href="#" className="hover:text-foreground">
-                Điều khoản · Bảo mật
+                {t("sh.user.legal")}
               </a>
             </div>
           </div>
