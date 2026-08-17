@@ -67,41 +67,23 @@ async function recordEvent(
 
 /* ------------------------------ Chợ ứng viên ------------------------------ */
 
-// Thống kê thực thi theo workflow agent trong tenant: số run thành công, số đề xuất, số được duyệt.
+// Thống kê thực thi đọc từ bảng thật public.ai_agent_performance (trigger tự cập nhật).
 async function loadTenantAgentStats(context: any, tenantId: string, workflowAgentIds: string[]) {
   const map = new Map<string, { completed: number; proposals: number; approved: number }>();
   if (!workflowAgentIds.length) return map;
 
-  const { data: runs } = await context.supabase
-    .from("workflow_agent_runs")
-    .select("agent_id, proposal_id, status")
+  const { data: perf } = await context.supabase
+    .from("ai_agent_performance")
+    .select("agent_id, proposals_sent, proposals_approved, tasks_completed")
     .eq("tenant_id", tenantId)
-    .in("agent_id", workflowAgentIds)
-    .limit(2000);
+    .in("agent_id", workflowAgentIds);
 
-  const proposalIds = (runs ?? [])
-    .map((r: any) => r.proposal_id)
-    .filter((v: string | null): v is string => !!v);
-  const approvedIds = new Set<string>();
-  if (proposalIds.length) {
-    const { data: proposals } = await context.supabase
-      .from("ai_action_proposals")
-      .select("id, status")
-      .eq("tenant_id", tenantId)
-      .in("id", proposalIds);
-    for (const p of proposals ?? []) {
-      if (p.status === "EXECUTED" || p.status === "CONFIRMED") approvedIds.add(p.id as string);
-    }
-  }
-  for (const r of runs ?? []) {
-    const key = r.agent_id as string;
-    const cur = map.get(key) ?? { completed: 0, proposals: 0, approved: 0 };
-    if (r.status === "succeeded" || r.status === "SUCCEEDED") cur.completed += 1;
-    if (r.proposal_id) {
-      cur.proposals += 1;
-      if (approvedIds.has(r.proposal_id)) cur.approved += 1;
-    }
-    map.set(key, cur);
+  for (const p of perf ?? []) {
+    map.set(p.agent_id as string, {
+      completed: Number(p.tasks_completed) || 0,
+      proposals: Number(p.proposals_sent) || 0,
+      approved: Number(p.proposals_approved) || 0,
+    });
   }
   return map;
 }
