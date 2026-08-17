@@ -253,9 +253,32 @@ function ReportsPage() {
                   days={days}
                   t={t}
                 />
-                <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
-                  <Settings className="h-4 w-4" /> {t("rp.customize")}
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
+                      <Settings className="h-4 w-4" /> {t("rp.customize")}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuCheckboxItem
+                      checked={compare}
+                      onCheckedChange={(v) => setCompare(Boolean(v))}
+                    >
+                      So sánh kỳ trước
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator />
+                    {[7, 30, 90].map((d) => (
+                      <DropdownMenuItem
+                        key={d}
+                        onSelect={() =>
+                          setRange({ from: shiftDay(todayKey(), -(d - 1)), to: todayKey() })
+                        }
+                      >
+                        {d} ngày gần nhất
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <button
                   disabled={isFetching}
                   onClick={async () => {
@@ -297,9 +320,53 @@ function ReportsPage() {
                 >
                   <ArrowUpRight className="h-4 w-4" /> {t("rp.drill")}
                 </Link>
-                <button onClick={() => notifyComingSoon()} className="rounded-lg bg-surface p-2 text-muted-foreground hover:text-foreground">
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Thao tác khác"
+                      className="rounded-lg bg-surface p-2 text-muted-foreground hover:text-foreground"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        void refetch();
+                        toast.success(t("rp.refresh.done"));
+                      }}
+                    >
+                      {t("rp.refresh")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={!report}
+                      onSelect={() => {
+                        if (!report) return;
+                        exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                        toast.success(t("rp.export.done"));
+                      }}
+                    >
+                      {t("rp.export.csv")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={!report}
+                      onSelect={() => {
+                        if (!report) return;
+                        const ok = exportReportPdf(report, {
+                          ...range,
+                          title: t("rp.title"),
+                          compare,
+                          prev,
+                        });
+                        if (!ok) toast.error(t("rp.export.blocked"));
+                      }}
+                    >
+                      {t("rp.export.pdf")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => drill()}>{t("rp.drill")}</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
