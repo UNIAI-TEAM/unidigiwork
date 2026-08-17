@@ -1397,13 +1397,15 @@ function ExportBtn({
   icon: Icon,
   label,
   color,
+  onClick,
 }: {
   icon: LucideIcon;
   label: string;
   color: string;
+  onClick: () => void;
 }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
+    <button onClick={onClick} className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
       <Icon className={`h-3.5 w-3.5 ${color}`} /> {label}
     </button>
   );
