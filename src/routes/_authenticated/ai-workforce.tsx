@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listAiEmployments } from "@/lib/api/ai-market.functions";
 import { AI_EMPLOYMENT_STATUS_LABELS, formatMoney } from "@/domain/ai-market/contracts";
-import { formatApprovalRate } from "@/domain/ai-market/kpi";
+import { formatApproved, formatKpiScore } from "@/domain/ai-market/kpi";
 import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
 import { Badge } from "@/components/ui/badge";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
@@ -190,12 +190,12 @@ function AiContractsTab() {
               <span className="block truncate text-sm font-medium">{e.agent?.name ?? "Nhân sự AI"}</span>
               <span className="block truncate text-xs text-muted-foreground">{e.agent?.title}</span>
               <span className="mt-1 block truncate text-xs text-muted-foreground">
-                {e.kpi?.proposals ?? 0} đề xuất · duyệt {formatApprovalRate(e.kpi?.approvalRate ?? null)} ·{" "}
+                {e.kpi?.proposals ?? 0} đề xuất · duyệt {formatApproved(e.kpi?.approved ?? 0, e.kpi?.proposals ?? 0)} ·{" "}
                 {e.kpi?.completed ?? 0} việc hoàn thành
               </span>
             </span>
             <Badge variant="outline" className="font-semibold">
-              KPI {e.kpi?.score ?? 0}
+              KPI {formatKpiScore(e.kpi?.score)}
             </Badge>
             <Badge variant="secondary">{AI_EMPLOYMENT_STATUS_LABELS[e.status as keyof typeof AI_EMPLOYMENT_STATUS_LABELS] ?? e.status}</Badge>
             <span className="text-sm font-medium">
