@@ -36,6 +36,14 @@ import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
 import { Table2, RefreshCw } from "lucide-react";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
