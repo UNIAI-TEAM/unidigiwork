@@ -67,6 +67,48 @@ async function recordEvent(
 
 /* ------------------------------ Chợ ứng viên ------------------------------ */
 
+// Tự động kết thúc các hợp đồng thử việc đã hết hạn (14 ngày) hoặc không có hợp đồng thử việc hợp lệ.
+async function sweepExpiredTrials(context: any, tenantId: string) {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - TRIAL_DAYS * 86_400_000).toISOString();
+
+  const { data: rows } = await context.supabase
+    .from("ai_employments")
+    .select("id, status, trial_ends_at, trial_started_at, created_at, workflow_agent_id")
+    .eq("tenant_id", tenantId)
+    .in("status", ["TRIAL", "OFFER", "INTERVIEW"]);
+
+  const expired = (rows ?? []).filter((r: any) => {
+    if (r.status === "TRIAL") {
+      if (r.trial_ends_at) return new Date(r.trial_ends_at).getTime() < now.getTime();
+      return (r.trial_started_at ?? r.created_at) < cutoff;
+    }
+    // INTERVIEW/OFFER: chưa có hợp đồng thử việc sau 14 ngày → gỡ khỏi AI Workforce
+    return r.created_at < cutoff;
+  });
+  if (!expired.length) return;
+
+  const agentIds = expired.map((r: any) => r.workflow_agent_id).filter(Boolean);
+  if (agentIds.length) {
+    await context.supabase.from("workflow_agents").update({ enabled: false }).in("id", agentIds);
+  }
+  await context.supabase
+    .from("ai_employments")
+    .update({ status: "TERMINATED", ended_at: now.toISOString(), updated_by: context.userId })
+    .in("id", expired.map((r: any) => r.id));
+
+  await context.supabase.from("ai_employment_events").insert(
+    expired.map((r: any) => ({
+      tenant_id: tenantId,
+      employment_id: r.id,
+      from_status: r.status,
+      to_status: "TERMINATED",
+      note: "Tự động gỡ: thử việc hết hạn hoặc không có hợp đồng sau 14 ngày.",
+      actor_id: context.userId,
+    })),
+  );
+}
+
 export const listMarketAgents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
