@@ -963,7 +963,10 @@ function ReportsPage() {
                     <div className="text-sm font-medium">{t("rp.exp.sched")}</div>
                     <div className="text-[11px] text-muted-foreground">{t("rp.exp.schedsub")}</div>
                   </div>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                  <button
+                    onClick={() => navigate({ to: "/workflows" })}
+                    className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
                     <Plus className="h-3 w-3" /> {t("rp.schedule")}
                   </button>
                 </div>
@@ -1385,10 +1388,9 @@ function FilterField({ label, value }: { label: string; value: string }) {
   return (
     <div className="mb-3">
       <div className="mb-1 text-[11px] text-muted-foreground">{label}</div>
-      <button onClick={() => notifyComingSoon()} className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
+      <div className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
         <span className="truncate">{value}</span>
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-      </button>
+      </div>
     </div>
   );
 }
