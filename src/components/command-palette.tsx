@@ -43,6 +43,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import type { SearchKind } from "@/lib/api/search-universal.server";
+import { useI18n, type Key } from "@/lib/i18n";
 
 /**
  * Global event the topbar (and any button) can dispatch to open the palette
@@ -54,7 +55,14 @@ export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent(OPEN_CMDK_EVENT));
 }
 
-type CmdGroup = "Kết quả" | "Điều hướng" | "Hành động" | "Tìm kiếm";
+type CmdGroup = "result" | "nav" | "action" | "search";
+
+const GROUP_KEY: Record<CmdGroup, Key> = {
+  result: "cmd.group.result",
+  nav: "cmd.group.nav",
+  action: "cmd.group.action",
+  search: "cmd.group.search",
+};
 
 const KIND_ICON: Record<SearchKind, LucideIcon> = {
   project: Briefcase,
@@ -67,15 +75,15 @@ const KIND_ICON: Record<SearchKind, LucideIcon> = {
   person: Users,
 };
 
-const KIND_LABEL: Record<SearchKind, string> = {
-  project: "Dự án",
-  task: "Công việc",
-  meeting: "Cuộc họp",
-  artifact: "Kết quả họp",
-  document: "Tài liệu",
-  email: "Email",
-  chat: "Kênh chat",
-  person: "Nhân sự",
+const KIND_LABEL_KEY: Record<SearchKind, Key> = {
+  project: "cmd.kind.project",
+  task: "cmd.kind.task",
+  meeting: "cmd.kind.meeting",
+  artifact: "cmd.kind.artifact",
+  document: "cmd.kind.document",
+  email: "cmd.kind.email",
+  chat: "cmd.kind.chat",
+  person: "cmd.kind.person",
 };
 
 type CmdItem = {
@@ -88,26 +96,35 @@ type CmdItem = {
   run: (ctx: { navigate: ReturnType<typeof useNavigate>; query: string }) => void;
 };
 
+type CmdSpec = {
+  id: string;
+  group: CmdGroup;
+  labelKey: Key;
+  hintKey?: Key;
+  icon: LucideIcon;
+  keywords?: string;
+};
+
 // Nhãn nhóm khớp Information Architecture V2 (xem src/config/navigation.ts).
-const NAV_ITEMS: Omit<CmdItem, "run">[] = [
-  { id: "tasks", group: "Điều hướng", label: "Công việc của tôi", hint: "Trang chủ", icon: ListChecks, keywords: "task cong viec my work to do" },
-  { id: "notifications", group: "Điều hướng", label: "Hộp việc", hint: "Trang chủ", icon: Bell, keywords: "inbox notification thong bao" },
-  { id: "workspace", group: "Điều hướng", label: "Không gian làm việc", hint: "Công việc", icon: LayoutGrid, keywords: "workspace project du an" },
-  { id: "calendar", group: "Điều hướng", label: "Lịch", hint: "Công việc", icon: Calendar, keywords: "lich calendar deadline" },
-  { id: "people", group: "Điều hướng", label: "Nhân sự", hint: "Công việc", icon: Users, keywords: "people nhan su team" },
-  { id: "chat", group: "Điều hướng", label: "Chat", hint: "Trao đổi", icon: MessageSquare, keywords: "tin nhan message" },
-  { id: "meeting", group: "Điều hướng", label: "Phòng họp", hint: "Trao đổi", icon: Video, keywords: "meeting hop video" },
-  { id: "email", group: "Điều hướng", label: "Email Hub", hint: "Trao đổi", icon: Mail, keywords: "mail thu" },
-  { id: "documents", group: "Điều hướng", label: "Tài liệu", hint: "Tri thức", icon: FileText, keywords: "document file docs" },
-  { id: "knowledge", group: "Điều hướng", label: "Kho tri thức", hint: "Tri thức", icon: BookOpen, keywords: "knowledge wiki tri thuc" },
-  { id: "workflows", group: "Điều hướng", label: "Quy trình", hint: "Tự động hoá", icon: Workflow, keywords: "workflow automation quy trinh" },
-  { id: "ai", group: "Điều hướng", label: "AI Assistant", hint: "Tự động hoá", icon: Bot, keywords: "ai tro ly assistant agent" },
-  { id: "dashboard", group: "Điều hướng", label: "Dashboard", hint: "Phân tích", icon: LayoutDashboard, keywords: "trang chu home tong quan" },
-  { id: "reports", group: "Điều hướng", label: "Báo cáo", hint: "Phân tích", icon: BarChart3, keywords: "report bao cao analytics workload" },
-  { id: "admin", group: "Điều hướng", label: "Quản trị hệ thống", hint: "Quản trị", icon: ShieldCheck, keywords: "admin quan tri console" },
-  { id: "billing", group: "Điều hướng", label: "Gói & Thanh toán", hint: "Quản trị", icon: CreditCard, keywords: "billing goi thanh toan invoice" },
-  { id: "settings", group: "Điều hướng", label: "Cài đặt", hint: "Quản trị", icon: Settings, keywords: "settings cai dat" },
-  { id: "help", group: "Điều hướng", label: "Trợ giúp", icon: HelpCircle, keywords: "help support tro giup" },
+const NAV_ITEMS: CmdSpec[] = [
+  { id: "tasks", group: "nav", labelKey: "nav.mywork", hintKey: "nav.group.home", icon: ListChecks, keywords: "task cong viec my work to do" },
+  { id: "notifications", group: "nav", labelKey: "nav.inbox", hintKey: "nav.group.home", icon: Bell, keywords: "inbox notification thong bao" },
+  { id: "workspace", group: "nav", labelKey: "nav.projects", hintKey: "nav.group.work", icon: LayoutGrid, keywords: "workspace project du an" },
+  { id: "calendar", group: "nav", labelKey: "nav.calendar", hintKey: "nav.group.work", icon: Calendar, keywords: "lich calendar deadline" },
+  { id: "people", group: "nav", labelKey: "nav.people", hintKey: "nav.group.work", icon: Users, keywords: "people nhan su team" },
+  { id: "chat", group: "nav", labelKey: "nav.chat", hintKey: "nav.group.communication", icon: MessageSquare, keywords: "tin nhan message chat" },
+  { id: "meeting", group: "nav", labelKey: "nav.meetings", hintKey: "nav.group.communication", icon: Video, keywords: "meeting hop video" },
+  { id: "email", group: "nav", labelKey: "nav.email", hintKey: "nav.group.communication", icon: Mail, keywords: "mail thu" },
+  { id: "documents", group: "nav", labelKey: "nav.documents", hintKey: "nav.group.knowledge", icon: FileText, keywords: "document file docs tai lieu" },
+  { id: "knowledge", group: "nav", labelKey: "nav.knowledge", hintKey: "nav.group.knowledge", icon: BookOpen, keywords: "knowledge wiki tri thuc" },
+  { id: "workflows", group: "nav", labelKey: "nav.workflows", hintKey: "nav.group.automation", icon: Workflow, keywords: "workflow automation quy trinh" },
+  { id: "ai", group: "nav", labelKey: "nav.ai", hintKey: "nav.group.automation", icon: Bot, keywords: "ai tro ly assistant agent" },
+  { id: "dashboard", group: "nav", labelKey: "nav.dashboard", hintKey: "nav.group.insights", icon: LayoutDashboard, keywords: "dashboard trang chu home tong quan" },
+  { id: "reports", group: "nav", labelKey: "nav.reports", hintKey: "nav.group.insights", icon: BarChart3, keywords: "report bao cao analytics workload" },
+  { id: "admin", group: "nav", labelKey: "nav.admin", hintKey: "nav.group.admin", icon: ShieldCheck, keywords: "admin quan tri console" },
+  { id: "billing", group: "nav", labelKey: "nav.billing", hintKey: "nav.group.admin", icon: CreditCard, keywords: "billing goi thanh toan invoice" },
+  { id: "settings", group: "nav", labelKey: "nav.settings", hintKey: "nav.group.admin", icon: Settings, keywords: "settings cai dat" },
+  { id: "help", group: "nav", labelKey: "nav.help", icon: HelpCircle, keywords: "help support tro giup" },
 ];
 
 const NAV_TO: Record<string, string> = {
@@ -131,12 +148,12 @@ const NAV_TO: Record<string, string> = {
   billing: "/billing",
 };
 
-const ACTION_ITEMS: Omit<CmdItem, "run">[] = [
-  { id: "new-meeting", group: "Hành động", label: "Tạo cuộc họp mới", icon: Video, keywords: "new meeting tao hop" },
-  { id: "new-task", group: "Hành động", label: "Tạo nhiệm vụ", icon: ListChecks, keywords: "new task tao cong viec" },
-  { id: "new-doc", group: "Hành động", label: "Tạo tài liệu", icon: FileText, keywords: "new document tao tai lieu" },
-  { id: "compose-email", group: "Hành động", label: "Soạn email", icon: Mail, keywords: "compose email soan thu" },
-  { id: "ask-uni", group: "Hành động", label: "Hỏi UNI…", icon: Sparkles, keywords: "ai uni copilot hoi assistant" },
+const ACTION_ITEMS: CmdSpec[] = [
+  { id: "new-meeting", group: "action", labelKey: "cmd.act.newMeeting", icon: Video, keywords: "new meeting tao hop" },
+  { id: "new-task", group: "action", labelKey: "cmd.act.newTask", icon: ListChecks, keywords: "new task tao cong viec" },
+  { id: "new-doc", group: "action", labelKey: "cmd.act.newDoc", icon: FileText, keywords: "new document tao tai lieu" },
+  { id: "compose-email", group: "action", labelKey: "cmd.act.composeEmail", icon: Mail, keywords: "compose email soan thu" },
+  { id: "ask-uni", group: "action", labelKey: "cmd.act.askUni", icon: Sparkles, keywords: "ai uni copilot hoi assistant" },
 ];
 
 const ACTION_TO: Record<string, string> = {
@@ -154,13 +171,25 @@ function norm(s: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function buildItems(navigate: ReturnType<typeof useNavigate>): CmdItem[] {
+function buildItems(
+  navigate: ReturnType<typeof useNavigate>,
+  t: (k: Key) => string,
+): CmdItem[] {
   const nav = NAV_ITEMS.map<CmdItem>((i) => ({
-    ...i,
+    id: i.id,
+    group: i.group,
+    icon: i.icon,
+    keywords: i.keywords,
+    label: t(i.labelKey),
+    hint: i.hintKey ? t(i.hintKey) : undefined,
     run: () => navigate({ to: NAV_TO[i.id] as never }),
   }));
   const act = ACTION_ITEMS.map<CmdItem>((i) => ({
-    ...i,
+    id: i.id,
+    group: i.group,
+    icon: i.icon,
+    keywords: i.keywords,
+    label: t(i.labelKey),
     run: () =>
       i.id === "ask-uni" ? openUniCopilot() : navigate({ to: ACTION_TO[i.id] as never }),
   }));
@@ -172,6 +201,7 @@ export function CommandPalette() {
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const { workspaceId: activeWorkspaceId, workspaceName } = useActiveWorkspace();
@@ -216,7 +246,7 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  const all = useMemo(() => buildItems(navigate), [navigate]);
+  const all = useMemo(() => buildItems(navigate, t), [navigate, t]);
 
   // Debounced live search (permission-aware, Universal Search V2).
   const [debounced, setDebounced] = useState("");
@@ -247,19 +277,19 @@ export function CommandPalette() {
     if (needle) {
       const hits: CmdItem[] = (live?.items ?? []).map((r) => ({
         id: `hit-${r.kind}-${r.id}`,
-        group: "Kết quả" as const,
+        group: "result" as const,
         label: r.title,
-        hint: KIND_LABEL[r.kind],
+        hint: t(KIND_LABEL_KEY[r.kind]),
         icon: KIND_ICON[r.kind] ?? FileText,
         run: ({ navigate }) => navigate({ href: r.href } as never),
       }));
       // Always offer a "search this query" affordance at the bottom.
       const searchItem: CmdItem = {
         id: "search-query",
-        group: "Tìm kiếm",
-        label: `Tìm "${q.trim()}" trong toàn workspace`,
+        group: "search",
+        label: `${t("cmd.searchAll")}: "${q.trim()}"`,
         icon: Search,
-        hint: "Mở /search",
+        hint: t("cmd.openSearch"),
         run: ({ navigate, query }) =>
           navigate({
             to: "/search",
@@ -269,7 +299,7 @@ export function CommandPalette() {
       return [...hits, ...base, searchItem];
     }
     return base;
-  }, [all, q, live, scopeId]);
+  }, [all, q, live, scopeId, t]);
 
   // Clamp active when results change
   useEffect(() => {
@@ -319,10 +349,8 @@ export function CommandPalette() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="top-[18%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0">
-        <DialogTitle className="sr-only">Bảng lệnh</DialogTitle>
-        <DialogDescription className="sr-only">
-          Tìm trang, hành động hoặc tìm kiếm trong toàn workspace.
-        </DialogDescription>
+        <DialogTitle className="sr-only">{t("cmd.title")}</DialogTitle>
+        <DialogDescription className="sr-only">{t("cmd.desc")}</DialogDescription>
 
         <div className="flex items-center gap-3 border-b border-border px-4">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -334,9 +362,9 @@ export function CommandPalette() {
               setActive(0);
             }}
             onKeyDown={onKeyDown}
-            placeholder="Đi tới trang, chạy lệnh hoặc tìm kiếm…"
+            placeholder={t("cmd.placeholder")}
             className="h-12 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            aria-label="Tìm lệnh"
+            aria-label={t("cmd.aria")}
           />
           <kbd className="hidden shrink-0 rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
             ESC
@@ -348,7 +376,7 @@ export function CommandPalette() {
 
         {activeWorkspaceId && (
           <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-            <span className="text-[11px] text-muted-foreground">Phạm vi</span>
+            <span className="text-[11px] text-muted-foreground">{t("cmd.scope")}</span>
             <button
               type="button"
               onClick={() => chooseScope(true)}
@@ -360,7 +388,7 @@ export function CommandPalette() {
                   : "border-border bg-surface text-muted-foreground",
               )}
             >
-              {workspaceName ?? "Dự án hiện tại"}
+              {workspaceName ?? t("cmd.scope.current")}
             </button>
             <button
               type="button"
@@ -373,7 +401,7 @@ export function CommandPalette() {
                   : "border-border bg-surface text-muted-foreground",
               )}
             >
-              Mọi dự án
+              {t("cmd.scope.all")}
             </button>
           </div>
         )}
@@ -385,13 +413,13 @@ export function CommandPalette() {
         >
           {results.length === 0 ? (
             <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-              Không tìm thấy kết quả nào
+              {t("cmd.empty")}
             </div>
           ) : (
             grouped.map(([group, items]) => (
               <div key={group} className="mb-1">
                 <div className="px-4 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {group}
+                  {t(GROUP_KEY[group])}
                 </div>
                 <div>
                   {items.map((item) => {
@@ -443,18 +471,18 @@ export function CommandPalette() {
         <div className="flex items-center justify-between gap-3 border-t border-border bg-surface-2/40 px-4 py-2 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <CommandIcon className="h-3 w-3" />
-            <span>Bảng lệnh</span>
+            <span>{t("cmd.title")}</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden items-center gap-1 sm:flex">
               <kbd className="rounded border border-border bg-surface px-1 font-mono">↑↓</kbd>
-              di chuyển
+              {t("cmd.move")}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="rounded border border-border bg-surface px-1 font-mono">
                 <CornerDownLeft className="inline h-2.5 w-2.5" />
               </kbd>
-              chọn
+              {t("cmd.select")}
             </span>
           </div>
         </div>

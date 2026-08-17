@@ -49,7 +49,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { ThemeToggle, ToneToggle } from "@/lib/theme";
-import { LanguageToggle, useI18n } from "@/lib/i18n";
+import { LanguageToggle, useI18n, type Key } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
@@ -199,6 +199,7 @@ function wsColorOf(id: string) {
 // Danh sách workspace thật của người dùng.
 function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
   const { workspaceId: activeWsId } = useActiveWorkspace();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({
     queryKey: ["my-workspaces"],
     queryFn: () => listMyWorkspaces(),
@@ -215,9 +216,9 @@ function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
   if (rows.length === 0) {
     return collapsed ? null : (
       <div className="px-3 py-2 text-[11px] text-muted-foreground">
-        Chưa có workspace ·{" "}
+        {t("sh.ws.empty")}{" "}
         <Link to="/workspace" className="text-primary hover:underline">
-          Tạo mới
+          {t("sh.ws.createNew")}
         </Link>
       </div>
     );
@@ -240,7 +241,7 @@ function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
           to="/workspace"
           className="mx-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
-          <Plus className="h-3.5 w-3.5" /> Quản lý workspace
+          <Plus className="h-3.5 w-3.5" /> {t("sh.ws.manage")}
         </Link>
       )}
     </>
@@ -407,7 +408,7 @@ export function AppSidebar({
                 <span>{t("nav.workspaces")}</span>
                 <button
                   className="rounded p-0.5 hover:bg-surface-2"
-                  aria-label="Tạo workspace mới"
+                  aria-label={t("sh.ws.addAria")}
                   onClick={() => setWsOpen(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -431,7 +432,7 @@ export function AppSidebar({
               <Cloud className="h-5 w-5 text-sky-400" />
               <div>
                 <div className="font-medium">Nguyễn Văn A</div>
-                <div className="text-[11px] text-muted-foreground">28°C · Hà Nội</div>
+                <div className="text-[11px] text-muted-foreground">{t("sh.user.weather")}</div>
               </div>
             </div>
           </>
@@ -463,18 +464,18 @@ export function AppSidebar({
                   "flex items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground",
                   collapsed ? "w-full justify-center px-2 py-2" : "w-full px-3 py-2",
                 )}
-                aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+                aria-label={collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
               >
                 {collapsed ? (
                   <PanelLeft className="h-[18px] w-[18px]" />
                 ) : (
                   <PanelLeftClose className="h-[18px] w-[18px]" />
                 )}
-                {!collapsed && <span className="text-left">Thu gọn menu</span>}
+                {!collapsed && <span className="text-left">{t("sh.menu.collapse")}</span>}
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              {collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+              {collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -491,6 +492,7 @@ function CreateWorkspaceDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useI18n();
   const colors = [
     { id: "emerald", cls: "bg-emerald-500" },
     { id: "sky", cls: "bg-sky-500" },
@@ -502,10 +504,10 @@ function CreateWorkspaceDialog({
     { id: "indigo", cls: "bg-indigo-500" },
   ];
   const templates = [
-    { id: "blank", icon: Plus, name: "Trống", desc: "Bắt đầu từ đầu" },
-    { id: "project", icon: Workflow, name: "Dự án", desc: "Quản lý task & timeline" },
-    { id: "team", icon: Users, name: "Phòng ban", desc: "Cộng tác theo nhóm" },
-    { id: "client", icon: BookOpen, name: "Khách hàng", desc: "Không gian chia sẻ" },
+    { id: "blank", icon: Plus, name: t("sh.tpl.blank"), desc: t("sh.tpl.blankDesc") },
+    { id: "project", icon: Workflow, name: t("sh.tpl.project"), desc: t("sh.tpl.projectDesc") },
+    { id: "team", icon: Users, name: t("sh.tpl.team"), desc: t("sh.tpl.teamDesc") },
+    { id: "client", icon: BookOpen, name: t("sh.tpl.client"), desc: t("sh.tpl.clientDesc") },
   ];
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -528,10 +530,10 @@ function CreateWorkspaceDialog({
 
   const handleCreate = () => {
     if (!name.trim()) {
-      toast.error("Vui lòng nhập tên workspace");
+      toast.error(t("sh.wsdlg.nameRequired"));
       return;
     }
-    toast.success(`Đã tạo workspace "${name.trim()}"`);
+    toast.success(`${t("sh.wsdlg.created")}: "${name.trim()}"`);
     reset();
     onOpenChange(false);
   };
@@ -546,10 +548,8 @@ function CreateWorkspaceDialog({
     >
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Tạo workspace mới</DialogTitle>
-          <DialogDescription>
-            Workspace giúp nhóm của bạn tổ chức dự án, tài liệu và cuộc họp riêng biệt.
-          </DialogDescription>
+          <DialogTitle>{t("sh.wsdlg.title")}</DialogTitle>
+          <DialogDescription>{t("sh.wsdlg.desc")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-1">
@@ -564,37 +564,37 @@ function CreateWorkspaceDialog({
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold">
-                {name.trim() || "Workspace của bạn"}
+                {name.trim() || t("sh.wsdlg.phName")}
               </div>
               <div className="truncate text-xs text-muted-foreground">
-                {desc.trim() || "Mô tả ngắn xuất hiện tại đây"}
+                {desc.trim() || t("sh.wsdlg.phDesc")}
               </div>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Tên workspace</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.nameLabel")}</label>
             <input
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="VD: Phòng Marketing"
+              placeholder={t("sh.wsdlg.namePh")}
               className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Mô tả (tuỳ chọn)</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.descLabel")}</label>
             <input
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              placeholder="Mục đích sử dụng của workspace"
+              placeholder={t("sh.wsdlg.descPh")}
               className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Màu sắc</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.color")}</label>
             <div className="flex flex-wrap gap-2">
               {colors.map((c) => (
                 <button
@@ -612,7 +612,7 @@ function CreateWorkspaceDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Mẫu khởi tạo</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.template")}</label>
             <div className="grid grid-cols-2 gap-2">
               {templates.map((tp) => (
                 <button
@@ -638,7 +638,7 @@ function CreateWorkspaceDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Quyền truy cập</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.access")}</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setPrivacy("team")}
@@ -651,9 +651,9 @@ function CreateWorkspaceDialog({
               >
                 <Users className="h-4 w-4 text-primary" />
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">Nhóm</div>
+                  <div className="text-sm font-medium">{t("sh.wsdlg.team")}</div>
                   <div className="text-[11px] text-muted-foreground">
-                    Thành viên được mời có thể tham gia
+                    {t("sh.wsdlg.teamDesc")}
                   </div>
                 </div>
               </button>
@@ -668,8 +668,8 @@ function CreateWorkspaceDialog({
               >
                 <ShieldCheck className="h-4 w-4 text-primary" />
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">Riêng tư</div>
-                  <div className="text-[11px] text-muted-foreground">Chỉ mình bạn truy cập</div>
+                  <div className="text-sm font-medium">{t("sh.wsdlg.private")}</div>
+                  <div className="text-[11px] text-muted-foreground">{t("sh.wsdlg.privateDesc")}</div>
                 </div>
               </button>
             </div>
@@ -677,7 +677,7 @@ function CreateWorkspaceDialog({
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
-              Mời thành viên (tuỳ chọn)
+              {t("sh.wsdlg.invite")}
             </label>
             <input
               value={members}
@@ -693,13 +693,13 @@ function CreateWorkspaceDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
           >
-            Huỷ
+            {t("sh.wsdlg.cancel")}
           </button>
           <button
             onClick={handleCreate}
             className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Tạo workspace
+            {t("sh.wsdlg.submit")}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -708,75 +708,76 @@ function CreateWorkspaceDialog({
 }
 
 function NewPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const groups: {
     label: string;
     items: { icon: LucideIcon; title: string; desc: string; kbd?: string; color: string }[];
   }[] = [
     {
-      label: "Công việc",
+      label: t("sh.new.g.work"),
       items: [
         {
           icon: ListChecks,
-          title: "Nhiệm vụ mới",
-          desc: "Tạo task, gán người, đặt deadline",
+          title: t("sh.new.task"),
+          desc: t("sh.new.taskDesc"),
           kbd: "T",
           color: "bg-primary/15 text-primary",
         },
         {
           icon: Workflow,
-          title: "Quy trình",
-          desc: "Khởi tạo workflow tự động",
+          title: t("sh.new.flow"),
+          desc: t("sh.new.flowDesc"),
           kbd: "W",
           color: "bg-violet-500/15 text-violet-300",
         },
       ],
     },
     {
-      label: "Giao tiếp",
+      label: t("sh.new.g.comm"),
       items: [
         {
           icon: Video,
-          title: "Cuộc họp",
-          desc: "Bắt đầu hoặc lên lịch họp",
+          title: t("sh.new.meeting"),
+          desc: t("sh.new.meetingDesc"),
           kbd: "M",
           color: "bg-rose-500/15 text-rose-300",
         },
         {
           icon: MessageSquare,
-          title: "Tin nhắn",
-          desc: "Mở hội thoại nhóm mới",
+          title: t("sh.new.msg"),
+          desc: t("sh.new.msgDesc"),
           kbd: "C",
           color: "bg-emerald-500/15 text-emerald-300",
         },
         {
           icon: Mail,
-          title: "Soạn email",
-          desc: "Gửi email từ Email Hub",
+          title: t("sh.new.email"),
+          desc: t("sh.new.emailDesc"),
           kbd: "E",
           color: "bg-sky-500/15 text-sky-300",
         },
       ],
     },
     {
-      label: "Nội dung",
+      label: t("sh.new.g.content"),
       items: [
         {
           icon: FileText,
-          title: "Tài liệu",
-          desc: "Tạo tài liệu cộng tác",
+          title: t("sh.new.doc"),
+          desc: t("sh.new.docDesc"),
           kbd: "D",
           color: "bg-amber-500/15 text-amber-300",
         },
         {
           icon: BookOpen,
-          title: "Trang Wiki",
-          desc: "Ghi chú kiến thức nội bộ",
+          title: t("sh.new.wiki"),
+          desc: t("sh.new.wikiDesc"),
           color: "bg-teal-500/15 text-teal-300",
         },
         {
           icon: Calendar,
-          title: "Sự kiện lịch",
-          desc: "Thêm vào lịch cá nhân",
+          title: t("sh.new.event"),
+          desc: t("sh.new.eventDesc"),
           color: "bg-indigo-500/15 text-indigo-300",
         },
       ],
@@ -786,13 +787,13 @@ function NewPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="dialog"
-      aria-label="Tạo mới"
+      aria-label={t("sh.new.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]"
     >
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/15 via-surface to-surface px-4 py-3">
         <div>
-          <div className="text-sm font-semibold">Tạo nhanh</div>
-          <div className="text-[11px] text-muted-foreground">Chọn một loại để bắt đầu</div>
+          <div className="text-sm font-semibold">{t("sh.new.title")}</div>
+          <div className="text-[11px] text-muted-foreground">{t("sh.new.sub")}</div>
         </div>
         <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
           N
@@ -836,37 +837,38 @@ function NewPanel({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <div className="border-t border-border bg-surface-2/40 px-3 py-2 text-[11px] text-muted-foreground">
-        Gõ{" "}
+        {t("sh.new.hintA")}{" "}
         <span className="rounded border border-border bg-surface px-1 font-mono text-[10px]">
           /
         </span>{" "}
-        trong bất kỳ ô nào để mở lệnh nhanh.
+        {t("sh.new.hintB")}
       </div>
     </div>
   );
 }
 
 function AIPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const suggestions = [
     {
       icon: FileSearch,
-      title: "Tóm tắt cuộc họp hôm nay",
-      desc: "Lấy điểm chính từ 3 cuộc họp gần nhất",
+      title: t("sh.ai.s1"),
+      desc: t("sh.ai.s1d"),
     },
-    { icon: Wand2, title: "Soạn email cảm ơn khách hàng", desc: "Gửi đến STOS sau buổi demo" },
-    { icon: ListChecks, title: "Lập kế hoạch tuần", desc: "Dựa trên task đang mở và lịch" },
+    { icon: Wand2, title: t("sh.ai.s2"), desc: t("sh.ai.s2d") },
+    { icon: ListChecks, title: t("sh.ai.s3"), desc: t("sh.ai.s3d") },
     {
       icon: Languages,
-      title: "Dịch tài liệu sang tiếng Anh",
-      desc: "Văn bản đang xem trong Documents",
+      title: t("sh.ai.s4"),
+      desc: t("sh.ai.s4d"),
     },
   ];
-  const recent = ["Phân tích tiến độ Dự án Alpha", "Tạo OKR Q3 cho phòng Marketing"];
+  const recent = [t("sh.ai.r1"), t("sh.ai.r2")];
 
   return (
     <div
       role="dialog"
-      aria-label="Trợ lý AI"
+      aria-label={t("sh.ai.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[380px]"
     >
       <div className="flex items-center gap-3 border-b border-border bg-gradient-to-br from-primary/20 via-surface to-surface px-4 py-3">
@@ -874,14 +876,14 @@ function AIPanel({ onClose }: { onClose: () => void }) {
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold">Trợ lý Uniwork AI</div>
+          <div className="text-sm font-semibold">{t("sh.ai.title")}</div>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Sẵn sàng · Gemini 3 Flash
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t("sh.ai.ready")}
           </div>
         </div>
         <button
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t("sh.ai.close")}
           className="rounded-md p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
           <X className="h-4 w-4" />
@@ -892,11 +894,11 @@ function AIPanel({ onClose }: { onClose: () => void }) {
         <div className="relative">
           <textarea
             rows={3}
-            placeholder="Hỏi AI bất kỳ điều gì về công việc, tài liệu, cuộc họp..."
+            placeholder={t("sh.ai.ph")}
             className="w-full resize-none rounded-xl border border-border bg-surface-2 p-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
           <button
-            aria-label="Gửi"
+            aria-label={t("sh.ai.send")}
             className="absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <ArrowUp className="h-4 w-4" />
@@ -904,9 +906,9 @@ function AIPanel({ onClose }: { onClose: () => void }) {
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {[
-            { icon: FileText, label: "Tài liệu hiện tại" },
-            { icon: Calendar, label: "Lịch tuần" },
-            { icon: ListChecks, label: "Task của tôi" },
+            { icon: FileText, label: t("sh.ai.chip.doc") },
+            { icon: Calendar, label: t("sh.ai.chip.week") },
+            { icon: ListChecks, label: t("sh.ai.chip.tasks") },
           ].map((c) => (
             <button
               key={c.label}
@@ -920,7 +922,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
 
       <div className="px-3 pt-3">
         <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          <Lightbulb className="h-3.5 w-3.5" /> Gợi ý cho bạn
+          <Lightbulb className="h-3.5 w-3.5" /> {t("sh.ai.suggest")}
         </div>
         <ul className="space-y-1">
           {suggestions.map((s) => (
@@ -941,7 +943,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
 
       <div className="mt-2 border-t border-border px-3 py-2">
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Lịch sử gần đây
+          {t("sh.ai.recent")}
         </div>
         <ul className="space-y-0.5">
           {recent.map((r) => (
@@ -956,9 +958,9 @@ function AIPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2 text-[11px] text-muted-foreground">
-        <span>AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng.</span>
+        <span>{t("sh.ai.disclaimer")}</span>
         <button className="rounded-md px-1.5 py-0.5 hover:bg-surface-2 hover:text-foreground">
-          Mở rộng
+          {t("sh.ai.expand")}
         </button>
       </div>
     </div>
@@ -966,6 +968,8 @@ function AIPanel({ onClose }: { onClose: () => void }) {
 }
 
 function CalendarPanel({ onClose }: { onClose: () => void }) {
+  const { t, lang } = useI18n();
+  const locale = lang === "vi" ? "vi-VN" : "en-US";
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState(today.getDate());
@@ -982,40 +986,48 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
   while (cells.length % 7 !== 0)
     cells.push({ d: cells.length - daysInMonth - firstDow + 1, cur: false });
 
-  const monthName = cursor.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
-  const dows = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+  const monthName = cursor.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  const dows = [
+    t("sh.cal.dow.mon"),
+    t("sh.cal.dow.tue"),
+    t("sh.cal.dow.wed"),
+    t("sh.cal.dow.thu"),
+    t("sh.cal.dow.fri"),
+    t("sh.cal.dow.sat"),
+    t("sh.cal.dow.sun"),
+  ];
   const eventDays = new Set([3, 8, 10, 15, 18, 22, 27]);
 
   const events = [
-    { time: "09:00", title: "Họp giao ban tuần", room: "Phòng Alpha", color: "bg-primary" },
+    { time: "09:00", title: t("sh.cal.e1"), room: t("sh.cal.e1room"), color: "bg-primary" },
     {
       time: "11:30",
-      title: "Review thiết kế Email Hub",
+      title: t("sh.cal.e2"),
       room: "Google Meet",
       color: "bg-emerald-500",
     },
-    { time: "14:00", title: "1-1 với Trần Minh", room: "Phòng Beta", color: "bg-amber-500" },
-    { time: "16:30", title: "Demo khách hàng STOS", room: "Zoom", color: "bg-rose-500" },
+    { time: "14:00", title: t("sh.cal.e3"), room: t("sh.cal.e3room"), color: "bg-amber-500" },
+    { time: "16:30", title: t("sh.cal.e4"), room: "Zoom", color: "bg-rose-500" },
   ];
 
   return (
     <div
       role="dialog"
-      aria-label="Lịch"
+      aria-label={t("sh.cal.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]"
     >
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 via-surface to-surface p-3">
         <div>
           <div className="text-sm font-semibold capitalize">{monthName}</div>
           <div className="text-[11px] text-muted-foreground">
-            Hôm nay · {today.toLocaleDateString("vi-VN")}
+            {t("sh.cal.today")} · {today.toLocaleDateString(locale)}
           </div>
         </div>
         <div className="flex items-center gap-1">
           <button
             className="rounded-md p-1.5 hover:bg-surface-2"
             onClick={() => setCursor(new Date(year, month - 1, 1))}
-            aria-label="Tháng trước"
+            aria-label={t("sh.cal.prev")}
           >
             <ChevronDown className="h-4 w-4 rotate-90" />
           </button>
@@ -1026,12 +1038,12 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
               setSelected(today.getDate());
             }}
           >
-            Hôm nay
+            {t("sh.cal.today")}
           </button>
           <button
             className="rounded-md p-1.5 hover:bg-surface-2"
             onClick={() => setCursor(new Date(year, month + 1, 1))}
-            aria-label="Tháng sau"
+            aria-label={t("sh.cal.next")}
           >
             <ChevronDown className="h-4 w-4 -rotate-90" />
           </button>
@@ -1080,7 +1092,7 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
       <div className="border-t border-border px-3 py-2.5">
         <div className="mb-1.5 flex items-center justify-between">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Sự kiện hôm nay
+            {t("sh.cal.events")}
           </div>
           <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {events.length}
@@ -1106,13 +1118,13 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
 
       <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2">
         <button className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-          <Plus className="h-3.5 w-3.5" /> Tạo sự kiện
+          <Plus className="h-3.5 w-3.5" /> {t("sh.cal.new")}
         </button>
         <button
           onClick={onClose}
           className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
-          Đóng
+          {t("sh.cal.close")}
         </button>
       </div>
     </div>
@@ -1124,9 +1136,9 @@ type PanelNotif = {
   icon: LucideIcon;
   tint: string;
   actor?: string;
-  title: string;
-  body: string;
-  time: string;
+  titleKey: Key;
+  bodyKey: Key;
+  timeKey: Key;
   unread?: boolean;
 };
 
@@ -1136,9 +1148,9 @@ const PANEL_NOTIFS: PanelNotif[] = [
     icon: AtSign,
     tint: "text-violet-400 bg-violet-500/15",
     actor: "Trần Thị B",
-    title: "đã nhắc bạn trong #dev-team",
-    body: "@Nguyễn Văn A vui lòng review PR #482 trước 17:00.",
-    time: "5 phút trước",
+    titleKey: "sh.notif.n1t",
+    bodyKey: "sh.notif.n1b",
+    timeKey: "sh.notif.n1time",
     unread: true,
   },
   {
@@ -1146,18 +1158,18 @@ const PANEL_NOTIFS: PanelNotif[] = [
     icon: CheckCircle2,
     tint: "text-emerald-400 bg-emerald-500/15",
     actor: "Phạm Minh C",
-    title: "đã giao nhiệm vụ cho bạn",
-    body: "Thiết kế API Gateway v2.2 — hạn 15/06/2026.",
-    time: "32 phút trước",
+    titleKey: "sh.notif.n2t",
+    bodyKey: "sh.notif.n2b",
+    timeKey: "sh.notif.n2time",
     unread: true,
   },
   {
     id: "3",
     icon: Video,
     tint: "text-rose-400 bg-rose-500/15",
-    title: "Sắp diễn ra: Sprint 6 Daily Standup",
-    body: "Bắt đầu lúc 09:30 · 5 người tham gia.",
-    time: "1 giờ trước",
+    titleKey: "sh.notif.n3t",
+    bodyKey: "sh.notif.n3b",
+    timeKey: "sh.notif.n3time",
     unread: true,
   },
   {
@@ -1165,23 +1177,24 @@ const PANEL_NOTIFS: PanelNotif[] = [
     icon: FileText,
     tint: "text-sky-400 bg-sky-500/15",
     actor: "Phạm Minh C",
-    title: "đã cập nhật tài liệu",
-    body: "API_Gateway_Spec_v2.1.docx trong STOS Project.",
-    time: "2 giờ trước",
+    titleKey: "sh.notif.n4t",
+    bodyKey: "sh.notif.n4b",
+    timeKey: "sh.notif.n4time",
   },
   {
     id: "5",
     icon: Workflow,
     tint: "text-amber-400 bg-amber-500/15",
     actor: "Lê Hoàng D",
-    title: "cần bạn phê duyệt",
-    body: "Leave Request — Nguyễn Hương (3 ngày).",
-    time: "3 giờ trước",
+    titleKey: "sh.notif.n5t",
+    bodyKey: "sh.notif.n5b",
+    timeKey: "sh.notif.n5time",
     unread: true,
   },
 ];
 
 function NotificationsPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState<"all" | "unread">("all");
   const [items, setItems] = useState(PANEL_NOTIFS);
   const list = tab === "unread" ? items.filter((n) => n.unread) : items;
@@ -1192,15 +1205,17 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="dialog"
-      aria-label="Thông báo"
+      aria-label={t("sh.notif.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[380px]"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 via-surface to-surface px-4 py-3">
         <div>
-          <div className="text-sm font-semibold">Thông báo</div>
+          <div className="text-sm font-semibold">{t("sh.notif.title")}</div>
           <div className="text-[11px] text-muted-foreground">
-            {unreadCount > 0 ? `${unreadCount} chưa đọc` : "Bạn đã đọc hết thông báo"}
+            {unreadCount > 0
+              ? `${unreadCount} ${t("sh.notif.unreadSuffix")}`
+              : t("sh.notif.allRead")}
           </div>
         </div>
         <button
@@ -1208,7 +1223,7 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
           disabled={unreadCount === 0}
           className="rounded-md px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
         >
-          Đánh dấu đã đọc
+          {t("sh.notif.markAll")}
         </button>
       </div>
 
@@ -1225,7 +1240,9 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {k === "all" ? "Tất cả" : `Chưa đọc${unreadCount ? ` (${unreadCount})` : ""}`}
+            {k === "all"
+              ? t("sh.notif.all")
+              : `${t("sh.notif.unread")}${unreadCount ? ` (${unreadCount})` : ""}`}
           </button>
         ))}
       </div>
@@ -1234,7 +1251,7 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
       <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto">
         {list.length === 0 ? (
           <li className="px-6 py-10 text-center text-sm text-muted-foreground">
-            Không có thông báo nào
+            {t("sh.notif.empty")}
           </li>
         ) : (
           list.map((n) => {
@@ -1258,14 +1275,16 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm leading-snug">
                     {n.actor && <span className="font-medium">{n.actor} </span>}
-                    <span className="text-foreground/90">{n.title}</span>
+                    <span className="text-foreground/90">{t(n.titleKey)}</span>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">{n.body}</div>
-                  <div className="mt-1 text-[11px] text-muted-foreground">{n.time}</div>
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {t(n.bodyKey)}
+                  </div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">{t(n.timeKey)}</div>
                 </div>
                 {n.unread && (
                   <span
-                    aria-label="Chưa đọc"
+                    aria-label={t("sh.notif.unread")}
                     className="absolute right-3 top-3.5 h-2 w-2 rounded-full bg-primary"
                   />
                 )}
@@ -1282,14 +1301,14 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10"
         >
-          <ExternalLink className="h-3.5 w-3.5" /> Xem tất cả
+          <ExternalLink className="h-3.5 w-3.5" /> {t("sh.notif.viewAll")}
         </Link>
         <Link
           to="/settings"
           onClick={onClose}
           className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
-          <Settings className="h-3.5 w-3.5" /> Cài đặt
+          <Settings className="h-3.5 w-3.5" /> {t("sh.notif.settings")}
         </Link>
       </div>
     </div>
@@ -1416,7 +1435,7 @@ export function AppTopbar({
         <Menu className="h-5 w-5" />
       </button>
       <button
-        aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+        aria-label={collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
         className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"
         onClick={toggleCollapsed}
       >
@@ -1485,7 +1504,7 @@ export function AppTopbar({
           </div>
           <Link
             to="/help"
-            aria-label="Trợ giúp"
+            aria-label={t("sh.aria.help")}
             className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"
           >
             <HelpCircle className="h-5 w-5 text-muted-foreground" />
@@ -1498,14 +1517,14 @@ export function AppTopbar({
       <Link
         to="/settings"
         className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"
-        aria-label="Bảo mật"
+        aria-label={t("sh.aria.security")}
       >
         <ShieldCheck className="h-5 w-5 text-muted-foreground" />
       </Link>
       <Link
         to="/settings"
         className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"
-        aria-label="Cài đặt"
+        aria-label={t("sh.aria.settings")}
       >
         <Settings className="h-5 w-5 text-muted-foreground" />
       </Link>
@@ -1519,7 +1538,7 @@ export function AppTopbar({
         <button
           onClick={() => setNotifOpen((v) => !v)}
           className={cn("relative rounded-lg p-2 hover:bg-surface-2", notifOpen && "bg-surface-2")}
-          aria-label="Thông báo"
+          aria-label={t("sh.notif.aria")}
           aria-haspopup="dialog"
           aria-expanded={notifOpen}
         >
@@ -1535,7 +1554,7 @@ export function AppTopbar({
       <div className="relative" ref={calRef}>
         <button
           onClick={() => setCalOpen((v) => !v)}
-          aria-label="Lịch"
+          aria-label={t("sh.cal.aria")}
           aria-haspopup="dialog"
           aria-expanded={calOpen}
           className={cn("rounded-lg p-2 hover:bg-surface-2", calOpen && "bg-surface-2")}
@@ -1565,7 +1584,7 @@ export function AppTopbar({
           <div className="hidden text-left leading-tight sm:block">
             <div className="whitespace-nowrap text-sm font-semibold">Nguyễn Văn A</div>
             <div className="whitespace-nowrap text-[11px] text-muted-foreground">
-              Giám đốc Điều hành
+              {t("sh.user.role")}
             </div>
           </div>
           <ChevronDown
@@ -1599,7 +1618,7 @@ export function AppTopbar({
                   </span>
                 </div>
                 <div className="truncate text-[11px] text-muted-foreground">
-                  Giám đốc Điều hành · STOS
+                  {t("sh.user.roleOrg")}
                 </div>
                 <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Mail className="h-3 w-3" />
@@ -1612,10 +1631,10 @@ export function AppTopbar({
             <div className="flex items-center justify-between border-b border-border px-3 py-2 text-xs">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Circle className="h-2 w-2 fill-emerald-400 text-emerald-400" />
-                <span>Đang trực tuyến</span>
+                <span>{t("sh.user.online")}</span>
               </div>
               <button className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground">
-                <Moon className="h-3 w-3" /> Đặt trạng thái
+                <Moon className="h-3 w-3" /> {t("sh.user.setStatus")}
               </button>
             </div>
 
@@ -1627,7 +1646,7 @@ export function AppTopbar({
                 onClick={() => setUserOpen(false)}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary/15 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/25"
               >
-                <KeyRound className="h-3.5 w-3.5" /> Đổi mật khẩu
+                <KeyRound className="h-3.5 w-3.5" /> {t("sh.user.changePw")}
               </Link>
             </div>
 
@@ -1635,47 +1654,47 @@ export function AppTopbar({
             <div className="p-1.5">
               <MenuItem
                 icon={UserCircle2}
-                label="Hồ sơ cá nhân"
-                desc="Xem & chỉnh sửa thông tin"
+                label={t("sh.user.profile")}
+                desc={t("sh.user.profileDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "profile" }}
               />
               <MenuItem
                 icon={Settings}
-                label="Cài đặt tài khoản"
-                desc="Email, tên đăng nhập"
+                label={t("sh.user.account")}
+                desc={t("sh.user.accountDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "account" }}
               />
               <MenuItem
                 icon={KeyRound}
-                label="Đổi mật khẩu"
-                desc="Cập nhật & bật 2FA"
+                label={t("sh.user.changePw")}
+                desc={t("sh.user.pwDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "password" }}
               />
               <MenuItem
                 icon={ShieldCheck}
-                label="Quyền riêng tư & bảo mật"
-                desc="Phiên đăng nhập, thiết bị"
+                label={t("sh.user.privacy")}
+                desc={t("sh.user.privacyDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/settings"
                 search={{ tab: "security" }}
               />
               <MenuItem
                 icon={CreditCard}
-                label="Gói dịch vụ"
-                desc="Xem, nâng cấp hoặc hủy gói"
+                label={t("sh.user.plan")}
+                desc={t("sh.user.planDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/billing"
               />
               <MenuItem
                 icon={HelpCircle}
-                label="Trợ giúp & hỗ trợ"
-                desc="Tài liệu, hotline 1900 6996"
+                label={t("sh.user.help")}
+                desc={t("sh.user.helpDesc")}
                 onClick={() => setUserOpen(false)}
                 to="/help"
               />
@@ -1688,7 +1707,7 @@ export function AppTopbar({
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="flex-1 text-left font-medium">Đăng xuất</span>
+                <span className="flex-1 text-left font-medium">{t("sh.user.logout")}</span>
                 <span className="text-[11px] text-muted-foreground">⇧⌘Q</span>
               </button>
             </div>
@@ -1696,7 +1715,7 @@ export function AppTopbar({
             <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2 text-[10px] text-muted-foreground">
               <span>UNIWORK v2.4.1</span>
               <a href="#" className="hover:text-foreground">
-                Điều khoản · Bảo mật
+                {t("sh.user.legal")}
               </a>
             </div>
           </div>
