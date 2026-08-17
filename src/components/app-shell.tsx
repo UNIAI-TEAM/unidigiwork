@@ -492,6 +492,7 @@ function CreateWorkspaceDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useI18n();
   const colors = [
     { id: "emerald", cls: "bg-emerald-500" },
     { id: "sky", cls: "bg-sky-500" },
@@ -503,10 +504,10 @@ function CreateWorkspaceDialog({
     { id: "indigo", cls: "bg-indigo-500" },
   ];
   const templates = [
-    { id: "blank", icon: Plus, name: "Trống", desc: "Bắt đầu từ đầu" },
-    { id: "project", icon: Workflow, name: "Dự án", desc: "Quản lý task & timeline" },
-    { id: "team", icon: Users, name: "Phòng ban", desc: "Cộng tác theo nhóm" },
-    { id: "client", icon: BookOpen, name: "Khách hàng", desc: "Không gian chia sẻ" },
+    { id: "blank", icon: Plus, name: t("sh.tpl.blank"), desc: t("sh.tpl.blankDesc") },
+    { id: "project", icon: Workflow, name: t("sh.tpl.project"), desc: t("sh.tpl.projectDesc") },
+    { id: "team", icon: Users, name: t("sh.tpl.team"), desc: t("sh.tpl.teamDesc") },
+    { id: "client", icon: BookOpen, name: t("sh.tpl.client"), desc: t("sh.tpl.clientDesc") },
   ];
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -529,10 +530,10 @@ function CreateWorkspaceDialog({
 
   const handleCreate = () => {
     if (!name.trim()) {
-      toast.error("Vui lòng nhập tên workspace");
+      toast.error(t("sh.wsdlg.nameRequired"));
       return;
     }
-    toast.success(`Đã tạo workspace "${name.trim()}"`);
+    toast.success(`${t("sh.wsdlg.created")}: "${name.trim()}"`);
     reset();
     onOpenChange(false);
   };
@@ -547,10 +548,8 @@ function CreateWorkspaceDialog({
     >
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Tạo workspace mới</DialogTitle>
-          <DialogDescription>
-            Workspace giúp nhóm của bạn tổ chức dự án, tài liệu và cuộc họp riêng biệt.
-          </DialogDescription>
+          <DialogTitle>{t("sh.wsdlg.title")}</DialogTitle>
+          <DialogDescription>{t("sh.wsdlg.desc")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-1">
@@ -565,37 +564,37 @@ function CreateWorkspaceDialog({
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold">
-                {name.trim() || "Workspace của bạn"}
+                {name.trim() || t("sh.wsdlg.phName")}
               </div>
               <div className="truncate text-xs text-muted-foreground">
-                {desc.trim() || "Mô tả ngắn xuất hiện tại đây"}
+                {desc.trim() || t("sh.wsdlg.phDesc")}
               </div>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Tên workspace</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.nameLabel")}</label>
             <input
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="VD: Phòng Marketing"
+              placeholder={t("sh.wsdlg.namePh")}
               className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Mô tả (tuỳ chọn)</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.descLabel")}</label>
             <input
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              placeholder="Mục đích sử dụng của workspace"
+              placeholder={t("sh.wsdlg.descPh")}
               className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Màu sắc</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.color")}</label>
             <div className="flex flex-wrap gap-2">
               {colors.map((c) => (
                 <button
@@ -613,7 +612,7 @@ function CreateWorkspaceDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Mẫu khởi tạo</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.template")}</label>
             <div className="grid grid-cols-2 gap-2">
               {templates.map((tp) => (
                 <button
@@ -639,7 +638,7 @@ function CreateWorkspaceDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Quyền truy cập</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("sh.wsdlg.access")}</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setPrivacy("team")}
@@ -652,9 +651,9 @@ function CreateWorkspaceDialog({
               >
                 <Users className="h-4 w-4 text-primary" />
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">Nhóm</div>
+                  <div className="text-sm font-medium">{t("sh.wsdlg.team")}</div>
                   <div className="text-[11px] text-muted-foreground">
-                    Thành viên được mời có thể tham gia
+                    {t("sh.wsdlg.teamDesc")}
                   </div>
                 </div>
               </button>
@@ -669,8 +668,8 @@ function CreateWorkspaceDialog({
               >
                 <ShieldCheck className="h-4 w-4 text-primary" />
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">Riêng tư</div>
-                  <div className="text-[11px] text-muted-foreground">Chỉ mình bạn truy cập</div>
+                  <div className="text-sm font-medium">{t("sh.wsdlg.private")}</div>
+                  <div className="text-[11px] text-muted-foreground">{t("sh.wsdlg.privateDesc")}</div>
                 </div>
               </button>
             </div>
@@ -678,7 +677,7 @@ function CreateWorkspaceDialog({
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
-              Mời thành viên (tuỳ chọn)
+              {t("sh.wsdlg.invite")}
             </label>
             <input
               value={members}
@@ -694,13 +693,13 @@ function CreateWorkspaceDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
           >
-            Huỷ
+            {t("sh.wsdlg.cancel")}
           </button>
           <button
             onClick={handleCreate}
             className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Tạo workspace
+            {t("sh.wsdlg.submit")}
           </button>
         </DialogFooter>
       </DialogContent>
