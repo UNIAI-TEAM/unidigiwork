@@ -8,8 +8,8 @@ export type AiKpiInput = {
   tenantProposals: number;
   /** Số đề xuất được người dùng duyệt / thực thi. */
   tenantApproved: number;
-  /** Đánh giá chủ quan 0–5 (chỉ dùng làm trọng số phụ). */
-  rating: number;
+  /** @deprecated Không còn dùng: KPI tính hoàn toàn từ dữ liệu thực thi. */
+  rating?: number;
 };
 
 export type AiKpi = {
@@ -29,27 +29,23 @@ export type AiKpi = {
 const clamp = (v: number, min = 0, max = 100) => Math.min(max, Math.max(min, v));
 
 /**
- * Điểm KPI = 55% tỉ lệ duyệt + 30% khối lượng việc hoàn thành (log-scale, chuẩn hóa ở mốc 1.000 việc)
- * + 15% đánh giá chủ quan. Khi chưa có đề xuất nào, phần tỉ lệ duyệt được phân bổ lại cho khối lượng việc.
+ * Điểm KPI tính hoàn toàn tự động từ dữ liệu thực thi — không có thành phần nhập tay:
+ * 60% tỉ lệ đề xuất được duyệt + 40% khối lượng việc hoàn thành (log-scale, chuẩn hóa ở mốc 1.000 việc).
+ * Khi chưa có đề xuất nào, toàn bộ trọng số dồn về khối lượng việc hoàn thành.
  */
 export function computeAiKpi(input: AiKpiInput): AiKpi {
   const marketCompleted = Math.max(0, Number(input.marketCompleted) || 0);
   const tenantCompleted = Math.max(0, Number(input.tenantCompleted) || 0);
   const proposals = Math.max(0, Number(input.tenantProposals) || 0);
   const approved = Math.max(0, Math.min(proposals, Number(input.tenantApproved) || 0));
-  const rating = clamp(Number(input.rating) || 0, 0, 5);
-
   const completed = marketCompleted + tenantCompleted;
   const approvalRate = proposals > 0 ? (approved / proposals) * 100 : null;
 
   // Khối lượng: log scale để không cho ứng viên "cày số" áp đảo hoàn toàn.
   const volume = clamp((Math.log10(1 + completed) / Math.log10(1 + 1000)) * 100);
-  const ratingScore = (rating / 5) * 100;
 
   const score =
-    approvalRate === null
-      ? clamp(volume * 0.85 + ratingScore * 0.15)
-      : clamp(approvalRate * 0.55 + volume * 0.3 + ratingScore * 0.15);
+    approvalRate === null ? clamp(volume) : clamp(approvalRate * 0.6 + volume * 0.4);
 
   return {
     completed,

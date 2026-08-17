@@ -287,7 +287,7 @@ export function AiMarketProfile({
             <div className="rounded-lg border border-border p-3">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Tỉ lệ duyệt</p>
               <p className="mt-1 text-lg font-semibold">{formatApprovalRate(kpi.approvalRate)}</p>
-              <p className="text-xs text-muted-foreground">55% trọng số KPI</p>
+              <p className="text-xs text-muted-foreground">60% trọng số KPI</p>
             </div>
             <div className="rounded-lg border border-border p-3">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Việc đã hoàn thành</p>
@@ -299,7 +299,7 @@ export function AiMarketProfile({
           </div>
           {!kpi.hasEvidence && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Chưa có dữ liệu thực thi tại công ty bạn — điểm hiện tính theo khối lượng việc và đánh giá thị trường.
+              Chưa có dữ liệu thực thi tại công ty bạn — điểm hiện tính theo khối lượng việc đã hoàn thành trên thị trường.
             </p>
           )}
         </section>
