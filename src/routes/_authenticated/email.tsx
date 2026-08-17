@@ -1256,7 +1256,7 @@ function EmailHubPage() {
                 </button>
               </div>
               <div className="mt-3 flex items-center gap-4">
-                <DonutChart stats={statSlices} />
+                <DonutChart stats={statSlices} centerValue={countsQuery.data?.total ?? 0} />
                 <ul className="flex-1 space-y-1.5 text-xs">
                   {statSlices.map((s) => (
                     <li key={s.label} className="flex items-center justify-between">
