@@ -11,14 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
-import { listMarketAgents } from "@/lib/api/ai-market.functions";
+import { listMarketAgents, listMarketSkills } from "@/lib/api/ai-market.functions";
 import {
   AI_EMPLOYMENT_STATUS_LABELS,
   AI_SENIORITY_LABELS,
   formatMoney,
   type AiEmploymentStatus,
 } from "@/domain/ai-market/contracts";
-import { AI_SKILLS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
+import { AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
 import { formatApprovalRate } from "@/domain/ai-market/kpi";
 
 export const Route = createFileRoute("/_authenticated/ai-market/search")({
@@ -81,6 +81,17 @@ function AiMarketSearchPage() {
       }),
     enabled: !!activeWorkspaceId,
   });
+
+  // Danh mục kỹ năng lấy từ bảng thật (dùng chung + kỹ năng riêng của tổ chức).
+  const { data: skillCatalog } = useQuery({
+    queryKey: ["ai-market-skills", activeWorkspaceId],
+    queryFn: () => listMarketSkills({ data: { workspaceId: activeWorkspaceId } }),
+    enabled: !!activeWorkspaceId,
+    staleTime: 5 * 60_000,
+  });
+
+  const skillNameOf = (code: string) =>
+    (skillCatalog ?? []).find((s: any) => s.id === code)?.name ?? AI_SKILL_MAP[code]?.name ?? code;
 
   const all = useMemo(() => data?.agents ?? [], [data]);
 
@@ -199,8 +210,11 @@ function AiMarketSearchPage() {
                     <SelectTrigger><SelectValue placeholder="Kỹ năng" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tất cả kỹ năng</SelectItem>
-                      {AI_SKILLS.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      {(skillCatalog ?? []).map((s: any) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                          {s.tenantOwned ? " (riêng)" : ""}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -437,7 +451,7 @@ function AiMarketSearchPage() {
                         <div className="flex flex-wrap gap-1">
                           {(a.skills ?? []).slice(0, 4).map((s: string) => (
                             <span key={s} className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                              {AI_SKILL_MAP[s]?.name ?? s}
+                              {skillNameOf(s)}
                             </span>
                           ))}
                         </div>

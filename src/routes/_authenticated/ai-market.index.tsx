@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
-import { listMarketAgents } from "@/lib/api/ai-market.functions";
+import { listMarketAgents, listMarketSkills } from "@/lib/api/ai-market.functions";
 import {
   AI_EMPLOYMENT_STATUS_LABELS,
   AI_SENIORITY_LABELS,
@@ -56,6 +56,16 @@ function AiMarketPage() {
       }),
     enabled: !!activeWorkspaceId,
   });
+
+  const { data: skillCatalog } = useQuery({
+    queryKey: ["ai-market-skills", activeWorkspaceId],
+    queryFn: () => listMarketSkills({ data: { workspaceId: activeWorkspaceId } }),
+    enabled: !!activeWorkspaceId,
+    staleTime: 5 * 60_000,
+  });
+
+  const skillNameOf = (code: string) =>
+    (skillCatalog ?? []).find((s: any) => s.id === code)?.name ?? AI_SKILL_MAP[code]?.name ?? code;
 
   const agents = useMemo(() => data?.agents ?? [], [data]);
 
@@ -173,7 +183,7 @@ function AiMarketPage() {
                   <div className="flex flex-wrap gap-1">
                     {(a.skills ?? []).slice(0, 3).map((s: string) => (
                       <span key={s} className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                        {AI_SKILL_MAP[s]?.name ?? s}
+                        {skillNameOf(s)}
                       </span>
                     ))}
                     {(a.skills ?? []).length > 3 && (

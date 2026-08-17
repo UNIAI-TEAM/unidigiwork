@@ -545,6 +545,7 @@ export type Database = {
           seniority: string
           skills: string[]
           sort_order: number
+          tenant_id: string | null
           title: string
           updated_at: string
           worker_profile: string | null
@@ -570,6 +571,7 @@ export type Database = {
           seniority?: string
           skills?: string[]
           sort_order?: number
+          tenant_id?: string | null
           title?: string
           updated_at?: string
           worker_profile?: string | null
@@ -595,11 +597,20 @@ export type Database = {
           seniority?: string
           skills?: string[]
           sort_order?: number
+          tenant_id?: string | null
           title?: string
           updated_at?: string
           worker_profile?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_market_agents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_market_experiences: {
         Row: {
@@ -677,6 +688,62 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      ai_market_skills: {
+        Row: {
+          action_types: string[]
+          code: string
+          created_at: string
+          description: string
+          example: string
+          id: string
+          kind: string
+          name: string
+          published: boolean
+          sort_order: number
+          sources: string[]
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_types?: string[]
+          code: string
+          created_at?: string
+          description?: string
+          example?: string
+          id?: string
+          kind?: string
+          name: string
+          published?: boolean
+          sort_order?: number
+          sources?: string[]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_types?: string[]
+          code?: string
+          created_at?: string
+          description?: string
+          example?: string
+          id?: string
+          kind?: string
+          name?: string
+          published?: boolean
+          sort_order?: number
+          sources?: string[]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_market_skills_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_message_versions: {
         Row: {
