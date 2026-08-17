@@ -253,6 +253,76 @@ export const getMarketAgent = createServerFn({ method: "GET" })
       tenantApproved: tenantStats.approved,
     });
 
+    // Hiệu quả theo kỹ năng: gom theo action_type của các đề xuất sinh ra từ agent này.
+    const skillStats: Array<{ code: string; name: string; total: number; approved: number }> = [];
+    let domainStats: { domain: string; agents: number; avgCompleted: number; avgApprovalRate: number | null } | null =
+      null;
+
+    if (employment?.workflow_agent_id) {
+      const { data: runs } = await context.supabase
+        .from("workflow_agent_runs")
+        .select("proposal_id")
+        .eq("tenant_id", tenantId)
+        .eq("agent_id", employment.workflow_agent_id)
+        .not("proposal_id", "is", null)
+        .limit(1000);
+      const proposalIds = Array.from(new Set((runs ?? []).map((r: any) => r.proposal_id))).filter(Boolean);
+      if (proposalIds.length) {
+        const [{ data: proposals }, { data: skillRows }] = await Promise.all([
+          context.supabase
+            .from("ai_action_proposals")
+            .select("action_type, status")
+            .eq("tenant_id", tenantId)
+            .in("id", proposalIds),
+          context.supabase
+            .from("ai_market_skills")
+            .select("code, name, action_types")
+            .or(`tenant_id.is.null,tenant_id.eq.${tenantId}`),
+        ]);
+        const byAction = new Map<string, { code: string; name: string }>();
+        for (const s of (skillRows ?? []) as any[]) {
+          for (const a of (s.action_types ?? []) as string[]) byAction.set(a, { code: s.code, name: s.name });
+        }
+        const acc = new Map<string, { code: string; name: string; total: number; approved: number }>();
+        for (const p of (proposals ?? []) as any[]) {
+          const skill = byAction.get(p.action_type) ?? { code: p.action_type, name: p.action_type };
+          const cur = acc.get(skill.code) ?? { ...skill, total: 0, approved: 0 };
+          cur.total += 1;
+          if (["APPROVED", "CONFIRMED", "EXECUTED", "DONE"].includes(String(p.status).toUpperCase())) cur.approved += 1;
+          acc.set(skill.code, cur);
+        }
+        skillStats.push(...Array.from(acc.values()).sort((a, b) => b.total - a.total));
+      }
+    }
+
+    // Hiệu quả theo lĩnh vực: so sánh với các nhân sự AI cùng lĩnh vực đang làm việc tại tenant.
+    {
+      const { data: peers } = await context.supabase
+        .from("ai_market_agents")
+        .select("id")
+        .eq("domain", agent.domain);
+      const peerIds = (peers ?? []).map((p: any) => p.id);
+      if (peerIds.length) {
+        const { data: perfRows } = await context.supabase
+          .from("ai_agent_performance")
+          .select("proposals_sent, proposals_approved, tasks_completed")
+          .eq("tenant_id", tenantId)
+          .in("market_agent_id", peerIds);
+        const rows = (perfRows ?? []) as any[];
+        if (rows.length) {
+          const sent = rows.reduce((s, r) => s + (Number(r.proposals_sent) || 0), 0);
+          const approved = rows.reduce((s, r) => s + (Number(r.proposals_approved) || 0), 0);
+          const completed = rows.reduce((s, r) => s + (Number(r.tasks_completed) || 0), 0);
+          domainStats = {
+            domain: agent.domain,
+            agents: rows.length,
+            avgCompleted: Math.round(completed / rows.length),
+            avgApprovalRate: sent > 0 ? Math.round((approved / sent) * 100) : null,
+          };
+        }
+      }
+    }
+
     return {
       agent,
       experiences: experiences ?? [],
@@ -260,6 +330,8 @@ export const getMarketAgent = createServerFn({ method: "GET" })
       employment: employment ?? null,
       tenantStats,
       kpi,
+      skillStats,
+      domainStats,
     };
   });
 
