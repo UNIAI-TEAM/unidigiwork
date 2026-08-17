@@ -968,6 +968,8 @@ function AIPanel({ onClose }: { onClose: () => void }) {
 }
 
 function CalendarPanel({ onClose }: { onClose: () => void }) {
+  const { t, lang } = useI18n();
+  const locale = lang === "vi" ? "vi-VN" : "en-US";
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState(today.getDate());
@@ -984,40 +986,48 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
   while (cells.length % 7 !== 0)
     cells.push({ d: cells.length - daysInMonth - firstDow + 1, cur: false });
 
-  const monthName = cursor.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
-  const dows = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+  const monthName = cursor.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  const dows = [
+    t("sh.cal.dow.mon"),
+    t("sh.cal.dow.tue"),
+    t("sh.cal.dow.wed"),
+    t("sh.cal.dow.thu"),
+    t("sh.cal.dow.fri"),
+    t("sh.cal.dow.sat"),
+    t("sh.cal.dow.sun"),
+  ];
   const eventDays = new Set([3, 8, 10, 15, 18, 22, 27]);
 
   const events = [
-    { time: "09:00", title: "Họp giao ban tuần", room: "Phòng Alpha", color: "bg-primary" },
+    { time: "09:00", title: t("sh.cal.e1"), room: t("sh.cal.e1room"), color: "bg-primary" },
     {
       time: "11:30",
-      title: "Review thiết kế Email Hub",
+      title: t("sh.cal.e2"),
       room: "Google Meet",
       color: "bg-emerald-500",
     },
-    { time: "14:00", title: "1-1 với Trần Minh", room: "Phòng Beta", color: "bg-amber-500" },
-    { time: "16:30", title: "Demo khách hàng STOS", room: "Zoom", color: "bg-rose-500" },
+    { time: "14:00", title: t("sh.cal.e3"), room: t("sh.cal.e3room"), color: "bg-amber-500" },
+    { time: "16:30", title: t("sh.cal.e4"), room: "Zoom", color: "bg-rose-500" },
   ];
 
   return (
     <div
       role="dialog"
-      aria-label="Lịch"
+      aria-label={t("sh.cal.aria")}
       className="fixed left-2 right-2 top-[64px] z-50 w-auto origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl shadow-black/40 sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]"
     >
       <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 via-surface to-surface p-3">
         <div>
           <div className="text-sm font-semibold capitalize">{monthName}</div>
           <div className="text-[11px] text-muted-foreground">
-            Hôm nay · {today.toLocaleDateString("vi-VN")}
+            {t("sh.cal.today")} · {today.toLocaleDateString(locale)}
           </div>
         </div>
         <div className="flex items-center gap-1">
           <button
             className="rounded-md p-1.5 hover:bg-surface-2"
             onClick={() => setCursor(new Date(year, month - 1, 1))}
-            aria-label="Tháng trước"
+            aria-label={t("sh.cal.prev")}
           >
             <ChevronDown className="h-4 w-4 rotate-90" />
           </button>
@@ -1028,12 +1038,12 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
               setSelected(today.getDate());
             }}
           >
-            Hôm nay
+            {t("sh.cal.today")}
           </button>
           <button
             className="rounded-md p-1.5 hover:bg-surface-2"
             onClick={() => setCursor(new Date(year, month + 1, 1))}
-            aria-label="Tháng sau"
+            aria-label={t("sh.cal.next")}
           >
             <ChevronDown className="h-4 w-4 -rotate-90" />
           </button>
@@ -1082,7 +1092,7 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
       <div className="border-t border-border px-3 py-2.5">
         <div className="mb-1.5 flex items-center justify-between">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Sự kiện hôm nay
+            {t("sh.cal.events")}
           </div>
           <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {events.length}
@@ -1108,13 +1118,13 @@ function CalendarPanel({ onClose }: { onClose: () => void }) {
 
       <div className="flex items-center justify-between border-t border-border bg-surface-2/40 px-3 py-2">
         <button className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-          <Plus className="h-3.5 w-3.5" /> Tạo sự kiện
+          <Plus className="h-3.5 w-3.5" /> {t("sh.cal.new")}
         </button>
         <button
           onClick={onClose}
           className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
-          Đóng
+          {t("sh.cal.close")}
         </button>
       </div>
     </div>
