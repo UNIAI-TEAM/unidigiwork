@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
+import { suggestCandidatesForTask } from "@/lib/api/ai-market.functions";
 import {
   listTaskViews,
   saveTaskView,
@@ -222,6 +223,25 @@ function TasksPage() {
       }),
     onSuccess: async (_r, vars) => {
       await queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] });
+      // Công việc mới → tự động đề xuất ứng viên AI phù hợp theo hồ sơ & kỹ năng.
+      const row: any = Array.isArray(_r) ? (_r as any[])[0] : _r;
+      if (row?.id) {
+        try {
+          const res = await suggestCandidatesForTask({ data: { taskId: row.id, limit: 1 } });
+          const top = res.suggestions[0];
+          if (top) {
+            toast.success(`Gợi ý nhân sự AI: ${top.name}`, {
+              description: top.reasons.join(" · "),
+              action: {
+                label: "Xem hồ sơ",
+                onClick: () => navigateTasks({ to: "/ai-market/$id", params: { id: top.id } }),
+              },
+            });
+          }
+        } catch {
+          /* gợi ý là phụ trợ — không chặn luồng tạo việc */
+        }
+      }
       if (vars.status !== "todo") return;
     },
     onError: (e: Error) => toast.error(e.message),

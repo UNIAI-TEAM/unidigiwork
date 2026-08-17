@@ -1,5 +1,6 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
+import { AiCandidateSuggest } from "@/components/ai/ai-candidate-suggest";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -521,6 +522,7 @@ function TaskDetailPage() {
                     label="Hỏi UNI về công việc này"
                     suggestions={["Công việc này liên quan đến gì?", "Đang vướng gì?", "Tóm tắt tiến độ"]}
                   />
+                  <AiCandidateSuggest taskId={id} />
                   <RelatedWorkPanel
                     entityType="TASK"
                     entityId={id}
