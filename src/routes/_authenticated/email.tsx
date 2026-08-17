@@ -157,7 +157,7 @@ function bucketEmailWhen(iso: string): Email["group"] {
 
 type StatSlice = { label: string; value: number; pct: number; color: string };
 
-function DonutChart({ stats }: { stats: StatSlice[] }) {
+function DonutChart({ stats, centerValue }: { stats: StatSlice[]; centerValue?: number }) {
   const total = stats.reduce((s, x) => s + x.value, 0) || 1;
   let acc = 0;
   const r = 42,
@@ -187,7 +187,7 @@ function DonutChart({ stats }: { stats: StatSlice[] }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="text-xl font-bold tabular-nums">
-          {stats.reduce((s, x) => s + x.value, 0)}
+          {centerValue ?? stats.reduce((s, x) => s + x.value, 0)}
         </div>
         <div className="text-[10px] text-muted-foreground">Email</div>
       </div>
