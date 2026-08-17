@@ -307,7 +307,10 @@ function TasksPage() {
                       key={w.id}
                       onSelect={() => {
                         setWsId(w.id);
-                        navigateTasks({ to: "/tasks", search: (s) => ({ ...s, ws: w.id }) });
+                        navigateTasks({
+                          to: "/tasks",
+                          search: { ...tasksSearch, ws: w.id },
+                        });
                       }}
                     >
                       {w.name}
