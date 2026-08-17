@@ -250,7 +250,7 @@ function AiMarketSearchPage() {
                     onValueChange={(v) => setMinKpi(v[0] ?? 0)}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Điểm KPI = 55% tỉ lệ đề xuất được duyệt + 30% khối lượng việc hoàn thành + 15% đánh giá.
+                    Điểm KPI = 60% tỉ lệ đề xuất được duyệt + 40% khối lượng việc hoàn thành.
                   </p>
                 </div>
 
