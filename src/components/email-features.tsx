@@ -1,5 +1,9 @@
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { sendEmail } from "@/lib/api/emails.functions";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +46,7 @@ export function ComposeEmailDialog({
   initialSubject = "",
   initialCc = "",
   initialBody = "",
+  threadId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -49,6 +54,7 @@ export function ComposeEmailDialog({
   initialSubject?: string;
   initialCc?: string;
   initialBody?: string;
+  threadId?: string;
 }) {
   const [to, setTo] = useState(initialTo);
   const [showCc, setShowCc] = useState(Boolean(initialCc));
@@ -58,6 +64,44 @@ export function ComposeEmailDialog({
   const [body, setBody] = useState(initialBody);
   const [attachments, setAttachments] = useState<{ name: string; size: string }[]>([]);
   const [aiBusy, setAiBusy] = useState(false);
+
+  const qc = useQueryClient();
+  const doSend = useServerFn(sendEmail);
+  const parseList = (v: string) =>
+    v
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  const sendMut = useMutation({
+    mutationFn: () =>
+      doSend({
+        data: {
+          to: parseList(to),
+          cc: parseList(cc),
+          subject: subject.trim(),
+          body,
+          ...(threadId ? { thread_id: threadId } : {}),
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Đã gửi email");
+      qc.invalidateQueries({ queryKey: ["emails"] });
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function handleSend() {
+    if (parseList(to).length === 0) {
+      toast.error("Vui lòng nhập ít nhất một người nhận");
+      return;
+    }
+    if (!subject.trim()) {
+      toast.error("Vui lòng nhập tiêu đề");
+      return;
+    }
+    sendMut.mutate();
+  }
 
   function runAI(prompt: string) {
     setAiBusy(true);
@@ -199,11 +243,16 @@ export function ComposeEmailDialog({
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              disabled={sendMut.isPending}
+            >
               Hủy
             </Button>
-            <Button size="sm" onClick={() => onOpenChange(false)}>
-              <Send className="h-4 w-4" /> Gửi
+            <Button size="sm" onClick={handleSend} disabled={sendMut.isPending}>
+              <Send className="h-4 w-4" /> {sendMut.isPending ? "Đang gửi…" : "Gửi"}
             </Button>
           </div>
         </DialogFooter>

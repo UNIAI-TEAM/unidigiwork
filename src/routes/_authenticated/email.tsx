@@ -459,6 +459,20 @@ function EmailHubPage() {
     bulkMoveMut.mutate({ ids, folder });
   }
 
+  // Mở email = đọc thật: cập nhật trạng thái đã đọc trong database.
+  function openEmail(id: string) {
+    setSelected(id);
+    setDetailOpen(true);
+    const target = dbEmails.find((e) => e.id === id);
+    if (!target?.unread) return;
+    if (!UUID_RE.test(id)) return;
+    doSetRead({ data: { message_ids: [id], is_read: true } })
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["emails"] });
+      })
+      .catch((e: Error) => toast.error(e.message));
+  }
+
   function openCompose(to: string, subject: string, body = "", cc = "") {
     setComposePrefill({ to, subject, body, cc });
     setComposeOpen(true);
@@ -880,10 +894,7 @@ function EmailHubPage() {
                                 src={avatar(e.from)}
                                 alt=""
                                 className={`h-9 w-9 rounded-full object-cover ${isChecked ? "hidden" : "group-hover:hidden"}`}
-                                onClick={() => {
-                                  setSelected(e.id);
-                                  setDetailOpen(true);
-                                }}
+                                onClick={() => openEmail(e.id)}
                               />
                               <div
                                 className={`${isChecked ? "flex" : "hidden group-hover:flex"} h-9 w-9 items-center justify-center`}
@@ -895,10 +906,7 @@ function EmailHubPage() {
                               </div>
                             </div>
                             <button
-                              onClick={() => {
-                                setSelected(e.id);
-                                setDetailOpen(true);
-                              }}
+                              onClick={() => openEmail(e.id)}
                               className="min-w-0 flex-1 text-left"
                             >
                               <div className="flex items-center justify-between gap-2">
