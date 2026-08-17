@@ -458,8 +458,8 @@ function EmailHubPage() {
     bulkMoveMut.mutate({ ids, folder });
   }
 
-  function openCompose(to: string, subject: string) {
-    setComposePrefill({ to, subject });
+  function openCompose(to: string, subject: string, body = "", cc = "") {
+    setComposePrefill({ to, subject, body, cc });
     setComposeOpen(true);
   }
 
@@ -469,12 +469,34 @@ function EmailHubPage() {
       selectedEmail.fromEmail ||
       `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`;
     const cc = all && selectedEmail.cc ? `, ${selectedEmail.cc}` : "";
-    openCompose(`${from}${cc}`, `Re: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+    openCompose(
+      `${from}${cc}`,
+      `Re: ${stripPrefix(selectedEmail.subject)}`,
+      buildReplyBody({
+        from: selectedEmail.from,
+        fromEmail: selectedEmail.fromEmail,
+        subject: selectedEmail.subject,
+        date: selectedEmail.time,
+        body: selectedEmail.body || selectedEmail.preview,
+      }),
+    );
   }
 
   function forwardSelected() {
     if (!selectedEmail) return;
-    openCompose("", `Fwd: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+    openCompose(
+      "",
+      `Fwd: ${stripPrefix(selectedEmail.subject)}`,
+      buildForwardBody({
+        from: selectedEmail.from,
+        fromEmail: selectedEmail.fromEmail,
+        to: selectedEmail.to,
+        cc: selectedEmail.cc,
+        subject: selectedEmail.subject,
+        date: selectedEmail.time,
+        body: selectedEmail.body || selectedEmail.preview,
+      }),
+    );
   }
 
   const groups: Record<string, Email[]> = {};
