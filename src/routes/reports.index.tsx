@@ -851,6 +851,7 @@ function ReportsPage() {
                   title={t("rp.ai.i1.t")}
                   sub={t("rp.ai.i1.s")}
                   t={t}
+                  onClick={() => drill("done")}
                 />
                 <Insight
                   icon={AlertTriangle}
@@ -858,6 +859,7 @@ function ReportsPage() {
                   title={t("rp.ai.i2.t")}
                   sub={t("rp.ai.i2.s")}
                   t={t}
+                  onClick={() => drill("blocked")}
                 />
                 <Insight
                   icon={Info}
@@ -865,6 +867,7 @@ function ReportsPage() {
                   title={t("rp.ai.i3.t")}
                   sub={t("rp.ai.i3.s")}
                   t={t}
+                  onClick={() => drill("in_progress")}
                 />
                 <Insight
                   icon={UsersIcon}
@@ -872,6 +875,7 @@ function ReportsPage() {
                   title={t("rp.ai.i4.t")}
                   sub={t("rp.ai.i4.s")}
                   t={t}
+                  onClick={() => drill("todo")}
                 />
               </div>
             </div>
@@ -879,16 +883,36 @@ function ReportsPage() {
             <div className="border-b border-border px-4 py-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">{t("rp.flt.title")}</h3>
-                <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">
+                <button
+                  onClick={() => {
+                    setRange({ from: shiftDay(todayKey(), -6), to: todayKey() });
+                    setCompare(true);
+                    toast.success("Đã đặt lại bộ lọc");
+                  }}
+                  className="text-xs text-primary hover:underline"
+                >
                   {t("rp.flt.clear")}
                 </button>
               </div>
-              <FilterField label={t("rp.flt.time")} value="12/05/2025 – 18/05/2025" />
-              <FilterField label={t("rp.flt.ws")} value={t("rp.flt.allws")} />
-              <FilterField label={t("rp.flt.dep")} value={t("rp.flt.alldep")} />
-              <FilterField label={t("rp.flt.team")} value={t("rp.flt.allteam")} />
-              <FilterField label={t("rp.flt.user")} value={t("rp.flt.alluser")} />
-              <button onClick={() => notifyComingSoon()} className="mt-2 w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <FilterField
+                label={t("rp.flt.time")}
+                value={`${fmtDay(range.from)} – ${fmtDay(range.to)}`}
+              />
+              <FilterField
+                label={t("rp.flt.ws")}
+                value={wsTotal ? `${wsTotal} workspace` : t("rp.flt.allws")}
+              />
+              <FilterField
+                label={t("rp.flt.dep")}
+                value={compare ? "So sánh kỳ trước: Bật" : "So sánh kỳ trước: Tắt"}
+              />
+              <button
+                onClick={() => {
+                  void refetch();
+                  toast.success(t("rp.refresh.done"));
+                }}
+                className="mt-2 w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
                 {t("rp.flt.apply")}
               </button>
             </div>
@@ -897,9 +921,41 @@ function ReportsPage() {
               <h3 className="text-sm font-semibold">{t("rp.exp.title")}</h3>
               <p className="mt-0.5 text-[11px] text-muted-foreground">{t("rp.exp.sub")}</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <ExportBtn icon={FileImage} label="PDF" color="text-rose-300" />
-                <ExportBtn icon={FileSpreadsheet} label="Excel" color="text-emerald-300" />
-                <ExportBtn icon={FileText} label="CSV" color="text-sky-300" />
+                <ExportBtn
+                  icon={FileImage}
+                  label="PDF"
+                  color="text-rose-300"
+                  onClick={() => {
+                    if (!report) return toast.error(t("rp.export.blocked"));
+                    const ok = exportReportPdf(report, {
+                      ...range,
+                      title: t("rp.title"),
+                      compare,
+                      prev,
+                    });
+                    if (!ok) toast.error(t("rp.export.blocked"));
+                  }}
+                />
+                <ExportBtn
+                  icon={FileSpreadsheet}
+                  label="Excel"
+                  color="text-emerald-300"
+                  onClick={() => {
+                    if (!report) return toast.error(t("rp.export.blocked"));
+                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    toast.success(t("rp.export.done"));
+                  }}
+                />
+                <ExportBtn
+                  icon={FileText}
+                  label="CSV"
+                  color="text-sky-300"
+                  onClick={() => {
+                    if (!report) return toast.error(t("rp.export.blocked"));
+                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    toast.success(t("rp.export.done"));
+                  }}
+                />
               </div>
               <div className="mt-4 rounded-lg border border-border bg-surface-2 p-3">
                 <div className="flex items-center justify-between">
