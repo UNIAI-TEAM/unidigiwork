@@ -1137,9 +1137,6 @@ function MeetingPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Sửa cuộc họp</DialogTitle>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sửa cuộc họp</DialogTitle>
             <DialogDescription>Cập nhật tiêu đề và thời gian của cuộc họp.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
