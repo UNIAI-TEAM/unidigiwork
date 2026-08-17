@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Bot, BriefcaseBusiness, Plus, Sparkles, Users } from "lucide-react";
+import { Bot, BriefcaseBusiness, Gauge, Plus, Sparkles, Users } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listAiEmployments } from "@/lib/api/ai-market.functions";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ai/ai-worker-profile";
 import { AiWorkerKpiSection } from "@/components/ai/ai-worker-kpi";
 import { AiSkillsManager } from "@/components/ai/ai-skills-manager";
+import { AiWorkforceEvaluation } from "@/components/ai/ai-workforce-evaluation";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 
 export const Route = createFileRoute("/_authenticated/ai-workforce")({
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/ai-workforce")({
 const TABS = [
   { id: "workers", label: "Nhân sự AI", icon: Bot },
   { id: "contracts", label: "Hợp đồng AI", icon: BriefcaseBusiness },
+  { id: "evaluation", label: "Đánh giá hiệu quả", icon: Gauge },
   { id: "skills", label: "Kỹ năng AI", icon: Sparkles },
   { id: "workspaces", label: "Không gian làm việc", icon: Users },
 ] as const;
@@ -123,6 +125,8 @@ function AiWorkforcePage() {
             </ul>
           ) : tab === "contracts" ? (
             <AiContractsTab />
+          ) : tab === "evaluation" ? (
+            <AiWorkforceEvaluation />
           ) : tab === "skills" ? (
             <AiSkillsManager />
           ) : (
