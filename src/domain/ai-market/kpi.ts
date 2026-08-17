@@ -18,9 +18,9 @@ export type AiKpi = {
   tenantCompleted: number;
   proposals: number;
   approved: number;
-  /** Tỉ lệ duyệt 0–100; null khi chưa có đề xuất nào. */
+  /** Tỉ lệ duyệt 0–100 (dùng nội bộ để tính điểm); null khi chưa có đề xuất nào. */
   approvalRate: number | null;
-  /** Điểm KPI 0–100. */
+  /** Điểm KPI cố định thang 1–10. */
   score: number;
   /** Đã có dữ liệu thực thi trong tenant hay chưa. */
   hasEvidence: boolean;
@@ -44,8 +44,9 @@ export function computeAiKpi(input: AiKpiInput): AiKpi {
   // Khối lượng: log scale để không cho ứng viên "cày số" áp đảo hoàn toàn.
   const volume = clamp((Math.log10(1 + completed) / Math.log10(1 + 1000)) * 100);
 
-  const score =
-    approvalRate === null ? clamp(volume) : clamp(approvalRate * 0.6 + volume * 0.4);
+  const raw = approvalRate === null ? clamp(volume) : clamp(approvalRate * 0.6 + volume * 0.4);
+  // Quy đổi sang thang điểm cố định 1–10.
+  const score = Math.min(10, Math.max(1, Math.round(raw / 10)));
 
   return {
     completed,
@@ -53,10 +54,14 @@ export function computeAiKpi(input: AiKpiInput): AiKpi {
     proposals,
     approved,
     approvalRate,
-    score: Math.round(score),
+    score,
     hasEvidence: proposals > 0 || tenantCompleted > 0,
   };
 }
 
-export const formatApprovalRate = (rate: number | null) =>
-  rate === null ? "Chưa có dữ liệu" : `${Math.round(rate)}%`;
+/** Điểm KPI dạng "8/10". */
+export const formatKpiScore = (score: number | null | undefined) => `${score ?? 1}/10`;
+
+/** Mức duyệt hiển thị theo số lượng, không dùng phần trăm. */
+export const formatApproved = (approved: number, proposals: number) =>
+  proposals > 0 ? `${approved}/${proposals} đề xuất` : "Chưa có đề xuất";
