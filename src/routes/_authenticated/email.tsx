@@ -1298,15 +1298,36 @@ function EmailHubPage() {
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <ToolBtn icon={Reply} label="Trả lời" />
-              <ToolBtn icon={ReplyAll} label="Trả lời tất cả" />
-              <ToolBtn icon={Forward} label="Chuyển tiếp" />
-              <ToolBtn icon={Archive} label="Lưu trữ" />
-              <ToolBtn icon={Trash2} label="Xóa" />
-              <ToolBtn icon={Tag} label="Đánh dấu" />
-              <button onClick={() => notifyComingSoon()} className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2">
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
+              <ToolBtn icon={Reply} label="Trả lời" onClick={() => replySelected(false)} />
+              <ToolBtn icon={ReplyAll} label="Trả lời tất cả" onClick={() => replySelected(true)} />
+              <ToolBtn icon={Forward} label="Chuyển tiếp" onClick={forwardSelected} />
+              <ToolBtn icon={Archive} label="Lưu trữ" onClick={() => messageAction("archive")} />
+              <ToolBtn icon={Trash2} label="Xóa" onClick={() => messageAction("trash")} />
+              <ToolBtn icon={Sparkles} label="Hỏi AI" onClick={() => setAiOpen(true)} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Thao tác khác"
+                    className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
+                      if (!ids.length) return toast.info("Email mẫu không thể thao tác");
+                      bulkReadMut.mutate({ ids, is_read: false });
+                    }}
+                  >
+                    Đánh dấu chưa đọc
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => messageAction("archive")}>Lưu trữ</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => messageAction("trash")}>Chuyển vào thùng rác</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLabelsOpen(true)}>Nhãn & quy tắc</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
