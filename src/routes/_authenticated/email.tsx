@@ -1578,7 +1578,13 @@ function EmailHubPage() {
         </div>
       </main>
 
-      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} />
+      <ComposeEmailDialog
+        key={`${composePrefill.to}|${composePrefill.subject}`}
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+        initialTo={composePrefill.to}
+        initialSubject={composePrefill.subject}
+      />
       <AdvancedFilterDialog
         open={advancedOpen}
         onOpenChange={setAdvancedOpen}
