@@ -27,6 +27,9 @@ export const Route = createFileRoute("/_authenticated/workspace/settings")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
+  }),
   component: WorkspaceSettingsPage,
 });
 
@@ -45,7 +48,8 @@ const inputCls =
 function WorkspaceSettingsPage() {
   const qc = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
-  const [workspaceId, setWorkspaceId] = useState<string>("");
+  const { ws } = Route.useSearch();
+  const [workspaceId, setWorkspaceId] = useState<string>(ws ?? "");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -63,8 +67,10 @@ function WorkspaceSettingsPage() {
   const workspaces = useMemo(() => workspacesQ.data ?? [], [workspacesQ.data]);
 
   useEffect(() => {
+    if (ws && ws !== workspaceId) { setWorkspaceId(ws); return; }
     if (!workspaceId && workspaces.length) setWorkspaceId(workspaces[0]!.id);
-  }, [workspaces, workspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaces, ws]);
 
   const settingsQ = useQuery({
     queryKey: ["workspace", workspaceId, "settings"],
