@@ -473,15 +473,6 @@ function EmailHubPage() {
       .catch((e: Error) => toast.error(e.message));
   }
 
-  function unusedMessageAction(folder: "archive" | "trash") {
-    const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
-    if (!ids.length) {
-      toast.info("Email mẫu không thể thao tác");
-      return;
-    }
-    bulkMoveMut.mutate({ ids, folder });
-  }
-
   function openCompose(to: string, subject: string, body = "", cc = "") {
     setComposePrefill({ to, subject, body, cc });
     setComposeOpen(true);
@@ -903,10 +894,7 @@ function EmailHubPage() {
                                 src={avatar(e.from)}
                                 alt=""
                                 className={`h-9 w-9 rounded-full object-cover ${isChecked ? "hidden" : "group-hover:hidden"}`}
-                                onClick={() => {
-                                  setSelected(e.id);
-                                  setDetailOpen(true);
-                                }}
+                                onClick={() => openEmail(e.id)}
                               />
                               <div
                                 className={`${isChecked ? "flex" : "hidden group-hover:flex"} h-9 w-9 items-center justify-center`}
@@ -918,10 +906,7 @@ function EmailHubPage() {
                               </div>
                             </div>
                             <button
-                              onClick={() => {
-                                setSelected(e.id);
-                                setDetailOpen(true);
-                              }}
+                              onClick={() => openEmail(e.id)}
                               className="min-w-0 flex-1 text-left"
                             >
                               <div className="flex items-center justify-between gap-2">
