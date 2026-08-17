@@ -32,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/workspace/members")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { ws?: string } =>
+    typeof search["ws"] === "string" ? { ws: search["ws"] as string } : {},
   component: WorkspaceMembersPage,
 });
 
@@ -60,7 +62,8 @@ function fmtDate(v: string | null): string {
 function WorkspaceMembersPage() {
   const qc = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
-  const [workspaceId, setWorkspaceId] = useState<string>("");
+  const { ws } = Route.useSearch();
+  const [workspaceId, setWorkspaceId] = useState<string>(ws ?? "");
   const [email, setEmail] = useState("");
   const [tenantRole, setTenantRole] = useState<(typeof TENANT_ROLES)[number]["value"]>("member");
   const [workspaceRole, setWorkspaceRole] = useState<"owner" | "member">("member");
@@ -70,8 +73,10 @@ function WorkspaceMembersPage() {
   const workspaces = workspacesQ.data ?? [];
 
   useEffect(() => {
+    if (ws && ws !== workspaceId) { setWorkspaceId(ws); return; }
     if (!workspaceId && workspaces.length) setWorkspaceId(workspaces[0]!.id);
-  }, [workspaces, workspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaces, ws]);
 
   const active = useMemo(
     () => workspaces.find((w) => w.id === workspaceId) ?? null,
