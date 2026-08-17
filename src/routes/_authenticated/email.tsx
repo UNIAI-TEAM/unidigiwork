@@ -340,10 +340,14 @@ function EmailHubPage() {
 
   const quickSummary = useMemo(
     () => [
-      { label: "Chưa đọc trong hộp đến", value: countsQuery.data?.unreadInbox ?? 0 },
-      { label: "Quan trọng", value: folderCounts.starred ?? 0 },
-      { label: "Bản nháp", value: folderCounts.drafts ?? 0 },
       { label: "Tổng email", value: countsQuery.data?.total ?? 0 },
+      { label: "Đã đọc", value: countsQuery.data?.read ?? 0 },
+      { label: "Chưa đọc", value: countsQuery.data?.unread ?? 0 },
+      { label: "Đã gửi", value: countsQuery.data?.sent ?? 0 },
+      { label: "Chuyển tiếp", value: countsQuery.data?.forwarded ?? 0 },
+      { label: "Đã giải quyết", value: countsQuery.data?.resolved ?? 0 },
+      { label: "Đã hủy", value: countsQuery.data?.cancelled ?? 0 },
+      { label: "Chưa đọc ở hộp đến", value: countsQuery.data?.unreadInbox ?? 0 },
     ],
     [countsQuery.data, folderCounts],
   );
@@ -359,15 +363,18 @@ function EmailHubPage() {
   );
 
   const statSlices: StatSlice[] = useMemo(() => {
+    const c = countsQuery.data;
     const raw = [
-      { label: "Đã nhận", value: folderCounts.inbox ?? 0, color: "#7c3aed" },
-      { label: "Đã gửi", value: folderCounts.sent ?? 0, color: "#10b981" },
-      { label: "Lưu trữ", value: folderCounts.archive ?? 0, color: "#f59e0b" },
-      { label: "Khác", value: (folderCounts.drafts ?? 0) + (folderCounts.trash ?? 0), color: "#94a3b8" },
+      { label: "Đã đọc", value: c?.read ?? 0, color: "#7c3aed" },
+      { label: "Chưa đọc", value: c?.unread ?? 0, color: "#ef4444" },
+      { label: "Đã gửi", value: c?.sent ?? 0, color: "#10b981" },
+      { label: "Chuyển tiếp", value: c?.forwarded ?? 0, color: "#0ea5e9" },
+      { label: "Đã giải quyết", value: c?.resolved ?? 0, color: "#f59e0b" },
+      { label: "Đã hủy", value: c?.cancelled ?? 0, color: "#94a3b8" },
     ];
     const total = raw.reduce((s, x) => s + x.value, 0) || 1;
     return raw.map((r) => ({ ...r, pct: Math.round((r.value / total) * 100) }));
-  }, [folderCounts]);
+  }, [countsQuery.data]);
 
   // Reset paging + selection when mailbox/filters change
   function changeMailbox(key: string) {
