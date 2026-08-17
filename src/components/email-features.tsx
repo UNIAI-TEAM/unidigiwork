@@ -243,11 +243,16 @@ export function ComposeEmailDialog({
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              disabled={sendMut.isPending}
+            >
               Hủy
             </Button>
-            <Button size="sm" onClick={() => onOpenChange(false)}>
-              <Send className="h-4 w-4" /> Gửi
+            <Button size="sm" onClick={handleSend} disabled={sendMut.isPending}>
+              <Send className="h-4 w-4" /> {sendMut.isPending ? "Đang gửi…" : "Gửi"}
             </Button>
           </div>
         </DialogFooter>
