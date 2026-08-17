@@ -66,8 +66,15 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
+function formatMoney(n: number, lang: "vi" | "en"): string {
+  if (lang === "en") {
+    return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(n)} VND`;
+  }
+  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(n).replace(/,/g, ".")}đ`;
+}
+
 function Landing() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const features = [
     { icon: Video, title: t("land.feat.meet.t"), desc: t("land.feat.meet.d") },
     { icon: FileText, title: t("land.feat.docs.t"), desc: t("land.feat.docs.d") },
@@ -488,10 +495,10 @@ function Landing() {
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {([
-              { icon: Calendar, t: "land.hire.r1.t", d: "land.hire.r1.d", price: "1.900.000đ" },
-              { icon: BarChart3, t: "land.hire.r2.t", d: "land.hire.r2.d", price: "2.900.000đ" },
-              { icon: Headphones, t: "land.hire.r3.t", d: "land.hire.r3.d", price: "2.400.000đ" },
-              { icon: Settings2, t: "land.hire.r4.t", d: "land.hire.r4.d", price: "3.500.000đ" },
+              { icon: Calendar, t: "land.hire.r1.t", d: "land.hire.r1.d", price: 1900000 },
+              { icon: BarChart3, t: "land.hire.r2.t", d: "land.hire.r2.d", price: 2900000 },
+              { icon: Headphones, t: "land.hire.r3.t", d: "land.hire.r3.d", price: 2400000 },
+              { icon: Settings2, t: "land.hire.r4.t", d: "land.hire.r4.d", price: 3500000 },
             ] as const).map((r) => (
               <article
                 key={r.t}
@@ -505,7 +512,7 @@ function Landing() {
                 <div className="mt-4 border-t border-border pt-4">
                   <div className="text-xs text-muted-foreground">{t("land.hire.price")}</div>
                   <div className="text-lg font-semibold tracking-tight">
-                    {r.price}
+                    {formatMoney(r.price, lang)}
                     <span className="ml-1 text-xs font-normal text-muted-foreground">
                       {t("land.hire.unit")}
                     </span>
@@ -898,7 +905,7 @@ function LeadForm({ variant }: { variant: "demo" | "hire" }) {
 }
 
 function HireEstimator() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const roles = [
     { key: "assistant", label: t("land.hire.r1.t"), price: 1900000 },
     { key: "analyst", label: t("land.hire.r2.t"), price: 2900000 },
@@ -922,8 +929,7 @@ function HireEstimator() {
   const discountAmount = baseTotal * selectedDuration.discount;
   const total = baseTotal - discountAmount;
 
-  const formatVnd = (n: number) =>
-    n.toLocaleString("vi-VN", { maximumFractionDigits: 0 }).replace(/,/g, ".") + "đ";
+  const formatVnd = (n: number) => formatMoney(n, lang);
 
   const changeQty = (delta: number) => {
     setQty((prev) => Math.max(1, prev + delta));
