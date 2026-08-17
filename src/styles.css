@@ -232,30 +232,206 @@
 
 /* ---------------------------------------------------------------------------
  * Tone accents — người dùng chọn tone màu nhấn (data-tone trên <html>).
- * Chỉ ghi đè các token nhấn; nền/chữ giữ nguyên để bảo toàn độ tương phản.
+ * Giá trị màu được viết tường minh cho từng tone (không lồng var() trong
+ * oklch) để Safari/iPadOS phân giải đúng và có fallback khi build.
  * ------------------------------------------------------------------------- */
-:root[data-tone="violet"] { --tone-h: 285; }
-:root[data-tone="blue"]   { --tone-h: 255; }
-:root[data-tone="teal"]   { --tone-h: 195; }
-:root[data-tone="emerald"]{ --tone-h: 155; }
-:root[data-tone="amber"]  { --tone-h: 75;  }
-:root[data-tone="rose"]   { --tone-h: 15;  }
 
-:root[data-tone] {
-  --primary: oklch(0.56 0.17 var(--tone-h));
-  --accent: oklch(0.56 0.17 var(--tone-h));
-  --ring: oklch(0.56 0.17 var(--tone-h) / 55%);
-  --sidebar-primary: oklch(0.52 0.16 var(--tone-h));
-  --sidebar-ring: oklch(0.56 0.17 var(--tone-h) / 55%);
+:root[data-tone="violet"] {
+  --tone-h: 285;
+  --primary: oklch(0.56 0.17 285);
+  --accent: oklch(0.56 0.17 285);
+  --ring: oklch(0.56 0.17 285 / 55%);
+  --sidebar-primary: oklch(0.52 0.16 285);
+  --sidebar-ring: oklch(0.56 0.17 285 / 55%);
 }
 
-:root[data-tone].dark,
-.dark:root[data-tone] {
-  --primary: oklch(0.68 0.15 var(--tone-h));
-  --accent: oklch(0.68 0.15 var(--tone-h));
-  --ring: oklch(0.68 0.15 var(--tone-h) / 55%);
-  --sidebar-primary: oklch(0.68 0.15 var(--tone-h));
-  --sidebar-ring: oklch(0.68 0.15 var(--tone-h) / 55%);
+:root[data-tone="violet"].dark,
+.dark :root[data-tone="violet"],
+.dark:root[data-tone="violet"] {
+  --primary: oklch(0.68 0.15 285);
+  --accent: oklch(0.68 0.15 285);
+  --ring: oklch(0.68 0.15 285 / 55%);
+  --sidebar-primary: oklch(0.68 0.15 285);
+  --sidebar-ring: oklch(0.68 0.15 285 / 55%);
+}
+
+:root[data-tone="violet"][data-contrast="high"] {
+  --primary: oklch(0.44 0.19 285);
+  --accent: oklch(0.44 0.19 285);
+  --ring: oklch(0.30 0.05 285 / 90%);
+  --sidebar-primary: oklch(0.40 0.18 285);
+}
+
+:root[data-tone="violet"][data-contrast="high"].dark,
+.dark:root[data-tone="violet"][data-contrast="high"] {
+  --primary: oklch(0.82 0.14 285);
+  --accent: oklch(0.82 0.14 285);
+  --ring: oklch(0.92 0.05 285 / 90%);
+}
+
+:root[data-tone="blue"] {
+  --tone-h: 255;
+  --primary: oklch(0.56 0.17 255);
+  --accent: oklch(0.56 0.17 255);
+  --ring: oklch(0.56 0.17 255 / 55%);
+  --sidebar-primary: oklch(0.52 0.16 255);
+  --sidebar-ring: oklch(0.56 0.17 255 / 55%);
+}
+
+:root[data-tone="blue"].dark,
+.dark :root[data-tone="blue"],
+.dark:root[data-tone="blue"] {
+  --primary: oklch(0.68 0.15 255);
+  --accent: oklch(0.68 0.15 255);
+  --ring: oklch(0.68 0.15 255 / 55%);
+  --sidebar-primary: oklch(0.68 0.15 255);
+  --sidebar-ring: oklch(0.68 0.15 255 / 55%);
+}
+
+:root[data-tone="blue"][data-contrast="high"] {
+  --primary: oklch(0.44 0.19 255);
+  --accent: oklch(0.44 0.19 255);
+  --ring: oklch(0.30 0.05 255 / 90%);
+  --sidebar-primary: oklch(0.40 0.18 255);
+}
+
+:root[data-tone="blue"][data-contrast="high"].dark,
+.dark:root[data-tone="blue"][data-contrast="high"] {
+  --primary: oklch(0.82 0.14 255);
+  --accent: oklch(0.82 0.14 255);
+  --ring: oklch(0.92 0.05 255 / 90%);
+}
+
+:root[data-tone="teal"] {
+  --tone-h: 195;
+  --primary: oklch(0.56 0.17 195);
+  --accent: oklch(0.56 0.17 195);
+  --ring: oklch(0.56 0.17 195 / 55%);
+  --sidebar-primary: oklch(0.52 0.16 195);
+  --sidebar-ring: oklch(0.56 0.17 195 / 55%);
+}
+
+:root[data-tone="teal"].dark,
+.dark :root[data-tone="teal"],
+.dark:root[data-tone="teal"] {
+  --primary: oklch(0.68 0.15 195);
+  --accent: oklch(0.68 0.15 195);
+  --ring: oklch(0.68 0.15 195 / 55%);
+  --sidebar-primary: oklch(0.68 0.15 195);
+  --sidebar-ring: oklch(0.68 0.15 195 / 55%);
+}
+
+:root[data-tone="teal"][data-contrast="high"] {
+  --primary: oklch(0.44 0.19 195);
+  --accent: oklch(0.44 0.19 195);
+  --ring: oklch(0.30 0.05 195 / 90%);
+  --sidebar-primary: oklch(0.40 0.18 195);
+}
+
+:root[data-tone="teal"][data-contrast="high"].dark,
+.dark:root[data-tone="teal"][data-contrast="high"] {
+  --primary: oklch(0.82 0.14 195);
+  --accent: oklch(0.82 0.14 195);
+  --ring: oklch(0.92 0.05 195 / 90%);
+}
+
+:root[data-tone="emerald"] {
+  --tone-h: 155;
+  --primary: oklch(0.56 0.17 155);
+  --accent: oklch(0.56 0.17 155);
+  --ring: oklch(0.56 0.17 155 / 55%);
+  --sidebar-primary: oklch(0.52 0.16 155);
+  --sidebar-ring: oklch(0.56 0.17 155 / 55%);
+}
+
+:root[data-tone="emerald"].dark,
+.dark :root[data-tone="emerald"],
+.dark:root[data-tone="emerald"] {
+  --primary: oklch(0.68 0.15 155);
+  --accent: oklch(0.68 0.15 155);
+  --ring: oklch(0.68 0.15 155 / 55%);
+  --sidebar-primary: oklch(0.68 0.15 155);
+  --sidebar-ring: oklch(0.68 0.15 155 / 55%);
+}
+
+:root[data-tone="emerald"][data-contrast="high"] {
+  --primary: oklch(0.44 0.19 155);
+  --accent: oklch(0.44 0.19 155);
+  --ring: oklch(0.30 0.05 155 / 90%);
+  --sidebar-primary: oklch(0.40 0.18 155);
+}
+
+:root[data-tone="emerald"][data-contrast="high"].dark,
+.dark:root[data-tone="emerald"][data-contrast="high"] {
+  --primary: oklch(0.82 0.14 155);
+  --accent: oklch(0.82 0.14 155);
+  --ring: oklch(0.92 0.05 155 / 90%);
+}
+
+:root[data-tone="amber"] {
+  --tone-h: 75;
+  --primary: oklch(0.56 0.17 75);
+  --accent: oklch(0.56 0.17 75);
+  --ring: oklch(0.56 0.17 75 / 55%);
+  --sidebar-primary: oklch(0.52 0.16 75);
+  --sidebar-ring: oklch(0.56 0.17 75 / 55%);
+}
+
+:root[data-tone="amber"].dark,
+.dark :root[data-tone="amber"],
+.dark:root[data-tone="amber"] {
+  --primary: oklch(0.68 0.15 75);
+  --accent: oklch(0.68 0.15 75);
+  --ring: oklch(0.68 0.15 75 / 55%);
+  --sidebar-primary: oklch(0.68 0.15 75);
+  --sidebar-ring: oklch(0.68 0.15 75 / 55%);
+}
+
+:root[data-tone="amber"][data-contrast="high"] {
+  --primary: oklch(0.44 0.19 75);
+  --accent: oklch(0.44 0.19 75);
+  --ring: oklch(0.30 0.05 75 / 90%);
+  --sidebar-primary: oklch(0.40 0.18 75);
+}
+
+:root[data-tone="amber"][data-contrast="high"].dark,
+.dark:root[data-tone="amber"][data-contrast="high"] {
+  --primary: oklch(0.82 0.14 75);
+  --accent: oklch(0.82 0.14 75);
+  --ring: oklch(0.92 0.05 75 / 90%);
+}
+
+:root[data-tone="rose"] {
+  --tone-h: 15;
+  --primary: oklch(0.56 0.17 15);
+  --accent: oklch(0.56 0.17 15);
+  --ring: oklch(0.56 0.17 15 / 55%);
+  --sidebar-primary: oklch(0.52 0.16 15);
+  --sidebar-ring: oklch(0.56 0.17 15 / 55%);
+}
+
+:root[data-tone="rose"].dark,
+.dark :root[data-tone="rose"],
+.dark:root[data-tone="rose"] {
+  --primary: oklch(0.68 0.15 15);
+  --accent: oklch(0.68 0.15 15);
+  --ring: oklch(0.68 0.15 15 / 55%);
+  --sidebar-primary: oklch(0.68 0.15 15);
+  --sidebar-ring: oklch(0.68 0.15 15 / 55%);
+}
+
+:root[data-tone="rose"][data-contrast="high"] {
+  --primary: oklch(0.44 0.19 15);
+  --accent: oklch(0.44 0.19 15);
+  --ring: oklch(0.30 0.05 15 / 90%);
+  --sidebar-primary: oklch(0.40 0.18 15);
+}
+
+:root[data-tone="rose"][data-contrast="high"].dark,
+.dark:root[data-tone="rose"][data-contrast="high"] {
+  --primary: oklch(0.82 0.14 15);
+  --accent: oklch(0.82 0.14 15);
+  --ring: oklch(0.92 0.05 15 / 90%);
 }
 
 /* ---------------------------------------------------------------------------
@@ -275,15 +451,15 @@
   --secondary-foreground: oklch(0.14 0.02 260);
   --border: oklch(0.14 0.02 260 / 32%);
   --input: oklch(0.14 0.02 260 / 45%);
-  --primary: oklch(0.44 0.19 var(--tone-h, 285));
-  --accent: oklch(0.44 0.19 var(--tone-h, 285));
+  --primary: oklch(0.44 0.19 285);
+  --accent: oklch(0.44 0.19 285);
   --primary-foreground: oklch(1 0 0);
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.46 0.20 25);
-  --ring: oklch(0.30 0.05 var(--tone-h, 285) / 90%);
+  --ring: oklch(0.30 0.05 285 / 90%);
   --sidebar-foreground: oklch(0.14 0.02 260);
   --sidebar-border: oklch(0.14 0.02 260 / 30%);
-  --sidebar-primary: oklch(0.40 0.18 var(--tone-h, 285));
+  --sidebar-primary: oklch(0.40 0.18 285);
 }
 
 :root[data-contrast="high"].dark,
@@ -300,12 +476,12 @@
   --secondary-foreground: oklch(0.99 0 0);
   --border: oklch(0.99 0 0 / 38%);
   --input: oklch(0.99 0 0 / 50%);
-  --primary: oklch(0.82 0.14 var(--tone-h, 285));
-  --accent: oklch(0.82 0.14 var(--tone-h, 285));
+  --primary: oklch(0.82 0.14 285);
+  --accent: oklch(0.82 0.14 285);
   --primary-foreground: oklch(0.12 0.01 260);
   --accent-foreground: oklch(0.12 0.01 260);
   --destructive: oklch(0.72 0.18 25);
-  --ring: oklch(0.92 0.05 var(--tone-h, 285) / 90%);
+  --ring: oklch(0.92 0.05 285 / 90%);
   --sidebar-foreground: oklch(0.99 0 0);
   --sidebar-border: oklch(0.99 0 0 / 35%);
 }
