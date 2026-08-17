@@ -323,7 +323,26 @@ export const listAiEmployments = createServerFn({ method: "GET" })
       .not("status", "in", "(TERMINATED,REJECTED)")
       .order("created_at", { ascending: false });
     if (error) throw fail("AI_MARKET_LIST_FAILED", error.message);
-    return rows ?? [];
+
+    // KPI khách quan cho nhân sự đã tuyển: tỉ lệ đề xuất được duyệt + khối lượng việc hoàn thành.
+    const workflowAgentIds = (rows ?? [])
+      .map((r: any) => r.workflow_agent_id)
+      .filter((v: string | null): v is string => !!v);
+    const stats = await loadTenantAgentStats(context, tenantId, workflowAgentIds);
+
+    const withKpi = (rows ?? []).map((r: any) => {
+      const s = r.workflow_agent_id ? stats.get(r.workflow_agent_id) : undefined;
+      const kpi = computeAiKpi({
+        marketCompleted: Number(r.agent?.completed_tasks) || 0,
+        tenantCompleted: s?.completed ?? 0,
+        tenantProposals: s?.proposals ?? 0,
+        tenantApproved: s?.approved ?? 0,
+      });
+      return { ...r, kpi };
+    });
+
+    withKpi.sort((a: any, b: any) => b.kpi.score - a.kpi.score);
+    return withKpi.map((r: any, i: number) => ({ ...r, rank: i + 1 }));
   });
 
 /* -------------------------------- Phỏng vấn -------------------------------- */
