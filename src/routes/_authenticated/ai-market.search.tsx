@@ -311,9 +311,30 @@ function AiMarketSearchPage() {
               ) : isLoading ? (
                 <p className="mt-8 text-sm text-muted-foreground">Đang tải danh sách ứng viên…</p>
               ) : agents.length === 0 ? (
-                <p className="mt-8 text-sm text-muted-foreground">
-                  Không có ứng viên nào khớp bộ lọc. Hãy nới điều kiện KPI hoặc ngân sách lương.
-                </p>
+                <div className="mt-8 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Không có ứng viên nào khớp bộ lọc. Hãy nới điều kiện KPI hoặc ngân sách lương.
+                  </p>
+                  {cheapestFallback && (
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
+                      <p>
+                        Mức lương thấp nhất trên thị trường hiện là{" "}
+                        <span className="font-medium text-foreground">
+                          {formatMoney(Number(cheapestFallback.salary_min))}
+                        </span>{" "}
+                        ({cheapestFallback.name} · {cheapestFallback.domain}).
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3"
+                        onClick={() => setMaxSalary(Number(cheapestFallback.salary_min))}
+                      >
+                        Nâng ngân sách lên {formatMoney(Number(cheapestFallback.salary_min))}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <p className="mt-3 text-xs text-muted-foreground">
