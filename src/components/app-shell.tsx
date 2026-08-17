@@ -199,6 +199,7 @@ function wsColorOf(id: string) {
 // Danh sách workspace thật của người dùng.
 function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
   const { workspaceId: activeWsId } = useActiveWorkspace();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({
     queryKey: ["my-workspaces"],
     queryFn: () => listMyWorkspaces(),
@@ -215,9 +216,9 @@ function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
   if (rows.length === 0) {
     return collapsed ? null : (
       <div className="px-3 py-2 text-[11px] text-muted-foreground">
-        Chưa có workspace ·{" "}
+        {t("sh.ws.empty")}{" "}
         <Link to="/workspace" className="text-primary hover:underline">
-          Tạo mới
+          {t("sh.ws.createNew")}
         </Link>
       </div>
     );
@@ -240,7 +241,7 @@ function WorkspaceList({ collapsed }: { collapsed?: boolean }) {
           to="/workspace"
           className="mx-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
-          <Plus className="h-3.5 w-3.5" /> Quản lý workspace
+          <Plus className="h-3.5 w-3.5" /> {t("sh.ws.manage")}
         </Link>
       )}
     </>
