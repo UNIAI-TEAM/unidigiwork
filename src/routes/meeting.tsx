@@ -393,6 +393,17 @@ function MeetingPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
 
+  // Lên lịch họp thật
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [schTitle, setSchTitle] = useState("");
+  const [schStart, setSchStart] = useState("");
+  const [schEnd, setSchEnd] = useState("");
+  const [schAgenda, setSchAgenda] = useState("");
+
+  // Tham gia bằng mã mời
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+
   const setRoomFilter = (next: {
     ws?: string;
     q?: string;
