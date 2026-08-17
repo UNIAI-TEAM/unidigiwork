@@ -8,7 +8,7 @@ import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
 import { listMarketAgents } from "@/lib/api/ai-market.functions";
 import { formatMoney } from "@/domain/ai-market/contracts";
 
-export const Route = createFileRoute("/_authenticated/m/ai-market")({
+export const Route = createFileRoute("/_authenticated/m/ai-market/")({
   head: () => ({
     meta: [
       { title: "AI Market · UNIWORK" },
