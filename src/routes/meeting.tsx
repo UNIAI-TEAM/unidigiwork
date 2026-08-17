@@ -542,6 +542,52 @@ function MeetingPage() {
     onError: () => toast.error("Không cập nhật được cuộc họp. Kiểm tra quyền của bạn."),
   });
 
+  const scheduleMutation = useMutation({
+    mutationFn: () =>
+      scheduleMeeting({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          workspaceId: activeWs as string,
+          title: schTitle.trim(),
+          startAt: new Date(schStart).toISOString(),
+          endAt: new Date(schEnd).toISOString(),
+          ...(schAgenda.trim() ? { agenda: schAgenda.trim() } : {}),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
+      setScheduleOpen(false);
+      setSchTitle("");
+      setSchStart("");
+      setSchEnd("");
+      setSchAgenda("");
+      toast.success("Đã lên lịch cuộc họp.");
+    },
+    onError: () => toast.error("Không lên lịch được. Kiểm tra quyền và thời gian hợp lệ."),
+  });
+
+  const joinByCode = useMutation({
+    mutationFn: () => redeemMeetingInviteLink({ data: { token: joinCode.trim() } }),
+    onSuccess: (res) => {
+      if ((res.status === "joined" || res.status === "already") && res.meetingId) {
+        setJoinOpen(false);
+        setJoinCode("");
+        void navigate({ to: "/meeting/$id", params: { id: res.meetingId } });
+        return;
+      }
+      const msg: Record<string, string> = {
+        expired: "Mã mời đã hết hạn.",
+        exhausted: "Mã mời đã hết lượt sử dụng.",
+        revoked: "Mã mời đã bị thu hồi.",
+        invalid: "Mã mời không hợp lệ.",
+      };
+      toast.error(msg[res.status] ?? "Không tham gia được bằng mã này.");
+    },
+    onError: () => toast.error("Không tham gia được. Kiểm tra lại mã mời."),
+  });
+
   const cancelRoomMutation = useMutation({
     mutationFn: () =>
       cancelMeeting({
