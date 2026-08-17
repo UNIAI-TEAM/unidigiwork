@@ -300,7 +300,8 @@ export const getMarketAgent = createServerFn({ method: "GET" })
       const { data: peers } = await context.supabase
         .from("ai_market_agents")
         .select("id")
-        .eq("domain", agent.domain);
+        .eq("domain", agent.domain)
+        .or(`tenant_id.is.null,tenant_id.eq.${tenantId}`);
       const peerIds = (peers ?? []).map((p: any) => p.id);
       if (peerIds.length) {
         const { data: perfRows } = await context.supabase
