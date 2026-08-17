@@ -76,10 +76,12 @@ import { Route as AuthenticatedMEmailRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
 import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
 import { Route as AuthenticatedMAiWorkforceRouteImport } from './routes/_authenticated/m/ai-workforce'
+import { Route as AuthenticatedMAiMarketRouteImport } from './routes/_authenticated/m/ai-market'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
+import { Route as AuthenticatedAiMarketIdRouteImport } from './routes/_authenticated/ai-market.$id'
 import { Route as AuthenticatedAdminWebhooksRouteImport } from './routes/_authenticated/admin.webhooks'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminTraceRouteImport } from './routes/_authenticated/admin.trace'
@@ -99,6 +101,7 @@ import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/adm
 import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
+import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
@@ -447,6 +450,11 @@ const AuthenticatedMAiWorkforceRoute =
     path: '/ai-workforce',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
+const AuthenticatedMAiMarketRoute = AuthenticatedMAiMarketRouteImport.update({
+  id: '/ai-market',
+  path: '/ai-market',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedEmailComposeRoute =
   AuthenticatedEmailComposeRouteImport.update({
     id: '/compose',
@@ -470,6 +478,11 @@ const AuthenticatedChatChannelIdRoute =
     path: '/chat/$channelId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAiMarketIdRoute = AuthenticatedAiMarketIdRouteImport.update({
+  id: '/ai-market/$id',
+  path: '/ai-market/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminWebhooksRoute =
   AuthenticatedAdminWebhooksRouteImport.update({
     id: '/webhooks',
@@ -576,6 +589,12 @@ const AuthenticatedMAiWorkforceIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedMAiWorkforceRoute,
   } as any)
+const AuthenticatedMAiMarketIdRoute =
+  AuthenticatedMAiMarketIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedMAiMarketRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -633,10 +652,12 @@ export interface FileRoutesByFullPath {
   '/admin/trace': typeof AuthenticatedAdminTraceRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
+  '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/ai-market': typeof AuthenticatedMAiMarketRouteWithChildren
   '/m/ai-workforce': typeof AuthenticatedMAiWorkforceRouteWithChildren
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
@@ -659,6 +680,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -722,10 +744,12 @@ export interface FileRoutesByTo {
   '/admin/trace': typeof AuthenticatedAdminTraceRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
+  '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/ai-market': typeof AuthenticatedMAiMarketRouteWithChildren
   '/m/ai-workforce': typeof AuthenticatedMAiWorkforceRouteWithChildren
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
@@ -748,6 +772,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
+  '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -815,10 +840,12 @@ export interface FileRoutesById {
   '/_authenticated/admin/trace': typeof AuthenticatedAdminTraceRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
+  '/_authenticated/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/_authenticated/m/ai-market': typeof AuthenticatedMAiMarketRouteWithChildren
   '/_authenticated/m/ai-workforce': typeof AuthenticatedMAiWorkforceRouteWithChildren
   '/_authenticated/m/chat': typeof AuthenticatedMChatRoute
   '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
@@ -841,6 +868,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
@@ -908,10 +936,12 @@ export interface FileRouteTypes {
     | '/admin/trace'
     | '/admin/users'
     | '/admin/webhooks'
+    | '/ai-market/$id'
     | '/chat/$channelId'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/ai-market'
     | '/m/ai-workforce'
     | '/m/chat'
     | '/m/compose'
@@ -934,6 +964,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/ai-market/'
     | '/workspace/'
+    | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
     | '/workspace/$id/stos'
@@ -997,10 +1028,12 @@ export interface FileRouteTypes {
     | '/admin/trace'
     | '/admin/users'
     | '/admin/webhooks'
+    | '/ai-market/$id'
     | '/chat/$channelId'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/ai-market'
     | '/m/ai-workforce'
     | '/m/chat'
     | '/m/compose'
@@ -1023,6 +1056,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ai-market'
     | '/workspace'
+    | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
     | '/workspace/$id/stos'
@@ -1089,10 +1123,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/trace'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/webhooks'
+    | '/_authenticated/ai-market/$id'
     | '/_authenticated/chat_/$channelId'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email/$id'
     | '/_authenticated/email/compose'
+    | '/_authenticated/m/ai-market'
     | '/_authenticated/m/ai-workforce'
     | '/_authenticated/m/chat'
     | '/_authenticated/m/compose'
@@ -1115,6 +1151,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/ai-market/'
     | '/_authenticated/workspace/'
+    | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/email/$id'
     | '/_authenticated/workspace/$id/stos'
@@ -1627,6 +1664,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMAiWorkforceRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/ai-market': {
+      id: '/_authenticated/m/ai-market'
+      path: '/ai-market'
+      fullPath: '/m/ai-market'
+      preLoaderRoute: typeof AuthenticatedMAiMarketRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/email/compose': {
       id: '/_authenticated/email/compose'
       path: '/compose'
@@ -1653,6 +1697,13 @@ declare module '@tanstack/react-router' {
       path: '/chat/$channelId'
       fullPath: '/chat/$channelId'
       preLoaderRoute: typeof AuthenticatedChatChannelIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-market/$id': {
+      id: '/_authenticated/ai-market/$id'
+      path: '/ai-market/$id'
+      fullPath: '/ai-market/$id'
+      preLoaderRoute: typeof AuthenticatedAiMarketIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/webhooks': {
@@ -1788,6 +1839,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMAiWorkforceIdRouteImport
       parentRoute: typeof AuthenticatedMAiWorkforceRoute
     }
+    '/_authenticated/m/ai-market/$id': {
+      id: '/_authenticated/m/ai-market/$id'
+      path: '/$id'
+      fullPath: '/m/ai-market/$id'
+      preLoaderRoute: typeof AuthenticatedMAiMarketIdRouteImport
+      parentRoute: typeof AuthenticatedMAiMarketRoute
+    }
   }
 }
 
@@ -1851,6 +1909,20 @@ const AuthenticatedEmailRouteChildren: AuthenticatedEmailRouteChildren = {
 const AuthenticatedEmailRouteWithChildren =
   AuthenticatedEmailRoute._addFileChildren(AuthenticatedEmailRouteChildren)
 
+interface AuthenticatedMAiMarketRouteChildren {
+  AuthenticatedMAiMarketIdRoute: typeof AuthenticatedMAiMarketIdRoute
+}
+
+const AuthenticatedMAiMarketRouteChildren: AuthenticatedMAiMarketRouteChildren =
+  {
+    AuthenticatedMAiMarketIdRoute: AuthenticatedMAiMarketIdRoute,
+  }
+
+const AuthenticatedMAiMarketRouteWithChildren =
+  AuthenticatedMAiMarketRoute._addFileChildren(
+    AuthenticatedMAiMarketRouteChildren,
+  )
+
 interface AuthenticatedMAiWorkforceRouteChildren {
   AuthenticatedMAiWorkforceIdRoute: typeof AuthenticatedMAiWorkforceIdRoute
 }
@@ -1877,6 +1949,7 @@ const AuthenticatedMEmailRouteWithChildren =
   AuthenticatedMEmailRoute._addFileChildren(AuthenticatedMEmailRouteChildren)
 
 interface AuthenticatedMRouteChildren {
+  AuthenticatedMAiMarketRoute: typeof AuthenticatedMAiMarketRouteWithChildren
   AuthenticatedMAiWorkforceRoute: typeof AuthenticatedMAiWorkforceRouteWithChildren
   AuthenticatedMChatRoute: typeof AuthenticatedMChatRoute
   AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
@@ -1889,6 +1962,7 @@ interface AuthenticatedMRouteChildren {
 }
 
 const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
+  AuthenticatedMAiMarketRoute: AuthenticatedMAiMarketRouteWithChildren,
   AuthenticatedMAiWorkforceRoute: AuthenticatedMAiWorkforceRouteWithChildren,
   AuthenticatedMChatRoute: AuthenticatedMChatRoute,
   AuthenticatedMComposeRoute: AuthenticatedMComposeRoute,
@@ -1948,6 +2022,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
   AuthenticatedChatChannelIdRoute: typeof AuthenticatedChatChannelIdRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
@@ -1977,6 +2052,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,
   AuthenticatedChatChannelIdRoute: AuthenticatedChatChannelIdRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
