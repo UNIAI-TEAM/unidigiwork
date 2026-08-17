@@ -664,10 +664,23 @@ function MeetingPage() {
                     )}
                     Bắt đầu họp ngay
                   </button>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
+                  <button
+                    onClick={() => {
+                      const now = new Date();
+                      const start = new Date(now.getTime() + 30 * 60000);
+                      const end = new Date(start.getTime() + 30 * 60000);
+                      setSchStart(toLocalInput(start));
+                      setSchEnd(toLocalInput(end));
+                      setScheduleOpen(true);
+                    }}
+                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
+                  >
                     <Calendar className="h-4 w-4" /> Lên lịch
                   </button>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
+                  <button
+                    onClick={() => setJoinOpen(true)}
+                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
+                  >
                     <Link2 className="h-4 w-4" /> Tham gia bằng mã
                   </button>
                   <Link
@@ -960,9 +973,41 @@ function MeetingPage() {
                     className="w-56 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
-                <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border bg-surface p-2 text-muted-foreground hover:text-foreground">
-                  <Filter className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Lọc trạng thái phòng họp"
+                      className="rounded-lg border border-border bg-surface p-2 text-muted-foreground hover:text-foreground"
+                    >
+                      <Filter className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {(
+                      [
+                        ["all", "Tất cả"],
+                        ["live", "Đang diễn ra"],
+                        ["upcoming", "Sắp diễn ra"],
+                        ["ended", "Đã kết thúc"],
+                      ] as [RoomFilterState, string][]
+                    ).map(([value, label]) => (
+                      <DropdownMenuItem
+                        key={value}
+                        onClick={() => setRoomFilter({ state: value, page: 1 })}
+                      >
+                        {label}
+                        {roomState === value ? " ✓" : ""}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })
+                      }
+                    >
+                      {sortStartAt === "asc" ? "Sắp xếp: mới nhất trước" : "Sắp xếp: sớm nhất trước"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -991,7 +1036,9 @@ function MeetingPage() {
             <div className="border-t border-border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Sắp diễn ra</h3>
-                <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Tất cả</button>
+                <Link to="/calendar" className="text-xs text-primary hover:underline">
+                  Tất cả
+                </Link>
               </div>
               <div className="space-y-2">
                 {MEETINGS.filter((m) => m.status === "upcoming")
