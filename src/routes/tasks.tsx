@@ -126,6 +126,7 @@ function TasksPage() {
   const [wsId, setWsId] = useState<string | undefined>(undefined);
   // Ưu tiên workspace do dashboard truyền sang để số liệu khớp với thẻ thống kê.
   const activeWs = wsId ?? urlWs ?? workspaces.data?.[0]?.id;
+  const activeWsName = (workspaces.data ?? []).find((w) => w.id === activeWs)?.name ?? "";
 
   const tasksQuery = useQuery({
     queryKey: ["tasks", activeWs],
