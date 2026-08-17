@@ -67,7 +67,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const features = [
     { icon: Video, title: t("land.feat.meet.t"), desc: t("land.feat.meet.d") },
     { icon: FileText, title: t("land.feat.docs.t"), desc: t("land.feat.docs.d") },
