@@ -270,7 +270,7 @@ function Landing() {
           </div>
 
           <div className="mt-12 space-y-16">
-            <div className="grid items-center gap-8 lg:grid-cols-2">
+            <div className="grid items-center gap-8 md:grid-cols-2">
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
                   <Video className="h-3.5 w-3.5" /> {t("land.preview.meet.tag")}
@@ -288,8 +288,8 @@ function Landing() {
               </div>
             </div>
 
-            <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 lg:order-first">
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 md:order-first">
                 <img
                   src={assetUrl(shotKnowledge)}
                   alt={t("land.preview.kb.tag")}
@@ -297,7 +297,7 @@ function Landing() {
                   loading="lazy"
                 />
               </div>
-              <div className="lg:order-last">
+              <div className="md:order-last">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-300">
                   <BookOpen className="h-3.5 w-3.5" /> {t("land.preview.kb.tag")}
                 </span>
@@ -306,7 +306,7 @@ function Landing() {
               </div>
             </div>
 
-            <div className="grid items-center gap-8 lg:grid-cols-2">
+            <div className="grid items-center gap-8 md:grid-cols-2">
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300">
                   <KanbanSquare className="h-3.5 w-3.5" /> {t("land.preview.tasks.tag")}
@@ -324,8 +324,8 @@ function Landing() {
               </div>
             </div>
 
-            <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 lg:order-first">
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 md:order-first">
                 <img
                   src={assetUrl(shotEmail)}
                   alt={t("land.preview.email.tag")}
@@ -333,7 +333,7 @@ function Landing() {
                   loading="lazy"
                 />
               </div>
-              <div className="lg:order-last">
+              <div className="md:order-last">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-300">
                   <Mail className="h-3.5 w-3.5" /> {t("land.preview.email.tag")}
                 </span>
@@ -629,7 +629,7 @@ function Landing() {
             <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.case.sub")}</p>
           </div>
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {([
               {
                 name: "land.case.c1.name",
