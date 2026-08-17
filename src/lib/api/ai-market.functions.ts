@@ -67,6 +67,45 @@ async function recordEvent(
 
 /* ------------------------------ Chợ ứng viên ------------------------------ */
 
+// Thống kê thực thi theo workflow agent trong tenant: số run thành công, số đề xuất, số được duyệt.
+async function loadTenantAgentStats(context: any, tenantId: string, workflowAgentIds: string[]) {
+  const map = new Map<string, { completed: number; proposals: number; approved: number }>();
+  if (!workflowAgentIds.length) return map;
+
+  const { data: runs } = await context.supabase
+    .from("workflow_agent_runs")
+    .select("agent_id, proposal_id, status")
+    .eq("tenant_id", tenantId)
+    .in("agent_id", workflowAgentIds)
+    .limit(2000);
+
+  const proposalIds = (runs ?? [])
+    .map((r: any) => r.proposal_id)
+    .filter((v: string | null): v is string => !!v);
+  const approvedIds = new Set<string>();
+  if (proposalIds.length) {
+    const { data: proposals } = await context.supabase
+      .from("ai_action_proposals")
+      .select("id, status")
+      .eq("tenant_id", tenantId)
+      .in("id", proposalIds);
+    for (const p of proposals ?? []) {
+      if (p.status === "EXECUTED" || p.status === "CONFIRMED") approvedIds.add(p.id as string);
+    }
+  }
+  for (const r of runs ?? []) {
+    const key = r.agent_id as string;
+    const cur = map.get(key) ?? { completed: 0, proposals: 0, approved: 0 };
+    if (r.status === "succeeded" || r.status === "SUCCEEDED") cur.completed += 1;
+    if (r.proposal_id) {
+      cur.proposals += 1;
+      if (approvedIds.has(r.proposal_id)) cur.approved += 1;
+    }
+    map.set(key, cur);
+  }
+  return map;
+}
+
 // Tự động kết thúc các hợp đồng thử việc đã hết hạn (14 ngày) hoặc không có hợp đồng thử việc hợp lệ.
 async function sweepExpiredTrials(context: any, tenantId: string) {
   const now = new Date();
@@ -323,7 +362,26 @@ export const listAiEmployments = createServerFn({ method: "GET" })
       .not("status", "in", "(TERMINATED,REJECTED)")
       .order("created_at", { ascending: false });
     if (error) throw fail("AI_MARKET_LIST_FAILED", error.message);
-    return rows ?? [];
+
+    // KPI khách quan cho nhân sự đã tuyển: tỉ lệ đề xuất được duyệt + khối lượng việc hoàn thành.
+    const workflowAgentIds = (rows ?? [])
+      .map((r: any) => r.workflow_agent_id)
+      .filter((v: string | null): v is string => !!v);
+    const stats = await loadTenantAgentStats(context, tenantId, workflowAgentIds);
+
+    const withKpi = (rows ?? []).map((r: any) => {
+      const s = r.workflow_agent_id ? stats.get(r.workflow_agent_id) : undefined;
+      const kpi = computeAiKpi({
+        marketCompleted: Number(r.agent?.completed_tasks) || 0,
+        tenantCompleted: s?.completed ?? 0,
+        tenantProposals: s?.proposals ?? 0,
+        tenantApproved: s?.approved ?? 0,
+      });
+      return { ...r, kpi };
+    });
+
+    withKpi.sort((a: any, b: any) => b.kpi.score - a.kpi.score);
+    return withKpi.map((r: any, i: number) => ({ ...r, rank: i + 1 }));
   });
 
 /* -------------------------------- Phỏng vấn -------------------------------- */

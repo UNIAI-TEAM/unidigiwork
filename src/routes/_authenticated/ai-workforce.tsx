@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listAiEmployments } from "@/lib/api/ai-market.functions";
 import { AI_EMPLOYMENT_STATUS_LABELS, formatMoney } from "@/domain/ai-market/contracts";
+import { formatApprovalRate } from "@/domain/ai-market/kpi";
 import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
 import { Badge } from "@/components/ui/badge";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
@@ -179,13 +180,23 @@ function AiContractsTab() {
       {data.map((e: any) => (
         <li key={e.id} className="rounded-xl border border-border bg-surface p-4">
           <Link to="/ai-market/$id" params={{ id: e.market_agent_id }} className="flex flex-wrap items-center gap-3">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">
+              {e.rank}
+            </span>
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
               <Bot className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">{e.agent?.name ?? "Nhân sự AI"}</span>
               <span className="block truncate text-xs text-muted-foreground">{e.agent?.title}</span>
+              <span className="mt-1 block truncate text-xs text-muted-foreground">
+                {e.kpi?.proposals ?? 0} đề xuất · duyệt {formatApprovalRate(e.kpi?.approvalRate ?? null)} ·{" "}
+                {e.kpi?.completed ?? 0} việc hoàn thành
+              </span>
             </span>
+            <Badge variant="outline" className="font-semibold">
+              KPI {e.kpi?.score ?? 0}
+            </Badge>
             <Badge variant="secondary">{AI_EMPLOYMENT_STATUS_LABELS[e.status as keyof typeof AI_EMPLOYMENT_STATUS_LABELS] ?? e.status}</Badge>
             <span className="text-sm font-medium">
               {formatMoney(Number(e.salary_amount ?? 0), e.currency)}/tháng
