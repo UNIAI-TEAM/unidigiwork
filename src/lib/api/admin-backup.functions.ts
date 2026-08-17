@@ -16,7 +16,8 @@ export const AI_BACKUP_TABLES = [
 
 export type AiBackupTable = (typeof AI_BACKUP_TABLES)[number];
 
-type Row = Record<string, unknown>;
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+type Row = Record<string, JsonValue>;
 
 async function assertAdmin(ctx: { supabase: unknown; userId: string }) {
   const sb = ctx.supabase as {
