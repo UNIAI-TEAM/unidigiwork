@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAdminRead, assertAdminWrite, resolveAdminAccess } from "./admin-access.server";
 
 /** Check whether current user has admin role. Bootstraps first user as admin. */
 export const getMyIsAdmin = createServerFn({ method: "GET" })
@@ -32,21 +33,46 @@ export const getMyIsAdmin = createServerFn({ method: "GET" })
     return { isAdmin: false, bootstrapped: false };
   });
 
-async function assertAdmin(ctx: { supabase: ReturnType<typeof Object.assign>; userId: string }) {
-  const { data } = await (ctx.supabase as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown }> } } } } })
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", ctx.userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (!data) throw new Error("Forbidden: admin role required");
+/** Quyền chi tiết của người dùng hiện tại trên màn hình Quản trị. */
+export const getMyAdminAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const access = await resolveAdminAccess(context.supabase, context.userId);
+    if (access.canRead) return { ...access, bootstrapped: false };
+
+    // Bootstrap: chưa có admin nào thì cấp cho người dùng hiện tại.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error } = await supabaseAdmin
+      .from("user_roles")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "admin");
+    if (error) throw new Error(error.message);
+    if ((count ?? 0) === 0) {
+      const { error: iErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: context.userId, role: "admin" });
+      if (iErr) throw new Error(iErr.message);
+      return {
+        isAdmin: true,
+        isModerator: false,
+        canRead: true,
+        canWrite: true,
+        level: "write" as const,
+        bootstrapped: true,
+      };
+    }
+    return { ...access, bootstrapped: false };
+  });
+
+async function assertAdmin(ctx: { supabase: unknown; userId: string }) {
+  await assertAdminWrite(ctx);
 }
 
 /** List all users with profiles + roles. Admin only. */
 export const listAllUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminRead(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: authList, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
     if (error) throw new Error(error.message);
@@ -121,6 +147,7 @@ export const revokeUserRole = createServerFn({ method: "POST" })
 export const listAdminRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertAdminRead(context as never);
     const { data, error } = await context.supabase
       .from("admin_rules")
       .select("*")
@@ -194,7 +221,7 @@ export const deleteAdminRule = createServerFn({ method: "POST" })
 export const getAdminStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminRead(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [users, workspaces, docs, threads, rules, notifs] = await Promise.all([
       supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }),
