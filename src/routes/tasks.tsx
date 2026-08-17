@@ -1211,7 +1211,21 @@ function MyTasks({ tasks, onViewAll }: { tasks: Task[]; onViewAll: () => void })
   );
 }
 
-function CopilotPanel() {
+function CopilotPanel({
+  onGantt,
+  onResource,
+  onExport,
+  onImport,
+  onNewTask,
+  onViewActivity,
+}: {
+  onGantt: () => void;
+  onResource: () => void;
+  onExport: () => void;
+  onImport: () => void;
+  onNewTask: () => void;
+  onViewActivity: () => void;
+}) {
   const { t } = useI18n();
   const risks = [
     "API Gateway có thể trễ 2 ngày",
@@ -1231,7 +1245,11 @@ function CopilotPanel() {
         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
           BETA
         </span>
-        <button onClick={() => notifyComingSoon()} className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2">
+        <button
+          onClick={onNewTask}
+          aria-label="Tạo công việc mới"
+          className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"
+        >
           <Plus className="h-4 w-4" />
         </button>
       </div>
@@ -1277,7 +1295,9 @@ function CopilotPanel() {
       <section className="border-t border-border px-5 py-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-xs font-semibold">{t("tasks.activity")}</h3>
-          <button onClick={() => notifyComingSoon()} className="text-[11px] text-primary hover:underline">{t("tasks.viewall")}</button>
+          <button onClick={onViewActivity} className="text-[11px] text-primary hover:underline">
+            {t("tasks.viewall")}
+          </button>
         </div>
         <div className="space-y-3 text-xs">
           <Activity
@@ -1307,10 +1327,10 @@ function CopilotPanel() {
       <section className="border-t border-border px-5 py-4">
         <h3 className="mb-3 text-xs font-semibold">{t("tasks.quick")}</h3>
         <div className="grid grid-cols-4 gap-2">
-          <QuickAction icon={BarChart3} label={t("tasks.quick.gantt")} />
-          <QuickAction icon={UsersIcon} label={t("tasks.quick.resource")} />
-          <QuickAction icon={Upload} label={t("tasks.quick.import")} />
-          <QuickAction icon={Download} label={t("tasks.quick.export")} />
+          <QuickAction icon={BarChart3} label={t("tasks.quick.gantt")} onClick={onGantt} />
+          <QuickAction icon={UsersIcon} label={t("tasks.quick.resource")} onClick={onResource} />
+          <QuickAction icon={Upload} label={t("tasks.quick.import")} onClick={onImport} />
+          <QuickAction icon={Download} label={t("tasks.quick.export")} onClick={onExport} />
         </div>
       </section>
 
@@ -1360,9 +1380,17 @@ function Activity({
   );
 }
 
-function QuickAction({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function QuickAction({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
+    <button onClick={onClick} className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
       <Icon className="h-4 w-4" />
       <span className="text-center leading-tight">{label}</span>
     </button>
