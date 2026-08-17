@@ -67,41 +67,23 @@ async function recordEvent(
 
 /* ------------------------------ Chợ ứng viên ------------------------------ */
 
-// Thống kê thực thi theo workflow agent trong tenant: số run thành công, số đề xuất, số được duyệt.
+// Thống kê thực thi đọc từ bảng thật public.ai_agent_performance (trigger tự cập nhật).
 async function loadTenantAgentStats(context: any, tenantId: string, workflowAgentIds: string[]) {
   const map = new Map<string, { completed: number; proposals: number; approved: number }>();
   if (!workflowAgentIds.length) return map;
 
-  const { data: runs } = await context.supabase
-    .from("workflow_agent_runs")
-    .select("agent_id, proposal_id, status")
+  const { data: perf } = await context.supabase
+    .from("ai_agent_performance")
+    .select("agent_id, proposals_sent, proposals_approved, tasks_completed")
     .eq("tenant_id", tenantId)
-    .in("agent_id", workflowAgentIds)
-    .limit(2000);
+    .in("agent_id", workflowAgentIds);
 
-  const proposalIds = (runs ?? [])
-    .map((r: any) => r.proposal_id)
-    .filter((v: string | null): v is string => !!v);
-  const approvedIds = new Set<string>();
-  if (proposalIds.length) {
-    const { data: proposals } = await context.supabase
-      .from("ai_action_proposals")
-      .select("id, status")
-      .eq("tenant_id", tenantId)
-      .in("id", proposalIds);
-    for (const p of proposals ?? []) {
-      if (p.status === "EXECUTED" || p.status === "CONFIRMED") approvedIds.add(p.id as string);
-    }
-  }
-  for (const r of runs ?? []) {
-    const key = r.agent_id as string;
-    const cur = map.get(key) ?? { completed: 0, proposals: 0, approved: 0 };
-    if (r.status === "succeeded" || r.status === "SUCCEEDED") cur.completed += 1;
-    if (r.proposal_id) {
-      cur.proposals += 1;
-      if (approvedIds.has(r.proposal_id)) cur.approved += 1;
-    }
-    map.set(key, cur);
+  for (const p of perf ?? []) {
+    map.set(p.agent_id as string, {
+      completed: Number(p.tasks_completed) || 0,
+      proposals: Number(p.proposals_sent) || 0,
+      approved: Number(p.proposals_approved) || 0,
+    });
   }
   return map;
 }
@@ -194,39 +176,7 @@ export const listMarketAgents = createServerFn({ method: "GET" })
     const workflowAgentIds = (employments ?? [])
       .map((e: any) => e.workflow_agent_id)
       .filter((v: string | null): v is string => !!v);
-    const statsByWorkflowAgent = new Map<string, { completed: number; proposals: number; approved: number }>();
-    if (workflowAgentIds.length) {
-      const { data: runs } = await context.supabase
-        .from("workflow_agent_runs")
-        .select("agent_id, proposal_id, status")
-        .eq("tenant_id", tenantId)
-        .in("agent_id", workflowAgentIds)
-        .limit(2000);
-      const proposalIds = (runs ?? [])
-        .map((r: any) => r.proposal_id)
-        .filter((v: string | null): v is string => !!v);
-      const approvedIds = new Set<string>();
-      if (proposalIds.length) {
-        const { data: proposals } = await context.supabase
-          .from("ai_action_proposals")
-          .select("id, status")
-          .eq("tenant_id", tenantId)
-          .in("id", proposalIds);
-        for (const p of proposals ?? []) {
-          if (p.status === "EXECUTED" || p.status === "CONFIRMED") approvedIds.add(p.id as string);
-        }
-      }
-      for (const r of runs ?? []) {
-        const key = r.agent_id as string;
-        const cur = statsByWorkflowAgent.get(key) ?? { completed: 0, proposals: 0, approved: 0 };
-        if (r.status === "succeeded" || r.status === "SUCCEEDED") cur.completed += 1;
-        if (r.proposal_id) {
-          cur.proposals += 1;
-          if (approvedIds.has(r.proposal_id)) cur.approved += 1;
-        }
-        statsByWorkflowAgent.set(key, cur);
-      }
-    }
+    const statsByWorkflowAgent = await loadTenantAgentStats(context, tenantId, workflowAgentIds);
 
     const withKpi = (rows ?? []).map((r: any) => {
       const employment = byAgent.get(r.id) ?? null;
@@ -282,30 +232,18 @@ export const getMarketAgent = createServerFn({ method: "GET" })
     // KPI thật của ứng viên trong chính tenant này (nếu đã từng làm việc).
     let tenantStats = { proposals: 0, approved: 0, runs: 0, completed: 0 };
     if (employment?.workflow_agent_id) {
-      const { data: runs } = await context.supabase
-        .from("workflow_agent_runs")
-        .select("id, proposal_id, status")
+      const { data: perf } = await context.supabase
+        .from("ai_agent_performance")
+        .select("proposals_sent, proposals_approved, tasks_completed, runs_total")
         .eq("tenant_id", tenantId)
         .eq("agent_id", employment.workflow_agent_id)
-        .limit(500);
-      const proposalIds = (runs ?? [])
-        .map((r: any) => r.proposal_id)
-        .filter((v: string | null): v is string => !!v);
-      let approved = 0;
-      if (proposalIds.length) {
-        const { data: proposals } = await context.supabase
-          .from("ai_action_proposals")
-          .select("status")
-          .eq("tenant_id", tenantId)
-          .in("id", proposalIds);
-        approved = (proposals ?? []).filter(
-          (p: any) => p.status === "EXECUTED" || p.status === "CONFIRMED",
-        ).length;
-      }
-      const completed = (runs ?? []).filter(
-        (r: any) => r.status === "succeeded" || r.status === "SUCCEEDED",
-      ).length;
-      tenantStats = { runs: (runs ?? []).length, proposals: proposalIds.length, approved, completed };
+        .maybeSingle();
+      tenantStats = {
+        runs: Number(perf?.runs_total) || 0,
+        proposals: Number(perf?.proposals_sent) || 0,
+        approved: Number(perf?.proposals_approved) || 0,
+        completed: Number(perf?.tasks_completed) || 0,
+      };
     }
 
     const kpi = computeAiKpi({
