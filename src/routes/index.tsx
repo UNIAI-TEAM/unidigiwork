@@ -37,6 +37,7 @@ import { z } from "zod";
 import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { assetUrl } from "@/lib/asset-url";
 import shotMeeting from "@/assets/shot-meeting.png.asset.json";
 import shotKnowledge from "@/assets/shot-knowledge.png.asset.json";
 import shotTasks from "@/assets/shot-tasks.png.asset.json";
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/")({
         content: "Tất cả trong một nơi làm việc số: meeting, documents, knowledge, AI copilot.",
       },
       { property: "og:url", content: "https://unidigiwork.lovable.app/" },
-      { property: "og:image", content: shotKnowledge.url },
+      { property: "og:image", content: assetUrl(shotKnowledge) },
     ],
     links: [{ rel: "canonical", href: "https://unidigiwork.lovable.app/" }],
   }),
@@ -277,7 +278,7 @@ function Landing() {
               </div>
               <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10">
                 <img
-                  src={shotMeeting.url}
+                  src={assetUrl(shotMeeting)}
                   alt={t("land.preview.meet.h")}
                   className="w-full"
                   loading="lazy"
@@ -288,7 +289,7 @@ function Landing() {
             <div className="grid items-center gap-8 lg:grid-cols-2">
               <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 lg:order-first">
                 <img
-                  src={shotKnowledge.url}
+                  src={assetUrl(shotKnowledge)}
                   alt={t("land.preview.kb.tag")}
                   className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                   loading="lazy"
@@ -313,7 +314,7 @@ function Landing() {
               </div>
               <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20">
                 <img
-                  src={shotTasks.url}
+                  src={assetUrl(shotTasks)}
                   alt={t("land.preview.tasks.tag")}
                   className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                   loading="lazy"
@@ -324,7 +325,7 @@ function Landing() {
             <div className="grid items-center gap-8 lg:grid-cols-2">
               <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 lg:order-first">
                 <img
-                  src={shotEmail.url}
+                  src={assetUrl(shotEmail)}
                   alt={t("land.preview.email.tag")}
                   className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                   loading="lazy"
