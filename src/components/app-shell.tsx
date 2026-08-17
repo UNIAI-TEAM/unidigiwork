@@ -408,7 +408,7 @@ export function AppSidebar({
                 <span>{t("nav.workspaces")}</span>
                 <button
                   className="rounded p-0.5 hover:bg-surface-2"
-                  aria-label="Tạo workspace mới"
+                  aria-label={t("sh.ws.addAria")}
                   onClick={() => setWsOpen(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -432,7 +432,7 @@ export function AppSidebar({
               <Cloud className="h-5 w-5 text-sky-400" />
               <div>
                 <div className="font-medium">Nguyễn Văn A</div>
-                <div className="text-[11px] text-muted-foreground">28°C · Hà Nội</div>
+                <div className="text-[11px] text-muted-foreground">{t("sh.user.weather")}</div>
               </div>
             </div>
           </>
@@ -464,18 +464,18 @@ export function AppSidebar({
                   "flex items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground",
                   collapsed ? "w-full justify-center px-2 py-2" : "w-full px-3 py-2",
                 )}
-                aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+                aria-label={collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
               >
                 {collapsed ? (
                   <PanelLeft className="h-[18px] w-[18px]" />
                 ) : (
                   <PanelLeftClose className="h-[18px] w-[18px]" />
                 )}
-                {!collapsed && <span className="text-left">Thu gọn menu</span>}
+                {!collapsed && <span className="text-left">{t("sh.menu.collapse")}</span>}
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              {collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+              {collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
             </TooltipContent>
           </Tooltip>
         </div>
