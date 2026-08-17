@@ -1607,9 +1607,21 @@ function EmailHubPage() {
   );
 }
 
-function ToolBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function ToolBtn({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick?: () => void;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button
+      onClick={onClick}
+      title={label}
+      className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+    >
       <Icon className="h-4 w-4" />
       <span>{label}</span>
     </button>
