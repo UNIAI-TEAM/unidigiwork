@@ -731,13 +731,27 @@ function TasksPage() {
 
             {/* Bottom panels */}
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <ProjectOverview counts={counts} total={total} />
-              <BurndownChart />
-              <MyTasks tasks={tasks} />
+              <ProjectOverview
+                counts={counts}
+                total={total}
+                rangeDays={rangeDays}
+                onRangeChange={(d) =>
+                  navigateTasks({ to: "/tasks", search: { ...tasksSearch, range: d } })
+                }
+              />
+              <BurndownChart tasks={allTasks} />
+              <MyTasks tasks={tasks} onViewAll={() => setTab("list")} />
             </div>
           </main>
 
-          <CopilotPanel />
+          <CopilotPanel
+            onGantt={() => setTab("timeline")}
+            onResource={() => navigateTasks({ to: "/people" })}
+            onExport={() => exportTasksCsv(tasks)}
+            onImport={() => navigateTasks({ to: "/documents" })}
+            onNewTask={() => setTab("board")}
+            onViewActivity={() => navigateTasks({ to: "/workspace/audit" })}
+          />
         </div>
       </div>
     </div>
