@@ -24,6 +24,7 @@ import {
   type AiEmploymentStatus,
 } from "@/domain/ai-market/contracts";
 import { AI_SKILL_KIND_LABELS, AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
+import { formatApprovalRate } from "@/domain/ai-market/kpi";
 
 const TERMS = [0, 6, 12, 24];
 
@@ -61,6 +62,12 @@ export function AiMarketProfile({
 
   const agent = data?.agent;
   const employment = data?.employment as any | null;
+  const kpi = (data as any)?.kpi as
+    | { score: number; approvalRate: number | null; completed: number; hasEvidence: boolean }
+    | undefined;
+  const stats = ((data as any)?.tenantStats ?? { proposals: 0, approved: 0, runs: 0, completed: 0 }) as {
+    proposals: number; approved: number; runs: number; completed: number;
+  };
   const status = (employment?.status ?? null) as AiEmploymentStatus | null;
 
   // Điền sẵn mức lương đề nghị theo hợp đồng hiện tại hoặc mức sàn của ứng viên,
