@@ -19,7 +19,7 @@ import {
   type AiEmploymentStatus,
 } from "@/domain/ai-market/contracts";
 import { AI_SKILL_MAP } from "@/domain/workflow-agents/skills";
-import { formatApprovalRate } from "@/domain/ai-market/kpi";
+import { formatApproved, formatKpiScore } from "@/domain/ai-market/kpi";
 
 export const Route = createFileRoute("/_authenticated/ai-market/search")({
   head: () => ({
@@ -107,7 +107,7 @@ function AiMarketSearchPage() {
           if (Number(a.rating) < minRating) return false;
           if ((a.kpi?.completed ?? Number(a.completed_tasks)) < minTasks) return false;
           if (minKpi > 0 && (a.kpi?.score ?? 0) < minKpi) return false;
-          if (minApproval > 0 && (a.kpi?.approvalRate ?? -1) < minApproval) return false;
+          if (minApproval > 0 && Math.round((a.kpi?.approvalRate ?? -10) / 10) < minApproval) return false;
           if (maxSalary !== null && Number(a.salary_min) > maxSalary) return false;
           const status = a.employment?.status ?? null;
           if (contract === "none" && status) return false;
@@ -240,29 +240,29 @@ function AiMarketSearchPage() {
 
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">
-                    KPI — điểm tối thiểu: {minKpi}
+                    KPI — điểm tối thiểu: {minKpi}/10
                   </Label>
                   <Slider
                     value={[minKpi]}
                     min={0}
-                    max={100}
-                    step={5}
+                    max={10}
+                    step={1}
                     onValueChange={(v) => setMinKpi(v[0] ?? 0)}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Điểm KPI = 60% tỉ lệ đề xuất được duyệt + 40% khối lượng việc hoàn thành.
+                    Điểm KPI thang 1–10, tính từ mức đề xuất được duyệt và khối lượng việc hoàn thành.
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">
-                    KPI — tỉ lệ được duyệt tối thiểu: {minApproval}%
+                    Mức duyệt tối thiểu: {minApproval}/10
                   </Label>
                   <Slider
                     value={[minApproval]}
                     min={0}
-                    max={100}
-                    step={5}
+                    max={10}
+                    step={1}
                     onValueChange={(v) => setMinApproval(v[0] ?? 0)}
                   />
                   {minApproval > 0 && (
@@ -422,10 +422,10 @@ function AiMarketSearchPage() {
                             <p className="truncate text-xs text-muted-foreground">{a.title}</p>
                             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                               <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
-                                KPI {a.kpi?.score ?? 0}/100
+                                KPI {formatKpiScore(a.kpi?.score)}
                               </span>
                               <span>{(a.kpi?.completed ?? Number(a.completed_tasks)).toLocaleString("vi-VN")} việc hoàn thành</span>
-                              <span>· Duyệt {formatApprovalRate(a.kpi?.approvalRate ?? null)}</span>
+                              <span>· Duyệt {formatApproved(a.kpi?.approved ?? 0, a.kpi?.proposals ?? 0)}</span>
                               <span className="flex items-center gap-1">
                                 · <Star className="h-3 w-3 fill-warning text-warning" /> {Number(a.rating).toFixed(1)}
                               </span>
