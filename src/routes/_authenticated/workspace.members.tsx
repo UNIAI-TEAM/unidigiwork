@@ -32,9 +32,8 @@ export const Route = createFileRoute("/_authenticated/workspace/members")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { ws?: string } =>
+    typeof search["ws"] === "string" ? { ws: search["ws"] as string } : {},
   component: WorkspaceMembersPage,
 });
 
