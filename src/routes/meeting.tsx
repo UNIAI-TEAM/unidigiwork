@@ -11,8 +11,14 @@ import {
   listMyMeetingRooms,
   listMyWorkspaces,
   listMeetingParticipants,
+  redeemMeetingInviteLink,
 } from "@/lib/api/meeting-rooms.functions";
-import { cancelMeeting, listMeetings, updateMeeting } from "@/lib/api/meetings.functions";
+import {
+  cancelMeeting,
+  listMeetings,
+  scheduleMeeting,
+  updateMeeting,
+} from "@/lib/api/meetings.functions";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +28,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -387,6 +399,17 @@ function MeetingPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
 
+  // Lên lịch họp thật
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [schTitle, setSchTitle] = useState("");
+  const [schStart, setSchStart] = useState("");
+  const [schEnd, setSchEnd] = useState("");
+  const [schAgenda, setSchAgenda] = useState("");
+
+  // Tham gia bằng mã mời
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+
   const setRoomFilter = (next: {
     ws?: string;
     q?: string;
@@ -525,6 +548,52 @@ function MeetingPage() {
     onError: () => toast.error("Không cập nhật được cuộc họp. Kiểm tra quyền của bạn."),
   });
 
+  const scheduleMutation = useMutation({
+    mutationFn: () =>
+      scheduleMeeting({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          workspaceId: activeWs as string,
+          title: schTitle.trim(),
+          startAt: new Date(schStart).toISOString(),
+          endAt: new Date(schEnd).toISOString(),
+          ...(schAgenda.trim() ? { agenda: schAgenda.trim() } : {}),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+        },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
+      setScheduleOpen(false);
+      setSchTitle("");
+      setSchStart("");
+      setSchEnd("");
+      setSchAgenda("");
+      toast.success("Đã lên lịch cuộc họp.");
+    },
+    onError: () => toast.error("Không lên lịch được. Kiểm tra quyền và thời gian hợp lệ."),
+  });
+
+  const joinByCode = useMutation({
+    mutationFn: () => redeemMeetingInviteLink({ data: { token: joinCode.trim() } }),
+    onSuccess: (res) => {
+      if ((res.status === "joined" || res.status === "already") && res.meetingId) {
+        setJoinOpen(false);
+        setJoinCode("");
+        void navigate({ to: "/meeting/$id", params: { id: res.meetingId } });
+        return;
+      }
+      const msg: Record<string, string> = {
+        expired: "Mã mời đã hết hạn.",
+        exhausted: "Mã mời đã hết lượt sử dụng.",
+        revoked: "Mã mời đã bị thu hồi.",
+        invalid: "Mã mời không hợp lệ.",
+      };
+      toast.error(msg[res.status] ?? "Không tham gia được bằng mã này.");
+    },
+    onError: () => toast.error("Không tham gia được. Kiểm tra lại mã mời."),
+  });
+
   const cancelRoomMutation = useMutation({
     mutationFn: () =>
       cancelMeeting({
@@ -601,10 +670,23 @@ function MeetingPage() {
                     )}
                     Bắt đầu họp ngay
                   </button>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
+                  <button
+                    onClick={() => {
+                      const now = new Date();
+                      const start = new Date(now.getTime() + 30 * 60000);
+                      const end = new Date(start.getTime() + 30 * 60000);
+                      setSchStart(toLocalInput(start));
+                      setSchEnd(toLocalInput(end));
+                      setScheduleOpen(true);
+                    }}
+                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
+                  >
                     <Calendar className="h-4 w-4" /> Lên lịch
                   </button>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40">
+                  <button
+                    onClick={() => setJoinOpen(true)}
+                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
+                  >
                     <Link2 className="h-4 w-4" /> Tham gia bằng mã
                   </button>
                   <Link
@@ -897,9 +979,41 @@ function MeetingPage() {
                     className="w-56 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
-                <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border bg-surface p-2 text-muted-foreground hover:text-foreground">
-                  <Filter className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Lọc trạng thái phòng họp"
+                      className="rounded-lg border border-border bg-surface p-2 text-muted-foreground hover:text-foreground"
+                    >
+                      <Filter className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {(
+                      [
+                        ["all", "Tất cả"],
+                        ["live", "Đang diễn ra"],
+                        ["upcoming", "Sắp diễn ra"],
+                        ["ended", "Đã kết thúc"],
+                      ] as [RoomFilterState, string][]
+                    ).map(([value, label]) => (
+                      <DropdownMenuItem
+                        key={value}
+                        onClick={() => setRoomFilter({ state: value, page: 1 })}
+                      >
+                        {label}
+                        {roomState === value ? " ✓" : ""}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })
+                      }
+                    >
+                      {sortStartAt === "asc" ? "Sắp xếp: mới nhất trước" : "Sắp xếp: sớm nhất trước"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -928,7 +1042,9 @@ function MeetingPage() {
             <div className="border-t border-border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Sắp diễn ra</h3>
-                <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Tất cả</button>
+                <Link to="/calendar" className="text-xs text-primary hover:underline">
+                  Tất cả
+                </Link>
               </div>
               <div className="space-y-2">
                 {MEETINGS.filter((m) => m.status === "upcoming")
@@ -1016,6 +1132,76 @@ function MeetingPage() {
           onSubmit={(v) => createRoom.mutate(v)}
         />
       ) : null}
+
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Lên lịch cuộc họp</DialogTitle>
+            <DialogDescription>Tạo cuộc họp có thời gian cụ thể trong workspace hiện tại.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="sch-title">Tiêu đề</Label>
+              <Input id="sch-title" value={schTitle} onChange={(e) => setSchTitle(e.target.value)} placeholder="Họp review sprint" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="sch-start">Bắt đầu</Label>
+                <Input id="sch-start" type="datetime-local" value={schStart} onChange={(e) => setSchStart(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sch-end">Kết thúc</Label>
+                <Input id="sch-end" type="datetime-local" value={schEnd} onChange={(e) => setSchEnd(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sch-agenda">Nội dung (tùy chọn)</Label>
+              <Input id="sch-agenda" value={schAgenda} onChange={(e) => setSchAgenda(e.target.value)} placeholder="Chương trình họp" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleOpen(false)}>Đóng</Button>
+            <Button
+              onClick={() => scheduleMutation.mutate()}
+              disabled={
+                scheduleMutation.isPending || !activeWs || !schTitle.trim() || !schStart || !schEnd
+              }
+            >
+              {scheduleMutation.isPending ? "Đang lưu…" : "Lên lịch"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Tham gia bằng mã</DialogTitle>
+            <DialogDescription>Nhập mã mời để vào phòng họp.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="join-code">Mã mời</Label>
+            <Input
+              id="join-code"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              placeholder="Dán mã mời tại đây"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && joinCode.trim().length >= 10) joinByCode.mutate();
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJoinOpen(false)}>Đóng</Button>
+            <Button
+              onClick={() => joinByCode.mutate()}
+              disabled={joinByCode.isPending || joinCode.trim().length < 10}
+            >
+              {joinByCode.isPending ? "Đang kiểm tra…" : "Tham gia"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editRoom} onOpenChange={(o) => !o && setEditRoom(null)}>
         <DialogContent className="sm:max-w-md">
