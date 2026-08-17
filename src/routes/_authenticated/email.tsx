@@ -853,9 +853,27 @@ function EmailHubPage() {
                 >
                   <FileEdit className="h-4 w-4" /> Soạn email
                 </button>
-                <button onClick={() => notifyComingSoon()} className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90">
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Tùy chọn soạn email"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => openCompose("", "")}>
+                      Soạn email mới
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => changeMailbox("drafts")}>
+                      Mở bản nháp
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setAiOpen(true)}>
+                      Soạn với AI
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <button
                 onClick={() => setLabelsOpen(true)}
