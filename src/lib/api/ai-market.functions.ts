@@ -13,6 +13,7 @@ import {
 } from "@/domain/ai-market/contracts";
 import { deriveAllowedFromSkills, ensureDefaultSkill, normalizeSkills } from "@/domain/workflow-agents/skills";
 import { AI_WORKER_PROFILE_MAP } from "@/domain/ai-workforce/profiles";
+import { computeAiKpi } from "@/domain/ai-market/kpi";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
