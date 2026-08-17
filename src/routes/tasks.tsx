@@ -106,6 +106,31 @@ function fmtDate(v: string | null) {
   return new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 }
 
+// Xuất danh sách công việc đang hiển thị ra CSV (dữ liệu thật, không mock).
+function exportTasksCsv(rows: Task[]) {
+  if (!rows.length) {
+    toast.error("Không có công việc để xuất");
+    return;
+  }
+  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const header = ["id", "title", "status", "priority", "due_at", "tags", "updated_at"];
+  const csv = [
+    header.join(","),
+    ...rows.map((r) =>
+      [r.id, r.title, r.status, r.priority, r.due_at ?? "", (r.tags ?? []).join("|"), r.updated_at]
+        .map(esc)
+        .join(","),
+    ),
+  ].join("\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `tasks-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success(`Đã xuất ${rows.length} công việc`);
+}
+
 function TasksPage() {
   const [open, setOpen] = useSidebarState();
   const { t } = useI18n();
@@ -126,6 +151,7 @@ function TasksPage() {
   const [wsId, setWsId] = useState<string | undefined>(undefined);
   // Ưu tiên workspace do dashboard truyền sang để số liệu khớp với thẻ thống kê.
   const activeWs = wsId ?? urlWs ?? workspaces.data?.[0]?.id;
+  const activeWsName = (workspaces.data ?? []).find((w) => w.id === activeWs)?.name ?? "";
 
   const tasksQuery = useQuery({
     queryKey: ["tasks", activeWs],
@@ -291,13 +317,37 @@ function TasksPage() {
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
             {/* Project header row */}
             <div className="mb-5 flex flex-wrap items-center gap-3">
-              <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
-                  S
-                </span>
-                {t("tasks.project")}
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
+                    <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
+                      {(activeWsName || "S").slice(0, 1).toUpperCase()}
+                    </span>
+                    {activeWsName || t("tasks.project")}
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-60">
+                  {(workspaces.data ?? []).map((w) => (
+                    <DropdownMenuItem
+                      key={w.id}
+                      onSelect={() => {
+                        setWsId(w.id);
+                        navigateTasks({
+                          to: "/tasks",
+                          search: { ...tasksSearch, ws: w.id },
+                        });
+                      }}
+                    >
+                      {w.name}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigateTasks({ to: "/workspace" })}>
+                    Quản lý workspace
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <nav className="flex items-center gap-5 text-sm">
                 {(
@@ -312,9 +362,33 @@ function TasksPage() {
                   </button>
                 ))}
               </nav>
-              <button onClick={() => notifyComingSoon()} className="ml-auto rounded-lg p-2 hover:bg-surface-2">
-                <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="ml-auto rounded-lg p-2 hover:bg-surface-2">
+                    <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      void queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] });
+                      toast.success("Đã làm mới danh sách công việc");
+                    }}
+                  >
+                    Làm mới dữ liệu
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => exportTasksCsv(tasks)}>
+                    Xuất CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigateTasks({ to: "/workspace/settings" })}>
+                    Cài đặt dự án
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigateTasks({ to: "/workspace/members" })}>
+                    Thành viên
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Title row */}
@@ -657,13 +731,27 @@ function TasksPage() {
 
             {/* Bottom panels */}
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <ProjectOverview counts={counts} total={total} />
-              <BurndownChart />
-              <MyTasks tasks={tasks} />
+              <ProjectOverview
+                counts={counts}
+                total={total}
+                rangeDays={rangeDays}
+                onRangeChange={(d) =>
+                  navigateTasks({ to: "/tasks", search: { ...tasksSearch, range: d } })
+                }
+              />
+              <BurndownChart tasks={allTasks} />
+              <MyTasks tasks={tasks} onViewAll={() => setTab("list")} />
             </div>
           </main>
 
-          <CopilotPanel />
+          <CopilotPanel
+            onGantt={() => setTab("timeline")}
+            onResource={() => navigateTasks({ to: "/people" })}
+            onExport={() => exportTasksCsv(tasks)}
+            onImport={() => navigateTasks({ to: "/documents" })}
+            onNewTask={() => setTab("board")}
+            onViewActivity={() => navigateTasks({ to: "/workspace/audit" })}
+          />
         </div>
       </div>
     </div>
@@ -928,9 +1016,13 @@ function TaskCard({
 function ProjectOverview({
   counts,
   total,
+  rangeDays,
+  onRangeChange,
 }: {
   counts: Record<Status, number>;
   total: number;
+  rangeDays?: number | undefined;
+  onRangeChange: (d: number | undefined) => void;
 }) {
   const { t } = useI18n();
   const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
@@ -959,12 +1051,23 @@ function ProjectOverview({
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("tasks.overview")}</h3>
-        <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
-          {t("tasks.sprint")} <ChevronDown className="h-3 w-3" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
+              {rangeDays ? `${rangeDays} ngày` : t("tasks.sprint")}{" "}
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => onRangeChange(undefined)}>Tất cả</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onRangeChange(7)}>7 ngày</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onRangeChange(30)}>30 ngày</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onRangeChange(90)}>90 ngày</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="mt-4 flex items-center gap-5">
-        <DonutChart />
+        <DonutChart segments={segs} total={total} />
         <div className="flex-1 space-y-2 text-xs">
           {segs.map((s) => (
             <div key={s.label} className="flex items-center gap-2">
@@ -981,32 +1084,60 @@ function ProjectOverview({
   );
 }
 
-function DonutChart() {
-  // simple conic-gradient donut
-  const style = {
-    background:
-      "conic-gradient(hsl(var(--success)) 0% 72%, hsl(var(--primary)) 72% 92%, hsl(var(--muted-foreground)) 92% 96%, hsl(var(--destructive)) 96% 100%)",
-  } as React.CSSProperties;
+function DonutChart({
+  segments,
+  total,
+}: {
+  segments: { pct: number; color: string }[];
+  total: number;
+}) {
   const { t } = useI18n();
+  // Donut dựng từ số liệu thật của workspace đang chọn.
+  const varOf: Record<string, string> = {
+    "bg-success": "hsl(var(--success))",
+    "bg-sky-500": "hsl(var(--primary))",
+    "bg-muted-foreground": "hsl(var(--muted-foreground))",
+    "bg-destructive": "hsl(var(--destructive))",
+  };
+  let acc = 0;
+  const stops = segments
+    .map((s) => {
+      const from = acc;
+      acc += s.pct;
+      return `${varOf[s.color] ?? "hsl(var(--muted))"} ${from}% ${acc}%`;
+    })
+    .concat(`hsl(var(--surface-2)) ${acc}% 100%`)
+    .join(", ");
+  const style = { background: `conic-gradient(${stops})` } as React.CSSProperties;
   return (
     <div className="relative h-28 w-28 shrink-0 rounded-full" style={style}>
       <div className="absolute inset-2 flex flex-col items-center justify-center rounded-full bg-surface">
-        <div className="text-lg font-bold">128</div>
+        <div className="text-lg font-bold tabular-nums">{total}</div>
         <div className="text-[10px] text-muted-foreground">{t("tasks.total")}</div>
       </div>
     </div>
   );
 }
 
-function BurndownChart() {
+function BurndownChart({ tasks }: { tasks: Task[] }) {
   const { t } = useI18n();
-  // SVG burndown
+  // SVG burndown dựng từ dữ liệu thật: 6 mốc theo 6 tuần gần nhất.
   const w = 320,
     h = 140,
     pad = 24;
-  const ideal = [100, 80, 60, 40, 20, 0];
-  const remaining = [100, 86, 72, 58, 40, 28];
-  const completed = [0, 14, 28, 42, 60, 72];
+  const steps = 6;
+  const totalCount = tasks.length || 1;
+  const now = Date.now();
+  const week = 7 * 86_400_000;
+  const ideal = Array.from({ length: steps }, (_, i) => 100 - (i * 100) / (steps - 1));
+  const completed = Array.from({ length: steps }, (_, i) => {
+    const cutoff = now - (steps - 1 - i) * week;
+    const done = tasks.filter(
+      (tk) => tk.status === "done" && new Date(tk.updated_at).getTime() <= cutoff,
+    ).length;
+    return Math.round((done / totalCount) * 100);
+  });
+  const remaining = completed.map((c) => 100 - c);
   const xs = (i: number) => pad + (i * (w - pad * 2)) / (ideal.length - 1);
   const ys = (v: number) => h - pad - (v / 100) * (h - pad * 2);
   const path = (vals: number[]) =>
@@ -1015,9 +1146,9 @@ function BurndownChart() {
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("tasks.burndown")}</h3>
-        <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:bg-surface-3">
-          Sprint 6 <ChevronDown className="h-3 w-3" />
-        </button>
+        <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
+          6 tuần gần nhất
+        </span>
       </div>
       <svg viewBox={`0 0 ${w} ${h}`} className="mt-3 h-36 w-full">
         <path
@@ -1045,7 +1176,7 @@ function BurndownChart() {
   );
 }
 
-function MyTasks({ tasks }: { tasks: Task[] }) {
+function MyTasks({ tasks, onViewAll }: { tasks: Task[]; onViewAll: () => void }) {
   const { t } = useI18n();
   const list = tasks.slice(0, 5);
   return (
@@ -1054,7 +1185,9 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
         <h3 className="text-sm font-semibold">
           {t("tasks.mytasks")} ({list.length})
         </h3>
-        <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">{t("tasks.viewall")}</button>
+        <button onClick={onViewAll} className="text-xs text-primary hover:underline">
+          {t("tasks.viewall")}
+        </button>
       </div>
       <div className="mt-2 divide-y divide-border">
         {list.map((tk) => (
@@ -1071,14 +1204,28 @@ function MyTasks({ tasks }: { tasks: Task[] }) {
           </div>
         ))}
       </div>
-      <button onClick={() => notifyComingSoon()} className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10">
+      <button onClick={onViewAll} className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10">
         {t("tasks.viewalltasks")}
       </button>
     </section>
   );
 }
 
-function CopilotPanel() {
+function CopilotPanel({
+  onGantt,
+  onResource,
+  onExport,
+  onImport,
+  onNewTask,
+  onViewActivity,
+}: {
+  onGantt: () => void;
+  onResource: () => void;
+  onExport: () => void;
+  onImport: () => void;
+  onNewTask: () => void;
+  onViewActivity: () => void;
+}) {
   const { t } = useI18n();
   const risks = [
     "API Gateway có thể trễ 2 ngày",
@@ -1098,7 +1245,11 @@ function CopilotPanel() {
         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
           BETA
         </span>
-        <button onClick={() => notifyComingSoon()} className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2">
+        <button
+          onClick={onNewTask}
+          aria-label="Tạo công việc mới"
+          className="ml-auto rounded p-1 text-muted-foreground hover:bg-surface-2"
+        >
           <Plus className="h-4 w-4" />
         </button>
       </div>
@@ -1144,7 +1295,9 @@ function CopilotPanel() {
       <section className="border-t border-border px-5 py-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-xs font-semibold">{t("tasks.activity")}</h3>
-          <button onClick={() => notifyComingSoon()} className="text-[11px] text-primary hover:underline">{t("tasks.viewall")}</button>
+          <button onClick={onViewActivity} className="text-[11px] text-primary hover:underline">
+            {t("tasks.viewall")}
+          </button>
         </div>
         <div className="space-y-3 text-xs">
           <Activity
@@ -1174,10 +1327,10 @@ function CopilotPanel() {
       <section className="border-t border-border px-5 py-4">
         <h3 className="mb-3 text-xs font-semibold">{t("tasks.quick")}</h3>
         <div className="grid grid-cols-4 gap-2">
-          <QuickAction icon={BarChart3} label={t("tasks.quick.gantt")} />
-          <QuickAction icon={UsersIcon} label={t("tasks.quick.resource")} />
-          <QuickAction icon={Upload} label={t("tasks.quick.import")} />
-          <QuickAction icon={Download} label={t("tasks.quick.export")} />
+          <QuickAction icon={BarChart3} label={t("tasks.quick.gantt")} onClick={onGantt} />
+          <QuickAction icon={UsersIcon} label={t("tasks.quick.resource")} onClick={onResource} />
+          <QuickAction icon={Upload} label={t("tasks.quick.import")} onClick={onImport} />
+          <QuickAction icon={Download} label={t("tasks.quick.export")} onClick={onExport} />
         </div>
       </section>
 
@@ -1227,9 +1380,17 @@ function Activity({
   );
 }
 
-function QuickAction({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function QuickAction({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
+    <button onClick={onClick} className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
       <Icon className="h-4 w-4" />
       <span className="text-center leading-tight">{label}</span>
     </button>

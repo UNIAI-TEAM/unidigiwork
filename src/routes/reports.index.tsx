@@ -35,7 +35,14 @@ import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functi
 import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
 import { Table2, RefreshCw } from "lucide-react";
-import { notifyComingSoon } from "@/lib/coming-soon";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
@@ -245,9 +252,32 @@ function ReportsPage() {
                   days={days}
                   t={t}
                 />
-                <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
-                  <Settings className="h-4 w-4" /> {t("rp.customize")}
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
+                      <Settings className="h-4 w-4" /> {t("rp.customize")}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuCheckboxItem
+                      checked={compare}
+                      onCheckedChange={(v) => setCompare(Boolean(v))}
+                    >
+                      So sánh kỳ trước
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator />
+                    {[7, 30, 90].map((d) => (
+                      <DropdownMenuItem
+                        key={d}
+                        onSelect={() =>
+                          setRange({ from: shiftDay(todayKey(), -(d - 1)), to: todayKey() })
+                        }
+                      >
+                        {d} ngày gần nhất
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <button
                   disabled={isFetching}
                   onClick={async () => {
@@ -289,9 +319,53 @@ function ReportsPage() {
                 >
                   <ArrowUpRight className="h-4 w-4" /> {t("rp.drill")}
                 </Link>
-                <button onClick={() => notifyComingSoon()} className="rounded-lg bg-surface p-2 text-muted-foreground hover:text-foreground">
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Thao tác khác"
+                      className="rounded-lg bg-surface p-2 text-muted-foreground hover:text-foreground"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        void refetch();
+                        toast.success(t("rp.refresh.done"));
+                      }}
+                    >
+                      {t("rp.refresh")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={!report}
+                      onSelect={() => {
+                        if (!report) return;
+                        exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                        toast.success(t("rp.export.done"));
+                      }}
+                    >
+                      {t("rp.export.csv")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={!report}
+                      onSelect={() => {
+                        if (!report) return;
+                        const ok = exportReportPdf(report, {
+                          ...range,
+                          title: t("rp.title"),
+                          compare,
+                          prev,
+                        });
+                        if (!ok) toast.error(t("rp.export.blocked"));
+                      }}
+                    >
+                      {t("rp.export.pdf")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => drill()}>{t("rp.drill")}</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -371,9 +445,25 @@ function ReportsPage() {
                 <CardHeader
                   title={t("rp.act.title")}
                   right={
-                    <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
-                      {days} {t("rp.dd.days")} <ChevronDown className="h-3 w-3" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
+                          {days} {t("rp.dd.days")} <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {[7, 30, 90].map((d) => (
+                          <DropdownMenuItem
+                            key={d}
+                            onSelect={() =>
+                              setRange({ from: shiftDay(todayKey(), -(d - 1)), to: todayKey() })
+                            }
+                          >
+                            {d} {t("rp.dd.days")}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   }
                 />
                 <LineChart data={report?.activity ?? []} />
@@ -705,27 +795,36 @@ function ReportsPage() {
                     color="bg-emerald-500/20 text-emerald-300"
                     title={t("rp.short.exec")}
                     sub={t("rp.short.execd")}
+                    onClick={() => navigate({ to: "/reports/$type", params: { type: "overview" } })}
                   />
                   <ShortcutRow
                     icon={BarChart3}
                     color="bg-violet-500/20 text-violet-300"
                     title={t("rp.short.team")}
                     sub={t("rp.short.teamd")}
+                    onClick={() => navigate({ to: "/reports/$type", params: { type: "team" } })}
                   />
                   <ShortcutRow
                     icon={Folder}
                     color="bg-sky-500/20 text-sky-300"
                     title={t("rp.short.proj")}
                     sub={t("rp.short.projd")}
+                    onClick={() => navigate({ to: "/reports/$type", params: { type: "projects" } })}
                   />
                   <ShortcutRow
                     icon={UsersIcon}
                     color="bg-amber-500/20 text-amber-300"
                     title={t("rp.short.user")}
                     sub={t("rp.short.userd")}
+                    onClick={() =>
+                      navigate({ to: "/reports/$type", params: { type: "productivity" } })
+                    }
                   />
                 </div>
-                <button onClick={() => notifyComingSoon()} className="mt-3 block w-full text-center text-xs text-primary hover:underline">
+                <button
+                  onClick={() => navigate({ to: "/reports/$type", params: { type: tab } })}
+                  className="mt-3 block w-full text-center text-xs text-primary hover:underline"
+                >
                   {t("rp.short.viewall")}
                 </button>
               </Card>
@@ -751,6 +850,7 @@ function ReportsPage() {
                   title={t("rp.ai.i1.t")}
                   sub={t("rp.ai.i1.s")}
                   t={t}
+                  onClick={() => drill("done")}
                 />
                 <Insight
                   icon={AlertTriangle}
@@ -758,6 +858,7 @@ function ReportsPage() {
                   title={t("rp.ai.i2.t")}
                   sub={t("rp.ai.i2.s")}
                   t={t}
+                  onClick={() => drill("blocked")}
                 />
                 <Insight
                   icon={Info}
@@ -765,6 +866,7 @@ function ReportsPage() {
                   title={t("rp.ai.i3.t")}
                   sub={t("rp.ai.i3.s")}
                   t={t}
+                  onClick={() => drill("in_progress")}
                 />
                 <Insight
                   icon={UsersIcon}
@@ -772,6 +874,7 @@ function ReportsPage() {
                   title={t("rp.ai.i4.t")}
                   sub={t("rp.ai.i4.s")}
                   t={t}
+                  onClick={() => drill("todo")}
                 />
               </div>
             </div>
@@ -779,16 +882,36 @@ function ReportsPage() {
             <div className="border-b border-border px-4 py-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">{t("rp.flt.title")}</h3>
-                <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">
+                <button
+                  onClick={() => {
+                    setRange({ from: shiftDay(todayKey(), -6), to: todayKey() });
+                    setCompare(true);
+                    toast.success("Đã đặt lại bộ lọc");
+                  }}
+                  className="text-xs text-primary hover:underline"
+                >
                   {t("rp.flt.clear")}
                 </button>
               </div>
-              <FilterField label={t("rp.flt.time")} value="12/05/2025 – 18/05/2025" />
-              <FilterField label={t("rp.flt.ws")} value={t("rp.flt.allws")} />
-              <FilterField label={t("rp.flt.dep")} value={t("rp.flt.alldep")} />
-              <FilterField label={t("rp.flt.team")} value={t("rp.flt.allteam")} />
-              <FilterField label={t("rp.flt.user")} value={t("rp.flt.alluser")} />
-              <button onClick={() => notifyComingSoon()} className="mt-2 w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <FilterField
+                label={t("rp.flt.time")}
+                value={`${fmtDay(range.from)} – ${fmtDay(range.to)}`}
+              />
+              <FilterField
+                label={t("rp.flt.ws")}
+                value={wsTotal ? `${wsTotal} workspace` : t("rp.flt.allws")}
+              />
+              <FilterField
+                label={t("rp.flt.dep")}
+                value={compare ? "So sánh kỳ trước: Bật" : "So sánh kỳ trước: Tắt"}
+              />
+              <button
+                onClick={() => {
+                  void refetch();
+                  toast.success(t("rp.refresh.done"));
+                }}
+                className="mt-2 w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
                 {t("rp.flt.apply")}
               </button>
             </div>
@@ -797,9 +920,41 @@ function ReportsPage() {
               <h3 className="text-sm font-semibold">{t("rp.exp.title")}</h3>
               <p className="mt-0.5 text-[11px] text-muted-foreground">{t("rp.exp.sub")}</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <ExportBtn icon={FileImage} label="PDF" color="text-rose-300" />
-                <ExportBtn icon={FileSpreadsheet} label="Excel" color="text-emerald-300" />
-                <ExportBtn icon={FileText} label="CSV" color="text-sky-300" />
+                <ExportBtn
+                  icon={FileImage}
+                  label="PDF"
+                  color="text-rose-300"
+                  onClick={() => {
+                    if (!report) return toast.error(t("rp.export.blocked"));
+                    const ok = exportReportPdf(report, {
+                      ...range,
+                      title: t("rp.title"),
+                      compare,
+                      prev,
+                    });
+                    if (!ok) toast.error(t("rp.export.blocked"));
+                  }}
+                />
+                <ExportBtn
+                  icon={FileSpreadsheet}
+                  label="Excel"
+                  color="text-emerald-300"
+                  onClick={() => {
+                    if (!report) return toast.error(t("rp.export.blocked"));
+                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    toast.success(t("rp.export.done"));
+                  }}
+                />
+                <ExportBtn
+                  icon={FileText}
+                  label="CSV"
+                  color="text-sky-300"
+                  onClick={() => {
+                    if (!report) return toast.error(t("rp.export.blocked"));
+                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    toast.success(t("rp.export.done"));
+                  }}
+                />
               </div>
               <div className="mt-4 rounded-lg border border-border bg-surface-2 p-3">
                 <div className="flex items-center justify-between">
@@ -807,7 +962,10 @@ function ReportsPage() {
                     <div className="text-sm font-medium">{t("rp.exp.sched")}</div>
                     <div className="text-[11px] text-muted-foreground">{t("rp.exp.schedsub")}</div>
                   </div>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                  <button
+                    onClick={() => navigate({ to: "/workflows" })}
+                    className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
                     <Plus className="h-3 w-3" /> {t("rp.schedule")}
                   </button>
                 </div>
@@ -1175,14 +1333,16 @@ function ShortcutRow({
   color,
   title,
   sub,
+  onClick,
 }: {
   icon: LucideIcon;
   color: string;
   title: string;
   sub: string;
+  onClick: () => void;
 }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
+    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
       <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
         <Icon className="h-4 w-4" />
       </div>
@@ -1200,15 +1360,17 @@ function Insight({
   title,
   sub,
   t,
+  onClick,
 }: {
   icon: LucideIcon;
   color: string;
   title: string;
   sub: string;
   t: (k: Key) => string;
+  onClick: () => void;
 }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="block w-full rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
+    <button onClick={onClick} className="block w-full rounded-lg border border-border bg-surface-2 p-3 text-left hover:border-primary/40">
       <div className="flex items-start gap-2">
         <Icon className={`mt-0.5 h-4 w-4 ${color}`} />
         <div className="min-w-0 flex-1">
@@ -1225,10 +1387,9 @@ function FilterField({ label, value }: { label: string; value: string }) {
   return (
     <div className="mb-3">
       <div className="mb-1 text-[11px] text-muted-foreground">{label}</div>
-      <button onClick={() => notifyComingSoon()} className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
+      <div className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
         <span className="truncate">{value}</span>
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-      </button>
+      </div>
     </div>
   );
 }
@@ -1237,13 +1398,15 @@ function ExportBtn({
   icon: Icon,
   label,
   color,
+  onClick,
 }: {
   icon: LucideIcon;
   label: string;
   color: string;
+  onClick: () => void;
 }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
+    <button onClick={onClick} className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 py-2 text-xs font-medium hover:border-primary/40">
       <Icon className={`h-3.5 w-3.5 ${color}`} /> {label}
     </button>
   );
