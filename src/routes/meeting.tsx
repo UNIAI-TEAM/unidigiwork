@@ -12,7 +12,13 @@ import {
   listMyWorkspaces,
   listMeetingParticipants,
 } from "@/lib/api/meeting-rooms.functions";
-import { cancelMeeting, listMeetings, updateMeeting } from "@/lib/api/meetings.functions";
+import {
+  cancelMeeting,
+  listMeetings,
+  scheduleMeeting,
+  updateMeeting,
+} from "@/lib/api/meetings.functions";
+import { redeemMeetingInviteLink } from "@/lib/api/meeting-rooms.functions";
 import {
   Dialog,
   DialogContent,
