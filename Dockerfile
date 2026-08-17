@@ -6,6 +6,8 @@ COPY package.json .npmrc ./
 RUN npm install
 
 COPY . .
+# Tăng heap size để tránh lỗi "JavaScript heap out of memory" trong quá trình build
+ENV NODE_OPTIONS=--max-old-space-size=8192
 # Ngoài sandbox Lovable, vite.config.ts dùng nitro preset `node-server`,
 # nên build sinh ra server Node độc lập tại .output/
 RUN npm run build
