@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  getEmailFolderCounts,
   listEmailMessages,
   moveEmailMessages,
   setEmailMessagesRead,
@@ -68,6 +69,7 @@ import {
   type RuleDef,
 } from "@/components/email-features";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import { useActiveWorkspace } from "@/lib/active-workspace";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
@@ -83,15 +85,13 @@ export const Route = createFileRoute("/_authenticated/email")({
   component: EmailHubPage,
 });
 
-const MAILBOXES = [
-  { key: "inbox", label: "Hộp đến", icon: Inbox, count: 128, active: true },
-  { key: "starred", label: "Quan trọng", icon: Star, count: 12 },
-  { key: "sent", label: "Đã gửi", icon: Send, count: 65 },
-  { key: "drafts", label: "Bản nháp", icon: FileEdit, count: 8 },
-  { key: "trash", label: "Đã xóa", icon: Trash2, count: 4 },
-  { key: "archive", label: "Lưu trữ", icon: Archive, count: 37 },
-  { key: "spam", label: "Spam", icon: AlertOctagon, count: 3 },
-  { key: "bin", label: "Thùng rác", icon: Trash2, count: 2 },
+const MAILBOXES: { key: string; label: string; icon: LucideIcon }[] = [
+  { key: "inbox", label: "Hộp đến", icon: Inbox },
+  { key: "starred", label: "Quan trọng", icon: Star },
+  { key: "sent", label: "Đã gửi", icon: Send },
+  { key: "drafts", label: "Bản nháp", icon: FileEdit },
+  { key: "archive", label: "Lưu trữ", icon: Archive },
+  { key: "trash", label: "Đã xóa", icon: Trash2 },
 ];
 
 type LabelWithCount = LabelDef & { count: number };
@@ -193,9 +193,10 @@ function DonutChart({ stats }: { stats: StatSlice[] }) {
 }
 
 function EmailHubPage() {
+  const { workspaceId } = useActiveWorkspace();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeMailbox, setActiveMailbox] = useState("inbox");
-  const [selected, setSelected] = useState("1");
+  const [selected, setSelected] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
@@ -553,7 +554,7 @@ function EmailHubPage() {
                 Mailboxes
               </div>
               <ul className="space-y-0.5">
-                {MAILBOXES.map((m) => {
+                {mailboxes.map((m) => {
                   const Icon = m.icon;
                   const active = activeMailbox === m.key;
                   return (
@@ -804,12 +805,12 @@ function EmailHubPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {dbMode && dbQuery.isLoading ? (
+              {dbQuery.isLoading ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
                   <span className="text-xs">Đang tải email…</span>
                 </div>
-              ) : dbMode && dbQuery.error ? (
+              ) : dbQuery.error ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-destructive">
                   <AlertCircle className="h-6 w-6" />
                   <span className="font-medium">Không tải được email</span>
@@ -1157,7 +1158,7 @@ function EmailHubPage() {
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="text-sm font-semibold">Tóm tắt nhanh</div>
               <ul className="mt-3 space-y-2 text-sm">
-                {QUICK_SUMMARY.map((q) => (
+                {quickSummary.map((q) => (
                   <li key={q.label} className="flex items-center justify-between">
                     <span className="text-muted-foreground">{q.label}</span>
                     <span className="font-semibold tabular-nums">{q.value}</span>
@@ -1206,9 +1207,9 @@ function EmailHubPage() {
                 </button>
               </div>
               <div className="mt-3 flex items-center gap-4">
-                <DonutChart />
+                <DonutChart stats={statSlices} />
                 <ul className="flex-1 space-y-1.5 text-xs">
-                  {STATS.map((s) => (
+                  {statSlices.map((s) => (
                     <li key={s.label} className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-muted-foreground">
                         <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />{" "}
