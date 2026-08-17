@@ -108,6 +108,15 @@ function AiMarketSearchPage() {
     (minTasks > 0 ? 1 : 0) +
     (maxSalary !== null ? 1 : 0);
 
+  // Khi không có kết quả vì ngân sách quá thấp, gợi ý ứng viên rẻ nhất còn lại.
+  const cheapestFallback = useMemo(() => {
+    if (agents.length > 0 || maxSalary === null) return null;
+    const pool = all
+      .filter((a: any) => Number(a.rating) >= minRating && Number(a.completed_tasks) >= minTasks)
+      .sort((a: any, b: any) => Number(a.salary_min) - Number(b.salary_min));
+    return pool[0] ?? null;
+  }, [agents.length, all, maxSalary, minRating, minTasks]);
+
   const resetFilters = () => {
     setDomain("all");
     setSkill("all");
@@ -232,9 +241,26 @@ function AiMarketSearchPage() {
                     value={[maxSalary ?? salaryCeiling]}
                     min={0}
                     max={salaryCeiling}
-                    step={Math.max(100_000, Math.round(salaryCeiling / 40))}
+                    step={100_000}
                     onValueChange={(v) => setMaxSalary(v[0] ?? null)}
                   />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      step={100}
+                      inputMode="numeric"
+                      value={maxSalary === null ? "" : Math.round(maxSalary / 1000)}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        setMaxSalary(raw === "" ? null : Math.max(0, Number(raw)) * 1000);
+                      }}
+                      placeholder="Nhập số tiền"
+                      aria-label="Ngân sách lương tối đa (nghìn đồng)"
+                      className="h-8 w-32"
+                    />
+                    <span className="text-xs text-muted-foreground">nghìn đ / tháng</span>
+                  </div>
                   {maxSalary !== null && (
                     <button
                       type="button"
@@ -285,9 +311,30 @@ function AiMarketSearchPage() {
               ) : isLoading ? (
                 <p className="mt-8 text-sm text-muted-foreground">Đang tải danh sách ứng viên…</p>
               ) : agents.length === 0 ? (
-                <p className="mt-8 text-sm text-muted-foreground">
-                  Không có ứng viên nào khớp bộ lọc. Hãy nới điều kiện KPI hoặc ngân sách lương.
-                </p>
+                <div className="mt-8 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Không có ứng viên nào khớp bộ lọc. Hãy nới điều kiện KPI hoặc ngân sách lương.
+                  </p>
+                  {cheapestFallback && (
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
+                      <p>
+                        Mức lương thấp nhất trên thị trường hiện là{" "}
+                        <span className="font-medium text-foreground">
+                          {formatMoney(Number(cheapestFallback.salary_min))}
+                        </span>{" "}
+                        ({cheapestFallback.name} · {cheapestFallback.domain}).
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3"
+                        onClick={() => setMaxSalary(Number(cheapestFallback.salary_min))}
+                      >
+                        Nâng ngân sách lên {formatMoney(Number(cheapestFallback.salary_min))}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <p className="mt-3 text-xs text-muted-foreground">
