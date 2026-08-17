@@ -1,15 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  ArrowLeft, Reply, ReplyAll, Forward, Star, Archive, Trash2,
-  MoreHorizontal, RefreshCw, AlertCircle, Inbox,
+  ArrowLeft, Reply, ReplyAll, Forward, Archive, Trash2,
+  MailOpen, RefreshCw, AlertCircle, Inbox,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
-import { getEmailThread } from "@/lib/api/emails.functions";
+import { getEmailThread, moveEmailMessages, setEmailMessagesRead } from "@/lib/api/emails.functions";
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
-import { notifyComingSoon } from "@/lib/coming-soon";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,6 +22,10 @@ function EmailDetailPage() {
   const { id } = Route.useParams();
   const [open, setOpen] = useSidebarState();
   const fetchThread = useServerFn(getEmailThread);
+  const nav = useNavigate();
+  const qc = useQueryClient();
+  const doMove = useServerFn(moveEmailMessages);
+  const doSetRead = useServerFn(setEmailMessagesRead);
   const isUuid = UUID_RE.test(id);
   const q = useQuery({
     queryKey: ["email-thread", id],
@@ -30,6 +34,34 @@ function EmailDetailPage() {
   });
 
   const thread = q.data;
+  const messages = (thread?.messages ?? []) as unknown as ThreadMessage[];
+  const messageIds = messages.map((m) => m.id);
+  const lastMessage = messages[messages.length - 1];
+  const replyTo = lastMessage?.sender?.email ?? "";
+  const allParticipants = Array.from(
+    new Set(messages.map((m) => m.sender?.email).filter(Boolean) as string[]),
+  ).join(", ");
+  const baseSubject = (thread?.subject ?? "").replace(/^((re|fwd):\s*)+/i, "");
+
+  const moveMut = useMutation({
+    mutationFn: (folder: "archive" | "trash") =>
+      doMove({ data: { message_ids: messageIds, folder } }),
+    onSuccess: (_r, folder) => {
+      toast.success(folder === "archive" ? "Đã lưu trữ cuộc hội thoại" : "Đã chuyển vào thùng rác");
+      qc.invalidateQueries({ queryKey: ["emails"] });
+      nav({ to: "/email" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const unreadMut = useMutation({
+    mutationFn: () => doSetRead({ data: { message_ids: messageIds, is_read: false } }),
+    onSuccess: () => {
+      toast.success("Đã đánh dấu chưa đọc");
+      qc.invalidateQueries({ queryKey: ["emails"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const busy = moveMut.isPending || unreadMut.isPending || messageIds.length === 0;
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -57,10 +89,9 @@ function EmailDetailPage() {
                     ]}
                   />
                 ) : null}
-                <IconBtn icon={Archive} />
-                <IconBtn icon={Trash2} />
-                <IconBtn icon={Star} />
-                <IconBtn icon={MoreHorizontal} />
+                <IconBtn icon={Archive} label="Lưu trữ" disabled={busy} onClick={() => moveMut.mutate("archive")} />
+                <IconBtn icon={Trash2} label="Chuyển vào thùng rác" disabled={busy} onClick={() => moveMut.mutate("trash")} />
+                <IconBtn icon={MailOpen} label="Đánh dấu chưa đọc" disabled={busy} onClick={() => unreadMut.mutate()} />
               </div>
             </div>
 
@@ -108,16 +139,25 @@ function EmailDetailPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     to="/email/compose"
+                    search={{ thread: id, to: replyTo, subject: `Re: ${baseSubject}` }}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                   >
                     <Reply className="h-4 w-4" /> Trả lời
                   </Link>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                  <Link
+                    to="/email/compose"
+                    search={{ thread: id, to: allParticipants, subject: `Re: ${baseSubject}` }}
+                    className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3"
+                  >
                     <ReplyAll className="h-4 w-4" /> Trả lời tất cả
-                  </button>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                  </Link>
+                  <Link
+                    to="/email/compose"
+                    search={{ subject: `Fwd: ${baseSubject}` }}
+                    className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3"
+                  >
                     <Forward className="h-4 w-4" /> Chuyển tiếp
-                  </button>
+                  </Link>
                 </div>
                 <RelatedWorkPanel
                   entityType="EMAIL"
@@ -201,9 +241,25 @@ function EmptyState({
   );
 }
 
-function IconBtn({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
+function IconBtn({
+  icon: Icon,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()} className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+    >
       <Icon className="h-4 w-4" />
     </button>
   );

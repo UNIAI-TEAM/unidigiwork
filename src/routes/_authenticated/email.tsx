@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { listEmailMessages } from "@/lib/api/emails.functions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  listEmailMessages,
+  moveEmailMessages,
+  setEmailMessagesRead,
+} from "@/lib/api/emails.functions";
 import {
   Mail,
   Search,
@@ -548,6 +554,7 @@ function EmailHubPage() {
     },
   ]);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [composePrefill, setComposePrefill] = useState({ to: "", subject: "" });
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -718,6 +725,92 @@ function EmailHubPage() {
     setCheckedIds(new Set());
   }
 
+  // --- Real actions (DB-backed messages only) --------------------------------
+  const qc = useQueryClient();
+  const doMove = useServerFn(moveEmailMessages);
+  const doSetRead = useServerFn(setEmailMessagesRead);
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  function realIds(ids: string[]) {
+    return ids.filter((id) => UUID_RE.test(id));
+  }
+
+  const bulkMoveMut = useMutation({
+    mutationFn: (v: { ids: string[]; folder: "inbox" | "archive" | "trash" }) =>
+      doMove({ data: { message_ids: v.ids, folder: v.folder } }),
+    onSuccess: (_r, v) => {
+      toast.success(
+        v.folder === "archive"
+          ? "Đã lưu trữ"
+          : v.folder === "trash"
+            ? "Đã chuyển vào thùng rác"
+            : "Đã chuyển về hộp đến",
+      );
+      qc.invalidateQueries({ queryKey: ["emails"] });
+      clearChecked();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkReadMut = useMutation({
+    mutationFn: (v: { ids: string[]; is_read: boolean }) =>
+      doSetRead({ data: { message_ids: v.ids, is_read: v.is_read } }),
+    onSuccess: (_r, v) => {
+      toast.success(v.is_read ? "Đã đánh dấu đã đọc" : "Đã đánh dấu chưa đọc");
+      qc.invalidateQueries({ queryKey: ["emails"] });
+      clearChecked();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function bulkMove(folder: "inbox" | "archive" | "trash") {
+    const ids = realIds([...checkedIds]);
+    if (!ids.length) {
+      toast.info("Chỉ áp dụng cho email thật trong hộp thư");
+      clearChecked();
+      return;
+    }
+    bulkMoveMut.mutate({ ids, folder });
+  }
+
+  function bulkRead(is_read: boolean) {
+    const ids = realIds([...checkedIds]);
+    if (!ids.length) {
+      toast.info("Chỉ áp dụng cho email thật trong hộp thư");
+      clearChecked();
+      return;
+    }
+    bulkReadMut.mutate({ ids, is_read });
+  }
+
+  function messageAction(folder: "archive" | "trash") {
+    const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
+    if (!ids.length) {
+      toast.info("Email mẫu không thể thao tác");
+      return;
+    }
+    bulkMoveMut.mutate({ ids, folder });
+  }
+
+  function openCompose(to: string, subject: string) {
+    setComposePrefill({ to, subject });
+    setComposeOpen(true);
+  }
+
+  function replySelected(all: boolean) {
+    if (!selectedEmail) return;
+    const from =
+      selectedEmail.fromEmail ||
+      `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`;
+    const cc = all && selectedEmail.cc ? `, ${selectedEmail.cc}` : "";
+    openCompose(`${from}${cc}`, `Re: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+  }
+
+  function forwardSelected() {
+    if (!selectedEmail) return;
+    openCompose("", `Fwd: ${selectedEmail.subject.replace(/^((re|fwd):\s*)+/i, "")}`);
+  }
+
   const groups: Record<string, Email[]> = {};
   if (sortBy === "priority") {
     groups["Theo mức độ ưu tiên"] = pagedEmails;
@@ -760,9 +853,27 @@ function EmailHubPage() {
                 >
                   <FileEdit className="h-4 w-4" /> Soạn email
                 </button>
-                <button onClick={() => notifyComingSoon()} className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90">
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Tùy chọn soạn email"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => openCompose("", "")}>
+                      Soạn email mới
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => changeMailbox("drafts")}>
+                      Mở bản nháp
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setAiOpen(true)}>
+                      Soạn với AI
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <button
                 onClick={() => setLabelsOpen(true)}
@@ -982,11 +1093,11 @@ function EmailHubPage() {
               </button>
               {checkedIds.size > 0 ? (
                 <div className="ml-1 flex items-center gap-0.5">
-                  <BulkBtn icon={Archive} label="Lưu trữ" onClick={clearChecked} />
-                  <BulkBtn icon={Trash2} label="Xóa" onClick={clearChecked} />
-                  <BulkBtn icon={MailOpen} label="Đánh dấu đã đọc" onClick={clearChecked} />
-                  <BulkBtn icon={Tag} label="Gắn nhãn" onClick={clearChecked} />
-                  <BulkBtn icon={AlertOctagon} label="Spam" onClick={clearChecked} />
+                  <BulkBtn icon={Archive} label="Lưu trữ" onClick={() => bulkMove("archive")} />
+                  <BulkBtn icon={Trash2} label="Xóa" onClick={() => bulkMove("trash")} />
+                  <BulkBtn icon={MailOpen} label="Đánh dấu đã đọc" onClick={() => bulkRead(true)} />
+                  <BulkBtn icon={Mail} label="Đánh dấu chưa đọc" onClick={() => bulkRead(false)} />
+                  <BulkBtn icon={Inbox} label="Về hộp đến" onClick={() => bulkMove("inbox")} />
                   <button
                     onClick={clearChecked}
                     className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
@@ -996,11 +1107,12 @@ function EmailHubPage() {
                   </button>
                 </div>
               ) : (
-                <button onClick={() => notifyComingSoon()}
+                <button
+                  onClick={() => dbQuery.refetch()}
                   className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
                   title="Làm mới"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className={`h-3.5 w-3.5 ${dbQuery.isFetching ? "animate-spin" : ""}`} />
                 </button>
               )}
               <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
@@ -1186,15 +1298,36 @@ function EmailHubPage() {
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <ToolBtn icon={Reply} label="Trả lời" />
-              <ToolBtn icon={ReplyAll} label="Trả lời tất cả" />
-              <ToolBtn icon={Forward} label="Chuyển tiếp" />
-              <ToolBtn icon={Archive} label="Lưu trữ" />
-              <ToolBtn icon={Trash2} label="Xóa" />
-              <ToolBtn icon={Tag} label="Đánh dấu" />
-              <button onClick={() => notifyComingSoon()} className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2">
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
+              <ToolBtn icon={Reply} label="Trả lời" onClick={() => replySelected(false)} />
+              <ToolBtn icon={ReplyAll} label="Trả lời tất cả" onClick={() => replySelected(true)} />
+              <ToolBtn icon={Forward} label="Chuyển tiếp" onClick={forwardSelected} />
+              <ToolBtn icon={Archive} label="Lưu trữ" onClick={() => messageAction("archive")} />
+              <ToolBtn icon={Trash2} label="Xóa" onClick={() => messageAction("trash")} />
+              <ToolBtn icon={Sparkles} label="Hỏi AI" onClick={() => setAiOpen(true)} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Thao tác khác"
+                    className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
+                      if (!ids.length) return toast.info("Email mẫu không thể thao tác");
+                      bulkReadMut.mutate({ ids, is_read: false });
+                    }}
+                  >
+                    Đánh dấu chưa đọc
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => messageAction("archive")}>Lưu trữ</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => messageAction("trash")}>Chuyển vào thùng rác</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLabelsOpen(true)}>Nhãn & quy tắc</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
@@ -1227,13 +1360,21 @@ function EmailHubPage() {
                     <span className="ml-auto text-xs text-muted-foreground">
                       {selectedEmail.time}
                     </span>
-                    <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground hover:bg-surface-2">
+                    <button
+                      onClick={() => notifyComingSoon()}
+                      title="Đánh dấu quan trọng"
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                    >
                       <Star
                         className={`h-4 w-4 ${selectedEmail.starred ? "fill-amber-400 text-amber-400" : ""}`}
                       />
                     </button>
-                    <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground hover:bg-surface-2">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <button
+                      onClick={() => replySelected(false)}
+                      title="Trả lời"
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                    >
+                      <Reply className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -1445,7 +1586,13 @@ function EmailHubPage() {
         </div>
       </main>
 
-      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} />
+      <ComposeEmailDialog
+        key={`${composePrefill.to}|${composePrefill.subject}`}
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+        initialTo={composePrefill.to}
+        initialSubject={composePrefill.subject}
+      />
       <AdvancedFilterDialog
         open={advancedOpen}
         onOpenChange={setAdvancedOpen}
@@ -1474,9 +1621,21 @@ function EmailHubPage() {
   );
 }
 
-function ToolBtn({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function ToolBtn({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick?: () => void;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button
+      onClick={onClick}
+      title={label}
+      className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+    >
       <Icon className="h-4 w-4" />
       <span>{label}</span>
     </button>
