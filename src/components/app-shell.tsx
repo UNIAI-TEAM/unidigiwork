@@ -709,9 +709,24 @@ function CreateWorkspaceDialog({
 
 function NewPanel({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const go = useCallback(
+    (to: string) => {
+      onClose();
+      void navigate({ to });
+    },
+    [navigate, onClose],
+  );
   const groups: {
     label: string;
-    items: { icon: LucideIcon; title: string; desc: string; kbd?: string; color: string }[];
+    items: {
+      icon: LucideIcon;
+      title: string;
+      desc: string;
+      kbd?: string;
+      color: string;
+      to: string;
+    }[];
   }[] = [
     {
       label: t("sh.new.g.work"),
@@ -722,6 +737,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.taskDesc"),
           kbd: "T",
           color: "bg-primary/15 text-primary",
+          to: "/tasks",
         },
         {
           icon: Workflow,
@@ -729,6 +745,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.flowDesc"),
           kbd: "W",
           color: "bg-violet-500/15 text-violet-300",
+          to: "/workflows",
         },
       ],
     },
@@ -741,6 +758,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.meetingDesc"),
           kbd: "M",
           color: "bg-rose-500/15 text-rose-300",
+          to: "/meeting",
         },
         {
           icon: MessageSquare,
@@ -748,6 +766,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.msgDesc"),
           kbd: "C",
           color: "bg-emerald-500/15 text-emerald-300",
+          to: "/chat",
         },
         {
           icon: Mail,
@@ -755,6 +774,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.emailDesc"),
           kbd: "E",
           color: "bg-sky-500/15 text-sky-300",
+          to: "/email/compose",
         },
       ],
     },
@@ -767,22 +787,53 @@ function NewPanel({ onClose }: { onClose: () => void }) {
           desc: t("sh.new.docDesc"),
           kbd: "D",
           color: "bg-amber-500/15 text-amber-300",
+          to: "/documents",
         },
         {
           icon: BookOpen,
           title: t("sh.new.wiki"),
           desc: t("sh.new.wikiDesc"),
           color: "bg-teal-500/15 text-teal-300",
+          to: "/knowledge",
         },
         {
           icon: Calendar,
           title: t("sh.new.event"),
           desc: t("sh.new.eventDesc"),
           color: "bg-indigo-500/15 text-indigo-300",
+          to: "/calendar",
         },
       ],
     },
   ];
+
+  // Phím tắt trong panel: T/W/M/C/E/D điều hướng nhanh tới trang tương ứng.
+  useEffect(() => {
+    const map: Record<string, string> = {
+      t: "/tasks",
+      w: "/workflows",
+      m: "/meeting",
+      c: "/chat",
+      e: "/email/compose",
+      d: "/documents",
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+      const target = ev.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      if (ev.key === "Escape") {
+        onClose();
+        return;
+      }
+      const to = map[ev.key.toLowerCase()];
+      if (!to) return;
+      ev.preventDefault();
+      go(to);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, onClose]);
 
   return (
     <div
@@ -809,7 +860,7 @@ function NewPanel({ onClose }: { onClose: () => void }) {
               {g.items.map((it) => (
                 <li key={it.title}>
                   <button
-                    onClick={onClose}
+                    onClick={() => go(it.to)}
                     className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-2"
                   >
                     <span
