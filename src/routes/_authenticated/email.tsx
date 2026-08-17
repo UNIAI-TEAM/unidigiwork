@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  getEmailFolderCounts,
   listEmailMessages,
   moveEmailMessages,
   setEmailMessagesRead,
@@ -68,6 +69,7 @@ import {
   type RuleDef,
 } from "@/components/email-features";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import { useActiveWorkspace } from "@/lib/active-workspace";
 
 export const Route = createFileRoute("/_authenticated/email")({
   head: () => ({
@@ -83,15 +85,13 @@ export const Route = createFileRoute("/_authenticated/email")({
   component: EmailHubPage,
 });
 
-const MAILBOXES = [
-  { key: "inbox", label: "Hộp đến", icon: Inbox, count: 128, active: true },
-  { key: "starred", label: "Quan trọng", icon: Star, count: 12 },
-  { key: "sent", label: "Đã gửi", icon: Send, count: 65 },
-  { key: "drafts", label: "Bản nháp", icon: FileEdit, count: 8 },
-  { key: "trash", label: "Đã xóa", icon: Trash2, count: 4 },
-  { key: "archive", label: "Lưu trữ", icon: Archive, count: 37 },
-  { key: "spam", label: "Spam", icon: AlertOctagon, count: 3 },
-  { key: "bin", label: "Thùng rác", icon: Trash2, count: 2 },
+const MAILBOXES: { key: string; label: string; icon: LucideIcon }[] = [
+  { key: "inbox", label: "Hộp đến", icon: Inbox },
+  { key: "starred", label: "Quan trọng", icon: Star },
+  { key: "sent", label: "Đã gửi", icon: Send },
+  { key: "drafts", label: "Bản nháp", icon: FileEdit },
+  { key: "archive", label: "Lưu trữ", icon: Archive },
+  { key: "trash", label: "Đã xóa", icon: Trash2 },
 ];
 
 type LabelWithCount = LabelDef & { count: number };
@@ -154,342 +154,10 @@ function bucketEmailWhen(iso: string): Email["group"] {
   return "Tuần này";
 }
 
-const EMAILS: Email[] = [
-  {
-    id: "1",
-    mailbox: "inbox",
-    from: "Lê Minh Đức",
-    fromEmail: "leminhduc@techcorp.vn",
-    to: "nguyenvana@ubos.vn",
-    subject: "RFQ - Hệ thống máy chủ cho dự án STOS",
-    preview: "Kính gửi anh/chị, Chúng tôi xin gửi yêu cầu báo giá...",
-    body: "Kính gửi anh/chị,\n\nChúng tôi xin gửi yêu cầu báo giá cho hệ thống máy chủ phục vụ dự án STOS Platform với các yêu cầu kỹ thuật như file đính kèm.\n\nRất mong nhận được báo giá và thời gian dự kiến.\n\nTrân trọng cảm ơn!\n\nLê Minh Đức\nGiám đốc Công nghệ\nTechCorp Solutions",
-    time: "10:24 AM",
-    group: "Hôm nay",
-    unread: true,
-    starred: true,
-    hasAttachment: true,
-    selected: true,
-    labels: ["Dự án STOS"],
-    attachments: [
-      { name: "Yeu_cau_ky_thuat_STOS.pdf", size: "1.2 MB", type: "pdf" },
-      { name: "Bang_du_toan_may_chu.xlsx", size: "320 KB", type: "excel" },
-    ],
-  },
-  {
-    id: "2",
-    mailbox: "inbox",
-    from: "Trần Thùy Linh",
-    fromEmail: "tranthuylinh@ubos.vn",
-    to: "nguyenvana@ubos.vn",
-    subject: "Review hợp đồng triển khai Smart University",
-    preview: "Anh vui lòng xem xét và phản hồi các nội dung...",
-    body: "Anh vui lòng xem xét và phản hồi các nội dung trong hợp đồng triển khai Smart University. Chúng tôi đã cập nhật một số điều khoản theo thỏa thuận trong buổi họp tuần trước.\n\nĐặc biệt cần lưu ý phần bảo hành và hỗ trợ kỹ thuật.\n\nTrân trọng,\nTrần Thùy Linh",
-    time: "09:15 AM",
-    group: "Hôm nay",
-    unread: true,
-    starred: true,
-    labels: ["Hợp đồng", "Khách hàng"],
-  },
-  {
-    id: "3",
-    mailbox: "inbox",
-    from: "Vũ Hoàng Nam",
-    fromEmail: "vuhoangnam@finance.vn",
-    to: "nguyenvana@ubos.vn",
-    subject: "Yêu cầu phê duyệt ngân sách Q2/2025",
-    preview: "Theo kế hoạch, chúng tôi đề xuất ngân sách...",
-    body: "Theo kế hoạch, chúng tôi đề xuất ngân sách Q2/2025 với tổng số tiền 2.5 tỷ VNĐ cho các hạng mục: nhân sự, cơ sở hạ tầng, và marketing.\n\nĐính kèm là bảng chi tiết dự toán để anh/chị tham khảo và phê duyệt.\n\nTrân trọng,\nVũ Hoàng Nam\nPhòng Tài chính",
-    time: "08:47 AM",
-    group: "Hôm nay",
-    hasAttachment: true,
-    labels: ["Dự án STOS"],
-    attachments: [{ name: "Du_toan_Q2_2025.xlsx", size: "450 KB", type: "excel" }],
-  },
-  {
-    id: "4",
-    mailbox: "inbox",
-    from: "Nguyễn Lan Anh",
-    subject: "Kế hoạch đào tạo nhân sự tháng 6",
-    preview: "Danh sách học viên và nội dung đào tạo chi tiết...",
-    time: "Yesterday",
-    group: "Hôm qua",
-    starred: true,
-    labels: ["Nhân sự"],
-  },
-  {
-    id: "5",
-    mailbox: "inbox",
-    from: "Phạm Quốc Huy",
-    subject: "Re: Hợp đồng bảo trì hệ thống",
-    preview: "Cảm ơn anh. Chúng tôi sẽ xử lý trong hôm nay...",
-    time: "Yesterday",
-    group: "Hôm qua",
-    labels: ["Hợp đồng"],
-  },
-  {
-    id: "6",
-    mailbox: "inbox",
-    from: "Đỗ Thành Công",
-    subject: "Hóa đơn VAT số 2025-06-001",
-    preview: "Đính kèm hóa đơn VAT và bảng kê chi tiết.",
-    time: "12/05/2025",
-    group: "Tuần này",
-    hasAttachment: true,
-    labels: ["Hóa đơn", "Khách hàng"],
-  },
-  {
-    id: "7",
-    mailbox: "inbox",
-    from: "support@cloudvendor.com",
-    subject: "Thông báo nâng cấp dịch vụ",
-    preview: "Kính gửi Quý khách hàng, Chúng tôi xin thông...",
-    time: "12/05/2025",
-    group: "Tuần này",
-    labels: ["Khách hàng"],
-  },
-  // Inbox extras (for pagination demo)
-  {
-    id: "i8",
-    mailbox: "inbox",
-    from: "Hoàng Mai",
-    subject: "Cập nhật tiến độ sprint 6",
-    preview: "Sprint 6 đã hoàn thành 78% công việc...",
-    time: "11/05/2025",
-    group: "Tuần này",
-    labels: ["Dự án STOS"],
-  },
-  {
-    id: "i9",
-    mailbox: "inbox",
-    from: "Bùi Quang",
-    subject: "Lịch họp khách hàng tuần tới",
-    preview: "Đề xuất lịch họp với khách hàng UBOS...",
-    time: "10/05/2025",
-    group: "Tuần này",
-    labels: ["Khách hàng"],
-  },
-  {
-    id: "i10",
-    mailbox: "inbox",
-    from: "Lê Hà",
-    subject: "Tài liệu kiến trúc giải pháp v2",
-    preview: "Phiên bản 2 của tài liệu kiến trúc...",
-    time: "10/05/2025",
-    group: "Tuần này",
-    hasAttachment: true,
-    labels: ["Dự án STOS"],
-  },
-  {
-    id: "i11",
-    mailbox: "inbox",
-    from: "Trịnh Hoa",
-    subject: "Phản hồi đề xuất ngân sách",
-    preview: "Tôi đã xem xét đề xuất và có vài ý kiến...",
-    time: "09/05/2025",
-    group: "Tuần này",
-  },
-  {
-    id: "i12",
-    mailbox: "inbox",
-    from: "Ngô Tuấn",
-    subject: "Mời tham dự hội thảo CNTT 2025",
-    preview: "Hội thảo CNTT thường niên sẽ tổ chức...",
-    time: "08/05/2025",
-    group: "Tuần này",
-  },
+type StatSlice = { label: string; value: number; pct: number; color: string };
 
-  // Sent
-  {
-    id: "s1",
-    mailbox: "sent",
-    from: "Bạn",
-    to: "leminhduc@techcorp.vn",
-    subject: "Re: RFQ - Báo giá hệ thống máy chủ",
-    preview: "Gửi anh Đức, đính kèm báo giá chi tiết cho RFQ...",
-    time: "11:30 AM",
-    group: "Hôm nay",
-    hasAttachment: true,
-    labels: ["Dự án STOS"],
-  },
-  {
-    id: "s2",
-    mailbox: "sent",
-    from: "Bạn",
-    to: "bgd@ubos.vn",
-    subject: "Báo cáo tuần — Dự án STOS",
-    preview: "Kính gửi BGĐ, em xin gửi báo cáo tiến độ tuần...",
-    time: "Yesterday",
-    group: "Hôm qua",
-    labels: ["Dự án STOS"],
-  },
-  {
-    id: "s3",
-    mailbox: "sent",
-    from: "Bạn",
-    to: "tranthuylinh@ubos.vn",
-    subject: "Mời họp review hợp đồng",
-    preview: "Kính mời anh chị tham dự buổi họp...",
-    time: "Yesterday",
-    group: "Hôm qua",
-    labels: ["Hợp đồng"],
-  },
-  {
-    id: "s4",
-    mailbox: "sent",
-    from: "Bạn",
-    to: "dothanhcong@ubos.vn",
-    subject: "Xác nhận thanh toán hóa đơn 2025-06-001",
-    preview: "Đã xác nhận chuyển khoản. Cảm ơn anh chị...",
-    time: "12/05/2025",
-    group: "Tuần này",
-    labels: ["Hóa đơn"],
-  },
-  {
-    id: "s5",
-    mailbox: "sent",
-    from: "Bạn",
-    to: "hr@ubos.vn",
-    subject: "Tài liệu onboarding nhân sự mới",
-    preview: "Gửi anh chị bộ tài liệu onboarding...",
-    time: "11/05/2025",
-    group: "Tuần này",
-    hasAttachment: true,
-    labels: ["Nhân sự"],
-  },
-  {
-    id: "s6",
-    mailbox: "sent",
-    from: "Bạn",
-    to: "vuhoangnam@finance.vn",
-    subject: "Re: Yêu cầu phê duyệt ngân sách Q2",
-    preview: "Em đã xem và đồng ý với đề xuất...",
-    time: "10/05/2025",
-    group: "Tuần này",
-  },
-
-  // Spam
-  {
-    id: "sp1",
-    mailbox: "spam",
-    from: "promo@bigsale.com",
-    subject: "🎁 Khuyến mại 90% — chỉ hôm nay!",
-    preview: "Cơ hội cuối cùng nhận voucher 5 triệu...",
-    time: "08:00 AM",
-    group: "Hôm nay",
-  },
-  {
-    id: "sp2",
-    mailbox: "spam",
-    from: "winner@lucky-draw.net",
-    subject: "Bạn đã trúng iPhone 16 Pro Max!",
-    preview: "Nhấn vào link để nhận giải thưởng...",
-    time: "Yesterday",
-    group: "Hôm qua",
-  },
-  {
-    id: "sp3",
-    mailbox: "spam",
-    from: "ceo@unknown-corp.biz",
-    subject: "Cơ hội đầu tư sinh lời 300%/tháng",
-    preview: "Quỹ đầu tư mới mở, lợi nhuận khủng...",
-    time: "12/05/2025",
-    group: "Tuần này",
-  },
-  {
-    id: "sp4",
-    mailbox: "spam",
-    from: "no-reply@phishing-bank.xyz",
-    subject: "Cảnh báo: tài khoản bị khóa",
-    preview: "Vui lòng xác minh thông tin ngay...",
-    time: "11/05/2025",
-    group: "Tuần này",
-  },
-
-  // Drafts
-  {
-    id: "d1",
-    mailbox: "drafts",
-    from: "Bạn",
-    subject: "(Bản nháp) Đề xuất hợp tác với UBOS",
-    preview: "Kính gửi anh/chị, em xin gửi đề xuất...",
-    time: "09:00 AM",
-    group: "Hôm nay",
-  },
-  {
-    id: "d2",
-    mailbox: "drafts",
-    from: "Bạn",
-    subject: "(Bản nháp) Báo cáo cuối tháng",
-    preview: "Báo cáo tổng kết các chỉ số...",
-    time: "Yesterday",
-    group: "Hôm qua",
-  },
-
-  // Archive
-  {
-    id: "a1",
-    mailbox: "archive",
-    from: "Lê Quốc",
-    subject: "Tài liệu lưu trữ Q1/2025",
-    preview: "Đính kèm các tài liệu lưu trữ quý 1...",
-    time: "01/04/2025",
-    group: "Tuần này",
-    hasAttachment: true,
-  },
-
-  // Trash
-  {
-    id: "t1",
-    mailbox: "trash",
-    from: "Phạm Hùng",
-    subject: "Email cũ — đã xoá",
-    preview: "Nội dung không còn dùng tới...",
-    time: "01/05/2025",
-    group: "Tuần này",
-  },
-];
-
-const QUICK_SUMMARY = [
-  { label: "Email cần phản hồi", value: 5 },
-  { label: "Chờ xử lý", value: 12 },
-  { label: "Email quan trọng", value: 3 },
-  { label: "Email từ khách hàng", value: 7 },
-];
-
-const PRIORITY = [
-  {
-    from: "Lê Minh Đức",
-    subject: "RFQ - Hệ thống máy chủ cho dự án STOS",
-    time: "10:24 AM",
-    level: "Cao",
-    tint: "bg-rose-500/15 text-rose-300",
-  },
-  {
-    from: "Trần Thùy Linh",
-    subject: "Review hợp đồng triển khai Smart University",
-    time: "09:15 AM",
-    level: "Trung bình",
-    tint: "bg-amber-500/15 text-amber-300",
-  },
-  {
-    from: "Vũ Hoàng Nam",
-    subject: "Yêu cầu phê duyệt ngân sách Q2/2025",
-    time: "08:47 AM",
-    level: "Trung bình",
-    tint: "bg-amber-500/15 text-amber-300",
-  },
-];
-
-const STATS = [
-  { label: "Đã nhận", value: 210, pct: 59, color: "#7c3aed" },
-  { label: "Đã gửi", value: 80, pct: 22, color: "#10b981" },
-  { label: "Trả lời", value: 46, pct: 13, color: "#f59e0b" },
-  { label: "Khác", value: 20, pct: 6, color: "#94a3b8" },
-];
-
-function DonutChart() {
-  const total = STATS.reduce((s, x) => s + x.value, 0);
+function DonutChart({ stats }: { stats: StatSlice[] }) {
+  const total = stats.reduce((s, x) => s + x.value, 0) || 1;
   let acc = 0;
   const r = 42,
     c = 2 * Math.PI * r;
@@ -497,7 +165,7 @@ function DonutChart() {
     <div className="relative h-[140px] w-[140px]">
       <svg viewBox="0 0 120 120" className="-rotate-90">
         <circle cx="60" cy="60" r={r} fill="none" stroke="hsl(var(--surface-2))" strokeWidth="14" />
-        {STATS.map((s, i) => {
+        {stats.map((s, i) => {
           const len = (s.value / total) * c;
           const off = (acc / total) * c;
           acc += s.value;
@@ -525,9 +193,10 @@ function DonutChart() {
 }
 
 function EmailHubPage() {
+  const { workspaceId } = useActiveWorkspace();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeMailbox, setActiveMailbox] = useState("inbox");
-  const [selected, setSelected] = useState("1");
+  const [selected, setSelected] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
@@ -576,16 +245,18 @@ function EmailHubPage() {
     setPage(1);
   }, [debouncedSearch, activeMailbox]);
 
-  // Wire DB-backed folders to the server; other mailboxes stay on mock data.
-  const dbMode = DB_FOLDERS.includes(activeMailbox as DbFolder);
+  // Danh sách email thật theo workspace đang chọn (không còn dữ liệu mock).
+  const starredMode = activeMailbox === "starred";
+  const folder: DbFolder = starredMode ? "inbox" : (activeMailbox as DbFolder);
   const dbQuery = useQuery({
-    enabled: dbMode,
-    queryKey: ["emails", activeMailbox, debouncedSearch, page],
+    queryKey: ["emails", workspaceId, activeMailbox, debouncedSearch, page],
     queryFn: () =>
       listEmailMessages({
         data: {
-          folder: activeMailbox as DbFolder,
+          folder,
           search: debouncedSearch,
+          workspace_id: workspaceId ?? null,
+          starred_only: starredMode,
           limit: PAGE_SIZE,
           offset: (page - 1) * PAGE_SIZE,
         },
@@ -593,8 +264,14 @@ function EmailHubPage() {
     placeholderData: (prev) => prev,
     staleTime: 15_000,
   });
+  const countsQuery = useQuery({
+    queryKey: ["emails", "counts", workspaceId],
+    queryFn: () => getEmailFolderCounts({ data: { workspace_id: workspaceId ?? null } }),
+    staleTime: 30_000,
+  });
+
   const dbEmails: Email[] = useMemo(() => {
-    if (!dbMode || !dbQuery.data) return [];
+    if (!dbQuery.data) return [];
     return dbQuery.data.items.map((r) => {
       const m = r.message as {
         id: string;
@@ -620,27 +297,7 @@ function EmailHubPage() {
         mailbox: r.folder as Email["mailbox"],
       } satisfies Email;
     });
-  }, [dbMode, dbQuery.data]);
-  const selectedEmail =
-    dbEmails.find((e) => e.id === selected) ??
-    EMAILS.find((e) => e.id === selected) ??
-    dbEmails[0] ??
-    EMAILS[0];
-
-  function timeSortValue(e: Email): number {
-    const groupWeight = e.group === "Hôm nay" ? 3 : e.group === "Hôm qua" ? 2 : 1;
-    if (e.time.includes("AM") || e.time.includes("PM")) {
-      const m = e.time.match(/(\d+):(\d+)/);
-      if (m) {
-        let hour = parseInt(m[1]);
-        const minute = parseInt(m[2]);
-        if (e.time.includes("PM") && hour !== 12) hour += 12;
-        if (e.time.includes("AM") && hour === 12) hour = 0;
-        return groupWeight * 10000 + hour * 60 + minute;
-      }
-    }
-    return groupWeight * 10000;
-  }
+  }, [dbQuery.data]);
 
   function prioritySortValue(e: Email): number {
     if (e.unread && e.starred) return 3;
@@ -649,56 +306,65 @@ function EmailHubPage() {
     return 0;
   }
 
-  const filteredEmails = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const list = EMAILS.filter((e) => {
-      const matchMailbox = (e.mailbox ?? "inbox") === activeMailbox;
-      const matchQuery =
-        !q ||
-        e.from.toLowerCase().includes(q) ||
-        e.subject.toLowerCase().includes(q) ||
-        e.preview.toLowerCase().includes(q);
-      const matchLabel = !filterLabel || (e.labels?.includes(filterLabel) ?? false);
-      const matchUnread = !filterUnread || e.unread;
-      const a = advanced;
+  // Lọc phía client trên dữ liệu thật của trang hiện tại.
+  const pagedEmails = useMemo(() => {
+    const a = advanced;
+    const list = dbEmails.filter((e) => {
+      const matchUnread = !filterUnread || !!e.unread;
       const matchAdvKeyword =
         !a.keyword ||
         e.subject.toLowerCase().includes(a.keyword.toLowerCase()) ||
-        e.preview.toLowerCase().includes(a.keyword.toLowerCase());
+        (e.preview ?? "").toLowerCase().includes(a.keyword.toLowerCase());
       const matchAdvFrom = !a.from || e.from.toLowerCase().includes(a.from.toLowerCase());
-      const matchAdvAttach = !a.hasAttachment || !!e.hasAttachment;
-      const matchAdvLabels = a.labels.length === 0 || a.labels.every((l) => e.labels?.includes(l));
-      return (
-        matchMailbox &&
-        matchQuery &&
-        matchLabel &&
-        matchUnread &&
-        matchAdvKeyword &&
-        matchAdvFrom &&
-        matchAdvAttach &&
-        matchAdvLabels
-      );
+      return matchUnread && matchAdvKeyword && matchAdvFrom;
     });
-    return list.slice().sort((a, b) => {
-      if (sortBy === "priority") {
-        return prioritySortValue(b) - prioritySortValue(a);
-      }
-      return timeSortValue(b) - timeSortValue(a);
-    });
-  }, [searchQuery, filterLabel, filterUnread, sortBy, activeMailbox, advanced]);
+    return list
+      .slice()
+      .sort((x, y) => (sortBy === "priority" ? prioritySortValue(y) - prioritySortValue(x) : 0));
+  }, [dbEmails, filterUnread, advanced, sortBy]);
 
-  const mockTotalPages = Math.max(1, Math.ceil(filteredEmails.length / PAGE_SIZE));
-  const mockCurrentPage = Math.min(page, mockTotalPages);
-  const mockPagedEmails = useMemo(
-    () => filteredEmails.slice((mockCurrentPage - 1) * PAGE_SIZE, mockCurrentPage * PAGE_SIZE),
-    [filteredEmails, mockCurrentPage],
-  );
-  const effectiveTotal = dbMode ? (dbQuery.data?.total ?? 0) : filteredEmails.length;
-  const totalPages = dbMode
-    ? Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE))
-    : mockTotalPages;
+  const selectedEmail = dbEmails.find((e) => e.id === selected) ?? dbEmails[0] ?? null;
+
+  const effectiveTotal = dbQuery.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotal / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pagedEmails = dbMode ? dbEmails : mockPagedEmails;
+
+  const folderCounts = countsQuery.data?.counts ?? {};
+  const mailboxes = useMemo(
+    () => MAILBOXES.map((m) => ({ ...m, count: folderCounts[m.key] ?? 0 })),
+    [folderCounts],
+  );
+
+  const quickSummary = useMemo(
+    () => [
+      { label: "Chưa đọc trong hộp đến", value: countsQuery.data?.unreadInbox ?? 0 },
+      { label: "Quan trọng", value: folderCounts.starred ?? 0 },
+      { label: "Bản nháp", value: folderCounts.drafts ?? 0 },
+      { label: "Tổng email", value: countsQuery.data?.total ?? 0 },
+    ],
+    [countsQuery.data, folderCounts],
+  );
+
+  const priorityEmails = useMemo(
+    () =>
+      dbEmails
+        .slice()
+        .sort((x, y) => prioritySortValue(y) - prioritySortValue(x))
+        .filter((e) => e.unread || e.starred)
+        .slice(0, 3),
+    [dbEmails],
+  );
+
+  const statSlices: StatSlice[] = useMemo(() => {
+    const raw = [
+      { label: "Đã nhận", value: folderCounts.inbox ?? 0, color: "#7c3aed" },
+      { label: "Đã gửi", value: folderCounts.sent ?? 0, color: "#10b981" },
+      { label: "Lưu trữ", value: folderCounts.archive ?? 0, color: "#f59e0b" },
+      { label: "Khác", value: (folderCounts.drafts ?? 0) + (folderCounts.trash ?? 0), color: "#94a3b8" },
+    ];
+    const total = raw.reduce((s, x) => s + x.value, 0) || 1;
+    return raw.map((r) => ({ ...r, pct: Math.round((r.value / total) * 100) }));
+  }, [folderCounts]);
 
   // Reset paging + selection when mailbox/filters change
   function changeMailbox(key: string) {
@@ -888,7 +554,7 @@ function EmailHubPage() {
                 Mailboxes
               </div>
               <ul className="space-y-0.5">
-                {MAILBOXES.map((m) => {
+                {mailboxes.map((m) => {
                   const Icon = m.icon;
                   const active = activeMailbox === m.key;
                   return (
@@ -1139,12 +805,12 @@ function EmailHubPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {dbMode && dbQuery.isLoading ? (
+              {dbQuery.isLoading ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
                   <span className="text-xs">Đang tải email…</span>
                 </div>
-              ) : dbMode && dbQuery.error ? (
+              ) : dbQuery.error ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-destructive">
                   <AlertCircle className="h-6 w-6" />
                   <span className="font-medium">Không tải được email</span>
@@ -1492,7 +1158,7 @@ function EmailHubPage() {
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="text-sm font-semibold">Tóm tắt nhanh</div>
               <ul className="mt-3 space-y-2 text-sm">
-                {QUICK_SUMMARY.map((q) => (
+                {quickSummary.map((q) => (
                   <li key={q.label} className="flex items-center justify-between">
                     <span className="text-muted-foreground">{q.label}</span>
                     <span className="font-semibold tabular-nums">{q.value}</span>
@@ -1504,8 +1170,11 @@ function EmailHubPage() {
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="text-sm font-semibold">Ưu tiên xử lý</div>
               <ul className="mt-3 space-y-3">
-                {PRIORITY.map((p, i) => (
-                  <li key={i} className="flex gap-2">
+                {priorityEmails.length === 0 ? (
+                  <li className="text-xs text-muted-foreground">Không có email cần ưu tiên.</li>
+                ) : null}
+                {priorityEmails.map((p) => (
+                  <li key={p.id} className="flex gap-2">
                     <img
                       src={avatar(p.from)}
                       alt=""
@@ -1515,9 +1184,9 @@ function EmailHubPage() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="line-clamp-2 text-sm font-medium">{p.subject}</div>
                         <span
-                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${p.tint}`}
+                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${p.unread && p.starred ? "bg-rose-500/15 text-rose-300" : "bg-amber-500/15 text-amber-300"}`}
                         >
-                          {p.level}
+                          {p.unread && p.starred ? "Cao" : "Trung bình"}
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
@@ -1541,9 +1210,9 @@ function EmailHubPage() {
                 </button>
               </div>
               <div className="mt-3 flex items-center gap-4">
-                <DonutChart />
+                <DonutChart stats={statSlices} />
                 <ul className="flex-1 space-y-1.5 text-xs">
-                  {STATS.map((s) => (
+                  {statSlices.map((s) => (
                     <li key={s.label} className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-muted-foreground">
                         <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />{" "}
