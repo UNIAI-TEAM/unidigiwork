@@ -1093,11 +1093,11 @@ function EmailHubPage() {
               </button>
               {checkedIds.size > 0 ? (
                 <div className="ml-1 flex items-center gap-0.5">
-                  <BulkBtn icon={Archive} label="Lưu trữ" onClick={clearChecked} />
-                  <BulkBtn icon={Trash2} label="Xóa" onClick={clearChecked} />
-                  <BulkBtn icon={MailOpen} label="Đánh dấu đã đọc" onClick={clearChecked} />
-                  <BulkBtn icon={Tag} label="Gắn nhãn" onClick={clearChecked} />
-                  <BulkBtn icon={AlertOctagon} label="Spam" onClick={clearChecked} />
+                  <BulkBtn icon={Archive} label="Lưu trữ" onClick={() => bulkMove("archive")} />
+                  <BulkBtn icon={Trash2} label="Xóa" onClick={() => bulkMove("trash")} />
+                  <BulkBtn icon={MailOpen} label="Đánh dấu đã đọc" onClick={() => bulkRead(true)} />
+                  <BulkBtn icon={Mail} label="Đánh dấu chưa đọc" onClick={() => bulkRead(false)} />
+                  <BulkBtn icon={Inbox} label="Về hộp đến" onClick={() => bulkMove("inbox")} />
                   <button
                     onClick={clearChecked}
                     className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
@@ -1107,11 +1107,12 @@ function EmailHubPage() {
                   </button>
                 </div>
               ) : (
-                <button onClick={() => notifyComingSoon()}
+                <button
+                  onClick={() => dbQuery.refetch()}
                   className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
                   title="Làm mới"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className={`h-3.5 w-3.5 ${dbQuery.isFetching ? "animate-spin" : ""}`} />
                 </button>
               )}
               <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
