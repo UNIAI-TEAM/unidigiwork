@@ -131,6 +131,70 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_agent_performance: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          last_run_at: string | null
+          market_agent_id: string | null
+          proposals_approved: number
+          proposals_sent: number
+          runs_total: number
+          tasks_completed: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          last_run_at?: string | null
+          market_agent_id?: string | null
+          proposals_approved?: number
+          proposals_sent?: number
+          runs_total?: number
+          tasks_completed?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          last_run_at?: string | null
+          market_agent_id?: string | null
+          proposals_approved?: number
+          proposals_sent?: number
+          runs_total?: number
+          tasks_completed?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_agent_performance_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_agent_performance_market_agent_id_fkey"
+            columns: ["market_agent_id"]
+            isOneToOne: false
+            referencedRelation: "ai_market_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_agent_performance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_context_metrics: {
         Row: {
           created_at: string
@@ -7029,6 +7093,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      recompute_ai_agent_performance: {
+        Args: { _agent_id: string; _tenant_id: string }
+        Returns: undefined
       }
       record_meeting_usage: {
         Args: {
