@@ -85,6 +85,8 @@ export const listMarketAgents = createServerFn({ method: "GET" })
     const tenantId = await resolveTenant(context, data.workspaceId);
 
     let query = context.supabase.from("ai_market_agents").select("*").eq("published", true);
+    // Catalog dùng chung (tenant_id null) + ứng viên riêng của tenant hiện tại. RLS đã chặn tenant khác.
+    query = query.or(`tenant_id.is.null,tenant_id.eq.${tenantId}`);
     if (data.domain) query = query.eq("domain", data.domain);
     if (data.skill) query = query.contains("skills", [data.skill]);
     if (data.maxSalary) query = query.lte("salary_min", data.maxSalary);
