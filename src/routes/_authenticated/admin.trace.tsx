@@ -1,3 +1,4 @@
+import { useI18n, type Key } from "@/lib/i18n";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -32,10 +33,10 @@ function severityOfItem(item: { kind: string; data: unknown }): Severity {
 
 const ALL_STATUSES = ["success", "failure", "pending"] as const;
 type Status = (typeof ALL_STATUSES)[number];
-const STATUS_META: Record<Status, { label: string; className: string }> = {
-  success: { label: "Thành công", className: "text-emerald-400 border-emerald-500/40" },
-  failure: { label: "Thất bại", className: "text-red-400 border-red-500/40" },
-  pending: { label: "Đang xử lý", className: "text-amber-400 border-amber-500/40" },
+const STATUS_META: Record<Status, { labelKey: Key; className: string }> = {
+  success: { labelKey: "trc.161", className: "text-emerald-400 border-emerald-500/40" },
+  failure: { labelKey: "trc.162", className: "text-red-400 border-red-500/40" },
+  pending: { labelKey: "trc.163", className: "text-amber-400 border-amber-500/40" },
 };
 function statusOfItem(item: { kind: string; data: unknown }): Status {
   const d = (item.data ?? {}) as Record<string, unknown>;
@@ -49,15 +50,15 @@ function statusOfItem(item: { kind: string; data: unknown }): Status {
 }
 
 const COLUMN_DEFS = [
-  { key: "time", label: "Thời gian" },
-  { key: "kind", label: "Loại" },
-  { key: "label", label: "Nhãn (meter/event)" },
-  { key: "status", label: "Trạng thái" },
-  { key: "meta", label: "Chỉ số (Δ/usage/attempts)" },
-  { key: "tenant", label: "Tenant" },
-  { key: "actor", label: "Actor" },
-  { key: "target", label: "Aggregate/Resource ID" },
-  { key: "payload", label: "Payload / Lỗi" },
+  { key: "time", label: "Thời gian", labelKey: "trc.164" as Key },
+  { key: "kind", label: "Loại", labelKey: "trc.165" as Key },
+  { key: "label", label: "Nhãn (meter/event)", labelKey: "trc.166" as Key },
+  { key: "status", label: "Trạng thái", labelKey: "trc.167" as Key },
+  { key: "meta", label: "Chỉ số (Δ/usage/attempts)", labelKey: "trc.168" as Key },
+  { key: "tenant", label: "Tenant", labelKey: undefined },
+  { key: "actor", label: "Actor", labelKey: undefined },
+  { key: "target", label: "Aggregate/Resource ID", labelKey: undefined },
+  { key: "payload", label: "Payload / Lỗi", labelKey: "trc.169" as Key },
 ] as const;
 type ColumnKey = (typeof COLUMN_DEFS)[number]["key"];
 type ColumnPrefs = Record<ColumnKey, boolean>;
@@ -761,6 +762,7 @@ function writeMetadataLogSort(sort: MetadataLogSort) {
 }
 
 function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFailDetected?: () => void }) {
+  const { t } = useI18n();
   const entries = useMetadataCheckLog();
   const [query, setQuery] = useState(DEFAULT_METADATA_LOG_FILTERS.query);
   const [resultFilter, setResultFilter] = useState<"all" | "pass" | "fail">(DEFAULT_METADATA_LOG_FILTERS.resultFilter);
@@ -914,7 +916,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               · lọc <span className="text-foreground">{filtered.length}</span>
             </span>
           )}
-          {last ? ` · gần nhất ${last.ok ? "PASS" : "FAIL"} (${last.fieldCount} trường)` : " · chưa có"}
+          {last ? ` · gần nhất ${last.ok ? "PASS" : "FAIL"} (${last.fieldCount} trường)` : t("trc.1")}
         </span>
         <div className="flex items-center gap-1">
           <button
@@ -929,7 +931,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               setSigFilter(null);
             }}
             className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-            title="Đặt lại bộ lọc và sắp xếp"
+            title={t("trc.2")}
           >
             <RefreshCw className="h-3 w-3" />
             Reset
@@ -940,7 +942,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               disabled={filtered.length === 0}
               onClick={() => setExportOpen((v) => !v)}
               className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 hover:bg-surface-1 hover:text-foreground disabled:opacity-50"
-              title="Export chỉ các log đang được lọc"
+              title={t("trc.3")}
             >
               <Download className="h-3 w-3" />
               Export
@@ -959,10 +961,10 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                     setExportOpen(false);
                   }}
                   className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
-                  title="Tải log đã lọc dạng .log"
+                  title={t("trc.4")}
                 >
                   <Download className="h-3 w-3" />
-                  Tải .log
+                  {t("trc.5")}
                 </button>
                 <button
                   type="button"
@@ -977,10 +979,10 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                     setExportOpen(false);
                   }}
                   className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
-                  title="Tải log đã lọc dạng CSV"
+                  title={t("trc.6")}
                 >
                   <Download className="h-3 w-3" />
-                  Tải CSV
+                  {t("trc.7")}
                 </button>
                 <button
                   type="button"
@@ -1011,10 +1013,10 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                     setExportOpen(false);
                   }}
                   className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
-                  title="Tải log đã lọc dạng JSON"
+                  title={t("trc.8")}
                 >
                   <Download className="h-3 w-3" />
-                  Tải JSON
+                  {t("trc.9")}
                 </button>
                 <button
                   type="button"
@@ -1024,12 +1026,12 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                       await navigator.clipboard.writeText(text);
                       toast.success(`Đã sao chép ${filtered.length} lượt log đã lọc vào clipboard`, { duration: 2500 });
                     } catch {
-                      toast.error("Sao chép thất bại. Trình duyệt có thể chặn quyền clipboard.", { duration: 3000 });
+                      toast.error(t("trc.10"), { duration: 3000 });
                     }
                     setExportOpen(false);
                   }}
                   className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-surface-2"
-                  title="Sao chép log đã lọc vào clipboard"
+                  title={t("trc.11")}
                 >
                   <Copy className="h-3 w-3" />
                   Copy
@@ -1047,7 +1049,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm theo nội dung, thời gian, mode..."
+            placeholder={t("trc.12")}
             className="h-6 w-40 rounded border border-border bg-surface-1 pl-5 pr-5 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring sm:w-56"
           />
           {query && (
@@ -1076,7 +1078,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                 : "border-border hover:bg-surface-1 hover:text-foreground")
             }
           >
-            {k === "all" ? "Tất cả" : k === "pass" ? "PASS" : "FAIL"}
+            {k === "all" ? t("trc.13") : k === "pass" ? "PASS" : "FAIL"}
             <span className="text-muted-foreground">
               (
               {k === "all"
@@ -1091,7 +1093,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
           onChange={(e) => setDelimFilter(e.target.value)}
           className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
-          <option value="all">Delimiter: tất cả</option>
+          <option value="all">{t("trc.14")}</option>
           {delimiters.map((d) => (
             <option key={d} value={d}>
               {`"${d}"`}
@@ -1103,7 +1105,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
           onChange={(e) => setQuoteFilter(e.target.value)}
           className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
-          <option value="all">Quote: tất cả</option>
+          <option value="all">{t("trc.15")}</option>
           {quotes.map((q) => (
             <option key={q} value={q}>
               {`"${q}"`}
@@ -1117,18 +1119,18 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
             setSort({ field, direction });
           }}
           className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          title="Sắp xếp log"
+          title={t("trc.16")}
         >
-          <option value="timestamp-desc">⏱️ Mới nhất</option>
-          <option value="timestamp-asc">⏱️ Cũ nhất</option>
-          <option value="severity-desc">⚠️ FAIL trước</option>
-          <option value="severity-asc">✅ PASS trước</option>
+          <option value="timestamp-desc">{t("trc.17")}</option>
+          <option value="timestamp-asc">{t("trc.18")}</option>
+          <option value="severity-desc">{t("trc.19")}</option>
+          <option value="severity-asc">{t("trc.20")}</option>
         </select>
       </div>
 
       <div className="grid grid-cols-3 gap-2 rounded border border-border bg-surface-1 p-2">
         <div className="flex flex-col">
-          <span className="text-[10px] text-muted-foreground">Tổng kiểm tra</span>
+          <span className="text-[10px] text-muted-foreground">{t("trc.21")}</span>
           <span className="text-lg font-semibold leading-tight text-foreground">{summary.total}</span>
         </div>
         <div className="flex flex-col">
@@ -1145,7 +1147,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
 
       {topErrors.length > 0 && (
         <div className="rounded border border-border bg-surface-1 p-2">
-          <div className="mb-1 text-[10px] font-medium text-muted-foreground">Top lỗi phổ biến</div>
+          <div className="mb-1 text-[10px] font-medium text-muted-foreground">{t("trc.22")}</div>
           <ul className="flex flex-col gap-1">
             {topErrors.map(([sig, count], i) => (
               <li key={i}>
@@ -1156,7 +1158,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                     "flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-left text-[11px] hover:bg-surface-2 " +
                     (sigFilter === sig ? "bg-surface-2 ring-1 ring-ring" : "")
                   }
-                  title={sigFilter === sig ? "Bỏ lọc theo lỗi này" : `Xem log chi tiết: ${sig}`}
+                  title={sigFilter === sig ? t("trc.23") : `Xem log chi tiết: ${sig}`}
                 >
                   <span className="line-clamp-1 text-foreground">
                     {i + 1}. {sig}
@@ -1175,7 +1177,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               className="mt-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] hover:bg-surface-2 hover:text-foreground"
             >
               <X className="h-3 w-3" />
-              Bỏ lọc theo lỗi
+              {t("trc.24")}
             </button>
           )}
         </div>
@@ -1183,7 +1185,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
 
       <div className="max-h-56 overflow-y-auto rounded border border-border bg-surface-1">
         {pageItems.length === 0 ? (
-          <div className="px-2 py-3 text-center text-muted-foreground">Không có log phù hợp.</div>
+          <div className="px-2 py-3 text-center text-muted-foreground">{t("trc.25")}</div>
         ) : (
           <ul className="divide-y divide-border">
             {pageItems.map((e, i) => (
@@ -1191,7 +1193,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                 <button
                   type="button"
                   onClick={() => setDetail(e)}
-                  title="Xem đầy đủ nội dung log"
+                  title={t("trc.26")}
                   className="flex flex-1 items-start gap-2 text-left"
                 >
                   <span
@@ -1212,13 +1214,13 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                 </button>
                 <button
                   type="button"
-                  title="Sao chép stack trace"
+                  title={t("trc.27")}
                   onClick={(evt) => {
                     evt.stopPropagation();
                     navigator.clipboard
                       .writeText(e.message)
-                      .then(() => toast.success("Đã sao chép stack trace"))
-                      .catch(() => toast.error("Không sao chép được"));
+                      .then(() => toast.success(t("trc.28")))
+                      .catch(() => toast.error(t("trc.29")));
                   }}
                   className="mt-0.5 shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-surface-2 hover:text-foreground group-hover:opacity-100"
                 >
@@ -1242,17 +1244,17 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               >
                 {detail?.ok ? "PASS" : "FAIL"}
               </span>
-              Chi tiết log kiểm tra
+              {t("trc.30")}
             </DialogTitle>
           </DialogHeader>
           {detail && (
             <div className="space-y-3 text-xs">
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
                 {[
-                  ["Thời điểm", detail.at],
-                  ["Biến thể", detail.variant],
-                  ["Chế độ", detail.mode],
-                  ["Số trường", String(detail.fieldCount)],
+                  [t("trc.31"), detail.at],
+                  [t("trc.32"), detail.variant],
+                  [t("trc.33"), detail.mode],
+                  [t("trc.34"), String(detail.fieldCount)],
                   ["Delimiter", detail.delimiter === "\t" ? "\\t" : detail.delimiter],
                   ["Quote", detail.quoteChar],
                 ].map(([k, v]) => (
@@ -1264,20 +1266,20 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               </dl>
               <div>
                 <div className="mb-1 flex items-center justify-between text-muted-foreground">
-                  <span>Thông điệp / stack trace</span>
+                  <span>{t("trc.35")}</span>
                   <button
                     type="button"
-                    title="Sao chép stack trace"
+                    title={t("trc.27")}
                     onClick={() => {
                       navigator.clipboard
                         .writeText(detail.message)
-                        .then(() => toast.success("Đã sao chép stack trace"))
-                        .catch(() => toast.error("Không sao chép được"));
+                        .then(() => toast.success(t("trc.28")))
+                        .catch(() => toast.error(t("trc.29")));
                     }}
                     className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] hover:bg-surface-2 hover:text-foreground"
                   >
                     <Copy className="h-3 w-3" />
-                    Sao chép
+                    {t("trc.36")}
                   </button>
                 </div>
                 <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border border-border bg-surface-1 p-2 font-mono text-[11px] text-foreground">
@@ -1285,7 +1287,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                 </pre>
               </div>
               <div>
-                <div className="mb-1 text-muted-foreground">Dòng metadata</div>
+                <div className="mb-1 text-muted-foreground">{t("trc.37")}</div>
                 <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-all rounded border border-border bg-surface-1 p-2 font-mono text-[11px] text-foreground">
                   {detail.line}
                 </pre>
@@ -1296,13 +1298,13 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
                   onClick={() => {
                     navigator.clipboard
                       .writeText(buildMetadataCheckLogText([detail]))
-                      .then(() => toast.success("Đã sao chép nội dung log"))
-                      .catch(() => toast.error("Không sao chép được"));
+                      .then(() => toast.success(t("trc.38")))
+                      .catch(() => toast.error(t("trc.29")));
                   }}
                   className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 hover:bg-surface-2 hover:text-foreground"
                 >
                   <Copy className="h-3 w-3" />
-                  Sao chép log này
+                  {t("trc.39")}
                 </button>
               </div>
             </div>
@@ -1324,7 +1326,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
               className="h-6 rounded border border-border bg-surface-1 px-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              title="Số log mỗi trang"
+              title={t("trc.40")}
             >
               {[10, 20, 50, 100].map((n) => (
                 <option key={n} value={n}>
@@ -1337,7 +1339,7 @@ function MetadataCheckLogPanel({ csv, onFailDetected }: { csv: CsvOptions; onFai
               disabled={safePage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               className="inline-flex items-center rounded border border-border px-1 py-0.5 hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
-              title="Trang trước"
+              title={t("trc.41")}
             >
               <ChevronLeft className="h-3 w-3" />
             </button>
@@ -1410,6 +1412,7 @@ function parseCsvLineExcel(line: string, delim: string, quote: string): ExcelFie
 }
 
 function ExcelParseCheck({ line, csv, variant = "metadata" }: { line: string; csv: CsvOptions; variant?: string }) {
+  const { t } = useI18n();
   const [result, setResult] = useState<ExcelField[] | null>(null);
   const problems = result?.filter((f) => f.note) ?? [];
   return (
@@ -1428,17 +1431,17 @@ function ExcelParseCheck({ line, csv, variant = "metadata" }: { line: string; cs
           else toast.warning(`Excel parse: ${r.length} cột, ${bad} cảnh báo`, { duration: 4000 });
         }}
         className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-        title="Parse dòng metadata theo cách Excel diễn giải, dùng delimiter/quote đang chọn"
+        title={t("trc.42")}
       >
         <CheckCircle2 className="h-3 w-3" />
-        Kiểm tra kiểu Excel
+        {t("trc.43")}
       </button>
       {result && (
         <div className="mt-1 rounded border border-border bg-surface-2 p-1.5">
           <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>
               Excel đọc thành <span className="text-foreground">{result.length}</span> cột
-              {problems.length > 0 ? ` · ${problems.length} cảnh báo` : " · không cảnh báo"}
+              {problems.length > 0 ? ` · ${problems.length} cảnh báo` : t("trc.44")}
             </span>
             <button type="button" onClick={() => setResult(null)} className="rounded p-0.5 hover:text-foreground">
               <XCircle className="h-3 w-3" />
@@ -1451,7 +1454,7 @@ function ExcelParseCheck({ line, csv, variant = "metadata" }: { line: string; cs
                   #{f.index + 1} · vị trí {f.start} · {f.quoted ? "quoted" : "plain"}
                 </span>
                 {": "}
-                <span className="text-foreground">{f.value || "(rỗng)"}</span>
+                <span className="text-foreground">{f.value || t("trc.45")}</span>
                 {f.note && <div className="text-amber-400">⚠ {f.note}</div>}
               </li>
             ))}
@@ -1463,6 +1466,7 @@ function ExcelParseCheck({ line, csv, variant = "metadata" }: { line: string; cs
 }
 
 function MetadataValidationBadgeInner({ line, csv }: { line: string; csv: CsvOptions }) {
+  const { t } = useI18n();
   const v = validateMetadataLine(line, csv);
   if (!v.ok && csv.autoFixMetadata) {
     const r = resolveMetadataLine(line, csv);
@@ -1494,7 +1498,7 @@ function MetadataValidationBadgeInner({ line, csv }: { line: string; csv: CsvOpt
           {v.issues.slice(0, 6).map((iss, k) => (
             <li key={k} className="font-mono leading-snug">
               <span className="text-muted-foreground">
-                {iss.index >= 0 ? `Trường #${iss.index + 1}` : "Dòng"} · vị trí ký tự {iss.position}
+                {iss.index >= 0 ? `Trường #${iss.index + 1}` : t("trc.46")} · vị trí ký tự {iss.position}
               </span>
               {": "}
               {iss.message}
@@ -1796,6 +1800,7 @@ type TraceResult = Awaited<ReturnType<typeof traceByCorrelationId>>;
 type TimelineItem = TraceResult["timeline"][number];
 
 function AdminTracePage() {
+  const { t } = useI18n();
   const { cid, page, limit, kinds, from, to, sort, sev, st } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [input, setInput] = useState<string>(cid ?? "");
@@ -1863,9 +1868,9 @@ function AdminTracePage() {
       }),
     onSuccess: (data) => {
       setResult(data);
-      if (data.totals.total === 0) toast.info("Không tìm thấy event nào với correlation_id này.");
+      if (data.totals.total === 0) toast.info(t("trc.47"));
     },
-    onError: (e: Error) => toast.error(e.message ?? "Không truy vết được"),
+    onError: (e: Error) => toast.error(e.message ?? t("trc.48")),
   });
 
   const exportMut = useMutation({
@@ -1950,7 +1955,7 @@ function AdminTracePage() {
         active: true,
         variant: "all",
         phase: effOpts.zip ? "compressing" : "saving",
-        label: effOpts.zip ? (autoZipped ? "Tự động nén .zip…" : "Đang nén .zip…") : "Đang tạo file…",
+        label: effOpts.zip ? (autoZipped ? t("trc.49") : t("trc.50")) : t("trc.51"),
         percent: 75,
         rows: data.rowCount,
       });
@@ -1983,14 +1988,14 @@ function AdminTracePage() {
         active: true,
         variant: "all",
         phase: "fetching",
-        label: "Đang truy vấn dữ liệu từ máy chủ…",
+        label: t("trc.52"),
         percent: 35,
       });
     },
     onError: (e: Error) => {
-      setExportProgress({ active: true, variant: "all", phase: "error", label: e.message ?? "Không export được", percent: 100 });
+      setExportProgress({ active: true, variant: "all", phase: "error", label: e.message ?? t("trc.53"), percent: 100 });
       window.setTimeout(() => setExportProgress(IDLE_EXPORT_PROGRESS), 3000);
-      toast.error(e.message ?? "Không export được");
+      toast.error(e.message ?? t("trc.53"));
     },
   });
 
@@ -2006,7 +2011,7 @@ function AdminTracePage() {
   const submit = () => {
     const v = input.trim();
     if (!v) {
-      toast.error("Nhập correlation_id trước");
+      toast.error(t("trc.54"));
       return;
     }
     navigate({ search: (prev: SearchState) => ({ ...prev, cid: v, page: 1 }) });
@@ -2014,12 +2019,12 @@ function AdminTracePage() {
 
   const applyRange = () => {
     const f = fromInput.trim() || undefined;
-    const t = toInput.trim() || undefined;
-    if (f && t && localToIso(f)! > localToIso(t)!) {
-      toast.error("Khoảng thời gian không hợp lệ: 'Từ' phải trước 'Đến'");
+    const tEnd = toInput.trim() || undefined;
+    if (f && tEnd && localToIso(f)! > localToIso(tEnd)!) {
+      toast.error(t("trc.55"));
       return;
     }
-    navigate({ search: (prev: SearchState) => ({ ...prev, from: f, to: t, page: 1 }) });
+    navigate({ search: (prev: SearchState) => ({ ...prev, from: f, to: tEnd, page: 1 }) });
   };
   const clearRange = () => {
     setFromInput("");
@@ -2038,10 +2043,10 @@ function AdminTracePage() {
   };
 
   const quickRangeOptions = [
-    { label: "15 phút", minutes: 15 },
-    { label: "1 giờ", minutes: 60 },
-    { label: "24 giờ", minutes: 24 * 60 },
-    { label: "7 ngày", minutes: 7 * 24 * 60 },
+    { label: t("trc.56"), minutes: 15 },
+    { label: t("trc.57"), minutes: 60 },
+    { label: t("trc.58"), minutes: 24 * 60 },
+    { label: t("trc.59"), minutes: 7 * 24 * 60 },
   ] as const;
 
   const goToPage = (nextPage: number) => {
@@ -2055,7 +2060,7 @@ function AdminTracePage() {
     if (set.has(k)) set.delete(k);
     else set.add(k);
     if (set.size === 0) {
-      toast.error("Phải chọn ít nhất một loại event");
+      toast.error(t("trc.60"));
       return;
     }
     const next: Kind[] = ALL_KINDS.filter((x) => set.has(x));
@@ -2070,7 +2075,7 @@ function AdminTracePage() {
     if (set.has(s)) set.delete(s);
     else set.add(s);
     if (set.size === 0) {
-      toast.error("Phải chọn ít nhất một mức severity");
+      toast.error(t("trc.61"));
       return;
     }
     const next: Severity[] = ALL_SEVERITIES.filter((x) => set.has(x));
@@ -2085,7 +2090,7 @@ function AdminTracePage() {
     if (set.has(s)) set.delete(s);
     else set.add(s);
     if (set.size === 0) {
-      toast.error("Phải chọn ít nhất một trạng thái");
+      toast.error(t("trc.62"));
       return;
     }
     const next: Status[] = ALL_STATUSES.filter((x) => set.has(x));
@@ -2103,7 +2108,7 @@ function AdminTracePage() {
   const savePreset = (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) {
-      toast.error("Nhập tên preset");
+      toast.error(t("trc.63"));
       return;
     }
     const encodedKinds = activeKinds.length === ALL_KINDS.length ? undefined : activeKinds.join(",");
@@ -2200,7 +2205,7 @@ function AdminTracePage() {
           <div>
             <h1 className="text-sm font-semibold">Trace theo correlation_id</h1>
             <p className="text-xs text-muted-foreground">
-              Truy vết end-to-end: quota_check_events, audit_events, outbox_events cùng correlation_id, xếp theo thời gian.
+              {t("trc.64")}
             </p>
           </div>
         </div>
@@ -2211,7 +2216,7 @@ function AdminTracePage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") submit();
             }}
-            placeholder="Ví dụ: 018f9c3a-8b2e-7a3f-b5e0-1c9f8e6b4a2d"
+            placeholder={t("trc.65")}
             className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-xs outline-none focus:border-primary/60"
             maxLength={200}
           />
@@ -2221,12 +2226,12 @@ function AdminTracePage() {
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             <Search className={`h-3.5 w-3.5 ${traceMut.isPending ? "animate-pulse" : ""}`} />
-            {traceMut.isPending ? "Đang truy vết…" : "Truy vết"}
+            {traceMut.isPending ? t("trc.66") : t("trc.67")}
           </button>
         </div>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
           <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
-            <span>Từ</span>
+            <span>{t("trc.68")}</span>
             <input
               type="datetime-local"
               value={fromInput}
@@ -2235,7 +2240,7 @@ function AdminTracePage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
-            <span>Đến</span>
+            <span>{t("trc.69")}</span>
             <input
               type="datetime-local"
               value={toInput}
@@ -2248,7 +2253,7 @@ function AdminTracePage() {
             disabled={traceMut.isPending}
             className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs text-foreground hover:border-primary/60 disabled:opacity-50"
           >
-            Áp dụng
+            {t("trc.70")}
           </button>
           {(from || to) && (
             <button
@@ -2256,7 +2261,7 @@ function AdminTracePage() {
               disabled={traceMut.isPending}
               className="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
-              Xóa khoảng
+              {t("trc.71")}
             </button>
           )}
           {(from || to) && (
@@ -2266,7 +2271,7 @@ function AdminTracePage() {
           )}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] text-muted-foreground">Chọn nhanh:</span>
+          <span className="text-[11px] text-muted-foreground">{t("trc.72")}</span>
           {quickRangeOptions.map((opt) => (
             <button
               key={opt.minutes}
@@ -2323,11 +2328,11 @@ function AdminTracePage() {
         />
       ) : traceMut.isPending ? (
         <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
-          Đang truy vết…
+          {t("trc.66")}
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-10 text-center text-xs text-muted-foreground">
-          Nhập correlation_id và bấm Truy vết để xem timeline.
+          {t("trc.73")}
         </div>
       )}
     </div>
@@ -2335,14 +2340,15 @@ function AdminTracePage() {
 }
 
 function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClose: () => void }) {
+  const { t } = useI18n();
   if (!item) return null;
-  const t = new Date(item.at);
-  const timeStr = `${t.toLocaleDateString("vi-VN")} ${t.toLocaleTimeString("vi-VN", { hour12: false })}`;
+  const dt = new Date(item.at);
+  const timeStr = `${dt.toLocaleDateString()} ${dt.toLocaleTimeString(undefined, { hour12: false })}`;
   const json = JSON.stringify(item.data, null, 2);
   const copyJson = () => { void navigator.clipboard?.writeText(json); };
   return (
     <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
-      <div className="flex-1 bg-black/40" onClick={onClose} aria-label="Đóng panel" />
+      <div className="flex-1 bg-black/40" onClick={onClose} aria-label={t("trc.74")} />
       <aside className="flex h-full w-full max-w-xl flex-col border-l border-border bg-surface-1 shadow-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border p-4">
           <div className="flex flex-col gap-1">
@@ -2350,7 +2356,7 @@ function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClos
               <KindBadge kind={item.kind} />
               <span className="tabular-nums text-xs text-muted-foreground">{timeStr}</span>
             </div>
-            <h3 className="text-sm font-semibold text-foreground">Chi tiết event</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("trc.75")}</h3>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -2364,9 +2370,9 @@ function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClos
               type="button"
               onClick={onClose}
               className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-surface-2"
-              aria-label="Đóng"
+              aria-label={t("trc.76")}
             >
-              Đóng
+              {t("trc.76")}
             </button>
           </div>
         </header>
@@ -2429,6 +2435,7 @@ function ExportSizeHint({
   onEnableZip: () => void;
   disabled?: boolean;
 }) {
+  const { t } = useI18n();
   if (disabled || rows <= 0 || cols <= 0) return null;
   const raw = estimateCsvBytes(rows, cols, includeMetadata);
   const finalBytes = zip ? Math.max(1024, Math.round(raw * ZIP_COMPRESSION_RATIO)) : raw;
@@ -2459,22 +2466,23 @@ function ExportSizeHint({
             type="button"
             onClick={onEnableZip}
             className="rounded-md border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-            title="Bật ZIP mặc định cho các lần export sau"
+            title={t("trc.77")}
           >
-            Bật mặc định
+            {t("trc.78")}
           </button>
         </>
       )}
       {warn && zip && (
-        <span className="text-emerald-600">· ZIP đang bật</span>
+        <span className="text-emerald-600">{t("trc.79")}</span>
       )}
     </div>
   );
 }
 
 function ExportProgressBar({ progress }: { progress: ExportProgress }) {
+  const { t } = useI18n();
   if (!progress.active) return null;
-  const variantLabel = progress.variant === "all" ? "CSV · tất cả kết quả" : "CSV · cột hiện tại";
+  const variantLabel = progress.variant === "all" ? t("trc.80") : t("trc.81");
   const isError = progress.phase === "error";
   const isDone = progress.phase === "done";
   const barTone = isError
@@ -2497,7 +2505,7 @@ function ExportProgressBar({ progress }: { progress: ExportProgress }) {
           <span className={isError ? "text-destructive" : "text-muted-foreground"}>{progress.label}</span>
         </div>
         <span className="text-muted-foreground">
-          {isError ? "Lỗi" : isDone ? "Hoàn tất" : `${Math.round(progress.percent)}%`}
+          {isError ? t("trc.82") : isDone ? t("trc.83") : `${Math.round(progress.percent)}%`}
         </span>
       </div>
       <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
@@ -2575,6 +2583,7 @@ function TraceResultView({
   lastExportStats: LastExportStats | null;
   setLastExportStats: (v: LastExportStats) => void;
 }) {
+  const { t } = useI18n();
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
   const [selected, setSelected] = useState<TimelineItem | null>(null);
@@ -2739,8 +2748,8 @@ function TraceResultView({
   }, [timeline, kw, sevFiltered, activeSevSet, stFiltered, activeStSet]);
   const copyCid = () => {
     navigator.clipboard.writeText(correlationId).then(
-      () => toast.success("Đã copy correlation_id"),
-      () => toast.error("Copy thất bại"),
+      () => toast.success(t("trc.84")),
+      () => toast.error(t("trc.85")),
     );
   };
   const { page, pageCount, pageSize, offset } = pagination;
@@ -2755,14 +2764,14 @@ function TraceResultView({
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <CountCard label="Tổng events" value={totals.total} icon={Activity} tint="text-foreground" hint={`hiện ${counts.total}`} />
+        <CountCard label={t("trc.86")} value={totals.total} icon={Activity} tint="text-foreground" hint={`hiện ${counts.total}`} />
         <CountCard label="Quota checks" value={totals.quota} icon={CheckCircle2} tint="text-emerald-400" hint={`hiện ${counts.quota}`} />
         <CountCard label="Audit" value={totals.audit} icon={ShieldCheck} tint="text-sky-400" hint={`hiện ${counts.audit}`} />
         <CountCard label="Outbox" value={totals.outbox} icon={Radio} tint="text-amber-400" hint={`hiện ${counts.outbox}`} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-muted-foreground">Lọc loại event:</span>
+        <span className="text-muted-foreground">{t("trc.87")}</span>
         {ALL_KINDS.map((k) => {
           const active = activeKinds.includes(k);
           return (
@@ -2787,13 +2796,13 @@ function TraceResultView({
             disabled={pending}
             className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
-            Tất cả
+            {t("trc.13")}
           </button>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-muted-foreground">Lọc severity:</span>
+        <span className="text-muted-foreground">{t("trc.88")}</span>
         {ALL_SEVERITIES.map((s) => {
           const active = activeSevSet.has(s);
           return (
@@ -2819,7 +2828,7 @@ function TraceResultView({
               disabled={pending}
               className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
-              Tất cả
+              {t("trc.13")}
             </button>
             <span className="text-[11px] tabular-nums text-muted-foreground">
               Khớp {filteredTimeline.length.toLocaleString("vi-VN")} / {timeline.length.toLocaleString("vi-VN")}
@@ -2829,7 +2838,7 @@ function TraceResultView({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-muted-foreground">Lọc trạng thái:</span>
+        <span className="text-muted-foreground">{t("trc.89")}</span>
         {ALL_STATUSES.map((s) => {
           const active = activeStSet.has(s);
           return (
@@ -2844,7 +2853,7 @@ function TraceResultView({
                   : "border-border bg-surface text-muted-foreground hover:text-foreground"
               } disabled:opacity-50`}
             >
-              {STATUS_META[s].label}
+              {t(STATUS_META[s].labelKey)}
             </button>
           );
         })}
@@ -2854,7 +2863,7 @@ function TraceResultView({
             disabled={pending}
             className="ml-1 rounded-full border border-border bg-surface px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
-            Tất cả
+            {t("trc.13")}
           </button>
         )}
       </div>
@@ -2876,10 +2885,10 @@ function TraceResultView({
               onClick={onToggleSort}
               disabled={pending || totals.total === 0}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-              title={sort === "asc" ? "Đang xếp tăng dần (cũ → mới)" : "Đang xếp giảm dần (mới → cũ)"}
+              title={sort === "asc" ? t("trc.90") : t("trc.91")}
             >
               {sort === "asc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
-              {sort === "asc" ? "Cũ → mới" : "Mới → cũ"}
+              {sort === "asc" ? t("trc.92") : t("trc.93")}
             </button>
             <button
               onClick={() => onExport(keyword, csvOpts, activeExportCols)}
@@ -2887,7 +2896,7 @@ function TraceResultView({
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
               title={
                 activeExportCols.length === 0
-                  ? "Chưa chọn cột nào để export"
+                  ? t("trc.94")
                   : keyword.trim()
                   ? `Export ${activeExportCols.length} cột, kèm keyword`
                   : `Export ${activeExportCols.length} cột`
@@ -2895,7 +2904,7 @@ function TraceResultView({
             >
               <Download className={`h-3 w-3 ${exporting || exportProgress.active ? "animate-pulse" : ""}`} />
               {exporting || (exportProgress.active && exportProgress.variant === "all")
-                ? exportProgress.label || "Đang export…"
+                ? exportProgress.label || t("trc.95")
                 : `CSV (tất cả kết quả) · ${activeExportCols.length}/${exportCols.length} cột`}
             </button>
             <TraceExportColumnsMenu
@@ -2910,7 +2919,7 @@ function TraceResultView({
               onClick={() => {
                 const startedAt = performance.now();
                 const csv = buildTimelineCsv(filteredTimeline, columns, columnOrder, csvOpts);
-                if (!csv) { toast.error("Chưa bật cột nào để export"); return; }
+                if (!csv) { toast.error(t("trc.96")); return; }
                 const csvFilename = buildCsvFilename({
                   correlationId,
                   variant: "columns",
@@ -2968,7 +2977,7 @@ function TraceResultView({
                   active: true,
                   variant: "columns",
                   phase: effOpts.zip ? "compressing" : "saving",
-                  label: effOpts.zip ? (autoZipped ? "Tự động nén .zip…" : "Đang nén .zip…") : "Đang tạo file…",
+                  label: effOpts.zip ? (autoZipped ? t("trc.49") : t("trc.50")) : t("trc.51"),
                   percent: 70,
                   rows,
                 });
@@ -2991,7 +3000,7 @@ function TraceResultView({
               }}
               disabled={filteredTimeline.length === 0 || activeColumnCount === 0 || exportProgress.active}
               className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-              title="Export CSV chỉ gồm các cột đang bật trong timeline (đúng thứ tự và tiêu đề)"
+              title={t("trc.97")}
             >
               <Download className="h-3 w-3" />
               CSV (cột hiện tại)
@@ -3037,7 +3046,7 @@ function TraceResultView({
         </div>
         <div className="flex flex-col gap-1 border-b border-border bg-surface-2/30 px-4 py-2">
           <ExportSizeHint
-            label="CSV · tất cả kết quả"
+            label={t("trc.80")}
             rows={totals.total}
             cols={activeExportCols.length}
             zip={csvOpts.zip}
@@ -3046,7 +3055,7 @@ function TraceResultView({
             disabled={totals.total === 0 || activeExportCols.length === 0}
           />
           <ExportSizeHint
-            label="CSV · cột hiện tại"
+            label={t("trc.81")}
             rows={filteredTimeline.length}
             cols={activeColumnCount}
             zip={csvOpts.zip}
@@ -3074,14 +3083,14 @@ function TraceResultView({
             <input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Tìm keyword trong nội dung event (meter, actor, aggregate_id, payload…)"
+              placeholder={t("trc.98")}
               className="w-full rounded-md border border-border bg-surface px-7 py-1.5 text-xs outline-none focus:border-primary/60"
               maxLength={200}
             />
             {keyword && (
               <button
                 onClick={() => setKeyword("")}
-                aria-label="Xóa từ khóa"
+                aria-label={t("trc.99")}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3 w-3" />
@@ -3096,7 +3105,7 @@ function TraceResultView({
         </div>
         {filteredTimeline.length === 0 ? (
           <div className="py-10 text-center text-sm text-muted-foreground">
-            {kw ? "Không có event khớp từ khóa." : "Không có event nào."}
+            {kw ? t("trc.100") : t("trc.101")}
           </div>
         ) : (
           <ol className="divide-y divide-border">
@@ -3131,8 +3140,9 @@ function TraceResultView({
 }
 
 function FrequencyChart({ items }: { items: TimelineItem[] }) {
+  const { t } = useI18n();
   const { data, bucketLabel } = useMemo(() => {
-    if (items.length === 0) return { data: [] as Array<{ t: string; quota: number; audit: number; outbox: number }>, bucketLabel: "phút" };
+    if (items.length === 0) return { data: [] as Array<{ t: string; quota: number; audit: number; outbox: number }>, bucketLabel: t("trc.102") };
     const times = items.map((i) => new Date(i.at).getTime());
     const min = Math.min(...times);
     const max = Math.max(...times);
@@ -3140,7 +3150,7 @@ function FrequencyChart({ items }: { items: TimelineItem[] }) {
     // Choose bucket: <=2h -> minute, <=2d -> hour, else day
     const MIN = 60_000, HOUR = 3_600_000, DAY = 86_400_000;
     const bucketMs = spanMs <= 2 * HOUR ? MIN : spanMs <= 2 * DAY ? HOUR : DAY;
-    const label = bucketMs === MIN ? "phút" : bucketMs === HOUR ? "giờ" : "ngày";
+    const label = bucketMs === MIN ? t("trc.102") : bucketMs === HOUR ? t("trc.103") : t("trc.104");
     const map = new Map<number, { quota: number; audit: number; outbox: number }>();
     for (const it of items) {
       const ts = new Date(it.at).getTime();
@@ -3228,6 +3238,7 @@ function PaginationBar({
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
 }) {
+  const { t } = useI18n();
   const canPrev = page > 1 && !pending;
   const canNext = page < pageCount && !pending;
   return (
@@ -3237,7 +3248,7 @@ function PaginationBar({
       </div>
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-1">
-          <span>Mỗi trang</span>
+          <span>{t("trc.105")}</span>
           <select
             value={pageSize}
             onChange={(e) => onLimit(Number(e.target.value))}
@@ -3256,7 +3267,7 @@ function PaginationBar({
             onClick={() => onPage(page - 1)}
             disabled={!canPrev}
             className="inline-flex items-center rounded-md border border-border bg-surface px-1.5 py-1 hover:text-foreground disabled:opacity-40"
-            aria-label="Trang trước"
+            aria-label={t("trc.41")}
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
@@ -3477,6 +3488,7 @@ function CsvOptionsMenu({
   onChange: (v: CsvOptions) => void;
   preview?: CsvPreviewContext;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -3493,7 +3505,7 @@ function CsvOptionsMenu({
       <button
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-        title="Tùy chọn định dạng CSV (delimiter, quote, BOM)"
+        title={t("trc.106")}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -3502,18 +3514,18 @@ function CsvOptionsMenu({
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-border bg-surface p-3 text-xs shadow-lg">
           <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
-            <span>Tùy chọn CSV</span>
+            <span>{t("trc.107")}</span>
             <button
               onClick={() => onChange(DEFAULT_CSV_OPTIONS)}
               className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
             >
-              Đặt lại
+              {t("trc.108")}
             </button>
           </div>
           <div className="mb-3">
             <div className="mb-1 text-muted-foreground">Delimiter</div>
             <div className="flex gap-1">
-              {([[",", "Phẩy ,"], [";", "Chấm phẩy ;"], ["\t", "Tab"]] as const).map(([d, label]) => (
+              {([[",", t("trc.109")], [";", t("trc.110")], ["\t", "Tab"]] as const).map(([d, label]) => (
                 <button
                   key={d}
                   onClick={() => onChange({ ...value, delimiter: d })}
@@ -3526,7 +3538,7 @@ function CsvOptionsMenu({
             </div>
           </div>
           <div className="mb-3">
-            <div className="mb-1 text-muted-foreground">Ký tự bao chuỗi</div>
+            <div className="mb-1 text-muted-foreground">{t("trc.111")}</div>
             <div className="flex gap-1">
               {([['"', "\" (double)"], ["'", "' (single)"]] as const).map(([q, label]) => (
                 <button
@@ -3547,7 +3559,7 @@ function CsvOptionsMenu({
               onChange={(e) => onChange({ ...value, bom: e.target.checked })}
               className="h-3.5 w-3.5 rounded border-border accent-primary"
             />
-            <span className="text-foreground">Thêm BOM (UTF-8) để tương thích Excel</span>
+            <span className="text-foreground">{t("trc.112")}</span>
           </label>
           <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 hover:bg-surface-2">
             <input
@@ -3556,7 +3568,7 @@ function CsvOptionsMenu({
               onChange={(e) => onChange({ ...value, zip: e.target.checked })}
               className="h-3.5 w-3.5 rounded border-border accent-primary"
             />
-            <span className="text-foreground">Nén file thành .zip (khuyến nghị khi &gt;10k dòng)</span>
+            <span className="text-foreground">{t("trc.113")}</span>
           </label>
           <label className={`mt-1 flex items-center gap-2 pl-6 ${value.zip ? "" : "opacity-50"}`}>
             <input
@@ -3589,7 +3601,7 @@ function CsvOptionsMenu({
             Xuất thêm <code>&lt;stem&gt;.meta.json</code> gồm metadata (keyword, from/to, sort, filter, timezone, rows) và summary (total_rows, severity, processing_ms) dạng JSON để đối chiếu hoặc import lại.
           </p>
           <div className="mt-3">
-            <div className="mb-1 text-muted-foreground">Timezone trong tên file (from/to)</div>
+            <div className="mb-1 text-muted-foreground">{t("trc.114")}</div>
             <div className="flex gap-1">
               {([["utc", `UTC (Z)`], ["local", `Local (${Intl.DateTimeFormat().resolvedOptions().timeZone})`]] as const).map(([tz, label]) => (
                 <button
@@ -3602,7 +3614,7 @@ function CsvOptionsMenu({
                 </button>
               ))}
             </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Hậu tố Z = UTC, L = local time.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">{t("trc.115")}</p>
           </div>
           <div>
             <label className="flex items-center gap-2">
@@ -3611,7 +3623,7 @@ function CsvOptionsMenu({
                 checked={value.includeMetadata}
                 onChange={(e) => onChange({ ...value, includeMetadata: e.target.checked })}
               />
-              <span>Thêm dòng metadata đầu file</span>
+              <span>{t("trc.116")}</span>
             </label>
             <p className="mt-1 text-[11px] text-muted-foreground">
               Ghi 1 dòng comment (bắt đầu bằng <code># </code>) ghi rõ keyword, from/to, sort, severities, statuses, kinds, timezone và thời gian tạo file.
@@ -3625,7 +3637,7 @@ function CsvOptionsMenu({
                 className="h-3.5 w-3.5 rounded border-border accent-primary"
               />
               <span className={value.includeMetadata ? "text-foreground" : "text-muted-foreground"}>
-                Tự động sửa metadata để parse OK trước khi export
+                {t("trc.117")}
               </span>
             </label>
             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -3634,16 +3646,16 @@ function CsvOptionsMenu({
           </div>
           <div className="mt-3 space-y-1.5 border-t border-border pt-2">
             <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
-              <span>Mẫu tên file</span>
+              <span>{t("trc.118")}</span>
               <button
                 onClick={() => onChange({ ...value, filenameTemplate: DEFAULT_FILENAME_TEMPLATE.map((p) => ({ ...p })) })}
                 className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
               >
-                Đặt lại
+                {t("trc.108")}
               </button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Kéo thứ tự bằng nút ▲▼, tick để bật/tắt từng trường. Các trường không có dữ liệu sẽ tự bỏ qua.
+              {t("trc.119")}
             </p>
             <ul className="space-y-1">
               {value.filenameTemplate.map((part, idx) => (
@@ -3671,7 +3683,7 @@ function CsvOptionsMenu({
                       onChange({ ...value, filenameTemplate: next });
                     }}
                     className="rounded px-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    aria-label="Di chuyển lên"
+                    aria-label={t("trc.120")}
                   >
                     ▲
                   </button>
@@ -3684,7 +3696,7 @@ function CsvOptionsMenu({
                       onChange({ ...value, filenameTemplate: next });
                     }}
                     className="rounded px-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    aria-label="Di chuyển xuống"
+                    aria-label={t("trc.121")}
                   >
                     ▼
                   </button>
@@ -3758,15 +3770,15 @@ function CsvOptionsMenu({
               <div className="mt-3 space-y-1.5 border-t border-border pt-2">
                 <div className="rounded-md border border-border bg-surface-2 px-2 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
                   <div className="flex items-center justify-between">
-                    <span>Tổng số rows (tất cả kết quả)</span>
+                    <span>{t("trc.122")}</span>
                     <span className="font-mono text-foreground">{(preview.rowsAll ?? 0).toLocaleString("vi-VN")}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Rows theo cột hiện tại</span>
+                    <span>{t("trc.123")}</span>
                     <span className="font-mono text-foreground">{(preview.rowsCols ?? 0).toLocaleString("vi-VN")}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>processing_ms (lần export gần nhất)</span>
+                    <span>{t("trc.124")}</span>
                     <span className="font-mono text-foreground">
                       {preview.lastExport
                         ? `${preview.lastExport.processingMs.toLocaleString("vi-VN")} ms`
@@ -3781,10 +3793,10 @@ function CsvOptionsMenu({
                   )}
                 </div>
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Xem trước tên file
+                  {t("trc.125")}
                 </div>
                 <div>
-                  <div className="text-[11px] text-muted-foreground">CSV (tất cả kết quả)</div>
+                  <div className="text-[11px] text-muted-foreground">{t("trc.126")}</div>
                   <code
                     className="mt-0.5 block break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
                     title={display(nameAll)}
@@ -3793,7 +3805,7 @@ function CsvOptionsMenu({
                   </code>
                 </div>
                 <div>
-                  <div className="text-[11px] text-muted-foreground">CSV (cột hiện tại)</div>
+                  <div className="text-[11px] text-muted-foreground">{t("trc.127")}</div>
                   <code
                     className="mt-0.5 block break-all rounded bg-surface-2 px-1.5 py-1 font-mono text-[11px] text-foreground"
                     title={display(nameCols)}
@@ -3804,20 +3816,20 @@ function CsvOptionsMenu({
                 {value.includeMetadata && (metaAll || metaCols) && (
                   <div className="mt-2 space-y-1.5 border-t border-border pt-2">
                     <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
-                      <span>Xem trước dòng metadata</span>
+                      <span>{t("trc.128")}</span>
                       <button
                         type="button"
                         onClick={() => {
                           const text = [metaAll, metaCols].filter(Boolean).join("\n");
                           if (!text) return;
                           void navigator.clipboard?.writeText(text).then(() => {
-                            toast.success("Đã sao chép toàn bộ dòng metadata", { duration: 2000 });
+                            toast.success(t("trc.129"), { duration: 2000 });
                           }).catch(() => {
-                            toast.error("Không thể sao chép metadata");
+                            toast.error(t("trc.130"));
                           });
                         }}
                         className="inline-flex items-center gap-1 rounded bg-surface-2 px-2 py-1 text-[11px] normal-case tracking-normal text-foreground hover:bg-surface-3"
-                        title="Sao chép toàn bộ dòng metadata đã chuẩn hóa"
+                        title={t("trc.131")}
                       >
                         <Copy className="h-3 w-3" />
                         Copy
@@ -3826,18 +3838,18 @@ function CsvOptionsMenu({
                     {metaAll && (
                       <div>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>Metadata (tất cả kết quả)</span>
+                          <span>{t("trc.132")}</span>
                           <button
                             type="button"
                             onClick={() => {
                               void navigator.clipboard?.writeText(metaAll).then(() => {
-                                toast.success("Đã sao chép metadata (tất cả kết quả)", { duration: 2000 });
+                                toast.success(t("trc.133"), { duration: 2000 });
                               }).catch(() => {
-                                toast.error("Không thể sao chép metadata");
+                                toast.error(t("trc.130"));
                               });
                             }}
                             className="inline-flex items-center gap-1 rounded p-1 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                            title="Sao chép dòng này"
+                            title={t("trc.134")}
                           >
                             <Copy className="h-3 w-3" />
                           </button>
@@ -3855,18 +3867,18 @@ function CsvOptionsMenu({
                     {metaCols && (
                       <div>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>Metadata (cột hiện tại)</span>
+                          <span>{t("trc.135")}</span>
                           <button
                             type="button"
                             onClick={() => {
                               void navigator.clipboard?.writeText(metaCols).then(() => {
-                                toast.success("Đã sao chép metadata (cột hiện tại)", { duration: 2000 });
+                                toast.success(t("trc.136"), { duration: 2000 });
                               }).catch(() => {
-                                toast.error("Không thể sao chép metadata");
+                                toast.error(t("trc.130"));
                               });
                             }}
                             className="inline-flex items-center gap-1 rounded p-1 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                            title="Sao chép dòng này"
+                            title={t("trc.134")}
                           >
                             <Copy className="h-3 w-3" />
                           </button>
@@ -3882,7 +3894,7 @@ function CsvOptionsMenu({
                       </div>
                     )}
                     <p className="text-[11px] text-muted-foreground">
-                      Dòng này sẽ được ghi ở đầu CSV (hoặc trong <code>.meta.txt</code> nếu bật tách metadata trong ZIP). <code>rows</code> được thêm khi export.
+                      Dòng này sẽ được ghi ở đầu CSV (hoặc trong <code>.meta.txt</code>{t("trc.137")}<code>rows</code> được thêm khi export.
                     </p>
                     <MetadataCheckLogPanel csv={value} onFailDetected={() => setOpen(true)} />
                   </div>
@@ -3911,6 +3923,7 @@ function TraceExportColumnsMenu({
   onReset: () => void;
   onToggleAll: (on: boolean) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -3927,7 +3940,7 @@ function TraceExportColumnsMenu({
       <button
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-        title="Chọn/đổi thứ tự/đổi tiêu đề các cột khi bấm 'CSV (tất cả kết quả)'"
+        title={t("trc.138")}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -3937,25 +3950,25 @@ function TraceExportColumnsMenu({
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 w-[420px] rounded-lg border border-border bg-surface p-3 text-xs shadow-lg">
           <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground">
-            <span>Cột cho "CSV (tất cả kết quả)"</span>
+            <span>{t("trc.139")}</span>
             <div className="flex items-center gap-1 normal-case tracking-normal">
               <button
                 onClick={() => onToggleAll(true)}
                 className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
               >
-                Tất cả
+                {t("trc.13")}
               </button>
               <button
                 onClick={() => onToggleAll(false)}
                 className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
               >
-                Bỏ chọn
+                {t("trc.140")}
               </button>
               <button
                 onClick={onReset}
                 className="rounded px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
               >
-                Đặt lại
+                {t("trc.108")}
               </button>
             </div>
           </div>
@@ -3976,7 +3989,7 @@ function TraceExportColumnsMenu({
                   <input
                     value={c.label}
                     onChange={(e) => onRelabel(c.key, e.target.value)}
-                    placeholder="Tiêu đề cột"
+                    placeholder={t("trc.141")}
                     className="min-w-0 flex-1 rounded border border-border bg-surface-2 px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                   <div className="flex flex-col gap-0.5">
@@ -3984,8 +3997,8 @@ function TraceExportColumnsMenu({
                       onClick={() => onMove(i, -1)}
                       disabled={i === 0}
                       className="rounded border border-border px-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                      aria-label="Lên"
-                      title="Lên"
+                      aria-label={t("trc.142")}
+                      title={t("trc.142")}
                     >
                       ▲
                     </button>
@@ -3993,8 +4006,8 @@ function TraceExportColumnsMenu({
                       onClick={() => onMove(i, 1)}
                       disabled={i === cols.length - 1}
                       className="rounded border border-border px-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                      aria-label="Xuống"
-                      title="Xuống"
+                      aria-label={t("trc.143")}
+                      title={t("trc.143")}
                     >
                       ▼
                     </button>
@@ -4004,7 +4017,7 @@ function TraceExportColumnsMenu({
             </ul>
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            Cấu hình được lưu tự động trên trình duyệt này.
+            {t("trc.144")}
           </p>
         </div>
       )}
@@ -4035,6 +4048,7 @@ function ColumnsMenu({
   onApplyPreset: (id: string) => void;
   onDeletePreset: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -4052,7 +4066,7 @@ function ColumnsMenu({
       <button
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-        title="Bật/tắt, sắp xếp cột và quản lý preset"
+        title={t("trc.145")}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -4062,12 +4076,12 @@ function ColumnsMenu({
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-lg border border-border bg-surface p-2 shadow-lg">
           <div className="mb-1 flex items-center justify-between px-1 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-            <span>Cột hiển thị & thứ tự</span>
+            <span>{t("trc.146")}</span>
             <button
               onClick={onReset}
               className="rounded px-1.5 py-0.5 text-[11px] normal-case tracking-normal text-muted-foreground hover:text-foreground"
             >
-              Đặt lại
+              {t("trc.108")}
             </button>
           </div>
           <ul className="flex flex-col">
@@ -4083,13 +4097,13 @@ function ColumnsMenu({
                       onChange={() => onToggle(key)}
                       className="h-3.5 w-3.5 rounded border-border accent-primary"
                     />
-                    <span>{c.label}</span>
+                    <span>{c.labelKey ? t(c.labelKey) : c.label}</span>
                   </label>
                   <button
                     onClick={() => onMove(key, -1)}
                     disabled={idx === 0}
                     className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    title="Lên"
+                    title={t("trc.142")}
                   >
                     <ArrowUp className="h-3 w-3" />
                   </button>
@@ -4097,7 +4111,7 @@ function ColumnsMenu({
                     onClick={() => onMove(key, 1)}
                     disabled={idx === order.length - 1}
                     className="mr-1 rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    title="Xuống"
+                    title={t("trc.143")}
                   >
                     <ArrowDown className="h-3 w-3" />
                   </button>
@@ -4128,7 +4142,7 @@ function ColumnsMenu({
                     <button
                       onClick={() => onDeletePreset(p.id)}
                       className="rounded p-1 text-muted-foreground hover:text-red-400"
-                      title="Xóa preset"
+                      title={t("trc.147")}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -4148,7 +4162,7 @@ function ColumnsMenu({
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Tên preset (vd: Chỉ Quota)"
+                placeholder={t("trc.148")}
                 className="flex-1 rounded border border-border bg-surface-2 px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none"
                 maxLength={64}
               />
@@ -4156,10 +4170,10 @@ function ColumnsMenu({
                 type="submit"
                 disabled={!newName.trim()}
                 className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-                title="Lưu cấu hình cột hiện tại thành preset"
+                title={t("trc.149")}
               >
                 <Save className="h-3 w-3" />
-                Lưu
+                {t("trc.150")}
               </button>
             </form>
           </div>
@@ -4183,26 +4197,27 @@ function AutoRefreshControl({
   pending: boolean;
   lastRefreshedAt: number | null;
 }) {
+  const { t } = useI18n();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
   const secsAgo = lastRefreshedAt ? Math.max(0, Math.floor((now - lastRefreshedAt) / 1000)) : null;
-  const label = (v: RefreshSec) => (v === 0 ? "Tắt" : v < 60 ? `${v}s` : `${v / 60}m`);
+  const label = (v: RefreshSec) => (v < 60 ? `${v}s` : `${v / 60}m`);
   const active = value > 0;
   return (
     <div
       className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${active ? "border-primary/40 bg-primary/5 text-foreground" : "border-border bg-surface-2 text-muted-foreground"}`}
-      title={active ? `Tự động làm mới mỗi ${label(value)}` : "Tự động làm mới đang tắt"}
+      title={active ? `Tự động làm mới mỗi ${label(value)}` : t("trc.152")}
     >
       <RefreshCw className={`h-3 w-3 ${pending ? "animate-spin" : ""}`} />
-      <span className="hidden sm:inline">Tự động</span>
+      <span className="hidden sm:inline">{t("trc.153")}</span>
       <select
         value={value}
         onChange={(e) => onChange(Number(e.target.value) as RefreshSec)}
         className="rounded bg-transparent px-0.5 py-0 text-xs outline-none focus:ring-0"
-        aria-label="Chu kỳ tự động làm mới timeline"
+        aria-label={t("trc.154")}
       >
         {REFRESH_OPTIONS.map((v) => (
           <option key={v} value={v} className="bg-surface text-foreground">
@@ -4214,8 +4229,8 @@ function AutoRefreshControl({
         onClick={onRefreshNow}
         disabled={pending}
         className="ml-0.5 rounded px-1 text-muted-foreground hover:text-foreground disabled:opacity-40"
-        title="Làm mới ngay"
-        aria-label="Làm mới ngay"
+        title={t("trc.155")}
+        aria-label={t("trc.155")}
       >
         ↻
       </button>
@@ -4276,6 +4291,7 @@ function PresetsMenu({
   onApply: (p: FilterPreset) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   useEffect(() => {
@@ -4298,7 +4314,7 @@ function PresetsMenu({
         className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/60 hover:text-foreground"
         aria-haspopup="menu"
         aria-expanded={open}
-        title="Lưu và tải nhanh preset bộ lọc"
+        title={t("trc.156")}
       >
         <Bookmark className="h-3 w-3" />
         Preset ({presets.length})
@@ -4306,14 +4322,14 @@ function PresetsMenu({
       {open && (
         <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-lg border border-border bg-surface p-2 shadow-lg">
           <div className="px-1 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-            Lưu bộ lọc hiện tại
+            {t("trc.157")}
           </div>
           <div className="flex items-center gap-1 px-1 pb-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
-              placeholder="Tên preset…"
+              placeholder={t("trc.158")}
               maxLength={60}
               className="flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs outline-none focus:border-primary/60"
             />
@@ -4321,15 +4337,15 @@ function PresetsMenu({
               onClick={handleSave}
               className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
-              Lưu
+              {t("trc.150")}
             </button>
           </div>
           <div className="mb-1 border-t border-border px-1 pt-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-            Đã lưu
+            {t("trc.159")}
           </div>
           {presets.length === 0 ? (
             <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
-              Chưa có preset. Đặt bộ lọc mong muốn rồi bấm Lưu.
+              {t("trc.160")}
             </div>
           ) : (
             <ul className="flex max-h-64 flex-col overflow-y-auto">

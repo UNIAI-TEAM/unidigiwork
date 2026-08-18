@@ -1,3 +1,4 @@
+import { useI18n } from "@/lib/i18n";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -37,13 +38,14 @@ function ColumnsPicker({
   value: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { t } = useI18n();
   const toggle = (key: string) => {
     onChange(value.includes(key) ? value.filter((k) => k !== key) : [...value, key]);
   };
   return (
     <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface-2 p-2">
       <div className="flex items-center justify-between text-[10px] uppercase tracking-wide text-muted-foreground">
-        <span>Cột nâng cao</span>
+        <span>{t("qta.1")}</span>
         <span className="normal-case tracking-normal text-[10px] text-muted-foreground/80">
           occurred_at · tenant_id · meter_key · allowed · reason · <span className="text-foreground">correlation_id</span> luôn có
         </span>
@@ -88,6 +90,7 @@ export const Route = createFileRoute("/_authenticated/admin/quota")({
 type StatusFilter = "all" | "pass" | "fail";
 
 function AdminQuotaPage() {
+  const { t } = useI18n();
   const [status, setStatus] = useState<StatusFilter>("all");
   const [tenantId, setTenantId] = useState<string>("");
   const [meterKey, setMeterKey] = useState<string>("");
@@ -184,7 +187,7 @@ function AdminQuotaPage() {
     <div className="flex flex-col gap-6">
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
-        <StatCard label="Tổng checks" value={summary.total} tint="text-foreground" icon={Activity} />
+        <StatCard label={t("qta.2")} value={summary.total} tint="text-foreground" icon={Activity} />
         <StatCard label="PASS" value={summary.pass} tint="text-emerald-400" icon={CheckCircle2} />
         <StatCard label="FAIL" value={summary.fail} tint="text-rose-400" icon={XCircle} />
         <StatCard label="Exceeded" value={summary.exceeded} tint="text-amber-400" />
@@ -196,8 +199,8 @@ function AdminQuotaPage() {
       <section className="rounded-2xl border border-border bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold">Phân bổ theo tenant × meter (24h)</h2>
-            <p className="text-xs text-muted-foreground">Tỉ lệ PASS/FAIL trên tổng số checks.</p>
+            <h2 className="text-sm font-semibold">{t("qta.3")}</h2>
+            <p className="text-xs text-muted-foreground">{t("qta.4")}</p>
           </div>
           <button
             onClick={refresh}
@@ -207,10 +210,10 @@ function AdminQuotaPage() {
           </button>
         </div>
         {metricsQ.isLoading ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">Đang tải…</div>
+          <div className="py-10 text-center text-sm text-muted-foreground">{t("qta.5")}</div>
         ) : metrics.length === 0 ? (
           <div className="py-10 text-center text-sm text-muted-foreground">
-            Chưa có check_quota nào trong 24h qua.
+            {t("qta.6")}
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -266,7 +269,7 @@ function AdminQuotaPage() {
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold">quota_check_events</h2>
-            <p className="text-xs text-muted-foreground">200 sự kiện gần nhất trong 24h.</p>
+            <p className="text-xs text-muted-foreground">{t("qta.7")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
@@ -275,7 +278,7 @@ function AdminQuotaPage() {
               onChange={(e) => setStatus(e.target.value as StatusFilter)}
               className="rounded-lg border border-border bg-surface-2 px-2 py-1.5"
             >
-              <option value="all">Tất cả</option>
+              <option value="all">{t("qta.8")}</option>
               <option value="pass">PASS</option>
               <option value="fail">FAIL</option>
             </select>
@@ -284,7 +287,7 @@ function AdminQuotaPage() {
               onChange={(e) => setTenantId(e.target.value)}
               className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
             >
-              <option value="">Mọi tenant</option>
+              <option value="">{t("qta.9")}</option>
               {tenantOptions.map((t) => (
                 <option key={t} value={t}>{t.slice(0, 8)}…</option>
               ))}
@@ -294,7 +297,7 @@ function AdminQuotaPage() {
               onChange={(e) => setMeterKey(e.target.value)}
               className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
             >
-              <option value="">Mọi meter</option>
+              <option value="">{t("qta.10")}</option>
               {meterOptions.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
@@ -305,12 +308,12 @@ function AdminQuotaPage() {
           <table className="w-full text-xs">
             <thead className="bg-surface-2 text-muted-foreground">
               <tr>
-                <th className="px-3 py-2 text-left font-medium">Thời điểm</th>
+                <th className="px-3 py-2 text-left font-medium">{t("qta.11")}</th>
                 <th className="px-3 py-2 text-left font-medium">Tenant</th>
                 <th className="px-3 py-2 text-left font-medium">Meter</th>
                 <th className="px-3 py-2 text-right font-medium">Δ</th>
                 <th className="px-3 py-2 text-right font-medium">Usage / Limit</th>
-                <th className="px-3 py-2 text-left font-medium">Trạng thái</th>
+                <th className="px-3 py-2 text-left font-medium">{t("qta.12")}</th>
                 <th className="px-3 py-2 text-left font-medium">Correlation</th>
               </tr>
             </thead>
@@ -318,13 +321,13 @@ function AdminQuotaPage() {
               {eventsQ.isLoading ? (
                 <tr>
                   <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                    Đang tải…
+                    {t("qta.5")}
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                    Không có sự kiện nào khớp bộ lọc.
+                    {t("qta.13")}
                   </td>
                 </tr>
               ) : (
@@ -405,6 +408,7 @@ function AlertsSection({
   tenantOptions: string[];
   onChanged: () => void;
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState<{
     tenant_id: string;
     meter_key: string;
@@ -425,7 +429,7 @@ function AlertsSection({
   const upsert = useMutation({
     mutationFn: (input: UpsertInput) => upsertQuotaAlertRule({ data: input }),
     onSuccess: () => {
-      toast.success("Đã lưu rule cảnh báo");
+      toast.success(t("qta.14"));
       onChanged();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -433,7 +437,7 @@ function AlertsSection({
   const del = useMutation({
     mutationFn: (id: string) => deleteQuotaAlertRule({ data: { id } }),
     onSuccess: () => {
-      toast.success("Đã xóa rule");
+      toast.success(t("qta.15"));
       onChanged();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -445,7 +449,7 @@ function AlertsSection({
         <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-amber-400" />
           <div>
-            <h2 className="text-sm font-semibold">Cảnh báo quota spike (realtime)</h2>
+            <h2 className="text-sm font-semibold">{t("qta.16")}</h2>
             <p className="text-xs text-muted-foreground">
               Rule khớp cụ thể nhất sẽ áp dụng: (tenant, meter) &gt; (tenant, *) &gt; (*, meter) &gt; (*, *).
             </p>
@@ -460,7 +464,7 @@ function AlertsSection({
           onChange={(e) => setDraft({ ...draft, tenant_id: e.target.value })}
           className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
         >
-          <option value="">Mọi tenant</option>
+          <option value="">{t("qta.9")}</option>
           {tenantOptions.map((t) => (
             <option key={t} value={t}>{t.slice(0, 8)}…</option>
           ))}
@@ -470,13 +474,13 @@ function AlertsSection({
           onChange={(e) => setDraft({ ...draft, meter_key: e.target.value })}
           className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
         >
-          <option value="">Mọi meter</option>
+          <option value="">{t("qta.10")}</option>
           {meterOptions.map((m) => (
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
         <NumInput label="Window (m)" value={draft.window_minutes} onChange={(v) => setDraft({ ...draft, window_minutes: v })} />
-        <NumInput label="Ngưỡng" value={draft.threshold_count} onChange={(v) => setDraft({ ...draft, threshold_count: v })} />
+        <NumInput label={t("qta.17")} value={draft.threshold_count} onChange={(v) => setDraft({ ...draft, threshold_count: v })} />
         <NumInput label="Cooldown (m)" value={draft.cooldown_minutes} onChange={(v) => setDraft({ ...draft, cooldown_minutes: v })} />
         <button
           onClick={() =>
@@ -504,17 +508,17 @@ function AlertsSection({
               <th className="px-3 py-2 text-left font-medium">Tenant</th>
               <th className="px-3 py-2 text-left font-medium">Meter</th>
               <th className="px-3 py-2 text-right font-medium">Window (m)</th>
-              <th className="px-3 py-2 text-right font-medium">Ngưỡng</th>
+              <th className="px-3 py-2 text-right font-medium">{t("qta.17")}</th>
               <th className="px-3 py-2 text-right font-medium">Cooldown (m)</th>
-              <th className="px-3 py-2 text-left font-medium">Trạng thái</th>
+              <th className="px-3 py-2 text-left font-medium">{t("qta.12")}</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody>
             {loadingRules ? (
-              <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Đang tải…</td></tr>
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">{t("qta.5")}</td></tr>
             ) : rules.length === 0 ? (
-              <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Chưa có rule nào.</td></tr>
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">{t("qta.18")}</td></tr>
             ) : rules.map((r) => (
               <tr key={r.id} className="border-t border-border/60">
                 <td className="px-3 py-2 font-mono text-muted-foreground">{r.tenant_id ? r.tenant_id.slice(0, 8) + "…" : "*"}</td>
@@ -527,7 +531,7 @@ function AlertsSection({
                     onClick={() => upsert.mutate({ id: r.id, tenant_id: r.tenant_id, meter_key: r.meter_key, window_minutes: r.window_minutes, threshold_count: r.threshold_count, cooldown_minutes: r.cooldown_minutes, enabled: !r.enabled })}
                     className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${r.enabled ? "bg-emerald-500/10 text-emerald-400" : "bg-muted text-muted-foreground"}`}
                   >
-                    {r.enabled ? "Bật" : "Tắt"}
+                    {r.enabled ? t("qta.19") : t("qta.20")}
                   </button>
                 </td>
                 <td className="px-3 py-2 text-right">
@@ -550,9 +554,9 @@ function AlertsSection({
           <AlertTriangle className="h-3.5 w-3.5" /> Cảnh báo gần đây
         </div>
         {loadingAlerts ? (
-          <div className="py-4 text-center text-xs text-muted-foreground">Đang tải…</div>
+          <div className="py-4 text-center text-xs text-muted-foreground">{t("qta.5")}</div>
         ) : alerts.length === 0 ? (
-          <div className="py-4 text-center text-xs text-muted-foreground">Chưa có cảnh báo nào.</div>
+          <div className="py-4 text-center text-xs text-muted-foreground">{t("qta.21")}</div>
         ) : (
           <ul className="flex flex-col gap-1.5 text-xs">
             {alerts.slice(0, 20).map((a) => (
@@ -590,6 +594,7 @@ function NumInput({ label, value, onChange }: { label: string; value: number; on
 }
 
 function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]; tenantOptions: string[] }) {
+  const { t } = useI18n();
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400_000).toISOString().slice(0, 10);
   const [from, setFrom] = useState<string>(yesterday);
@@ -603,7 +608,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
 
   const run = async () => {
     if (!from || !to) {
-      toast.error("Chọn khoảng ngày trước khi export");
+      toast.error(t("qta.22"));
       return;
     }
     setBusy(true);
@@ -624,7 +629,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
         });
         count = res.count;
         truncated = res.truncated;
-        if (count === 0) { toast.info("Không có sự kiện nào khớp bộ lọc"); return; }
+        if (count === 0) { toast.info(t("qta.23")); return; }
         const bin = atob(res.base64);
         const bytes = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -635,7 +640,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
         });
         count = res.count;
         truncated = res.truncated;
-        if (count === 0) { toast.info("Không có sự kiện nào khớp bộ lọc"); return; }
+        if (count === 0) { toast.info(t("qta.23")); return; }
         blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
       }
       const url = URL.createObjectURL(blob);
@@ -646,9 +651,9 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success(`Đã export ${count} sự kiện${truncated ? " (bị cắt ở 20.000 dòng)" : ""}`);
+      toast.success(`Đã export ${count} sự kiện${truncated ? t("qta.24") : ""}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Export thất bại");
+      toast.error(e instanceof Error ? e.message : t("qta.25"));
     } finally {
       setBusy(false);
     }
@@ -661,13 +666,13 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
         <div>
           <h2 className="text-sm font-semibold">Export quota_check_events</h2>
           <p className="text-xs text-muted-foreground">
-            Đối soát theo khoảng ngày, tenant và meter. CSV hoặc XLSX, tối đa 20.000 dòng/lần.
+            {t("qta.26")}
           </p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-7">
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Từ ngày</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.27")}</span>
           <input
             type="date"
             value={from}
@@ -676,7 +681,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Đến ngày</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.28")}</span>
           <input
             type="date"
             value={to}
@@ -691,7 +696,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
             onChange={(e) => setTenantId(e.target.value)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
           >
-            <option value="">Mọi tenant</option>
+            <option value="">{t("qta.9")}</option>
             {tenantOptions.map((t) => (
               <option key={t} value={t}>{t.slice(0, 8)}…</option>
             ))}
@@ -704,26 +709,26 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
             onChange={(e) => setMeterKey(e.target.value)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono"
           >
-            <option value="">Mọi meter</option>
+            <option value="">{t("qta.10")}</option>
             {meterOptions.map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Trạng thái</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.12")}</span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as StatusFilter)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5"
           >
-            <option value="all">Tất cả</option>
+            <option value="all">{t("qta.8")}</option>
             <option value="pass">PASS</option>
             <option value="fail">FAIL</option>
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Định dạng</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.29")}</span>
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value as "csv" | "xlsx")}
@@ -740,7 +745,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             <Download className={`h-3.5 w-3.5 ${busy ? "animate-pulse" : ""}`} />
-            {busy ? "Đang export…" : `Export ${format.toUpperCase()}`}
+            {busy ? t("qta.30") : `Export ${format.toUpperCase()}`}
           </button>
         </div>
       </div>
@@ -752,6 +757,7 @@ function ExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]
 }
 
 function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions: string[]; tenantOptions: string[] }) {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
@@ -788,20 +794,20 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
         },
       }),
     onSuccess: async () => {
-      toast.success("Đã tạo job export nền");
+      toast.success(t("qta.31"));
       await qc.invalidateQueries({ queryKey: ["admin", "quota", "export-jobs"] });
       // Kick off immediate processing so admin doesn't wait for cron
       runPendingQuotaExports().then(() => {
         qc.invalidateQueries({ queryKey: ["admin", "quota", "export-jobs"] });
       }).catch(() => {});
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Không tạo được job"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("qta.32")),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteQuotaExportJob({ data: { id } }),
     onSuccess: async () => {
-      toast.success("Đã xóa job");
+      toast.success(t("qta.33"));
       await qc.invalidateQueries({ queryKey: ["admin", "quota", "export-jobs"] });
     },
   });
@@ -816,7 +822,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
       a.click();
       a.remove();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Không tải được file");
+      toast.error(e instanceof Error ? e.message : t("qta.34"));
     }
   };
 
@@ -827,21 +833,21 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
       <div className="flex items-center gap-2 border-b border-border p-4">
         <Download className="h-4 w-4 text-primary" />
         <div>
-          <h2 className="text-sm font-semibold">Export nền (&gt;20.000 dòng)</h2>
+          <h2 className="text-sm font-semibold">{t("qta.35")}</h2>
           <p className="text-xs text-muted-foreground">
-            Job chạy nền qua pg_cron, tối đa 2.000.000 dòng/lần. File CSV lưu trong bucket riêng, tự hết hạn sau 7 ngày.
+            {t("qta.36")}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 p-4 text-xs sm:grid-cols-8">
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Từ ngày</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.27")}</span>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5" />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Đến ngày</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.28")}</span>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5" />
         </label>
@@ -849,7 +855,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Tenant</span>
           <select value={tenantId} onChange={(e) => setTenantId(e.target.value)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono">
-            <option value="">Mọi tenant</option>
+            <option value="">{t("qta.9")}</option>
             {tenantOptions.map((t) => <option key={t} value={t}>{t.slice(0, 8)}…</option>)}
           </select>
         </label>
@@ -857,15 +863,15 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Meter</span>
           <select value={meterKey} onChange={(e) => setMeterKey(e.target.value)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 font-mono">
-            <option value="">Mọi meter</option>
+            <option value="">{t("qta.10")}</option>
             {meterOptions.map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Trạng thái</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.12")}</span>
           <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5">
-            <option value="all">Tất cả</option>
+            <option value="all">{t("qta.8")}</option>
             <option value="pass">PASS</option>
             <option value="fail">FAIL</option>
           </select>
@@ -877,7 +883,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-right tabular-nums" />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Định dạng</span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("qta.29")}</span>
           <select value={format} onChange={(e) => setFormat(e.target.value as "csv" | "xlsx")}
             className="rounded-lg border border-border bg-surface-2 px-2 py-1.5">
             <option value="csv">CSV</option>
@@ -891,7 +897,7 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             <Plus className="h-3.5 w-3.5" />
-            {createMut.isPending ? "Đang tạo…" : "Tạo job"}
+            {createMut.isPending ? t("qta.37") : t("qta.38")}
           </button>
         </div>
       </div>
@@ -901,9 +907,9 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
 
       <div className="border-t border-border">
         {jobsQ.isLoading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">Đang tải…</div>
+          <div className="py-8 text-center text-xs text-muted-foreground">{t("qta.5")}</div>
         ) : jobs.length === 0 ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">Chưa có job nào.</div>
+          <div className="py-8 text-center text-xs text-muted-foreground">{t("qta.39")}</div>
         ) : (
           <ul className="divide-y divide-border">
             {jobs.map((j) => (
@@ -912,15 +918,15 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
                   <div className="flex items-center gap-2 font-mono">
                     <JobStatusBadge status={j.status} />
                     <span className="text-muted-foreground">{j.id.slice(0, 8)}…</span>
-                    <span className="text-foreground">{j.meter_key ?? "mọi meter"}</span>
-                    <span className="text-muted-foreground">· {j.tenant_id ? `${j.tenant_id.slice(0, 8)}…` : "mọi tenant"}</span>
+                    <span className="text-foreground">{j.meter_key ?? t("qta.40")}</span>
+                    <span className="text-muted-foreground">· {j.tenant_id ? `${j.tenant_id.slice(0, 8)}…` : t("qta.41")}</span>
                     <span className="text-muted-foreground">· {j.status_filter}</span>
                     <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{j.format ?? "csv"}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
                     <span>{new Date(j.from_ts).toLocaleDateString("vi-VN")} → {new Date(j.to_ts).toLocaleDateString("vi-VN")}</span>
                     <span>Max: {j.max_rows.toLocaleString("vi-VN")}</span>
-                    {j.row_count !== null && <span className="text-foreground tabular-nums">{j.row_count.toLocaleString("vi-VN")} dòng{j.truncated ? " (cắt)" : ""}</span>}
+                    {j.row_count !== null && <span className="text-foreground tabular-nums">{j.row_count.toLocaleString("vi-VN")} dòng{j.truncated ? t("qta.42") : ""}</span>}
                     {j.file_size_bytes !== null && <span>{(j.file_size_bytes / 1024).toFixed(1)} KB</span>}
                     <span>Tạo {new Date(j.created_at).toLocaleString("vi-VN")}</span>
                     {j.error && <span className="text-rose-400">Lỗi: {j.error}</span>}
@@ -953,12 +959,13 @@ function BackgroundExportSection({ meterOptions, tenantOptions }: { meterOptions
 }
 
 function JobStatusBadge({ status }: { status: QuotaExportJob["status"] }) {
+  const { t } = useI18n();
   const map: Record<QuotaExportJob["status"], { label: string; className: string }> = {
-    pending: { label: "Đang chờ", className: "bg-surface-2 text-muted-foreground" },
-    running: { label: "Đang chạy", className: "bg-amber-500/15 text-amber-400" },
-    succeeded: { label: "Hoàn tất", className: "bg-emerald-500/15 text-emerald-400" },
-    failed: { label: "Lỗi", className: "bg-rose-500/15 text-rose-400" },
-    canceled: { label: "Đã hủy", className: "bg-surface-2 text-muted-foreground" },
+    pending: { label: t("qta.43"), className: "bg-surface-2 text-muted-foreground" },
+    running: { label: t("qta.44"), className: "bg-amber-500/15 text-amber-400" },
+    succeeded: { label: t("qta.45"), className: "bg-emerald-500/15 text-emerald-400" },
+    failed: { label: t("qta.46"), className: "bg-rose-500/15 text-rose-400" },
+    canceled: { label: t("qta.47"), className: "bg-surface-2 text-muted-foreground" },
   };
   const m = map[status];
   return <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${m.className}`}>{m.label}</span>;
