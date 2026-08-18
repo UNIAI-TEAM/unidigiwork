@@ -107,6 +107,27 @@ function DocumentDetailPage() {
   });
 
   const [uploading, setUploading] = useState(false);
+  const starKey = `documents.starred.${id}`;
+  const [starred, setStarred] = useState(false);
+  useEffect(() => {
+    try {
+      setStarred(window.localStorage.getItem(starKey) === "1");
+    } catch {
+      /* ignore */
+    }
+  }, [starKey]);
+  const toggleStar = () => {
+    setStarred((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(starKey, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      toast.success(next ? "Đã đánh dấu quan trọng." : "Đã bỏ đánh dấu quan trọng.");
+      return next;
+    });
+  };
 
   const openFile = async (ref: unknown, download = false) => {
     try {
