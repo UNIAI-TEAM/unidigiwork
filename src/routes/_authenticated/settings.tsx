@@ -48,6 +48,7 @@ import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { PushDevicesPanel } from "@/components/push-devices-panel";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import { useI18n, type Key as I18nKey } from "@/lib/i18n";
 
 const searchSchema = z.object({
   tab: z
@@ -91,18 +92,18 @@ type SectionKey =
   | "billing"
   | "data";
 
-const SECTIONS: { key: SectionKey; label: string; desc: string; icon: LucideIcon }[] = [
-  { key: "profile", label: "Hồ sơ cá nhân", desc: "Tên, ảnh đại diện, chức danh", icon: User },
-  { key: "account", label: "Tài khoản", desc: "Email, tên đăng nhập", icon: KeyRound },
-  { key: "password", label: "Đổi mật khẩu", desc: "Mật khẩu, xác thực 2 lớp", icon: Lock },
-  { key: "notifications", label: "Thông báo", desc: "Email, in-app, push", icon: Bell },
-  { key: "appearance", label: "Giao diện", desc: "Chủ đề sáng/tối, mật độ", icon: Palette },
-  { key: "language", label: "Ngôn ngữ & múi giờ", desc: "Tiếng Việt, GMT+7", icon: Languages },
-  { key: "integrations", label: "Tích hợp", desc: "Google, Slack, GitHub", icon: Plug },
-  { key: "team", label: "Thành viên & vai trò", desc: "Quản lý quyền truy cập", icon: UsersIcon },
-  { key: "security", label: "Bảo mật", desc: "2FA, phiên đăng nhập", icon: ShieldCheck },
-  { key: "billing", label: "Gói & thanh toán", desc: "Gói hiện tại, hóa đơn", icon: CreditCard },
-  { key: "data", label: "Dữ liệu", desc: "Sao lưu, xuất, xóa", icon: Database },
+const SECTIONS: { key: SectionKey; labelKey: I18nKey; descKey: I18nKey; icon: LucideIcon }[] = [
+  { key: "profile", labelKey: "ac.20", descKey: "ac.21", icon: User },
+  { key: "account", labelKey: "ac.22", descKey: "ac.23", icon: KeyRound },
+  { key: "password", labelKey: "ac.24", descKey: "ac.25", icon: Lock },
+  { key: "notifications", labelKey: "ac.26", descKey: "ac.27", icon: Bell },
+  { key: "appearance", labelKey: "ac.28", descKey: "ac.29", icon: Palette },
+  { key: "language", labelKey: "ac.30", descKey: "ac.31", icon: Languages },
+  { key: "integrations", labelKey: "ac.32", descKey: "ac.33", icon: Plug },
+  { key: "team", labelKey: "ac.34", descKey: "ac.35", icon: UsersIcon },
+  { key: "security", labelKey: "ac.36", descKey: "ac.37", icon: ShieldCheck },
+  { key: "billing", labelKey: "ac.38", descKey: "ac.39", icon: CreditCard },
+  { key: "data", labelKey: "ac.40", descKey: "ac.41", icon: Database },
 ];
 
 function Field({
@@ -212,29 +213,30 @@ function ProfileSection() {
 }
 
 function AccountSection() {
+  const { t } = useI18n();
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Email">
+        <Field label={t("ac.50")}>
           <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm">
             <Mail className="h-4 w-4 text-muted-foreground" />
             <span className="flex-1">nguyenvana@unicom.vn</span>
             <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-300">
-              Đã xác minh
+              {t("ac.51")}
             </span>
           </div>
         </Field>
-        <Field label="Tên đăng nhập">
+        <Field label={t("ac.52")}>
           <Input defaultValue="nguyenvana" />
         </Field>
       </div>
       <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
-        <div className="text-sm font-semibold text-destructive">Vùng nguy hiểm</div>
+        <div className="text-sm font-semibold text-destructive">{t("ac.53")}</div>
         <p className="text-xs text-muted-foreground">
-          Xóa tài khoản sẽ gỡ toàn bộ dữ liệu cá nhân khỏi workspace.
+          {t("ac.54")}
         </p>
         <button onClick={() => notifyComingSoon()} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-destructive/60 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10">
-          <Trash2 className="h-3.5 w-3.5" /> Xóa tài khoản
+          <Trash2 className="h-3.5 w-3.5" /> {t("ac.55")}
         </button>
       </div>
     </div>
@@ -242,6 +244,7 @@ function AccountSection() {
 }
 
 function PasswordSection() {
+  const { t } = useI18n();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentPwd, setCurrentPwd] = useState("");
@@ -250,11 +253,11 @@ function PasswordSection() {
 
   const openConfirm = () => {
     if (!currentPwd || !newPwd || !confirmPwd) {
-      toast.error("Vui lòng điền đầy đủ các trường mật khẩu.");
+      toast.error(t("ac.73"));
       return;
     }
     if (newPwd !== confirmPwd) {
-      toast.error("Mật khẩu mới và xác nhận không khớp.");
+      toast.error(t("ac.74"));
       return;
     }
     setDialogOpen(true);
@@ -267,25 +270,25 @@ function PasswordSection() {
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       const email = userData.user?.email;
-      if (userErr || !email) throw new Error("Không xác định được tài khoản hiện tại.");
+      if (userErr || !email) throw new Error(t("ac.75"));
 
       const { error: reauthErr } = await supabase.auth.signInWithPassword({
         email,
         password: currentPwd,
       });
-      if (reauthErr) throw new Error("Mật khẩu hiện tại không đúng.");
+      if (reauthErr) throw new Error(t("ac.76"));
 
       const { error: updErr } = await supabase.auth.updateUser({ password: newPwd });
       if (updErr) throw new Error(updErr.message);
 
       await supabase.auth.refreshSession();
       await supabase.auth.getUser();
-      toast.success("Cập nhật mật khẩu thành công!");
+      toast.success(t("ac.77"));
       setCurrentPwd("");
       setNewPwd("");
       setConfirmPwd("");
     } catch (e) {
-      toast.error((e as Error).message || "Cập nhật mật khẩu thất bại.");
+      toast.error((e as Error).message || t("ac.78"));
     } finally {
       setLoading(false);
     }
@@ -294,24 +297,24 @@ function PasswordSection() {
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-border/60 bg-surface-2/40 p-4">
-        <div className="text-sm font-semibold">Đổi mật khẩu</div>
-        <p className="text-xs text-muted-foreground">Khuyến nghị đổi mật khẩu 90 ngày một lần.</p>
+        <div className="text-sm font-semibold">{t("ac.60")}</div>
+        <p className="text-xs text-muted-foreground">{t("ac.61")}</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <Input
             type="password"
-            placeholder="Mật khẩu hiện tại"
+            placeholder={t("ac.62")}
             value={currentPwd}
             onChange={(e) => setCurrentPwd(e.target.value)}
           />
           <Input
             type="password"
-            placeholder="Mật khẩu mới"
+            placeholder={t("ac.63")}
             value={newPwd}
             onChange={(e) => setNewPwd(e.target.value)}
           />
           <Input
             type="password"
-            placeholder="Xác nhận mật khẩu"
+            placeholder={t("ac.64")}
             value={confirmPwd}
             onChange={(e) => setConfirmPwd(e.target.value)}
           />
@@ -321,21 +324,21 @@ function PasswordSection() {
           disabled={loading}
           className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          <Lock className="h-3.5 w-3.5" /> {loading ? "Đang cập nhật…" : "Cập nhật mật khẩu"}
+          <Lock className="h-3.5 w-3.5" /> {loading ? t("ac.65") : t("ac.66")}
         </button>
       </div>
       <Toggle
-        title="Xác thực 2 lớp (2FA)"
-        desc="Bắt buộc nhập mã từ ứng dụng Authenticator khi đăng nhập"
+        title={t("ac.67")}
+        desc={t("ac.68")}
         defaultOn
       />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Xác nhận đổi mật khẩu</DialogTitle>
+            <DialogTitle>{t("ac.69")}</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn cập nhật mật khẩu? Hành động này không thể hoàn tác.
+              {t("ac.70")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-row justify-end gap-2">
@@ -343,13 +346,13 @@ function PasswordSection() {
               onClick={() => setDialogOpen(false)}
               className="rounded-lg border border-border bg-surface px-4 py-2 text-xs font-medium text-foreground hover:bg-surface-2"
             >
-              Hủy
+              {t("ac.71")}
             </button>
             <button
               onClick={handleUpdate}
               className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
-              Xác nhận
+              {t("ac.72")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -848,6 +851,7 @@ const RENDERS: Record<SectionKey, React.FC> = {
 };
 
 function SettingsPage() {
+  const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
@@ -862,9 +866,9 @@ function SettingsPage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
         <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
           <div className="mb-5">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Cài đặt</h1>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("ac.80")}</h1>
             <p className="text-sm text-muted-foreground">
-              Quản lý tài khoản, thông báo, tích hợp và bảo mật
+              {t("ac.81")}
             </p>
           </div>
           <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
@@ -879,8 +883,8 @@ function SettingsPage() {
                   >
                     <s.icon className="h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">{s.label}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">{s.desc}</div>
+                      <div className="text-sm font-medium">{t(s.labelKey)}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">{t(s.descKey)}</div>
                     </div>
                     <ChevronRight className={`h-4 w-4 ${active ? "text-primary" : "opacity-50"}`} />
                   </button>
@@ -890,11 +894,11 @@ function SettingsPage() {
             <section className="rounded-2xl border border-border bg-surface p-5">
               <div className="mb-5 flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <h2 className="text-lg font-semibold">{current.label}</h2>
-                  <p className="text-xs text-muted-foreground">{current.desc}</p>
+                  <h2 className="text-lg font-semibold">{t(current.labelKey)}</h2>
+                  <p className="text-xs text-muted-foreground">{t(current.descKey)}</p>
                 </div>
                 <button onClick={() => notifyComingSoon()} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                  Lưu thay đổi
+                  {t("ac.82")}
                 </button>
               </div>
               <Body />
