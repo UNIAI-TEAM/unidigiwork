@@ -246,9 +246,7 @@ function Landing() {
               <h2 className="text-xl font-semibold">
                 {signupMode ? t("ac.8") : t("land.login.title")}
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {signupMode ? t("ac.13").replace(/\.$/, "") : t("land.login.sub")}
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("land.login.sub")}</p>
               <form onSubmit={handleLogin} className="mt-5 space-y-3">
                 {signupMode && (
                   <div>
