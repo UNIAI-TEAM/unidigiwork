@@ -4,12 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
-  ArrowLeft, Bold, Italic, List, Link2, Paperclip, Image as ImageIcon, Loader2, Save, Send, Sparkles, Trash2, X,
+  ArrowLeft, Bold, Italic, List, Link2, Image as ImageIcon, Loader2, Save, Send, Sparkles, Trash2, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { deleteEmailDraft, getEmailDraft, saveEmailDraft, sendEmail } from "@/lib/api/emails.functions";
-import { notifyComingSoon } from "@/lib/coming-soon";
 
 const searchSchema = z.object({
   draft: z.string().uuid().optional(),
@@ -56,8 +55,40 @@ function ComposePage() {
   const [showCc, setShowCc] = useState(Boolean(search.cc));
   const [subject, setSubject] = useState(search.subject ?? "");
   const [body, setBody] = useState(search.body ?? "");
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+
+  /** Chèn markdown quanh vùng đang chọn trong ô nội dung. */
+  const wrapSelection = useCallback((before: string, after = before, placeholder = "văn bản") => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const value = el.value;
+    const selected = value.slice(start, end) || placeholder;
+    const next = `${value.slice(0, start)}${before}${selected}${after}${value.slice(end)}`;
+    setBody(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + before.length, start + before.length + selected.length);
+    });
+  }, []);
+
+  const insertAtCursor = useCallback((text: string) => {
+    const el = bodyRef.current;
+    if (!el) {
+      setBody((b) => (b ? `${b}\n${text}` : text));
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const next = `${el.value.slice(0, start)}${text}${el.value.slice(start)}`;
+    setBody(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + text.length, start + text.length);
+    });
+  }, []);
   const dirty = useRef(false);
 
   const draftQ = useQuery({
@@ -201,6 +232,7 @@ function ComposePage() {
                   </div>
 
                   <textarea
+                    ref={bodyRef}
                     value={body}
                     onChange={(e) => touch(setBody)(e.target.value)}
                     rows={14}
@@ -216,12 +248,48 @@ function ComposePage() {
 
               <div className="flex items-center justify-between border-t border-border px-5 py-3">
                 <div className="flex items-center gap-1">
-                  {[Bold, Italic, List, Link2, Paperclip, ImageIcon].map((I, i) => (
-                    <button onClick={() => notifyComingSoon()} key={i} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                  {[
+                    { icon: Bold, label: "In đậm", run: () => wrapSelection("**") },
+                    { icon: Italic, label: "In nghiêng", run: () => wrapSelection("*") },
+                    { icon: List, label: "Danh sách", run: () => insertAtCursor("\n- ") },
+                    {
+                      icon: Link2,
+                      label: "Chèn liên kết",
+                      run: () => {
+                        const url = window.prompt("Nhập đường dẫn liên kết", "https://");
+                        if (url) wrapSelection("[", `](${url})`, "liên kết");
+                      },
+                    },
+                    {
+                      icon: ImageIcon,
+                      label: "Chèn ảnh",
+                      run: () => {
+                        const url = window.prompt("Nhập đường dẫn ảnh", "https://");
+                        if (url) insertAtCursor(`![ảnh](${url})`);
+                      },
+                    },
+                  ].map(({ icon: I, label, run }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      title={label}
+                      aria-label={label}
+                      onClick={run}
+                      className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                    >
                       <I className="h-4 w-4" />
                     </button>
                   ))}
-                  <button onClick={() => notifyComingSoon()} className="ml-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/15">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      insertAtCursor(
+                        `Kính gửi anh/chị,\n\n${subject.trim() || "Nội dung trao đổi"}: em xin gửi thông tin để anh/chị xem xét và phản hồi giúp em.\n\nTrân trọng,`,
+                      );
+                      toast.success("Đã chèn bản nháp gợi ý.");
+                    }}
+                    className="ml-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/15"
+                  >
                     <Sparkles className="h-3.5 w-3.5" /> Viết với AI
                   </button>
                 </div>
