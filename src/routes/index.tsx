@@ -88,9 +88,11 @@ function Landing() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginReady, setLoginReady] = useState(false);
 
   // If already signed in, jump straight to the app
   useEffect(() => {
+    setLoginReady(true);
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/tasks" });
     });
@@ -98,19 +100,23 @@ function Landing() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (!loginReady || loading) return;
     if (!email || !password) {
       toast.error(t("land.email") + " / " + t("land.password"));
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) throw error;
+      toast.success(t("land.signin"));
+      navigate({ to: "/tasks" });
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Không thể đăng nhập");
+    } finally {
+      setLoading(false);
     }
-    toast.success(t("land.signin"));
-    navigate({ to: "/tasks" });
   };
 
   return (
@@ -246,10 +252,10 @@ function Landing() {
                 </div>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={!loginReady || loading}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                 >
-                  {loading ? (
+                  {!loginReady || loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <LogIn className="h-4 w-4" />
