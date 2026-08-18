@@ -1207,6 +1207,7 @@ const dict = {
     "doc.118": "Tóm tắt nội dung tài liệu",
     "doc.119": "Ai đang tham gia chỉnh sửa?",
     "doc.120": "Liên quan công việc nào?",
+    "doc.5s": "Chia s\u1ebb",
   },
   en: {
     "nav.dashboard": "Dashboard",
@@ -2404,6 +2405,7 @@ const dict = {
     "doc.118": "Summarize document content",
     "doc.119": "Who is editing?",
     "doc.120": "Related to which task?",
+    "doc.5s": "Share",
   },
 } as const;
 

@@ -812,7 +812,7 @@ function DocumentsPage() {
                     }}
                     className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 disabled:opacity-50"
                   >
-                    <Share2 className="h-4 w-4" /> Chia sẻ
+                    <Share2 className="h-4 w-4" /> {t("doc.5s")}
                   </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
