@@ -101,7 +101,7 @@ function DocumentDetailPage() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["document", id] });
-      toast.success("Đã lưu tiêu đề");
+      toast.success(t("doc.99"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -124,7 +124,7 @@ function DocumentDetailPage() {
       } catch {
         /* ignore */
       }
-      toast.success(next ? "Đã đánh dấu quan trọng." : "Đã bỏ đánh dấu quan trọng.");
+      toast.success(next ? t("doc.100") : t("doc.101"));
       return next;
     });
   };
@@ -159,7 +159,7 @@ function DocumentDetailPage() {
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["document", id] });
-      toast.success("Đã tải lên phiên bản mới");
+      toast.success(t("doc.102"));
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -215,7 +215,7 @@ function DocumentDetailPage() {
                 </div>
               ) : docQuery.isError || !doc ? (
                 <div className="rounded-xl border border-border bg-surface p-8 text-center">
-                  <p className="text-sm font-medium">Không tìm thấy tài liệu</p>
+                  <p className="text-sm font-medium">{t("doc.103")}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Tài liệu không tồn tại hoặc bạn không có quyền truy cập.
                   </p>
@@ -240,23 +240,23 @@ function DocumentDetailPage() {
                     <div className="flex items-center gap-1">
                       <IconBtn
                         icon={Star}
-                        label={starred ? "Bỏ đánh dấu quan trọng" : "Đánh dấu quan trọng"}
+                        label={starred ? t("doc.104") : t("doc.105")}
                         active={starred}
                         onClick={toggleStar}
                       />
                       <IconBtn
                         icon={Share2}
-                        label="Sao chép liên kết tài liệu"
+                        label={t("doc.106")}
                         onClick={() => {
                           void navigator.clipboard
                             .writeText(window.location.href)
-                            .then(() => toast.success("Đã sao chép liên kết tài liệu."))
-                            .catch(() => toast.error("Không sao chép được liên kết."));
+                            .then(() => toast.success(t("doc.107")))
+                            .catch(() => toast.error(t("doc.108")));
                         }}
                       />
                       <button
                         type="button"
-                        title="Tải tệp xuống"
+                        title={t("doc.109")}
                         disabled={!isStorageRef(doc.storage_ref)}
                         onClick={() => void openFile(doc.storage_ref, true)}
                         className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
@@ -264,7 +264,7 @@ function DocumentDetailPage() {
                         <Download className="h-4 w-4" />
                       </button>
                       <label
-                        title="Tải phiên bản mới"
+                        title={t("doc.110")}
                         className={`flex cursor-pointer items-center rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground ${uploading ? "pointer-events-none opacity-40" : ""}`}
                       >
                         {uploading ? (
@@ -275,7 +275,7 @@ function DocumentDetailPage() {
                         <input
                           type="file"
                           className="hidden"
-                          aria-label="Tải phiên bản mới"
+                          aria-label={t("doc.110")}
                           disabled={uploading}
                           onChange={(e) => {
                             void uploadVersion(e.target.files?.[0]);
@@ -283,7 +283,7 @@ function DocumentDetailPage() {
                           }}
                         />
                       </label>
-                      <IconBtn icon={MoreHorizontal} label="In tài liệu" onClick={() => window.print()} />
+                      <IconBtn icon={MoreHorizontal} label={t("doc.48")} onClick={() => window.print()} />
                     </div>
                   </div>
 
@@ -291,7 +291,7 @@ function DocumentDetailPage() {
                     <input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      aria-label="Tiêu đề tài liệu"
+                      aria-label={t("doc.111")}
                       className="w-full bg-transparent text-4xl font-bold tracking-tight focus:outline-none"
                     />
                     {title.trim() && title.trim() !== doc.title ? (
@@ -300,7 +300,7 @@ function DocumentDetailPage() {
                         disabled={saveTitle.isPending}
                         className="mt-2 shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                       >
-                        {saveTitle.isPending ? "Đang lưu…" : "Lưu"}
+                        {saveTitle.isPending ? t("doc.78") : t("doc.112")}
                       </button>
                     ) : null}
                   </div>
@@ -336,7 +336,7 @@ function DocumentDetailPage() {
                   </div>
 
                   <article className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                    {doc.content?.trim() ? doc.content : "Tài liệu này chưa có nội dung."}
+                    {doc.content?.trim() ? doc.content : t("doc.113")}
                   </article>
                 </>
               )}
@@ -364,7 +364,7 @@ function DocumentDetailPage() {
                         <div className="flex items-center gap-0.5">
                           <button
                             type="button"
-                            title="Tải xuống"
+                            title={t("doc.114")}
                             onClick={() => void openFile(v.storage_ref, true)}
                             className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                           >
@@ -373,7 +373,7 @@ function DocumentDetailPage() {
                           {v.version !== doc?.current_version ? (
                             <button
                               type="button"
-                              title="Khôi phục phiên bản này"
+                              title={t("doc.115")}
                               disabled={restoring === v.id}
                               onClick={() => void restoreVersion(v)}
                               className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
@@ -404,7 +404,7 @@ function DocumentDetailPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-muted-foreground">Chưa có phiên bản nào được tải lên.</p>
+              <p className="text-xs text-muted-foreground">{t("doc.116")}</p>
             )}
 
             <h3 className="mb-3 mt-6 text-xs font-semibold uppercase text-muted-foreground">
@@ -420,11 +420,11 @@ function DocumentDetailPage() {
             <div className="mt-6">
               <AskUniPanel
                 rootEntity={{ type: "DOCUMENT", id }}
-                label="Hỏi UNI về tài liệu này"
+                label={t("doc.117")}
                 suggestions={[
-                  "Tóm tắt nội dung tài liệu",
-                  "Ai đang tham gia chỉnh sửa?",
-                  "Liên quan công việc nào?",
+                  t("doc.118"),
+                  t("doc.119"),
+                  t("doc.120"),
                 ]}
               />
             </div>

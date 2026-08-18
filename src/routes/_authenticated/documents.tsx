@@ -167,7 +167,7 @@ function DocumentsPage() {
       setUserId(u.user.id);
       const { data: ws, error } = await supabase.from("workspaces").select("*").order("created_at");
       if (error) {
-        toast.error("Không tải được workspace");
+        toast.error(t("doc.1"));
         return;
       }
       setWorkspaces(ws as Workspace[]);
@@ -190,7 +190,7 @@ function DocumentsPage() {
       .is("deleted_at", null)
       .order("updated_at", { ascending: false });
     if (error) {
-      toast.error("Không tải lại được danh sách tài liệu");
+      toast.error(t("doc.2"));
       return [] as Doc[];
     }
     const list = (d ?? []) as Doc[];
@@ -215,7 +215,7 @@ function DocumentsPage() {
   const reloadWorkspaces = async (selectId?: string) => {
     const { data: ws, error } = await supabase.from("workspaces").select("*").order("created_at");
     if (error) {
-      toast.error("Không tải lại được workspace");
+      toast.error(t("doc.3"));
       return;
     }
     const list = (ws ?? []) as Workspace[];
@@ -254,7 +254,7 @@ function DocumentsPage() {
   // Chia sẻ tài liệu cho thành viên workspace qua server function shareDocument
   const submitShare = async () => {
     if (!selected || !shareUserId) {
-      toast.error("Chọn thành viên để chia sẻ");
+      toast.error(t("doc.4"));
       return;
     }
     setSharing(true);
@@ -268,7 +268,7 @@ function DocumentsPage() {
           idempotencyKey: crypto.randomUUID(),
         },
       });
-      toast.success("Đã chia sẻ tài liệu");
+      toast.success(t("doc.5"));
       await reloadDocs(selected.id);
       setShowShare(false);
       setShareUserId("");
@@ -289,10 +289,10 @@ function DocumentsPage() {
       .single();
     setSaving(false);
     if (error) {
-      toast.error("Tạo workspace thất bại: " + error.message);
+      toast.error(t("doc.6") + error.message);
       return;
     }
-    toast.success("Đã tạo workspace");
+    toast.success(t("doc.7"));
     await reloadWorkspaces((data as Workspace).id);
     setShowNewWs(false);
     setNewWsName("");
@@ -300,7 +300,7 @@ function DocumentsPage() {
 
   const createDoc = async () => {
     if (!newTitle.trim() || !currentWs) {
-      toast.error("Vui lòng nhập tiêu đề");
+      toast.error(t("doc.8"));
       return;
     }
     setSaving(true);
@@ -315,13 +315,13 @@ function DocumentsPage() {
           idempotencyKey: crypto.randomUUID(),
         },
       })) as unknown as Doc;
-      toast.success("Đã tạo tài liệu");
+      toast.success(t("doc.9"));
       await reloadDocs(created?.id ?? null);
       setShowNew(false);
       setNewTitle("");
       setNewFolder("My Documents");
     } catch (e) {
-      toast.error("Lưu thất bại: " + (e as Error).message);
+      toast.error(t("doc.10") + (e as Error).message);
     } finally {
       setSaving(false);
     }
@@ -344,25 +344,25 @@ function DocumentsPage() {
       });
       await reloadDocs(selected.id);
       setHistory((prev) => [
-        { id: crypto.randomUUID(), action: patch.title ? "Đổi tiêu đề" : "Cập nhật nội dung", user: "Bạn", time: new Date().toLocaleString("vi-VN") },
+        { id: crypto.randomUUID(), action: patch.title ? t("doc.11") : t("doc.12"), user: t("doc.13"), time: new Date().toLocaleString("vi-VN") },
         ...prev.slice(0, 49),
       ]);
       setSaveState("saved");
     } catch (e) {
-      toast.error("Lưu thất bại: " + (e as Error).message);
+      toast.error(t("doc.10") + (e as Error).message);
       setSaveState("dirty");
       await reloadDocs(selected.id);
     }
   };
 
   const deleteDoc = async (id: string) => {
-    if (!confirm("Xoá tài liệu này?")) return;
+    if (!confirm(t("doc.14"))) return;
     try {
       await archiveDocument({ data: { documentId: id, idempotencyKey: crypto.randomUUID() } });
       await reloadDocs(selected?.id === id ? null : selected?.id ?? null);
-      toast.success("Đã xoá");
+      toast.success(t("doc.15"));
     } catch (e) {
-      toast.error("Xoá thất bại: " + (e as Error).message);
+      toast.error(t("doc.16") + (e as Error).message);
     }
   };
 
@@ -370,7 +370,7 @@ function DocumentsPage() {
   const uploadFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     if (!currentWs) {
-      toast.error("Chọn workspace trước khi tải tệp");
+      toast.error(t("doc.17"));
       return;
     }
     setUploading(true);
@@ -435,17 +435,17 @@ function DocumentsPage() {
       return;
     }
     if (!p) {
-      toast.error("Không tìm thấy người dùng. Họ cần đăng ký trước.");
+      toast.error(t("doc.18"));
       return;
     }
     const { error } = await supabase
       .from("workspace_members")
       .insert({ workspace_id: currentWs.id, user_id: p.id, role: "member" });
     if (error) {
-      toast.error("Thêm thất bại: " + error.message);
+      toast.error(t("doc.19") + error.message);
       return;
     }
-    toast.success("Đã thêm thành viên");
+    toast.success(t("doc.20"));
     setInviteEmail("");
     await reloadMembers();
   };
@@ -510,7 +510,7 @@ function DocumentsPage() {
   const submitAiAsk = () => {
     if (!aiAsk.trim()) return;
     if (selected) {
-      toast.info("Mở UNI AI với nội dung tài liệu đã chọn");
+      toast.info(t("doc.21"));
     }
     navigate({ to: "/ai", search: { q: aiAsk.trim() } });
     setAiAsk("");
@@ -521,12 +521,12 @@ function DocumentsPage() {
     const c = {
       id: crypto.randomUUID(),
       text: newComment.trim(),
-      user: "Bạn",
+      user: t("doc.13"),
       time: new Date().toLocaleString(),
     };
     setComments((prev) => [...prev, c]);
     setNewComment("");
-    toast.success("Đã thêm bình luận");
+    toast.success(t("doc.22"));
   };
 
   const exportDocument = () => {
@@ -557,7 +557,7 @@ function DocumentsPage() {
         <AppTopbar
           variant="documents"
           onOpenSidebar={() => setSidebarOpen(true)}
-          onNew={() => (currentWs ? setShowNew(true) : toast.error("Tạo workspace trước"))}
+          onNew={() => (currentWs ? setShowNew(true) : toast.error(t("doc.23")))}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
@@ -571,19 +571,19 @@ function DocumentsPage() {
                 <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
                   {currentWs?.name?.[0]?.toUpperCase() ?? "—"}
                 </span>
-                <span className="truncate">{currentWs?.name ?? "Chưa có workspace"}</span>
+                <span className="truncate">{currentWs?.name ?? t("doc.24")}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </button>
               <button
                 onClick={() => setShowMembers(true)}
-                title="Thành viên"
+                title={t("doc.25")}
                 className="rounded p-1.5 hover:bg-surface-2"
               >
                 <Users className="h-4 w-4 text-muted-foreground" />
               </button>
               <button
                 onClick={signOut}
-                title="Đăng xuất"
+                title={t("doc.26")}
                 className="rounded p-1.5 hover:bg-surface-2"
               >
                 <LogOut className="h-4 w-4 text-muted-foreground" />
@@ -625,13 +625,13 @@ function DocumentsPage() {
               </div>
               <button
                 onClick={() => currentWs && setShowNew(true)}
-                title="Tài liệu mới"
+                title={t("doc.27")}
                 className="rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
               <label
-                title="Tải tệp lên"
+                title={t("doc.28")}
                 className={`flex cursor-pointer items-center rounded-md bg-surface-2 p-1.5 hover:bg-surface-2/70 ${!currentWs || uploading ? "pointer-events-none opacity-50" : ""}`}
               >
                 {uploading ? (
@@ -643,7 +643,7 @@ function DocumentsPage() {
                   type="file"
                   multiple
                   className="hidden"
-                  aria-label="Tải tệp lên"
+                  aria-label={t("doc.28")}
                   disabled={!currentWs || uploading}
                   onChange={(e) => {
                     void uploadFiles(e.target.files);
@@ -663,8 +663,8 @@ function DocumentsPage() {
                   }
                   className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-warning/15 px-2.5 py-1.5 text-xs text-warning hover:bg-warning/25"
                 >
-                  <span>Tài liệu cần cập nhật (&gt;30 ngày)</span>
-                  <span>Bỏ lọc ✕</span>
+                  <span>{t("doc.29")}</span>
+                  <span>{t("doc.30")}</span>
                 </button>
               )}
               {rangeDays ? (
@@ -678,16 +678,16 @@ function DocumentsPage() {
                   className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs text-primary hover:bg-primary/25"
                 >
                   <span>{rangeDays} ngày qua</span>
-                  <span>Bỏ lọc ✕</span>
+                  <span>{t("doc.30")}</span>
                 </button>
               ) : null}
               {visibleDocs.length === 0 ? (
                 <div className="px-2 py-6 text-center text-xs text-muted-foreground">
                   {docFilter === "stale"
-                    ? "Không có tài liệu nào quá 30 ngày chưa cập nhật"
+                    ? t("doc.31")
                     : currentWs
-                      ? "Chưa có tài liệu nào. Bấm + để tạo mới"
-                      : "Tạo workspace đầu tiên để bắt đầu"}
+                      ? t("doc.32")
+                      : t("doc.33")}
                 </div>
               ) : (
                 userFolders.map((f) => (
@@ -711,7 +711,7 @@ function DocumentsPage() {
                           </button>
                           <button
                             onClick={() => deleteDoc(d.id)}
-                            title="Xoá"
+                            title={t("doc.34")}
                             className="opacity-0 group-hover:opacity-100 mr-1 rounded p-1 text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -739,27 +739,27 @@ function DocumentsPage() {
             <div className="border-b border-border px-4 py-3 sm:px-8">
               <FilterPageHeader
                 crumbs={[
-                  { label: "Trang chủ", to: "/tasks" },
-                  { label: "Tài liệu", to: "/documents" },
+                  { label: t("doc.35"), to: "/tasks" },
+                  { label: t("doc.36"), to: "/documents" },
                   {
                     label:
                       docFilter === "stale"
-                        ? "Cần cập nhật"
+                        ? t("doc.37")
                         : rangeDays
                           ? `${rangeDays} ngày qua`
-                          : "Tất cả",
+                          : t("doc.38"),
                   },
                 ]}
                 title={
                   docFilter === "stale"
-                    ? "Tài liệu cần cập nhật"
+                    ? t("doc.39")
                     : rangeDays
                       ? `Tài liệu ${rangeDays} ngày qua`
-                      : "Tất cả tài liệu"
+                      : t("doc.40")
                 }
                 description={
                   docFilter === "stale"
-                    ? "Chưa được cập nhật trong hơn 30 ngày"
+                    ? t("doc.41")
                     : rangeDays
                       ? `Được cập nhật trong ${rangeDays} ngày gần nhất`
                       : undefined
@@ -768,7 +768,7 @@ function DocumentsPage() {
                   ...(docFilter === "stale"
                     ? [
                         {
-                          label: "Quá 30 ngày",
+                          label: t("doc.42"),
                           onClear: () =>
                             navigate({
                               to: "/documents",
@@ -798,14 +798,14 @@ function DocumentsPage() {
                   <span>{selected?.folder ?? "—"}</span>
                   <span>/</span>
                   <span className="font-medium text-foreground">
-                    {selected?.title ?? "Chưa chọn tài liệu"}
+                    {selected?.title ?? t("doc.43")}
                   </span>
                   {selected && <Star className="h-4 w-4 fill-amber-400 text-amber-400" />}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      if (!selected) { toast.error("Chọn tài liệu trước"); return; }
+                      if (!selected) { toast.error(t("doc.44")); return; }
                       setShowShare(true);
                     }}
                     className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 disabled:opacity-50"
@@ -815,12 +815,12 @@ function DocumentsPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3">
-                        {previewMode ? "Xem trước" : "Chỉnh sửa"} <ChevronDown className="h-4 w-4" />
+                        {previewMode ? t("doc.45") : t("doc.46")} <ChevronDown className="h-4 w-4" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-surface border-border">
-                      <DropdownMenuItem onClick={() => setPreviewMode(false)} className="cursor-pointer focus:bg-surface-2">Chỉnh sửa</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setPreviewMode(true)} className="cursor-pointer focus:bg-surface-2">Xem trước</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setPreviewMode(false)} className="cursor-pointer focus:bg-surface-2">{t("doc.46")}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setPreviewMode(true)} className="cursor-pointer focus:bg-surface-2">{t("doc.45")}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <DropdownMenu>
@@ -830,9 +830,9 @@ function DocumentsPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-surface border-border">
-                      <DropdownMenuItem onClick={exportDocument} className="cursor-pointer focus:bg-surface-2">Tải xuống Markdown</DropdownMenuItem>
-                      <DropdownMenuItem onClick={printDocument} className="cursor-pointer focus:bg-surface-2">In tài liệu</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setHistoryOpen(true)} className="cursor-pointer focus:bg-surface-2">Lịch sử</DropdownMenuItem>
+                      <DropdownMenuItem onClick={exportDocument} className="cursor-pointer focus:bg-surface-2">{t("doc.47")}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={printDocument} className="cursor-pointer focus:bg-surface-2">{t("doc.48")}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setHistoryOpen(true)} className="cursor-pointer focus:bg-surface-2">{t("doc.49")}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -851,7 +851,7 @@ function DocumentsPage() {
                       className="w-full bg-transparent text-2xl font-bold focus:outline-none sm:text-3xl"
                     />
                   ) : (
-                    <h1 className="text-2xl font-bold sm:text-3xl">Chọn hoặc tạo tài liệu</h1>
+                    <h1 className="text-2xl font-bold sm:text-3xl">{t("doc.50")}</h1>
                   )}
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">
@@ -870,14 +870,14 @@ function DocumentsPage() {
                   <button
                     onClick={() => setRightTab("comments")}
                     className={`rounded p-1.5 hover:bg-surface-2 ${rightTab === "comments" ? "text-primary" : ""}`}
-                    title="Bình luận"
+                    title={t("doc.51")}
                   >
                     <MessageSquare className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setHistoryOpen(true)}
                     className="rounded p-1.5 hover:bg-surface-2"
-                    title="Lịch sử"
+                    title={t("doc.49")}
                   >
                     <HistoryIcon className="h-4 w-4" />
                   </button>
@@ -905,12 +905,12 @@ function DocumentsPage() {
             </div>
 
             <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-border bg-background/95 px-4 py-2 backdrop-blur sm:px-8">
-              <ToolbarBtn icon={ChevronDown} onClick={() => insertMarkdown.hr()} title="Đường kẻ" />
-              <ToolbarBtn icon={ChevronRight} onClick={() => insertMarkdown.blockquote()} title="Trích dẫn" />
+              <ToolbarBtn icon={ChevronDown} onClick={() => insertMarkdown.hr()} title={t("doc.52")} />
+              <ToolbarBtn icon={ChevronRight} onClick={() => insertMarkdown.blockquote()} title={t("doc.53")} />
               <select
                 onChange={(e) => insertMarkdown.heading(Number(e.target.value))}
                 className="mx-1 rounded bg-surface-2 px-2 py-1 text-xs text-foreground focus:outline-none"
-                title="Tiêu đề"
+                title={t("doc.54")}
                 value=""
               >
                 <option value="" disabled>Heading</option>
@@ -920,28 +920,28 @@ function DocumentsPage() {
                 <option value="4">H4</option>
               </select>
               <span className="mx-1 h-5 w-px bg-border" />
-              <ToolbarBtn icon={Bold} onClick={() => insertMarkdown.bold()} title="In đậm" />
-              <ToolbarBtn icon={Italic} onClick={() => insertMarkdown.italic()} title="In nghiêng" />
-              <ToolbarBtn icon={Underline} onClick={() => insertMarkdown.underline()} title="Gạch chân" />
-              <ToolbarBtn icon={Strikethrough} onClick={() => insertMarkdown.strikethrough()} title="Gạch ngang" />
+              <ToolbarBtn icon={Bold} onClick={() => insertMarkdown.bold()} title={t("doc.55")} />
+              <ToolbarBtn icon={Italic} onClick={() => insertMarkdown.italic()} title={t("doc.56")} />
+              <ToolbarBtn icon={Underline} onClick={() => insertMarkdown.underline()} title={t("doc.57")} />
+              <ToolbarBtn icon={Strikethrough} onClick={() => insertMarkdown.strikethrough()} title={t("doc.58")} />
               <ToolbarBtn icon={Code} onClick={() => insertMarkdown.code()} title="Code" />
               <span className="mx-1 h-5 w-px bg-border" />
-              <ToolbarBtn icon={List} onClick={() => insertMarkdown.bullet()} title="Danh sách" />
-              <ToolbarBtn icon={ListOrdered} onClick={() => insertMarkdown.ordered()} title="Danh sách số" />
-              <ToolbarBtn icon={AlignLeft} onClick={() => insertMarkdown.blockquote()} title="Canh trái / trích dẫn" />
-              <ToolbarBtn icon={AlignCenter} onClick={() => insertAtCursor("<center>", "</center>")} title="Canh giữa" />
+              <ToolbarBtn icon={List} onClick={() => insertMarkdown.bullet()} title={t("doc.59")} />
+              <ToolbarBtn icon={ListOrdered} onClick={() => insertMarkdown.ordered()} title={t("doc.60")} />
+              <ToolbarBtn icon={AlignLeft} onClick={() => insertMarkdown.blockquote()} title={t("doc.61")} />
+              <ToolbarBtn icon={AlignCenter} onClick={() => insertAtCursor("<center>", "</center>")} title={t("doc.62")} />
               <span className="mx-1 h-5 w-px bg-border" />
-              <ToolbarBtn icon={LinkIcon} onClick={() => insertMarkdown.link()} title="Liên kết" />
-              <ToolbarBtn icon={ImageIcon} onClick={() => insertMarkdown.image()} title="Hình ảnh" />
-              <ToolbarBtn icon={TableIcon} onClick={() => insertMarkdown.table()} title="Bảng" />
-              <ToolbarBtn icon={MoreHorizontal} onClick={() => insertMarkdown.codeBlock()} title="Khối code" />
+              <ToolbarBtn icon={LinkIcon} onClick={() => insertMarkdown.link()} title={t("doc.63")} />
+              <ToolbarBtn icon={ImageIcon} onClick={() => insertMarkdown.image()} title={t("doc.64")} />
+              <ToolbarBtn icon={TableIcon} onClick={() => insertMarkdown.table()} title={t("doc.65")} />
+              <ToolbarBtn icon={MoreHorizontal} onClick={() => insertMarkdown.codeBlock()} title={t("doc.66")} />
             </div>
 
             <article className="flex-1 px-4 py-6 sm:px-8">
               {selected ? (
                 previewMode ? (
                   <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                    {selected.content || "(Không có nội dung)"}
+                    {selected.content || t("doc.67")}
                   </div>
                 ) : (
                   <textarea
@@ -952,7 +952,7 @@ function DocumentsPage() {
                       setSaveState("dirty");
                     }}
                     onBlur={(e) => updateSelected({ content: e.target.value })}
-                    placeholder="Bắt đầu viết tài liệu của bạn…"
+                    placeholder={t("doc.68")}
                     className="min-h-[400px] w-full resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
                 )
@@ -964,7 +964,7 @@ function DocumentsPage() {
                   </p>
                   <button
                     onClick={() =>
-                      currentWs ? setShowNew(true) : toast.error("Tạo workspace trước")
+                      currentWs ? setShowNew(true) : toast.error(t("doc.23"))
                     }
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                     disabled={!currentWs}
@@ -992,13 +992,13 @@ function DocumentsPage() {
                       type="button"
                       onClick={() => updateSelected({ content: selected.content, title: selected.title })}
                       className="flex items-center gap-1 rounded px-1.5 py-0.5 text-warning hover:bg-surface-2"
-                      title="Lưu tài liệu"
-                      aria-label="Lưu tài liệu"
+                      title={t("doc.69")}
+                      aria-label={t("doc.69")}
                     >
                       <Save className="h-3.5 w-3.5" aria-hidden /> Lưu
                     </button>
                   ) : (
-                    <span className="flex items-center gap-1 text-success" title="Đã lưu">
+                    <span className="flex items-center gap-1 text-success" title={t("doc.70")}>
                       <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> Đã lưu
                     </span>
                   ))}
@@ -1037,8 +1037,8 @@ function DocumentsPage() {
                     </div>
                     <p className="text-xs leading-relaxed text-muted-foreground">
                       {selected
-                        ? "Tóm tắt sẽ xuất hiện ở đây sau khi bạn viết nội dung tài liệu."
-                        : "Chọn một tài liệu để xem tóm tắt AI."}
+                        ? t("doc.71")
+                        : t("doc.72")}
                     </p>
                   </div>
                   <div>
@@ -1071,7 +1071,7 @@ function DocumentsPage() {
                   </div>
                   <div className="flex-1 space-y-3">
                     {comments.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Chưa có bình luận nào.</p>
+                      <p className="text-xs text-muted-foreground">{t("doc.73")}</p>
                     ) : (
                       comments.map((c) => (
                         <div key={c.id} className="rounded-lg border border-border bg-surface-2 p-3">
@@ -1089,7 +1089,7 @@ function DocumentsPage() {
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && submitComment()}
-                      placeholder="Thêm bình luận…"
+                      placeholder={t("doc.74")}
                       disabled={!selected}
                       className="flex-1 bg-transparent text-xs placeholder:text-muted-foreground focus:outline-none"
                     />
@@ -1120,7 +1120,7 @@ function DocumentsPage() {
                         </div>
                       </div>
                     ))}
-                    {members.length === 0 && <p className="text-xs text-muted-foreground">Chưa có thành viên nào.</p>}
+                    {members.length === 0 && <p className="text-xs text-muted-foreground">{t("doc.75")}</p>}
                   </div>
                   <button
                     onClick={() => setShowMembers(true)}
@@ -1137,11 +1137,11 @@ function DocumentsPage() {
 
       {showNew && (
         <Modal onClose={() => !saving && setShowNew(false)}>
-          <h2 className="mb-1 text-lg font-semibold">Tạo tài liệu mới</h2>
+          <h2 className="mb-1 text-lg font-semibold">{t("doc.76")}</h2>
           <p className="mb-4 text-xs text-muted-foreground">
             Lưu vào workspace «{currentWs?.name}».
           </p>
-          <Field label="Tiêu đề">
+          <Field label={t("doc.54")}>
             <input
               autoFocus
               value={newTitle}
@@ -1150,7 +1150,7 @@ function DocumentsPage() {
               className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </Field>
-          <Field label="Thư mục">
+          <Field label={t("doc.77")}>
             <input
               value={newFolder}
               onChange={(e) => setNewFolder(e.target.value)}
@@ -1170,7 +1170,7 @@ function DocumentsPage() {
               disabled={saving}
               className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {saving ? "Đang lưu…" : "Tạo"}
+              {saving ? t("doc.78") : t("doc.79")}
             </button>
           </Actions>
         </Modal>
@@ -1178,9 +1178,9 @@ function DocumentsPage() {
 
       {showNewWs && (
         <Modal onClose={() => !saving && setShowNewWs(false)}>
-          <h2 className="mb-1 text-lg font-semibold">Tạo workspace mới</h2>
-          <p className="mb-4 text-xs text-muted-foreground">Bạn sẽ là chủ sở hữu.</p>
-          <Field label="Tên workspace">
+          <h2 className="mb-1 text-lg font-semibold">{t("doc.80")}</h2>
+          <p className="mb-4 text-xs text-muted-foreground">{t("doc.81")}</p>
+          <Field label={t("doc.82")}>
             <input
               autoFocus
               value={newWsName}
@@ -1210,15 +1210,15 @@ function DocumentsPage() {
 
       {showShare && selected && (
         <Modal onClose={() => !sharing && setShowShare(false)}>
-          <h2 className="mb-1 text-lg font-semibold">Chia sẻ tài liệu</h2>
+          <h2 className="mb-1 text-lg font-semibold">{t("doc.83")}</h2>
           <p className="mb-4 text-xs text-muted-foreground">«{selected.title}»</p>
-          <Field label="Thành viên">
+          <Field label={t("doc.25")}>
             <select
               value={shareUserId}
               onChange={(e) => setShareUserId(e.target.value)}
               className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="">— Chọn thành viên —</option>
+              <option value="">{t("doc.84")}</option>
               {members.map((m) => (
                 <option key={m.user_id} value={m.user_id}>
                   {m.profiles?.display_name || m.profiles?.email || m.user_id}
@@ -1226,22 +1226,22 @@ function DocumentsPage() {
               ))}
             </select>
           </Field>
-          <Field label="Quyền">
+          <Field label={t("doc.85")}>
             <select
               value={shareLevel}
               onChange={(e) => setShareLevel(e.target.value as typeof shareLevel)}
               className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="view">Chỉ xem</option>
-              <option value="comment">Bình luận</option>
-              <option value="edit">Chỉnh sửa</option>
-              <option value="manage">Quản lý</option>
+              <option value="view">{t("doc.86")}</option>
+              <option value="comment">{t("doc.51")}</option>
+              <option value="edit">{t("doc.46")}</option>
+              <option value="manage">{t("doc.87")}</option>
             </select>
           </Field>
           <Actions>
-            <button onClick={() => setShowShare(false)} disabled={sharing} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">Huỷ</button>
+            <button onClick={() => setShowShare(false)} disabled={sharing} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">{t("doc.88")}</button>
             <button onClick={submitShare} disabled={sharing || !shareUserId} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-              {sharing ? "Đang chia sẻ…" : "Chia sẻ"}
+              {sharing ? t("doc.89") : t("doc.90")}
             </button>
           </Actions>
         </Modal>
@@ -1249,9 +1249,9 @@ function DocumentsPage() {
 
       {showMembers && currentWs && (
         <Modal onClose={() => setShowMembers(false)}>
-          <h2 className="mb-1 text-lg font-semibold">Thành viên workspace</h2>
+          <h2 className="mb-1 text-lg font-semibold">{t("doc.91")}</h2>
           <p className="mb-4 text-xs text-muted-foreground">
-            «{currentWs.name}» · {isOwner ? "Bạn là chủ" : "Bạn là thành viên"}
+            «{currentWs.name}» · {isOwner ? t("doc.92") : t("doc.93")}
           </p>
           <div className="mb-4 max-h-60 space-y-1 overflow-y-auto">
             {members.map((m) => (
@@ -1284,7 +1284,7 @@ function DocumentsPage() {
           </div>
           {isOwner && (
             <>
-              <Field label="Mời thành viên qua email">
+              <Field label={t("doc.94")}>
                 <input
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
@@ -1318,11 +1318,11 @@ function DocumentsPage() {
 
       {historyOpen && selected && (
         <Modal onClose={() => setHistoryOpen(false)}>
-          <h2 className="mb-1 text-lg font-semibold">Lịch sử tài liệu</h2>
+          <h2 className="mb-1 text-lg font-semibold">{t("doc.95")}</h2>
           <p className="mb-4 text-xs text-muted-foreground">«{selected.title}»</p>
           <div className="mb-4 max-h-60 space-y-2 overflow-y-auto text-sm">
             {history.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Chưa có lịch sử.</p>
+              <p className="text-xs text-muted-foreground">{t("doc.96")}</p>
             ) : (
               history.map((h) => (
                 <div key={h.id} className="rounded-lg bg-surface-2/50 p-3">
@@ -1348,10 +1348,10 @@ function DocumentsPage() {
 
       {historyOpen && !selected && (
         <Modal onClose={() => setHistoryOpen(false)}>
-          <h2 className="mb-1 text-lg font-semibold">Lịch sử</h2>
-          <p className="mb-4 text-sm text-muted-foreground">Chọn tài liệu để xem lịch sử.</p>
+          <h2 className="mb-1 text-lg font-semibold">{t("doc.49")}</h2>
+          <p className="mb-4 text-sm text-muted-foreground">{t("doc.97")}</p>
           <Actions>
-            <button onClick={() => setHistoryOpen(false)} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">Đóng</button>
+            <button onClick={() => setHistoryOpen(false)} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">{t("doc.98")}</button>
           </Actions>
         </Modal>
       )}
