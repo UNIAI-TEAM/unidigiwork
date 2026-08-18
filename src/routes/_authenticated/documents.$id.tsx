@@ -1,5 +1,6 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
+import { useI18n } from "@/lib/i18n";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -72,6 +73,7 @@ function fmtTimeImpl(v: string | null | undefined) {
 }
 
 function DocumentDetailPage() {
+  const { t } = useI18n();
   const { id } = Route.useParams();
   const [open, setOpen] = useSidebarState();
   const queryClient = useQueryClient();

@@ -1,6 +1,7 @@
 import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
 import { isStaleDocument } from "@/lib/metrics";
+import { useI18n } from "@/lib/i18n";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -114,6 +115,7 @@ function ToolbarBtn({
 }
 
 function DocumentsPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { filter: docFilter } = Route.useSearch();
   const docsSearch = Route.useSearch();
