@@ -22,7 +22,7 @@ import {
   markNotificationsRead,
   setNotificationsArchived,
 } from "@/lib/api/notifications.functions";
-import { notifyComingSoon } from "@/lib/coming-soon";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/notifications/$id")({
   head: () => ({
@@ -61,6 +61,16 @@ function NotificationDetailPage() {
   const deleteMut = useMutation({
     mutationFn: (ids: string[]) => deleteNotifications({ data: { ids } }),
     onSuccess: invalidate,
+  });
+
+  const archived = ((row?.meta ?? {}) as Record<string, unknown>)["archived"] === true;
+  const archiveMut = useMutation({
+    mutationFn: () => setNotificationsArchived({ data: { ids: [id], archived: !archived } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success(archived ? "Đã bỏ lưu trữ thông báo" : "Đã lưu trữ thông báo");
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -247,7 +257,7 @@ function NotificationDetailPage() {
                         key={a.label}
                         onClick={() => {
                           if (notif.link?.to) {
-                            void navigate({ to: notif.link.to });
+                            void router.navigate({ to: notif.link.to });
                           } else {
                             toast.info(a.label + ": không có liên kết đính kèm.");
                           }
