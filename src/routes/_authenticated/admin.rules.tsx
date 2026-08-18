@@ -116,7 +116,7 @@ function AdminRulesPage() {
             ))}
           </div>
           <span className="ml-auto text-xs text-muted-foreground">
-            {filtered.length}/{rules.length} quy tắc
+            {filtered.length}/{rules.length} {t("adm.102")}
           </span>
           <button
             onClick={() => setForm({ ...emptyForm })}
@@ -170,7 +170,7 @@ function AdminRulesPage() {
                       <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>
                     )}
                     <div className="mt-1 text-[11px] text-muted-foreground">
-                      Cập nhật: {new Date(r.updated_at).toLocaleString("vi-VN")}
+                      {t("adm.103")} {new Date(r.updated_at).toLocaleString()}
                     </div>
                   </div>
                   <div className="flex flex-none items-center gap-1">
@@ -192,7 +192,7 @@ function AdminRulesPage() {
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`Xóa quy tắc "${r.name}"?`)) deleteMut.mutate(r.id);
+                        if (confirm(`${t("adm.104")} "${r.name}"?`)) deleteMut.mutate(r.id);
                       }}
                       className="rounded-md border border-border bg-surface p-1.5 text-muted-foreground hover:text-destructive"
                       aria-label={t("em.42")}
@@ -213,7 +213,7 @@ function AdminRulesPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2">
               <Plus className="h-5 w-5" />
             </div>
-            <div>Chọn t("adm.59") hoặc chỉnh sửa quy tắc để bắt đầu.</div>
+            <div>{t("adm.105")}</div>
           </div>
         ) : (
           <form
