@@ -82,7 +82,8 @@ function AdminLeadsPage() {
         </div>
         <div className="flex flex-wrap gap-1">
           {(["all", ...STATUSES.map((s) => s.key)] as const).map((k) => {
-            const label = k === "all" ? t("adm.52") : STATUSES.find((s) => s.key === k)?.label;
+            const lbl = STATUSES.find((s) => s.key === k)?.label;
+            const label = k === "all" ? t("adm.52") : lbl ? t(lbl as Key) : k;
             const active = filter === k;
             return (
               <button
@@ -145,7 +146,7 @@ function AdminLeadsPage() {
                           STATUSES.find((s) => s.key === l.status)?.tint ?? "bg-surface-2 text-muted-foreground"
                         }`}
                       >
-                        {STATUSES.find((s) => s.key === l.status)?.label ?? l.status}
+                        {(() => { const lb = STATUSES.find((s) => s.key === l.status)?.label; return lb ? t(lb as Key) : l.status; })()}
                       </span>
                       <select
                         value={l.status}
@@ -158,7 +159,7 @@ function AdminLeadsPage() {
                       >
                         {STATUSES.map((s) => (
                           <option key={s.key} value={s.key}>
-                            {s.label}
+                            {t(s.label as Key)}
                           </option>
                         ))}
                       </select>

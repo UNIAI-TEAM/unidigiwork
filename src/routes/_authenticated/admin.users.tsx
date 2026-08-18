@@ -138,7 +138,7 @@ function AdminUsersPage() {
                                 key={r}
                                 className={`rounded px-1.5 py-0.5 text-[11px] ${meta?.tint ?? "bg-surface-2 text-muted-foreground"}`}
                               >
-                                {meta?.label ?? r}
+                                {meta ? t(meta.label as Key) : r}
                               </span>
                             );
                           })
@@ -181,12 +181,12 @@ function AdminUsersPage() {
                                 !canWrite
                                   ? t("adm.25")
                                   : has
-                                    ? `Thu hồi ${r.label}`
-                                    : `Cấp ${r.label}`
+                                    ? `${t("adm.role.revoke")} ${t(r.label as Key)}`
+                                    : `${t("adm.role.grant")} ${t(r.label as Key)}`
                               }
                             >
                               {has ? "− " : "+ "}
-                              {r.label}
+                              {t(r.label as Key)}
                             </button>
                           );
                         })}

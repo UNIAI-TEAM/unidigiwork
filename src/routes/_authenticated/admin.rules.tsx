@@ -111,7 +111,7 @@ function AdminRulesPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {k === "all" ? t("adm.52") : KIND_META[k].label}
+                {k === "all" ? t("adm.52") : t(KIND_META[k].label as Key)}
               </button>
             ))}
           </div>
@@ -158,7 +158,7 @@ function AdminRulesPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{r.name}</span>
                       <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                        {meta.label}
+                        {t(meta.label as Key)}
                       </span>
                       {!r.is_enabled && (
                         <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted-foreground">
@@ -264,7 +264,7 @@ function AdminRulesPage() {
               >
                 {(Object.keys(KIND_META) as Kind[]).map((k) => (
                   <option key={k} value={k}>
-                    {KIND_META[k].label}
+                    {t(KIND_META[k].label as Key)}
                   </option>
                 ))}
               </select>

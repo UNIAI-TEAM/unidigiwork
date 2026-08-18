@@ -62,19 +62,19 @@ function AdminLayout() {
           ) : (
             <>
               <nav className="mb-5 flex gap-1 rounded-xl border border-border bg-surface p-1 text-sm">
-                {TABS.map((t) => {
-                  const active = t.exact ? path === t.to : path.startsWith(t.to);
+                {TABS.map((tab) => {
+                  const active = tab.exact ? path === tab.to : path.startsWith(tab.to);
                   return (
                     <Link
-                      key={t.to}
-                      to={t.to}
+                      key={tab.to}
+                      to={tab.to}
                       className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-colors ${
                         active
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                       }`}
                     >
-                      <t.icon className="h-4 w-4" /> {t.label}
+                      <tab.icon className="h-4 w-4" /> {t(tab.label as Key)}
                     </Link>
                   );
                 })}
