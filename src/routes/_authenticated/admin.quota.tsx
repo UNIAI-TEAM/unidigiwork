@@ -32,13 +32,13 @@ const OPTIONAL_EXPORT_COLUMNS = [
 const DEFAULT_OPTIONAL_COLUMNS = OPTIONAL_EXPORT_COLUMNS.map((c) => c.key);
 
 function ColumnsPicker({
-  const { t } = useI18n();
   value,
   onChange,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { t } = useI18n();
   const toggle = (key: string) => {
     onChange(value.includes(key) ? value.filter((k) => k !== key) : [...value, key]);
   };
@@ -392,7 +392,6 @@ function StatCard({
 }
 
 function AlertsSection({
-  const { t } = useI18n();
   rules,
   alerts,
   loadingRules,
@@ -409,6 +408,7 @@ function AlertsSection({
   tenantOptions: string[];
   onChanged: () => void;
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState<{
     tenant_id: string;
     meter_key: string;

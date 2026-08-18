@@ -2419,7 +2419,6 @@ function maybeAutoZipOpts(opts: CsvOptions, rawBytes: number): { opts: CsvOption
 }
 
 function ExportSizeHint({
-  const { t } = useI18n();
   label,
   rows,
   cols,
@@ -2436,6 +2435,7 @@ function ExportSizeHint({
   onEnableZip: () => void;
   disabled?: boolean;
 }) {
+  const { t } = useI18n();
   if (disabled || rows <= 0 || cols <= 0) return null;
   const raw = estimateCsvBytes(rows, cols, includeMetadata);
   const finalBytes = zip ? Math.max(1024, Math.round(raw * ZIP_COMPRESSION_RATIO)) : raw;
@@ -2519,7 +2519,6 @@ function ExportProgressBar({ progress }: { progress: ExportProgress }) {
 }
 
 function TraceResultView({
-  const { t } = useI18n();
   result,
   onPage,
   onLimit,
@@ -2584,6 +2583,7 @@ function TraceResultView({
   lastExportStats: LastExportStats | null;
   setLastExportStats: (v: LastExportStats) => void;
 }) {
+  const { t } = useI18n();
   const { correlationId, counts, totals, pagination, timeline } = result;
   const setKeyword = onKeywordChange;
   const [selected, setSelected] = useState<TimelineItem | null>(null);
@@ -3218,7 +3218,6 @@ function FrequencyChart({ items }: { items: TimelineItem[] }) {
 }
 
 function PaginationBar({
-  const { t } = useI18n();
   page,
   pageCount,
   pageSize,
@@ -3239,6 +3238,7 @@ function PaginationBar({
   onPage: (p: number) => void;
   onLimit: (n: number) => void;
 }) {
+  const { t } = useI18n();
   const canPrev = page > 1 && !pending;
   const canNext = page < pageCount && !pending;
   return (
@@ -3480,7 +3480,6 @@ type CsvPreviewContext = {
   lastExport?: LastExportStats | null;
 };
 function CsvOptionsMenu({
-  const { t } = useI18n();
   value,
   onChange,
   preview,
@@ -3489,6 +3488,7 @@ function CsvOptionsMenu({
   onChange: (v: CsvOptions) => void;
   preview?: CsvPreviewContext;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -3909,7 +3909,6 @@ function CsvOptionsMenu({
 }
 
 function TraceExportColumnsMenu({
-  const { t } = useI18n();
   cols,
   onToggle,
   onRelabel,
@@ -3924,6 +3923,7 @@ function TraceExportColumnsMenu({
   onReset: () => void;
   onToggleAll: (on: boolean) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -4026,7 +4026,6 @@ function TraceExportColumnsMenu({
 }
 
 function ColumnsMenu({
-  const { t } = useI18n();
   columns,
   order,
   onToggle,
@@ -4049,6 +4048,7 @@ function ColumnsMenu({
   onApplyPreset: (id: string) => void;
   onDeletePreset: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -4184,7 +4184,6 @@ function ColumnsMenu({
 }
 
 function AutoRefreshControl({
-  const { t } = useI18n();
   value,
   onChange,
 // (kept above)
@@ -4198,6 +4197,7 @@ function AutoRefreshControl({
   pending: boolean;
   lastRefreshedAt: number | null;
 }) {
+  const { t } = useI18n();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -4281,7 +4281,6 @@ function CountCard({
   );
 }
 function PresetsMenu({
-  const { t } = useI18n();
   presets,
   onSave,
   onApply,
@@ -4292,6 +4291,7 @@ function PresetsMenu({
   onApply: (p: FilterPreset) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   useEffect(() => {
