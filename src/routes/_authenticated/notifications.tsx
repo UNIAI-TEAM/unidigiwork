@@ -49,7 +49,6 @@ import {
   unmarkNotificationsRead,
 } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
-import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
