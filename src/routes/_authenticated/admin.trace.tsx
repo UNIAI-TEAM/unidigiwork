@@ -1,4 +1,4 @@
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -33,10 +33,10 @@ function severityOfItem(item: { kind: string; data: unknown }): Severity {
 
 const ALL_STATUSES = ["success", "failure", "pending"] as const;
 type Status = (typeof ALL_STATUSES)[number];
-const STATUS_META: Record<Status, { label: string; className: string }> = {
-  success: { label: "Thành công", className: "text-emerald-400 border-emerald-500/40" },
-  failure: { label: "Thất bại", className: "text-red-400 border-red-500/40" },
-  pending: { label: "Đang xử lý", className: "text-amber-400 border-amber-500/40" },
+const STATUS_META: Record<Status, { labelKey: Key; className: string }> = {
+  success: { labelKey: "trc.161", className: "text-emerald-400 border-emerald-500/40" },
+  failure: { labelKey: "trc.162", className: "text-red-400 border-red-500/40" },
+  pending: { labelKey: "trc.163", className: "text-amber-400 border-amber-500/40" },
 };
 function statusOfItem(item: { kind: string; data: unknown }): Status {
   const d = (item.data ?? {}) as Record<string, unknown>;
@@ -50,15 +50,15 @@ function statusOfItem(item: { kind: string; data: unknown }): Status {
 }
 
 const COLUMN_DEFS = [
-  { key: "time", label: "Thời gian" },
-  { key: "kind", label: "Loại" },
-  { key: "label", label: "Nhãn (meter/event)" },
-  { key: "status", label: "Trạng thái" },
-  { key: "meta", label: "Chỉ số (Δ/usage/attempts)" },
-  { key: "tenant", label: "Tenant" },
-  { key: "actor", label: "Actor" },
-  { key: "target", label: "Aggregate/Resource ID" },
-  { key: "payload", label: "Payload / Lỗi" },
+  { key: "time", label: "Thời gian", labelKey: "trc.164" as Key },
+  { key: "kind", label: "Loại", labelKey: "trc.165" as Key },
+  { key: "label", label: "Nhãn (meter/event)", labelKey: "trc.166" as Key },
+  { key: "status", label: "Trạng thái", labelKey: "trc.167" as Key },
+  { key: "meta", label: "Chỉ số (Δ/usage/attempts)", labelKey: "trc.168" as Key },
+  { key: "tenant", label: "Tenant", labelKey: undefined },
+  { key: "actor", label: "Actor", labelKey: undefined },
+  { key: "target", label: "Aggregate/Resource ID", labelKey: undefined },
+  { key: "payload", label: "Payload / Lỗi", labelKey: "trc.169" as Key },
 ] as const;
 type ColumnKey = (typeof COLUMN_DEFS)[number]["key"];
 type ColumnPrefs = Record<ColumnKey, boolean>;
@@ -2853,7 +2853,7 @@ function TraceResultView({
                   : "border-border bg-surface text-muted-foreground hover:text-foreground"
               } disabled:opacity-50`}
             >
-              {STATUS_META[s].label}
+              {t(STATUS_META[s].labelKey)}
             </button>
           );
         })}
@@ -4097,7 +4097,7 @@ function ColumnsMenu({
                       onChange={() => onToggle(key)}
                       className="h-3.5 w-3.5 rounded border-border accent-primary"
                     />
-                    <span>{c.label}</span>
+                    <span>{c.labelKey ? t(c.labelKey) : c.label}</span>
                   </label>
                   <button
                     onClick={() => onMove(key, -1)}
