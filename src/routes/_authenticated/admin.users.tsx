@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Search, ShieldCheck, UserX, X } from "lucide-react";
@@ -19,9 +19,9 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 
 type Role = "admin" | "moderator" | "user";
 const ROLES: { key: Role; label: string; tint: string }[] = [
-  { key: "admin", label: "Quản trị viên", tint: "bg-primary/15 text-primary" },
-  { key: "moderator", label: "Điều phối", tint: "bg-amber-500/15 text-amber-300" },
-  { key: "user", label: "Người dùng", tint: "bg-surface-2 text-muted-foreground" },
+  { key: "admin", label: "adm.role.admin", tint: "bg-primary/15 text-primary" },
+  { key: "moderator", label: "adm.role.moderator", tint: "bg-amber-500/15 text-amber-300" },
+  { key: "user", label: "adm.role.user", tint: "bg-surface-2 text-muted-foreground" },
 ];
 
 function AdminUsersPage() {

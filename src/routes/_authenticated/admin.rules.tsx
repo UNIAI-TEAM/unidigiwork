@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ListFilter, Pencil, Plus, Sparkles, Tag, Trash2, X } from "lucide-react";
@@ -22,9 +22,9 @@ export const Route = createFileRoute("/_authenticated/admin/rules")({
 
 type Kind = "notification" | "label" | "automation";
 const KIND_META: Record<Kind, { label: string; icon: typeof Bell; tint: string }> = {
-  notification: { label: "Thông báo", icon: Bell, tint: "bg-primary/15 text-primary" },
-  label: { label: "Nhãn", icon: Tag, tint: "bg-amber-500/15 text-amber-300" },
-  automation: { label: "Tự động hóa", icon: Sparkles, tint: "bg-violet-500/15 text-violet-300" },
+  notification: { label: "adm.rule.notification", icon: Bell, tint: "bg-primary/15 text-primary" },
+  label: { label: "adm.rule.label", icon: Tag, tint: "bg-amber-500/15 text-amber-300" },
+  automation: { label: "adm.rule.automation", icon: Sparkles, tint: "bg-violet-500/15 text-violet-300" },
 };
 
 type Rule = Awaited<ReturnType<typeof listAdminRules>>[number];

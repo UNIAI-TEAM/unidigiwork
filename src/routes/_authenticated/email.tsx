@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -87,13 +87,19 @@ export const Route = createFileRoute("/_authenticated/email")({
   component: EmailHubPage,
 });
 
+const GROUP_KEYS: Record<string, string> = {
+  "Hôm nay": "em.grp.today",
+  "Hôm qua": "em.grp.yesterday",
+  "Tuần này": "em.grp.week",
+};
+
 const MAILBOXES: { key: string; label: string; icon: LucideIcon }[] = [
-  { key: "inbox", label: "Hộp đến", icon: Inbox },
-  { key: "starred", label: "Quan trọng", icon: Star },
-  { key: "sent", label: "Đã gửi", icon: Send },
-  { key: "drafts", label: "Bản nháp", icon: FileEdit },
-  { key: "archive", label: "Lưu trữ", icon: Archive },
-  { key: "trash", label: "Đã xóa", icon: Trash2 },
+  { key: "inbox", label: "em.mb.inbox", icon: Inbox },
+  { key: "starred", label: "em.mb.starred", icon: Star },
+  { key: "sent", label: "em.mb.sent", icon: Send },
+  { key: "drafts", label: "em.mb.drafts", icon: FileEdit },
+  { key: "archive", label: "em.mb.archive", icon: Archive },
+  { key: "trash", label: "em.mb.trash", icon: Trash2 },
 ];
 
 type LabelWithCount = LabelDef & { count: number };
@@ -631,7 +637,7 @@ function EmailHubPage() {
                         className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
                       >
                         <Icon className="h-[18px] w-[18px]" />
-                        <span className="flex-1 text-left">{m.label}</span>
+                        <span className="flex-1 text-left">{t(m.label as Key)}</span>
                         <span className="text-[11px] tabular-nums text-muted-foreground">
                           {m.count}
                         </span>
@@ -901,7 +907,7 @@ function EmailHubPage() {
               {Object.entries(groups).map(([group, items]) => (
                 <div key={group}>
                   <div className="sticky top-0 z-10 bg-background/95 px-4 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
-                    {group}
+                    {GROUP_KEYS[group] ? t(GROUP_KEYS[group] as Key) : group}
                   </div>
                   <ul>
                     {items.map((e) => {

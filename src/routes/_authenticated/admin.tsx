@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { useState } from "react";
 import { LayoutGrid, ShieldCheck, Users, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
@@ -16,17 +16,17 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 const TABS = [
-  { to: "/admin" as const, label: "Tổng quan", icon: LayoutGrid, exact: true },
-  { to: "/admin/users" as const, label: "Tài khoản", icon: Users },
-  { to: "/admin/rules" as const, label: "Quy tắc", icon: ListFilter },
-  { to: "/admin/plans" as const, label: "Bảng giá", icon: CreditCard },
+  { to: "/admin" as const, label: "adm.tab.overview", icon: LayoutGrid, exact: true },
+  { to: "/admin/users" as const, label: "adm.tab.users", icon: Users },
+  { to: "/admin/rules" as const, label: "adm.tab.rules", icon: ListFilter },
+  { to: "/admin/plans" as const, label: "adm.tab.plans", icon: CreditCard },
   { to: "/admin/knowledge" as const, label: "Knowledge", icon: BookOpen },
-  { to: "/admin/leads" as const, label: "Lead demo", icon: Inbox },
+  { to: "/admin/leads" as const, label: "adm.tab.leads", icon: Inbox },
   { to: "/admin/quota" as const, label: "Quota", icon: Activity },
   { to: "/admin/ai-context" as const, label: "Context Budget", icon: Gauge },
   { to: "/admin/ai-actions" as const, label: "AI Action", icon: Bot },
   { to: "/admin/webhooks" as const, label: "Webhook", icon: Webhook },
-  { to: "/admin/backup" as const, label: "Sao lưu", icon: Database },
+  { to: "/admin/backup" as const, label: "adm.tab.backup", icon: Database },
 ];
 
 function AdminLayout() {

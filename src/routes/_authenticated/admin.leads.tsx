@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Inbox, Search, X } from "lucide-react";
@@ -19,11 +19,11 @@ export const Route = createFileRoute("/_authenticated/admin/leads")({
 type Status = "new" | "contacted" | "qualified" | "won" | "lost";
 
 const STATUSES: { key: Status; label: string; tint: string }[] = [
-  { key: "new", label: "Mới", tint: "bg-primary/15 text-primary" },
-  { key: "contacted", label: "Đã liên hệ", tint: "bg-amber-500/15 text-amber-300" },
-  { key: "qualified", label: "Tiềm năng", tint: "bg-sky-500/15 text-sky-300" },
-  { key: "won", label: "Thành công", tint: "bg-emerald-500/15 text-emerald-400" },
-  { key: "lost", label: "Thất bại", tint: "bg-surface-2 text-muted-foreground" },
+  { key: "new", label: "adm.lead.new", tint: "bg-primary/15 text-primary" },
+  { key: "contacted", label: "adm.lead.contacted", tint: "bg-amber-500/15 text-amber-300" },
+  { key: "qualified", label: "adm.lead.qualified", tint: "bg-sky-500/15 text-sky-300" },
+  { key: "won", label: "adm.lead.won", tint: "bg-emerald-500/15 text-emerald-400" },
+  { key: "lost", label: "adm.lead.lost", tint: "bg-surface-2 text-muted-foreground" },
 ];
 
 function AdminLeadsPage() {
