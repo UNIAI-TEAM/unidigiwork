@@ -1,7 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Globe } from "lucide-react";
+import { my } from "./i18n-locales/my";
+import { km } from "./i18n-locales/km";
+import { lo } from "./i18n-locales/lo";
 
-export type Lang = "vi" | "en";
+export type Lang = "vi" | "en" | "my" | "km" | "lo";
 
 const dict = {
   vi: {
