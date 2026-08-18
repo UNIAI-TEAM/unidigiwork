@@ -38,6 +38,8 @@ import {
   Trash2,
   Upload,
   Loader2,
+  Save,
+  CheckCircle2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,6 +127,7 @@ function DocumentsPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [docs, setDocs] = useState<Doc[]>([]);
   const [selected, setSelected] = useState<Doc | null>(null);
+  const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving">("saved");
   const [showNew, setShowNew] = useState(false);
   const [showWsMenu, setShowWsMenu] = useState(false);
   const [showNewWs, setShowNewWs] = useState(false);
