@@ -3,6 +3,29 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapPgError } from "./business.server";
+import { loadDepartmentReport, type DepartmentReport } from "./reports-departments.server";
+
+export type { DepartmentReport, DepartmentReportRow } from "./reports-departments.server";
+
+// Đếm số báo cáo thật (tasks/documents/meetings) theo kỳ và phòng ban.
+export const getReportDepartments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        from: z.string().datetime(),
+        to: z.string().datetime(),
+        workspaceId: z.string().uuid().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<DepartmentReport> =>
+    loadDepartmentReport(context.supabase, context.userId, {
+      from: data.from,
+      to: data.to,
+      workspaceId: data.workspaceId,
+    }),
+  );
 
 export type ReportOverview = {
   range_days: number;

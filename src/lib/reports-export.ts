@@ -1,7 +1,15 @@
 // Xuất báo cáo (KPI, workspaces, hoạt động) ra CSV và PDF (in trình duyệt, unicode-safe).
-import type { ReportOverview } from "@/lib/api/reports.functions";
+import type { DepartmentReport, ReportOverview } from "@/lib/api/reports.functions";
 
-type Meta = { from: string; to: string; title: string; compare?: boolean; prev?: { from: string; to: string } };
+type Meta = {
+  from: string;
+  to: string;
+  title: string;
+  compare?: boolean;
+  prev?: { from: string; to: string };
+  departments?: DepartmentReport | null;
+  departmentFilter?: string | null;
+};
 
 const esc = (v: unknown) => {
   const s = String(v ?? "");
@@ -61,6 +69,29 @@ export function exportReportCsv(report: ReportOverview, meta: Meta) {
   rows.push([]);
   rows.push(["Ngày", "Công việc", "Cuộc họp", "Tài liệu", "Hoàn thành"]);
   s.activity.forEach((a) => rows.push([a.day, a.tasks, a.meetings, a.documents, a.completed]));
+  const dept = meta.departments;
+  if (dept) {
+    const drows = meta.departmentFilter
+      ? dept.rows.filter((r) => r.department === meta.departmentFilter)
+      : dept.rows;
+    rows.push([]);
+    rows.push([`Báo cáo theo phòng ban (${meta.from} → ${meta.to})`]);
+    if (meta.departmentFilter) rows.push(["Lọc phòng ban", meta.departmentFilter]);
+    rows.push(["Phòng ban", "Thành viên", "Công việc", "Tài liệu", "Cuộc họp", "Tổng báo cáo"]);
+    drows.forEach((r) =>
+      rows.push([r.department, r.members, r.tasks, r.documents, r.meetings, r.total]),
+    );
+    const tot = drows.reduce(
+      (s2, r) => ({
+        tasks: s2.tasks + r.tasks,
+        documents: s2.documents + r.documents,
+        meetings: s2.meetings + r.meetings,
+        total: s2.total + r.total,
+      }),
+      { tasks: 0, documents: 0, meetings: 0, total: 0 },
+    );
+    rows.push(["Tổng", "", tot.tasks, tot.documents, tot.meetings, tot.total]);
+  }
   download(`uniwork-report_${fileStamp(meta)}.csv`, toCsv(rows), "text/csv");
 }
 
@@ -71,6 +102,18 @@ const table = (head: string[], body: (string | number)[][]) =>
 
 export function exportReportPdf(report: ReportOverview, meta: Meta) {
   const s = sections(report, meta);
+  const dept = meta.departments;
+  const drows = dept
+    ? meta.departmentFilter
+      ? dept.rows.filter((r) => r.department === meta.departmentFilter)
+      : dept.rows
+    : [];
+  const deptHtml = dept
+    ? `<h2>Báo cáo theo phòng ban${meta.departmentFilter ? ` · ${meta.departmentFilter}` : ""}</h2>${table(
+        ["Phòng ban", "Thành viên", "Công việc", "Tài liệu", "Cuộc họp", "Tổng báo cáo"],
+        drows.map((r) => [r.department, r.members, r.tasks, r.documents, r.meetings, r.total]),
+      )}`
+    : "";
   const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${meta.title}</title>
 <style>
  *{box-sizing:border-box}
@@ -97,6 +140,7 @@ export function exportReportPdf(report: ReportOverview, meta: Meta) {
     ["Ngày", "Công việc", "Cuộc họp", "Tài liệu", "Hoàn thành"],
     s.activity.map((a) => [a.day, a.tasks, a.meetings, a.documents, a.completed]),
   )}
+${deptHtml}
 </body></html>`;
   const w = window.open("", "_blank", "width=900,height=1000");
   if (!w) return false;

@@ -31,7 +31,11 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functions";
+import {
+  getReportOverview,
+  getReportDepartments,
+  type ReportOverview,
+} from "@/lib/api/reports.functions";
 import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
 import { Table2, RefreshCw } from "lucide-react";
@@ -202,6 +206,8 @@ function ReportsPage() {
   const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
     navigate({ to: "/reports/detail", search: { from: fromISO, to: toISO, status: s, workspaceId: wsId } });
   const fetchOverview = useServerFn(getReportOverview);
+  const fetchDepartments = useServerFn(getReportDepartments);
+  const [deptFilter, setDeptFilter] = useState<string | null>(null);
   const {
     data: report,
     isPending,
@@ -212,6 +218,22 @@ function ReportsPage() {
     queryKey: ["report-overview", fromISO, toISO],
     queryFn: () => fetchOverview({ data: { from: fromISO, to: toISO } }),
     staleTime: 60_000,
+  });
+  const { data: depts, isFetching: deptsFetching } = useQuery({
+    queryKey: ["report-departments", fromISO, toISO],
+    queryFn: () => fetchDepartments({ data: { from: fromISO, to: toISO } }),
+    staleTime: 60_000,
+  });
+  const deptRows = depts?.rows ?? [];
+  const shownDeptRows = deptFilter ? deptRows.filter((r) => r.department === deptFilter) : deptRows;
+  const deptTotal = shownDeptRows.reduce((s, r) => s + r.total, 0);
+  const exportMeta = () => ({
+    ...range,
+    title: t("rp.title"),
+    compare,
+    prev,
+    departments: depts ?? null,
+    departmentFilter: deptFilter,
   });
   const k = report?.kpis;
   const st = report?.tasks_by_status;
@@ -294,7 +316,7 @@ function ReportsPage() {
                   disabled={!report}
                   onClick={() => {
                     if (!report) return;
-                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    exportReportCsv(report, exportMeta());
                     toast.success(t("rp.export.done"));
                   }}
                   className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
@@ -305,7 +327,7 @@ function ReportsPage() {
                   disabled={!report}
                   onClick={() => {
                     if (!report) return;
-                    const ok = exportReportPdf(report, { ...range, title: t("rp.title"), compare, prev });
+                    const ok = exportReportPdf(report, exportMeta());
                     if (!ok) toast.error(t("rp.export.blocked"));
                   }}
                   className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
@@ -341,7 +363,7 @@ function ReportsPage() {
                       disabled={!report}
                       onSelect={() => {
                         if (!report) return;
-                        exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                        exportReportCsv(report, exportMeta());
                         toast.success(t("rp.export.done"));
                       }}
                     >
@@ -351,12 +373,7 @@ function ReportsPage() {
                       disabled={!report}
                       onSelect={() => {
                         if (!report) return;
-                        const ok = exportReportPdf(report, {
-                          ...range,
-                          title: t("rp.title"),
-                          compare,
-                          prev,
-                        });
+                        const ok = exportReportPdf(report, exportMeta());
                         if (!ok) toast.error(t("rp.export.blocked"));
                       }}
                     >
@@ -886,6 +903,7 @@ function ReportsPage() {
                   onClick={() => {
                     setRange({ from: shiftDay(todayKey(), -6), to: todayKey() });
                     setCompare(true);
+                    setDeptFilter(null);
                     toast.success("Đã đặt lại bộ lọc");
                   }}
                   className="text-xs text-primary hover:underline"
@@ -901,10 +919,57 @@ function ReportsPage() {
                 label={t("rp.flt.ws")}
                 value={wsTotal ? `${wsTotal} workspace` : t("rp.flt.allws")}
               />
-              <FilterField
-                label={t("rp.flt.dep")}
-                value={compare ? "So sánh kỳ trước: Bật" : "So sánh kỳ trước: Tắt"}
-              />
+              <div className="mb-3">
+                <div className="mb-1 text-[11px] text-muted-foreground">{t("rp.flt.dep")}</div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex w-full items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
+                      <span className="truncate">
+                        {deptFilter ?? `Tất cả (${deptRows.length})`}
+                      </span>
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="max-h-72 w-64 overflow-y-auto">
+                    <DropdownMenuItem onSelect={() => setDeptFilter(null)}>
+                      Tất cả phòng ban ({depts?.totals.total ?? 0})
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {deptRows.map((r) => (
+                      <DropdownMenuItem key={r.department} onSelect={() => setDeptFilter(r.department)}>
+                        <span className="flex-1 truncate">{r.department}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">{r.total}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="mb-3 rounded-lg border border-border bg-surface-2 p-3">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[11px] text-muted-foreground">
+                    Số báo cáo trong kỳ {deptFilter ? `· ${deptFilter}` : ""}
+                  </span>
+                  <span className="text-lg font-semibold">
+                    {deptsFetching ? "…" : deptTotal.toLocaleString("vi-VN")}
+                  </span>
+                </div>
+                <div className="mt-2 space-y-1">
+                  {shownDeptRows.slice(0, 6).map((r) => (
+                    <div key={r.department} className="flex items-center justify-between text-[11px]">
+                      <span className="truncate text-muted-foreground">{r.department}</span>
+                      <span className="ml-2 shrink-0 tabular-nums">
+                        {r.tasks}/{r.documents}/{r.meetings}
+                      </span>
+                    </div>
+                  ))}
+                  {shownDeptRows.length === 0 && !deptsFetching && (
+                    <div className="text-[11px] text-muted-foreground">Chưa có dữ liệu trong kỳ.</div>
+                  )}
+                </div>
+                <div className="mt-2 text-[10px] text-muted-foreground">
+                  Công việc / Tài liệu / Cuộc họp
+                </div>
+              </div>
               <button
                 onClick={() => {
                   void refetch();
@@ -926,12 +991,7 @@ function ReportsPage() {
                   color="text-rose-300"
                   onClick={() => {
                     if (!report) return toast.error(t("rp.export.blocked"));
-                    const ok = exportReportPdf(report, {
-                      ...range,
-                      title: t("rp.title"),
-                      compare,
-                      prev,
-                    });
+                    const ok = exportReportPdf(report, exportMeta());
                     if (!ok) toast.error(t("rp.export.blocked"));
                   }}
                 />
@@ -941,7 +1001,7 @@ function ReportsPage() {
                   color="text-emerald-300"
                   onClick={() => {
                     if (!report) return toast.error(t("rp.export.blocked"));
-                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    exportReportCsv(report, exportMeta());
                     toast.success(t("rp.export.done"));
                   }}
                 />
@@ -951,7 +1011,7 @@ function ReportsPage() {
                   color="text-sky-300"
                   onClick={() => {
                     if (!report) return toast.error(t("rp.export.blocked"));
-                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    exportReportCsv(report, exportMeta());
                     toast.success(t("rp.export.done"));
                   }}
                 />
