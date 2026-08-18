@@ -20,7 +20,7 @@ const searchSchema = z.object({
   body: z.string().optional(),
 });
 
-export const Route = createFileRoute("/_authenticated/email/compose")({
+export const Route = createFileRoute("/_authenticated/email_/compose")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
