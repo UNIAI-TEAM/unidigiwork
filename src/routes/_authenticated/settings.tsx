@@ -48,7 +48,7 @@ import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { PushDevicesPanel } from "@/components/push-devices-panel";
 import { notifyComingSoon } from "@/lib/coming-soon";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key as I18nKey } from "@/lib/i18n";
 
 const searchSchema = z.object({
   tab: z
@@ -92,7 +92,7 @@ type SectionKey =
   | "billing"
   | "data";
 
-const SECTIONS: { key: SectionKey; labelKey: string; descKey: string; icon: LucideIcon }[] = [
+const SECTIONS: { key: SectionKey; labelKey: I18nKey; descKey: I18nKey; icon: LucideIcon }[] = [
   { key: "profile", labelKey: "ac.20", descKey: "ac.21", icon: User },
   { key: "account", labelKey: "ac.22", descKey: "ac.23", icon: KeyRound },
   { key: "password", labelKey: "ac.24", descKey: "ac.25", icon: Lock },
