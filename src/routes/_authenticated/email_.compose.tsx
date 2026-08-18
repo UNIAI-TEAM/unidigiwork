@@ -142,7 +142,7 @@ function ComposePage() {
     onSuccess: (r: { thread_id: string; unknown_recipients?: string[] }) => {
       qc.invalidateQueries({ queryKey: ["emails"] });
       if (r.unknown_recipients?.length) {
-        toast.warning(`Không gửi được tới: ${r.unknown_recipients.join(", ")}`);
+        toast.warning(`${t("em.150")}: ${r.unknown_recipients.join(", ")}`);
       } else {
         toast.success(t("em.109"));
       }
@@ -160,7 +160,7 @@ function ComposePage() {
     },
   });
 
-  {t("em.112")}
+  // autosave
   useEffect(() => {
     if (!dirty.current) return;
     const hasContent = to.trim() || subject.trim() || body.trim();
@@ -201,7 +201,7 @@ function ComposePage() {
                     {saveMut.isPending
                       ? t("em.115")
                       : savedAt
-                        ? `Đã lưu ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                        ? `${t("em.151")} ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
                         : ""}
                   </span>
                   <button onClick={() => nav({ to: "/email" })} className="rounded p-1 hover:bg-surface-2" aria-label={t("em.116")}>
@@ -259,7 +259,7 @@ function ComposePage() {
                       label: t("em.125"),
                       run: () => {
                         const url = window.prompt(t("em.126"), "https://");
-                        if (url) wrapSelection("[", `](${url})`, "liên kết");
+                        if (url) wrapSelection("[", `](${url})`, t("em.152"));
                       },
                     },
                     {
@@ -267,7 +267,7 @@ function ComposePage() {
                       label: t("em.127"),
                       run: () => {
                         const url = window.prompt(t("em.128"), "https://");
-                        if (url) insertAtCursor(`![ảnh](${url})`);
+                        if (url) insertAtCursor(`![${t("em.153")}](${url})`);
                       },
                     },
                   ].map(({ icon: I, label, run }) => (
@@ -286,7 +286,7 @@ function ComposePage() {
                     type="button"
                     onClick={() => {
                       insertAtCursor(
-                        `Kính gửi anh/chị,\n\n${subject.trim() || "Nội dung trao đổi"}: em xin gửi thông tin để anh/chị xem xét và phản hồi giúp em.\n\nTrân trọng,`,
+                        `${t("em.154")}\n\n${subject.trim() || t("em.155")}: ${t("em.156")}\n\n${t("em.157")}`,
                       );
                       toast.success(t("em.129"));
                     }}
