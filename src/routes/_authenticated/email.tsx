@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -438,6 +438,25 @@ function EmailHubPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  // Tự động đánh dấu đã đọc thật trong DB khi mở cửa sổ chi tiết một email chưa đọc.
+  const autoReadRef = useRef<string | null>(null);
+  useEffect(() => {
+    const e = selectedEmail;
+    if (!e || !e.unread || !UUID_RE.test(e.id)) return;
+    if (autoReadRef.current === e.id) return;
+    autoReadRef.current = e.id;
+    void doSetRead({ data: { message_ids: [e.id], is_read: true } })
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["emails"] });
+        qc.invalidateQueries({ queryKey: ["email-thread", e.id] });
+        qc.invalidateQueries({ queryKey: ["unread-counts"] });
+      })
+      .catch(() => {
+        autoReadRef.current = null;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEmail?.id, selectedEmail?.unread]);
 
   function bulkMove(folder: "inbox" | "archive" | "trash") {
     const ids = realIds([...checkedIds]);
