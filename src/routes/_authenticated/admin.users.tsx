@@ -80,7 +80,7 @@ function AdminUsersPage() {
           )}
         </div>
         <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length}/{users.length} tài khoản
+          {filtered.length}/{users.length} {t("adm.101")}
         </span>
       </div>
 

@@ -197,7 +197,7 @@ function AdminBackupPage() {
                 className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-1.5 text-[12px]"
               >
                 <span className="font-mono text-muted-foreground">{table}</span>
-                <span className="font-medium">{count} bản ghi</span>
+                <span className="font-medium">{count} {t("adm.106")}</span>
               </li>
             ))}
           </ul>

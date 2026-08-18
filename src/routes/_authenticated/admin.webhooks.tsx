@@ -102,7 +102,7 @@ function AdminWebhooksPage() {
     if (!id) return;
     const row = (await getMeetingWebhookEvent({ data: { eventId: id } })) as EventRow | null;
     if (!row) {
-      toast.error(`Không tìm thấy event.id “${id}” — webhook chưa từng được xử lý.`);
+      toast.error(`${t("adm.107")} “${id}” ${t("adm.108")}`);
       return;
     }
     setDetail(row);
@@ -156,9 +156,9 @@ function AdminWebhooksPage() {
         <div className="flex items-center gap-2">
           <Webhook className="h-4 w-4 text-primary" />
           <div>
-            <h2 className="text-base font-semibold">Audit webhook LiveKit</h2>
+            <h2 className="text-base font-semibold">{t("adm.109")}</h2>
             <p className="text-xs text-muted-foreground">
-              Tra cứu từng event theo <span className="font-mono">event.id</span>{t("adm.79")}
+              {t("adm.111")} <span className="font-mono">event.id</span>{t("adm.79")}
               {t("adm.80")}
             </p>
           </div>
@@ -168,7 +168,7 @@ function AdminWebhooksPage() {
             onClick={() => void refetch()}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-2"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Làm mới
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> {t("adm.110")}
           </button>
           <button
             onClick={exportCsv}

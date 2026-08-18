@@ -399,7 +399,7 @@ function DocumentsPage() {
               idempotencyKey: crypto.randomUUID(),
             },
           });
-          toast.success(`${file.name}: đã tạo phiên bản mới`);
+          toast.success(`${file.name}: ${t("doc.121")}`);
         } else {
           await createDocument({
             data: {
@@ -421,7 +421,7 @@ function DocumentsPage() {
     }
     await reloadDocs();
     setUploading(false);
-    if (ok > 0) toast.success(`Đã tải lên ${ok} tệp`);
+    if (ok > 0) toast.success(`${t("doc.122")} ${ok} ${t("doc.123")}`);
   };
 
   const addMember = async () => {
@@ -505,7 +505,7 @@ function DocumentsPage() {
     blockquote: () => insertAtCursor("> "),
     link: () => insertAtCursor("[", "](https://)"),
     image: () => insertAtCursor("![alt](", ")"),
-    table: () => insertAtCursor("| Tiêu đề 1 | Tiêu đề 2 |\n| --- | --- |\n| ", " | |"),
+    table: () => insertAtCursor(`| ${t("doc.124")} 1 | ${t("doc.124")} 2 |\n| --- | --- |\n| `, " | |"),
     hr: () => insertAtCursor("\n---\n"),
   };
 
@@ -612,7 +612,7 @@ function DocumentsPage() {
                     }}
                     className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-sm text-primary hover:bg-surface-2"
                   >
-                    <Plus className="h-4 w-4" /> Tạo workspace mới
+                    <Plus className="h-4 w-4" /> {t("doc.125")}
                   </button>
                 </div>
               )}
@@ -679,7 +679,7 @@ function DocumentsPage() {
                   }
                   className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs text-primary hover:bg-primary/25"
                 >
-                  <span>{rangeDays} ngày qua</span>
+                  <span>{rangeDays} {t("doc.126")}</span>
                   <span>{t("doc.30")}</span>
                 </button>
               ) : null}
@@ -748,7 +748,7 @@ function DocumentsPage() {
                       docFilter === "stale"
                         ? t("doc.37")
                         : rangeDays
-                          ? `${rangeDays} ngày qua`
+                          ? `${rangeDays} ${t("doc.126")}`
                           : t("doc.38"),
                   },
                 ]}
@@ -756,14 +756,14 @@ function DocumentsPage() {
                   docFilter === "stale"
                     ? t("doc.39")
                     : rangeDays
-                      ? `Tài liệu ${rangeDays} ngày qua`
+                      ? `${t("doc.127")} ${rangeDays} ${t("doc.126")}`
                       : t("doc.40")
                 }
                 description={
                   docFilter === "stale"
                     ? t("doc.41")
                     : rangeDays
-                      ? `Được cập nhật trong ${rangeDays} ngày gần nhất`
+                      ? `${t("doc.128")} ${rangeDays} ${t("doc.129")}`
                       : undefined
                 }
                 chips={[
@@ -782,7 +782,7 @@ function DocumentsPage() {
                   ...(rangeDays
                     ? [
                         {
-                          label: `${rangeDays} ngày qua`,
+                          label: `${rangeDays} ${t("doc.126")}`,
                           onClear: () =>
                             navigate({
                               to: "/documents",
@@ -858,7 +858,7 @@ function DocumentsPage() {
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">
                       {selected
-                        ? `Cập nhật ${new Date(selected.updated_at).toLocaleString()}`
+                        ? `${t("doc.130")} ${new Date(selected.updated_at).toLocaleString()}`
                         : "—"}
                     </span>
                     {selected && (
@@ -888,10 +888,10 @@ function DocumentsPage() {
 
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> {members.length} thành viên
+                  <Clock className="h-3 w-3" /> {members.length} {t("doc.131")}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Eye className="h-3 w-3" /> {docs.length} tài liệu
+                  <Eye className="h-3 w-3" /> {docs.length} {t("doc.132")}
                 </span>
                 <div className="ml-auto flex -space-x-1.5">
                   {members.slice(0, 5).map((m) => (
@@ -961,7 +961,7 @@ function DocumentsPage() {
               ) : (
                 <div className="flex flex-col items-start gap-3">
                   <p className="text-sm text-muted-foreground">
-                    Chọn một tài liệu từ thanh bên trái, hoặc tạo mới trong workspace{" "}
+                    {t("doc.133")}{" "}
                     <span className="font-medium text-foreground">{currentWs?.name ?? "—"}</span>.
                   </p>
                   <button
@@ -971,7 +971,7 @@ function DocumentsPage() {
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                     disabled={!currentWs}
                   >
-                    <Plus className="h-4 w-4" /> Tạo tài liệu mới
+                    <Plus className="h-4 w-4" /> {t("doc.134")}
                   </button>
                 </div>
               )}
@@ -987,7 +987,7 @@ function DocumentsPage() {
                 {selected &&
                   (saveState === "saving" ? (
                     <span className="flex items-center gap-1 text-muted-foreground">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Đang lưu…
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> {t("doc.135")}
                     </span>
                   ) : saveState === "dirty" ? (
                     <button
@@ -997,11 +997,11 @@ function DocumentsPage() {
                       title={t("doc.69")}
                       aria-label={t("doc.69")}
                     >
-                      <Save className="h-3.5 w-3.5" aria-hidden /> Lưu
+                      <Save className="h-3.5 w-3.5" aria-hidden /> {t("doc.136")}
                     </button>
                   ) : (
                     <span className="flex items-center gap-1 text-success" title={t("doc.70")}>
-                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> Đã lưu
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> {t("doc.137")}
                     </span>
                   ))}
               </div>
@@ -1069,7 +1069,7 @@ function DocumentsPage() {
               {rightTab === "comments" && (
                 <div className="flex h-full flex-col gap-3">
                   <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                    <MessageSquare className="h-4 w-4 text-primary" /> Bình luận
+                    <MessageSquare className="h-4 w-4 text-primary" /> {t("doc.138")}
                   </div>
                   <div className="flex-1 space-y-3">
                     {comments.length === 0 ? (
@@ -1108,7 +1108,7 @@ function DocumentsPage() {
               {rightTab === "members" && (
                 <div className="space-y-3">
                   <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                    <Users className="h-4 w-4 text-primary" /> Thành viên
+                    <Users className="h-4 w-4 text-primary" /> {t("doc.139")}
                   </div>
                   <div className="space-y-2">
                     {members.map((m) => (
@@ -1128,7 +1128,7 @@ function DocumentsPage() {
                     onClick={() => setShowMembers(true)}
                     className="w-full rounded-lg border border-border bg-surface-2 py-1.5 text-xs hover:bg-surface-3"
                   >
-                    Quản lý thành viên
+                    {t("doc.140")}
                   </button>
                 </div>
               )}
@@ -1141,7 +1141,7 @@ function DocumentsPage() {
         <Modal onClose={() => !saving && setShowNew(false)}>
           <h2 className="mb-1 text-lg font-semibold">{t("doc.76")}</h2>
           <p className="mb-4 text-xs text-muted-foreground">
-            Lưu vào workspace «{currentWs?.name}».
+            {t("doc.141")} «{currentWs?.name}».
           </p>
           <Field label={t("doc.54")}>
             <input
@@ -1165,7 +1165,7 @@ function DocumentsPage() {
               disabled={saving}
               className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
             >
-              Huỷ
+              {t("doc.142")}
             </button>
             <button
               onClick={createDoc}
@@ -1197,14 +1197,14 @@ function DocumentsPage() {
               disabled={saving}
               className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
             >
-              Huỷ
+              {t("doc.142")}
             </button>
             <button
               onClick={createWorkspace}
               disabled={saving}
               className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              Tạo
+              {t("doc.143")}
             </button>
           </Actions>
         </Modal>
@@ -1297,20 +1297,20 @@ function DocumentsPage() {
                 />
               </Field>
               <p className="mb-3 text-[11px] text-muted-foreground">
-                Người dùng cần đã đăng ký tài khoản.
+                {t("doc.144")}
               </p>
               <Actions>
                 <button
                   onClick={() => setShowMembers(false)}
                   className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
                 >
-                  Đóng
+                  {t("doc.145")}
                 </button>
                 <button
                   onClick={addMember}
                   className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
-                  Thêm
+                  {t("doc.146")}
                 </button>
               </Actions>
             </>
@@ -1342,7 +1342,7 @@ function DocumentsPage() {
               onClick={() => setHistoryOpen(false)}
               className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
             >
-              Đóng
+              {t("doc.145")}
             </button>
           </Actions>
         </Modal>
