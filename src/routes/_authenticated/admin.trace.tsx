@@ -2019,12 +2019,12 @@ function AdminTracePage() {
 
   const applyRange = () => {
     const f = fromInput.trim() || undefined;
-    const t = toInput.trim() || undefined;
-    if (f && t && localToIso(f)! > localToIso(t)!) {
+    const tEnd = toInput.trim() || undefined;
+    if (f && tEnd && localToIso(f)! > localToIso(tEnd)!) {
       toast.error(t("trc.55"));
       return;
     }
-    navigate({ search: (prev: SearchState) => ({ ...prev, from: f, to: t, page: 1 }) });
+    navigate({ search: (prev: SearchState) => ({ ...prev, from: f, to: tEnd, page: 1 }) });
   };
   const clearRange = () => {
     setFromInput("");
@@ -2342,8 +2342,8 @@ function AdminTracePage() {
 function EventDetailPanel({ item, onClose }: { item: TimelineItem | null; onClose: () => void }) {
   const { t } = useI18n();
   if (!item) return null;
-  const t = new Date(item.at);
-  const timeStr = `${t.toLocaleDateString("vi-VN")} ${t.toLocaleTimeString("vi-VN", { hour12: false })}`;
+  const dt = new Date(item.at);
+  const timeStr = `${dt.toLocaleDateString()} ${dt.toLocaleTimeString(undefined, { hour12: false })}`;
   const json = JSON.stringify(item.data, null, 2);
   const copyJson = () => { void navigator.clipboard?.writeText(json); };
   return (
