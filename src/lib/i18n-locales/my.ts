@@ -1027,6 +1027,7 @@ export const my = {
   "adm.108": "— webhook ကို တစ်ခါမျှ မလုပ်ဆောင်ခဲ့ပါ။",
   "adm.109": "LiveKit webhook စစ်ဆေးမှု",
   "adm.110": "ရီဖရက်ရှ်",
+  "adm.111": "event တစ်ခုချင်းစီကို ရှာဖွေရန်",
   "em.mb.inbox": "ဝင်စာ",
   "em.mb.starred": "အရေးကြီး",
   "em.mb.sent": "ပေးပို့ပြီး",

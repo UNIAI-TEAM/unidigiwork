@@ -158,7 +158,7 @@ function AdminWebhooksPage() {
           <div>
             <h2 className="text-base font-semibold">{t("adm.109")}</h2>
             <p className="text-xs text-muted-foreground">
-              Tra cứu từng event theo <span className="font-mono">event.id</span>{t("adm.79")}
+              {t("adm.111")} <span className="font-mono">event.id</span>{t("adm.79")}
               {t("adm.80")}
             </p>
           </div>

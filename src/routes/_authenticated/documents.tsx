@@ -748,7 +748,7 @@ function DocumentsPage() {
                       docFilter === "stale"
                         ? t("doc.37")
                         : rangeDays
-                          ? `${rangeDays} ngày qua`
+                          ? `${rangeDays} ${t("doc.126")}`
                           : t("doc.38"),
                   },
                 ]}

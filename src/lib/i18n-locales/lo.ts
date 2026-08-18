@@ -1027,6 +1027,7 @@ export const lo = {
   "adm.108": "— webhook ບໍ່ເຄີຍຖືກປະມວນຜົນ.",
   "adm.109": "ການກວດສອບ webhook LiveKit",
   "adm.110": "ໂຫຼດໃໝ່",
+  "adm.111": "ຄົ້ນຫາແຕ່ລະ event ຕາມ",
   "em.mb.inbox": "ກ່ອງເຂົ້າ",
   "em.mb.starred": "ສຳຄັນ",
   "em.mb.sent": "ສົ່ງແລ້ວ",
