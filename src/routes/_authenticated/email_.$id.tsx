@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -81,6 +82,24 @@ function EmailDetailPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  // Mở chi tiết = đánh dấu đã đọc thật trong DB, đồng bộ với Email Hub.
+  const autoReadRef = useRef<string | null>(null);
+  const idsKey = messageIds.join(",");
+  useEffect(() => {
+    if (!messageIds.length || unreadMut.isPending) return;
+    if (autoReadRef.current === idsKey) return;
+    autoReadRef.current = idsKey;
+    void doSetRead({ data: { message_ids: messageIds, is_read: true } })
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["emails"] });
+        qc.invalidateQueries({ queryKey: ["unread-counts"] });
+      })
+      .catch(() => {
+        autoReadRef.current = null;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey]);
   const busy = moveMut.isPending || unreadMut.isPending || messageIds.length === 0;
 
   return (
