@@ -20,8 +20,9 @@ import {
   getNotification,
   listNotifications,
   markNotificationsRead,
+  setNotificationsArchived,
 } from "@/lib/api/notifications.functions";
-import { notifyComingSoon } from "@/lib/coming-soon";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/notifications/$id")({
   head: () => ({
@@ -60,6 +61,16 @@ function NotificationDetailPage() {
   const deleteMut = useMutation({
     mutationFn: (ids: string[]) => deleteNotifications({ data: { ids } }),
     onSuccess: invalidate,
+  });
+
+  const archived = ((row?.meta ?? {}) as Record<string, unknown>)["archived"] === true;
+  const archiveMut = useMutation({
+    mutationFn: () => setNotificationsArchived({ data: { ids: [id], archived: !archived } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success(archived ? "Đã bỏ lưu trữ thông báo" : "Đã lưu trữ thông báo");
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -124,8 +135,9 @@ function NotificationDetailPage() {
                   <CheckCircle2 className="h-3.5 w-3.5" /> Đã đọc
                 </span>
               )}
-              <button onClick={() => notifyComingSoon()}
-                title="Lưu trữ"
+              <button
+                onClick={() => archiveMut.mutate()}
+                title={archived ? "Bỏ lưu trữ" : "Lưu trữ"}
                 className="rounded-lg border border-border bg-surface p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               >
                 <Archive className="h-3.5 w-3.5" />
@@ -241,8 +253,15 @@ function NotificationDetailPage() {
                           ? "bg-destructive/10 text-destructive hover:bg-destructive/15"
                           : "border border-border bg-surface hover:bg-surface-2";
                     return (
-                      <button onClick={() => notifyComingSoon()}
+                      <button
                         key={a.label}
+                        onClick={() => {
+                          if (notif.link?.to) {
+                            void router.navigate({ to: notif.link.to });
+                          } else {
+                            toast.info(a.label + ": không có liên kết đính kèm.");
+                          }
+                        }}
                         className={`rounded-lg px-3 py-1.5 text-sm font-medium ${cls}`}
                       >
                         {a.label}

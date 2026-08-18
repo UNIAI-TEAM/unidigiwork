@@ -30,7 +30,6 @@ import {
   isStorageRef,
   uploadDocumentFile,
 } from "@/lib/documents-storage";
-import { notifyComingSoon } from "@/lib/coming-soon";
 
 export const Route = createFileRoute("/_authenticated/documents/$id")({
   head: ({ params }) => ({
@@ -108,6 +107,27 @@ function DocumentDetailPage() {
   });
 
   const [uploading, setUploading] = useState(false);
+  const starKey = `documents.starred.${id}`;
+  const [starred, setStarred] = useState(false);
+  useEffect(() => {
+    try {
+      setStarred(window.localStorage.getItem(starKey) === "1");
+    } catch {
+      /* ignore */
+    }
+  }, [starKey]);
+  const toggleStar = () => {
+    setStarred((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(starKey, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      toast.success(next ? "Đã đánh dấu quan trọng." : "Đã bỏ đánh dấu quan trọng.");
+      return next;
+    });
+  };
 
   const openFile = async (ref: unknown, download = false) => {
     try {
@@ -218,8 +238,22 @@ function DocumentDetailPage() {
                       <span>Cập nhật {fmtTime(doc.updated_at)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <IconBtn icon={Star} />
-                      <IconBtn icon={Share2} />
+                      <IconBtn
+                        icon={Star}
+                        label={starred ? "Bỏ đánh dấu quan trọng" : "Đánh dấu quan trọng"}
+                        active={starred}
+                        onClick={toggleStar}
+                      />
+                      <IconBtn
+                        icon={Share2}
+                        label="Sao chép liên kết tài liệu"
+                        onClick={() => {
+                          void navigator.clipboard
+                            .writeText(window.location.href)
+                            .then(() => toast.success("Đã sao chép liên kết tài liệu."))
+                            .catch(() => toast.error("Không sao chép được liên kết."));
+                        }}
+                      />
                       <button
                         type="button"
                         title="Tải tệp xuống"
@@ -249,7 +283,7 @@ function DocumentDetailPage() {
                           }}
                         />
                       </label>
-                      <IconBtn icon={MoreHorizontal} />
+                      <IconBtn icon={MoreHorizontal} label="In tài liệu" onClick={() => window.print()} />
                     </div>
                   </div>
 
@@ -403,9 +437,25 @@ function DocumentDetailPage() {
   );
 }
 
-function IconBtn({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
+function IconBtn({
+  icon: Icon,
+  label,
+  onClick,
+  active,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()} className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      className={`rounded-md p-2 hover:bg-surface-2 hover:text-foreground ${active ? "text-primary" : "text-muted-foreground"}`}
+    >
       <Icon className="h-4 w-4" />
     </button>
   );
