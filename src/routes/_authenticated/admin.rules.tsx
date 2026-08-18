@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useI18n, type Key } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ListFilter, Pencil, Plus, Sparkles, Tag, Trash2, X } from "lucide-react";
@@ -21,9 +22,9 @@ export const Route = createFileRoute("/_authenticated/admin/rules")({
 
 type Kind = "notification" | "label" | "automation";
 const KIND_META: Record<Kind, { label: string; icon: typeof Bell; tint: string }> = {
-  notification: { label: "Thông báo", icon: Bell, tint: "bg-primary/15 text-primary" },
-  label: { label: "Nhãn", icon: Tag, tint: "bg-amber-500/15 text-amber-300" },
-  automation: { label: "Tự động hóa", icon: Sparkles, tint: "bg-violet-500/15 text-violet-300" },
+  notification: { label: "adm.rule.notification", icon: Bell, tint: "bg-primary/15 text-primary" },
+  label: { label: "adm.rule.label", icon: Tag, tint: "bg-amber-500/15 text-amber-300" },
+  automation: { label: "adm.rule.automation", icon: Sparkles, tint: "bg-violet-500/15 text-violet-300" },
 };
 
 type Rule = Awaited<ReturnType<typeof listAdminRules>>[number];
@@ -44,6 +45,7 @@ const emptyForm: FormState = {
 };
 
 function AdminRulesPage() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState | null>(null);
   const [filter, setFilter] = useState<"all" | Kind>("all");
@@ -109,7 +111,7 @@ function AdminRulesPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {k === "all" ? "Tất cả" : KIND_META[k].label}
+                {k === "all" ? t("adm.52") : t(KIND_META[k].label as Key)}
               </button>
             ))}
           </div>
@@ -120,26 +122,26 @@ function AdminRulesPage() {
             onClick={() => setForm({ ...emptyForm })}
             className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
           >
-            <Plus className="h-3.5 w-3.5" /> Thêm
+            <Plus className="h-3.5 w-3.5" /> {t("adm.59")}
           </button>
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Đang tải quy tắc…</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">{t("adm.60")}</div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 p-10 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
               <ListFilter className="h-5 w-5" />
             </div>
-            <div className="text-sm font-medium">Chưa có quy tắc</div>
+            <div className="text-sm font-medium">{t("adm.61")}</div>
             <p className="text-xs text-muted-foreground">
-              Tạo quy tắc để tự động gửi thông báo hoặc gắn nhãn theo điều kiện.
+              {t("adm.62")}
             </p>
             <button
               onClick={() => setForm({ ...emptyForm })}
               className="mt-2 inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
-              <Plus className="h-3.5 w-3.5" /> Tạo quy tắc đầu tiên
+              <Plus className="h-3.5 w-3.5" /> {t("adm.63")}
             </button>
           </div>
         ) : (
@@ -156,11 +158,11 @@ function AdminRulesPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{r.name}</span>
                       <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                        {meta.label}
+                        {t(meta.label as Key)}
                       </span>
                       {!r.is_enabled && (
                         <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                          Tạm tắt
+                          {t("adm.64")}
                         </span>
                       )}
                     </div>
@@ -179,12 +181,12 @@ function AdminRulesPage() {
                         checked={r.is_enabled}
                         onChange={(e) => toggleMut.mutate({ id: r.id, is_enabled: e.target.checked })}
                       />
-                      Bật
+                      {t("adm.65")}
                     </label>
                     <button
                       onClick={() => startEdit(r)}
                       className="rounded-md border border-border bg-surface p-1.5 text-muted-foreground hover:text-foreground"
-                      aria-label="Sửa"
+                      aria-label={t("adm.66")}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -193,7 +195,7 @@ function AdminRulesPage() {
                         if (confirm(`Xóa quy tắc "${r.name}"?`)) deleteMut.mutate(r.id);
                       }}
                       className="rounded-md border border-border bg-surface p-1.5 text-muted-foreground hover:text-destructive"
-                      aria-label="Xóa"
+                      aria-label={t("em.42")}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -211,7 +213,7 @@ function AdminRulesPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2">
               <Plus className="h-5 w-5" />
             </div>
-            <div>Chọn "Thêm" hoặc chỉnh sửa quy tắc để bắt đầu.</div>
+            <div>Chọn t("adm.59") hoặc chỉnh sửa quy tắc để bắt đầu.</div>
           </div>
         ) : (
           <form
@@ -223,38 +225,38 @@ function AdminRulesPage() {
             className="flex flex-col gap-3"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold">{form.id ? "Sửa quy tắc" : "Quy tắc mới"}</h2>
+              <h2 className="text-sm font-semibold">{form.id ? t("adm.67") : t("adm.68")}</h2>
               <button
                 type="button"
                 onClick={() => setForm(null)}
                 className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                aria-label="Đóng"
+                aria-label={t("em.116")}
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <label className="flex flex-col gap-1 text-xs">
-              <span className="text-muted-foreground">Tên</span>
+              <span className="text-muted-foreground">{t("adm.69")}</span>
               <input
                 required
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="rounded-md bg-surface-2 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                placeholder="VD: Nhắc deadline sau 24h"
+                placeholder={t("adm.70")}
               />
             </label>
             <label className="flex flex-col gap-1 text-xs">
-              <span className="text-muted-foreground">Mô tả</span>
+              <span className="text-muted-foreground">{t("adm.71")}</span>
               <textarea
                 rows={3}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 className="rounded-md bg-surface-2 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                placeholder="Mô tả ngắn về hành vi của quy tắc"
+                placeholder={t("adm.72")}
               />
             </label>
             <label className="flex flex-col gap-1 text-xs">
-              <span className="text-muted-foreground">Loại</span>
+              <span className="text-muted-foreground">{t("adm.73")}</span>
               <select
                 value={form.kind}
                 onChange={(e) => setForm({ ...form, kind: e.target.value as Kind })}
@@ -262,7 +264,7 @@ function AdminRulesPage() {
               >
                 {(Object.keys(KIND_META) as Kind[]).map((k) => (
                   <option key={k} value={k}>
-                    {KIND_META[k].label}
+                    {t(KIND_META[k].label as Key)}
                   </option>
                 ))}
               </select>
@@ -274,7 +276,7 @@ function AdminRulesPage() {
                 checked={form.is_enabled}
                 onChange={(e) => setForm({ ...form, is_enabled: e.target.checked })}
               />
-              <span>Kích hoạt ngay</span>
+              <span>{t("adm.74")}</span>
             </label>
             {upsertMut.error && (
               <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive">
@@ -287,14 +289,14 @@ function AdminRulesPage() {
                 onClick={() => setForm(null)}
                 className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
-                Hủy
+                {t("adm.75")}
               </button>
               <button
                 type="submit"
                 disabled={upsertMut.isPending}
                 className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
               >
-                {upsertMut.isPending ? "Đang lưu…" : form.id ? "Cập nhật" : "Tạo mới"}
+                {upsertMut.isPending ? t("em.115") : form.id ? t("adm.76") : t("adm.77")}
               </button>
             </div>
           </form>

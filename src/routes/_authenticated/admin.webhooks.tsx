@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -62,6 +63,7 @@ function download(name: string, content: string, mime: string) {
 }
 
 function AdminWebhooksPage() {
+  const { t } = useI18n();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [eventType, setEventType] = useState("");
@@ -145,7 +147,7 @@ function AdminWebhooksPage() {
       `\uFEFF${header.join(",")}\n${body}`,
       "text/csv;charset=utf-8",
     );
-    toast.success("Đã tải log CSV của trang hiện tại.");
+    toast.success(t("adm.78"));
   }
 
   return (
@@ -156,8 +158,8 @@ function AdminWebhooksPage() {
           <div>
             <h2 className="text-base font-semibold">Audit webhook LiveKit</h2>
             <p className="text-xs text-muted-foreground">
-              Tra cứu từng event theo <span className="font-mono">event.id</span>, xem đã áp dụng hay
-              bị chặn trùng, tải log để debug.
+              Tra cứu từng event theo <span className="font-mono">event.id</span>{t("adm.79")}
+              {t("adm.80")}
             </p>
           </div>
         </div>
@@ -173,7 +175,7 @@ function AdminWebhooksPage() {
             disabled={rows.length === 0}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            <Download className="h-3.5 w-3.5" /> Tải log CSV
+            <Download className="h-3.5 w-3.5" /> {t("adm.81")}
           </button>
         </div>
       </div>
@@ -185,7 +187,7 @@ function AdminWebhooksPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applySearch()}
-            placeholder="Tìm theo event.id, room SID, identity hoặc correlation id…"
+            placeholder={t("adm.82")}
             className="w-full rounded-lg border border-border bg-bg py-2 pl-9 pr-8 text-sm outline-none focus:border-primary"
           />
           {searchInput && (
@@ -196,7 +198,7 @@ function AdminWebhooksPage() {
                 setPage(0);
               }}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-              aria-label="Xóa tìm kiếm"
+              aria-label={t("adm.13")}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -206,13 +208,13 @@ function AdminWebhooksPage() {
           onClick={applySearch}
           className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs hover:bg-surface"
         >
-          Lọc
+          {t("adm.83")}
         </button>
         <button
           onClick={() => void lookupExact()}
           className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs hover:bg-surface"
         >
-          Tra cứu đúng event.id
+          {t("adm.84")}
         </button>
         <select
           value={eventType}
@@ -222,7 +224,7 @@ function AdminWebhooksPage() {
           }}
           className="rounded-lg border border-border bg-bg px-2 py-2 text-xs"
         >
-          <option value="">Mọi loại event</option>
+          <option value="">{t("adm.85")}</option>
           {EVENT_TYPES.map((t) => (
             <option key={t} value={t}>
               {t}
@@ -237,9 +239,9 @@ function AdminWebhooksPage() {
           }}
           className="rounded-lg border border-border bg-bg px-2 py-2 text-xs"
         >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="applied">Chỉ applied</option>
-          <option value="duplicate">Có duplicate</option>
+          <option value="all">{t("adm.86")}</option>
+          <option value="applied">{t("adm.87")}</option>
+          <option value="duplicate">{t("adm.88")}</option>
         </select>
       </div>
 
@@ -248,10 +250,10 @@ function AdminWebhooksPage() {
           <thead className="bg-surface-2 text-muted-foreground">
             <tr>
               <th className="px-3 py-2 font-medium">event.id</th>
-              <th className="px-3 py-2 font-medium">Loại</th>
-              <th className="px-3 py-2 font-medium">Trạng thái</th>
-              <th className="px-3 py-2 font-medium">Phòng / người</th>
-              <th className="px-3 py-2 font-medium">Nhận lúc</th>
+              <th className="px-3 py-2 font-medium">{t("adm.73")}</th>
+              <th className="px-3 py-2 font-medium">{t("adm.19")}</th>
+              <th className="px-3 py-2 font-medium">{t("adm.89")}</th>
+              <th className="px-3 py-2 font-medium">{t("adm.90")}</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -259,13 +261,13 @@ function AdminWebhooksPage() {
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
-                  Đang tải log webhook…
+                  {t("adm.91")}
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
-                  Không có event nào khớp bộ lọc.
+                  {t("adm.92")}
                 </td>
               </tr>
             ) : (
@@ -290,7 +292,7 @@ function AdminWebhooksPage() {
                       onClick={() => setDetail(r)}
                       className="rounded-md border border-border px-2 py-1 hover:bg-surface"
                     >
-                      Chi tiết
+                      {t("adm.93")}
                     </button>
                   </td>
                 </tr>
@@ -310,7 +312,7 @@ function AdminWebhooksPage() {
             onClick={() => setPage((p) => p - 1)}
             className="rounded-md border border-border px-2 py-1 disabled:opacity-40"
           >
-            Trước
+            {t("adm.94")}
           </button>
           <button
             disabled={page + 1 >= pages}
@@ -328,6 +330,7 @@ function AdminWebhooksPage() {
 }
 
 function DetailModal({ row, onClose }: { row: EventRow; onClose: () => void }) {
+  const { t } = useI18n();
   const json = JSON.stringify(row, null, 2);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -337,7 +340,7 @@ function DetailModal({ row, onClose }: { row: EventRow; onClose: () => void }) {
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold">Chi tiết event webhook</h3>
+            <h3 className="text-sm font-semibold">{t("adm.95")}</h3>
             <p className="font-mono text-xs text-muted-foreground">{row.event_id}</p>
           </div>
           <button onClick={onClose} className="rounded p-1 text-muted-foreground hover:text-foreground">
@@ -346,18 +349,18 @@ function DetailModal({ row, onClose }: { row: EventRow; onClose: () => void }) {
         </div>
 
         <dl className="mb-3 grid grid-cols-2 gap-2 text-xs">
-          <Info label="Loại" value={row.event_type} />
+          <Info label={t("adm.73")} value={row.event_type} />
           <Info
-            label="Trạng thái"
+            label={t("adm.19")}
             value={row.duplicate_count > 0 ? `applied · duplicate ×${row.duplicate_count}` : "applied"}
           />
           <Info label="Meeting" value={row.meeting_id} />
           <Info label="Room SID" value={row.room_sid ?? "—"} />
           <Info label="Identity" value={row.participant_identity ?? "—"} />
           <Info label="Correlation" value={row.correlation_id ?? "—"} />
-          <Info label="Xảy ra lúc" value={fmt(row.occurred_at)} />
-          <Info label="Nhận lúc" value={fmt(row.created_at)} />
-          <Info label="Trùng gần nhất" value={fmt(row.last_duplicate_at)} />
+          <Info label={t("adm.96")} value={fmt(row.occurred_at)} />
+          <Info label={t("adm.90")} value={fmt(row.created_at)} />
+          <Info label={t("adm.97")} value={fmt(row.last_duplicate_at)} />
         </dl>
 
         <pre className="max-h-72 overflow-auto rounded-lg bg-surface-2 p-3 text-[11px] leading-relaxed">
@@ -368,17 +371,17 @@ function DetailModal({ row, onClose }: { row: EventRow; onClose: () => void }) {
           <button
             onClick={async () => {
               await navigator.clipboard.writeText(json);
-              toast.success("Đã sao chép log event.");
+              toast.success(t("adm.98"));
             }}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 hover:bg-surface-2"
           >
-            <Copy className="h-3.5 w-3.5" /> Sao chép
+            <Copy className="h-3.5 w-3.5" /> {t("adm.99")}
           </button>
           <button
             onClick={() => download(`event-${row.event_id}.json`, json, "application/json")}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:bg-primary/90"
           >
-            <Download className="h-3.5 w-3.5" /> Tải log JSON
+            <Download className="h-3.5 w-3.5" /> {t("adm.100")}
           </button>
         </div>
       </div>

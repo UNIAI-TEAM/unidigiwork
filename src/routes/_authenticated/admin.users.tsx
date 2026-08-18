@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useI18n, type Key } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Search, ShieldCheck, UserX, X } from "lucide-react";
@@ -18,12 +19,13 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 
 type Role = "admin" | "moderator" | "user";
 const ROLES: { key: Role; label: string; tint: string }[] = [
-  { key: "admin", label: "Quản trị viên", tint: "bg-primary/15 text-primary" },
-  { key: "moderator", label: "Điều phối", tint: "bg-amber-500/15 text-amber-300" },
-  { key: "user", label: "Người dùng", tint: "bg-surface-2 text-muted-foreground" },
+  { key: "admin", label: "adm.role.admin", tint: "bg-primary/15 text-primary" },
+  { key: "moderator", label: "adm.role.moderator", tint: "bg-amber-500/15 text-amber-300" },
+  { key: "user", label: "adm.role.user", tint: "bg-surface-2 text-muted-foreground" },
 ];
 
 function AdminUsersPage() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const { access } = useAdminAccess();
   const canWrite = access.canWrite;
@@ -64,14 +66,14 @@ function AdminUsersPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo email hoặc tên..."
+            placeholder={t("adm.12")}
             className="w-full rounded-lg bg-surface-2 py-1.5 pl-8 pr-8 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
           {q && (
             <button
               onClick={() => setQ("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-surface hover:text-foreground"
-              aria-label="Xóa tìm kiếm"
+              aria-label={t("adm.13")}
             >
               <X className="h-3 w-3" />
             </button>
@@ -83,25 +85,25 @@ function AdminUsersPage() {
       </div>
 
       {isLoading ? (
-        <div className="p-8 text-center text-sm text-muted-foreground">Đang tải danh sách…</div>
+        <div className="p-8 text-center text-sm text-muted-foreground">{t("adm.14")}</div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 p-10 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted-foreground">
             <UserX className="h-5 w-5" />
           </div>
-          <div className="text-sm font-medium">Không tìm thấy tài khoản</div>
-          <p className="text-xs text-muted-foreground">Thử điều chỉnh từ khóa tìm kiếm</p>
+          <div className="text-sm font-medium">{t("adm.15")}</div>
+          <p className="text-xs text-muted-foreground">{t("adm.16")}</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-surface-2/40 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-2 font-medium">Tài khoản</th>
-                <th className="px-4 py-2 font-medium">Vai trò</th>
-                <th className="px-4 py-2 font-medium">Trạng thái</th>
-                <th className="px-4 py-2 font-medium">Đăng nhập gần nhất</th>
-                <th className="px-4 py-2 font-medium text-right">Hành động</th>
+                <th className="px-4 py-2 font-medium">{t("adm.17")}</th>
+                <th className="px-4 py-2 font-medium">{t("adm.18")}</th>
+                <th className="px-4 py-2 font-medium">{t("adm.19")}</th>
+                <th className="px-4 py-2 font-medium">{t("adm.20")}</th>
+                <th className="px-4 py-2 font-medium text-right">{t("adm.21")}</th>
               </tr>
             </thead>
             <tbody>
@@ -126,7 +128,7 @@ function AdminUsersPage() {
                       <div className="flex flex-wrap gap-1">
                         {u.roles.length === 0 ? (
                           <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                            Chưa gán
+                            {t("adm.22")}
                           </span>
                         ) : (
                           u.roles.map((r) => {
@@ -136,7 +138,7 @@ function AdminUsersPage() {
                                 key={r}
                                 className={`rounded px-1.5 py-0.5 text-[11px] ${meta?.tint ?? "bg-surface-2 text-muted-foreground"}`}
                               >
-                                {meta?.label ?? r}
+                                {meta ? t(meta.label as Key) : r}
                               </span>
                             );
                           })
@@ -146,10 +148,10 @@ function AdminUsersPage() {
                     <td className="px-4 py-3 text-xs">
                       {u.email_confirmed ? (
                         <span className="inline-flex items-center gap-1 text-emerald-400">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Đã xác thực
+                          <CheckCircle2 className="h-3.5 w-3.5" /> {t("adm.23")}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">Chưa xác thực</span>
+                        <span className="text-muted-foreground">{t("adm.24")}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -177,14 +179,14 @@ function AdminUsersPage() {
                               } disabled:cursor-not-allowed disabled:opacity-50`}
                               title={
                                 !canWrite
-                                  ? "Bạn chỉ có quyền đọc"
+                                  ? t("adm.25")
                                   : has
-                                    ? `Thu hồi ${r.label}`
-                                    : `Cấp ${r.label}`
+                                    ? `${t("adm.role.revoke")} ${t(r.label as Key)}`
+                                    : `${t("adm.role.grant")} ${t(r.label as Key)}`
                               }
                             >
                               {has ? "− " : "+ "}
-                              {r.label}
+                              {t(r.label as Key)}
                             </button>
                           );
                         })}
@@ -200,8 +202,8 @@ function AdminUsersPage() {
       <div className="flex items-center gap-2 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
         <ShieldCheck className="h-3.5 w-3.5" />
         <span>
-          Quản trị viên: đọc + ghi · Điều phối: chỉ đọc. Không thể thu hồi vai trò quản trị viên cuối
-          cùng để tránh khóa hệ thống.
+          {t("adm.26")}
+          {t("adm.27")}
         </span>
       </div>
     </section>

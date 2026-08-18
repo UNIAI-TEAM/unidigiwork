@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Download, Upload, Database, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/admin/backup")({
 type RestoreMode = "merge" | "replace";
 
 function AdminBackupPage() {
+  const { t } = useI18n();
   const { access } = useAdminAccess();
   const canWrite = access.canWrite;
   const [mode, setMode] = useState<RestoreMode>("merge");
@@ -44,7 +46,7 @@ function AdminBackupPage() {
       a.click();
       URL.revokeObjectURL(url);
       setLastCounts(payload.counts);
-      toast.success("Đã tạo tệp sao lưu và tải về ổ đĩa.");
+      toast.success(t("adm.28"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -56,7 +58,7 @@ function AdminBackupPage() {
       try {
         parsed = JSON.parse(text);
       } catch {
-        throw new Error("Tệp không phải JSON hợp lệ.");
+        throw new Error(t("adm.29"));
       }
       return restoreAiWorkforceBackup({
         data: { payload: parsed as never, mode },
@@ -64,7 +66,7 @@ function AdminBackupPage() {
     },
     onSuccess: (res) => {
       setLastCounts(res.restored);
-      toast.success("Khôi phục dữ liệu nhân sự AI thành công.");
+      toast.success(t("adm.30"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -74,11 +76,11 @@ function AdminBackupPage() {
       <section className="rounded-2xl border border-border bg-surface p-5">
         <div className="mb-1 flex items-center gap-2">
           <Database className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-semibold">Sao lưu dữ liệu nhân sự AI</h2>
+          <h2 className="text-base font-semibold">{t("adm.31")}</h2>
         </div>
         <p className="mb-4 text-sm text-muted-foreground">
-          Gói sao lưu gồm hồ sơ nhân sự AI, kỹ năng, kinh nghiệm, hợp đồng tuyển dụng, lịch sử
-          trạng thái và chỉ số hiệu suất. Tệp JSON được tải trực tiếp về ổ đĩa của bạn.
+          {t("adm.32")}
+          {t("adm.33")}
         </p>
         <button
           onClick={() => exportMut.mutate()}
@@ -86,22 +88,22 @@ function AdminBackupPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           <Download className="h-4 w-4" />
-          {exportMut.isPending ? "Đang tạo gói sao lưu…" : "Tải bản sao lưu về ổ đĩa"}
+          {exportMut.isPending ? t("adm.34") : t("adm.35")}
         </button>
       </section>
 
       <section className="rounded-2xl border border-border bg-surface p-5">
         <div className="mb-1 flex items-center gap-2">
           <Upload className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-semibold">Khôi phục từ tệp trên ổ đĩa</h2>
+          <h2 className="text-base font-semibold">{t("adm.36")}</h2>
         </div>
         <p className="mb-4 text-sm text-muted-foreground">
-          Chọn tệp JSON đã sao lưu trước đó để phục hồi dữ liệu nhân sự AI.
+          {t("adm.37")}
         </p>
         {!canWrite && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-surface-2 p-3 text-[12px] text-muted-foreground">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Chỉ quản trị viên (quyền ghi) mới được khôi phục dữ liệu. Bạn chỉ có quyền đọc.</span>
+            <span>{t("adm.38")}</span>
           </div>
         )}
 
@@ -119,9 +121,9 @@ function AdminBackupPage() {
               checked={mode === "merge"}
               onChange={() => setMode("merge")}
             />
-            <div className="text-sm font-medium">Hợp nhất (khuyên dùng)</div>
+            <div className="text-sm font-medium">{t("adm.39")}</div>
             <div className="text-[11px] text-muted-foreground">
-              Thêm mới và cập nhật bản ghi trùng ID, giữ nguyên dữ liệu hiện có khác.
+              {t("adm.40")}
             </div>
           </label>
           <label
@@ -137,9 +139,9 @@ function AdminBackupPage() {
               checked={mode === "replace"}
               onChange={() => setMode("replace")}
             />
-            <div className="text-sm font-medium">Thay thế toàn bộ</div>
+            <div className="text-sm font-medium">{t("adm.41")}</div>
             <div className="text-[11px] text-muted-foreground">
-              Xóa dữ liệu nhân sự AI hiện tại rồi nạp lại từ tệp sao lưu.
+              {t("adm.42")}
             </div>
           </label>
         </div>
@@ -148,8 +150,8 @@ function AdminBackupPage() {
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-[12px] text-amber-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              Chế độ thay thế sẽ xóa dữ liệu nhân sự AI hiện tại. Hãy tải một bản sao lưu mới
-              trước khi thực hiện.
+              {t("adm.43")}
+              {t("adm.44")}
             </span>
           </div>
         )}
@@ -165,7 +167,7 @@ function AdminBackupPage() {
             if (!file) return;
             if (
               mode === "replace" &&
-              !window.confirm("Xóa toàn bộ dữ liệu nhân sự AI hiện tại và khôi phục từ tệp này?")
+              !window.confirm(t("adm.45"))
             ) {
               return;
             }
@@ -178,7 +180,7 @@ function AdminBackupPage() {
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3.5 py-2 text-sm font-medium hover:bg-surface-2/70 disabled:opacity-60"
         >
           <Upload className="h-4 w-4" />
-          {restoreMut.isPending ? "Đang khôi phục…" : "Chọn tệp sao lưu và khôi phục"}
+          {restoreMut.isPending ? t("adm.46") : t("adm.47")}
         </button>
       </section>
 
@@ -186,7 +188,7 @@ function AdminBackupPage() {
         <section className="rounded-2xl border border-border bg-surface p-5">
           <div className="mb-3 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-            <h2 className="text-sm font-semibold">Kết quả gần nhất</h2>
+            <h2 className="text-sm font-semibold">{t("adm.48")}</h2>
           </div>
           <ul className="grid gap-1.5 sm:grid-cols-2">
             {Object.entries(lastCounts).map(([table, count]) => (
