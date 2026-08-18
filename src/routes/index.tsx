@@ -89,6 +89,8 @@ function Landing() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginReady, setLoginReady] = useState(false);
+  const [signupMode, setSignupMode] = useState(false);
+  const [fullName, setFullName] = useState("");
 
   // If already signed in, jump straight to the app
   useEffect(() => {
@@ -108,12 +110,30 @@ function Landing() {
     }
     setLoading(true);
     try {
+      if (signupMode) {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { display_name: fullName.trim() || email.trim().split("@")[0] },
+          },
+        });
+        if (error) throw error;
+        toast.success(t("ac.9"));
+        if (data.session) {
+          navigate({ to: "/tasks" });
+        } else {
+          setSignupMode(false);
+        }
+        return;
+      }
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       toast.success(t("land.signin"));
       navigate({ to: "/tasks" });
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Không thể đăng nhập");
+      toast.error(error instanceof Error ? error.message : t("ac.10"));
     } finally {
       setLoading(false);
     }
@@ -223,9 +243,23 @@ function Landing() {
           {/* Inline login card */}
           <div id="login" className="flex items-center justify-center">
             <div className="w-full max-w-md rounded-2xl border border-border bg-surface/80 p-6 shadow-2xl shadow-primary/5 backdrop-blur">
-              <h2 className="text-xl font-semibold">{t("land.login.title")}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{t("land.login.sub")}</p>
+              <h2 className="text-xl font-semibold">
+                {signupMode ? t("ac.8") : t("land.login.title")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {signupMode ? t("ac.13").replace(/\.$/, "") : t("land.login.sub")}
+              </p>
               <form onSubmit={handleLogin} className="mt-5 space-y-3">
+                {signupMode && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">{t("ac.3")}</label>
+                    <input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">
                     {t("land.email")}
@@ -260,14 +294,18 @@ function Landing() {
                   ) : (
                     <LogIn className="h-4 w-4" />
                   )}
-                  {t("land.signin")}
+                  {signupMode ? t("ac.8") : t("land.signin")}
                 </button>
               </form>
               <div className="mt-4 text-center text-xs text-muted-foreground">
-                {t("land.no.account")}{" "}
-                <Link to="/auth" className="text-primary hover:underline">
-                  {t("land.create.account")}
-                </Link>
+                {signupMode ? "" : `${t("land.no.account")} `}
+                <button
+                  type="button"
+                  onClick={() => setSignupMode((v) => !v)}
+                  className="text-primary hover:underline"
+                >
+                  {signupMode ? t("ac.16") : t("land.create.account")}
+                </button>
               </div>
             </div>
           </div>
