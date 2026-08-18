@@ -3,7 +3,7 @@ import { FilterPageHeader } from "@/components/filter-page-header";
 import { isStaleDocument } from "@/lib/metrics";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -31,7 +31,7 @@ import {
   Eye,
   Sparkles,
   Globe,
-  History,
+  History as HistoryIcon,
   Send,
   Users,
   LogOut,
@@ -51,6 +51,12 @@ import {
 } from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Doc = {
   id: string;
@@ -84,9 +90,22 @@ export const Route = createFileRoute("/_authenticated/documents")({
   component: DocumentsPage,
 });
 
-function ToolbarBtn({ icon: Icon }: { icon: LucideIcon }) {
+function ToolbarBtn({
+  icon: Icon,
+  onClick,
+  title,
+}: {
+  icon: LucideIcon;
+  onClick?: () => void;
+  title?: string;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+    <button
+      onClick={onClick}
+      title={title}
+      className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+      disabled={!onClick}
+    >
       <Icon className="h-4 w-4" />
     </button>
   );
@@ -116,6 +135,14 @@ function DocumentsPage() {
   const [sharing, setSharing] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newFolder, setNewFolder] = useState("My Documents");
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [rightTab, setRightTab] = useState<"ai" | "comments" | "members">("ai");
+  const [aiAsk, setAiAsk] = useState("");
+  const [comments, setComments] = useState<{ id: string; text: string; user: string; time: string }[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [history, setHistory] = useState<{ id: string; action: string; user: string; time: string }[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
   const [newWsName, setNewWsName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -432,6 +459,79 @@ function DocumentsPage() {
     navigate({ to: "/auth" });
   };
 
+  const insertAtCursor = (before: string, after = "") => {
+    const el = contentRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const value = el.value;
+    const selectedText = value.slice(start, end);
+    const replacement = `${before}${selectedText}${after}`;
+    const nextValue = value.slice(0, start) + replacement + value.slice(end);
+    if (selected) {
+      const next = { ...selected, content: nextValue };
+      setSelected(next);
+      setDocs((d) => d.map((x) => (x.id === next.id ? next : x)));
+    }
+    requestAnimationFrame(() => {
+      el.focus();
+      const cursor = start + replacement.length;
+      el.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const insertMarkdown = {
+    bold: () => insertAtCursor("**", "**"),
+    italic: () => insertAtCursor("_", "_"),
+    underline: () => insertAtCursor("<u>", "</u>"),
+    strikethrough: () => insertAtCursor("~~", "~~"),
+    code: () => insertAtCursor("`", "`"),
+    codeBlock: () => insertAtCursor("```\n", "\n```"),
+    bullet: () => insertAtCursor("- "),
+    ordered: () => insertAtCursor("1. "),
+    heading: (level = 1) => insertAtCursor("#".repeat(level) + " "),
+    blockquote: () => insertAtCursor("> "),
+    link: () => insertAtCursor("[", "](https://)"),
+    image: () => insertAtCursor("![alt](", ")"),
+    table: () => insertAtCursor("| Tiêu đề 1 | Tiêu đề 2 |\n| --- | --- |\n| ", " | |"),
+    hr: () => insertAtCursor("\n---\n"),
+  };
+
+  const submitAiAsk = () => {
+    if (!aiAsk.trim()) return;
+    if (selected) {
+      toast.info("Mở UNI AI với nội dung tài liệu đã chọn");
+    }
+    navigate({ to: "/ai", search: { q: aiAsk.trim() } });
+    setAiAsk("");
+  };
+
+  const submitComment = () => {
+    if (!newComment.trim() || !selected) return;
+    const c = {
+      id: crypto.randomUUID(),
+      text: newComment.trim(),
+      user: "Bạn",
+      time: new Date().toLocaleString(),
+    };
+    setComments((prev) => [...prev, c]);
+    setNewComment("");
+    toast.success("Đã thêm bình luận");
+  };
+
+  const exportDocument = () => {
+    if (!selected) return;
+    const blob = new Blob([`# ${selected.title}\n\n${selected.content}`], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selected.title || "document"}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printDocument = () => window.print();
+
   const { range: rangeDays } = Route.useSearch();
   const visibleDocs = (
     docFilter === "stale" ? docs.filter((d) => isStaleDocument(d)) : docs
@@ -702,12 +802,29 @@ function DocumentsPage() {
                   >
                     <Share2 className="h-4 w-4" /> Chia sẻ
                   </button>
-                  <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm">
-                    Editing <ChevronDown className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => notifyComingSoon()} className="rounded-lg bg-surface-2 p-2">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3">
+                        {previewMode ? "Xem trước" : "Chỉnh sửa"} <ChevronDown className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-surface border-border">
+                      <DropdownMenuItem onClick={() => setPreviewMode(false)} className="cursor-pointer focus:bg-surface-2">Chỉnh sửa</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setPreviewMode(true)} className="cursor-pointer focus:bg-surface-2">Xem trước</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="rounded-lg bg-surface-2 p-2 hover:bg-surface-3">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-surface border-border">
+                      <DropdownMenuItem onClick={exportDocument} className="cursor-pointer focus:bg-surface-2">Tải xuống Markdown</DropdownMenuItem>
+                      <DropdownMenuItem onClick={printDocument} className="cursor-pointer focus:bg-surface-2">In tài liệu</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setHistoryOpen(true)} className="cursor-pointer focus:bg-surface-2">Lịch sử</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
@@ -737,11 +854,19 @@ function DocumentsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-muted-foreground">
-                  <button onClick={() => notifyComingSoon()} className="rounded p-1.5 hover:bg-surface-2">
+                  <button
+                    onClick={() => setRightTab("comments")}
+                    className={`rounded p-1.5 hover:bg-surface-2 ${rightTab === "comments" ? "text-primary" : ""}`}
+                    title="Bình luận"
+                  >
                     <MessageSquare className="h-4 w-4" />
                   </button>
-                  <button onClick={() => notifyComingSoon()} className="rounded p-1.5 hover:bg-surface-2">
-                    <History className="h-4 w-4" />
+                  <button
+                    onClick={() => setHistoryOpen(true)}
+                    className="rounded p-1.5 hover:bg-surface-2"
+                    title="Lịch sử"
+                  >
+                    <HistoryIcon className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -767,38 +892,54 @@ function DocumentsPage() {
             </div>
 
             <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-border bg-background/95 px-4 py-2 backdrop-blur sm:px-8">
-              <ToolbarBtn icon={ChevronDown} />
-              <ToolbarBtn icon={ChevronRight} />
-              <button onClick={() => notifyComingSoon()} className="mx-1 flex items-center gap-1 rounded bg-surface-2 px-2 py-1 text-xs">
-                Heading 1 <ChevronDown className="h-3 w-3" />
-              </button>
+              <ToolbarBtn icon={ChevronDown} onClick={() => insertMarkdown.hr()} title="Đường kẻ" />
+              <ToolbarBtn icon={ChevronRight} onClick={() => insertMarkdown.blockquote()} title="Trích dẫn" />
+              <select
+                onChange={(e) => insertMarkdown.heading(Number(e.target.value))}
+                className="mx-1 rounded bg-surface-2 px-2 py-1 text-xs text-foreground focus:outline-none"
+                title="Tiêu đề"
+                value=""
+              >
+                <option value="" disabled>Heading</option>
+                <option value="1">H1</option>
+                <option value="2">H2</option>
+                <option value="3">H3</option>
+                <option value="4">H4</option>
+              </select>
               <span className="mx-1 h-5 w-px bg-border" />
-              <ToolbarBtn icon={Bold} />
-              <ToolbarBtn icon={Italic} />
-              <ToolbarBtn icon={Underline} />
-              <ToolbarBtn icon={Strikethrough} />
-              <ToolbarBtn icon={Code} />
+              <ToolbarBtn icon={Bold} onClick={() => insertMarkdown.bold()} title="In đậm" />
+              <ToolbarBtn icon={Italic} onClick={() => insertMarkdown.italic()} title="In nghiêng" />
+              <ToolbarBtn icon={Underline} onClick={() => insertMarkdown.underline()} title="Gạch chân" />
+              <ToolbarBtn icon={Strikethrough} onClick={() => insertMarkdown.strikethrough()} title="Gạch ngang" />
+              <ToolbarBtn icon={Code} onClick={() => insertMarkdown.code()} title="Code" />
               <span className="mx-1 h-5 w-px bg-border" />
-              <ToolbarBtn icon={List} />
-              <ToolbarBtn icon={ListOrdered} />
-              <ToolbarBtn icon={AlignLeft} />
-              <ToolbarBtn icon={AlignCenter} />
+              <ToolbarBtn icon={List} onClick={() => insertMarkdown.bullet()} title="Danh sách" />
+              <ToolbarBtn icon={ListOrdered} onClick={() => insertMarkdown.ordered()} title="Danh sách số" />
+              <ToolbarBtn icon={AlignLeft} onClick={() => insertMarkdown.blockquote()} title="Canh trái / trích dẫn" />
+              <ToolbarBtn icon={AlignCenter} onClick={() => insertAtCursor("<center>", "</center>")} title="Canh giữa" />
               <span className="mx-1 h-5 w-px bg-border" />
-              <ToolbarBtn icon={LinkIcon} />
-              <ToolbarBtn icon={ImageIcon} />
-              <ToolbarBtn icon={TableIcon} />
-              <ToolbarBtn icon={MoreHorizontal} />
+              <ToolbarBtn icon={LinkIcon} onClick={() => insertMarkdown.link()} title="Liên kết" />
+              <ToolbarBtn icon={ImageIcon} onClick={() => insertMarkdown.image()} title="Hình ảnh" />
+              <ToolbarBtn icon={TableIcon} onClick={() => insertMarkdown.table()} title="Bảng" />
+              <ToolbarBtn icon={MoreHorizontal} onClick={() => insertMarkdown.codeBlock()} title="Khối code" />
             </div>
 
             <article className="flex-1 px-4 py-6 sm:px-8">
               {selected ? (
-                <textarea
-                  value={selected.content}
-                  onChange={(e) => setSelected({ ...selected, content: e.target.value })}
-                  onBlur={(e) => updateSelected({ content: e.target.value })}
-                  placeholder="Bắt đầu viết tài liệu của bạn…"
-                  className="min-h-[400px] w-full resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
+                previewMode ? (
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                    {selected.content || "(Không có nội dung)"}
+                  </div>
+                ) : (
+                  <textarea
+                    ref={contentRef}
+                    value={selected.content}
+                    onChange={(e) => setSelected({ ...selected, content: e.target.value })}
+                    onBlur={(e) => updateSelected({ content: e.target.value })}
+                    placeholder="Bắt đầu viết tài liệu của bạn…"
+                    className="min-h-[400px] w-full resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  />
+                )
               ) : (
                 <div className="flex flex-col items-start gap-3">
                   <p className="text-sm text-muted-foreground">
@@ -830,40 +971,130 @@ function DocumentsPage() {
             </footer>
           </section>
 
-          {/* Right AI panel */}
+          {/* Right panel */}
           <aside className="flex w-full shrink-0 flex-col border-t border-border bg-surface xl:w-80 xl:border-l xl:border-t-0 2xl:w-96">
             <div className="flex gap-5 overflow-x-auto border-b border-border px-5 pt-4 text-sm">
-              <button onClick={() => notifyComingSoon()} className="border-b-2 border-primary pb-3 font-medium">AI Copilot</button>
-              <button onClick={() => notifyComingSoon()} className="pb-3 text-muted-foreground">Comments</button>
-              <button onClick={() => setShowMembers(true)} className="pb-3 text-muted-foreground">
+              <button
+                onClick={() => setRightTab("ai")}
+                className={`pb-3 ${rightTab === "ai" ? "border-b-2 border-primary font-medium text-foreground" : "text-muted-foreground"}`}
+              >
+                AI Copilot
+              </button>
+              <button
+                onClick={() => setRightTab("comments")}
+                className={`pb-3 ${rightTab === "comments" ? "border-b-2 border-primary font-medium text-foreground" : "text-muted-foreground"}`}
+              >
+                Comments
+              </button>
+              <button
+                onClick={() => setShowMembers(true)}
+                className={`pb-3 ${rightTab === "members" ? "border-b-2 border-primary font-medium text-foreground" : "text-muted-foreground"}`}
+              >
                 Members
               </button>
             </div>
             <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-              <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-                <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="h-4 w-4 text-primary" /> AI Summary
+              {rightTab === "ai" && (
+                <>
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+                    <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      <Sparkles className="h-4 w-4 text-primary" /> AI Summary
+                    </div>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {selected
+                        ? "Tóm tắt sẽ xuất hiện ở đây sau khi bạn viết nội dung tài liệu."
+                        : "Chọn một tài liệu để xem tóm tắt AI."}
+                    </p>
+                  </div>
+                  <div>
+                    <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      <Sparkles className="h-4 w-4 text-primary" /> Ask AI
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
+                      <input
+                        value={aiAsk}
+                        onChange={(e) => setAiAsk(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && submitAiAsk()}
+                        placeholder="Ask anything…"
+                        className="flex-1 bg-transparent text-xs placeholder:text-muted-foreground focus:outline-none"
+                      />
+                      <button
+                        onClick={submitAiAsk}
+                        disabled={!aiAsk.trim()}
+                        className="rounded-md bg-primary p-1.5 text-primary-foreground disabled:opacity-40"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+              {rightTab === "comments" && (
+                <div className="flex h-full flex-col gap-3">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                    <MessageSquare className="h-4 w-4 text-primary" /> Bình luận
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    {comments.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Chưa có bình luận nào.</p>
+                    ) : (
+                      comments.map((c) => (
+                        <div key={c.id} className="rounded-lg border border-border bg-surface-2 p-3">
+                          <div className="mb-1 flex items-center justify-between text-xs">
+                            <span className="font-medium">{c.user}</span>
+                            <span className="text-muted-foreground">{c.time}</span>
+                          </div>
+                          <p className="text-xs text-foreground">{c.text}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
+                    <input
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && submitComment()}
+                      placeholder="Thêm bình luận…"
+                      disabled={!selected}
+                      className="flex-1 bg-transparent text-xs placeholder:text-muted-foreground focus:outline-none"
+                    />
+                    <button
+                      onClick={submitComment}
+                      disabled={!selected || !newComment.trim()}
+                      className="rounded-md bg-primary p-1.5 text-primary-foreground disabled:opacity-40"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {selected
-                    ? "Tóm tắt sẽ xuất hiện ở đây sau khi bạn viết nội dung tài liệu."
-                    : "Chọn một tài liệu để xem tóm tắt AI."}
-                </p>
-              </div>
-              <div>
-                <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="h-4 w-4 text-primary" /> Ask AI
-                </div>
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
-                  <input
-                    placeholder="Ask anything…"
-                    className="flex-1 bg-transparent text-xs placeholder:text-muted-foreground focus:outline-none"
-                  />
-                  <button onClick={() => notifyComingSoon()} className="rounded-md bg-primary p-1.5 text-primary-foreground">
-                    <Send className="h-3.5 w-3.5" />
+              )}
+              {rightTab === "members" && (
+                <div className="space-y-3">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                    <Users className="h-4 w-4 text-primary" /> Thành viên
+                  </div>
+                  <div className="space-y-2">
+                    {members.map((m) => (
+                      <div key={m.user_id} className="flex items-center gap-2 rounded-lg bg-surface-2 p-2">
+                        <img src={avatar(m.user_id)} className="h-7 w-7 rounded-full" alt="" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-xs font-medium">
+                            {m.profiles?.display_name || m.profiles?.email || m.user_id}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">{m.role}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {members.length === 0 && <p className="text-xs text-muted-foreground">Chưa có thành viên nào.</p>}
+                  </div>
+                  <button
+                    onClick={() => setShowMembers(true)}
+                    className="w-full rounded-lg border border-border bg-surface-2 py-1.5 text-xs hover:bg-surface-3"
+                  >
+                    Quản lý thành viên
                   </button>
                 </div>
-              </div>
+              )}
             </div>
           </aside>
         </div>
@@ -1047,6 +1278,46 @@ function DocumentsPage() {
               </Actions>
             </>
           )}
+        </Modal>
+      )}
+
+      {historyOpen && selected && (
+        <Modal onClose={() => setHistoryOpen(false)}>
+          <h2 className="mb-1 text-lg font-semibold">Lịch sử tài liệu</h2>
+          <p className="mb-4 text-xs text-muted-foreground">«{selected.title}»</p>
+          <div className="mb-4 max-h-60 space-y-2 overflow-y-auto text-sm">
+            {history.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Chưa có lịch sử.</p>
+            ) : (
+              history.map((h) => (
+                <div key={h.id} className="rounded-lg bg-surface-2/50 p-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">{h.user}</span>
+                    <span className="text-muted-foreground">{h.time}</span>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">{h.action}</div>
+                </div>
+              ))
+            )}
+          </div>
+          <Actions>
+            <button
+              onClick={() => setHistoryOpen(false)}
+              className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            >
+              Đóng
+            </button>
+          </Actions>
+        </Modal>
+      )}
+
+      {historyOpen && !selected && (
+        <Modal onClose={() => setHistoryOpen(false)}>
+          <h2 className="mb-1 text-lg font-semibold">Lịch sử</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Chọn tài liệu để xem lịch sử.</p>
+          <Actions>
+            <button onClick={() => setHistoryOpen(false)} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">Đóng</button>
+          </Actions>
         </Modal>
       )}
     </div>

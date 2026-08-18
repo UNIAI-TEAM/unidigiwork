@@ -8,7 +8,7 @@ import {
   removePerson,
   type PersonDTO,
 } from "@/lib/api/people.functions";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   Download,
@@ -45,6 +45,9 @@ import {
   Briefcase as BriefcaseIcon,
   MapPin as MapPinIcon,
   Trash2,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -163,6 +166,13 @@ function PeoplePage() {
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"all" | "teams" | "departments" | "positions" | "skills" | "org">("all");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(12);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState<Partial<Person>[] | null>(null);
 
   const fetchPeople = useServerFn(listPeople);
   const saveProfile = useServerFn(upsertPersonProfile);
@@ -223,6 +233,116 @@ function PeoplePage() {
     onError: (e: Error) => toast.error(e.message || "Không gỡ được nhân sự"),
   });
 
+  const exportPeopleCsv = () => {
+    const rows = [
+      ["ID", "Name", "Email", "Role", "Department", "Team", "Title", "Location", "Phone", "Emp ID", "Join Date", "Reports To", "Skills", "Teams"],
+      ...peopleList.map((p) => [
+        p.id,
+        p.name,
+        p.email,
+        p.role,
+        p.department,
+        p.team,
+        p.title,
+        p.location,
+        p.phone,
+        p.empId,
+        p.joinDate,
+        p.reportsTo,
+        p.skills.join("; "),
+        p.teams.join("; "),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `people-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Đã xuất danh sách nhân sự");
+  };
+
+  const parseCsv = (text: string): Partial<Person>[] => {
+    const lines = text.replace(/\r/g, "").split("\n").filter(Boolean);
+    if (lines.length < 2) return [];
+    const headers = lines[0]!.split(",").map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+    const get = (row: string[], name: string) => {
+      const idx = headers.indexOf(name);
+      return idx >= 0 ? row[idx]!.replace(/^"|"$/g, "").replace(/""/g, '"') : "";
+    };
+    return lines.slice(1).map((line) => {
+      const cols = line.split(",").map((c) => c.trim());
+      return {
+        name: get(cols, "name"),
+        email: get(cols, "email"),
+        role: get(cols, "role"),
+        department: get(cols, "department"),
+        team: get(cols, "team"),
+        title: get(cols, "title"),
+        location: get(cols, "location"),
+        phone: get(cols, "phone"),
+        empId: get(cols, "emp id") || get(cols, "empid") || get(cols, "emp_id"),
+        joinDate: get(cols, "join date") || get(cols, "joindate") || get(cols, "join_date"),
+        reportsTo: get(cols, "reports to") || get(cols, "reportsto") || get(cols, "reports_to"),
+        skills: (get(cols, "skills") || "").split(";").map((s) => s.trim()).filter(Boolean),
+        teams: (get(cols, "teams") || "").split(";").map((s) => s.trim()).filter(Boolean),
+      };
+    });
+  };
+
+  const importPeople = async (file: File) => {
+    const text = await file.text();
+    const rows = parseCsv(text);
+    if (rows.length === 0) {
+      toast.error("Không tìm thấy dữ liệu trong file CSV");
+      return;
+    }
+    setImportPreview(rows);
+    setImportOpen(true);
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview) return;
+    setImporting(true);
+    let ok = 0;
+    for (const row of importPreview) {
+      if (!row.name || !row.email) continue;
+      try {
+        await saveProfile({
+          data: {
+            userId: row.id ?? crypto.randomUUID(),
+            displayName: row.name,
+            email: row.email,
+            title: row.title === "—" ? "" : (row.title || ""),
+            department: row.department || "",
+            team: row.team || "",
+            location: row.location || "",
+            phone: row.phone || "",
+            empId: row.empId || "",
+            joinDate: row.joinDate || "",
+            reportsTo: row.reportsTo || "",
+            skills: row.skills ?? [],
+            teams: row.teams ?? [],
+            about: "",
+            role: row.role || "member",
+          },
+        });
+        ok += 1;
+      } catch (e) {
+        toast.error(`${row.email}: ${(e as Error).message}`);
+      }
+    }
+    setImporting(false);
+    setImportOpen(false);
+    setImportPreview(null);
+    qc.invalidateQueries({ queryKey: ["people"] });
+    toast.success(`Đã nhập ${ok}/${importPreview.length} nhân sự`);
+  };
+
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
     return peopleList.filter((p) => {
@@ -239,6 +359,16 @@ function PeoplePage() {
       );
     });
   }, [query, department, role, location, peopleList]);
+
+  const pageCount = useMemo(() => Math.max(1, Math.ceil(filtered.length / pageSize)), [filtered, pageSize]);
+  const paginated = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, department, role, location, tab, pageSize]);
 
   const selected = useMemo(
     () => peopleList.find((p) => p.id === selectedId) ?? peopleList[0],
@@ -274,10 +404,27 @@ function PeoplePage() {
                 <p className="mt-1 text-sm text-muted-foreground">{t("people.sub")}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void importPeople(file);
+                    e.target.value = "";
+                  }}
+                />
+                <button
+                  onClick={() => importInputRef.current?.click()}
+                  className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3"
+                >
                   <Upload className="h-4 w-4" /> {t("people.import")}
                 </button>
-                <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3">
+                <button
+                  onClick={exportPeopleCsv}
+                  className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3"
+                >
                   <Download className="h-4 w-4" /> {t("people.export")}
                 </button>
                 <Link
@@ -318,9 +465,34 @@ function PeoplePage() {
                 options={locations}
                 label={t("people.filter.location")}
               />
-              <button onClick={() => notifyComingSoon()} className="flex items-center gap-1 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-3">
-                {t("people.filter.more")} <ChevronDown className="h-4 w-4" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-3">
+                    {t("people.filter.more")} <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-surface border-border">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setQuery("");
+                      setDepartment("All");
+                      setRole("All");
+                      setLocation("All");
+                      setPage(1);
+                    }}
+                    className="cursor-pointer focus:bg-surface-2"
+                  >
+                    <SlidersHorizontal className="h-4 w-4 mr-2" /> Xóa bộ lọc
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setView(view === "grid" ? "list" : "grid")}
+                    className="cursor-pointer focus:bg-surface-2"
+                  >
+                    {view === "grid" ? <List className="h-4 w-4 mr-2" /> : <Grid3x3 className="h-4 w-4 mr-2" />}
+                    {view === "grid" ? "Xem dạng danh sách" : "Xem dạng lưới"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <div className="ml-auto flex items-center gap-1 rounded-lg bg-surface-2 p-1">
                 <button
                   onClick={() => setView("grid")}
@@ -339,12 +511,12 @@ function PeoplePage() {
 
             {/* Tabs */}
             <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border">
-              <Tab label={t("people.tab.all")} count={peopleList.length} active />
-              <Tab label={t("people.tab.teams")} count={new Set(peopleList.flatMap((p) => p.teams)).size} />
-              <Tab label={t("people.tab.departments")} count={(data?.departments ?? []).length} />
-              <Tab label={t("people.tab.positions")} count={new Set(peopleList.map((p) => p.title).filter((x) => x && x !== "—")).size} />
-              <Tab label={t("people.tab.skills")} />
-              <Tab label={t("people.tab.org")} />
+              <Tab label={t("people.tab.all")} count={peopleList.length} active={tab === "all"} onClick={() => setTab("all")} />
+              <Tab label={t("people.tab.teams")} count={new Set(peopleList.flatMap((p) => p.teams)).size} active={tab === "teams"} onClick={() => setTab("teams")} />
+              <Tab label={t("people.tab.departments")} count={(data?.departments ?? []).length} active={tab === "departments"} onClick={() => setTab("departments")} />
+              <Tab label={t("people.tab.positions")} count={new Set(peopleList.map((p) => p.title).filter((x) => x && x !== "—")).size} active={tab === "positions"} onClick={() => setTab("positions")} />
+              <Tab label={t("people.tab.skills")} active={tab === "skills"} onClick={() => setTab("skills")} />
+              <Tab label={t("people.tab.org")} active={tab === "org"} onClick={() => setTab("org")} />
             </div>
 
             {/* Cards / List */}
@@ -367,63 +539,92 @@ function PeoplePage() {
                 <UsersIcon className="mb-2 h-8 w-8 opacity-50" />
                 {t("people.empty")}
               </div>
-            ) : view === "grid" ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {filtered.map((p) => (
-                  <PersonCard
-                    key={p.id}
-                    p={p}
-                    active={p.id === selectedId}
-                    onClick={() => setSelectedId(p.id)}
-                    onEdit={() => handleEdit(p)}
-                    onDelete={() => handleDelete(p.id)}
-                  />
-                ))}
-              </div>
+            ) : tab === "all" ? (
+              view === "grid" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {paginated.map((p) => (
+                    <PersonCard
+                      key={p.id}
+                      p={p}
+                      active={p.id === selectedId}
+                      onClick={() => setSelectedId(p.id)}
+                      onEdit={() => handleEdit(p)}
+                      onDelete={() => handleDelete(p.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-border bg-surface">
+                  {paginated.map((p, i) => (
+                    <PersonRow
+                      key={p.id}
+                      p={p}
+                      active={p.id === selectedId}
+                      divider={i > 0}
+                      onClick={() => setSelectedId(p.id)}
+                      onEdit={() => handleEdit(p)}
+                      onDelete={() => handleDelete(p.id)}
+                    />
+                  ))}
+                </div>
+              )
+            ) : tab === "teams" ? (
+              <GroupByTeam people={filtered} onClick={(id) => setSelectedId(id)} />
+            ) : tab === "departments" ? (
+              <GroupByDepartment people={filtered} onClick={(id) => setSelectedId(id)} />
+            ) : tab === "positions" ? (
+              <GroupByPosition people={filtered} onClick={(id) => setSelectedId(id)} />
+            ) : tab === "skills" ? (
+              <SkillsView people={filtered} />
             ) : (
-              <div className="overflow-hidden rounded-xl border border-border bg-surface">
-                {filtered.map((p, i) => (
-                  <PersonRow
-                    key={p.id}
-                    p={p}
-                    active={p.id === selectedId}
-                    divider={i > 0}
-                    onClick={() => setSelectedId(p.id)}
-                    onEdit={() => handleEdit(p)}
-                    onDelete={() => handleDelete(p.id)}
-                  />
-                ))}
-              </div>
+              <OrgView people={filtered} />
             )}
 
             {/* Pagination */}
-            <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
-              <div>
-                {t("people.showing")} 1 - {filtered.length} {t("people.of")} {peopleList.length}{" "}
-                {t("people.people")}
-              </div>
-              <div className="flex items-center gap-1">
-                {["‹", "1", "2", "3", "4", "5", "…", "11", "›"].map((p, i) => (
-                  <button onClick={() => notifyComingSoon()}
-                    key={i}
-                    className={`h-8 min-w-8 rounded-lg px-2 text-xs ${p === "1" ? "bg-primary text-primary-foreground" : "bg-surface-2 hover:bg-surface-3"}`}
+            {tab === "all" && pageCount > 1 && (
+              <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
+                <div>
+                  {t("people.showing")} {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} {t("people.of")} {filtered.length}{" "}
+                  {t("people.people")}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="h-8 min-w-8 rounded-lg bg-surface-2 px-2 text-xs hover:bg-surface-3 disabled:opacity-40"
                   >
-                    {p}
+                    <ChevronLeft className="h-4 w-4" />
                   </button>
-                ))}
+                  {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`h-8 min-w-8 rounded-lg px-2 text-xs ${p === page ? "bg-primary text-primary-foreground" : "bg-surface-2 hover:bg-surface-3"}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                    disabled={page >= pageCount}
+                    className="h-8 min-w-8 rounded-lg bg-surface-2 px-2 text-xs hover:bg-surface-3 disabled:opacity-40"
+                  >
+                    <ChevronRightIcon className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </main>
 
           {/* Right panel */}
-          {selected && (
+          {selectedId && selected && (
             <PersonPanel
               person={selected}
               peers={peopleList.filter((p) => p.id !== selected.id)}
               canManage={canManage || selected.id === data?.people.find((x) => x.isSelf)?.id}
               onEdit={() => handleEdit(selected)}
               onOpenDetail={() => navigate({ to: "/people/$id", params: { id: selected.id } })}
-              onClose={() => {}}
+              onClose={() => setSelectedId("")}
             />
           )}
         </div>
@@ -464,9 +665,20 @@ function PeoplePage() {
   );
 }
 
-function Tab({ label, count, active }: { label: string; count?: number; active?: boolean }) {
+function Tab({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()}
+    <button
+      onClick={onClick}
       className={`-mb-px flex items-center gap-2 border-b-2 px-1 py-2.5 text-sm transition-colors ${
         active
           ? "border-primary text-foreground"
@@ -564,22 +776,25 @@ function PersonCard({
         </div>
       </button>
       <div className="flex items-center gap-1 border-t border-border px-4 pb-4 pt-3">
-        <IconBtn>
+        <IconBtn onClick={() => window.open(`/chat`, "_self")} title="Nhắn tin">
           <MessageCircle className="h-3.5 w-3.5" />
         </IconBtn>
-        <IconBtn>
+        <IconBtn onClick={() => window.open(`/email/compose?to=${encodeURIComponent(p.email)}`, "_self")} title="Gửi email">
           <Mail className="h-3.5 w-3.5" />
         </IconBtn>
-        <IconBtn>
+        <IconBtn onClick={() => window.open(`tel:${p.phone.replace(/\s/g, "")}`)} title="Gọi điện">
           <Phone className="h-3.5 w-3.5" />
         </IconBtn>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <IconBtn className="ml-auto">
+            <IconBtn className="ml-auto" title="Thêm">
               <MoreHorizontal className="h-3.5 w-3.5" />
             </IconBtn>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-surface border-border">
+            <DropdownMenuItem onClick={() => window.open(`/calendar`, "_self")} className="cursor-pointer focus:bg-surface-2">
+              <Calendar className="h-4 w-4 mr-2" /> Lên lịch họp
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onEdit} className="cursor-pointer focus:bg-surface-2">
               <Edit3 className="h-4 w-4 mr-2" /> Sửa
             </DropdownMenuItem>
@@ -660,9 +875,21 @@ function PersonRow({
   );
 }
 
-function IconBtn({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function IconBtn({
+  children,
+  className = "",
+  onClick,
+  title,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  title?: string;
+}) {
   return (
-    <button onClick={() => notifyComingSoon()}
+    <button
+      onClick={onClick}
+      title={title}
       className={`rounded-md p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground ${className}`}
     >
       {children}
@@ -676,6 +903,7 @@ function PersonPanel({
   canManage,
   onEdit,
   onOpenDetail,
+  onClose,
 }: {
   person: Person;
   peers: Person[];
@@ -719,7 +947,7 @@ function PersonPanel({
           <div className="mt-0.5 text-sm text-muted-foreground">{person.title}</div>
           <div className="text-xs text-muted-foreground">{person.team}</div>
         </div>
-        <button onClick={() => notifyComingSoon()} className="rounded-md p-1 text-muted-foreground hover:bg-surface-2">
+        <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-surface-2">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -751,21 +979,33 @@ function PersonPanel({
             Chỉnh sửa
           </button>
         )}
-        <IconBtn>
+        <IconBtn onClick={() => window.open(`/chat`, "_self")} title="Nhắn tin">
           <MessageCircle className="h-4 w-4" />
         </IconBtn>
-        <IconBtn>
+        <IconBtn onClick={() => window.open(`/email/compose?to=${encodeURIComponent(person.email)}`, "_self")} title="Gửi email">
           <Mail className="h-4 w-4" />
         </IconBtn>
-        <IconBtn>
+        <IconBtn onClick={() => window.open(`tel:${person.phone.replace(/\s/g, "")}`)} title="Gọi điện">
           <Phone className="h-4 w-4" />
         </IconBtn>
-        <IconBtn>
+        <IconBtn onClick={() => window.open(`/calendar`, "_self")} title="Lên lịch">
           <Calendar className="h-4 w-4" />
         </IconBtn>
-        <IconBtn>
-          <MoreHorizontal className="h-4 w-4" />
-        </IconBtn>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconBtn title="Thêm">
+              <MoreHorizontal className="h-4 w-4" />
+            </IconBtn>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-surface border-border">
+            <DropdownMenuItem onClick={() => window.open(`/tasks`, "_self")} className="cursor-pointer focus:bg-surface-2">
+              <BriefcaseIcon className="h-4 w-4 mr-2" /> Giao việc
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.open(`/meeting`, "_self")} className="cursor-pointer focus:bg-surface-2">
+              <Video className="h-4 w-4 mr-2" /> Mời họp
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex items-center gap-4 border-b border-border px-5 text-sm">
@@ -1458,5 +1698,236 @@ function EditPersonDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ========== Grouped tab views ==========
+
+function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
+  return items.reduce((acc, item) => {
+    const key = keyFn(item) || "Chưa phân loại";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {} as Record<string, T[]>);
+}
+
+function GroupByTeam({
+  people,
+  onClick,
+}: {
+  people: Person[];
+  onClick: (id: string) => void;
+}) {
+  const groups = groupBy(people, (p) => p.team);
+  const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {sorted.map(([team, members]) => (
+        <div
+          key={team}
+          className="rounded-xl border border-border bg-surface p-4 transition-shadow hover:shadow-sm"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <UsersIcon className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">{team}</h3>
+            </div>
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted-foreground">
+              {members.length}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {members.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => onClick(p.id)}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-left text-xs hover:bg-surface-3"
+              >
+                <img src={avatar(p.seed)} alt={p.name} className="h-6 w-6 rounded-full" />
+                <span className="font-medium">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GroupByDepartment({
+  people,
+  onClick,
+}: {
+  people: Person[];
+  onClick: (id: string) => void;
+}) {
+  const groups = groupBy(people, (p) => p.department);
+  const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {sorted.map(([dept, members]) => (
+        <div
+          key={dept}
+          className="rounded-xl border border-border bg-surface p-4 transition-shadow hover:shadow-sm"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">{dept}</h3>
+            </div>
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted-foreground">
+              {members.length}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {members.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => onClick(p.id)}
+                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs hover:bg-surface-2"
+              >
+                <span className="font-medium">{p.name}</span>
+                <span className="text-muted-foreground">{p.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GroupByPosition({
+  people,
+  onClick,
+}: {
+  people: Person[];
+  onClick: (id: string) => void;
+}) {
+  const groups = groupBy(people, (p) => p.title);
+  const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {sorted.map(([title, members]) => (
+        <div
+          key={title}
+          className="rounded-xl border border-border bg-surface p-4 transition-shadow hover:shadow-sm"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">{title}</h3>
+            </div>
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted-foreground">
+              {members.length}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {members.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => onClick(p.id)}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-left text-xs hover:bg-surface-3"
+              >
+                <img src={avatar(p.seed)} alt={p.name} className="h-6 w-6 rounded-full" />
+                <span className="font-medium">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkillsView({ people }: { people: Person[] }) {
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    people.forEach((p) =>
+      p.skills.forEach((s) => {
+        map.set(s, (map.get(s) || 0) + 1);
+      }),
+    );
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [people]);
+  const max = counts[0]?.[1] ?? 1;
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <Award className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Kỹ năng phổ biến</h3>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {counts.map(([skill, count]) => (
+          <div key={skill} className="rounded-lg border border-border bg-surface-2 p-3">
+            <div className="mb-1 flex items-center justify-between text-sm">
+              <span className="font-medium">{skill}</span>
+              <span className="text-xs text-muted-foreground">{count} người</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${Math.round((count / max) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OrgView({ people }: { people: Person[] }) {
+  const byName = useMemo(() => {
+    const map = new Map<string, Person>();
+    people.forEach((p) => map.set(p.name, p));
+    return map;
+  }, [people]);
+
+  const tree = useMemo(() => {
+    const roots: Person[] = [];
+    const children = new Map<string, Person[]>();
+    people.forEach((p) => {
+      const manager = p.reportsTo?.trim();
+      if (manager && byName.has(manager)) {
+        if (!children.has(manager)) children.set(manager, []);
+        children.get(manager)!.push(p);
+      } else {
+        roots.push(p);
+      }
+    });
+    return { roots, children };
+  }, [people, byName]);
+
+  const renderNode = (p: Person, depth = 0) => (
+    <div key={p.id} className="relative">
+      <div
+        className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3"
+        style={{ marginLeft: depth * 24 }}
+      >
+        <img src={avatar(p.seed)} alt={p.name} className="h-9 w-9 rounded-full" />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold">{p.name}</div>
+          <div className="truncate text-xs text-muted-foreground">
+            {p.title} · {p.team}
+          </div>
+        </div>
+        <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">{p.department}</span>
+      </div>
+      {tree.children.get(p.name)?.map((c) => renderNode(c, depth + 1))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {tree.roots.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-surface/40 py-12 text-center text-sm text-muted-foreground">
+          Chưa có dữ liệu cấu trúc báo cáo.
+        </div>
+      ) : (
+        tree.roots.map((p) => renderNode(p))
+      )}
+    </div>
   );
 }
