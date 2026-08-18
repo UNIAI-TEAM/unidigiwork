@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -38,6 +39,7 @@ const parseList = (s: string) =>
   s.split(/[,;\s]+/).map((v) => v.trim()).filter(Boolean);
 
 function ComposePage() {
+  const { t } = useI18n();
   const [open, setOpen] = useSidebarState();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -59,8 +61,8 @@ function ComposePage() {
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
-  /** Chèn markdown quanh vùng đang chọn trong ô nội dung. */
-  const wrapSelection = useCallback((before: string, after = before, placeholder = "văn bản") => {
+  {t("em.105")}
+  const wrapSelection = useCallback((before: string, after = before, placeholder = t("em.106")) => {
     const el = bodyRef.current;
     if (!el) return;
     const start = el.selectionStart ?? 0;
@@ -130,9 +132,9 @@ function ComposePage() {
       setSavedAt(new Date());
       dirty.current = false;
       qc.invalidateQueries({ queryKey: ["emails"] });
-      if (!r.silent) toast.success("Đã lưu nháp");
+      if (!r.silent) toast.success(t("em.107"));
     },
-    onError: (e: unknown) => setErr(e instanceof Error ? e.message : "Không lưu được bản nháp"),
+    onError: (e: unknown) => setErr(e instanceof Error ? e.message : t("em.108")),
   });
 
   const sendMut = useMutation({
@@ -142,23 +144,23 @@ function ComposePage() {
       if (r.unknown_recipients?.length) {
         toast.warning(`Không gửi được tới: ${r.unknown_recipients.join(", ")}`);
       } else {
-        toast.success("Đã gửi email");
+        toast.success(t("em.109"));
       }
       nav({ to: "/email/$id", params: { id: r.thread_id } });
     },
-    onError: (e: unknown) => setErr(e instanceof Error ? e.message : "Không gửi được email"),
+    onError: (e: unknown) => setErr(e instanceof Error ? e.message : t("em.110")),
   });
 
   const delMut = useMutation({
     mutationFn: () => doDelete({ data: { id: draftId! } }),
     onSuccess: () => {
-      toast.success("Đã xoá bản nháp");
+      toast.success(t("em.111"));
       qc.invalidateQueries({ queryKey: ["emails"] });
       nav({ to: "/email" });
     },
   });
 
-  // Autosave nháp sau 2s ngừng gõ
+  {t("em.112")}
   useEffect(() => {
     if (!dirty.current) return;
     const hasContent = to.trim() || subject.trim() || body.trim();
@@ -188,21 +190,21 @@ function ComposePage() {
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
             <Link to="/email" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" /> Hộp thư
+              <ArrowLeft className="h-4 w-4" /> {t("em.113")}
             </Link>
 
             <div className="rounded-2xl border border-border bg-surface">
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <h1 className="text-sm font-semibold">{draftId ? "Bản nháp" : "Tin nhắn mới"}</h1>
+                <h1 className="text-sm font-semibold">{draftId ? t("em.102") : t("em.114")}</h1>
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] text-muted-foreground">
                     {saveMut.isPending
-                      ? "Đang lưu…"
+                      ? t("em.115")
                       : savedAt
                         ? `Đã lưu ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
                         : ""}
                   </span>
-                  <button onClick={() => nav({ to: "/email" })} className="rounded p-1 hover:bg-surface-2" aria-label="Đóng">
+                  <button onClick={() => nav({ to: "/email" })} className="rounded p-1 hover:bg-surface-2" aria-label={t("em.116")}>
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -210,12 +212,12 @@ function ComposePage() {
 
               {draftQ.isLoading ? (
                 <div className="flex items-center gap-2 px-5 py-10 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Đang tải bản nháp…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("em.117")}
                 </div>
               ) : (
                 <>
                   <div className="px-5">
-                    <Field label="Đến">
+                    <Field label={t("em.118")}>
                       <input value={to} onChange={(e) => touch(setTo)(e.target.value)} placeholder="email@example.com" className="flex-1 bg-transparent text-sm focus:outline-none" />
                       <button type="button" onClick={() => setShowCc((v) => !v)} className="text-xs text-muted-foreground hover:text-foreground">
                         Cc
@@ -226,8 +228,8 @@ function ComposePage() {
                         <input value={cc} onChange={(e) => touch(setCc)(e.target.value)} placeholder="cc@example.com" className="flex-1 bg-transparent text-sm focus:outline-none" />
                       </Field>
                     )}
-                    <Field label="Tiêu đề">
-                      <input value={subject} onChange={(e) => touch(setSubject)(e.target.value)} placeholder="Tiêu đề email" className="flex-1 bg-transparent text-sm focus:outline-none" />
+                    <Field label={t("em.119")}>
+                      <input value={subject} onChange={(e) => touch(setSubject)(e.target.value)} placeholder={t("em.120")} className="flex-1 bg-transparent text-sm focus:outline-none" />
                     </Field>
                   </div>
 
@@ -236,7 +238,7 @@ function ComposePage() {
                     value={body}
                     onChange={(e) => touch(setBody)(e.target.value)}
                     rows={14}
-                    placeholder="Viết nội dung email…"
+                    placeholder={t("em.121")}
                     className="w-full resize-none border-t border-border bg-transparent px-5 py-4 text-sm focus:outline-none"
                   />
                 </>
@@ -249,22 +251,22 @@ function ComposePage() {
               <div className="flex items-center justify-between border-t border-border px-5 py-3">
                 <div className="flex items-center gap-1">
                   {[
-                    { icon: Bold, label: "In đậm", run: () => wrapSelection("**") },
-                    { icon: Italic, label: "In nghiêng", run: () => wrapSelection("*") },
-                    { icon: List, label: "Danh sách", run: () => insertAtCursor("\n- ") },
+                    { icon: Bold, label: t("em.122"), run: () => wrapSelection("**") },
+                    { icon: Italic, label: t("em.123"), run: () => wrapSelection("*") },
+                    { icon: List, label: t("em.124"), run: () => insertAtCursor("\n- ") },
                     {
                       icon: Link2,
-                      label: "Chèn liên kết",
+                      label: t("em.125"),
                       run: () => {
-                        const url = window.prompt("Nhập đường dẫn liên kết", "https://");
+                        const url = window.prompt(t("em.126"), "https://");
                         if (url) wrapSelection("[", `](${url})`, "liên kết");
                       },
                     },
                     {
                       icon: ImageIcon,
-                      label: "Chèn ảnh",
+                      label: t("em.127"),
                       run: () => {
-                        const url = window.prompt("Nhập đường dẫn ảnh", "https://");
+                        const url = window.prompt(t("em.128"), "https://");
                         if (url) insertAtCursor(`![ảnh](${url})`);
                       },
                     },
@@ -286,11 +288,11 @@ function ComposePage() {
                       insertAtCursor(
                         `Kính gửi anh/chị,\n\n${subject.trim() || "Nội dung trao đổi"}: em xin gửi thông tin để anh/chị xem xét và phản hồi giúp em.\n\nTrân trọng,`,
                       );
-                      toast.success("Đã chèn bản nháp gợi ý.");
+                      toast.success(t("em.129"));
                     }}
                     className="ml-2 inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/15"
                   >
-                    <Sparkles className="h-3.5 w-3.5" /> Viết với AI
+                    <Sparkles className="h-3.5 w-3.5" /> {t("em.130")}
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -299,13 +301,13 @@ function ComposePage() {
                     disabled={saveMut.isPending}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
                   >
-                    <Save className="h-4 w-4" /> Lưu nháp
+                    <Save className="h-4 w-4" /> {t("em.131")}
                   </button>
                   <button
                     disabled={!draftId || delMut.isPending}
-                    onClick={() => { if (confirm("Xoá bản nháp này?")) delMut.mutate(); }}
+                    onClick={() => { if (confirm(t("em.132"))) delMut.mutate(); }}
                     className="rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-destructive disabled:opacity-40"
-                    aria-label="Xoá bản nháp"
+                    aria-label={t("em.133")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -315,7 +317,7 @@ function ComposePage() {
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {sendMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    {sendMut.isPending ? "Đang gửi…" : "Gửi"}
+                    {sendMut.isPending ? t("em.134") : t("em.135")}
                   </button>
                 </div>
               </div>

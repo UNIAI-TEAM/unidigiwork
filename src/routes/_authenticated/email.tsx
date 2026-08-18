@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -196,6 +197,7 @@ function DonutChart({ stats, centerValue }: { stats: StatSlice[]; centerValue?: 
 }
 
 function EmailHubPage() {
+  const { t } = useI18n();
   const { workspaceId } = useActiveWorkspace();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeMailbox, setActiveMailbox] = useState("inbox");
@@ -208,18 +210,18 @@ function EmailHubPage() {
   const [rules, setRules] = useState<RuleDef[]>([
     {
       id: "r1",
-      name: "Email từ STOS → gắn nhãn Dự án STOS",
+      name: t("em.1"),
       whenField: "from",
       whenContains: "@stos.vn",
       thenAction: "label",
-      thenValue: "Dự án STOS",
+      thenValue: t("em.2"),
       active: true,
     },
     {
       id: "r2",
-      name: "Email hóa đơn → lưu trữ",
+      name: t("em.3"),
       whenField: "subject",
-      whenContains: "hóa đơn",
+      whenContains: t("em.4"),
       thenAction: "archive",
       thenValue: "",
       active: false,
@@ -248,7 +250,7 @@ function EmailHubPage() {
     setPage(1);
   }, [debouncedSearch, activeMailbox]);
 
-  // Danh sách email thật theo workspace đang chọn (không còn dữ liệu mock).
+  {t("em.5")}
   const starredMode = activeMailbox === "starred";
   const folder: DbFolder = starredMode ? "inbox" : (activeMailbox as DbFolder);
   const dbQuery = useQuery({
@@ -284,7 +286,7 @@ function EmailHubPage() {
         created_at: string;
         from_user_id: string;
       };
-      const senderName = r.sender?.display_name ?? r.sender?.email ?? "Người gửi";
+      const senderName = r.sender?.display_name ?? r.sender?.email ?? t("em.6");
       const when = m.sent_at ?? m.created_at;
       return {
         id: m.id,
@@ -309,7 +311,7 @@ function EmailHubPage() {
     return 0;
   }
 
-  // Lọc phía client trên dữ liệu thật của trang hiện tại.
+  {t("em.7")}
   const pagedEmails = useMemo(() => {
     const a = advanced;
     const list = dbEmails.filter((e) => {
@@ -340,14 +342,14 @@ function EmailHubPage() {
 
   const quickSummary = useMemo(
     () => [
-      { label: "Tổng email", value: countsQuery.data?.total ?? 0 },
-      { label: "Đã đọc", value: countsQuery.data?.read ?? 0 },
-      { label: "Chưa đọc", value: countsQuery.data?.unread ?? 0 },
-      { label: "Đã gửi", value: countsQuery.data?.sent ?? 0 },
-      { label: "Chuyển tiếp", value: countsQuery.data?.forwarded ?? 0 },
-      { label: "Đã giải quyết", value: countsQuery.data?.resolved ?? 0 },
-      { label: "Đã hủy", value: countsQuery.data?.cancelled ?? 0 },
-      { label: "Chưa đọc ở hộp đến", value: countsQuery.data?.unreadInbox ?? 0 },
+      { label: t("em.8"), value: countsQuery.data?.total ?? 0 },
+      { label: t("em.9"), value: countsQuery.data?.read ?? 0 },
+      { label: t("em.10"), value: countsQuery.data?.unread ?? 0 },
+      { label: t("em.11"), value: countsQuery.data?.sent ?? 0 },
+      { label: t("em.12"), value: countsQuery.data?.forwarded ?? 0 },
+      { label: t("em.13"), value: countsQuery.data?.resolved ?? 0 },
+      { label: t("em.14"), value: countsQuery.data?.cancelled ?? 0 },
+      { label: t("em.15"), value: countsQuery.data?.unreadInbox ?? 0 },
     ],
     [countsQuery.data, folderCounts],
   );
@@ -365,12 +367,12 @@ function EmailHubPage() {
   const statSlices: StatSlice[] = useMemo(() => {
     const c = countsQuery.data;
     const raw = [
-      { label: "Đã đọc", value: c?.read ?? 0, color: "#7c3aed" },
-      { label: "Chưa đọc", value: c?.unread ?? 0, color: "#ef4444" },
-      { label: "Đã gửi", value: c?.sent ?? 0, color: "#10b981" },
-      { label: "Chuyển tiếp", value: c?.forwarded ?? 0, color: "#0ea5e9" },
-      { label: "Đã giải quyết", value: c?.resolved ?? 0, color: "#f59e0b" },
-      { label: "Đã hủy", value: c?.cancelled ?? 0, color: "#94a3b8" },
+      { label: t("em.9"), value: c?.read ?? 0, color: "#7c3aed" },
+      { label: t("em.10"), value: c?.unread ?? 0, color: "#ef4444" },
+      { label: t("em.11"), value: c?.sent ?? 0, color: "#10b981" },
+      { label: t("em.12"), value: c?.forwarded ?? 0, color: "#0ea5e9" },
+      { label: t("em.13"), value: c?.resolved ?? 0, color: "#f59e0b" },
+      { label: t("em.14"), value: c?.cancelled ?? 0, color: "#94a3b8" },
     ];
     const total = raw.reduce((s, x) => s + x.value, 0) || 1;
     return raw.map((r) => ({ ...r, pct: Math.round((r.value / total) * 100) }));
@@ -417,10 +419,10 @@ function EmailHubPage() {
     onSuccess: (_r, v) => {
       toast.success(
         v.folder === "archive"
-          ? "Đã lưu trữ"
+          ? t("em.16")
           : v.folder === "trash"
-            ? "Đã chuyển vào thùng rác"
-            : "Đã chuyển về hộp đến",
+            ? t("em.17")
+            : t("em.18"),
       );
       qc.invalidateQueries({ queryKey: ["emails"] });
       clearChecked();
@@ -432,14 +434,14 @@ function EmailHubPage() {
     mutationFn: (v: { ids: string[]; is_read: boolean }) =>
       doSetRead({ data: { message_ids: v.ids, is_read: v.is_read } }),
     onSuccess: (_r, v) => {
-      toast.success(v.is_read ? "Đã đánh dấu đã đọc" : "Đã đánh dấu chưa đọc");
+      toast.success(v.is_read ? t("em.19") : t("em.20"));
       qc.invalidateQueries({ queryKey: ["emails"] });
       clearChecked();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Tự động đánh dấu đã đọc thật trong DB khi mở cửa sổ chi tiết một email chưa đọc.
+  {t("em.21")}
   const autoReadRef = useRef<string | null>(null);
   useEffect(() => {
     const e = selectedEmail;
@@ -461,7 +463,7 @@ function EmailHubPage() {
   function bulkMove(folder: "inbox" | "archive" | "trash") {
     const ids = realIds([...checkedIds]);
     if (!ids.length) {
-      toast.info("Chỉ áp dụng cho email thật trong hộp thư");
+      toast.info(t("em.22"));
       clearChecked();
       return;
     }
@@ -471,7 +473,7 @@ function EmailHubPage() {
   function bulkRead(is_read: boolean) {
     const ids = realIds([...checkedIds]);
     if (!ids.length) {
-      toast.info("Chỉ áp dụng cho email thật trong hộp thư");
+      toast.info(t("em.22"));
       clearChecked();
       return;
     }
@@ -481,13 +483,13 @@ function EmailHubPage() {
   function messageAction(folder: "archive" | "trash") {
     const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
     if (!ids.length) {
-      toast.info("Email mẫu không thể thao tác");
+      toast.info(t("em.23"));
       return;
     }
     bulkMoveMut.mutate({ ids, folder });
   }
 
-  // Mở email = đọc thật: cập nhật trạng thái đã đọc trong database.
+  {t("em.24")}
   function openEmail(id: string) {
     setSelected(id);
     setDetailOpen(true);
@@ -544,7 +546,7 @@ function EmailHubPage() {
 
   const groups: Record<string, Email[]> = {};
   if (sortBy === "priority") {
-    groups["Theo mức độ ưu tiên"] = pagedEmails;
+    groups[t("em.25")] = pagedEmails;
   } else {
     pagedEmails.forEach((e) => {
       groups[e.group] = groups[e.group] || [];
@@ -570,7 +572,7 @@ function EmailHubPage() {
                 <div>
                   <div className="text-base font-semibold">Email Hub</div>
                   <div className="text-[11px] text-muted-foreground">
-                    Tất cả email của bạn tại một nơi
+                    {t("em.26")}
                   </div>
                 </div>
               </div>
@@ -582,12 +584,12 @@ function EmailHubPage() {
                   onClick={() => setComposeOpen(true)}
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
-                  <FileEdit className="h-4 w-4" /> Soạn email
+                  <FileEdit className="h-4 w-4" /> {t("em.27")}
                 </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      aria-label="Tùy chọn soạn email"
+                      aria-label={t("em.28")}
                       className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary px-2 text-primary-foreground hover:bg-primary/90"
                     >
                       <ChevronDown className="h-4 w-4" />
@@ -595,13 +597,13 @@ function EmailHubPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem onClick={() => openCompose("", "")}>
-                      Soạn email mới
+                      {t("em.29")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => changeMailbox("drafts")}>
-                      Mở bản nháp
+                      {t("em.30")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setAiOpen(true)}>
-                      Soạn với AI
+                      {t("em.31")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -610,7 +612,7 @@ function EmailHubPage() {
                 onClick={() => setLabelsOpen(true)}
                 className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               >
-                <Settings2 className="h-3.5 w-3.5" /> Nhãn & Quy tắc tự động
+                <Settings2 className="h-3.5 w-3.5" /> {t("em.32")}
               </button>
             </div>
 
@@ -701,7 +703,7 @@ function EmailHubPage() {
 
             <div className="border-t border-border px-4 py-3">
               <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>Đã dùng 28.4 GB / 100 GB</span>
+                <span>{t("em.33")}</span>
               </div>
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
                 <div className="h-full rounded-full bg-primary" style={{ width: "28%" }} />
@@ -719,7 +721,7 @@ function EmailHubPage() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm theo người gửi, tiêu đề, nội dung..."
+                  placeholder={t("em.34")}
                   className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
@@ -728,7 +730,7 @@ function EmailHubPage() {
                   onClick={() => setFilterUnread((v) => !v)}
                   className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${filterUnread ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}
                 >
-                  <MailOpen className="h-3.5 w-3.5" /> Chưa đọc
+                  <MailOpen className="h-3.5 w-3.5" /> {t("em.10")}
                 </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -742,7 +744,7 @@ function EmailHubPage() {
                   <DropdownMenuContent align="start" className="min-w-[14rem]">
                     <DropdownMenuItem onClick={() => setSortBy("time")} className="cursor-pointer">
                       <Clock className="h-4 w-4" />
-                      <span className="flex-1">Thời gian (mới nhất)</span>
+                      <span className="flex-1">{t("em.35")}</span>
                       {sortBy === "time" && <Check className="h-4 w-4 text-primary" />}
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -750,7 +752,7 @@ function EmailHubPage() {
                       className="cursor-pointer"
                     >
                       <AlertCircle className="h-4 w-4" />
-                      <span className="flex-1">Mức độ ưu tiên</span>
+                      <span className="flex-1">{t("em.36")}</span>
                       {sortBy === "priority" && <Check className="h-4 w-4 text-primary" />}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -764,14 +766,14 @@ function EmailHubPage() {
                     }}
                     className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
                   >
-                    <X className="h-3 w-3" /> Xóa lọc
+                    <X className="h-3 w-3" /> {t("em.37")}
                   </button>
                 )}
                 <button
                   onClick={() => setAdvancedOpen(true)}
                   className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
                 >
-                  <Filter className="h-3 w-3" /> Lọc nâng cao
+                  <Filter className="h-3 w-3" /> {t("em.38")}
                 </button>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -795,7 +797,7 @@ function EmailHubPage() {
                 {filterUnread && (
                   <Badge variant="secondary" className="text-[11px]">
                     <MailOpen className="mr-1 h-3 w-3" />
-                    Chưa đọc
+                    {t("em.10")}
                     <X
                       className="ml-1 h-3 w-3 cursor-pointer"
                       onClick={() => setFilterUnread(false)}
@@ -813,7 +815,7 @@ function EmailHubPage() {
               <button
                 onClick={toggleAllOnPage}
                 className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                title={allOnPageChecked ? "Bỏ chọn trang này" : "Chọn tất cả trang này"}
+                title={allOnPageChecked ? t("em.39") : t("em.40")}
               >
                 {allOnPageChecked ? (
                   <CheckSquare className="h-4 w-4 text-primary" />
@@ -824,15 +826,15 @@ function EmailHubPage() {
               </button>
               {checkedIds.size > 0 ? (
                 <div className="ml-1 flex items-center gap-0.5">
-                  <BulkBtn icon={Archive} label="Lưu trữ" onClick={() => bulkMove("archive")} />
-                  <BulkBtn icon={Trash2} label="Xóa" onClick={() => bulkMove("trash")} />
-                  <BulkBtn icon={MailOpen} label="Đánh dấu đã đọc" onClick={() => bulkRead(true)} />
-                  <BulkBtn icon={Mail} label="Đánh dấu chưa đọc" onClick={() => bulkRead(false)} />
-                  <BulkBtn icon={Inbox} label="Về hộp đến" onClick={() => bulkMove("inbox")} />
+                  <BulkBtn icon={Archive} label={t("em.41")} onClick={() => bulkMove("archive")} />
+                  <BulkBtn icon={Trash2} label={t("em.42")} onClick={() => bulkMove("trash")} />
+                  <BulkBtn icon={MailOpen} label={t("em.43")} onClick={() => bulkRead(true)} />
+                  <BulkBtn icon={Mail} label={t("em.44")} onClick={() => bulkRead(false)} />
+                  <BulkBtn icon={Inbox} label={t("em.45")} onClick={() => bulkMove("inbox")} />
                   <button
                     onClick={clearChecked}
                     className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
-                    title="Bỏ chọn"
+                    title={t("em.46")}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -841,7 +843,7 @@ function EmailHubPage() {
                 <button
                   onClick={() => dbQuery.refetch()}
                   className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
-                  title="Làm mới"
+                  title={t("em.47")}
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${dbQuery.isFetching ? "animate-spin" : ""}`} />
                 </button>
@@ -873,12 +875,12 @@ function EmailHubPage() {
               {dbQuery.isLoading ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
-                  <span className="text-xs">Đang tải email…</span>
+                  <span className="text-xs">{t("em.48")}</span>
                 </div>
               ) : dbQuery.error ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-destructive">
                   <AlertCircle className="h-6 w-6" />
-                  <span className="font-medium">Không tải được email</span>
+                  <span className="font-medium">{t("em.49")}</span>
                   <span className="text-xs text-muted-foreground">
                     {(dbQuery.error as Error).message}
                   </span>
@@ -887,12 +889,12 @@ function EmailHubPage() {
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <Inbox className="h-8 w-8 opacity-50" />
                   <span className="font-medium">
-                    {debouncedSearch ? "Không tìm thấy email phù hợp" : "Chưa có email nào"}
+                    {debouncedSearch ? t("em.50") : t("em.51")}
                   </span>
                   <span className="text-xs">
                     {debouncedSearch
-                      ? "Thử thay đổi từ khóa hoặc bỏ bộ lọc"
-                      : "Email mới sẽ hiển thị tại đây"}
+                      ? t("em.52")
+                      : t("em.53")}
                   </span>
                 </div>
               ) : null}
@@ -1009,9 +1011,9 @@ function EmailHubPage() {
             {!selectedEmail ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
                 <Mail className="h-10 w-10 text-muted-foreground/50" />
-                <div className="text-sm font-medium">Chưa chọn email</div>
+                <div className="text-sm font-medium">{t("em.54")}</div>
                 <p className="text-xs text-muted-foreground">
-                  Chọn một email ở danh sách bên trái để xem nội dung
+                  {t("em.55")}
                 </p>
               </div>
             ) : (
@@ -1023,16 +1025,16 @@ function EmailHubPage() {
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <ToolBtn icon={Reply} label="Trả lời" onClick={() => replySelected(false)} />
-              <ToolBtn icon={ReplyAll} label="Trả lời tất cả" onClick={() => replySelected(true)} />
-              <ToolBtn icon={Forward} label="Chuyển tiếp" onClick={forwardSelected} />
-              <ToolBtn icon={Archive} label="Lưu trữ" onClick={() => messageAction("archive")} />
-              <ToolBtn icon={Trash2} label="Xóa" onClick={() => messageAction("trash")} />
-              <ToolBtn icon={Sparkles} label="Hỏi AI" onClick={() => setAiOpen(true)} />
+              <ToolBtn icon={Reply} label={t("em.56")} onClick={() => replySelected(false)} />
+              <ToolBtn icon={ReplyAll} label={t("em.57")} onClick={() => replySelected(true)} />
+              <ToolBtn icon={Forward} label={t("em.12")} onClick={forwardSelected} />
+              <ToolBtn icon={Archive} label={t("em.41")} onClick={() => messageAction("archive")} />
+              <ToolBtn icon={Trash2} label={t("em.42")} onClick={() => messageAction("trash")} />
+              <ToolBtn icon={Sparkles} label={t("em.58")} onClick={() => setAiOpen(true)} />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    aria-label="Thao tác khác"
+                    aria-label={t("em.59")}
                     className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2"
                   >
                     <MoreHorizontal className="h-4 w-4" />
@@ -1042,15 +1044,15 @@ function EmailHubPage() {
                   <DropdownMenuItem
                     onClick={() => {
                       const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
-                      if (!ids.length) return toast.info("Email mẫu không thể thao tác");
+                      if (!ids.length) return toast.info(t("em.23"));
                       bulkReadMut.mutate({ ids, is_read: false });
                     }}
                   >
-                    Đánh dấu chưa đọc
+                    {t("em.44")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => messageAction("archive")}>Lưu trữ</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => messageAction("trash")}>Chuyển vào thùng rác</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLabelsOpen(true)}>Nhãn & quy tắc</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => messageAction("archive")}>{t("em.41")}</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => messageAction("trash")}>{t("em.60")}</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLabelsOpen(true)}>{t("em.61")}</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -1087,7 +1089,7 @@ function EmailHubPage() {
                     </span>
                     <button
                       onClick={() => notifyComingSoon()}
-                      title="Đánh dấu quan trọng"
+                      title={t("em.62")}
                       className="rounded p-1 text-muted-foreground hover:bg-surface-2"
                     >
                       <Star
@@ -1096,14 +1098,14 @@ function EmailHubPage() {
                     </button>
                     <button
                       onClick={() => replySelected(false)}
-                      title="Trả lời"
+                      title={t("em.56")}
                       className="rounded p-1 text-muted-foreground hover:bg-surface-2"
                     >
                       <Reply className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    đến {selectedEmail.to || "tôi"}
+                    đến {selectedEmail.to || t("em.63")}
                     {selectedEmail.cc && <span> · Cc: {selectedEmail.cc}</span>}
                     <ChevronDown className="inline h-3 w-3" />
                   </div>
@@ -1114,7 +1116,7 @@ function EmailHubPage() {
                 {selectedEmail.body ? (
                   selectedEmail.body.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
                 ) : (
-                  <p className="text-muted-foreground">Email này chưa có nội dung</p>
+                  <p className="text-muted-foreground">{t("em.64")}</p>
                 )}
               </div>
 
@@ -1153,13 +1155,13 @@ function EmailHubPage() {
 
               <div className="mt-6 flex flex-wrap gap-2">
                 <ActionBtn icon={Reply} onClick={() => replySelected(false)}>
-                  Trả lời
+                  {t("em.56")}
                 </ActionBtn>
                 <ActionBtn icon={ReplyAll} onClick={() => replySelected(true)}>
-                  Trả lời tất cả
+                  {t("em.57")}
                 </ActionBtn>
                 <ActionBtn icon={Forward} onClick={forwardSelected}>
-                  Chuyển tiếp
+                  {t("em.12")}
                 </ActionBtn>
               </div>
 
@@ -1171,38 +1173,38 @@ function EmailHubPage() {
                     onClick={() => setAiOpen(true)}
                     className="ml-auto inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/25"
                   >
-                    <Sparkles className="h-3 w-3" /> Mở AI Assistant
+                    <Sparkles className="h-3 w-3" /> {t("em.65")}
                   </button>
                 </div>
-                <div className="mt-3 text-sm font-medium">Tóm tắt nội dung email</div>
+                <div className="mt-3 text-sm font-medium">{t("em.66")}</div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {selectedEmail.body
                     ? selectedEmail.body.substring(0, 180).replace(/\n/g, " ") +
                       (selectedEmail.body.length > 180 ? "..." : "")
-                    : "Chưa có nội dung để tóm tắt"}
+                    : t("em.67")}
                 </p>
-                <div className="mt-4 text-sm font-medium">Đề xuất hành động</div>
+                <div className="mt-4 text-sm font-medium">{t("em.68")}</div>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   <SuggestBtn
                     icon={FileText}
-                    title="Tạo task"
+                    title={t("em.69")}
                     desc={selectedEmail.subject.substring(0, 30)}
                   />
-                  <SuggestBtn icon={Bot} title="Tạo workflow" desc="Quy trình xử lý email" />
+                  <SuggestBtn icon={Bot} title={t("em.70")} desc={t("em.71")} />
                   <SuggestBtn
                     icon={Tag}
-                    title="Liên kết dự án"
-                    desc={selectedEmail.labels?.[0] || "Dự án"}
+                    title={t("em.72")}
+                    desc={selectedEmail.labels?.[0] || t("em.73")}
                   />
-                  <SuggestBtn icon={Reply} title="Trả lời email" desc="Soạn thư trả lời" />
+                  <SuggestBtn icon={Reply} title={t("em.74")} desc={t("em.75")} />
                 </div>
               </div>
 
               <div className="mt-6">
-                <div className="text-sm font-medium">Email liên quan</div>
+                <div className="text-sm font-medium">{t("em.76")}</div>
                 <div className="mt-3 flex items-center justify-center">
                   <button onClick={() => notifyComingSoon()} className="text-sm text-primary hover:underline">
-                    Xem 8 email liên quan
+                    {t("em.77")}
                   </button>
                 </div>
               </div>
@@ -1221,7 +1223,7 @@ function EmailHubPage() {
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="text-sm font-semibold">Tóm tắt nhanh</div>
+              <div className="text-sm font-semibold">{t("em.78")}</div>
               <ul className="mt-3 space-y-2 text-sm">
                 {quickSummary.map((q) => (
                   <li key={q.label} className="flex items-center justify-between">
@@ -1233,10 +1235,10 @@ function EmailHubPage() {
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="text-sm font-semibold">Ưu tiên xử lý</div>
+              <div className="text-sm font-semibold">{t("em.79")}</div>
               <ul className="mt-3 space-y-3">
                 {priorityEmails.length === 0 ? (
-                  <li className="text-xs text-muted-foreground">Không có email cần ưu tiên.</li>
+                  <li className="text-xs text-muted-foreground">{t("em.80")}</li>
                 ) : null}
                 {priorityEmails.map((p) => (
                   <li key={p.id} className="flex gap-2">
@@ -1251,7 +1253,7 @@ function EmailHubPage() {
                         <span
                           className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${p.unread && p.starred ? "bg-rose-500/15 text-rose-300" : "bg-amber-500/15 text-amber-300"}`}
                         >
-                          {p.unread && p.starred ? "Cao" : "Trung bình"}
+                          {p.unread && p.starred ? "Cao" : t("em.81")}
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
@@ -1263,13 +1265,13 @@ function EmailHubPage() {
                 ))}
               </ul>
               <button onClick={() => notifyComingSoon()} className="mt-3 w-full text-center text-xs text-primary hover:underline">
-                Xem tất cả (12)
+                {t("em.82")}
               </button>
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold">Thống kê email</div>
+                <div className="text-sm font-semibold">{t("em.83")}</div>
                 <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface">
                   Tuần này <ChevronDown className="h-3 w-3" />
                 </button>
@@ -1293,7 +1295,7 @@ function EmailHubPage() {
             </div>
 
             <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="text-sm font-semibold">Kết nối tài khoản</div>
+              <div className="text-sm font-semibold">{t("em.84")}</div>
               <ul className="mt-3 space-y-3 text-sm">
                 {ACCOUNTS.map((a, i) => (
                   <li key={i} className="flex items-center gap-2">
@@ -1308,12 +1310,12 @@ function EmailHubPage() {
                       </div>
                       <div className="truncate text-[11px] text-muted-foreground">{a.email}</div>
                     </div>
-                    <span className="text-[11px] text-success">✓ Đã kết nối</span>
+                    <span className="text-[11px] text-success">{t("em.85")}</span>
                   </li>
                 ))}
               </ul>
               <button onClick={() => notifyComingSoon()} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-xs text-primary hover:bg-surface-2">
-                <Plus className="h-3.5 w-3.5" /> Thêm tài khoản email
+                <Plus className="h-3.5 w-3.5" /> {t("em.86")}
               </button>
             </div>
           </aside>
