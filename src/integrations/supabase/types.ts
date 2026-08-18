@@ -6745,6 +6745,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      fanout_email_inbox_states: {
+        Args: { p_message_id: string; p_user_ids: string[] }
+        Returns: number
+      }
       finalize_meeting_from_provider: {
         Args: {
           _correlation_id?: string
