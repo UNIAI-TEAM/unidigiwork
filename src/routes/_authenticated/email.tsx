@@ -1320,7 +1320,7 @@ function EmailHubPage() {
       <AiAssistantDialog
         open={aiOpen}
         onOpenChange={setAiOpen}
-        emailSubject={selectedEmail.subject}
+        emailSubject={selectedEmail?.subject ?? ""}
       />
       <LabelsRulesDialog
         open={labelsOpen}
