@@ -332,6 +332,7 @@ function DocumentsPage() {
     const next = { ...selected, ...patch };
     setSelected(next);
     setDocs((d) => d.map((x) => (x.id === next.id ? next : x)));
+    setSaveState("saving");
     try {
       await updateDocument({
         data: {
@@ -346,8 +347,10 @@ function DocumentsPage() {
         { id: crypto.randomUUID(), action: patch.title ? "Đổi tiêu đề" : "Cập nhật nội dung", user: "Bạn", time: new Date().toLocaleString("vi-VN") },
         ...prev.slice(0, 49),
       ]);
+      setSaveState("saved");
     } catch (e) {
       toast.error("Lưu thất bại: " + (e as Error).message);
+      setSaveState("dirty");
       await reloadDocs(selected.id);
     }
   };
@@ -840,7 +843,10 @@ function DocumentsPage() {
                   {selected ? (
                     <input
                       value={selected.title}
-                      onChange={(e) => setSelected({ ...selected, title: e.target.value })}
+                      onChange={(e) => {
+                        setSelected({ ...selected, title: e.target.value });
+                        setSaveState("dirty");
+                      }}
                       onBlur={(e) => updateSelected({ title: e.target.value })}
                       className="w-full bg-transparent text-2xl font-bold focus:outline-none sm:text-3xl"
                     />
@@ -941,7 +947,10 @@ function DocumentsPage() {
                   <textarea
                     ref={contentRef}
                     value={selected.content}
-                    onChange={(e) => setSelected({ ...selected, content: e.target.value })}
+                    onChange={(e) => {
+                      setSelected({ ...selected, content: e.target.value });
+                      setSaveState("dirty");
+                    }}
                     onBlur={(e) => updateSelected({ content: e.target.value })}
                     placeholder="Bắt đầu viết tài liệu của bạn…"
                     className="min-h-[400px] w-full resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -973,7 +982,26 @@ function DocumentsPage() {
                 </span>
               </div>
               <div className="flex items-center gap-4">
-                {selected && <span className="flex items-center gap-1 text-success">● Đã lưu</span>}
+                {selected &&
+                  (saveState === "saving" ? (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Đang lưu…
+                    </span>
+                  ) : saveState === "dirty" ? (
+                    <button
+                      type="button"
+                      onClick={() => updateSelected({ content: selected.content, title: selected.title })}
+                      className="flex items-center gap-1 rounded px-1.5 py-0.5 text-warning hover:bg-surface-2"
+                      title="Lưu tài liệu"
+                      aria-label="Lưu tài liệu"
+                    >
+                      <Save className="h-3.5 w-3.5" aria-hidden /> Lưu
+                    </button>
+                  ) : (
+                    <span className="flex items-center gap-1 text-success" title="Đã lưu">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> Đã lưu
+                    </span>
+                  ))}
               </div>
             </footer>
           </section>
