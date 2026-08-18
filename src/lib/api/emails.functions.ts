@@ -407,16 +407,12 @@ export const sendEmail = createServerFn({ method: "POST" })
     // Inbox state cho người nhận (idempotent qua upsert theo message + user).
     const recipients = [...new Set([...toUserIds, ...ccUserIds])].filter((uid) => uid !== ctx.userId);
     if (recipients.length) {
-      const { error: rErr } = await ctx.supabase.from("email_states").upsert(
-        recipients.map((uid) => ({
-          user_id: uid,
-          message_id: messageId,
-          tenant_id: scope.tenantId,
-          folder: "inbox",
-          is_read: false,
-        })),
-        { onConflict: "message_id,user_id" },
-      );
+      // RLS chỉ cho phép mỗi user ghi state của chính mình, nên fan-out hộp đến
+      // phải qua RPC SECURITY DEFINER (đã kiểm tra caller là người gửi).
+      const { error: rErr } = await ctx.supabase.rpc("fanout_email_inbox_states", {
+        p_message_id: messageId,
+        p_user_ids: recipients,
+      });
       if (rErr) throw new Error(rErr.message);
     }
 
