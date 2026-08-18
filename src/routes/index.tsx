@@ -66,8 +66,8 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-function formatMoney(n: number, lang: "vi" | "en"): string {
-  if (lang === "en") {
+function formatMoney(n: number, lang: string): string {
+  if (lang !== "vi") {
     return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(n)} VND`;
   }
   return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(n).replace(/,/g, ".")}đ`;

@@ -1,7 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Globe } from "lucide-react";
+import { my } from "./i18n-locales/my";
+import { km } from "./i18n-locales/km";
+import { lo } from "./i18n-locales/lo";
 
-export type Lang = "vi" | "en";
+export type Lang = "vi" | "en" | "my" | "km" | "lo";
 
 const dict = {
   vi: {
@@ -1639,6 +1642,23 @@ const dict = {
 } as const;
 
 export type Key = keyof (typeof dict)["vi"];
+
+type PartialDict = Partial<Record<Key, string>>;
+const extraDicts: Record<"my" | "km" | "lo", PartialDict> = {
+  my: my as PartialDict,
+  km: km as PartialDict,
+  lo: lo as PartialDict,
+};
+
+export const LANGS: { code: Lang; label: string; short: string }[] = [
+  { code: "vi", label: "Tiếng Việt", short: "VI" },
+  { code: "en", label: "English", short: "EN" },
+  { code: "my", label: "မြန်မာ (Myanmar)", short: "MY" },
+  { code: "km", label: "ភាសាខ្មែរ (Khmer)", short: "KM" },
+  { code: "lo", label: "ພາສາລາວ (Lao)", short: "LO" },
+];
+const LANG_CODES = LANGS.map((l) => l.code);
+
 const LangCtx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: Key) => string }>({
   lang: "vi",
   setLang: () => {},
@@ -1651,7 +1671,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = (typeof localStorage !== "undefined" &&
       localStorage.getItem("uniwork-lang")) as Lang | null;
-    if (saved === "vi" || saved === "en") setLangState(saved);
+    if (saved && LANG_CODES.includes(saved)) setLangState(saved);
   }, []);
 
   const setLang = (l: Lang) => {
@@ -1664,8 +1684,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (typeof document !== "undefined") document.documentElement.lang = l;
   };
 
-  const t = (k: Key) =>
-    (dict[lang] as Record<string, string>)[k] ?? (dict.vi as Record<string, string>)[k] ?? k;
+  const t = (k: Key) => {
+    if (lang === "vi" || lang === "en") {
+      return (dict[lang] as Record<string, string>)[k] ?? (dict.vi as Record<string, string>)[k] ?? k;
+    }
+    return (
+      extraDicts[lang][k] ??
+      (dict.en as Record<string, string>)[k] ??
+      (dict.vi as Record<string, string>)[k] ??
+      (k as string)
+    );
+  };
 
   return <LangCtx.Provider value={{ lang, setLang, t }}>{children}</LangCtx.Provider>;
 }
@@ -1674,15 +1703,47 @@ export const useI18n = () => useContext(LangCtx);
 
 export function LanguageToggle({ className = "" }: { className?: string }) {
   const { lang, setLang } = useI18n();
+  const [open, setOpen] = useState(false);
+  const current = LANGS.find((l) => l.code === lang) ?? LANGS[0];
   return (
-    <button
-      onClick={() => setLang(lang === "vi" ? "en" : "vi")}
-      aria-label="Toggle language"
-      title={lang === "vi" ? "Switch to English" : "Chuyển sang Tiếng Việt"}
-      className={`flex items-center gap-1 rounded-lg p-2 text-xs font-medium uppercase text-muted-foreground hover:bg-surface-2 hover:text-foreground ${className}`}
-    >
-      <Globe className="h-4 w-4" />
-      {lang === "vi" ? "VI" : "EN"}
-    </button>
+    <div className={`relative ${className}`}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Chọn ngôn ngữ"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title={current.label}
+        className="flex items-center gap-1 rounded-lg p-2 text-xs font-medium uppercase text-muted-foreground hover:bg-surface-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <Globe className="h-4 w-4" />
+        {current.short}
+      </button>
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
+          <div
+            role="menu"
+            className="absolute right-0 z-50 mt-1 w-48 overflow-hidden rounded-xl border border-border bg-popover p-1 shadow-md"
+          >
+            {LANGS.map((l) => (
+              <button
+                key={l.code}
+                role="menuitem"
+                onClick={() => {
+                  setLang(l.code);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2 ${
+                  l.code === lang ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <span>{l.label}</span>
+                <span className="text-xs uppercase">{l.short}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </div>
   );
 }
