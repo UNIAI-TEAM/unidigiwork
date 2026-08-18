@@ -339,6 +339,10 @@ function DocumentsPage() {
         },
       });
       await reloadDocs(selected.id);
+      setHistory((prev) => [
+        { id: crypto.randomUUID(), action: patch.title ? "Đổi tiêu đề" : "Cập nhật nội dung", user: "Bạn", time: new Date().toLocaleString("vi-VN") },
+        ...prev.slice(0, 49),
+      ]);
     } catch (e) {
       toast.error("Lưu thất bại: " + (e as Error).message);
       await reloadDocs(selected.id);
