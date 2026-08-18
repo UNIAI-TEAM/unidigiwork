@@ -74,7 +74,7 @@ function AuthPage() {
             </button>
           ))}
         </div>
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} noValidate={false} className="space-y-3">
           {mode === "signup" && (
             <div>
               <label className="mb-1 block text-xs font-medium">Tên hiển thị</label>
@@ -111,10 +111,10 @@ function AuthPage() {
           </div>
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || !ready}
             className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            {busy ? "Đang xử lý…" : mode === "signin" ? "Đăng nhập" : "Tạo tài khoản"}
+            {!ready ? "Đang tải…" : busy ? "Đang xử lý…" : mode === "signin" ? "Đăng nhập" : "Tạo tài khoản"}
           </button>
         </form>
       </div>
