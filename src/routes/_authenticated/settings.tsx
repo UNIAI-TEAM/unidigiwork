@@ -851,6 +851,7 @@ const RENDERS: Record<SectionKey, React.FC> = {
 };
 
 function SettingsPage() {
+  const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
@@ -865,9 +866,9 @@ function SettingsPage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
         <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
           <div className="mb-5">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Cài đặt</h1>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("ac.80")}</h1>
             <p className="text-sm text-muted-foreground">
-              Quản lý tài khoản, thông báo, tích hợp và bảo mật
+              {t("ac.81")}
             </p>
           </div>
           <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
@@ -882,8 +883,8 @@ function SettingsPage() {
                   >
                     <s.icon className="h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">{s.label}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">{s.desc}</div>
+                      <div className="text-sm font-medium">{t(s.labelKey)}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">{t(s.descKey)}</div>
                     </div>
                     <ChevronRight className={`h-4 w-4 ${active ? "text-primary" : "opacity-50"}`} />
                   </button>
@@ -893,11 +894,11 @@ function SettingsPage() {
             <section className="rounded-2xl border border-border bg-surface p-5">
               <div className="mb-5 flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <h2 className="text-lg font-semibold">{current.label}</h2>
-                  <p className="text-xs text-muted-foreground">{current.desc}</p>
+                  <h2 className="text-lg font-semibold">{t(current.labelKey)}</h2>
+                  <p className="text-xs text-muted-foreground">{t(current.descKey)}</p>
                 </div>
                 <button onClick={() => notifyComingSoon()} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                  Lưu thay đổi
+                  {t("ac.82")}
                 </button>
               </div>
               <Body />
