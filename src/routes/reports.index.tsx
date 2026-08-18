@@ -294,7 +294,7 @@ function ReportsPage() {
                   disabled={!report}
                   onClick={() => {
                     if (!report) return;
-                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    exportReportCsv(report, exportMeta());
                     toast.success(t("rp.export.done"));
                   }}
                   className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
@@ -305,7 +305,7 @@ function ReportsPage() {
                   disabled={!report}
                   onClick={() => {
                     if (!report) return;
-                    const ok = exportReportPdf(report, { ...range, title: t("rp.title"), compare, prev });
+                    const ok = exportReportPdf(report, exportMeta());
                     if (!ok) toast.error(t("rp.export.blocked"));
                   }}
                   className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
@@ -341,7 +341,7 @@ function ReportsPage() {
                       disabled={!report}
                       onSelect={() => {
                         if (!report) return;
-                        exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                        exportReportCsv(report, exportMeta());
                         toast.success(t("rp.export.done"));
                       }}
                     >
@@ -351,12 +351,7 @@ function ReportsPage() {
                       disabled={!report}
                       onSelect={() => {
                         if (!report) return;
-                        const ok = exportReportPdf(report, {
-                          ...range,
-                          title: t("rp.title"),
-                          compare,
-                          prev,
-                        });
+                        const ok = exportReportPdf(report, exportMeta());
                         if (!ok) toast.error(t("rp.export.blocked"));
                       }}
                     >
@@ -926,12 +921,7 @@ function ReportsPage() {
                   color="text-rose-300"
                   onClick={() => {
                     if (!report) return toast.error(t("rp.export.blocked"));
-                    const ok = exportReportPdf(report, {
-                      ...range,
-                      title: t("rp.title"),
-                      compare,
-                      prev,
-                    });
+                    const ok = exportReportPdf(report, exportMeta());
                     if (!ok) toast.error(t("rp.export.blocked"));
                   }}
                 />
@@ -941,7 +931,7 @@ function ReportsPage() {
                   color="text-emerald-300"
                   onClick={() => {
                     if (!report) return toast.error(t("rp.export.blocked"));
-                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    exportReportCsv(report, exportMeta());
                     toast.success(t("rp.export.done"));
                   }}
                 />
@@ -951,7 +941,7 @@ function ReportsPage() {
                   color="text-sky-300"
                   onClick={() => {
                     if (!report) return toast.error(t("rp.export.blocked"));
-                    exportReportCsv(report, { ...range, title: t("rp.title"), compare, prev });
+                    exportReportCsv(report, exportMeta());
                     toast.success(t("rp.export.done"));
                   }}
                 />
