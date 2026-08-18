@@ -14,7 +14,7 @@ import { buildReplyBody, buildThreadForwardBody } from "@/lib/email-quote";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export const Route = createFileRoute("/_authenticated/email/$id")({
+export const Route = createFileRoute("/_authenticated/email_/$id")({
   head: () => ({ meta: [{ title: "Chi tiết email · UNIWORK" }] }),
   component: EmailDetailPage,
 });

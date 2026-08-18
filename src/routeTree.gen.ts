@@ -74,8 +74,8 @@ import { Route as AuthenticatedMMeetRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
 import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
 import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
-import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email.compose'
-import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email.$id'
+import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email_.compose'
+import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
 import { Route as AuthenticatedAiMarketSearchRouteImport } from './routes/_authenticated/ai-market.search'
@@ -443,14 +443,14 @@ const AuthenticatedMChatRoute = AuthenticatedMChatRouteImport.update({
 } as any)
 const AuthenticatedEmailComposeRoute =
   AuthenticatedEmailComposeRouteImport.update({
-    id: '/compose',
-    path: '/compose',
-    getParentRoute: () => AuthenticatedEmailRoute,
+    id: '/email_/compose',
+    path: '/email/compose',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEmailIdRoute = AuthenticatedEmailIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedEmailRoute,
+  id: '/email_/$id',
+  path: '/email/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDocumentsIdRoute =
   AuthenticatedDocumentsIdRouteImport.update({
@@ -635,7 +635,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
-  '/email': typeof AuthenticatedEmailRouteWithChildren
+  '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
   '/m': typeof AuthenticatedMRouteWithChildren
@@ -729,7 +729,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
-  '/email': typeof AuthenticatedEmailRouteWithChildren
+  '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
   '/m': typeof AuthenticatedMRouteWithChildren
@@ -827,7 +827,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
-  '/_authenticated/email': typeof AuthenticatedEmailRouteWithChildren
+  '/_authenticated/email': typeof AuthenticatedEmailRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/m': typeof AuthenticatedMRouteWithChildren
@@ -865,8 +865,8 @@ export interface FileRoutesById {
   '/_authenticated/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
-  '/_authenticated/email/$id': typeof AuthenticatedEmailIdRoute
-  '/_authenticated/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
+  '/_authenticated/email_/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/m/chat': typeof AuthenticatedMChatRoute
   '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
   '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
@@ -1154,8 +1154,8 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-market/search'
     | '/_authenticated/chat_/$channelId'
     | '/_authenticated/documents/$id'
-    | '/_authenticated/email/$id'
-    | '/_authenticated/email/compose'
+    | '/_authenticated/email_/$id'
+    | '/_authenticated/email_/compose'
     | '/_authenticated/m/chat'
     | '/_authenticated/m/compose'
     | '/_authenticated/m/home'
@@ -1678,19 +1678,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMChatRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
-    '/_authenticated/email/compose': {
-      id: '/_authenticated/email/compose'
-      path: '/compose'
+    '/_authenticated/email_/compose': {
+      id: '/_authenticated/email_/compose'
+      path: '/email/compose'
       fullPath: '/email/compose'
       preLoaderRoute: typeof AuthenticatedEmailComposeRouteImport
-      parentRoute: typeof AuthenticatedEmailRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/email/$id': {
-      id: '/_authenticated/email/$id'
-      path: '/$id'
+    '/_authenticated/email_/$id': {
+      id: '/_authenticated/email_/$id'
+      path: '/email/$id'
       fullPath: '/email/$id'
       preLoaderRoute: typeof AuthenticatedEmailIdRouteImport
-      parentRoute: typeof AuthenticatedEmailRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/documents/$id': {
       id: '/_authenticated/documents/$id'
@@ -1940,19 +1940,6 @@ const AuthenticatedDocumentsRouteWithChildren =
     AuthenticatedDocumentsRouteChildren,
   )
 
-interface AuthenticatedEmailRouteChildren {
-  AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
-  AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
-}
-
-const AuthenticatedEmailRouteChildren: AuthenticatedEmailRouteChildren = {
-  AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
-  AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
-}
-
-const AuthenticatedEmailRouteWithChildren =
-  AuthenticatedEmailRoute._addFileChildren(AuthenticatedEmailRouteChildren)
-
 interface AuthenticatedMRouteChildren {
   AuthenticatedMChatRoute: typeof AuthenticatedMChatRoute
   AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
@@ -2025,7 +2012,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
-  AuthenticatedEmailRoute: typeof AuthenticatedEmailRouteWithChildren
+  AuthenticatedEmailRoute: typeof AuthenticatedEmailRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMRoute: typeof AuthenticatedMRouteWithChildren
@@ -2036,6 +2023,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
   AuthenticatedAiMarketSearchRoute: typeof AuthenticatedAiMarketSearchRoute
   AuthenticatedChatChannelIdRoute: typeof AuthenticatedChatChannelIdRoute
+  AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
+  AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
   AuthenticatedWorkspaceAuditRoute: typeof AuthenticatedWorkspaceAuditRoute
@@ -2056,7 +2045,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
-  AuthenticatedEmailRoute: AuthenticatedEmailRouteWithChildren,
+  AuthenticatedEmailRoute: AuthenticatedEmailRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMRoute: AuthenticatedMRouteWithChildren,
@@ -2067,6 +2056,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,
   AuthenticatedAiMarketSearchRoute: AuthenticatedAiMarketSearchRoute,
   AuthenticatedChatChannelIdRoute: AuthenticatedChatChannelIdRoute,
+  AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
+  AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
   AuthenticatedWorkspaceAuditRoute: AuthenticatedWorkspaceAuditRoute,
