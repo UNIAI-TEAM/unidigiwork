@@ -4204,7 +4204,7 @@ function AutoRefreshControl({
     return () => window.clearInterval(id);
   }, []);
   const secsAgo = lastRefreshedAt ? Math.max(0, Math.floor((now - lastRefreshedAt) / 1000)) : null;
-  const label = (v: RefreshSec) =>{t("trc.151")}< 60 ? `${v}s` : `${v / 60}m`);
+  const label = (v: RefreshSec) => (v < 60 ? `${v}s` : `${v / 60}m`);
   const active = value > 0;
   return (
     <div
