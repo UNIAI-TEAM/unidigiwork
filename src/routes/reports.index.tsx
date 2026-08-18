@@ -206,6 +206,8 @@ function ReportsPage() {
   const drill = (s?: "todo" | "in_progress" | "blocked" | "done" | "canceled", wsId?: string) =>
     navigate({ to: "/reports/detail", search: { from: fromISO, to: toISO, status: s, workspaceId: wsId } });
   const fetchOverview = useServerFn(getReportOverview);
+  const fetchDepartments = useServerFn(getReportDepartments);
+  const [deptFilter, setDeptFilter] = useState<string | null>(null);
   const {
     data: report,
     isPending,
@@ -216,6 +218,22 @@ function ReportsPage() {
     queryKey: ["report-overview", fromISO, toISO],
     queryFn: () => fetchOverview({ data: { from: fromISO, to: toISO } }),
     staleTime: 60_000,
+  });
+  const { data: depts, isFetching: deptsFetching } = useQuery({
+    queryKey: ["report-departments", fromISO, toISO],
+    queryFn: () => fetchDepartments({ data: { from: fromISO, to: toISO } }),
+    staleTime: 60_000,
+  });
+  const deptRows = depts?.rows ?? [];
+  const shownDeptRows = deptFilter ? deptRows.filter((r) => r.department === deptFilter) : deptRows;
+  const deptTotal = shownDeptRows.reduce((s, r) => s + r.total, 0);
+  const exportMeta = () => ({
+    ...range,
+    title: t("rp.title"),
+    compare,
+    prev,
+    departments: depts ?? null,
+    departmentFilter: deptFilter,
   });
   const k = report?.kpis;
   const st = report?.tasks_by_status;
