@@ -27,6 +27,7 @@ export type Notif = {
   group: "Hôm nay" | "Hôm qua" | "Tuần này" | "Cũ hơn";
   unread?: boolean;
   important?: boolean;
+  archived?: boolean;
   priority?: NotifPriority;
   /** Optional rich detail fields for the detail page */
   context?: string;
@@ -320,6 +321,7 @@ export function mapNotifRow(row: NotifRow): Notif {
     group: groupOf(row.created_at),
     unread: !row.is_read,
     important: meta.important === true,
+    archived: meta.archived === true,
     priority: getNotifPriority(row),
     context: typeof meta.context === "string" ? meta.context : undefined,
     link: row.link ? { label: linkLabel, to: row.link } : undefined,

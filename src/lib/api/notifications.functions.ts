@@ -72,6 +72,31 @@ export const deleteNotifications = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Archive / unarchive notifications (stored in meta.archived). */
+export const setNotificationsArchived = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ ids: z.array(z.string().uuid()).min(1), archived: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error: readErr } = await context.supabase
+      .from("notifications")
+      .select("id, meta")
+      .in("id", data.ids)
+      .eq("user_id", context.userId);
+    if (readErr) throw new Error(readErr.message);
+    for (const row of rows ?? []) {
+      const meta = { ...((row.meta ?? {}) as Record<string, unknown>), archived: data.archived };
+      const { error } = await context.supabase
+        .from("notifications")
+        .update({ meta: meta as never })
+        .eq("id", row.id)
+        .eq("user_id", context.userId);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true, count: rows?.length ?? 0 };
+  });
+
 /** Mark notifications as unread (undo of mark-read). */
 export const unmarkNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
