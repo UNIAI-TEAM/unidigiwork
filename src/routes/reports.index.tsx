@@ -31,7 +31,11 @@ import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getReportOverview, type ReportOverview } from "@/lib/api/reports.functions";
+import {
+  getReportOverview,
+  getReportDepartments,
+  type ReportOverview,
+} from "@/lib/api/reports.functions";
 import { exportReportCsv, exportReportPdf } from "@/lib/reports-export";
 import { toast } from "sonner";
 import { Table2, RefreshCw } from "lucide-react";
