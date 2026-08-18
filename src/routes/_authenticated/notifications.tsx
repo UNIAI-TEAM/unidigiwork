@@ -45,6 +45,7 @@ import {
   markAllNotificationsRead,
   markNotificationsRead,
   restoreNotifications,
+  setNotificationsArchived,
   unmarkNotificationsRead,
 } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
@@ -70,6 +71,8 @@ function NotifRow({
   onMarkRead,
   pinned,
   onTogglePin,
+  onArchive,
+  onDelete,
 }: {
   n: Notif;
   selected: boolean;
@@ -77,6 +80,8 @@ function NotifRow({
   onMarkRead: () => void;
   pinned: boolean;
   onTogglePin: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
 }) {
   const meta = catMeta(n.cat);
   const Icon = meta.icon;
@@ -181,13 +186,15 @@ function NotifRow({
             <CheckCircle2 className="h-3.5 w-3.5" />
           </button>
         )}
-        <button onClick={() => notifyComingSoon()}
-          title="Lưu trữ"
+        <button
+          onClick={onArchive}
+          title={n.archived ? "Bỏ lưu trữ" : "Lưu trữ"}
           className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-foreground"
         >
           <Archive className="h-3.5 w-3.5" />
         </button>
-        <button onClick={() => notifyComingSoon()}
+        <button
+          onClick={onDelete}
           title="Xóa"
           className="rounded p-1.5 text-muted-foreground hover:bg-surface hover:text-destructive"
         >
@@ -294,6 +301,11 @@ function NotificationsPage() {
     mutationFn: (ids: string[]) => unmarkNotificationsRead({ data: { ids } }),
     onSuccess: invalidate,
   });
+  const archiveMut = useMutation({
+    mutationFn: (v: { ids: string[]; archived: boolean }) =>
+      setNotificationsArchived({ data: v }),
+    onSuccess: invalidate,
+  });
   const restoreMut = useMutation({
     mutationFn: (rows: Array<Record<string, unknown>>) =>
       restoreNotifications({ data: { rows } as never }),
@@ -306,7 +318,7 @@ function NotificationsPage() {
       if (tab === "unread" && !n.unread) return false;
       if (tab === "read" && n.unread) return false;
       if (tab === "mentions" && n.cat !== "mention") return false;
-      if (tab === "archived") return false;
+      if (tab === "archived" ? !n.archived : n.archived) return false;
       if (q && !`${n.title} ${n.body} ${n.actor ?? ""}`.toLowerCase().includes(q.toLowerCase()))
         return false;
       if (priorityFilter === "important") return !!n.important;
@@ -403,6 +415,28 @@ function NotificationsPage() {
       },
     });
   };
+  const archiveItems = (ids: string[], archived: boolean) => {
+    if (ids.length === 0) return;
+    archiveMut.mutate(
+      { ids, archived },
+      {
+        onSuccess: () => {
+          toast.success(
+            archived ? `Đã lưu trữ ${ids.length} thông báo` : `Đã bỏ lưu trữ ${ids.length} thông báo`,
+            {
+              action: {
+                label: "Hoàn tác",
+                onClick: () => archiveMut.mutate({ ids, archived: !archived }),
+              },
+              duration: 6000,
+            },
+          );
+        },
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
+  };
+
   const removeItems = (ids: string[]) => {
     if (ids.length === 0) return;
     // Snapshot rows before deletion so we can restore them
@@ -601,7 +635,15 @@ function NotificationsPage() {
                 >
                   Đánh dấu đã đọc
                 </button>
-                <button onClick={() => notifyComingSoon()} className="text-muted-foreground hover:text-foreground">Lưu trữ</button>
+                <button
+                  onClick={() => {
+                    archiveItems(Array.from(selected), tab !== "archived");
+                    setSelected(new Set());
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {tab === "archived" ? "Bỏ lưu trữ" : "Lưu trữ"}
+                </button>
                 <button
                   onClick={() => removeItems(Array.from(selected))}
                   className="text-destructive hover:underline"
@@ -672,6 +714,8 @@ function NotificationsPage() {
                       onMarkRead={() => markRead([n.id])}
                       pinned={pinnedIds.has(n.id)}
                       onTogglePin={() => togglePin(n.id)}
+                      onArchive={() => archiveItems([n.id], !n.archived)}
+                      onDelete={() => removeItems([n.id])}
                     />
                   ))}
                 </div>
