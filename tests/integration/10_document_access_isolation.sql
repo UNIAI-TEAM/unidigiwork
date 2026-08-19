@@ -27,17 +27,6 @@ CREATE TEMP TABLE _ctx (label text, tenant_id uuid, workspace_id uuid);
 INSERT INTO _ctx SELECT 'A', tenant_id, workspace_id FROM _t OFFSET 0 LIMIT 1;
 INSERT INTO _ctx SELECT 'B', tenant_id, workspace_id FROM _t OFFSET 1 LIMIT 1;
 
--- second workspace inside tenant A (owner A is NOT a member of it)
-CREATE TEMP TABLE _ws2 AS
-SELECT (INSERT_RESULT).id AS id FROM (
-  SELECT (
-    INSERT INTO public.workspaces (tenant_id, name, slug, created_by)
-    VALUES ((SELECT tenant_id FROM _ctx WHERE label='A'), 'WS-A2',
-            'ws-a2-'||substr(md5(random()::text),1,10), :OWNER_A::uuid)
-    RETURNING public.workspaces
-  ) AS INSERT_RESULT
-) s;
-
 -- documents: one in each tenant
 SELECT pg_temp.act(:OWNER_A::uuid);
 CREATE TEMP TABLE _doc_a AS
