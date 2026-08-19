@@ -45,8 +45,8 @@ export const Route = createFileRoute("/_authenticated/documents/$id")({
   component: DocumentDetailPage,
 });
 
-function fmtTime(v: string | null | undefined) {
-  return fmtTimeImpl(v);
+function fmtTime(v: string | null | undefined, tag = "vi-VN") {
+  return fmtTimeImpl(v, tag);
 }
 
 type DocVersion = {
@@ -61,9 +61,9 @@ type DocVersion = {
   storage_ref: unknown;
 };
 
-function fmtTimeImpl(v: string | null | undefined) {
+function fmtTimeImpl(v: string | null | undefined, tag: string) {
   if (!v) return "—";
-  return new Date(v).toLocaleString("vi-VN", {
+  return new Date(v).toLocaleString(tag, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
