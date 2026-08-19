@@ -1,5 +1,6 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
+import { AiTaskExecutionPanel } from "@/components/ai/ai-task-execution-panel";
 import { AiCandidateSuggest } from "@/components/ai/ai-candidate-suggest";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
@@ -264,6 +265,7 @@ function TaskDetailPage() {
                   </Section>
 
                   <Section title={`Công việc con (${doneSubtasks}/${subtasks.length})`}>
+                    <></>
                     <ul className="space-y-2 text-sm">
                       {subtasks.map((s) => (
                         <li key={s.id} className="flex items-center gap-2">
