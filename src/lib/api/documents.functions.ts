@@ -281,3 +281,69 @@ export const revokeDocumentShare = createServerFn({ method: "POST" })
     if (res.error) mapPgError(res.error);
     return { revoked: res.data === true };
   });
+
+// Nhật ký truy cập tài liệu (ai xem/tải, thuộc tổ chức/workspace nào).
+export const logDocumentAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      documentId: z.string().uuid(),
+      action: z.enum(["view", "download", "print", "export", "share_view"]),
+      context: z.record(z.string(), z.unknown()).default({}),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("log_document_access", {
+      _document_id: data.documentId,
+      _action: data.action,
+      _context: data.context as never,
+    });
+    if (res.error) mapPgError(res.error);
+    return { logged: true };
+  });
+
+export const listDocumentAccessLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      documentId: z.string().uuid(),
+      limit: z.number().int().min(1).max(200).default(50),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("document_access_logs")
+      .select("id, action, actor_id, occurred_at, tenant_id, workspace_id, version")
+      .eq("document_id", data.documentId)
+      .order("occurred_at", { ascending: false })
+      .limit(data.limit);
+    if (error) mapPgError(error);
+    const list = rows ?? [];
+    const actorIds = [...new Set(list.map((r) => r.actor_id))];
+    const wsIds = [...new Set(list.map((r) => r.workspace_id))];
+    const tenantIds = [...new Set(list.map((r) => r.tenant_id))];
+    const [profiles, workspaces, tenants] = await Promise.all([
+      actorIds.length
+        ? context.supabase.from("profiles").select("id, display_name, email").in("id", actorIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; display_name: string | null; email: string | null }> }),
+      wsIds.length
+        ? context.supabase.from("workspaces").select("id, name").in("id", wsIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+      tenantIds.length
+        ? context.supabase.from("tenants").select("id, name").in("id", tenantIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+    ]);
+    const pmap = new Map((profiles.data ?? []).map((p) => [p.id, p]));
+    const wmap = new Map((workspaces.data ?? []).map((w) => [w.id, w.name]));
+    const tmap = new Map((tenants.data ?? []).map((t) => [t.id, t.name]));
+    return list.map((r) => ({
+      id: r.id,
+      action: r.action as string,
+      occurredAt: r.occurred_at as string,
+      version: r.version as number | null,
+      actorName: pmap.get(r.actor_id)?.display_name ?? pmap.get(r.actor_id)?.email ?? r.actor_id,
+      actorEmail: pmap.get(r.actor_id)?.email ?? null,
+      workspaceName: wmap.get(r.workspace_id) ?? r.workspace_id,
+      tenantName: tmap.get(r.tenant_id) ?? r.tenant_id,
+    }));
+  });
