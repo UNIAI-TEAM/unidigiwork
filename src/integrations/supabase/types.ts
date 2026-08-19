@@ -7262,6 +7262,7 @@ export type Database = {
         Args: { _hours?: number }
         Returns: Json
       }
+      get_ai_task_brief: { Args: { _task_id: string }; Returns: Json }
       get_dashboard_ai_summary: {
         Args: { _day_end?: string; _day_start?: string; _workspace_id?: string }
         Returns: Json
