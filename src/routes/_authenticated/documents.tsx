@@ -876,7 +876,7 @@ function DocumentsPage() {
                   <button
                     onClick={() => {
                       if (!selected) { toast.error(t("doc.44")); return; }
-                      setShowShare(true);
+                      openShare();
                     }}
                     className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 disabled:opacity-50"
                   >
