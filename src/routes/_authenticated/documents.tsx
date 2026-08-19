@@ -51,6 +51,9 @@ import {
   shareDocument,
   updateDocument,
   uploadDocumentVersion,
+  listDocumentShareCandidates,
+  listDocumentShares,
+  revokeDocumentShare,
 } from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 import { notifyComingSoon } from "@/lib/coming-soon";
@@ -74,6 +77,20 @@ type Member = {
   user_id: string;
   role: string;
   profiles: { email: string; display_name: string | null } | null;
+};
+type ShareCandidate = {
+  userId: string;
+  role: string;
+  email: string | null;
+  displayName: string | null;
+  inWorkspace: boolean;
+};
+type ShareRow = {
+  principalType: "user" | "workspace" | "tenant";
+  principalId: string;
+  level: string;
+  label: string;
+  sublabel: string | null;
 };
 
 type DocumentsSearch = { filter?: "stale"; range?: number; ws?: string };
@@ -139,6 +156,10 @@ function DocumentsPage() {
   const [shareUserId, setShareUserId] = useState("");
   const [shareLevel, setShareLevel] = useState<"view" | "comment" | "edit" | "manage">("view");
   const [sharing, setSharing] = useState(false);
+  const [shareQuery, setShareQuery] = useState("");
+  const [shareCandidates, setShareCandidates] = useState<ShareCandidate[]>([]);
+  const [shares, setShares] = useState<ShareRow[]>([]);
+  const [canManageShares, setCanManageShares] = useState(true);
   const [newTitle, setNewTitle] = useState("");
   const [newFolder, setNewFolder] = useState("My Documents");
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -273,8 +294,54 @@ function DocumentsPage() {
       });
       toast.success(t("doc.5"));
       await reloadDocs(selected.id);
-      setShowShare(false);
       setShareUserId("");
+      await loadShareState(selected.id);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // Tải danh sách ứng viên (thành viên cùng tổ chức) và quyền chia sẻ hiện tại
+  const loadShareState = async (documentId: string) => {
+    try {
+      const [cands, current] = await Promise.all([
+        listDocumentShareCandidates({ data: { documentId } }),
+        listDocumentShares({ data: { documentId } }),
+      ]);
+      setShareCandidates(cands as ShareCandidate[]);
+      setShares(current.shares as ShareRow[]);
+      setCanManageShares(current.canManage);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const openShare = () => {
+    if (!selected) return;
+    setShareQuery("");
+    setShareUserId("");
+    setShareCandidates([]);
+    setShares([]);
+    setShowShare(true);
+    void loadShareState(selected.id);
+  };
+
+  const revokeShare = async (row: ShareRow) => {
+    if (!selected) return;
+    setSharing(true);
+    try {
+      await revokeDocumentShare({
+        data: {
+          documentId: selected.id,
+          principalType: row.principalType,
+          principalId: row.principalId,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      });
+      toast.success(t("doc.161"));
+      await loadShareState(selected.id);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -809,7 +876,7 @@ function DocumentsPage() {
                   <button
                     onClick={() => {
                       if (!selected) { toast.error(t("doc.44")); return; }
-                      setShowShare(true);
+                      openShare();
                     }}
                     className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 disabled:opacity-50"
                   >
@@ -1216,18 +1283,54 @@ function DocumentsPage() {
           <h2 className="mb-1 text-lg font-semibold">{t("doc.83")}</h2>
           <p className="mb-4 text-xs text-muted-foreground">«{selected.title}»</p>
           <Field label={t("doc.25")}>
-            <select
-              value={shareUserId}
-              onChange={(e) => setShareUserId(e.target.value)}
-              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="">{t("doc.84")}</option>
-              {members.map((m) => (
-                <option key={m.user_id} value={m.user_id}>
-                  {m.profiles?.display_name || m.profiles?.email || m.user_id}
-                </option>
-              ))}
-            </select>
+            <input
+              value={shareQuery}
+              onChange={(e) => setShareQuery(e.target.value)}
+              placeholder={t("doc.155")}
+              className="mb-2 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border border-border p-1">
+              {shareCandidates
+                .filter((c) => {
+                  const q = shareQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (c.displayName ?? "").toLowerCase().includes(q) ||
+                    (c.email ?? "").toLowerCase().includes(q)
+                  );
+                })
+                .map((c) => (
+                  <button
+                    key={c.userId}
+                    type="button"
+                    onClick={() => setShareUserId(c.userId)}
+                    className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-surface-2 ${shareUserId === c.userId ? "bg-primary/10 ring-1 ring-primary/40" : ""}`}
+                  >
+                    <img src={avatar(c.userId)} className="h-6 w-6 rounded-full" alt="" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{c.displayName || c.email || c.userId}</span>
+                      {c.email && <span className="block truncate text-[11px] text-muted-foreground">{c.email}</span>}
+                    </span>
+                    <span className="shrink-0 rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {c.inWorkspace ? t("doc.159") : t("doc.160")}
+                    </span>
+                  </button>
+                ))}
+              {shareCandidates.length > 0 &&
+                shareCandidates.filter((c) => {
+                  const q = shareQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (c.displayName ?? "").toLowerCase().includes(q) ||
+                    (c.email ?? "").toLowerCase().includes(q)
+                  );
+                }).length === 0 && (
+                  <p className="px-2 py-3 text-xs text-muted-foreground">{t("doc.162")}</p>
+                )}
+              {shareCandidates.length === 0 && (
+                <p className="px-2 py-3 text-xs text-muted-foreground">{t("doc.84")}</p>
+              )}
+            </div>
           </Field>
           <Field label={t("doc.85")}>
             <select
@@ -1241,9 +1344,41 @@ function DocumentsPage() {
               <option value="manage">{t("doc.87")}</option>
             </select>
           </Field>
+          <div className="mb-3">
+            <p className="mb-1 text-xs font-medium">{t("doc.156")}</p>
+            <div className="max-h-40 space-y-1 overflow-y-auto">
+              {shares.map((s) => (
+                <div
+                  key={`${s.principalType}:${s.principalId}`}
+                  className="flex items-center gap-2 rounded-lg bg-surface-2/50 px-2 py-1.5 text-sm"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{s.label}</span>
+                    {s.sublabel && <span className="block truncate text-[11px] text-muted-foreground">{s.sublabel}</span>}
+                  </span>
+                  <span className="shrink-0 rounded bg-surface px-1.5 py-0.5 text-[10px] capitalize">{s.level}</span>
+                  {canManageShares && (
+                    <button
+                      type="button"
+                      onClick={() => revokeShare(s)}
+                      disabled={sharing}
+                      className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-50"
+                      title={t("doc.158")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {shares.length === 0 && <p className="text-xs text-muted-foreground">{t("doc.157")}</p>}
+            </div>
+          </div>
+          {!canManageShares && (
+            <p className="mb-2 text-xs text-destructive">{t("doc.163")}</p>
+          )}
           <Actions>
             <button onClick={() => setShowShare(false)} disabled={sharing} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">{t("doc.88")}</button>
-            <button onClick={submitShare} disabled={sharing || !shareUserId} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <button onClick={submitShare} disabled={sharing || !shareUserId || !canManageShares} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
               {sharing ? t("doc.89") : t("doc.90")}
             </button>
           </Actions>

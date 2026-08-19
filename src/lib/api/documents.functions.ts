@@ -186,3 +186,98 @@ export const archiveDocument = createServerFn({ method: "POST" })
     });
     return ensureOk(res, "DOCUMENT_NOT_FOUND");
   });
+// Danh sách người dùng có thể được chia sẻ: thành viên đang hoạt động của cùng tổ chức.
+export const listDocumentShareCandidates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ documentId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: doc, error: docErr } = await context.supabase
+      .from("documents").select("id, tenant_id, workspace_id")
+      .eq("id", data.documentId).is("deleted_at", null).maybeSingle();
+    if (docErr) mapPgError(docErr);
+    if (!doc) throw new Error("DOCUMENT_NOT_FOUND");
+
+    const [membersRes, wsMembersRes] = await Promise.all([
+      context.supabase.from("tenant_members")
+        .select("user_id, role, status").eq("tenant_id", doc.tenant_id).eq("status", "active").limit(500),
+      context.supabase.from("workspace_members").select("user_id").eq("workspace_id", doc.workspace_id),
+    ]);
+    const rows = membersRes.data ?? [];
+    const inWorkspace = new Set((wsMembersRes.data ?? []).map((m) => m.user_id));
+    const ids = rows.map((r) => r.user_id);
+    const { data: profiles } = ids.length
+      ? await context.supabase.from("profiles").select("id, email, display_name").in("id", ids)
+      : { data: [] as Array<{ id: string; email: string | null; display_name: string | null }> };
+    const pmap = new Map((profiles ?? []).map((p) => [p.id, p]));
+    return rows.map((r) => ({
+      userId: r.user_id,
+      role: r.role as string,
+      email: pmap.get(r.user_id)?.email ?? null,
+      displayName: pmap.get(r.user_id)?.display_name ?? null,
+      inWorkspace: inWorkspace.has(r.user_id),
+    }));
+  });
+
+// Danh sách quyền chia sẻ hiện tại của tài liệu (kèm tên người/workspace/tổ chức).
+export const listDocumentShares = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ documentId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const [permsRes, canManageRes] = await Promise.all([
+      context.supabase.from("document_permissions")
+        .select("principal_type, principal_id, level, created_at, updated_at")
+        .eq("document_id", data.documentId)
+        .order("created_at", { ascending: true }),
+      context.supabase.rpc("can_manage_document_shares", { _document_id: data.documentId }),
+    ]);
+    if (permsRes.error) mapPgError(permsRes.error);
+    const perms = permsRes.data ?? [];
+    const userIds = perms.filter((p) => p.principal_type === "user").map((p) => p.principal_id);
+    const wsIds = perms.filter((p) => p.principal_type === "workspace").map((p) => p.principal_id);
+    const tenantIds = perms.filter((p) => p.principal_type === "tenant").map((p) => p.principal_id);
+    const [profiles, workspaces, tenants] = await Promise.all([
+      userIds.length ? context.supabase.from("profiles").select("id, email, display_name").in("id", userIds) : Promise.resolve({ data: [] }),
+      wsIds.length ? context.supabase.from("workspaces").select("id, name").in("id", wsIds) : Promise.resolve({ data: [] }),
+      tenantIds.length ? context.supabase.from("tenants").select("id, name").in("id", tenantIds) : Promise.resolve({ data: [] }),
+    ]);
+    const pmap = new Map(((profiles.data ?? []) as Array<{ id: string; email: string | null; display_name: string | null }>).map((p) => [p.id, p]));
+    const wmap = new Map(((workspaces.data ?? []) as Array<{ id: string; name: string }>).map((w) => [w.id, w.name]));
+    const tmap = new Map(((tenants.data ?? []) as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]));
+    return {
+      canManage: canManageRes.data === true,
+      shares: perms.map((p) => ({
+        principalType: p.principal_type as "user" | "workspace" | "tenant",
+        principalId: p.principal_id as string,
+        level: p.level as string,
+        label:
+          p.principal_type === "user"
+            ? (pmap.get(p.principal_id)?.display_name ?? pmap.get(p.principal_id)?.email ?? p.principal_id)
+            : p.principal_type === "workspace"
+              ? (wmap.get(p.principal_id) ?? p.principal_id)
+              : (tmap.get(p.principal_id) ?? p.principal_id),
+        sublabel: p.principal_type === "user" ? (pmap.get(p.principal_id)?.email ?? null) : null,
+      })),
+    };
+  });
+
+export const revokeDocumentShare = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      ...commandMetadataSchema.shape,
+      documentId: z.string().uuid(),
+      principalType: z.enum(["user", "workspace", "tenant"]),
+      principalId: z.string().uuid(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("revoke_document_share", {
+      _document_id: data.documentId,
+      _principal_type: data.principalType,
+      _principal_id: data.principalId,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    if (res.error) mapPgError(res.error);
+    return { revoked: res.data === true };
+  });
