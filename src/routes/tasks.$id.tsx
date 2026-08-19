@@ -264,8 +264,9 @@ function TaskDetailPage() {
                     })()}
                   </Section>
 
+                  <AiTaskExecutionPanel task={task as never} onChanged={invalidate} />
+
                   <Section title={`Công việc con (${doneSubtasks}/${subtasks.length})`}>
-                    <></>
                     <ul className="space-y-2 text-sm">
                       {subtasks.map((s) => (
                         <li key={s.id} className="flex items-center gap-2">

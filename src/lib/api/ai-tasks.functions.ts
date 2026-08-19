@@ -61,7 +61,7 @@ export const assignTaskToAi = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey ?? `assign-ai:${data.taskId}:${data.aiWorkerId}`,
     } as never);
     if (res.error) mapPgError(res.error, "TASK_NOT_FOUND");
-    return one(res.data);
+    return one<Record<string, unknown>>(res.data);
   });
 
 /** Bắt đầu một lượt AI thực thi và trả về bản nháp ở trạng thái CHỜ NGƯỜI DUYỆT. */
