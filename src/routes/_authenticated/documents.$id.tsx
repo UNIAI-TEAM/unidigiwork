@@ -1,6 +1,6 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, localeTag } from "@/lib/i18n";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -73,7 +73,8 @@ function fmtTimeImpl(v: string | null | undefined, tag: string) {
 }
 
 function DocumentDetailPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const tag = localeTag(lang);
   const { id } = Route.useParams();
   const [open, setOpen] = useSidebarState();
   const queryClient = useQueryClient();
@@ -237,7 +238,7 @@ function DocumentDetailPage() {
                       <span className="font-mono">{doc.id.slice(0, 8)}</span>
                       <span>·</span>
                       <Clock className="h-3 w-3" />
-                      <span>Cập nhật {fmtTime(doc.updated_at)}</span>
+                      <span>{t("doc.130")} {fmtTime(doc.updated_at, tag)}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <IconBtn
@@ -391,7 +392,7 @@ function DocumentDetailPage() {
                       ) : null}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      {fmtTime(v.created_at)}
+                      {fmtTime(v.created_at, tag)}
                       {v.size_bytes ? ` · ${formatBytes(v.size_bytes)}` : ""}
                     </div>
                     {v.author_name ? (
