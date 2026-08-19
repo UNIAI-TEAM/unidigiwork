@@ -5,6 +5,8 @@
 -- ==========================================================================
 \ir _helpers.sql
 
+SET client_min_messages TO notice;
+
 BEGIN;
 
 CREATE OR REPLACE FUNCTION pg_temp.act(_uid uuid) RETURNS void LANGUAGE sql AS $$
