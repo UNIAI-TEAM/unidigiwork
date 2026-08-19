@@ -81,29 +81,24 @@ export const runAiTask = createServerFn({ method: "POST" })
       throw new ApiError({ code: "AI_PROVIDER_UNAVAILABLE", message: "Nhân sự AI hiện chưa sẵn sàng." });
     }
 
-    const { data: task, error: taskErr } = await context.supabase
-      .from("tasks")
-      .select("*")
-      .eq("id", data.taskId)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (taskErr) mapPgError(taskErr, "TASK_NOT_FOUND");
+    const { loadAiTaskContext } = await import("./ai-tasks.server");
+    let task: Record<string, unknown> | null = null;
+    let worker: Record<string, unknown> | null = null;
+    try {
+      const loaded = await loadAiTaskContext(context.supabase as never, data.taskId);
+      task = loaded.task;
+      worker = loaded.worker;
+    } catch (e) {
+      mapPgError(e as Error, "TASK_NOT_FOUND");
+    }
     if (!task) throw new ApiError({ code: "TASK_NOT_FOUND", message: "Không tìm thấy công việc." });
-
-    const t = task as Record<string, unknown>;
+    const t = task;
     if (!t["ai_worker_id"]) {
       throw new ApiError({ code: "AI_WORKER_NOT_ASSIGNED", message: "Công việc chưa được giao cho nhân sự AI." });
     }
     if (!t["expected_deliverable"] || !t["acceptance_criteria"]) {
       throw new ApiError({ code: "AI_TASK_SPEC_REQUIRED", message: "Cần mô tả sản phẩm bàn giao và tiêu chí nghiệm thu." });
     }
-
-    const { data: worker, error: workerErr } = await context.supabase
-      .from("ai_workers" as never)
-      .select("*")
-      .eq("id", t["ai_worker_id"] as string)
-      .maybeSingle();
-    if (workerErr) mapPgError(workerErr, "AI_WORKER_NOT_FOUND");
     if (!worker) throw new ApiError({ code: "AI_WORKER_NOT_FOUND", message: "Không tìm thấy nhân sự AI." });
     const w = worker as unknown as AiWorkerRow;
 

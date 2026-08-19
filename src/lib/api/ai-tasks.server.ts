@@ -7,6 +7,29 @@ import { usableSources, validateAnswerCitations } from "@/domain/ai-context/cita
 import type { AiExecutionEvidence, DeliverableTemplate } from "@/domain/ai-tasks/contracts";
 import { buildAiContextPack, renderContextForModel } from "./ai-context.server";
 
+/** Đọc task + nhân sự AI theo RLS của actor (giữ mọi truy vấn bảng ở lớp .server). */
+export async function loadAiTaskContext(
+  supabase: {
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (k: string, v: string) => {
+          is: (k: string, v: null) => { maybeSingle: () => Promise<{ data: unknown; error: unknown }> };
+          maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+        };
+      };
+    };
+  },
+  taskId: string,
+): Promise<{ task: Record<string, unknown> | null; worker: Record<string, unknown> | null }> {
+  const taskRes = await supabase.from("tasks").select("*").eq("id", taskId).is("deleted_at", null).maybeSingle();
+  if (taskRes.error) throw taskRes.error;
+  const task = (taskRes.data ?? null) as Record<string, unknown> | null;
+  if (!task?.["ai_worker_id"]) return { task, worker: null };
+  const workerRes = await supabase.from("ai_workers").select("*").eq("id", task["ai_worker_id"] as string).maybeSingle();
+  if (workerRes.error) throw workerRes.error;
+  return { task, worker: (workerRes.data ?? null) as Record<string, unknown> | null };
+}
+
 export const AI_TASK_MODEL = "openai/gpt-5.6-sol";
 
 export interface AiTaskSpec {
