@@ -916,7 +916,7 @@ function DocumentsPage() {
                 title={t("doc.54")}
                 value=""
               >
-                <option value="" disabled>Heading</option>
+                <option value="" disabled>{t("doc.147")}</option>
                 <option value="1">H1</option>
                 <option value="2">H2</option>
                 <option value="3">H3</option>
@@ -981,7 +981,7 @@ function DocumentsPage() {
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2 text-xs text-muted-foreground sm:px-8">
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1">
-                  <Globe className="h-3.5 w-3.5" /> Vietnamese
+                  <Globe className="h-3.5 w-3.5" /> {t("doc.148")}
                 </span>
               </div>
               <div className="flex items-center gap-4">
@@ -1016,19 +1016,19 @@ function DocumentsPage() {
                 onClick={() => setRightTab("ai")}
                 className={`pb-3 ${rightTab === "ai" ? "border-b-2 border-primary font-medium text-foreground" : "text-muted-foreground"}`}
               >
-                AI Copilot
+                {t("doc.149")}
               </button>
               <button
                 onClick={() => setRightTab("comments")}
                 className={`pb-3 ${rightTab === "comments" ? "border-b-2 border-primary font-medium text-foreground" : "text-muted-foreground"}`}
               >
-                Comments
+                {t("doc.138")}
               </button>
               <button
                 onClick={() => setShowMembers(true)}
                 className={`pb-3 ${rightTab === "members" ? "border-b-2 border-primary font-medium text-foreground" : "text-muted-foreground"}`}
               >
-                Members
+                {t("doc.139")}
               </button>
             </div>
             <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
@@ -1036,7 +1036,7 @@ function DocumentsPage() {
                 <>
                   <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                      <Sparkles className="h-4 w-4 text-primary" /> AI Summary
+                      <Sparkles className="h-4 w-4 text-primary" /> {t("doc.150")}
                     </div>
                     <p className="text-xs leading-relaxed text-muted-foreground">
                       {selected
@@ -1046,14 +1046,14 @@ function DocumentsPage() {
                   </div>
                   <div>
                     <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                      <Sparkles className="h-4 w-4 text-primary" /> Ask AI
+                      <Sparkles className="h-4 w-4 text-primary" /> {t("doc.151")}
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
                       <input
                         value={aiAsk}
                         onChange={(e) => setAiAsk(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && submitAiAsk()}
-                        placeholder="Ask anything…"
+                        placeholder={t("doc.152")}
                         className="flex-1 bg-transparent text-xs placeholder:text-muted-foreground focus:outline-none"
                       />
                       <button
