@@ -1,7 +1,7 @@
 import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
 import { isStaleDocument } from "@/lib/metrics";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, localeTag } from "@/lib/i18n";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -115,7 +115,8 @@ function ToolbarBtn({
 }
 
 function DocumentsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const tag = localeTag(lang);
   const navigate = useNavigate();
   const { filter: docFilter } = Route.useSearch();
   const docsSearch = Route.useSearch();
@@ -346,7 +347,7 @@ function DocumentsPage() {
       });
       await reloadDocs(selected.id);
       setHistory((prev) => [
-        { id: crypto.randomUUID(), action: patch.title ? t("doc.11") : t("doc.12"), user: t("doc.13"), time: new Date().toLocaleString("vi-VN") },
+        { id: crypto.randomUUID(), action: patch.title ? t("doc.11") : t("doc.12"), user: t("doc.13"), time: new Date().toLocaleString(tag) },
         ...prev.slice(0, 49),
       ]);
       setSaveState("saved");
@@ -524,7 +525,7 @@ function DocumentsPage() {
       id: crypto.randomUUID(),
       text: newComment.trim(),
       user: t("doc.13"),
-      time: new Date().toLocaleString(),
+      time: new Date().toLocaleString(tag),
     };
     setComments((prev) => [...prev, c]);
     setNewComment("");
@@ -858,7 +859,7 @@ function DocumentsPage() {
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">
                       {selected
-                        ? `${t("doc.130")} ${new Date(selected.updated_at).toLocaleString()}`
+                        ? `${t("doc.130")} ${new Date(selected.updated_at).toLocaleString(tag)}`
                         : "—"}
                     </span>
                     {selected && (
