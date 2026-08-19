@@ -54,6 +54,8 @@ import {
   listDocumentShareCandidates,
   listDocumentShares,
   revokeDocumentShare,
+  logDocumentAccess,
+  listDocumentAccessLogs,
 } from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 import { notifyComingSoon } from "@/lib/coming-soon";
@@ -169,6 +171,9 @@ function DocumentsPage() {
   const [newComment, setNewComment] = useState("");
   const [history, setHistory] = useState<{ id: string; action: string; user: string; time: string }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [accessLogs, setAccessLogs] = useState<
+    Array<{ id: string; action: string; occurredAt: string; actorName: string; workspaceName: string; tenantName: string }>
+  >([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [newWsName, setNewWsName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
@@ -599,6 +604,22 @@ function DocumentsPage() {
     toast.success(t("doc.22"));
   };
 
+  const loggedViews = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!selected?.id || loggedViews.current.has(selected.id)) return;
+    loggedViews.current.add(selected.id);
+    void logDocumentAccess({ data: { documentId: selected.id, action: "view", context: {} } }).catch(() => {});
+  }, [selected?.id]);
+
+  useEffect(() => {
+    if (!historyOpen || !selected?.id) return;
+    let alive = true;
+    void listDocumentAccessLogs({ data: { documentId: selected.id, limit: 50 } })
+      .then((rows) => { if (alive) setAccessLogs(rows as typeof accessLogs); })
+      .catch(() => { if (alive) setAccessLogs([]); });
+    return () => { alive = false; };
+  }, [historyOpen, selected?.id]);
+
   const exportDocument = () => {
     if (!selected) return;
     const blob = new Blob([`# ${selected.title}\n\n${selected.content}`], { type: "text/markdown" });
@@ -608,9 +629,13 @@ function DocumentsPage() {
     a.download = `${selected.title || "document"}.md`;
     a.click();
     URL.revokeObjectURL(url);
+    void logDocumentAccess({ data: { documentId: selected.id, action: "download", context: { format: "md" } } }).catch(() => {});
   };
 
-  const printDocument = () => window.print();
+  const printDocument = () => {
+    if (selected) void logDocumentAccess({ data: { documentId: selected.id, action: "print", context: {} } }).catch(() => {});
+    window.print();
+  };
 
   const { range: rangeDays } = Route.useSearch();
   const visibleDocs = (
@@ -1469,6 +1494,32 @@ function DocumentsPage() {
                     <span className="text-muted-foreground">{h.time}</span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">{h.action}</div>
+                </div>
+              ))
+            )}
+          </div>
+          <h3 className="mb-2 text-sm font-semibold">{t("doc.164")}</h3>
+          <div className="mb-4 max-h-52 space-y-2 overflow-y-auto text-sm">
+            {accessLogs.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t("doc.165")}</p>
+            ) : (
+              accessLogs.map((l) => (
+                <div key={l.id} className="rounded-lg bg-surface-2/50 p-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">{l.actorName}</span>
+                    <span className="text-muted-foreground">{new Date(l.occurredAt).toLocaleString(tag)}</span>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {l.action === "download"
+                      ? t("doc.167")
+                      : l.action === "print"
+                        ? t("doc.168")
+                        : l.action === "export"
+                          ? t("doc.169")
+                          : t("doc.166")}
+                    {" · "}
+                    {t("doc.170")}: {l.tenantName} · {t("doc.171")}: {l.workspaceName}
+                  </div>
                 </div>
               ))
             )}

@@ -1450,6 +1450,67 @@ export type Database = {
         }
         Relationships: []
       }
+      document_access_logs: {
+        Row: {
+          action: string
+          actor_id: string
+          context: Json
+          document_id: string
+          document_title: string | null
+          id: string
+          occurred_at: string
+          tenant_id: string
+          version: number | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          context?: Json
+          document_id: string
+          document_title?: string | null
+          id?: string
+          occurred_at?: string
+          tenant_id: string
+          version?: number | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          context?: Json
+          document_id?: string
+          document_title?: string | null
+          id?: string
+          occurred_at?: string
+          tenant_id?: string
+          version?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_logs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_access_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_access_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_permissions: {
         Row: {
           created_at: string
@@ -7042,6 +7103,27 @@ export type Database = {
           role: string
           updated_at: string
         }[]
+      }
+      log_document_access: {
+        Args: { _action: string; _context?: Json; _document_id: string }
+        Returns: {
+          action: string
+          actor_id: string
+          context: Json
+          document_id: string
+          document_title: string | null
+          id: string
+          occurred_at: string
+          tenant_id: string
+          version: number | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "document_access_logs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       log_meeting_host_action: {
         Args: {
