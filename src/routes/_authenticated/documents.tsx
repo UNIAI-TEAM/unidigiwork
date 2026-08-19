@@ -294,8 +294,54 @@ function DocumentsPage() {
       });
       toast.success(t("doc.5"));
       await reloadDocs(selected.id);
-      setShowShare(false);
       setShareUserId("");
+      await loadShareState(selected.id);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // Tải danh sách ứng viên (thành viên cùng tổ chức) và quyền chia sẻ hiện tại
+  const loadShareState = async (documentId: string) => {
+    try {
+      const [cands, current] = await Promise.all([
+        listDocumentShareCandidates({ data: { documentId } }),
+        listDocumentShares({ data: { documentId } }),
+      ]);
+      setShareCandidates(cands as ShareCandidate[]);
+      setShares(current.shares as ShareRow[]);
+      setCanManageShares(current.canManage);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const openShare = () => {
+    if (!selected) return;
+    setShareQuery("");
+    setShareUserId("");
+    setShareCandidates([]);
+    setShares([]);
+    setShowShare(true);
+    void loadShareState(selected.id);
+  };
+
+  const revokeShare = async (row: ShareRow) => {
+    if (!selected) return;
+    setSharing(true);
+    try {
+      await revokeDocumentShare({
+        data: {
+          documentId: selected.id,
+          principalType: row.principalType,
+          principalId: row.principalId,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      });
+      toast.success(t("doc.161"));
+      await loadShareState(selected.id);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
