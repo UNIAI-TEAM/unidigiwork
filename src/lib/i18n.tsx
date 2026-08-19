@@ -1070,6 +1070,42 @@ const dict = {
     "adm.109": "Audit webhook LiveKit",
     "adm.110": "Làm mới",
     "adm.111": "Tra cứu từng event theo",
+    "acct.title": "Tài khoản & giới hạn",
+    "acct.desc": "Xem, đổi mật khẩu, đổi ngôn ngữ, xoá tài khoản và đặt giới hạn tài khoản cho từng tổ chức.",
+    "acct.search": "Tìm theo tên hoặc email",
+    "acct.tabUsers": "Tài khoản",
+    "acct.tabLimits": "Giới hạn tổ chức",
+    "acct.view": "Xem",
+    "acct.password": "Đổi mật khẩu",
+    "acct.delete": "Xoá tài khoản",
+    "acct.language": "Ngôn ngữ",
+    "acct.newPassword": "Mật khẩu mới",
+    "acct.confirmPassword": "Nhập lại mật khẩu",
+    "acct.save": "Lưu",
+    "acct.cancel": "Huỷ",
+    "acct.close": "Đóng",
+    "acct.pwMin": "Mật khẩu tối thiểu 8 ký tự",
+    "acct.pwMismatch": "Hai mật khẩu không khớp",
+    "acct.pwOk": "Đã đổi mật khẩu",
+    "acct.langOk": "Đã đổi ngôn ngữ",
+    "acct.deleteConfirm": "Xoá vĩnh viễn tài khoản này? Không thể hoàn tác.",
+    "acct.deleteOk": "Đã xoá tài khoản",
+    "acct.detail": "Thông tin tài khoản",
+    "acct.roles": "Vai trò",
+    "acct.tenants": "Tổ chức",
+    "acct.created": "Ngày tạo",
+    "acct.lastSignIn": "Đăng nhập gần nhất",
+    "acct.limitTitle": "Giới hạn tài khoản theo tổ chức",
+    "acct.limitDesc": "Khi đạt giới hạn, hệ thống sẽ chặn thêm thành viên mới vào tổ chức.",
+    "acct.tenant": "Tổ chức",
+    "acct.used": "Đang dùng",
+    "acct.limit": "Giới hạn",
+    "acct.unlimited": "Không giới hạn",
+    "acct.limitOk": "Đã lưu giới hạn",
+    "acct.readOnly": "Bạn chỉ có quyền xem",
+    "acct.loading": "Đang tải…",
+    "acct.empty": "Không có tài khoản phù hợp",
+    "acct.tabTitleNav": "Tài khoản",
     "qta.1": "Cột nâng cao",
     "qta.2": "Tổng checks",
     "qta.3": "Phân bổ theo tenant × meter (24h)",
@@ -2596,6 +2632,42 @@ const dict = {
     "adm.109": "LiveKit webhook audit",
     "adm.110": "Refresh",
     "adm.111": "Look up each event by",
+    "acct.title": "Accounts & limits",
+    "acct.desc": "View, reset passwords, change language, delete accounts and set per-organisation account limits.",
+    "acct.search": "Search by name or email",
+    "acct.tabUsers": "Accounts",
+    "acct.tabLimits": "Organisation limits",
+    "acct.view": "View",
+    "acct.password": "Change password",
+    "acct.delete": "Delete account",
+    "acct.language": "Language",
+    "acct.newPassword": "New password",
+    "acct.confirmPassword": "Confirm password",
+    "acct.save": "Save",
+    "acct.cancel": "Cancel",
+    "acct.close": "Close",
+    "acct.pwMin": "Password must be at least 8 characters",
+    "acct.pwMismatch": "Passwords do not match",
+    "acct.pwOk": "Password updated",
+    "acct.langOk": "Language updated",
+    "acct.deleteConfirm": "Permanently delete this account? This cannot be undone.",
+    "acct.deleteOk": "Account deleted",
+    "acct.detail": "Account details",
+    "acct.roles": "Roles",
+    "acct.tenants": "Organisations",
+    "acct.created": "Created",
+    "acct.lastSignIn": "Last sign-in",
+    "acct.limitTitle": "Account limits per organisation",
+    "acct.limitDesc": "When the limit is reached, new members can no longer join the organisation.",
+    "acct.tenant": "Organisation",
+    "acct.used": "In use",
+    "acct.limit": "Limit",
+    "acct.unlimited": "Unlimited",
+    "acct.limitOk": "Limit saved",
+    "acct.readOnly": "You have read-only access",
+    "acct.loading": "Loading…",
+    "acct.empty": "No matching accounts",
+    "acct.tabTitleNav": "Accounts",
     "qta.1": "Advanced columns",
     "qta.2": "Total checks",
     "qta.3": "Distribution by tenant × meter (24h)",
@@ -3096,6 +3168,34 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const saved = (typeof localStorage !== "undefined" &&
       localStorage.getItem("uniwork-lang")) as Lang | null;
     if (saved && LANG_CODES.includes(saved)) setLangState(saved);
+    // Ngôn ngữ do quản trị viên đặt (lưu trong hồ sơ) được ưu tiên.
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user) return;
+        const { data } = await supabase
+          .from("user_ui_prefs")
+          .select("lang")
+          .eq("user_id", auth.user.id)
+          .maybeSingle();
+        const remote = (data as { lang?: string } | null)?.lang as Lang | undefined;
+        if (!cancelled && remote && LANG_CODES.includes(remote)) {
+          setLangState(remote);
+          try {
+            localStorage.setItem("uniwork-lang", remote);
+          } catch {
+            /* ignore */
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setLang = (l: Lang) => {
@@ -3105,6 +3205,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    void (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user) return;
+        await supabase
+          .from("user_ui_prefs")
+          .upsert({ user_id: auth.user.id, lang: l }, { onConflict: "user_id" });
+      } catch {
+        /* ignore */
+      }
+    })();
     if (typeof document !== "undefined") document.documentElement.lang = l;
   };
 

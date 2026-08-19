@@ -92,6 +92,7 @@ import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenticated/admin.backup'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
 import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
+import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authenticated/admin.accounts'
 import { Route as AuthenticatedMEmailIndexRouteImport } from './routes/_authenticated/m/email.index'
 import { Route as AuthenticatedMAiWorkforceIndexRouteImport } from './routes/_authenticated/m/ai-workforce.index'
 import { Route as AuthenticatedMAiMarketIndexRouteImport } from './routes/_authenticated/m/ai-market.index'
@@ -541,6 +542,12 @@ const AuthenticatedAdminAiActionsRoute =
     path: '/ai-actions',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAccountsRoute =
+  AuthenticatedAdminAccountsRouteImport.update({
+    id: '/accounts',
+    path: '/accounts',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedMEmailIndexRoute =
   AuthenticatedMEmailIndexRouteImport.update({
     id: '/email/',
@@ -657,6 +664,7 @@ export interface FileRoutesByFullPath {
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
+  '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
@@ -751,6 +759,7 @@ export interface FileRoutesByTo {
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/reports': typeof ReportsIndexRoute
+  '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
@@ -849,6 +858,7 @@ export interface FileRoutesById {
   '/workflows_/permissions': typeof WorkflowsPermissionsRoute
   '/workflows_/runs': typeof WorkflowsRunsRoute
   '/reports/': typeof ReportsIndexRoute
+  '/_authenticated/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/_authenticated/admin/backup': typeof AuthenticatedAdminBackupRoute
@@ -947,6 +957,7 @@ export interface FileRouteTypes {
     | '/workflows/permissions'
     | '/workflows/runs'
     | '/reports/'
+    | '/admin/accounts'
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
@@ -1041,6 +1052,7 @@ export interface FileRouteTypes {
     | '/workflows/permissions'
     | '/workflows/runs'
     | '/reports'
+    | '/admin/accounts'
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
@@ -1138,6 +1150,7 @@ export interface FileRouteTypes {
     | '/workflows_/permissions'
     | '/workflows_/runs'
     | '/reports/'
+    | '/_authenticated/admin/accounts'
     | '/_authenticated/admin/ai-actions'
     | '/_authenticated/admin/ai-context'
     | '/_authenticated/admin/backup'
@@ -1804,6 +1817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAiActionsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/accounts': {
+      id: '/_authenticated/admin/accounts'
+      path: '/accounts'
+      fullPath: '/admin/accounts'
+      preLoaderRoute: typeof AuthenticatedAdminAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/m/email/': {
       id: '/_authenticated/m/email/'
       path: '/email'
@@ -1892,6 +1912,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAccountsRoute: typeof AuthenticatedAdminAccountsRoute
   AuthenticatedAdminAiActionsRoute: typeof AuthenticatedAdminAiActionsRoute
   AuthenticatedAdminAiContextRoute: typeof AuthenticatedAdminAiContextRoute
   AuthenticatedAdminBackupRoute: typeof AuthenticatedAdminBackupRoute
@@ -1908,6 +1929,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAccountsRoute: AuthenticatedAdminAccountsRoute,
   AuthenticatedAdminAiActionsRoute: AuthenticatedAdminAiActionsRoute,
   AuthenticatedAdminAiContextRoute: AuthenticatedAdminAiContextRoute,
   AuthenticatedAdminBackupRoute: AuthenticatedAdminBackupRoute,

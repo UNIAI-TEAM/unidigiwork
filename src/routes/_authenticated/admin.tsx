@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useI18n, type Key } from "@/lib/i18n";
 import { useState } from "react";
-import { LayoutGrid, ShieldCheck, Users, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database } from "lucide-react";
+import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { useAdminAccess } from "@/features/admin/access";
 
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 const TABS = [
   { to: "/admin" as const, label: "adm.tab.overview", icon: LayoutGrid, exact: true },
   { to: "/admin/users" as const, label: "adm.tab.users", icon: Users },
+  { to: "/admin/accounts" as const, label: "acct.title", icon: UserCog },
   { to: "/admin/rules" as const, label: "adm.tab.rules", icon: ListFilter },
   { to: "/admin/plans" as const, label: "adm.tab.plans", icon: CreditCard },
   { to: "/admin/knowledge" as const, label: "Knowledge", icon: BookOpen },
