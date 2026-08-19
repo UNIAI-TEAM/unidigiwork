@@ -71,9 +71,8 @@ BEGIN
 END $$;
 
 -- ---- 3: tenant member of A but NOT workspace member still has no access ---
-INSERT INTO public.tenant_members (tenant_id, user_id, role, status)
-VALUES ((SELECT tenant_id FROM _ctx WHERE label='A'), :OWNER_B::uuid, 'member', 'active')
-ON CONFLICT (tenant_id, user_id) DO UPDATE SET status='active';
+SELECT public._test_set_tenant_member(
+  (SELECT tenant_id FROM _ctx WHERE label='A'), :OWNER_B::uuid, 'member', 'active');
 
 DO $$
 DECLARE _a uuid := (SELECT id FROM _doc_a);
@@ -172,8 +171,7 @@ BEGIN
   END IF;
 
   -- remove membership in tenant A -> access must disappear
-  UPDATE public.tenant_members SET status = 'removed'
-   WHERE tenant_id = _tA AND user_id = '8236c840-8676-48ba-9f9b-497663e1e905'::uuid;
+  PERFORM public._test_set_tenant_member(_tA, '8236c840-8676-48ba-9f9b-497663e1e905'::uuid, 'member', 'removed');
   IF public.can_access_document(_a) THEN
     RAISE EXCEPTION 'FAIL doc-share-tenant: removed member still reads tenant-shared document';
   END IF;
