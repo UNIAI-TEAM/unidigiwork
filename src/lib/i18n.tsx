@@ -3168,6 +3168,34 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const saved = (typeof localStorage !== "undefined" &&
       localStorage.getItem("uniwork-lang")) as Lang | null;
     if (saved && LANG_CODES.includes(saved)) setLangState(saved);
+    // Ngôn ngữ do quản trị viên đặt (lưu trong hồ sơ) được ưu tiên.
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user) return;
+        const { data } = await supabase
+          .from("user_ui_prefs")
+          .select("lang")
+          .eq("user_id", auth.user.id)
+          .maybeSingle();
+        const remote = (data as { lang?: string } | null)?.lang as Lang | undefined;
+        if (!cancelled && remote && LANG_CODES.includes(remote)) {
+          setLangState(remote);
+          try {
+            localStorage.setItem("uniwork-lang", remote);
+          } catch {
+            /* ignore */
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setLang = (l: Lang) => {
@@ -3177,6 +3205,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    void (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user) return;
+        await supabase
+          .from("user_ui_prefs")
+          .upsert({ user_id: auth.user.id, lang: l }, { onConflict: "user_id" });
+      } catch {
+        /* ignore */
+      }
+    })();
     if (typeof document !== "undefined") document.documentElement.lang = l;
   };
 
