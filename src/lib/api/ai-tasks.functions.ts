@@ -52,7 +52,7 @@ export const assignTaskToAi = createServerFn({ method: "POST" })
       })
       .parse(i),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ ok: true; taskId: string; aiWorkerId: string }> => {
     const res = await context.supabase.rpc("assign_task_to_ai" as never, {
       _task_id: data.taskId,
       _ai_worker_id: data.aiWorkerId,
@@ -61,7 +61,7 @@ export const assignTaskToAi = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey ?? `assign-ai:${data.taskId}:${data.aiWorkerId}`,
     } as never);
     if (res.error) mapPgError(res.error, "TASK_NOT_FOUND");
-    return one<Record<string, unknown>>(res.data);
+    return { ok: true as const, taskId: data.taskId, aiWorkerId: data.aiWorkerId };
   });
 
 /** Bắt đầu một lượt AI thực thi và trả về bản nháp ở trạng thái CHỜ NGƯỜI DUYỆT. */
