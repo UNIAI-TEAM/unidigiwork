@@ -51,6 +51,9 @@ import {
   shareDocument,
   updateDocument,
   uploadDocumentVersion,
+  listDocumentShareCandidates,
+  listDocumentShares,
+  revokeDocumentShare,
 } from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 import { notifyComingSoon } from "@/lib/coming-soon";
@@ -139,6 +142,10 @@ function DocumentsPage() {
   const [shareUserId, setShareUserId] = useState("");
   const [shareLevel, setShareLevel] = useState<"view" | "comment" | "edit" | "manage">("view");
   const [sharing, setSharing] = useState(false);
+  const [shareQuery, setShareQuery] = useState("");
+  const [shareCandidates, setShareCandidates] = useState<ShareCandidate[]>([]);
+  const [shares, setShares] = useState<ShareRow[]>([]);
+  const [canManageShares, setCanManageShares] = useState(true);
   const [newTitle, setNewTitle] = useState("");
   const [newFolder, setNewFolder] = useState("My Documents");
   const contentRef = useRef<HTMLTextAreaElement>(null);
