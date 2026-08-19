@@ -78,6 +78,20 @@ type Member = {
   role: string;
   profiles: { email: string; display_name: string | null } | null;
 };
+type ShareCandidate = {
+  userId: string;
+  role: string;
+  email: string | null;
+  displayName: string | null;
+  inWorkspace: boolean;
+};
+type ShareRow = {
+  principalType: "user" | "workspace" | "tenant";
+  principalId: string;
+  level: string;
+  label: string;
+  sublabel: string | null;
+};
 
 type DocumentsSearch = { filter?: "stale"; range?: number; ws?: string };
 
