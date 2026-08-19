@@ -996,6 +996,127 @@ export type Database = {
           },
         ]
       }
+      ai_task_executions: {
+        Row: {
+          ai_worker_id: string
+          change_request: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deliverable_content: string | null
+          deliverable_title: string | null
+          deliverable_type: string | null
+          error_code: string | null
+          evidence: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: number
+          row_version: number
+          source_refs: Json
+          started_at: string | null
+          status: string
+          task_id: string
+          template_code: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          ai_worker_id: string
+          change_request?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deliverable_content?: string | null
+          deliverable_title?: string | null
+          deliverable_type?: string | null
+          error_code?: string | null
+          evidence?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision?: number
+          row_version?: number
+          source_refs?: Json
+          started_at?: string | null
+          status?: string
+          task_id: string
+          template_code?: string | null
+          tenant_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          ai_worker_id?: string
+          change_request?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deliverable_content?: string | null
+          deliverable_title?: string | null
+          deliverable_type?: string | null
+          error_code?: string | null
+          evidence?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision?: number
+          row_version?: number
+          source_refs?: Json
+          started_at?: string | null
+          status?: string
+          task_id?: string
+          template_code?: string | null
+          tenant_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_task_executions_ai_worker_id_fkey"
+            columns: ["ai_worker_id"]
+            isOneToOne: false
+            referencedRelation: "ai_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_task_executions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_task_executions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_task_executions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_task_executions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_task_executions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_events: {
         Row: {
           conversation_id: string | null
@@ -1075,6 +1196,59 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_workers: {
+        Row: {
+          allowed_tools: string[]
+          code: string
+          created_at: string
+          id: string
+          name: string
+          permission_scope: string
+          provider_config_ref: string
+          role: string
+          skills: string[]
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_tools?: string[]
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          permission_scope?: string
+          provider_config_ref?: string
+          role: string
+          skills?: string[]
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_tools?: string[]
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          permission_scope?: string
+          provider_config_ref?: string
+          role?: string
+          skills?: string[]
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_workers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -4038,12 +4212,18 @@ export type Database = {
       }
       tasks: {
         Row: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -4058,12 +4238,18 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          acceptance_criteria?: string | null
+          ai_execution_status?: string
+          ai_worker_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           due_at?: string | null
+          execution_mode?: string
+          expected_deliverable?: string | null
+          human_owner_id?: string | null
           id?: string
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -4078,12 +4264,18 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          acceptance_criteria?: string | null
+          ai_execution_status?: string
+          ai_worker_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           due_at?: string | null
+          execution_mode?: string
+          expected_deliverable?: string | null
+          human_owner_id?: string | null
           id?: string
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -4098,6 +4290,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_human_owner_id_fkey"
+            columns: ["human_owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_parent_task_id_fkey"
             columns: ["parent_task_id"]
@@ -5923,6 +6122,45 @@ export type Database = {
         }
         Returns: string
       }
+      accept_ai_task_execution: {
+        Args: {
+          _complete_task?: boolean
+          _correlation_id?: string
+          _execution_id: string
+          _idempotency_key?: string
+        }
+        Returns: {
+          ai_worker_id: string
+          change_request: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deliverable_content: string | null
+          deliverable_title: string | null
+          deliverable_type: string | null
+          error_code: string | null
+          evidence: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: number
+          row_version: number
+          source_refs: Json
+          started_at: string | null
+          status: string
+          task_id: string
+          template_code: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ai_task_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       accept_tenant_invitation: {
         Args: { _correlation_id?: string; _token_hash: string }
         Returns: {
@@ -6054,12 +6292,60 @@ export type Database = {
           _task_id: string
         }
         Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          row_version: number
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_task_to_ai: {
+        Args: {
+          _acceptance_criteria: string
+          _ai_worker_id: string
+          _correlation_id?: string
+          _expected_deliverable: string
+          _idempotency_key?: string
+          _task_id: string
+        }
+        Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -6511,12 +6797,18 @@ export type Database = {
           _title: string
         }
         Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -6549,12 +6841,18 @@ export type Database = {
           _workspace_id: string
         }
         Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -6789,6 +7087,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      ensure_default_ai_workers: {
+        Args: { _tenant_id: string }
+        Returns: {
+          allowed_tools: string[]
+          code: string
+          created_at: string
+          id: string
+          name: string
+          permission_scope: string
+          provider_config_ref: string
+          role: string
+          skills: string[]
+          status: string
+          tenant_id: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "ai_workers"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       ensure_work_node: {
         Args: { _entity_id: string; _entity_type: string }
         Returns: string
@@ -6889,6 +7210,50 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      finish_ai_task_execution: {
+        Args: {
+          _correlation_id?: string
+          _deliverable_content?: string
+          _deliverable_title?: string
+          _deliverable_type?: string
+          _error_code?: string
+          _evidence?: Json
+          _execution_id: string
+          _source_refs?: Json
+          _status: string
+        }
+        Returns: {
+          ai_worker_id: string
+          change_request: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deliverable_content: string | null
+          deliverable_title: string | null
+          deliverable_type: string | null
+          error_code: string | null
+          evidence: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: number
+          row_version: number
+          source_refs: Json
+          started_at: string | null
+          status: string
+          task_id: string
+          template_code: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ai_task_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       fire_workflow_event: {
         Args: { _event_type: string; _payload?: Json; _workspace_id: string }
         Returns: number
@@ -6897,6 +7262,7 @@ export type Database = {
         Args: { _hours?: number }
         Returns: Json
       }
+      get_ai_task_brief: { Args: { _task_id: string }; Returns: Json }
       get_dashboard_ai_summary: {
         Args: { _day_end?: string; _day_start?: string; _workspace_id?: string }
         Returns: Json
@@ -7270,6 +7636,44 @@ export type Database = {
         Args: { _from?: string; _to?: string; _workspace_id?: string }
         Returns: Json
       }
+      request_ai_execution_changes: {
+        Args: {
+          _correlation_id?: string
+          _execution_id: string
+          _feedback: string
+        }
+        Returns: {
+          ai_worker_id: string
+          change_request: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deliverable_content: string | null
+          deliverable_title: string | null
+          deliverable_type: string | null
+          error_code: string | null
+          evidence: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: number
+          row_version: number
+          source_refs: Json
+          started_at: string | null
+          status: string
+          task_id: string
+          template_code: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ai_task_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       request_meeting_join: {
         Args: {
           _correlation_id?: string
@@ -7613,12 +8017,18 @@ export type Database = {
       set_task_tags: {
         Args: { _tags: string[]; _task_id: string }
         Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -7703,6 +8113,45 @@ export type Database = {
           _workflow_id: string
         }
         Returns: Json
+      }
+      start_ai_task_execution: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _task_id: string
+          _template_code?: string
+        }
+        Returns: {
+          ai_worker_id: string
+          change_request: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deliverable_content: string | null
+          deliverable_title: string | null
+          deliverable_type: string | null
+          error_code: string | null
+          evidence: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: number
+          row_version: number
+          source_refs: Json
+          started_at: string | null
+          status: string
+          task_id: string
+          template_code: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ai_task_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       start_meeting: {
         Args: {
@@ -7857,12 +8306,18 @@ export type Database = {
           _to_status: Database["public"]["Enums"]["task_status"]
         }
         Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
@@ -7974,12 +8429,18 @@ export type Database = {
           _title?: string
         }
         Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
