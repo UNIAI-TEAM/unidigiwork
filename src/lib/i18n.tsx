@@ -3237,6 +3237,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 export const useI18n = () => useContext(LangCtx);
 
+/** BCP-47 tag cho định dạng ngày/giờ theo ngôn ngữ đang chọn. */
+export const localeTag = (lang: Lang): string =>
+  ({ vi: "vi-VN", en: "en-US", my: "my-MM", km: "km-KH", lo: "lo-LA" })[lang] ?? "vi-VN";
+
 export function LanguageToggle({ className = "" }: { className?: string }) {
   const { lang, setLang } = useI18n();
   const [open, setOpen] = useState(false);
