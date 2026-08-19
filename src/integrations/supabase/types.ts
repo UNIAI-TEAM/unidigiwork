@@ -4276,6 +4276,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          max_users: number | null
           name: string
           row_version: number
           slug: string
@@ -4288,6 +4289,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          max_users?: number | null
           name: string
           row_version?: number
           slug: string
@@ -4300,6 +4302,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          max_users?: number | null
           name?: string
           row_version?: number
           slug?: string
@@ -4483,6 +4486,7 @@ export type Database = {
           created_at: string
           font_family: string
           font_scale: string
+          lang: string
           theme: string
           tone: string
           updated_at: string
@@ -4493,6 +4497,7 @@ export type Database = {
           created_at?: string
           font_family?: string
           font_scale?: string
+          lang?: string
           theme?: string
           tone?: string
           updated_at?: string
@@ -4503,6 +4508,7 @@ export type Database = {
           created_at?: string
           font_family?: string
           font_scale?: string
+          lang?: string
           theme?: string
           tone?: string
           updated_at?: string
@@ -6224,6 +6230,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          max_users: number | null
           name: string
           row_version: number
           slug: string
