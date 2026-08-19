@@ -6020,6 +6020,10 @@ export type Database = {
         }
       }
       can_access_document: { Args: { _document_id: string }; Returns: boolean }
+      can_manage_document_shares: {
+        Args: { _document_id: string }
+        Returns: boolean
+      }
       can_manage_meeting_access: {
         Args: { _meeting_id: string; _user_id: string }
         Returns: boolean
@@ -7245,6 +7249,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      revoke_document_share: {
+        Args: {
+          _correlation_id?: string
+          _document_id: string
+          _idempotency_key?: string
+          _principal_id: string
+          _principal_type: string
+        }
+        Returns: boolean
       }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }
