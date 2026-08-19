@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Bot, CheckCircle2, ExternalLink, Loader2, Play, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import {
   AI_EXECUTION_STATUS_LABEL,
   DELIVERABLE_TEMPLATES,
@@ -207,9 +206,9 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
               <ul className="space-y-1 text-xs">
                 {latest.source_refs.map((s) => (
                   <li key={s.sourceId}>
-                    <Link to={s.href} className="inline-flex items-center gap-1 text-primary hover:underline">
+                    <a href={s.href} className="inline-flex items-center gap-1 text-primary hover:underline">
                       [{s.sourceId}] {s.title} <ExternalLink className="h-3 w-3" />
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
