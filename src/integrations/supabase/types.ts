@@ -5778,6 +5778,32 @@ export type Database = {
         }
         Returns: undefined
       }
+      _test_set_tenant_member: {
+        Args: {
+          _role?: Database["public"]["Enums"]["tenant_role"]
+          _status?: Database["public"]["Enums"]["tenant_member_status"]
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          row_version: number
+          status: Database["public"]["Enums"]["tenant_member_status"]
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenant_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       _test_unconfirm_auth_email: {
         Args: { _user_id: string }
         Returns: boolean
