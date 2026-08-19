@@ -56,6 +56,7 @@ import {
   revokeDocumentShare,
   logDocumentAccess,
   listDocumentAccessLogs,
+  getDocument,
 } from "@/lib/api/documents.functions";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 import { notifyComingSoon } from "@/lib/coming-soon";
@@ -171,6 +172,8 @@ function DocumentsPage() {
   const [newComment, setNewComment] = useState("");
   const [history, setHistory] = useState<{ id: string; action: string; user: string; time: string }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [listDenied, setListDenied] = useState(false);
+  const [detailDenied, setDetailDenied] = useState<string | null>(null);
   const [accessLogs, setAccessLogs] = useState<
     Array<{ id: string; action: string; occurredAt: string; actorName: string; workspaceName: string; tenantName: string }>
   >([]);
@@ -209,6 +212,20 @@ function DocumentsPage() {
     })();
   }, [navigate]);
 
+  // Lỗi có phải do thiếu quyền (RLS / grant / hàm bảo mật) hay không.
+  const isPermissionError = (e: unknown) => {
+    const err = e as { code?: string; message?: string } | null;
+    const msg = `${err?.code ?? ""} ${err?.message ?? ""}`.toLowerCase();
+    return (
+      msg.includes("42501") ||
+      msg.includes("permission denied") ||
+      msg.includes("access_denied") ||
+      msg.includes("document_access_denied") ||
+      msg.includes("row-level security") ||
+      msg.includes("forbidden")
+    );
+  };
+
   // Đồng bộ lại dữ liệu từ DB (không dựa vào state cục bộ sau khi mutate).
   const reloadDocs = async (keepSelectedId?: string | null) => {
     if (!currentWs) return [] as Doc[];
@@ -219,9 +236,15 @@ function DocumentsPage() {
       .is("deleted_at", null)
       .order("updated_at", { ascending: false });
     if (error) {
-      toast.error(t("doc.2"));
+      if (isPermissionError(error)) {
+        setListDenied(true);
+        toast.error(t("doc.172"));
+      } else {
+        toast.error(t("doc.2"));
+      }
       return [] as Doc[];
     }
+    setListDenied(false);
     const list = (d ?? []) as Doc[];
     setDocs(list);
     setSelected((prev) => {
@@ -264,14 +287,21 @@ function DocumentsPage() {
       return;
     }
     (async () => {
-      const { data: d } = await supabase
+      const { data: d, error: docsError } = await supabase
         .from("documents")
         .select("*")
         .eq("workspace_id", currentWs.id)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false });
+      if (docsError && isPermissionError(docsError)) {
+        setListDenied(true);
+        toast.error(t("doc.172"));
+      } else {
+        setListDenied(false);
+      }
       setDocs((d ?? []) as Doc[]);
       setSelected(null);
+      setDetailDenied(null);
       const { data: m } = await supabase
         .from("workspace_members")
         .select("user_id, role, profiles(email, display_name)")
@@ -604,6 +634,23 @@ function DocumentsPage() {
     toast.success(t("doc.22"));
   };
 
+  // Mở tài liệu: xác thực quyền ở server trước khi hiển thị nội dung.
+  const openDocument = async (d: Doc) => {
+    setDetailDenied(null);
+    setSelected(d);
+    try {
+      await getDocument({ data: { documentId: d.id } });
+    } catch (e) {
+      if (isPermissionError(e) || (e as Error).message?.includes("DOCUMENT_NOT_FOUND")) {
+        setDetailDenied(d.id);
+        setSelected(null);
+        toast.error(t("doc.173"));
+      } else {
+        toast.error(t("doc.175"));
+      }
+    }
+  };
+
   const loggedViews = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!selected?.id || loggedViews.current.has(selected.id)) return;
@@ -748,6 +795,11 @@ function DocumentsPage() {
               </label>
             </div>
             <div className="flex-1 overflow-y-auto px-2 pb-3">
+              {listDenied && (
+                <div className="mx-2 mb-2 rounded-lg border border-destructive/40 bg-destructive/10 px-2.5 py-2 text-xs text-destructive">
+                  {t("doc.172")}
+                </div>
+              )}
               {docFilter === "stale" && (
                 <button
                   onClick={() =>
@@ -798,7 +850,7 @@ function DocumentsPage() {
                           className={`group flex items-center gap-1 rounded ${selected?.id === d.id ? "bg-primary/15" : "hover:bg-surface-2"}`}
                         >
                           <button
-                            onClick={() => setSelected(d)}
+                            onClick={() => void openDocument(d)}
                             className={`flex flex-1 items-center gap-1.5 px-2 py-1.5 pl-7 text-left text-sm ${selected?.id === d.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                           >
                             <FileText className="h-4 w-4" />
@@ -1033,7 +1085,18 @@ function DocumentsPage() {
             </div>
 
             <article className="flex-1 px-4 py-6 sm:px-8">
-              {selected ? (
+              {detailDenied && !selected ? (
+                <div className="max-w-lg rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+                  <p className="text-sm font-semibold text-destructive">{t("doc.173")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t("doc.174")}</p>
+                  <button
+                    onClick={() => setDetailDenied(null)}
+                    className="mt-3 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-surface-2"
+                  >
+                    {t("doc.176")}
+                  </button>
+                </div>
+              ) : selected ? (
                 previewMode ? (
                   <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                     {selected.content || t("doc.67")}
