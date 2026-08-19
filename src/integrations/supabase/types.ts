@@ -6013,6 +6013,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      can_access_document: { Args: { _document_id: string }; Returns: boolean }
       can_manage_meeting_access: {
         Args: { _meeting_id: string; _user_id: string }
         Returns: boolean
