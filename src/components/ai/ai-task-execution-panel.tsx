@@ -336,6 +336,8 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
           </ul>
         </div>
       ) : null}
+        </>
+      )}
     </section>
   );
 }
