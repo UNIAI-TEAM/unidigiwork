@@ -841,8 +841,7 @@ function MeetingPage() {
                                     type="button"
                                     disabled={!canManageMeeting(r.id)}
                                     onClick={() => {
-                                      setCancelRoom(r);
-                                      setCancelReason("");
+                                      openCancel(r);
                                     }}
                                     className="rounded-md border border-border px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
@@ -1037,8 +1036,7 @@ function MeetingPage() {
                                     type="button"
                                     disabled={!canManageMeeting(m.id)}
                                     onClick={() => {
-                                      setCancelRoom(m);
-                                      setCancelReason("");
+                                      openCancel(m);
                                     }}
                                     className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
