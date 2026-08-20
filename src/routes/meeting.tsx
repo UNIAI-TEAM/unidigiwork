@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -43,7 +44,6 @@ import {
   Plus,
   Calendar,
   MoreHorizontal,
-  Mic,
   MicOff,
   VideoIcon,
   Monitor,
@@ -51,7 +51,6 @@ import {
   MessageCircle,
   Sparkles,
   PhoneOff,
-  Maximize2,
   Hash,
   Circle,
   Video,
@@ -85,8 +84,7 @@ import {
   MailQuestion,
   Mail,
 } from "lucide-react";
-import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
-import { notifyComingSoon } from "@/lib/coming-soon";
+import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 
 export const Route = createFileRoute("/meeting")({
   validateSearch: (search: {
@@ -1908,15 +1906,36 @@ const ROOMS = [
             ))}
           </div>
           <div className="mt-4 flex gap-2">
-            <button onClick={() => notifyComingSoon()}
-              disabled={!r.free}
-              className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
-            >
-              Đặt phòng
-            </button>
-            <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary/40">
-              Lịch sử
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex-1">
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full cursor-not-allowed rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground opacity-40"
+                  >
+                    Đặt phòng
+                  </button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Đặt phòng họp vật lý chưa khả dụng. Hãy tạo phòng họp trực tuyến.
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <button
+                    type="button"
+                    disabled
+                    className="cursor-not-allowed rounded-lg border border-border px-3 py-2 text-xs opacity-40"
+                  >
+                    Lịch sử
+                  </button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Lịch sử sử dụng phòng vật lý chưa khả dụng.</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       ))}
@@ -2073,56 +2092,6 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
     </div>
   );
 }
-
-/* ====================== LIVE ROOM (existing) ====================== */
-
-function VideoTile({ name, seed, highlight }: { name: string; seed: string; highlight?: boolean }) {
-  return (
-    <div className={`video-tile ${highlight ? "ring-2 ring-primary/70" : ""}`}>
-      <img src={avatar(seed)} alt={name} className="h-full w-full object-cover" />
-      <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/80 to-transparent p-2 text-xs text-white">
-        <Mic className="h-3 w-3" />
-        <span>{name}</span>
-      </div>
-      {highlight && (
-        <button onClick={() => notifyComingSoon()} className="absolute right-2 top-2 rounded-md bg-black/50 p-1.5 text-white hover:bg-black/70">
-          <Maximize2 className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
-  );
-}
-
-function ControlButton({
-  icon: Icon,
-  label,
-  badge,
-  danger,
-  onClick,
-}: {
-  icon: LucideIcon;
-  label: string;
-  badge?: number;
-  danger?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1.5">
-      <span
-        className={`relative flex h-11 w-11 items-center justify-center rounded-full ${danger ? "bg-destructive text-destructive-foreground" : "bg-surface-2 text-foreground hover:bg-surface-2/70"}`}
-      >
-        <Icon className="h-5 w-5" />
-        {badge !== undefined && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
-            {badge}
-          </span>
-        )}
-      </span>
-      <span className="text-[11px] text-muted-foreground">{label}</span>
-    </button>
-  );
-}
-
 
 /* keep referenced for typing */
 void AlertCircle;
