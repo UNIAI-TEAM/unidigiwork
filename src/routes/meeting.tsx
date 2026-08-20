@@ -197,6 +197,16 @@ const participants = [
 
 type Tab = "upcoming" | "live" | "ended" | "recordings" | "rooms";
 
+function formatRange(startAt?: string, endAt?: string) {
+  if (!startAt) return "Chưa đặt thời gian";
+  const s = new Date(startAt);
+  const e = endAt ? new Date(endAt) : null;
+  const time = s.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  const date = s.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+  const mins = e ? Math.max(0, Math.round((e.getTime() - s.getTime()) / 60000)) : null;
+  return `${time} · ${date}${mins ? ` · ${mins}p` : ""}`;
+}
+
 function MeetingPage() {
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("upcoming");
