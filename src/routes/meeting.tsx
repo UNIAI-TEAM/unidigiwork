@@ -210,7 +210,6 @@ function formatRange(startAt?: string, endAt?: string) {
 function MeetingPage() {
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("upcoming");
-  const [q, setQ] = useState("");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
