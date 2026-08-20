@@ -208,8 +208,48 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     },
   });
 
+  const invalidateTranscript = () => {
+    void queryClient.invalidateQueries({ queryKey: ["meeting-transcript", meetingId] });
+  };
+
+  const importText = useMutation({
+    mutationFn: (text: string) => importMeetingTranscriptText({ data: { meetingId, text, source: "MANUAL" } }),
+    onSuccess: (r: { inserted: number }) => {
+      invalidateTranscript();
+      setPasteOpen(false);
+      setPasteText("");
+      toast.success(`Đã lưu ${r.inserted} đoạn biên bản.`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không lưu được biên bản."),
+  });
+
+  const transcribe = useMutation({
+    mutationFn: async (file: File) => {
+      if (file.size > 12 * 1024 * 1024) {
+        throw new Error("File ghi âm vượt quá 12MB. Hãy cắt ngắn hoặc nén lại.");
+      }
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 0x8000) {
+        bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      }
+      return transcribeMeetingRecording({
+        data: {
+          meetingId,
+          fileName: file.name || "recording.wav",
+          mimeType: file.type || "audio/wav",
+          base64: btoa(bin),
+        },
+      });
+    },
+    onSuccess: (r: { inserted: number }) => {
+      invalidateTranscript();
+      toast.success(`Đã phiên âm và lưu ${r.inserted} đoạn biên bản.`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không phiên âm được."),
+  });
+
   const progressQuery = useQuery({
-    // eslint-disable-next-line
     queryKey: ["meeting-summary-progress", meetingId],
     queryFn: () => getMeetingSummaryProgress({ data: { meetingId } }),
     refetchInterval: generate.isPending ? 1500 : false,
