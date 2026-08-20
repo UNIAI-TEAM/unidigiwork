@@ -1,0 +1,110 @@
+{
+  "run": "30fbe450",
+  "tenant": "9b48153c-53ac-4d29-8beb-2b26c6e87058",
+  "workspace": "9b48153c-53ac-4d29-8beb-2b26c6e87058",
+  "task": {
+    "id": "92a3d93f-7fbd-476d-b46b-f5313c311b38",
+    "tenant_id": "9b48153c-53ac-4d29-8beb-2b26c6e87058",
+    "workspace_id": "9b48153c-53ac-4d29-8beb-2b26c6e87058",
+    "parent_task_id": null,
+    "project_id": null,
+    "title": "Audit task 30fbe450",
+    "description": "Kiểm toán runtime: tổng hợp tiến độ dự án.",
+    "status": "todo",
+    "priority": "high",
+    "due_at": null,
+    "completed_at": null,
+    "row_version": 1,
+    "created_by": "7d394e1a-e609-4dd3-a248-cad4e10ddd29",
+    "updated_by": "7d394e1a-e609-4dd3-a248-cad4e10ddd29",
+    "deleted_at": null,
+    "created_at": "2026-08-20T03:28:01.718124+00:00",
+    "updated_at": "2026-08-20T03:28:01.718124+00:00",
+    "tags": [],
+    "execution_mode": "HUMAN",
+    "human_owner_id": null,
+    "ai_worker_id": null,
+    "expected_deliverable": null,
+    "acceptance_criteria": null,
+    "ai_execution_status": "NOT_STARTED"
+  },
+  "results": [
+    {
+      "id": "AUTH-01",
+      "domain": "identity",
+      "name": "sign_in_password",
+      "status": "PASS",
+      "detail": "uid=7d394e1a-e609-4dd3-a248-cad4e10ddd29"
+    },
+    {
+      "id": "TEN-01",
+      "domain": "identity",
+      "name": "provision_tenant",
+      "status": "PASS",
+      "detail": "tenant=9b48153c-53ac-4d29-8beb-2b26c6e87058 ws=9b48153c-53ac-4d29-8beb-2b26c6e87058"
+    },
+    {
+      "id": "TASK-C",
+      "domain": "tasks",
+      "name": "create_task",
+      "status": "PASS",
+      "detail": "[object Object]"
+    },
+    {
+      "id": "HOME-01",
+      "domain": "home",
+      "name": "getHomeSummary",
+      "status": "FAIL",
+      "detail": "http=500 ms=13 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    },
+    {
+      "id": "SRCH-01",
+      "domain": "search",
+      "name": "searchUniversal",
+      "status": "FAIL",
+      "detail": "http=500 ms=6 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    },
+    {
+      "id": "GRAPH-01",
+      "domain": "work-graph",
+      "name": "getWorkContext",
+      "status": "FAIL",
+      "detail": "http=500 ms=5 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    },
+    {
+      "id": "AICTX-01",
+      "domain": "ai-context",
+      "name": "buildAiContext",
+      "status": "FAIL",
+      "detail": "http=500 ms=4 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    },
+    {
+      "id": "COP-01",
+      "domain": "ai-copilot",
+      "name": "askUniCopilot",
+      "status": "FAIL",
+      "detail": "http=500 ms=11 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    },
+    {
+      "id": "AIW-01",
+      "domain": "ai-workforce",
+      "name": "listAiWorkers",
+      "status": "FAIL",
+      "detail": "http=500 ms=3 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    },
+    {
+      "id": "NOTI-01",
+      "domain": "notifications",
+      "name": "listNotifications",
+      "status": "FAIL",
+      "detail": "http=500 ms=3 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    },
+    {
+      "id": "DASH-01",
+      "domain": "dashboard",
+      "name": "getDashboardSummary",
+      "status": "FAIL",
+      "detail": "http=500 ms=3 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+    }
+  ]
+}
