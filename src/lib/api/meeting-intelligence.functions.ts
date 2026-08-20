@@ -91,6 +91,110 @@ export const getMeetingSummary = createServerFn({ method: "POST" })
     return row ? mapSummaryRow(row as Record<string, unknown>) : null;
   });
 
+/** Nạp biên bản dạng văn bản (dán tay hoặc file .txt/.vtt đã có sẵn). */
+export const importMeetingTranscriptText = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    meetingIdSchema
+      .extend({
+        text: z.string().min(1).max(200_000),
+        durationSeconds: z.number().int().min(0).max(86_400).nullish(),
+        source: z.enum(["MANUAL", "RECORDING"]).default("MANUAL"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ inserted: number }> => {
+    const { splitTranscriptText } = await import("./meeting-transcription.server");
+    const segments = splitTranscriptText(data.text, data.durationSeconds ?? null);
+    if (segments.length === 0) {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "Nội dung biên bản trống." });
+    }
+    let inserted = 0;
+    for (let i = 0; i < segments.length; i += 100) {
+      const { data: count, error } = await context.supabase.rpc("append_meeting_transcript", {
+        _meeting_id: data.meetingId,
+        _segments: segments.slice(i, i + 100) as never,
+        _source: data.source,
+      });
+      if (error) mapPgError(error, "MEETING_NOT_FOUND");
+      inserted += Number(count ?? 0);
+    }
+    return { inserted };
+  });
+
+/** Phiên âm file ghi âm cuộc họp bằng Lovable AI rồi lưu thành biên bản thật. */
+export const transcribeMeetingRecording = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    meetingIdSchema
+      .extend({
+        fileName: z.string().min(1).max(200),
+        mimeType: z.string().min(1).max(120),
+        // base64 (không kèm data: prefix); giới hạn ~12MB nhị phân.
+        base64: z.string().min(16).max(17_000_000),
+        durationSeconds: z.number().int().min(0).max(86_400).nullish(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ inserted: number; characters: number }> => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) {
+      throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể phiên âm. Vui lòng thử lại." });
+    }
+    const { transcribeAudio, splitTranscriptText } = await import("./meeting-transcription.server");
+
+    const binary = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    if (binary.byteLength < 2048) {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "File ghi âm rỗng hoặc quá ngắn. Hãy ghi âm lại." });
+    }
+
+    let text = "";
+    try {
+      text = await transcribeAudio(binary, data.fileName, data.mimeType, apiKey);
+    } catch (e) {
+      const status = (e as { status?: number }).status ?? 0;
+      const message =
+        status === 402
+          ? "Workspace đã hết credit AI. Vui lòng nạp thêm để tiếp tục phiên âm."
+          : status === 429
+            ? "Đang bị giới hạn tốc độ. Vui lòng thử lại sau ít phút."
+            : status === 400
+              ? "Định dạng file ghi âm không được hỗ trợ. Hãy dùng WAV hoặc MP3."
+              : "Không phiên âm được file ghi âm. Vui lòng thử lại.";
+      throw new ApiError({ code: status === 402 ? "AI_QUOTA_EXCEEDED" : "AI_GATEWAY_UNAVAILABLE", message });
+    }
+    if (!text) {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "Không nhận được nội dung nào từ file ghi âm." });
+    }
+
+    const segments = splitTranscriptText(text, data.durationSeconds ?? null);
+    let inserted = 0;
+    for (let i = 0; i < segments.length; i += 100) {
+      const { data: count, error } = await context.supabase.rpc("append_meeting_transcript", {
+        _meeting_id: data.meetingId,
+        _segments: segments.slice(i, i + 100) as never,
+        _source: "RECORDING",
+      });
+      if (error) mapPgError(error, "MEETING_NOT_FOUND");
+      inserted += Number(count ?? 0);
+    }
+    return { inserted, characters: text.length };
+  });
+
+const _unusedGetMeetingSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => meetingIdSchema.parse(i))
+  .handler(async ({ data, context }): Promise<MeetingSummary | null> => {
+    const { mapSummaryRow } = await import("./meeting-intelligence.server");
+    const { data: row, error } = await context.supabase
+      .from("meeting_summaries")
+      .select("*")
+      .eq("meeting_id", data.meetingId)
+      .maybeSingle();
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    return row ? mapSummaryRow(row as Record<string, unknown>) : null;
+  });
+
 export const getMeetingSummaryProgress = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => meetingIdSchema.parse(i))
