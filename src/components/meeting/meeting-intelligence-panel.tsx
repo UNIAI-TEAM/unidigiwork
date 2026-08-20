@@ -48,6 +48,107 @@ import {
   type SummaryProgress,
   type SummarySource,
 } from "@/domain/meeting-intelligence/contracts";
+
+type TranscriptImportStep = "READ" | "STT" | "SAVE";
+type TranscriptStepStatus = "PENDING" | "RUNNING" | "DONE" | "FAILED" | "SKIPPED";
+type TranscriptImportJob = {
+  kind: "AUDIO" | "PASTE";
+  label: string;
+  startedAt: number;
+  error: string | null;
+  steps: Array<{ step: TranscriptImportStep; status: TranscriptStepStatus; detail: string | null }>;
+};
+const IMPORT_STEP_LABEL: Record<TranscriptImportStep, string> = {
+  READ: "Đọc & tải nội dung",
+  STT: "Phiên âm bằng AI (STT)",
+  SAVE: "Cắt đoạn & lưu segments",
+};
+const IMPORT_STATUS_LABEL: Record<TranscriptStepStatus, string> = {
+  PENDING: "Chờ",
+  RUNNING: "Đang chạy",
+  DONE: "Xong",
+  FAILED: "Lỗi",
+  SKIPPED: "Bỏ qua",
+};
+
+function TranscriptImportStatusCard({
+  job,
+  onDismiss,
+}: {
+  job: TranscriptImportJob;
+  onDismiss: () => void;
+}) {
+  const failed = job.steps.some((s) => s.status === "FAILED");
+  const done = !failed && job.steps.every((s) => s.status === "DONE");
+  return (
+    <div
+      className={`rounded-lg border p-2.5 ${
+        failed ? "border-destructive/40 bg-destructive/5" : "border-border bg-surface-2"
+      }`}
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[11px] font-medium text-foreground">
+            {job.kind === "AUDIO" ? "Nhập biên bản từ file ghi âm" : "Nhập biên bản dán tay"}
+          </div>
+          <div className="truncate text-[10px] text-muted-foreground">{job.label}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+          aria-label="Đóng trạng thái nhập biên bản"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+      <ol className="space-y-1.5">
+        {job.steps.map((s) => (
+          <li key={s.step} className="flex items-start gap-2">
+            <span className="mt-0.5 shrink-0">
+              {s.status === "RUNNING" ? (
+                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+              ) : s.status === "DONE" ? (
+                <CheckCircle2 className="h-3 w-3 text-success" />
+              ) : s.status === "FAILED" ? (
+                <AlertTriangle className="h-3 w-3 text-destructive" />
+              ) : (
+                <div className="h-3 w-3 rounded-full border border-border" />
+              )}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-[11px] text-foreground">
+                {IMPORT_STEP_LABEL[s.step]}
+                <span className="text-[10px] text-muted-foreground">
+                  · {IMPORT_STATUS_LABEL[s.status]}
+                </span>
+              </div>
+              {s.detail && (
+                <div
+                  className={`text-[10px] ${
+                    s.status === "FAILED" ? "text-destructive" : "text-muted-foreground"
+                  }`}
+                >
+                  {s.detail}
+                </div>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+      {done && (
+        <div className="mt-2 text-[10px] text-muted-foreground">
+          Hoàn tất — kiểm tra danh sách đoạn bên dưới để đối chiếu mốc thời gian.
+        </div>
+      )}
+      {job.error && (
+        <div className="mt-2 rounded border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+          Chi tiết lỗi: {job.error}
+        </div>
+      )}
+    </div>
+  );
+}
 import {
   confirmMeetingActionItem,
   dismissMeetingActionItem,
