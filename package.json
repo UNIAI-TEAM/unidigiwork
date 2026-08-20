@@ -20,7 +20,8 @@
     "test:domain-sdk": "vitest run src/lib/architecture/domain-sdk-gate.test.ts",
     "gate:domain-sdk": "node scripts/domain-sdk-gate.mjs",
     "verify": "bun run typecheck && bun run lint:changed && bun run test && bun run build",
-    "test:integration": "bash scripts/integration-tests.sh"
+    "test:integration": "bash scripts/integration-tests.sh",
+    "test:e2e:task-detail": "python3 tests/e2e/task-detail-ai-panel.py"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.36",
