@@ -195,135 +195,21 @@ const participants = [
   { name: "Bảo Ngọc", seed: "bao-ngoc" },
 ];
 
-type Status = "live" | "upcoming" | "ended";
-
-const MEETINGS: {
-  id: string;
-  title: string;
-  project: string;
-  time: string;
-  date: string;
-  durationMin: number;
-  status: Status;
-  participants: string[];
-  recording?: boolean;
-  type: "standup" | "review" | "1-on-1" | "client" | "workshop";
-}[] = [
-  {
-    id: "m1",
-    title: "Sprint 6 – Daily Standup",
-    project: "STOS",
-    time: "09:30",
-    date: "Hôm nay",
-    durationMin: 30,
-    status: "live",
-    participants: ["nguyen-van-a-1", "tran-thi-b", "pham-minh-c", "le-hoang-d", "nguyen-huong"],
-    recording: true,
-    type: "standup",
-  },
-  {
-    id: "m2",
-    title: "UX Review – Mobile App",
-    project: "Smart University",
-    time: "11:00",
-    date: "Hôm nay",
-    durationMin: 60,
-    status: "upcoming",
-    participants: ["my-linh", "duy-anh", "quang-minh"],
-    type: "review",
-  },
-  {
-    id: "m3",
-    title: "1:1 với CTO",
-    project: "Nội bộ",
-    time: "14:00",
-    date: "Hôm nay",
-    durationMin: 45,
-    status: "upcoming",
-    participants: ["nguyen-van-a-1", "bao-ngoc"],
-    type: "1-on-1",
-  },
-  {
-    id: "m4",
-    title: "Demo cho khách hàng – Y tế xã",
-    project: "Y tế xã",
-    time: "16:30",
-    date: "Hôm nay",
-    durationMin: 90,
-    status: "upcoming",
-    participants: ["tran-thi-b", "do-tuan-nam", "pham-minh-c", "le-hoang-d"],
-    type: "client",
-  },
-  {
-    id: "m5",
-    title: "Workshop AI Copilot",
-    project: "UNI-HRM",
-    time: "10:00",
-    date: "Mai, 12/06",
-    durationMin: 120,
-    status: "upcoming",
-    participants: ["nguyen-huong", "duy-anh", "my-linh", "quang-minh", "bao-ngoc", "do-tuan-nam"],
-    type: "workshop",
-  },
-  {
-    id: "m6",
-    title: "Retrospective Sprint 5",
-    project: "STOS",
-    time: "15:00",
-    date: "Hôm qua",
-    durationMin: 60,
-    status: "ended",
-    participants: [
-      "nguyen-van-a-1",
-      "tran-thi-b",
-      "pham-minh-c",
-      "le-hoang-d",
-      "nguyen-huong",
-      "do-tuan-nam",
-    ],
-    recording: true,
-    type: "review",
-  },
-  {
-    id: "m7",
-    title: "Kick-off – Dự án UNI-HRM",
-    project: "UNI-HRM",
-    time: "09:00",
-    date: "09/06",
-    durationMin: 90,
-    status: "ended",
-    participants: ["nguyen-van-a-1", "duy-anh", "my-linh", "bao-ngoc"],
-    recording: true,
-    type: "workshop",
-  },
-];
-
-const ROOMS = [
-  {
-    name: "Phòng họp lớn – Tầng 5",
-    capacity: 30,
-    free: true,
-    equipment: ['TV 75"', "Polycom", "Whiteboard"],
-  },
-  { name: "Hội trường A", capacity: 80, free: false, equipment: ["Projector", "Mic không dây"] },
-  { name: "Phòng nhỏ – Tầng 3", capacity: 8, free: true, equipment: ['TV 55"', "Jabra"] },
-  { name: "Phòng nhỏ – Tầng 4", capacity: 6, free: true, equipment: ['TV 55"'] },
-];
-
-const typeLabel: Record<string, { text: string; cls: string }> = {
-  standup: { text: "Standup", cls: "bg-emerald-500/15 text-emerald-300" },
-  review: { text: "Review", cls: "bg-sky-500/15 text-sky-300" },
-  "1-on-1": { text: "1:1", cls: "bg-violet-500/15 text-violet-300" },
-  client: { text: "Khách hàng", cls: "bg-amber-500/15 text-amber-300" },
-  workshop: { text: "Workshop", cls: "bg-rose-500/15 text-rose-300" },
-};
-
 type Tab = "upcoming" | "live" | "ended" | "recordings" | "rooms";
+
+function formatRange(startAt?: string, endAt?: string) {
+  if (!startAt) return "Chưa đặt thời gian";
+  const s = new Date(startAt);
+  const e = endAt ? new Date(endAt) : null;
+  const time = s.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  const date = s.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+  const mins = e ? Math.max(0, Math.round((e.getTime() - s.getTime()) / 60000)) : null;
+  return `${time} · ${date}${mins ? ` · ${mins}p` : ""}`;
+}
 
 function MeetingPage() {
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("upcoming");
-  const [q, setQ] = useState("");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
@@ -495,6 +381,17 @@ function MeetingPage() {
   const listLoading = rangeActive ? rangeQuery.isLoading : rooms.isLoading;
   const listFetching = rangeActive ? rangeQuery.isFetching : rooms.isFetching;
 
+  // Panel "Sắp diễn ra": luôn lấy dữ liệu thật, độc lập với bộ lọc đang chọn.
+  const upcomingPanel = useQuery({
+    queryKey: ["meeting-rooms", "upcoming-panel", activeWs ?? null],
+    enabled: !!activeWs,
+    queryFn: () =>
+      listMyMeetingRooms({
+        data: { workspaceId: activeWs as string, state: "upcoming", sort: "asc", limit: 3, offset: 0 },
+      }),
+  });
+  const upcomingItems = (upcomingPanel.data?.items ?? []) as unknown as ListRoom[];
+
   const createRoom = useMutation({
     mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
       createInstantMeeting({
@@ -609,15 +506,6 @@ function MeetingPage() {
       toast.success("Đã hủy cuộc họp.");
     },
     onError: () => toast.error("Không hủy được cuộc họp. Kiểm tra quyền của bạn."),
-  });
-
-  const list = MEETINGS.filter((m) => {
-    if (tab === "live" && m.status !== "live") return false;
-    if (tab === "upcoming" && m.status !== "upcoming" && m.status !== "live") return false;
-    if (tab === "ended" && m.status !== "ended") return false;
-    if (tab === "recordings" && !m.recording) return false;
-    if (q && !`${m.title} ${m.project}`.toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
   });
 
   return (
@@ -945,7 +833,20 @@ function MeetingPage() {
                 ).map(([k, label]) => (
                   <button
                     key={k}
-                    onClick={() => setTab(k)}
+                    onClick={() => {
+                      setTab(k);
+                      setRoomFilter({
+                        state:
+                          k === "live"
+                            ? "live"
+                            : k === "upcoming"
+                              ? "upcoming"
+                              : k === "ended" || k === "recordings"
+                                ? "ended"
+                                : "all",
+                        page: 1,
+                      });
+                    }}
                     className={`rounded-md px-3 py-1.5 transition-colors ${
                       tab === k
                         ? "bg-primary text-primary-foreground"
@@ -960,8 +861,8 @@ function MeetingPage() {
                 <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
+                    value={roomQuery}
+                    onChange={(e) => setRoomFilter({ q: e.target.value, page: 1 })}
                     placeholder="Tìm cuộc họp…"
                     className="w-56 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
@@ -1010,17 +911,96 @@ function MeetingPage() {
                 <RoomsGrid />
               ) : (
                 <div className="space-y-3">
-                  {list.map((m) => (
-                    <MeetingRow
-                      key={m.id}
-                      m={m}
-                      onJoin={() => void navigate({ to: "/meeting/$id", params: { id: m.id } })}
-                    />
-                  ))}
-                  {list.length === 0 && (
+                  {listLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Đang tải cuộc họp…
+                    </div>
+                  ) : listItems.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
                       Không tìm thấy cuộc họp nào
                     </div>
+                  ) : (
+                    <>
+                      {listItems.map((m) => (
+                        <div
+                          key={m.id}
+                          className={`flex flex-wrap items-center gap-4 rounded-xl border bg-surface p-4 ${m.status === "live" ? "border-destructive/40" : "border-border"} hover:border-primary/40`}
+                        >
+                          <div
+                            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${m.status === "live" ? "bg-destructive/15 text-destructive" : m.status === "ended" || m.status === "canceled" ? "bg-surface-2 text-muted-foreground" : "bg-primary/15 text-primary"}`}
+                          >
+                            {m.status === "live" ? (
+                              <Circle className="h-5 w-5 fill-current" />
+                            ) : m.status === "ended" || m.status === "canceled" ? (
+                              <CheckCircle2 className="h-5 w-5" />
+                            ) : (
+                              <VideoIcon className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium">{m.title}</span>
+                              <RoomStatusChip status={m.status} startAt={m.start_at} endAt={m.end_at} />
+                            </div>
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {formatRange(m.start_at, m.end_at)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to="/meeting/$id"
+                              params={{ id: m.id }}
+                              className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium ${m.status === "live" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                            >
+                              <ArrowUpRight className="h-3.5 w-3.5" />
+                              {m.status === "live" ? "Tham gia" : "Vào phòng"}
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(m)}
+                              className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCancelRoom(m);
+                                setCancelReason("");
+                              }}
+                              className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {listTotal > ROOM_PAGE_SIZE && (
+                        <div className="flex items-center justify-between gap-3 pt-2 text-xs">
+                          <span className="text-muted-foreground">
+                            Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
+                            {Math.min(currentPage * ROOM_PAGE_SIZE, listTotal)} / {listTotal} cuộc họp
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setRoomFilter({ page: currentPage - 1 })}
+                              disabled={currentPage <= 1 || listFetching}
+                              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                            >
+                              Trước
+                            </button>
+                            <button
+                              onClick={() => setRoomFilter({ page: currentPage + 1 })}
+                              disabled={currentPage * ROOM_PAGE_SIZE >= listTotal || listFetching}
+                              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                            >
+                              Sau
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -1038,44 +1018,31 @@ function MeetingPage() {
                 </Link>
               </div>
               <div className="space-y-2">
-                {MEETINGS.filter((m) => m.status === "upcoming")
-                  .slice(0, 3)
-                  .map((m) => (
-                    <button onClick={() => notifyComingSoon()}
+                {upcomingPanel.isLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải…
+                  </div>
+                ) : upcomingItems.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Chưa có cuộc họp nào sắp diễn ra.</p>
+                ) : (
+                  upcomingItems.slice(0, 3).map((m) => (
+                    <Link
                       key={m.id}
-                      className="w-full rounded-lg border border-border bg-bg p-3 text-left hover:border-primary/40"
+                      to="/meeting/$id"
+                      params={{ id: m.id }}
+                      className="block w-full rounded-lg border border-border bg-bg p-3 text-left hover:border-primary/40"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium">{m.title}</div>
-                          <div className="mt-0.5 text-[11px] text-muted-foreground">
-                            {m.project} · {m.durationMin}p
-                          </div>
-                        </div>
-                        <span
-                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${typeLabel[m.type].cls}`}
-                        >
-                          {typeLabel[m.type].text}
-                        </span>
+                        <div className="min-w-0 truncate text-sm font-medium">{m.title}</div>
+                        <RoomStatusChip status={m.status} startAt={m.start_at} endAt={m.end_at} />
                       </div>
-                      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {m.time} · {m.date}
-                        </span>
-                        <div className="flex -space-x-1.5">
-                          {m.participants.slice(0, 3).map((s) => (
-                            <img
-                              key={s}
-                              src={avatar(s)}
-                              alt=""
-                              className="h-5 w-5 rounded-full border border-surface object-cover"
-                            />
-                          ))}
-                        </div>
+                      <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {formatRange(m.start_at, m.end_at)}
                       </div>
-                    </button>
-                  ))}
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
 
@@ -1900,99 +1867,19 @@ function StatCard({
   );
 }
 
-function MeetingRow({ m, onJoin }: { m: (typeof MEETINGS)[number]; onJoin: () => void }) {
-  const live = m.status === "live";
-  const ended = m.status === "ended";
-  return (
-    <div
-      className={`flex flex-wrap items-center gap-4 rounded-xl border bg-surface p-4 ${live ? "border-destructive/40" : "border-border"} hover:border-primary/40`}
-    >
-      <div
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${live ? "bg-destructive/15 text-destructive" : ended ? "bg-surface-2 text-muted-foreground" : "bg-primary/15 text-primary"}`}
-      >
-        {live ? (
-          <Circle className="h-5 w-5 fill-current" />
-        ) : ended ? (
-          <CheckCircle2 className="h-5 w-5" />
-        ) : (
-          <VideoIcon className="h-5 w-5" />
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-medium">{m.title}</span>
-          <span
-            className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${typeLabel[m.type].cls}`}
-          >
-            {typeLabel[m.type].text}
-          </span>
-          {live && (
-            <span className="flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-              <Circle className="h-1.5 w-1.5 fill-current" /> LIVE
-            </span>
-          )}
-          {m.recording && !live && (
-            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Video className="h-3 w-3" /> Có bản ghi
-            </span>
-          )}
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Hash className="h-3 w-3" /> {m.project}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-3 w-3" /> {m.date} · {m.time} · {m.durationMin}p
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Users className="h-3 w-3" /> {m.participants.length} người
-          </span>
-        </div>
-      </div>
-      <div className="flex -space-x-2">
-        {m.participants.slice(0, 4).map((s) => (
-          <img
-            key={s}
-            src={avatar(s)}
-            alt=""
-            className="h-7 w-7 rounded-full border-2 border-surface object-cover"
-          />
-        ))}
-        {m.participants.length > 4 && (
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-[10px]">
-            +{m.participants.length - 4}
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        {ended ? (
-          <>
-            <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:border-primary/40">
-              <PlayCircle className="h-3.5 w-3.5" /> Xem lại
-            </button>
-            <button onClick={() => notifyComingSoon()} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:border-primary/40">
-              <FileText className="h-3.5 w-3.5" /> Tóm tắt
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={onJoin}
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium ${live ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
-            >
-              <ArrowUpRight className="h-3.5 w-3.5" /> {live ? "Tham gia" : "Vào phòng"}
-            </button>
-            <button onClick={() => notifyComingSoon()} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground">
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function RoomsGrid() {
+const ROOMS = [
+  {
+    name: "Phòng họp lớn – Tầng 5",
+    capacity: 30,
+    free: true,
+    equipment: ['TV 75"', "Polycom", "Whiteboard"],
+  },
+  { name: "Hội trường A", capacity: 80, free: false, equipment: ["Projector", "Mic không dây"] },
+  { name: "Phòng nhỏ – Tầng 3", capacity: 8, free: true, equipment: ['TV 55"', "Jabra"] },
+  { name: "Phòng nhỏ – Tầng 4", capacity: 6, free: true, equipment: ['TV 55"'] },
+];
+
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {ROOMS.map((r) => (
