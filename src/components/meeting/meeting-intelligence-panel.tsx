@@ -170,6 +170,8 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const [formTitle, setFormTitle] = useState("");
   const [formWorkspace, setFormWorkspace] = useState("");
   const [formDue, setFormDue] = useState("");
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
 
   const transcriptQuery = useQuery({
     queryKey: ["meeting-transcript", meetingId],
