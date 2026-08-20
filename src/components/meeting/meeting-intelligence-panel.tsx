@@ -470,6 +470,35 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     if (!summary?.transcriptChecksum || segments.length === 0) return false;
     return summary.transcriptChecksum !== transcriptChecksum(segments);
   }, [summary, segments]);
+
+  const exportTranscriptCsv = () => {
+    if (segments.length === 0) return;
+    const esc = (v: string | number | null | undefined) =>
+      `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows = [
+      ["stt", "offset_seconds", "timestamp", "speaker", "source", "content", "segment_id"],
+      ...segments.map((s, i) => [
+        i + 1,
+        s.offsetSeconds,
+        formatOffset(s.offsetSeconds),
+        s.speakerName ?? "",
+        TRANSCRIPT_SOURCE_LABEL[s.source] ?? s.source,
+        s.content,
+        s.id,
+      ]),
+    ];
+    const csv = "\uFEFF" + rows.map((r) => r.map(esc).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transcript-${meetingId}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Đã xuất ${segments.length} đoạn ra CSV.`);
+  };
+  }, [summary, segments]);
   const generatedAt = useMemo(
     () => (summary ? new Date(summary.generatedAt).toLocaleString("vi-VN") : null),
     [summary],
