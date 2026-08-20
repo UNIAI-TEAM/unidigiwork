@@ -2,7 +2,7 @@ import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { playMeetingCue } from "@/lib/meeting-cues";
 
@@ -37,6 +37,7 @@ import {
   Lock,
   Crown,
   Video as VideoIcon,
+  RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -76,7 +77,10 @@ import {
 } from "@/lib/screen-share-quality";
 import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
-import { getMeetingSummary } from "@/lib/api/meeting-intelligence.functions";
+import {
+  getMeetingSummary,
+  generateMeetingSummary,
+} from "@/lib/api/meeting-intelligence.functions";
 import { MeetingContentPanel } from "@/components/meeting/meeting-content-panel";
 import { MeetingStatusHistoryPanel } from "@/components/meeting/meeting-status-history-panel";
 import { MeetingParticipantsManagerPanel } from "@/components/meeting/participants-manager-panel";
