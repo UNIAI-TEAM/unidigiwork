@@ -1768,8 +1768,19 @@ function StatCard({
   );
 }
 
-
 function RoomsGrid() {
+const ROOMS = [
+  {
+    name: "Phòng họp lớn – Tầng 5",
+    capacity: 30,
+    free: true,
+    equipment: ['TV 75"', "Polycom", "Whiteboard"],
+  },
+  { name: "Hội trường A", capacity: 80, free: false, equipment: ["Projector", "Mic không dây"] },
+  { name: "Phòng nhỏ – Tầng 3", capacity: 8, free: true, equipment: ['TV 55"', "Jabra"] },
+  { name: "Phòng nhỏ – Tầng 4", capacity: 6, free: true, equipment: ['TV 55"'] },
+];
+
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {ROOMS.map((r) => (
