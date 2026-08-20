@@ -324,7 +324,6 @@ function MeetingPage() {
   const [open, setOpen] = useSidebarState();
   const [tab, setTab] = useState<Tab>("upcoming");
   const [q, setQ] = useState("");
-  const [inRoom, setInRoom] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
@@ -611,18 +610,6 @@ function MeetingPage() {
     },
     onError: () => toast.error("Không hủy được cuộc họp. Kiểm tra quyền của bạn."),
   });
-
-  if (inRoom) {
-    return (
-      <div className="flex min-h-screen bg-bg text-foreground">
-        <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
-        <main className="flex min-w-0 flex-1 flex-col">
-          <AppTopbar variant="meeting" onOpenSidebar={() => setOpen(true)} />
-          <LiveMeetingRoom onExit={() => setInRoom(false)} />
-        </main>
-      </div>
-    );
-  }
 
   const list = MEETINGS.filter((m) => {
     if (tab === "live" && m.status !== "live") return false;
@@ -1024,7 +1011,11 @@ function MeetingPage() {
               ) : (
                 <div className="space-y-3">
                   {list.map((m) => (
-                    <MeetingRow key={m.id} m={m} onJoin={() => setInRoom(true)} />
+                    <MeetingRow
+                      key={m.id}
+                      m={m}
+                      onJoin={() => void navigate({ to: "/meeting/$id", params: { id: m.id } })}
+                    />
                   ))}
                   {list.length === 0 && (
                     <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
