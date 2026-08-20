@@ -1,0 +1,199 @@
+{
+ "after_login_url": "http://localhost:8080/tasks",
+ "/home": {
+  "url": "http://localhost:8080/home",
+  "len": 1227,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/dashboard": {
+  "url": "http://localhost:8080/dashboard",
+  "len": 1763,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/tasks": {
+  "url": "http://localhost:8080/tasks",
+  "len": 2078,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/workspace": {
+  "url": "http://localhost:8080/workspace",
+  "len": 717,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/documents": {
+  "url": "http://localhost:8080/documents",
+  "len": 936,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client",
+   "Failed to load resource: the server responded with a status of 400 ()",
+   "Failed to load resource: the server responded with a status of 400 ()"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/meeting": {
+  "url": "http://localhost:8080/meeting?page=1",
+  "len": 1289,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/chat": {
+  "url": "http://localhost:8080/chat",
+  "len": 580,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/email": {
+  "url": "http://localhost:8080/email",
+  "len": 1382,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/calendar": {
+  "url": "http://localhost:8080/calendar",
+  "len": 1179,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/search": {
+  "url": "http://localhost:8080/search?type=all",
+  "len": 864,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/notifications": {
+  "url": "http://localhost:8080/notifications",
+  "len": 799,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/people": {
+  "url": "http://localhost:8080/people",
+  "len": 776,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/knowledge": {
+  "url": "http://localhost:8080/knowledge",
+  "len": 655,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/workflows": {
+  "url": "http://localhost:8080/workflows",
+  "len": 1222,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/ai": {
+  "url": "http://localhost:8080/ai",
+  "len": 1909,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/ai-workforce": {
+  "url": "http://localhost:8080/ai-workforce",
+  "len": 1112,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/ai-market": {
+  "url": "http://localhost:8080/ai-market",
+  "len": 3859,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/reports": {
+  "url": "http://localhost:8080/reports",
+  "len": 2814,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client",
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/billing": {
+  "url": "http://localhost:8080/billing",
+  "len": 2200,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/settings": {
+  "url": "http://localhost:8080/settings",
+  "len": 1151,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "/admin": {
+  "url": "http://localhost:8080/admin",
+  "len": 704,
+  "errors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client"
+  ],
+  "crash": false,
+  "sample": "U UNIWORK Digital Workplace Platform Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò chuyện Họp Trực tiếp Email Hub TRI THỨC Tài liệu Kho tri thức TỰ ĐỘNG HOÁ Quy trình Trợ lý AI AI Workforce AI Market PHÂN TÍCH Bảng điều khiển Báo cáo KHÔNG GIAN LÀM VIỆC A audit_2708848c_ws Quản lý workspace Nguyễn Văn A 28°C · Hà Nội Cài đặt"
+ },
+ "copilot": {
+  "ok": true,
+  "tail": "n Văn A Giám đốc Điều hành Chào buổi sáng Hôm nay bạn không có việc gấp Làm mới Công việc Cuộc họp Tin nhắn 0 Hôm nay 0 Quá hạn 0 Nhắc đến bạn 0 Chờ duyệt 0 Cuộc họp Công việc của tôi J/K di chuyển · X chọn · C hoàn thành · O mở · R trang liên quan Xem tất cả Không có việc cần xử lý Bạn không còn công việc quá hạn hay đến hạn hôm nay. Tạo việc mới hoặc xem toàn bộ danh sách. Tạo công việc Xem tất cả công việc Sắp tới Xem tất cả Không có cuộc họp hay deadline Lịch của bạn trống trong hôm nay và ngày mai. Tạo cuộc họp hoặc mở lịch để xem xa hơn. Tạo cuộc họp Mở lịch Hộp việc Xem tất cả Hộp việc trống Không có thông báo, nhắc đến hay email nào đang chờ bạn xử lý. Xem thông báo Mở email Tóm tắt hôm nay Từ dữ liệu thật Làm mới Không có dữ liệu công việc nào để tóm tắt. UNI Workspace Copilot Tôi đang có bao nhiêu công việc chưa hoàn thành? Chưa đủ dữ liệu để xác định số công việc chưa hoàn thành vì không có nguồn workspace nào truy xuất được trong quyền hiện tại. Những nguồn công việc nào hiện có thể truy xuất trong quyền của tôi? Có rủi ro nào liên quan không? Việc này liên quan đến ai? Sao chép UNI chỉ đọc dữ liệu bạn có quyền xem. Mọi thay đổi đều cần bạn xác nhận trước khi thực hiện."
+ }
+}
