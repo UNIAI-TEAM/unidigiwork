@@ -834,7 +834,20 @@ function MeetingPage() {
                 ).map(([k, label]) => (
                   <button
                     key={k}
-                    onClick={() => setTab(k)}
+                    onClick={() => {
+                      setTab(k);
+                      setRoomFilter({
+                        state:
+                          k === "live"
+                            ? "live"
+                            : k === "upcoming"
+                              ? "upcoming"
+                              : k === "ended" || k === "recordings"
+                                ? "ended"
+                                : "all",
+                        page: 1,
+                      });
+                    }}
                     className={`rounded-md px-3 py-1.5 transition-colors ${
                       tab === k
                         ? "bg-primary text-primary-foreground"
@@ -849,8 +862,8 @@ function MeetingPage() {
                 <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
+                    value={roomQuery}
+                    onChange={(e) => setRoomFilter({ q: e.target.value, page: 1 })}
                     placeholder="Tìm cuộc họp…"
                     className="w-56 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
