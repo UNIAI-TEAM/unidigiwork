@@ -31,7 +31,7 @@ import { Route as WorkflowsPermissionsRouteImport } from './routes/workflows_.pe
 import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calendar'
 import { Route as WorkflowsAgentsRouteImport } from './routes/workflows_.agents'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
-import { Route as TasksIdRouteImport } from './routes/tasks.$id'
+import { Route as TasksIdRouteImport } from './routes/tasks_.$id'
 import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as MeetingHistoryRouteImport } from './routes/meeting_.history'
@@ -216,9 +216,9 @@ const WorkflowsIdRoute = WorkflowsIdRouteImport.update({
   getParentRoute: () => WorkflowsRoute,
 } as any)
 const TasksIdRoute = TasksIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => TasksRoute,
+  id: '/tasks_/$id',
+  path: '/tasks/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsDetailRoute = ReportsDetailRouteImport.update({
   id: '/detail',
@@ -632,7 +632,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
-  '/tasks': typeof TasksRouteWithChildren
+  '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -728,7 +728,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
-  '/tasks': typeof TasksRouteWithChildren
+  '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/ai-workforce': typeof AuthenticatedAiWorkforceRoute
@@ -826,7 +826,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
-  '/tasks': typeof TasksRouteWithChildren
+  '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -851,7 +851,7 @@ export interface FileRoutesById {
   '/meeting_/history': typeof MeetingHistoryRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
-  '/tasks/$id': typeof TasksIdRoute
+  '/tasks_/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows_/agents': typeof WorkflowsAgentsRoute
   '/workflows_/calendar': typeof WorkflowsCalendarRoute
@@ -1143,7 +1143,7 @@ export interface FileRouteTypes {
     | '/meeting_/history'
     | '/reports/$type'
     | '/reports/detail'
-    | '/tasks/$id'
+    | '/tasks_/$id'
     | '/workflows/$id'
     | '/workflows_/agents'
     | '/workflows_/calendar'
@@ -1217,12 +1217,13 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReportsRoute: typeof ReportsRouteWithChildren
-  TasksRoute: typeof TasksRouteWithChildren
+  TasksRoute: typeof TasksRoute
   TermsRoute: typeof TermsRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
+  TasksIdRoute: typeof TasksIdRoute
   WorkflowsAgentsRoute: typeof WorkflowsAgentsRoute
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
@@ -1390,12 +1391,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsIdRouteImport
       parentRoute: typeof WorkflowsRoute
     }
-    '/tasks/$id': {
-      id: '/tasks/$id'
-      path: '/$id'
+    '/tasks_/$id': {
+      id: '/tasks_/$id'
+      path: '/tasks/$id'
       fullPath: '/tasks/$id'
       preLoaderRoute: typeof TasksIdRouteImport
-      parentRoute: typeof TasksRoute
+      parentRoute: typeof rootRouteImport
     }
     '/reports/detail': {
       id: '/reports/detail'
@@ -2135,16 +2136,6 @@ const ReportsRouteChildren: ReportsRouteChildren = {
 const ReportsRouteWithChildren =
   ReportsRoute._addFileChildren(ReportsRouteChildren)
 
-interface TasksRouteChildren {
-  TasksIdRoute: typeof TasksIdRoute
-}
-
-const TasksRouteChildren: TasksRouteChildren = {
-  TasksIdRoute: TasksIdRoute,
-}
-
-const TasksRouteWithChildren = TasksRoute._addFileChildren(TasksRouteChildren)
-
 interface WorkflowsRouteChildren {
   WorkflowsIdRoute: typeof WorkflowsIdRoute
 }
@@ -2171,12 +2162,13 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ReportsRoute: ReportsRouteWithChildren,
-  TasksRoute: TasksRouteWithChildren,
+  TasksRoute: TasksRoute,
   TermsRoute: TermsRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
+  TasksIdRoute: TasksIdRoute,
   WorkflowsAgentsRoute: WorkflowsAgentsRoute,
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
