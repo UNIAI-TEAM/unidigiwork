@@ -12,6 +12,58 @@ const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
 
 const one = <T,>(v: unknown): T => (Array.isArray(v) ? (v[0] as T) : (v as T));
 
+export interface AiTaskAccess {
+  canView: boolean;
+  canManage: boolean;
+  canReview: boolean;
+  reason: "OK" | "DENIED";
+}
+
+const MANAGER_ROLES = new Set(["owner", "admin", "manager", "tenant_admin"]);
+
+/**
+ * Quyền hiển thị panel AI EXECUTION.
+ * canView dựa trên RLS (đọc được task = thuộc tổ chức/workspace).
+ * canManage/canReview chỉ dành cho chủ sở hữu việc, người tạo, hoặc vai trò quản lý.
+ */
+export const getAiTaskAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<AiTaskAccess> => {
+    const denied: AiTaskAccess = { canView: false, canManage: false, canReview: false, reason: "DENIED" };
+    const { data: task, error } = await context.supabase
+      .from("tasks")
+      .select("id, tenant_id, workspace_id, human_owner_id, created_by")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (error || !task) return denied;
+
+    const uid = context.userId;
+    let elevated = task.human_owner_id === uid || task.created_by === uid;
+
+    if (!elevated) {
+      const { data: tm } = await context.supabase
+        .from("tenant_members")
+        .select("role, status")
+        .eq("tenant_id", task.tenant_id)
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (tm && tm.status === "active" && MANAGER_ROLES.has(String(tm.role))) elevated = true;
+    }
+
+    if (!elevated && task.workspace_id) {
+      const { data: wm } = await context.supabase
+        .from("workspace_members")
+        .select("role")
+        .eq("workspace_id", task.workspace_id)
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (wm && MANAGER_ROLES.has(String(wm.role))) elevated = true;
+    }
+
+    return { canView: true, canManage: elevated, canReview: elevated, reason: "OK" };
+  });
+
 /** Danh sách nhân sự AI của tổ chức (tự seed 3 hồ sơ mặc định nếu chưa có). */
 export const listAiWorkers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
