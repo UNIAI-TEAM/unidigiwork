@@ -435,6 +435,8 @@ function MeetingPage() {
   const [editEnd, setEditEnd] = useState("");
   const [cancelRoom, setCancelRoom] = useState<RoomItem | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelStep, setCancelStep] = useState<"edit" | "review">("edit");
+  const [reviewCountdown, setReviewCountdown] = useState(10);
 
   const openEdit = (r: RoomItem) => {
     setEditRoom(r);
