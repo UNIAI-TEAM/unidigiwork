@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2, History, CornerDownLeft } from "lucide-react";
+import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2, History, CornerDownLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { askUniCopilot } from "@/lib/api/ai-copilot.functions";
 import { proposeAiAction } from "@/lib/api/ai-actions.functions";
@@ -70,6 +70,8 @@ export function UniCopilot() {
   const [pinnedRoot, setPinnedRoot] = useState<CopilotRoot>(null);
   // Mobile bottom sheet: 'half' (mặc định) ↔ 'full', kéo xuống để đóng.
   const [snap, setSnap] = useState<"half" | "full">("half");
+  // Desktop: thu gọn panel để giải phóng không gian, giữ ngữ cảnh và lịch sử.
+  const [collapsed, setCollapsed] = useState(false);
   // Lịch sử follow-up đã hỏi (kèm nguồn trích dẫn) — mở/đóng bằng nút Lịch sử.
   const [showHistory, setShowHistory] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -327,9 +329,9 @@ export function UniCopilot() {
         role="dialog"
         aria-label="UNI — Workspace Copilot"
         style={{ transform: dragY ? `translateY(${dragY}px)` : undefined }}
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-border bg-background shadow-xl transition-[top,transform] duration-200 ease-out md:inset-y-0 md:left-auto md:right-0 md:w-[420px] md:rounded-none md:border-y-0 md:border-r-0 ${
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-border bg-background shadow-xl transition-[top,transform,width] duration-200 ease-out md:inset-y-0 md:left-auto md:right-0 md:rounded-none md:border-y-0 md:border-r-0 ${
           snap === "full" ? "top-4" : "top-[38vh]"
-        } md:top-0`}
+        } md:top-0 ${collapsed ? "md:w-16" : "md:w-[420px]"}`}
       >
         {/* Tay nắm kéo — chỉ mobile: kéo lên mở rộng, kéo xuống thu nhỏ/đóng. */}
         <div
@@ -347,51 +349,83 @@ export function UniCopilot() {
         >
           <span className="h-1.5 w-10 rounded-full bg-border" />
         </div>
-        <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
+        {collapsed ? (
+          <header className="flex flex-1 flex-col items-center gap-4 border-b border-border px-2 py-3">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Sparkles className="h-4 w-4" />
             </span>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold">UNI</p>
-              <p className="text-[11px] text-muted-foreground">Workspace Copilot</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              aria-label={snap === "full" ? "Thu nhỏ UNI" : "Mở rộng UNI"}
-              onClick={() => setSnap((s) => (s === "full" ? "half" : "full"))}
-            >
-              {snap === "full" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
-            {messages.length > 0 && (
+            <div className="mt-auto flex flex-col items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Lịch sử câu hỏi"
-                aria-pressed={showHistory}
-                title="Lịch sử câu hỏi đã hỏi"
-                className={showHistory ? "text-primary" : undefined}
-                onClick={() => setShowHistory((v) => !v)}
+                aria-label="Mở rộng UNI"
+                title="Mở rộng UNI"
+                onClick={() => setCollapsed(false)}
               >
-                <History className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-            )}
-            {messages.length > 0 && (
-              <Button variant="ghost" size="icon" aria-label="Hội thoại mới" onClick={reset}>
-                <RotateCcw className="h-4 w-4" />
+              <Button variant="ghost" size="icon" aria-label="Đóng UNI" onClick={closeUniCopilot}>
+                <X className="h-4 w-4" />
               </Button>
-            )}
-            <Button variant="ghost" size="icon" aria-label="Đóng UNI" onClick={closeUniCopilot}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </header>
+            </div>
+          </header>
+        ) : (
+          <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <div className="leading-tight">
+                <p className="text-sm font-semibold">UNI</p>
+                <p className="text-[11px] text-muted-foreground">Workspace Copilot</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden md:inline-flex"
+                aria-label="Thu gọn UNI"
+                title="Thu gọn UNI"
+                onClick={() => setCollapsed(true)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label={snap === "full" ? "Thu nhỏ UNI" : "Mở rộng UNI"}
+                onClick={() => setSnap((s) => (s === "full" ? "half" : "full"))}
+              >
+                {snap === "full" ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+              {messages.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Lịch sử câu hỏi"
+                  aria-pressed={showHistory}
+                  title="Lịch sử câu hỏi đã hỏi"
+                  className={showHistory ? "text-primary" : undefined}
+                  onClick={() => setShowHistory((v) => !v)}
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              )}
+              {messages.length > 0 && (
+                <Button variant="ghost" size="icon" aria-label="Hội thoại mới" onClick={reset}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" aria-label="Đóng UNI" onClick={closeUniCopilot}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </header>
+        )}
 
-        {effectiveRoot && (
+        {!collapsed && effectiveRoot && (
           <div className="flex items-center gap-2 border-b border-border bg-surface/60 px-4 py-2 text-xs">
             <span className="text-muted-foreground">{root ? "Ngữ cảnh:" : "Đang theo dõi:"}</span>
             <span className="truncate rounded-md bg-background px-2 py-0.5 font-medium">
@@ -409,7 +443,9 @@ export function UniCopilot() {
           </div>
         )}
 
-        {showHistory && askedHistory.length > 0 && (
+        {!collapsed && (
+          <>
+            {showHistory && askedHistory.length > 0 && (
           <div className="max-h-[45%] shrink-0 overflow-y-auto border-b border-border bg-surface/60 px-4 py-3">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Đã hỏi ({askedHistory.length})
@@ -557,6 +593,7 @@ export function UniCopilot() {
           </div>
           <p className="mt-1.5 text-[11px] text-muted-foreground">UNI chỉ đọc dữ liệu bạn có quyền xem. Mọi thay đổi đều cần bạn xác nhận trước khi thực hiện.</p>
         </div>
+        </>)}
       </aside>
     </>
   );

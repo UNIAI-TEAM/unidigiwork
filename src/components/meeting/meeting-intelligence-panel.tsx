@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Gavel,
   HelpCircle,
@@ -267,6 +269,7 @@ function StagedProgress({ progress, running }: { progress: SummaryProgress; runn
 
 export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const queryClient = useQueryClient();
+  const [collapsed, setCollapsed] = useState(false);
   const [activeSource, setActiveSource] = useState<SummarySource | null>(null);
   const [pending, setPending] = useState<{ item: MeetingActionItem; key: string } | null>(null);
   const [formTitle, setFormTitle] = useState("");
@@ -514,32 +517,46 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     <div className="space-y-4 text-xs">
       <div className="flex items-center justify-between gap-2">
         <div className="text-[11px] font-medium text-foreground">Biên bản &amp; tóm tắt AI</div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 gap-1 text-[11px]"
-          disabled={!hasTranscript || generate.isPending}
-          onClick={() => generate.mutate()}
-        >
-          {generate.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Sparkles className="h-3 w-3" />
-          )}
-          {summary ? "Tạo lại tóm tắt" : "Tóm tắt cuộc họp"}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1 text-[11px]"
+            disabled={!hasTranscript || generate.isPending}
+            onClick={() => generate.mutate()}
+          >
+            {generate.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Sparkles className="h-3 w-3" />
+            )}
+            {summary ? "Tạo lại tóm tắt" : "Tóm tắt cuộc họp"}
+          </Button>
+          <button
+            type="button"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Mở rộng panel biên bản" : "Thu gọn panel biên bản"}
+            title={collapsed ? "Mở rộng" : "Thu gọn"}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+          >
+            {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
-      {(generate.isPending || progress) && progress && (
-        <StagedProgress progress={progress} running={generate.isPending} />
-      )}
-      {generate.isPending && !progress && (
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-3 text-[11px] text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" /> Đang chuẩn bị tóm tắt…
-        </div>
-      )}
+      {collapsed ? null : (
+        <>
+          {(generate.isPending || progress) && progress && (
+            <StagedProgress progress={progress} running={generate.isPending} />
+          )}
+          {generate.isPending && !progress && (
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-3 text-[11px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Đang chuẩn bị tóm tắt…
+            </div>
+          )}
 
-      {summary && (
+          {summary && (
         <div className="space-y-3 rounded-lg border border-border bg-surface-2 p-3">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
             <span>
@@ -922,6 +939,8 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   );
 }
