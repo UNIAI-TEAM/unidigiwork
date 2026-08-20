@@ -269,6 +269,7 @@ function StagedProgress({ progress, running }: { progress: SummaryProgress; runn
 
 export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const queryClient = useQueryClient();
+  const [collapsed, setCollapsed] = useState(false);
   const [activeSource, setActiveSource] = useState<SummarySource | null>(null);
   const [pending, setPending] = useState<{ item: MeetingActionItem; key: string } | null>(null);
   const [formTitle, setFormTitle] = useState("");

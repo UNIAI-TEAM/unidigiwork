@@ -143,20 +143,34 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Bot className="h-4 w-4 text-primary" /> Nhân sự AI thực thi
         </h2>
-        <span className="rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-xs text-muted-foreground">
-          {AI_EXECUTION_STATUS_LABEL[status] ?? status}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-xs text-muted-foreground">
+            {AI_EXECUTION_STATUS_LABEL[status] ?? status}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Mở rộng panel AI" : "Thu gọn panel AI"}
+            title={collapsed ? "Mở rộng" : "Thu gọn"}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+          >
+            {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
-      {!canManage ? (
-        <p className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-surface-2 p-3 text-xs text-muted-foreground">
-          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Bạn chỉ có quyền xem. Giao việc cho nhân sự AI và nghiệm thu bản bàn giao thuộc về chủ sở hữu công việc hoặc quản trị viên.
-        </p>
-      ) : null}
+      {collapsed ? null : (
+        <>
+          {!canManage ? (
+            <p className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-surface-2 p-3 text-xs text-muted-foreground">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Bạn chỉ có quyền xem. Giao việc cho nhân sự AI và nghiệm thu bản bàn giao thuộc về chủ sở hữu công việc hoặc quản trị viên.
+            </p>
+          ) : null}
 
-      {/* Giao việc / cập nhật đặc tả */}
-      <div className={canManage ? "space-y-3" : "hidden"}>
+          {/* Giao việc / cập nhật đặc tả */}
+          <div className={canManage ? "space-y-3" : "hidden"}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-medium text-muted-foreground">
             Nhân sự AI
