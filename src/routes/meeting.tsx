@@ -878,17 +878,96 @@ function MeetingPage() {
                 <RoomsGrid />
               ) : (
                 <div className="space-y-3">
-                  {list.map((m) => (
-                    <MeetingRow
-                      key={m.id}
-                      m={m}
-                      onJoin={() => void navigate({ to: "/meeting/$id", params: { id: m.id } })}
-                    />
-                  ))}
-                  {list.length === 0 && (
+                  {listLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Đang tải cuộc họp…
+                    </div>
+                  ) : listItems.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
                       Không tìm thấy cuộc họp nào
                     </div>
+                  ) : (
+                    <>
+                      {listItems.map((m) => (
+                        <div
+                          key={m.id}
+                          className={`flex flex-wrap items-center gap-4 rounded-xl border bg-surface p-4 ${m.status === "live" ? "border-destructive/40" : "border-border"} hover:border-primary/40`}
+                        >
+                          <div
+                            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${m.status === "live" ? "bg-destructive/15 text-destructive" : m.status === "ended" || m.status === "canceled" ? "bg-surface-2 text-muted-foreground" : "bg-primary/15 text-primary"}`}
+                          >
+                            {m.status === "live" ? (
+                              <Circle className="h-5 w-5 fill-current" />
+                            ) : m.status === "ended" || m.status === "canceled" ? (
+                              <CheckCircle2 className="h-5 w-5" />
+                            ) : (
+                              <VideoIcon className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium">{m.title}</span>
+                              <RoomStatusChip status={m.status} startAt={m.start_at} endAt={m.end_at} />
+                            </div>
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {formatRange(m.start_at, m.end_at)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to="/meeting/$id"
+                              params={{ id: m.id }}
+                              className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium ${m.status === "live" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                            >
+                              <ArrowUpRight className="h-3.5 w-3.5" />
+                              {m.status === "live" ? "Tham gia" : "Vào phòng"}
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(m)}
+                              className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCancelRoom(m);
+                                setCancelReason("");
+                              }}
+                              className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {listTotal > ROOM_PAGE_SIZE && (
+                        <div className="flex items-center justify-between gap-3 pt-2 text-xs">
+                          <span className="text-muted-foreground">
+                            Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
+                            {Math.min(currentPage * ROOM_PAGE_SIZE, listTotal)} / {listTotal} cuộc họp
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setRoomFilter({ page: currentPage - 1 })}
+                              disabled={currentPage <= 1 || listFetching}
+                              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                            >
+                              Trước
+                            </button>
+                            <button
+                              onClick={() => setRoomFilter({ page: currentPage + 1 })}
+                              disabled={currentPage * ROOM_PAGE_SIZE >= listTotal || listFetching}
+                              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
+                            >
+                              Sau
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
