@@ -550,8 +550,7 @@ function MeetingPage() {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
-      setCancelRoom(null);
-      setCancelReason("");
+      closeCancel();
       toast.success("Đã hủy cuộc họp.");
     },
     onError: (err: unknown) => {
