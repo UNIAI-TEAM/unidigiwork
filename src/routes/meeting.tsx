@@ -1217,14 +1217,39 @@ function MeetingPage() {
               {cancelRoom ? `“${cancelRoom.title}” sẽ được đánh dấu là đã hủy.` : ""}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="cancel-reason">Lý do (tùy chọn)</Label>
-            <Input
-              id="cancel-reason"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Ví dụ: dời sang tuần sau"
-            />
+          <div className="space-y-3">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+              Thao tác này không thể hoàn tác. Người tham dự sẽ thấy cuộc họp ở trạng thái “Đã hủy”.
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cancel-reason">
+                Lý do hủy <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="cancel-reason"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Ví dụ: dời sang tuần sau"
+                maxLength={1000}
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {["Dời sang tuần sau", "Thiếu người tham dự", "Trùng lịch", "Không còn cần thiết"].map(
+                  (preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setCancelReason(preset)}
+                      className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {preset}
+                    </button>
+                  ),
+                )}
+              </div>
+              {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
+                <p className="text-xs text-destructive">Lý do cần ít nhất 5 ký tự.</p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelRoom(null)}>
@@ -1233,7 +1258,7 @@ function MeetingPage() {
             <Button
               variant="destructive"
               onClick={() => cancelRoomMutation.mutate()}
-              disabled={cancelRoomMutation.isPending}
+              disabled={cancelRoomMutation.isPending || cancelReason.trim().length < 5}
             >
               {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
             </Button>
