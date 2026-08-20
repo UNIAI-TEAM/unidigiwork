@@ -498,7 +498,6 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     URL.revokeObjectURL(url);
     toast.success(`Đã xuất ${segments.length} đoạn ra CSV.`);
   };
-  }, [summary, segments]);
   const generatedAt = useMemo(
     () => (summary ? new Date(summary.generatedAt).toLocaleString("vi-VN") : null),
     [summary],
