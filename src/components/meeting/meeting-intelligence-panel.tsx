@@ -12,6 +12,8 @@ import {
   Mail,
   Quote,
   Sparkles,
+  Upload,
+  FileText,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -54,6 +56,8 @@ import {
   getMeetingSummaryProgress,
   listMeetingActionItemStates,
   listMeetingTranscript,
+  importMeetingTranscriptText,
+  transcribeMeetingRecording,
 } from "@/lib/api/meeting-intelligence.functions";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 
