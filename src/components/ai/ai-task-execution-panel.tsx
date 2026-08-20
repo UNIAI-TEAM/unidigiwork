@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Bot, CheckCircle2, ExternalLink, Loader2, Play, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { Bot, CheckCircle2, ExternalLink, Loader2, Lock, Play, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import {
   AI_EXECUTION_STATUS_LABEL,
   DELIVERABLE_TEMPLATES,
@@ -13,6 +13,7 @@ import {
 import {
   acceptAiTaskExecution,
   assignTaskToAi,
+  getAiTaskAccess,
   listAiTaskExecutions,
   listAiWorkers,
   requestAiTaskChanges,
@@ -40,15 +41,27 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
   const [templateCode, setTemplateCode] = useState(DELIVERABLE_TEMPLATES[0]!.code);
   const [feedback, setFeedback] = useState("");
 
+  // RLS/RBAC: chỉ tải dữ liệu AI khi người dùng thực sự có quyền xem công việc.
+  const access = useQuery({
+    queryKey: ["ai-task-access", task.id],
+    queryFn: () => getAiTaskAccess({ data: { taskId: task.id } }),
+    staleTime: 60_000,
+  });
+  const canView = access.data?.canView === true;
+  const canManage = access.data?.canManage === true;
+  const canReview = access.data?.canReview === true;
+
   const workers = useQuery({
     queryKey: ["ai-workers", task.tenant_id],
     queryFn: () => listAiWorkers({ data: { tenantId: task.tenant_id } }),
     staleTime: 5 * 60_000,
+    enabled: canManage,
   });
 
   const executions = useQuery({
     queryKey: ["ai-task-executions", task.id],
     queryFn: () => listAiTaskExecutions({ data: { taskId: task.id } }),
+    enabled: canView,
   });
 
   const rows = (executions.data ?? []) as AiTaskExecutionRow[];
@@ -99,6 +112,30 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
   const status = (task.ai_execution_status ?? "NOT_STARTED") as keyof typeof AI_EXECUTION_STATUS_LABEL;
   const isAi = task.execution_mode === "AI_ASSISTED" && Boolean(task.ai_worker_id);
 
+  if (access.isLoading) {
+    return (
+      <section className="rounded-xl border border-border bg-surface p-5">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Đang kiểm tra quyền truy cập…
+        </p>
+      </section>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <section className="rounded-xl border border-border bg-surface p-5">
+        <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+          <Lock className="h-4 w-4 text-muted-foreground" /> Nhân sự AI thực thi
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Bạn không có quyền xem dữ liệu thực thi AI của công việc này. Công việc thuộc tổ chức hoặc workspace khác.
+          Hãy liên hệ quản trị viên workspace nếu bạn cần quyền truy cập.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-xl border border-border bg-surface p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -110,8 +147,15 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
         </span>
       </div>
 
+      {!canManage ? (
+        <p className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-surface-2 p-3 text-xs text-muted-foreground">
+          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          Bạn chỉ có quyền xem. Giao việc cho nhân sự AI và nghiệm thu bản bàn giao thuộc về chủ sở hữu công việc hoặc quản trị viên.
+        </p>
+      ) : null}
+
       {/* Giao việc / cập nhật đặc tả */}
-      <div className="space-y-3">
+      <div className={canManage ? "space-y-3" : "hidden"}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-medium text-muted-foreground">
             Nhân sự AI
@@ -229,7 +273,7 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
             </p>
           ) : null}
 
-          {latest.status === "WAITING_REVIEW" ? (
+          {latest.status === "WAITING_REVIEW" && canReview ? (
             <div className="mt-4 space-y-2 border-t border-border pt-3">
               <textarea
                 value={feedback}
