@@ -21,7 +21,7 @@ import {
 } from "@/lib/tasks-storage";
 import { parseChatSource, stripChatSource } from "@/lib/chat-task-link";
 
-export const Route = createFileRoute("/tasks/$id")({
+export const Route = createFileRoute("/tasks_/$id")({
   head: () => ({
     meta: [
       { title: "Chi tiết công việc · UNIWORK" },
