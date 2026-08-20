@@ -56,7 +56,11 @@ async def restore_session(context, page):
 
 async def stub_access(page, body: str):
     async def handler(route):
-        await route.fulfill(status=200, content_type="application/json", body=body)
+        await route.fulfill(
+            status=200,
+            headers={"content-type": "application/json", "x-tss-serialized": "true"},
+            body=body,
+        )
     await page.route(lambda u: is_fn(u, "getAiTaskAccess"), handler)
 
 
