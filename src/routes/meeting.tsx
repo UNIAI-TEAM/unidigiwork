@@ -1286,12 +1286,18 @@ function MeetingPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!cancelRoom} onOpenChange={(o) => !o && setCancelRoom(null)}>
+      <Dialog open={!!cancelRoom} onOpenChange={(o) => !o && closeCancel()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Hủy cuộc họp</DialogTitle>
+            <DialogTitle>
+              {cancelStep === "edit" ? "Hủy cuộc họp" : "Xác nhận lý do hủy"}
+            </DialogTitle>
             <DialogDescription>
-              {cancelRoom ? `“${cancelRoom.title}” sẽ được đánh dấu là đã hủy.` : ""}
+              {cancelRoom
+                ? cancelStep === "edit"
+                  ? `“${cancelRoom.title}” sẽ được đánh dấu là đã hủy.`
+                  : `Vui lòng kiểm tra lý do hủy cho “${cancelRoom.title}” trước khi lưu.`
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -1303,20 +1309,26 @@ function MeetingPage() {
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
               Thao tác này không thể hoàn tác. Người tham dự sẽ thấy cuộc họp ở trạng thái “Đã hủy”.
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cancel-reason">
-                Lý do hủy <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="cancel-reason"
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Ví dụ: dời sang tuần sau"
-                maxLength={1000}
-              />
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {["Dời sang tuần sau", "Thiếu người tham dự", "Trùng lịch", "Không còn cần thiết"].map(
-                  (preset) => (
+
+            {cancelStep === "edit" ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="cancel-reason">
+                  Lý do hủy <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cancel-reason"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Ví dụ: dời sang tuần sau"
+                  maxLength={1000}
+                />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {[
+                    "Dời sang tuần sau",
+                    "Thiếu người tham dự",
+                    "Trùng lịch",
+                    "Không còn cần thiết",
+                  ].map((preset) => (
                     <button
                       key={preset}
                       type="button"
@@ -1325,29 +1337,68 @@ function MeetingPage() {
                     >
                       {preset}
                     </button>
-                  ),
+                  ))}
+                </div>
+                {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
+                  <p className="text-xs text-destructive">Lý do cần ít nhất 5 ký tự.</p>
                 )}
               </div>
-              {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
-                <p className="text-xs text-destructive">Lý do cần ít nhất 5 ký tự.</p>
-              )}
-            </div>
+            ) : (
+              <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Lý do hủy</p>
+                    <p className="text-sm font-medium text-foreground">{cancelReason.trim()}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCancelStep("edit")}
+                    disabled={cancelRoomMutation.isPending}
+                  >
+                    Sửa
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Bạn còn {reviewCountdown} giây để sửa lý do trước khi hệ thống tự động xác nhận.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelRoom(null)}>
-              Quay lại
-            </Button>
             <Button
-              variant="destructive"
-              onClick={() => cancelRoomMutation.mutate()}
-              disabled={
-                cancelRoomMutation.isPending ||
-                cancelReason.trim().length < 5 ||
-                (!!cancelRoom && !canManageMeeting(cancelRoom.id))
-              }
+              variant="outline"
+              onClick={() => (cancelStep === "review" ? setCancelStep("edit") : closeCancel())}
+              disabled={cancelRoomMutation.isPending}
             >
-              {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
+              {cancelStep === "review" ? "Sửa lý do" : "Quay lại"}
             </Button>
+            {cancelStep === "edit" ? (
+              <Button
+                variant="destructive"
+                onClick={() => startCancelReview()}
+                disabled={
+                  cancelRoomMutation.isPending ||
+                  cancelReason.trim().length < 5 ||
+                  (!!cancelRoom && !canManageMeeting(cancelRoom.id))
+                }
+              >
+                Tiếp tục
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={() => cancelRoomMutation.mutate()}
+                disabled={
+                  cancelRoomMutation.isPending ||
+                  cancelReason.trim().length < 5 ||
+                  (!!cancelRoom && !canManageMeeting(cancelRoom.id))
+                }
+              >
+                {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
