@@ -38,6 +38,10 @@ import {
   Crown,
   Video as VideoIcon,
   RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -105,6 +109,10 @@ import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import { usePanelCollapse, usePanelCollapseControls } from "@/hooks/use-panel-collapse";
+
+const MEETING_AI_PANEL_IDS = ["ai-copilot", "meeting-intelligence", "uni-copilot"];
+
 
 const LiveKitStage = lazy(() => import("@/components/meeting/livekit-stage"));
 
@@ -1650,6 +1658,12 @@ function MeetingDetailPage() {
           </main>
 
           <aside className="hidden w-80 shrink-0 flex-col border-l border-border bg-surface lg:flex">
+            <div className="flex items-center justify-between border-b border-border px-3 py-2">
+              <span className="text-[11px] font-medium text-muted-foreground">AI & nội dung</span>
+              <div className="flex items-center gap-1">
+                <ExpandCollapseAllButtons panelIds={MEETING_AI_PANEL_IDS} />
+              </div>
+            </div>
             <div className="flex border-b border-border text-xs">
               {(
                 [
@@ -1906,7 +1920,32 @@ function CtrlBtn({
   );
 }
 
+function ExpandCollapseAllButtons({ panelIds }: { panelIds: string[] }) {
+  const { expandAll, collapseAll } = usePanelCollapseControls(panelIds);
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={expandAll}
+        title="Mở rộng tất cả"
+        className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-surface px-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground"
+      >
+        <Maximize2 className="h-3 w-3" /> Mở rộng tất cả
+      </button>
+      <button
+        type="button"
+        onClick={collapseAll}
+        title="Thu gọn tất cả"
+        className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-surface px-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground"
+      >
+        <Minimize2 className="h-3 w-3" /> Thu gọn tất cả
+      </button>
+    </div>
+  );
+}
+
 function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRoom: boolean }) {
+  const [collapsed, setCollapsed] = usePanelCollapse("ai-copilot");
   const queryClient = useQueryClient();
   const summaryQuery = useQuery({
     queryKey: ["meeting-summary", meetingId],
@@ -1925,6 +1964,20 @@ function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRo
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "Không tạo được tóm tắt."),
   });
+
+  const toggle = (
+    <button
+      type="button"
+      onClick={() => setCollapsed((v) => !v)}
+      aria-expanded={!collapsed}
+      aria-label={collapsed ? "Mở rộng panel AI" : "Thu gọn panel AI"}
+      title={collapsed ? "Mở rộng" : "Thu gọn"}
+      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+    >
+      {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+    </button>
+  );
+
   const rerunButton = (
     <button
       type="button"
@@ -1941,64 +1994,79 @@ function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRo
     </button>
   );
 
-  if (!isRealRoom) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        Tóm tắt AI chỉ khả dụng trong phòng họp thật.
-      </p>
-    );
-  }
-  if (summaryQuery.isLoading) {
-    return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" /> Đang tải tóm tắt…
-      </div>
-    );
-  }
   const summary = summaryQuery.data ?? null;
-  if (!summary) {
-    return (
-      <div className="space-y-3">
-        <p className="text-xs text-muted-foreground">
-          Chưa có tóm tắt cho cuộc họp này. Mở tab &quot;Biên bản&quot; để nạp biên bản (phụ đề trực
-          tiếp, file ghi âm hoặc dán văn bản), rồi bấm nút bên dưới — không cần tải lại trang.
-        </p>
-        {rerunButton}
-      </div>
-    );
-  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">{rerunButton}</div>
-      <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-primary">
-          <Sparkles className="h-3.5 w-3.5" />
-          {summary.status === "partial" ? "Tóm tắt (một phần)" : "Tóm tắt cuộc họp"}
-        </div>
-        <p className="whitespace-pre-wrap text-xs text-muted-foreground">
-          {summary.summary || "Chưa có nội dung tóm tắt."}
-        </p>
-        <div className="mt-2 text-[10px] text-muted-foreground">
-          {summary.segmentCount} đoạn biên bản · {new Date(summary.generatedAt).toLocaleString("vi-VN")}
-        </div>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          <Sparkles className="h-3.5 w-3.5 text-primary" /> Tóm tắt AI
+        </h3>
+        {toggle}
       </div>
-      {summary.actionItems.length > 0 && (
-        <div>
-          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Action items</div>
-          <ul className="space-y-2 text-xs">
-            {summary.actionItems.map((a, i) => (
-              <li key={i} className="rounded-md bg-surface-2 p-2">
-                <div className="text-foreground">{a.title}</div>
-                {(a.owner || a.dueHint) && (
-                  <div className="text-[10px] text-muted-foreground">
-                    {[a.owner, a.dueHint].filter(Boolean).join(" · ")}
+
+      {collapsed
+        ? null
+        : !isRealRoom
+          ? (
+            <p className="text-xs text-muted-foreground">
+              Tóm tắt AI chỉ khả dụng trong phòng họp thật.
+            </p>
+          )
+          : summaryQuery.isLoading
+            ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Đang tải tóm tắt…
+              </div>
+            )
+            : !summary
+              ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Chưa có tóm tắt cho cuộc họp này. Mở tab &quot;Biên bản&quot; để nạp biên bản (phụ
+                    đề trực tiếp, file ghi âm hoặc dán văn bản), rồi bấm nút bên dưới — không cần tải
+                    lại trang.
+                  </p>
+                  {rerunButton}
+                </div>
+              )
+              : (
+                <div className="space-y-4">
+                  <div className="flex justify-end">{rerunButton}</div>
+                  <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
+                    <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {summary.status === "partial" ? "Tóm tắt (một phần)" : "Tóm tắt cuộc họp"}
+                    </div>
+                    <p className="whitespace-pre-wrap text-xs text-muted-foreground">
+                      {summary.summary || "Chưa có nội dung tóm tắt."}
+                    </p>
+                    <div className="mt-2 text-[10px] text-muted-foreground">
+                      {summary.segmentCount} đoạn biên bản ·{" "}
+                      {new Date(summary.generatedAt).toLocaleString("vi-VN")}
+                    </div>
                   </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                  {summary.actionItems.length > 0 && (
+                    <div>
+                      <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                        Action items
+                      </div>
+                      <ul className="space-y-2 text-xs">
+                        {summary.actionItems.map((a, i) => (
+                          <li key={i} className="rounded-md bg-surface-2 p-2">
+                            <div className="text-foreground">{a.title}</div>
+                            {(a.owner || a.dueHint) && (
+                              <div className="text-[10px] text-muted-foreground">
+                                {[a.owner, a.dueHint].filter(Boolean).join(" · ")}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
     </div>
   );
 }
