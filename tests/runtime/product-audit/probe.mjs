@@ -12,7 +12,7 @@ const run = randomUUID().slice(0, 8);
 const results = [];
 const rec = (id, domain, name, status, detail) => { results.push({ id, domain, name, status, detail }); console.log(`${status.padEnd(6)} ${id} ${name} :: ${String(detail ?? "").slice(0, 220)}`); };
 
-const fnId = (file, exportName) => Buffer.from(JSON.stringify({ file: `/src/lib/api/${file}?tss-serverfn-split`, exportName })).toString("base64url");
+const fnId = (file, exportName) => Buffer.from(JSON.stringify({ file: `/src/lib/api/${file}?tss-serverfn-split`, export: `${exportName}_createServerFn_handler` })).toString("base64url");
 let TOKEN = null, TENANT = null;
 async function call(file, exportName, data, method = "POST") {
   const t0 = Date.now();
