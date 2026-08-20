@@ -1,14 +1,14 @@
 # SEC.6 Consolidated Runtime Regression
 
-Started: 2026-07-27T05:34:28.065Z
-Ended:   2026-07-27T05:38:20.878Z
+Started: 2026-08-20T03:19:19.334Z
+Ended:   2026-08-20T03:23:26.094Z
 
 | Suite | Exit | Duration (ms) |
 |---|---|---|
-| runner.mjs | 0 | 50019 |
-| sec2-provisioning.mjs | 0 | 14183 |
-| sec3-invitations.mjs | 0 | 34060 |
-| sec5-active-tenant.mjs | 0 | 27343 |
-| sec6-outbox-stress.mjs | 0 | 107207 |
+| runner.mjs | 1 | 53388 |
+| sec2-provisioning.mjs | 1 | 15990 |
+| sec3-invitations.mjs | 0 | 35080 |
+| sec5-active-tenant.mjs | 0 | 32343 |
+| sec6-outbox-stress.mjs | 0 | 109954 |
 
-**PASS — all suites returned 0.**
+**FAIL — 2 suite(s) non-zero.**

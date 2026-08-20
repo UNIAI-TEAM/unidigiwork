@@ -1,6 +1,6 @@
-# SEC.2 Provision Matrix (sec2_2026-07-27T05-35-18-255Z)
+# SEC.2 Provision Matrix (sec2_2026-08-20T03-20-12-923Z)
 
-Total: 46 · Passed: 46 · Failed: 0
+Total: 46 · Passed: 45 · Failed: 1
 
 | ID | Actor | Action | Expected | Actual | Info | Result |
 |---|---|---|---|---|---|---|
@@ -11,7 +11,7 @@ Total: 46 · Passed: 46 · Failed: 0
 | S005 | actor_a | workspace_owner_member | allow | allow |  | PASS |
 | S006 | actor_a | audit_provisioned_row | allow | allow |  | PASS |
 | S007 | actor_a | audit_no_secret | allow | allow |  | PASS |
-| S008 | actor_a | outbox_catalog | allow | allow |  | PASS |
+| S008 | actor_a | outbox_catalog | allow | deny |  | FAIL |
 | S009 | actor_a | outbox_idem_key_set | allow | allow |  | PASS |
 | S010 | actor_a | replay_same_payload | allow | allow | 200 | PASS |
 | S011 | actor_a | replay_no_duplicate | allow | allow |  | PASS |

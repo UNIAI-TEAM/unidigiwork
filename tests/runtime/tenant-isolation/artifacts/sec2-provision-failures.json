@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "S008",
+    "actor": "actor_a",
+    "action": "outbox_catalog",
+    "expected": "allow",
+    "actual": "deny",
+    "pass": false,
+    "types": [
+      "subscription.activated.v1",
+      "tenant.created.v1",
+      "tenant.member_added.v1",
+      "workspace.created.v1"
+    ]
+  }
+]

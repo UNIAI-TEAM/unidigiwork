@@ -1,8 +1,8 @@
 {
-  "runId": "sec2_2026-07-27T05-35-18-255Z",
+  "runId": "sec2_2026-08-20T03-20-12-923Z",
   "total": 46,
-  "passed": 46,
-  "failed": 0,
+  "passed": 45,
+  "failed": 1,
   "results": [
     {
       "id": "S001",
@@ -13,7 +13,7 @@
       "pass": true,
       "http": 200,
       "stable": null,
-      "errMsg": "[{\"tenant_id\":\"d698c1d1-d9e3-4a34-a52a-8509e6d36278\",\"workspace_id\":\"d698c1d1-d9e3-4a34-a52a-8509e6d36278\",\"membership_id\":\"8e9873f5-e701-4168-bb71-ea61fecb9012\"}]"
+      "errMsg": "[{\"tenant_id\":\"17badbf2-25bc-4a6b-b100-77c2d41856df\",\"workspace_id\":\"17badbf2-25bc-4a6b-b100-77c2d41856df\",\"membership_id\":\"bf52ebea-7cd3-4890-9e43-e3f0637e337e\"}]"
     },
     {
       "id": "S002",
@@ -26,8 +26,8 @@
         "tenant": 1,
         "member": 1,
         "workspace": 1,
-        "audit": 3,
-        "outbox": 3
+        "audit": 4,
+        "outbox": 4
       }
     },
     {
@@ -75,9 +75,10 @@
       "actor": "actor_a",
       "action": "outbox_catalog",
       "expected": "allow",
-      "actual": "allow",
-      "pass": true,
+      "actual": "deny",
+      "pass": false,
       "types": [
+        "subscription.activated.v1",
         "tenant.created.v1",
         "tenant.member_added.v1",
         "workspace.created.v1"
@@ -111,15 +112,15 @@
         "tenant": 1,
         "member": 1,
         "workspace": 1,
-        "audit": 3,
-        "outbox": 3
+        "audit": 4,
+        "outbox": 4
       },
       "after": {
         "tenant": 1,
         "member": 1,
         "workspace": 1,
-        "audit": 3,
-        "outbox": 3
+        "audit": 4,
+        "outbox": 4
       }
     },
     {
@@ -148,7 +149,7 @@
       "expected": "allow",
       "actual": "allow",
       "pass": true,
-      "okCount": 1,
+      "okCount": 3,
       "unique": 1
     },
     {
@@ -162,8 +163,8 @@
         "tenant": 1,
         "member": 1,
         "workspace": 1,
-        "audit": 3,
-        "outbox": 3
+        "audit": 4,
+        "outbox": 4
       }
     },
     {
@@ -229,7 +230,7 @@
       "stable": "TENANT_SLUG_CONFLICT",
       "errMsg": "TENANT_SLUG_CONFLICT",
       "rn1_ok": true,
-      "rn1_err": "[{\"tenant_id\":\"a215ad41-ba93-4217-a93a-29329d6e78fe\",\"workspace_id\":\"a215ad41-ba93-4217-a93a-29329d6e78fe\",\"membership_id\":\"f339507d-494c-4f43-adaf-4d8239e0ac5b\"}]"
+      "rn1_err": "[{\"tenant_id\":\"36f3bc87-886a-41f9-b47d-5b31e51983d5\",\"workspace_id\":\"36f3bc87-886a-41f9-b47d-5b31e51983d5\",\"membership_id\":\"67d5a835-597d-4ea2-9ac2-342571c3101f\"}]"
     },
     {
       "id": "S022",
@@ -438,8 +439,8 @@
       "expected": "allow",
       "actual": "allow",
       "pass": true,
-      "before": 14,
-      "after": 14
+      "before": 17,
+      "after": 17
     },
     {
       "id": "S045",
