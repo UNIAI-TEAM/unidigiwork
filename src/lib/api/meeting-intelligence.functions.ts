@@ -161,7 +161,7 @@ export const transcribeMeetingRecording = createServerFn({ method: "POST" })
             : status === 400
               ? "Định dạng file ghi âm không được hỗ trợ. Hãy dùng WAV hoặc MP3."
               : "Không phiên âm được file ghi âm. Vui lòng thử lại.";
-      throw new ApiError({ code: status === 402 ? "AI_QUOTA_EXCEEDED" : "AI_GATEWAY_UNAVAILABLE", message });
+      throw new ApiError({ code: status === 402 ? "QUOTA_EXCEEDED" : "AI_GATEWAY_UNAVAILABLE", message });
     }
     if (!text) {
       throw new ApiError({ code: "VALIDATION_FAILED", message: "Không nhận được nội dung nào từ file ghi âm." });
@@ -179,20 +179,6 @@ export const transcribeMeetingRecording = createServerFn({ method: "POST" })
       inserted += Number(count ?? 0);
     }
     return { inserted, characters: text.length };
-  });
-
-const _unusedGetMeetingSummary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i) => meetingIdSchema.parse(i))
-  .handler(async ({ data, context }): Promise<MeetingSummary | null> => {
-    const { mapSummaryRow } = await import("./meeting-intelligence.server");
-    const { data: row, error } = await context.supabase
-      .from("meeting_summaries")
-      .select("*")
-      .eq("meeting_id", data.meetingId)
-      .maybeSingle();
-    if (error) mapPgError(error, "MEETING_NOT_FOUND");
-    return row ? mapSummaryRow(row as Record<string, unknown>) : null;
   });
 
 export const getMeetingSummaryProgress = createServerFn({ method: "POST" })
