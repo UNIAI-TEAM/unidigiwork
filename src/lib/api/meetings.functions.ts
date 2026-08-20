@@ -377,3 +377,84 @@ export const requestJoinToken = createServerFn({ method: "POST" })
       expiresAt: signed.expiresAt.toISOString(),
     };
   });
+/**
+ * Nội dung buổi họp: agenda, ghi chú (meeting_artifacts) và tài liệu đính kèm
+ * (work_edges ATTACHED_TO / GENERATES). RLS của caller quyết định khả năng xem.
+ */
+export const getMeetingOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+
+    const { data: meeting, error: mErr } = await sb
+      .from("meetings")
+      .select("id,title,agenda,location,start_at,end_at,timezone,status,workspace_id")
+      .eq("id", data.meetingId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (mErr) mapPgError(mErr, "MEETING_NOT_FOUND");
+    if (!meeting) throw new ApiError({ code: "MEETING_NOT_FOUND", message: "MEETING_NOT_FOUND" });
+
+    const { data: notes } = await sb
+      .from("meeting_artifacts")
+      .select("id,kind,title,detail,confidence,created_at")
+      .eq("meeting_id", data.meetingId)
+      .order("created_at", { ascending: true })
+      .limit(200);
+
+    // Tài liệu đính kèm qua work graph.
+    let attachments: {
+      id: string;
+      title: string;
+      folder: string | null;
+      mimeType: string | null;
+      sizeBytes: number | null;
+      updatedAt: string | null;
+      relationship: string;
+    }[] = [];
+
+    const { data: node } = await sb
+      .from("work_nodes")
+      .select("id")
+      .eq("entity_type", "MEETING")
+      .eq("entity_id", data.meetingId)
+      .maybeSingle();
+
+    if (node?.id) {
+      const { data: edges } = await sb
+        .from("work_edges")
+        .select(
+          "relationship_type,source:source_node_id(entity_type,entity_id),target:target_node_id(entity_type,entity_id)",
+        )
+        .or(`source_node_id.eq.${node.id},target_node_id.eq.${node.id}`)
+        .limit(200);
+
+      const docIds = new Map<string, string>();
+      for (const e of (edges ?? []) as any[]) {
+        for (const side of [e.source, e.target]) {
+          if (side?.entity_type === "DOCUMENT" && side.entity_id) {
+            docIds.set(side.entity_id, e.relationship_type);
+          }
+        }
+      }
+      if (docIds.size) {
+        const { data: docs } = await sb
+          .from("documents")
+          .select("id,title,folder,mime_type,size_bytes,updated_at")
+          .in("id", [...docIds.keys()])
+          .is("deleted_at", null);
+        attachments = (docs ?? []).map((d: any) => ({
+          id: d.id,
+          title: d.title ?? "Tài liệu",
+          folder: d.folder ?? null,
+          mimeType: d.mime_type ?? null,
+          sizeBytes: d.size_bytes ?? null,
+          updatedAt: d.updated_at ?? null,
+          relationship: docIds.get(d.id) ?? "ATTACHED_TO",
+        }));
+      }
+    }
+
+    return { meeting, notes: notes ?? [], attachments };
+  });
