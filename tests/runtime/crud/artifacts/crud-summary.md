@@ -1,6 +1,6 @@
 # CRUD runtime summary
 
-Run: d80aa270 · 2026-08-11T15:49:45.453Z
+Run: ba78787e · 2026-08-20T03:16:10.049Z
 
 | Cell | Entity | Operation | Status |
 |---|---|---|---|
@@ -43,4 +43,4 @@ Run: d80aa270 · 2026-08-11T15:49:45.453Z
 | DOC-AU-01 | document | AUDIT | PASS_REAL |
 
 Total 37 · PASS 37 · FAIL 0
-Teardown orphans: none
+Teardown orphans: dcc5c1ee-107a-49f3-b87f-7e539a0dd45d, 43814662-0011-4f86-951c-704798c27115

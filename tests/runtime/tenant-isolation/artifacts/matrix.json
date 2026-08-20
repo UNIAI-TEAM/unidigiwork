@@ -311,10 +311,10 @@
     "table": "documents",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "owner_a",
@@ -443,10 +443,10 @@
     "table": "documents",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "admin_a",
@@ -465,10 +465,10 @@
     "table": "email_threads",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "admin_a",
@@ -487,10 +487,10 @@
     "table": "email_messages",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "admin_a",
@@ -575,10 +575,10 @@
     "table": "documents",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "member_a",
@@ -597,10 +597,10 @@
     "table": "email_threads",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "member_a",
@@ -619,10 +619,10 @@
     "table": "email_messages",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "member_a",
@@ -707,10 +707,10 @@
     "table": "documents",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "guest_a",
@@ -729,10 +729,10 @@
     "table": "email_threads",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "guest_a",
@@ -751,10 +751,10 @@
     "table": "email_messages",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "guest_a",
@@ -839,10 +839,10 @@
     "table": "documents",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "owner_b",
@@ -971,10 +971,10 @@
     "table": "documents",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "admin_b",
@@ -993,10 +993,10 @@
     "table": "email_threads",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "admin_b",
@@ -1015,10 +1015,10 @@
     "table": "email_messages",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "admin_b",
@@ -1103,10 +1103,10 @@
     "table": "documents",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "member_b",
@@ -1125,10 +1125,10 @@
     "table": "email_threads",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "member_b",
@@ -1147,10 +1147,10 @@
     "table": "email_messages",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "member_b",
@@ -1235,10 +1235,10 @@
     "table": "documents",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "guest_b",
@@ -1257,10 +1257,10 @@
     "table": "email_threads",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "guest_b",
@@ -1279,10 +1279,10 @@
     "table": "email_messages",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "guest_b",
@@ -1631,10 +1631,10 @@
     "table": "documents",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "multi",
@@ -1642,10 +1642,10 @@
     "table": "documents",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "multi",
@@ -1653,10 +1653,10 @@
     "table": "email_threads",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "multi",
@@ -1664,10 +1664,10 @@
     "table": "email_threads",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "multi",
@@ -1675,10 +1675,10 @@
     "table": "email_messages",
     "tenant": "A",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "multi",
@@ -1686,10 +1686,10 @@
     "table": "email_messages",
     "tenant": "B",
     "expected": "allow",
-    "actual": "allow",
+    "actual": "deny",
     "http": 200,
     "notes": null,
-    "pass": true
+    "pass": false
   },
   {
     "actor": "multi",
@@ -1743,7 +1743,7 @@
     "notes": null,
     "expected": "deny",
     "actual": "deny",
-    "http": 400,
+    "http": 403,
     "pass": true
   },
   {
@@ -1764,7 +1764,7 @@
     "tenant": "B",
     "expected": "deny",
     "actual": "deny",
-    "http": 200,
+    "http": 403,
     "notes": null,
     "pass": true
   },
@@ -1775,7 +1775,7 @@
     "tenant": "B",
     "expected": "deny",
     "actual": "deny",
-    "http": 204,
+    "http": 403,
     "notes": null,
     "pass": true
   },

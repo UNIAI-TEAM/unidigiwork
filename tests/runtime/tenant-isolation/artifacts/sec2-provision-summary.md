@@ -1,6 +1,6 @@
-# SEC.2 Summary (sec2_2026-07-27T05-35-18-255Z)
+# SEC.2 Summary (sec2_2026-08-20T03-20-12-923Z)
 
 - Total: 46
-- Passed: 46
-- Failed: 0
+- Passed: 45
+- Failed: 1
 - Cleanup tenant IDs tracked: 8
