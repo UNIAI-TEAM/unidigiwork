@@ -1954,9 +1954,9 @@ function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRo
             {summary.actionItems.map((a, i) => (
               <li key={i} className="rounded-md bg-surface-2 p-2">
                 <div className="text-foreground">{a.title}</div>
-                {(a.assigneeHint || a.dueHint) && (
+                {(a.owner || a.dueHint) && (
                   <div className="text-[10px] text-muted-foreground">
-                    {[a.assigneeHint, a.dueHint].filter(Boolean).join(" · ")}
+                    {[a.owner, a.dueHint].filter(Boolean).join(" · ")}
                   </div>
                 )}
               </li>
