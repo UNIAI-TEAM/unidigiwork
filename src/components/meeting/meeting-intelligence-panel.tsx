@@ -274,6 +274,7 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [importJob, setImportJob] = useState<TranscriptImportJob | null>(null);
+  const audioInputId = `meeting-audio-${meetingId}`;
   const setStep = (
     step: TranscriptImportStep,
     status: TranscriptStepStatus,
