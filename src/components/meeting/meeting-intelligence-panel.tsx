@@ -803,6 +803,7 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
           </DialogHeader>
           <textarea
             value={pasteText}
+            data-testid="meeting-transcript-paste-textarea"
             onChange={(e) => setPasteText(e.target.value)}
             rows={10}
             placeholder="An: Chúng ta chốt ngân sách quý 3...&#10;Bình: Tôi sẽ gửi báo cáo trước thứ Sáu."
@@ -813,6 +814,7 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
               Huỷ
             </Button>
             <Button
+              data-testid="meeting-transcript-paste-save"
               disabled={!pasteText.trim() || importText.isPending}
               onClick={() => importText.mutate(pasteText.trim())}
             >
