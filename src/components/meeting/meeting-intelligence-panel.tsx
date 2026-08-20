@@ -12,6 +12,8 @@ import {
   Mail,
   Quote,
   Sparkles,
+  Upload,
+  FileText,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -54,6 +56,8 @@ import {
   getMeetingSummaryProgress,
   listMeetingActionItemStates,
   listMeetingTranscript,
+  importMeetingTranscriptText,
+  transcribeMeetingRecording,
 } from "@/lib/api/meeting-intelligence.functions";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 
@@ -166,6 +170,8 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const [formTitle, setFormTitle] = useState("");
   const [formWorkspace, setFormWorkspace] = useState("");
   const [formDue, setFormDue] = useState("");
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
 
   const transcriptQuery = useQuery({
     queryKey: ["meeting-transcript", meetingId],
@@ -200,6 +206,47 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
       void queryClient.invalidateQueries({ queryKey: ["meeting-summary-progress", meetingId] });
       toast.error(message);
     },
+  });
+
+  const invalidateTranscript = () => {
+    void queryClient.invalidateQueries({ queryKey: ["meeting-transcript", meetingId] });
+  };
+
+  const importText = useMutation({
+    mutationFn: (text: string) => importMeetingTranscriptText({ data: { meetingId, text, source: "MANUAL" } }),
+    onSuccess: (r: { inserted: number }) => {
+      invalidateTranscript();
+      setPasteOpen(false);
+      setPasteText("");
+      toast.success(`Đã lưu ${r.inserted} đoạn biên bản.`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không lưu được biên bản."),
+  });
+
+  const transcribe = useMutation({
+    mutationFn: async (file: File) => {
+      if (file.size > 12 * 1024 * 1024) {
+        throw new Error("File ghi âm vượt quá 12MB. Hãy cắt ngắn hoặc nén lại.");
+      }
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 0x8000) {
+        bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      }
+      return transcribeMeetingRecording({
+        data: {
+          meetingId,
+          fileName: file.name || "recording.wav",
+          mimeType: file.type || "audio/wav",
+          base64: btoa(bin),
+        },
+      });
+    },
+    onSuccess: (r: { inserted: number }) => {
+      invalidateTranscript();
+      toast.success(`Đã phiên âm và lưu ${r.inserted} đoạn biên bản.`);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không phiên âm được."),
   });
 
   const progressQuery = useQuery({
@@ -465,6 +512,37 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2">
+        <span className="text-[10px] text-muted-foreground">Nguồn biên bản:</span>
+        <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-surface-3">
+          {transcribe.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Upload className="h-3 w-3" />
+          )}
+          {transcribe.isPending ? "Đang phiên âm…" : "Tải file ghi âm"}
+          <input
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            disabled={transcribe.isPending}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) transcribe.mutate(f);
+            }}
+          />
+        </label>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 gap-1 text-[11px]"
+          onClick={() => setPasteOpen(true)}
+        >
+          <FileText className="h-3 w-3" /> Dán biên bản
+        </Button>
+      </div>
+
       <div className="space-y-3">
         {transcriptQuery.isLoading && (
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -473,7 +551,8 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
         )}
         {!transcriptQuery.isLoading && !hasTranscript && (
           <p className="text-muted-foreground">
-            Chưa có biên bản. Bật phụ đề trực tiếp trong cuộc họp để hệ thống lưu lại nội dung.
+            Chưa có biên bản. Bật phụ đề trực tiếp trong cuộc họp, tải file ghi âm để AI phiên âm,
+            hoặc dán biên bản có sẵn.
           </p>
         )}
         {segments.map((s) => (
@@ -486,6 +565,37 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
           </div>
         ))}
       </div>
+
+      <Dialog open={pasteOpen} onOpenChange={(o) => setPasteOpen(o)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Dán biên bản cuộc họp</DialogTitle>
+            <DialogDescription>
+              Hỗ trợ dạng &quot;Người nói: nội dung&quot; theo từng dòng hoặc văn bản liền mạch. Hệ thống
+              tự cắt đoạn và gán mốc thời gian ước lượng.
+            </DialogDescription>
+          </DialogHeader>
+          <textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={10}
+            placeholder="An: Chúng ta chốt ngân sách quý 3...&#10;Bình: Tôi sẽ gửi báo cáo trước thứ Sáu."
+            className="w-full rounded-lg border border-border bg-background p-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPasteOpen(false)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={!pasteText.trim() || importText.isPending}
+              onClick={() => importText.mutate(pasteText.trim())}
+            >
+              {importText.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              Lưu biên bản
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(pending)} onOpenChange={(o) => !o && setPending(null)}>
         <DialogContent className="sm:max-w-md">
