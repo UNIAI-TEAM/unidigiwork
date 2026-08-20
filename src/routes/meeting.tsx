@@ -392,6 +392,23 @@ function MeetingPage() {
   });
   const upcomingItems = (upcomingPanel.data?.items ?? []) as unknown as ListRoom[];
 
+  // Phân quyền: chỉ chủ trì / quản trị tổ chức mới được hủy buổi họp.
+  const permIds = useMemo(
+    () =>
+      Array.from(new Set([...listItems, ...upcomingItems].map((r) => r.id))).sort().slice(0, 100),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [listItems.map((r) => r.id).join(","), upcomingItems.map((r) => r.id).join(",")],
+  );
+  const permsQuery = useQuery({
+    queryKey: ["meeting-manage-perms", permIds],
+    enabled: permIds.length > 0,
+    staleTime: 60_000,
+    queryFn: () => getMeetingManagePermissions({ data: { meetingIds: permIds } }),
+  });
+  const canManageMeeting = (id: string) => permsQuery.data?.[id] === true;
+  const DENY_HINT =
+    "Bạn không có quyền hủy buổi họp này. Chỉ người chủ trì hoặc quản trị viên tổ chức mới được hủy.";
+
   const createRoom = useMutation({
     mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
       createInstantMeeting({
