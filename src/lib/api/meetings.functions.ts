@@ -458,3 +458,62 @@ export const getMeetingOverview = createServerFn({ method: "GET" })
 
     return { meeting, notes: notes ?? [], attachments };
   });
+
+/** Quyền quản lý người tham dự (chủ trì / quản trị tổ chức). */
+export const getMeetingAccessControl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ canManage: boolean; userId: string }> => {
+    const { data: ok, error } = await context.supabase.rpc("can_manage_meeting_access", {
+      _meeting_id: data.meetingId,
+      _user_id: context.userId,
+    });
+    if (error) mapPgError(error);
+    return { canManage: ok === true, userId: context.userId };
+  });
+
+export const inviteMeetingParticipant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        meetingId: z.string().uuid(),
+        email: z.string().email().max(320),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("invite_meeting_participant", {
+      _meeting_id: data.meetingId,
+      _email: data.email,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    return ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
+      email: string;
+      status: "invited" | "already" | "not_found";
+      user_id?: string;
+    };
+  });
+
+export const removeMeetingParticipant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        meetingId: z.string().uuid(),
+        userId: z.string().uuid(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("remove_meeting_participant", {
+      _meeting_id: data.meetingId,
+      _user_id: data.userId,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    return ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
+      status: "removed" | "not_found";
+    };
+  });
