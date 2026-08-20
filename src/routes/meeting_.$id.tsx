@@ -76,6 +76,7 @@ import {
 } from "@/lib/screen-share-quality";
 import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
+import { getMeetingSummary } from "@/lib/api/meeting-intelligence.functions";
 import { MeetingContentPanel } from "@/components/meeting/meeting-content-panel";
 import { MeetingStatusHistoryPanel } from "@/components/meeting/meeting-status-history-panel";
 import { MeetingParticipantsManagerPanel } from "@/components/meeting/participants-manager-panel";
@@ -1667,7 +1668,7 @@ function MeetingDetailPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 text-sm">
-              {tab === "ai" && <AICopilotPanel />}
+              {tab === "ai" && <AICopilotPanel meetingId={id} isRealRoom={isRealRoom} />}
               {tab === "content" &&
                 (isRealRoom ? (
                   <div className="space-y-5">
@@ -1901,39 +1902,68 @@ function CtrlBtn({
   );
 }
 
-function AICopilotPanel() {
+function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRoom: boolean }) {
+  const summaryQuery = useQuery({
+    queryKey: ["meeting-summary", meetingId],
+    enabled: isRealRoom,
+    staleTime: 30_000,
+    queryFn: () => getMeetingSummary({ data: { meetingId } }),
+  });
+
+  if (!isRealRoom) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Tóm tắt AI chỉ khả dụng trong phòng họp thật.
+      </p>
+    );
+  }
+  if (summaryQuery.isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" /> Đang tải tóm tắt…
+      </div>
+    );
+  }
+  const summary = summaryQuery.data ?? null;
+  if (!summary) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Chưa có tóm tắt cho cuộc họp này. Mở tab &quot;Biên bản&quot; để nạp biên bản (phụ đề trực tiếp,
+        file ghi âm hoặc dán văn bản) rồi tạo tóm tắt.
+      </p>
+    );
+  }
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
         <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-primary">
-          <Sparkles className="h-3.5 w-3.5" /> Tóm tắt tức thời
+          <Sparkles className="h-3.5 w-3.5" />
+          {summary.status === "partial" ? "Tóm tắt (một phần)" : "Tóm tắt cuộc họp"}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Backend hoàn thành 8/10 user story. Frontend cần fix 2 bug responsive
-          trước EOD. Sprint planning tiếp theo dự kiến thứ Hai.
+        <p className="whitespace-pre-wrap text-xs text-muted-foreground">
+          {summary.summary || "Chưa có nội dung tóm tắt."}
         </p>
-      </div>
-      <div>
-        <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-          Action items
+        <div className="mt-2 text-[10px] text-muted-foreground">
+          {summary.segmentCount} đoạn biên bản · {new Date(summary.generatedAt).toLocaleString("vi-VN")}
         </div>
-        <ul className="space-y-2 text-xs">
-          <li className="flex items-start gap-2 rounded-md bg-surface-2 p-2">
-            <input type="checkbox" className="mt-0.5" />
-            <div>
-              Hương Trần fix bug responsive trên Dashboard
-              <div className="text-[10px] text-muted-foreground">Hạn: hôm nay</div>
-            </div>
-          </li>
-          <li className="flex items-start gap-2 rounded-md bg-surface-2 p-2">
-            <input type="checkbox" className="mt-0.5" />
-            <div>
-              Tuấn Nam gửi test report sprint 14
-              <div className="text-[10px] text-muted-foreground">Hạn: 30/05</div>
-            </div>
-          </li>
-        </ul>
       </div>
+      {summary.actionItems.length > 0 && (
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Action items</div>
+          <ul className="space-y-2 text-xs">
+            {summary.actionItems.map((a, i) => (
+              <li key={i} className="rounded-md bg-surface-2 p-2">
+                <div className="text-foreground">{a.title}</div>
+                {(a.assigneeHint || a.dueHint) && (
+                  <div className="text-[10px] text-muted-foreground">
+                    {[a.assigneeHint, a.dueHint].filter(Boolean).join(" · ")}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
