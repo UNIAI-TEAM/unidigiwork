@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Bot, CheckCircle2, ExternalLink, Loader2, Lock, Play, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { Bot, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, Loader2, Lock, Play, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import {
   AI_EXECUTION_STATUS_LABEL,
   DELIVERABLE_TEMPLATES,
