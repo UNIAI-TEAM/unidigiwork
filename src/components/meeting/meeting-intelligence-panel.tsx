@@ -209,6 +209,7 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   });
 
   const progressQuery = useQuery({
+    // eslint-disable-next-line
     queryKey: ["meeting-summary-progress", meetingId],
     queryFn: () => getMeetingSummaryProgress({ data: { meetingId } }),
     refetchInterval: generate.isPending ? 1500 : false,
