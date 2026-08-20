@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2, History, CornerDownLeft } from "lucide-react";
+import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2, History, CornerDownLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { askUniCopilot } from "@/lib/api/ai-copilot.functions";
 import { proposeAiAction } from "@/lib/api/ai-actions.functions";
@@ -70,6 +70,8 @@ export function UniCopilot() {
   const [pinnedRoot, setPinnedRoot] = useState<CopilotRoot>(null);
   // Mobile bottom sheet: 'half' (mặc định) ↔ 'full', kéo xuống để đóng.
   const [snap, setSnap] = useState<"half" | "full">("half");
+  // Desktop: thu gọn panel để giải phóng không gian, giữ ngữ cảnh và lịch sử.
+  const [collapsed, setCollapsed] = useState(false);
   // Lịch sử follow-up đã hỏi (kèm nguồn trích dẫn) — mở/đóng bằng nút Lịch sử.
   const [showHistory, setShowHistory] = useState(false);
   const [dragY, setDragY] = useState(0);
