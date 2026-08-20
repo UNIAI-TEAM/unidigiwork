@@ -991,16 +991,26 @@ function MeetingPage() {
                             >
                               Sửa
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCancelRoom(m);
-                                setCancelReason("");
-                              }}
-                              className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
-                            >
-                              Hủy
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <button
+                                    type="button"
+                                    disabled={!canManageMeeting(m.id)}
+                                    onClick={() => {
+                                      setCancelRoom(m);
+                                      setCancelReason("");
+                                    }}
+                                    className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Hủy
+                                  </button>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {canManageMeeting(m.id) ? "Hủy buổi họp này" : DENY_HINT}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </div>
                       ))}
