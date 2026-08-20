@@ -805,6 +805,7 @@ function MeetingPage() {
                             >
                               Hủy
                             </button>
+                            {!canManageMeeting(r.id) && null}
                           </div>
                         </div>
                       </li>
