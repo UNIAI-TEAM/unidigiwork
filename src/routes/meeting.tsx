@@ -1258,6 +1258,11 @@ function MeetingPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {cancelRoom && !canManageMeeting(cancelRoom.id) && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                {DENY_HINT}
+              </div>
+            )}
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
               Thao tác này không thể hoàn tác. Người tham dự sẽ thấy cuộc họp ở trạng thái “Đã hủy”.
             </div>
@@ -1298,7 +1303,11 @@ function MeetingPage() {
             <Button
               variant="destructive"
               onClick={() => cancelRoomMutation.mutate()}
-              disabled={cancelRoomMutation.isPending || cancelReason.trim().length < 5}
+              disabled={
+                cancelRoomMutation.isPending ||
+                cancelReason.trim().length < 5 ||
+                (!!cancelRoom && !canManageMeeting(cancelRoom.id))
+              }
             >
               {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
             </Button>
