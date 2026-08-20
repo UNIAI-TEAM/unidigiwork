@@ -329,9 +329,9 @@ export function UniCopilot() {
         role="dialog"
         aria-label="UNI — Workspace Copilot"
         style={{ transform: dragY ? `translateY(${dragY}px)` : undefined }}
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-border bg-background shadow-xl transition-[top,transform] duration-200 ease-out md:inset-y-0 md:left-auto md:right-0 md:w-[420px] md:rounded-none md:border-y-0 md:border-r-0 ${
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-border bg-background shadow-xl transition-[top,transform,width] duration-200 ease-out md:inset-y-0 md:left-auto md:right-0 md:rounded-none md:border-y-0 md:border-r-0 ${
           snap === "full" ? "top-4" : "top-[38vh]"
-        } md:top-0`}
+        } md:top-0 ${collapsed ? "md:w-16" : "md:w-[420px]"}`}
       >
         {/* Tay nắm kéo — chỉ mobile: kéo lên mở rộng, kéo xuống thu nhỏ/đóng. */}
         <div
