@@ -35,6 +35,7 @@ const input =
 
 export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onChanged: () => void }) {
   const qc = useQueryClient();
+  const [collapsed, setCollapsed] = useState(false);
   const [workerId, setWorkerId] = useState(task.ai_worker_id ?? "");
   const [deliverable, setDeliverable] = useState(task.expected_deliverable ?? "");
   const [criteria, setCriteria] = useState(task.acceptance_criteria ?? "");
