@@ -2,7 +2,7 @@ import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { playMeetingCue } from "@/lib/meeting-cues";
 
@@ -37,6 +37,7 @@ import {
   Lock,
   Crown,
   Video as VideoIcon,
+  RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -76,7 +77,10 @@ import {
 } from "@/lib/screen-share-quality";
 import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
-import { getMeetingSummary } from "@/lib/api/meeting-intelligence.functions";
+import {
+  getMeetingSummary,
+  generateMeetingSummary,
+} from "@/lib/api/meeting-intelligence.functions";
 import { MeetingContentPanel } from "@/components/meeting/meeting-content-panel";
 import { MeetingStatusHistoryPanel } from "@/components/meeting/meeting-status-history-panel";
 import { MeetingParticipantsManagerPanel } from "@/components/meeting/participants-manager-panel";
@@ -1903,12 +1907,39 @@ function CtrlBtn({
 }
 
 function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRoom: boolean }) {
+  const queryClient = useQueryClient();
   const summaryQuery = useQuery({
     queryKey: ["meeting-summary", meetingId],
     enabled: isRealRoom,
     staleTime: 30_000,
     queryFn: () => getMeetingSummary({ data: { meetingId } }),
   });
+  const regenerate = useMutation({
+    mutationFn: () => generateMeetingSummary({ data: { meetingId } }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["meeting-summary", meetingId], data);
+      void queryClient.invalidateQueries({ queryKey: ["meeting-transcript", meetingId] });
+      void queryClient.invalidateQueries({ queryKey: ["meeting-summary-progress", meetingId] });
+      toast.success("Đã cập nhật tóm tắt cuộc họp.");
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Không tạo được tóm tắt."),
+  });
+  const rerunButton = (
+    <button
+      type="button"
+      disabled={regenerate.isPending}
+      onClick={() => regenerate.mutate()}
+      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-surface-3 disabled:opacity-60"
+    >
+      {regenerate.isPending ? (
+        <Loader2 className="h-3 w-3 animate-spin" />
+      ) : (
+        <RefreshCw className="h-3 w-3" />
+      )}
+      {regenerate.isPending ? "Đang tóm tắt…" : "Chạy lại tóm tắt"}
+    </button>
+  );
 
   if (!isRealRoom) {
     return (
@@ -1927,14 +1958,18 @@ function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRo
   const summary = summaryQuery.data ?? null;
   if (!summary) {
     return (
-      <p className="text-xs text-muted-foreground">
-        Chưa có tóm tắt cho cuộc họp này. Mở tab &quot;Biên bản&quot; để nạp biên bản (phụ đề trực tiếp,
-        file ghi âm hoặc dán văn bản) rồi tạo tóm tắt.
-      </p>
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Chưa có tóm tắt cho cuộc họp này. Mở tab &quot;Biên bản&quot; để nạp biên bản (phụ đề trực
+          tiếp, file ghi âm hoặc dán văn bản), rồi bấm nút bên dưới — không cần tải lại trang.
+        </p>
+        {rerunButton}
+      </div>
     );
   }
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">{rerunButton}</div>
       <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
         <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-primary">
           <Sparkles className="h-3.5 w-3.5" />
