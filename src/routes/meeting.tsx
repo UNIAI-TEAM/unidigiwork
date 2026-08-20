@@ -1009,7 +1009,7 @@ function MeetingPage() {
 
           {/* Right panel */}
           <aside className="hidden w-[340px] shrink-0 flex-col border-l border-border bg-surface xl:flex">
-            <MiniCalendar />
+            <MiniCalendar workspaceId={activeWs} />
             <div className="border-t border-border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Sắp diễn ra</h3>
@@ -1924,19 +1924,78 @@ const ROOMS = [
   );
 }
 
-function MiniCalendar() {
-  const today = 10;
-  const days = Array.from({ length: 30 }, (_, i) => i + 1);
-  const events: Record<number, number> = { 10: 4, 11: 2, 12: 3, 13: 1, 16: 2, 17: 1, 20: 5 };
+function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
+  const now = new Date();
+  const [cursor, setCursor] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  const monthQuery = useQuery({
+    queryKey: ["meetings-month", workspaceId ?? null, monthStart.toISOString()],
+    enabled: !!workspaceId,
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      listMeetings({
+        data: {
+          workspaceId: workspaceId as string,
+          from: monthStart.toISOString(),
+          to: monthEnd.toISOString(),
+          sort: "asc",
+          limit: 200,
+        },
+      }),
+  });
+
+  type DayMeeting = { id: string; title: string; status: string; start_at: string; end_at: string };
+  const byDay = useMemo(() => {
+    const map = new Map<string, DayMeeting[]>();
+    for (const r of (monthQuery.data ?? []) as unknown as DayMeeting[]) {
+      if (!r.start_at) continue;
+      const d = new Date(r.start_at);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const arr = map.get(key) ?? [];
+      arr.push(r);
+      map.set(key, arr);
+    }
+    return map;
+  }, [monthQuery.data]);
+
+  const daysInMonth = monthEnd.getDate();
+  // Bắt đầu tuần từ Thứ 2.
+  const leading = (monthStart.getDay() + 6) % 7;
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const dayKey = (d: number) => `${cursor.getFullYear()}-${cursor.getMonth()}-${d}`;
+  const isSameMonthAsToday =
+    cursor.getFullYear() === now.getFullYear() && cursor.getMonth() === now.getMonth();
+  const selectedList = selected ? (byDay.get(selected) ?? []) : [];
+
   return (
     <div className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Tháng 6, 2026</h3>
+        <h3 className="text-sm font-semibold">
+          Tháng {cursor.getMonth() + 1}, {cursor.getFullYear()}
+        </h3>
         <div className="flex items-center gap-1">
-          <button onClick={() => notifyComingSoon()} className="rounded p-1 hover:bg-surface-2">
+          <button
+            aria-label="Tháng trước"
+            onClick={() => {
+              setSelected(null);
+              setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
+            }}
+            className="rounded p-1 hover:bg-surface-2"
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={() => notifyComingSoon()} className="rounded p-1 hover:bg-surface-2">
+          <button
+            aria-label="Tháng sau"
+            onClick={() => {
+              setSelected(null);
+              setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
+            }}
+            className="rounded p-1 hover:bg-surface-2"
+          >
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -1949,26 +2008,68 @@ function MiniCalendar() {
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: leading }, (_, i) => (
+          <div key={`lead-${i}`} className="aspect-square" />
+        ))}
         {days.map((d) => {
-          const isToday = d === today;
-          const has = events[d];
+          const key = dayKey(d);
+          const isToday = isSameMonthAsToday && d === now.getDate();
+          const count = byDay.get(key)?.length ?? 0;
+          const isSelected = selected === key;
           return (
-            <button onClick={() => notifyComingSoon()}
+            <button
               key={d}
+              type="button"
+              aria-label={`Ngày ${d}: ${count} cuộc họp`}
+              onClick={() => setSelected(isSelected ? null : key)}
               className={`relative aspect-square rounded text-xs ${
                 isToday
-                  ? "bg-primary text-primary-foreground font-semibold"
-                  : "hover:bg-surface-2 text-foreground"
+                  ? "bg-primary font-semibold text-primary-foreground"
+                  : isSelected
+                    ? "bg-primary/15 text-primary"
+                    : "text-foreground hover:bg-surface-2"
               }`}
             >
               {d}
-              {has && !isToday && (
+              {count > 0 && !isToday && (
                 <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
+              )}
+              {count > 0 && isToday && (
+                <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary-foreground" />
               )}
             </button>
           );
         })}
       </div>
+
+      {monthQuery.isLoading && (
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> Đang tải lịch họp…
+        </div>
+      )}
+
+      {selected && (
+        <div className="mt-3 space-y-2 border-t border-border pt-3">
+          {selectedList.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground">Không có cuộc họp trong ngày này.</p>
+          ) : (
+            selectedList.map((m) => (
+              <Link
+                key={m.id}
+                to="/meeting/$id"
+                params={{ id: m.id }}
+                className="block rounded-lg border border-border bg-bg p-2.5 hover:border-primary/40"
+              >
+                <div className="truncate text-xs font-medium">{m.title}</div>
+                <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {formatRange(m.start_at, m.end_at)}
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
