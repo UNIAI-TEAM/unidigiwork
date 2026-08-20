@@ -59,13 +59,27 @@ function OnboardingPage() {
   const step2Valid = workspaceName.trim().length >= 2;
 
   const onCreate = async () => {
-    try {
-      const res = await provision.mutateAsync({
+    const attempt = async (trySlug: string, key: string) =>
+      provision.mutateAsync({
         name: name.trim(),
-        slug: autoSlug,
+        slug: trySlug,
         defaultWorkspaceName: workspaceName.trim(),
-        metadata: { idempotencyKey },
+        metadata: { idempotencyKey: key },
       });
+    try {
+      let res;
+      try {
+        res = await attempt(autoSlug, idempotencyKey);
+      } catch (err) {
+        const code = err instanceof Error ? err.message : "";
+        if (code !== "TENANT_SLUG_CONFLICT") throw err;
+        // Slug taken → retry once with a unique suffix instead of failing.
+        const suffix = crypto.randomUUID().slice(0, 6);
+        const uniqueSlug = `${autoSlug.slice(0, 56)}-${suffix}`;
+        setSlug(uniqueSlug);
+        setSlugTouched(true);
+        res = await attempt(uniqueSlug, `${idempotencyKey}-${suffix}`);
+      }
       await setActive.mutateAsync(res.tenantId);
       toast.success("Đã tạo tenant thành công");
       navigate({ to: "/tasks" });
@@ -79,6 +93,7 @@ function OnboardingPage() {
             ? "Dữ liệu không hợp lệ."
             : message,
       );
+      setStep(1);
     }
   };
 
