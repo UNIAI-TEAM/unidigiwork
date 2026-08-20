@@ -7620,6 +7620,14 @@ export type Database = {
       }
       redeem_meeting_invite_link: { Args: { _token: string }; Returns: Json }
       refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
+      remove_meeting_participant: {
+        Args: {
+          _correlation_id?: string
+          _meeting_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       repair_workflow_run_timestamps: {
         Args: { _run_ids: string[] }
         Returns: {
