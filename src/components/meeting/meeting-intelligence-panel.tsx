@@ -48,6 +48,107 @@ import {
   type SummaryProgress,
   type SummarySource,
 } from "@/domain/meeting-intelligence/contracts";
+
+type TranscriptImportStep = "READ" | "STT" | "SAVE";
+type TranscriptStepStatus = "PENDING" | "RUNNING" | "DONE" | "FAILED" | "SKIPPED";
+type TranscriptImportJob = {
+  kind: "AUDIO" | "PASTE";
+  label: string;
+  startedAt: number;
+  error: string | null;
+  steps: Array<{ step: TranscriptImportStep; status: TranscriptStepStatus; detail: string | null }>;
+};
+const IMPORT_STEP_LABEL: Record<TranscriptImportStep, string> = {
+  READ: "Đọc & tải nội dung",
+  STT: "Phiên âm bằng AI (STT)",
+  SAVE: "Cắt đoạn & lưu segments",
+};
+const IMPORT_STATUS_LABEL: Record<TranscriptStepStatus, string> = {
+  PENDING: "Chờ",
+  RUNNING: "Đang chạy",
+  DONE: "Xong",
+  FAILED: "Lỗi",
+  SKIPPED: "Bỏ qua",
+};
+
+function TranscriptImportStatusCard({
+  job,
+  onDismiss,
+}: {
+  job: TranscriptImportJob;
+  onDismiss: () => void;
+}) {
+  const failed = job.steps.some((s) => s.status === "FAILED");
+  const done = !failed && job.steps.every((s) => s.status === "DONE");
+  return (
+    <div
+      className={`rounded-lg border p-2.5 ${
+        failed ? "border-destructive/40 bg-destructive/5" : "border-border bg-surface-2"
+      }`}
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[11px] font-medium text-foreground">
+            {job.kind === "AUDIO" ? "Nhập biên bản từ file ghi âm" : "Nhập biên bản dán tay"}
+          </div>
+          <div className="truncate text-[10px] text-muted-foreground">{job.label}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+          aria-label="Đóng trạng thái nhập biên bản"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+      <ol className="space-y-1.5">
+        {job.steps.map((s) => (
+          <li key={s.step} className="flex items-start gap-2">
+            <span className="mt-0.5 shrink-0">
+              {s.status === "RUNNING" ? (
+                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+              ) : s.status === "DONE" ? (
+                <CheckCircle2 className="h-3 w-3 text-success" />
+              ) : s.status === "FAILED" ? (
+                <AlertTriangle className="h-3 w-3 text-destructive" />
+              ) : (
+                <div className="h-3 w-3 rounded-full border border-border" />
+              )}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-[11px] text-foreground">
+                {IMPORT_STEP_LABEL[s.step]}
+                <span className="text-[10px] text-muted-foreground">
+                  · {IMPORT_STATUS_LABEL[s.status]}
+                </span>
+              </div>
+              {s.detail && (
+                <div
+                  className={`text-[10px] ${
+                    s.status === "FAILED" ? "text-destructive" : "text-muted-foreground"
+                  }`}
+                >
+                  {s.detail}
+                </div>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+      {done && (
+        <div className="mt-2 text-[10px] text-muted-foreground">
+          Hoàn tất — kiểm tra danh sách đoạn bên dưới để đối chiếu mốc thời gian.
+        </div>
+      )}
+      {job.error && (
+        <div className="mt-2 rounded border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+          Chi tiết lỗi: {job.error}
+        </div>
+      )}
+    </div>
+  );
+}
 import {
   confirmMeetingActionItem,
   dismissMeetingActionItem,
@@ -172,6 +273,22 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const [formDue, setFormDue] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
+  const [importJob, setImportJob] = useState<TranscriptImportJob | null>(null);
+  const setStep = (
+    step: TranscriptImportStep,
+    status: TranscriptStepStatus,
+    detail?: string,
+  ) =>
+    setImportJob((prev) =>
+      prev
+        ? {
+            ...prev,
+            steps: prev.steps.map((s) =>
+              s.step === step ? { ...s, status, detail: detail ?? s.detail } : s,
+            ),
+          }
+        : prev,
+    );
 
   const transcriptQuery = useQuery({
     queryKey: ["meeting-transcript", meetingId],
@@ -213,26 +330,59 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   };
 
   const importText = useMutation({
-    mutationFn: (text: string) => importMeetingTranscriptText({ data: { meetingId, text, source: "MANUAL" } }),
+    mutationFn: (text: string) => {
+      setImportJob({
+        kind: "PASTE",
+        label: `Dán biên bản · ${text.length.toLocaleString("vi-VN")} ký tự`,
+        startedAt: Date.now(),
+        error: null,
+        steps: [
+          { step: "READ", status: "DONE", detail: `${text.length.toLocaleString("vi-VN")} ký tự` },
+          { step: "SAVE", status: "RUNNING", detail: "Đang cắt đoạn và lưu vào biên bản…" },
+        ],
+      });
+      return importMeetingTranscriptText({ data: { meetingId, text, source: "MANUAL" } });
+    },
     onSuccess: (r: { inserted: number }) => {
       invalidateTranscript();
       setPasteOpen(false);
       setPasteText("");
+      setStep("SAVE", "DONE", `Đã lưu ${r.inserted} đoạn`);
       toast.success(`Đã lưu ${r.inserted} đoạn biên bản.`);
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không lưu được biên bản."),
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : "Không lưu được biên bản.";
+      setStep("SAVE", "FAILED", msg);
+      setImportJob((prev) => (prev ? { ...prev, error: msg } : prev));
+      toast.error(msg);
+    },
   });
 
   const transcribe = useMutation({
     mutationFn: async (file: File) => {
+      setImportJob({
+        kind: "AUDIO",
+        label: `${file.name || "recording"} · ${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+        startedAt: Date.now(),
+        error: null,
+        steps: [
+          { step: "READ", status: "RUNNING", detail: "Đang đọc file ghi âm…" },
+          { step: "STT", status: "PENDING", detail: null },
+          { step: "SAVE", status: "PENDING", detail: null },
+        ],
+      });
       if (file.size > 12 * 1024 * 1024) {
-        throw new Error("File ghi âm vượt quá 12MB. Hãy cắt ngắn hoặc nén lại.");
+        const msg = "File ghi âm vượt quá 12MB. Hãy cắt ngắn hoặc nén lại.";
+        setStep("READ", "FAILED", msg);
+        throw new Error(msg);
       }
       const buf = new Uint8Array(await file.arrayBuffer());
       let bin = "";
       for (let i = 0; i < buf.length; i += 0x8000) {
         bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
       }
+      setStep("READ", "DONE", `${buf.byteLength.toLocaleString("vi-VN")} byte`);
+      setStep("STT", "RUNNING", "Đang gửi lên AI để phiên âm…");
       return transcribeMeetingRecording({
         data: {
           meetingId,
@@ -242,11 +392,31 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
         },
       });
     },
-    onSuccess: (r: { inserted: number }) => {
+    onSuccess: (r: { inserted: number; characters: number }) => {
       invalidateTranscript();
+      setStep("STT", "DONE", `${r.characters.toLocaleString("vi-VN")} ký tự nhận được`);
+      setStep("SAVE", "DONE", `Đã lưu ${r.inserted} đoạn`);
       toast.success(`Đã phiên âm và lưu ${r.inserted} đoạn biên bản.`);
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Không phiên âm được."),
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : "Không phiên âm được.";
+      setImportJob((prev) =>
+        prev
+          ? {
+              ...prev,
+              error: msg,
+              steps: prev.steps.map((s) =>
+                s.status === "RUNNING"
+                  ? { ...s, status: "FAILED", detail: msg }
+                  : s.status === "PENDING"
+                    ? { ...s, status: "SKIPPED", detail: "Không chạy do bước trước lỗi" }
+                    : s,
+              ),
+            }
+          : prev,
+      );
+      toast.error(msg);
+    },
   });
 
   const progressQuery = useQuery({
@@ -544,6 +714,9 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
       </div>
 
       <div className="space-y-3">
+        {importJob && (
+          <TranscriptImportStatusCard job={importJob} onDismiss={() => setImportJob(null)} />
+        )}
         {transcriptQuery.isLoading && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" /> Đang tải biên bản…
