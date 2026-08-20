@@ -21,6 +21,34 @@ export interface AiTaskAccess {
 
 const MANAGER_ROLES = new Set(["owner", "admin", "manager", "tenant_admin"]);
 
+/** Ghi nhật ký truy cập panel AI EXECUTION (best-effort, không chặn nghiệp vụ). */
+async function logAiTaskAudit(input: {
+  tenantId: string | null;
+  actorId: string;
+  eventType: string;
+  taskId: string;
+  payload?: Record<string, unknown>;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("audit_events").insert({
+      tenant_id: input.tenantId,
+      actor_id: input.actorId,
+      actor_user_id: input.actorId,
+      event_type: input.eventType,
+      action: input.eventType,
+      aggregate_type: "task",
+      aggregate_id: input.taskId,
+      resource_type: "ai_task_execution",
+      resource_id: input.taskId,
+      payload: { task_id: input.taskId, ...(input.payload ?? {}) },
+      source: "app",
+    });
+  } catch {
+    // audit không được phép làm hỏng thao tác chính
+  }
+}
+
 /**
  * Quyền hiển thị panel AI EXECUTION.
  * canView dựa trên RLS (đọc được task = thuộc tổ chức/workspace).
@@ -36,7 +64,16 @@ export const getAiTaskAccess = createServerFn({ method: "GET" })
       .select("id, tenant_id, workspace_id, human_owner_id, created_by")
       .eq("id", data.taskId)
       .maybeSingle();
-    if (error || !task) return denied;
+    if (error || !task) {
+      await logAiTaskAudit({
+        tenantId: null,
+        actorId: context.userId,
+        eventType: "ai_task.access_denied",
+        taskId: data.taskId,
+        payload: { scope: "view", reason: error ? "rls_error" : "not_visible" },
+      });
+      return denied;
+    }
 
     const uid = context.userId;
     let elevated = task.human_owner_id === uid || task.created_by === uid;
@@ -59,6 +96,16 @@ export const getAiTaskAccess = createServerFn({ method: "GET" })
         .eq("user_id", uid)
         .maybeSingle();
       if (wm && MANAGER_ROLES.has(String(wm.role))) elevated = true;
+    }
+
+    if (!elevated) {
+      await logAiTaskAudit({
+        tenantId: task.tenant_id,
+        actorId: context.userId,
+        eventType: "ai_task.access_readonly",
+        taskId: data.taskId,
+        payload: { scope: "manage", workspace_id: task.workspace_id },
+      });
     }
 
     return { canView: true, canManage: elevated, canReview: elevated, reason: "OK" };
@@ -143,6 +190,18 @@ export const runAiTask = createServerFn({ method: "POST" })
       throw new ApiError({ code: "AI_TASK_SPEC_REQUIRED", message: "Cần mô tả sản phẩm bàn giao và tiêu chí nghiệm thu." });
     }
 
+    await logAiTaskAudit({
+      tenantId: (t["tenant_id"] as string | null) ?? null,
+      actorId: context.userId,
+      eventType: "ai_task.run_requested",
+      taskId: data.taskId,
+      payload: {
+        template_code: data.templateCode ?? "SUMMARY_REPORT",
+        ai_worker_id: w.id,
+        workspace_id: (t["workspace_id"] as string | null) ?? null,
+      },
+    });
+
     // 1. Mở lượt chạy (RPC kiểm tra quyền tenant + workspace, ghi audit + outbox).
     const startRes = await context.supabase.rpc("start_ai_task_execution" as never, {
       _task_id: data.taskId,
@@ -186,6 +245,13 @@ export const runAiTask = createServerFn({ method: "POST" })
         _evidence: run.evidence,
       } as never);
       if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
+      await logAiTaskAudit({
+        tenantId: (t["tenant_id"] as string | null) ?? null,
+        actorId: context.userId,
+        eventType: "ai_task.run_completed",
+        taskId: data.taskId,
+        payload: { execution_id: exec.id, status: "WAITING_REVIEW" },
+      });
       return one<AiTaskExecutionRow>(finish.data);
     } catch (e) {
       const code = e instanceof ApiError ? e.code : "AI_PROVIDER_UNAVAILABLE";
@@ -194,6 +260,13 @@ export const runAiTask = createServerFn({ method: "POST" })
         _status: "FAILED",
         _error_code: code,
       } as never);
+      await logAiTaskAudit({
+        tenantId: (t["tenant_id"] as string | null) ?? null,
+        actorId: context.userId,
+        eventType: "ai_task.run_failed",
+        taskId: data.taskId,
+        payload: { execution_id: exec.id, error_code: code },
+      });
       throw new ApiError({ code: "AI_PROVIDER_UNAVAILABLE", message: "Nhân sự AI không hoàn thành được lượt chạy này." });
     }
   });
