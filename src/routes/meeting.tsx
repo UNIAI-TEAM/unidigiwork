@@ -382,6 +382,17 @@ function MeetingPage() {
   const listLoading = rangeActive ? rangeQuery.isLoading : rooms.isLoading;
   const listFetching = rangeActive ? rangeQuery.isFetching : rooms.isFetching;
 
+  // Panel "Sắp diễn ra": luôn lấy dữ liệu thật, độc lập với bộ lọc đang chọn.
+  const upcomingPanel = useQuery({
+    queryKey: ["meeting-rooms", "upcoming-panel", activeWs ?? null],
+    enabled: !!activeWs,
+    queryFn: () =>
+      listMyMeetingRooms({
+        data: { workspaceId: activeWs as string, state: "upcoming", sort: "asc", limit: 3, offset: 0 },
+      }),
+  });
+  const upcomingItems = (upcomingPanel.data?.items ?? []) as unknown as ListRoom[];
+
   const createRoom = useMutation({
     mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
       createInstantMeeting({
