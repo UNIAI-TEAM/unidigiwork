@@ -555,15 +555,61 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
             hoặc dán biên bản có sẵn.
           </p>
         )}
-        {segments.map((s) => (
-          <div key={s.id}>
-            <div className="text-[10px] text-muted-foreground">
-              {s.speakerName ?? "Người nói"} · {formatOffset(s.offsetSeconds)} ·{" "}
-              {TRANSCRIPT_SOURCE_LABEL[s.source]}
-            </div>
-            <div className="text-foreground">{s.content}</div>
+        {hasTranscript && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[10px] text-muted-foreground">
+            <span>
+              <span className="font-semibold text-foreground">{segments.length}</span> đoạn
+            </span>
+            <span>
+              Mốc cuối:{" "}
+              <span className="font-medium text-foreground">
+                {formatOffset(segments.at(-1)?.offsetSeconds ?? 0)}
+              </span>
+            </span>
+            <span>
+              <span className="font-medium text-foreground">
+                {segments.reduce((n, s) => n + s.content.length, 0).toLocaleString("vi-VN")}
+              </span>{" "}
+              ký tự
+            </span>
+            {Object.entries(
+              segments.reduce<Record<string, number>>((acc, s) => {
+                acc[s.source] = (acc[s.source] ?? 0) + 1;
+                return acc;
+              }, {}),
+            ).map(([source, count]) => (
+              <span key={source} className="rounded-full border border-border px-1.5 py-0.5">
+                {(TRANSCRIPT_SOURCE_LABEL as Record<string, string>)[source] ?? source}: {count}
+              </span>
+            ))}
+            <span className="font-mono">checksum {transcriptChecksum(segments).slice(0, 10)}</span>
           </div>
-        ))}
+        )}
+        {hasTranscript && (
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {segments.map((s, i) => (
+              <div key={s.id} className="flex gap-2.5 px-2.5 py-2">
+                <div className="w-6 shrink-0 pt-0.5 text-right font-mono text-[10px] text-muted-foreground">
+                  {i + 1}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span className="rounded border border-border bg-surface-2 px-1 py-0.5 font-mono text-foreground">
+                      {formatOffset(s.offsetSeconds)}
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {s.speakerName ?? "Người nói"}
+                    </span>
+                    <span>· {TRANSCRIPT_SOURCE_LABEL[s.source]}</span>
+                  </div>
+                  <div className="mt-0.5 whitespace-pre-wrap break-words text-foreground">
+                    {s.content}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Dialog open={pasteOpen} onOpenChange={(o) => setPasteOpen(o)}>
