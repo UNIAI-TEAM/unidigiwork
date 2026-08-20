@@ -443,7 +443,9 @@ export function UniCopilot() {
           </div>
         )}
 
-        {showHistory && askedHistory.length > 0 && (
+        {!collapsed && (
+          <>
+            {showHistory && askedHistory.length > 0 && (
           <div className="max-h-[45%] shrink-0 overflow-y-auto border-b border-border bg-surface/60 px-4 py-3">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Đã hỏi ({askedHistory.length})
