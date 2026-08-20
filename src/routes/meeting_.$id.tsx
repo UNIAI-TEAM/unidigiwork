@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Users,
   Sparkles,
+  ClipboardList,
   Hand,
   MoreHorizontal,
   MonitorUp,
@@ -75,6 +76,7 @@ import {
 } from "@/lib/screen-share-quality";
 import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
+import { MeetingContentPanel } from "@/components/meeting/meeting-content-panel";
 import { appendMeetingTranscript } from "@/lib/api/meeting-intelligence.functions";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import {
@@ -200,7 +202,9 @@ function MeetingDetailPage() {
   const { invite } = Route.useSearch();
   const isRealRoom = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const [open, setOpen] = useSidebarState();
-  const [tab, setTab] = useState<"chat" | "participants" | "transcript" | "ai" | "recording">("ai");
+  const [tab, setTab] = useState<
+    "chat" | "participants" | "transcript" | "ai" | "recording" | "content"
+  >("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -1724,6 +1728,7 @@ function MeetingDetailPage() {
               {(
                 [
                   { k: "ai", label: "AI", icon: Sparkles },
+                  { k: "content", label: "Nội dung", icon: ClipboardList },
                   { k: "chat", label: "Chat", icon: MessageSquare },
                   { k: "participants", label: "Người", icon: Users },
                   { k: "transcript", label: "Biên bản", icon: FileText },
@@ -1742,6 +1747,14 @@ function MeetingDetailPage() {
 
             <div className="flex-1 overflow-y-auto p-4 text-sm">
               {tab === "ai" && <AICopilotPanel />}
+              {tab === "content" &&
+                (isRealRoom ? (
+                  <MeetingContentPanel meetingId={id} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Phòng demo không có agenda, ghi chú hay tài liệu thật.
+                  </p>
+                ))}
               {tab === "recording" &&
                 (isRealRoom ? (
                   <MeetingRecordingPanel meetingId={id} />
