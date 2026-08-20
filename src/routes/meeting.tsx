@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/meeting-rooms.functions";
 import {
   cancelMeeting,
+  getMeetingManagePermissions,
   listMeetings,
   scheduleMeeting,
   updateMeeting,
