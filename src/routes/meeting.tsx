@@ -85,6 +85,7 @@ import {
   Mail,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import { useMeetingsRealtime } from "@/hooks/use-meetings-realtime";
 
 export const Route = createFileRoute("/meeting")({
   validateSearch: (search: {
@@ -380,6 +381,7 @@ function MeetingPage() {
   const listFetching = rangeActive ? rangeQuery.isFetching : rooms.isFetching;
 
   // Panel "Sắp diễn ra": luôn lấy dữ liệu thật, độc lập với bộ lọc đang chọn.
+  useMeetingsRealtime(activeWs ?? null);
   const upcomingPanel = useQuery({
     queryKey: ["meeting-rooms", "upcoming-panel", activeWs ?? null],
     enabled: !!activeWs,
