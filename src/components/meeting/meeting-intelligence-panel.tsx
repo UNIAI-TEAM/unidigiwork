@@ -512,6 +512,37 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2">
+        <span className="text-[10px] text-muted-foreground">Nguồn biên bản:</span>
+        <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-surface-3">
+          {transcribe.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Upload className="h-3 w-3" />
+          )}
+          {transcribe.isPending ? "Đang phiên âm…" : "Tải file ghi âm"}
+          <input
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            disabled={transcribe.isPending}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) transcribe.mutate(f);
+            }}
+          />
+        </label>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 gap-1 text-[11px]"
+          onClick={() => setPasteOpen(true)}
+        >
+          <FileText className="h-3 w-3" /> Dán biên bản
+        </Button>
+      </div>
+
       <div className="space-y-3">
         {transcriptQuery.isLoading && (
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -520,7 +551,8 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
         )}
         {!transcriptQuery.isLoading && !hasTranscript && (
           <p className="text-muted-foreground">
-            Chưa có biên bản. Bật phụ đề trực tiếp trong cuộc họp để hệ thống lưu lại nội dung.
+            Chưa có biên bản. Bật phụ đề trực tiếp trong cuộc họp, tải file ghi âm để AI phiên âm,
+            hoặc dán biên bản có sẵn.
           </p>
         )}
         {segments.map((s) => (
@@ -533,6 +565,37 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
           </div>
         ))}
       </div>
+
+      <Dialog open={pasteOpen} onOpenChange={(o) => setPasteOpen(o)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Dán biên bản cuộc họp</DialogTitle>
+            <DialogDescription>
+              Hỗ trợ dạng &quot;Người nói: nội dung&quot; theo từng dòng hoặc văn bản liền mạch. Hệ thống
+              tự cắt đoạn và gán mốc thời gian ước lượng.
+            </DialogDescription>
+          </DialogHeader>
+          <textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={10}
+            placeholder="An: Chúng ta chốt ngân sách quý 3...&#10;Bình: Tôi sẽ gửi báo cáo trước thứ Sáu."
+            className="w-full rounded-lg border border-border bg-background p-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPasteOpen(false)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={!pasteText.trim() || importText.isPending}
+              onClick={() => importText.mutate(pasteText.trim())}
+            >
+              {importText.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              Lưu biên bản
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(pending)} onOpenChange={(o) => !o && setPending(null)}>
         <DialogContent className="sm:max-w-md">
