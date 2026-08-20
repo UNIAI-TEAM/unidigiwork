@@ -523,7 +523,16 @@ function MeetingPage() {
       setCancelReason("");
       toast.success("Đã hủy cuộc họp.");
     },
-    onError: () => toast.error("Không hủy được cuộc họp. Kiểm tra quyền của bạn."),
+    onError: (err: unknown) => {
+      const msg = String((err as { message?: string })?.message ?? "");
+      if (msg.includes("42501") || /denied|permission|FORBIDDEN/i.test(msg)) {
+        toast.error(DENY_HINT);
+      } else if (/MEETING_NOT_FOUND/.test(msg)) {
+        toast.error("Buổi họp không tồn tại hoặc đã bị hủy trước đó.");
+      } else {
+        toast.error("Không hủy được cuộc họp. Vui lòng thử lại.");
+      }
+    },
   });
 
   return (
