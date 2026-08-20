@@ -1,5 +1,6 @@
 // Meeting Intelligence V1 — biên bản trực tiếp + tóm tắt AI có nguồn trích dẫn.
 import { useMemo, useState } from "react";
+import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -269,7 +270,7 @@ function StagedProgress({ progress, running }: { progress: SummaryProgress; runn
 
 export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
   const queryClient = useQueryClient();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = usePanelCollapse("meeting-intelligence");
   const [activeSource, setActiveSource] = useState<SummarySource | null>(null);
   const [pending, setPending] = useState<{ item: MeetingActionItem; key: string } | null>(null);
   const [formTitle, setFormTitle] = useState("");
