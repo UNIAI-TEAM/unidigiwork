@@ -77,6 +77,7 @@ import {
 import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
 import { MeetingContentPanel } from "@/components/meeting/meeting-content-panel";
+import { MeetingStatusHistoryPanel } from "@/components/meeting/meeting-status-history-panel";
 import { MeetingParticipantsManagerPanel } from "@/components/meeting/participants-manager-panel";
 import { appendMeetingTranscript } from "@/lib/api/meeting-intelligence.functions";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
@@ -1669,7 +1670,10 @@ function MeetingDetailPage() {
               {tab === "ai" && <AICopilotPanel />}
               {tab === "content" &&
                 (isRealRoom ? (
-                  <MeetingContentPanel meetingId={id} />
+                  <div className="space-y-5">
+                    <MeetingContentPanel meetingId={id} />
+                    <MeetingStatusHistoryPanel meetingId={id} />
+                  </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">
                     Phòng demo không có agenda, ghi chú hay tài liệu thật.
