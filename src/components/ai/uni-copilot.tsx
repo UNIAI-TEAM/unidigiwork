@@ -593,6 +593,7 @@ export function UniCopilot() {
           </div>
           <p className="mt-1.5 text-[11px] text-muted-foreground">UNI chỉ đọc dữ liệu bạn có quyền xem. Mọi thay đổi đều cần bạn xác nhận trước khi thực hiện.</p>
         </div>
+        </>)}
       </aside>
     </>
   );
