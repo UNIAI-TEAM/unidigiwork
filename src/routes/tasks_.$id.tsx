@@ -2,7 +2,7 @@ import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { AiTaskExecutionPanel } from "@/components/ai/ai-task-execution-panel";
 import { AiCandidateSuggest } from "@/components/ai/ai-candidate-suggest";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -21,7 +21,13 @@ import {
 } from "@/lib/tasks-storage";
 import { parseChatSource, stripChatSource } from "@/lib/chat-task-link";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const Route = createFileRoute("/tasks_/$id")({
+  // Chỉ khớp id dạng UUID để không bao giờ rơi về bảng công việc do khớp nhầm.
+  beforeLoad: ({ params }) => {
+    if (!UUID_RE.test(params.id)) throw notFound();
+  },
   head: () => ({
     meta: [
       { title: "Chi tiết công việc · UNIWORK" },
@@ -32,8 +38,21 @@ export const Route = createFileRoute("/tasks_/$id")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  notFoundComponent: TaskNotFound,
   component: TaskDetailPage,
 });
+
+function TaskNotFound() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
+      <h1 className="text-lg font-semibold">Không tìm thấy công việc</h1>
+      <p className="text-sm text-muted-foreground">Liên kết công việc không hợp lệ hoặc đã bị xoá.</p>
+      <Link to="/tasks" className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface">
+        Quay lại Bảng công việc
+      </Link>
+    </div>
+  );
+}
 
 type Status = "todo" | "in_progress" | "blocked" | "done" | "canceled";
 
