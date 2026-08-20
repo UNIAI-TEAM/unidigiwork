@@ -85,6 +85,7 @@ import {
   Mail,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import { useMeetingsRealtime } from "@/hooks/use-meetings-realtime";
 
 export const Route = createFileRoute("/meeting")({
   validateSearch: (search: {
