@@ -105,8 +105,10 @@ async def main() -> int:
             if await page.get_by_role("button", name=btn).count():
                 failures.append(f"case1: nút không được phép vẫn hiện ({btn})")
 
-        # --- Case 2: chỉ được xem ---
-        await page.unroute_all(behavior="ignoreErrors")
+        # --- Case 2: chỉ được xem (trang mới để tránh cache React Query) ---
+        await page.close()
+        page = await context.new_page()
+        await restore_session(context, page)
         await stub_access(page, access_body(True, False, False, "OK"))
         await page.goto(f"{BASE}/tasks/{task_id}", wait_until="domcontentloaded")
         await page.wait_for_timeout(5000)
