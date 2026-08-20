@@ -939,6 +939,8 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   );
 }
