@@ -684,29 +684,35 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
 
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-2">
         <span className="text-[10px] text-muted-foreground">Nguồn biên bản:</span>
-        <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-surface-3">
+        <input
+          id={audioInputId}
+          data-testid="meeting-transcript-audio-input"
+          type="file"
+          accept="audio/*"
+          className="sr-only"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f && !transcribe.isPending) transcribe.mutate(f);
+          }}
+        />
+        <label
+          htmlFor={audioInputId}
+          data-testid="meeting-transcript-audio-label"
+          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-surface-3"
+        >
           {transcribe.isPending ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
             <Upload className="h-3 w-3" />
           )}
           {transcribe.isPending ? "Đang phiên âm…" : "Tải file ghi âm"}
-          <input
-            type="file"
-            accept="audio/*"
-            className="hidden"
-            disabled={transcribe.isPending}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (f) transcribe.mutate(f);
-            }}
-          />
         </label>
         <Button
           size="sm"
           variant="ghost"
           className="h-7 gap-1 text-[11px]"
+          data-testid="meeting-transcript-paste-open"
           onClick={() => setPasteOpen(true)}
         >
           <FileText className="h-3 w-3" /> Dán biên bản
