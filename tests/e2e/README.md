@@ -1,0 +1,1 @@
+# E2E (Playwright, Python)\n\n`bun run test:e2e:task-detail` — mở /tasks, đi tới /tasks/<id> và kiểm tra panel "Nhân sự AI thực thi".\nBiến môi trường: `E2E_BASE_URL` (mặc định http://localhost:8080), `E2E_TASK_ID` (dùng khi bảng công việc trống).
