@@ -579,7 +579,7 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
               }, {}),
             ).map(([source, count]) => (
               <span key={source} className="rounded-full border border-border px-1.5 py-0.5">
-                {TRANSCRIPT_SOURCE_LABEL[source as TranscriptSegment["source"]] ?? source}: {count}
+                {(TRANSCRIPT_SOURCE_LABEL as Record<string, string>)[source] ?? source}: {count}
               </span>
             ))}
             <span className="font-mono">checksum {transcriptChecksum(segments).slice(0, 10)}</span>
