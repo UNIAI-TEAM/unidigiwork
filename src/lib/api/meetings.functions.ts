@@ -239,6 +239,89 @@ export interface MeetingHostActionDto {
   occurredAt: string;
 }
 
+export interface MeetingStatusHistoryEntryDto {
+  id: string;
+  eventType: string;
+  status: string;
+  reason: string | null;
+  actorId: string | null;
+  actorName: string | null;
+  occurredAt: string;
+}
+
+/** Lịch sử trạng thái buổi họp (đặt lịch, bắt đầu, kết thúc, hủy + lý do hủy). */
+export const getMeetingStatusHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<MeetingStatusHistoryEntryDto[]> => {
+    const { data: meeting, error: mErr } = await context.supabase
+      .from("meetings")
+      .select("id, tenant_id")
+      .eq("id", data.meetingId)
+      .maybeSingle();
+    if (mErr) mapPgError(mErr, "MEETING_NOT_FOUND");
+    if (!meeting) throw new ApiError({ code: "MEETING_NOT_FOUND", message: "MEETING_NOT_FOUND" });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows } = await supabaseAdmin
+      .from("outbox_events")
+      .select("id, event_type, payload, occurred_at")
+      .eq("aggregate_type", "meeting")
+      .eq("aggregate_id", data.meetingId)
+      .eq("tenant_id", (meeting as { tenant_id: string }).tenant_id)
+      .like("event_type", "meeting.meeting.%")
+      .order("occurred_at", { ascending: false })
+      .limit(100);
+
+    const list = (rows ?? []) as Array<{
+      id: string;
+      event_type: string;
+      payload: { reason?: string | null; actor_id?: string | null } | null;
+      occurred_at: string | null;
+    }>;
+
+    const actorIds = Array.from(
+      new Set(list.map((r) => r.payload?.actor_id).filter((v): v is string => !!v)),
+    );
+    const names = new Map<string, string>();
+    if (actorIds.length > 0) {
+      const { data: profiles } = await context.supabase
+        .from("profiles")
+        .select("id, display_name, email")
+        .in("id", actorIds);
+      for (const p of (profiles ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        email: string | null;
+      }>) {
+        names.set(p.id, p.display_name ?? p.email ?? p.id);
+      }
+    }
+
+    return list.map((r) => {
+      const actorId = r.payload?.actor_id ?? null;
+      return {
+        id: r.id,
+        eventType: r.event_type,
+        status: r.event_type.split(".").pop() ?? "unknown",
+        reason: r.payload?.reason ? String(r.payload.reason) : null,
+        actorId,
+        actorName: actorId ? (names.get(actorId) ?? null) : null,
+        occurredAt: r.occurred_at ?? new Date(0).toISOString(),
+      };
+    });
+  });
+
+export interface MeetingHostActionDtoLegacy {
+  id: string;
+  action: "start" | "end" | "cancel" | string;
+  outcome: "success" | "failure" | string;
+  errorCode: string | null;
+  actorId: string | null;
+  actorName: string | null;
+  occurredAt: string;
+}
+
 export const listMeetingHostActions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
