@@ -44,7 +44,6 @@ import {
   Plus,
   Calendar,
   MoreHorizontal,
-  Mic,
   MicOff,
   VideoIcon,
   Monitor,
@@ -52,7 +51,6 @@ import {
   MessageCircle,
   Sparkles,
   PhoneOff,
-  Maximize2,
   Hash,
   Circle,
   Video,
@@ -86,7 +84,7 @@ import {
   MailQuestion,
   Mail,
 } from "lucide-react";
-import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 
 export const Route = createFileRoute("/meeting")({
   validateSearch: (search: {
