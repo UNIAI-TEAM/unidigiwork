@@ -719,6 +719,16 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
         >
           <FileText className="h-3 w-3" /> Dán biên bản
         </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 gap-1 text-[11px]"
+          data-testid="meeting-transcript-export-csv"
+          disabled={!hasTranscript}
+          onClick={() => exportTranscriptCsv()}
+        >
+          <Download className="h-3 w-3" /> Xuất CSV
+        </Button>
       </div>
 
       <div className="space-y-3">
