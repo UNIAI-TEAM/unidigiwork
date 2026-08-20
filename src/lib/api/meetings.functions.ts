@@ -249,6 +249,36 @@ export interface MeetingStatusHistoryEntryDto {
   occurredAt: string;
 }
 
+/** Quyền hủy/quản trị cho nhiều buổi họp cùng lúc (dùng cho danh sách). */
+export const getMeetingManagePermissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ meetingIds: z.array(z.string().uuid()).max(100) }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<Record<string, boolean>> => {
+    const out: Record<string, boolean> = {};
+    await Promise.all(
+      data.meetingIds.map(async (id) => {
+        const { data: ok } = await context.supabase.rpc("can_manage_meeting_access", {
+          _meeting_id: id,
+          _user_id: context.userId,
+        });
+        out[id] = ok === true;
+      }),
+    );
+    return out;
+  });
+
+export interface MeetingStatusHistoryEntryDtoLegacy {
+  id: string;
+  eventType: string;
+  status: string;
+  reason: string | null;
+  actorId: string | null;
+  actorName: string | null;
+  occurredAt: string;
+}
+
 /** Lịch sử trạng thái buổi họp (đặt lịch, bắt đầu, kết thúc, hủy + lý do hủy). */
 export const getMeetingStatusHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

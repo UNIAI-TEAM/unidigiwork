@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/meeting-rooms.functions";
 import {
   cancelMeeting,
+  getMeetingManagePermissions,
   listMeetings,
   scheduleMeeting,
   updateMeeting,
@@ -392,6 +393,23 @@ function MeetingPage() {
   });
   const upcomingItems = (upcomingPanel.data?.items ?? []) as unknown as ListRoom[];
 
+  // Phân quyền: chỉ chủ trì / quản trị tổ chức mới được hủy buổi họp.
+  const permIds = useMemo(
+    () =>
+      Array.from(new Set([...listItems, ...upcomingItems].map((r) => r.id))).sort().slice(0, 100),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [listItems.map((r) => r.id).join(","), upcomingItems.map((r) => r.id).join(",")],
+  );
+  const permsQuery = useQuery({
+    queryKey: ["meeting-manage-perms", permIds],
+    enabled: permIds.length > 0,
+    staleTime: 60_000,
+    queryFn: () => getMeetingManagePermissions({ data: { meetingIds: permIds } }),
+  });
+  const canManageMeeting = (id: string) => permsQuery.data?.[id] === true;
+  const DENY_HINT =
+    "Bạn không có quyền hủy buổi họp này. Chỉ người chủ trì hoặc quản trị viên tổ chức mới được hủy.";
+
   const createRoom = useMutation({
     mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
       createInstantMeeting({
@@ -505,7 +523,16 @@ function MeetingPage() {
       setCancelReason("");
       toast.success("Đã hủy cuộc họp.");
     },
-    onError: () => toast.error("Không hủy được cuộc họp. Kiểm tra quyền của bạn."),
+    onError: (err: unknown) => {
+      const msg = String((err as { message?: string })?.message ?? "");
+      if (msg.includes("42501") || /denied|permission|FORBIDDEN/i.test(msg)) {
+        toast.error(DENY_HINT);
+      } else if (/MEETING_NOT_FOUND/.test(msg)) {
+        toast.error("Buổi họp không tồn tại hoặc đã bị hủy trước đó.");
+      } else {
+        toast.error("Không hủy được cuộc họp. Vui lòng thử lại.");
+      }
+    },
   });
 
   return (
@@ -777,16 +804,26 @@ function MeetingPage() {
                             >
                               Sửa
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCancelRoom(r);
-                                setCancelReason("");
-                              }}
-                              className="rounded-md border border-border px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
-                            >
-                              Hủy
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <button
+                                    type="button"
+                                    disabled={!canManageMeeting(r.id)}
+                                    onClick={() => {
+                                      setCancelRoom(r);
+                                      setCancelReason("");
+                                    }}
+                                    className="rounded-md border border-border px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Hủy
+                                  </button>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {canManageMeeting(r.id) ? "Hủy buổi họp này" : DENY_HINT}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </div>
                       </li>
@@ -963,16 +1000,26 @@ function MeetingPage() {
                             >
                               Sửa
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCancelRoom(m);
-                                setCancelReason("");
-                              }}
-                              className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
-                            >
-                              Hủy
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <button
+                                    type="button"
+                                    disabled={!canManageMeeting(m.id)}
+                                    onClick={() => {
+                                      setCancelRoom(m);
+                                      setCancelReason("");
+                                    }}
+                                    className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    Hủy
+                                  </button>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {canManageMeeting(m.id) ? "Hủy buổi họp này" : DENY_HINT}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </div>
                       ))}
@@ -1220,6 +1267,11 @@ function MeetingPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {cancelRoom && !canManageMeeting(cancelRoom.id) && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                {DENY_HINT}
+              </div>
+            )}
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
               Thao tác này không thể hoàn tác. Người tham dự sẽ thấy cuộc họp ở trạng thái “Đã hủy”.
             </div>
@@ -1260,7 +1312,11 @@ function MeetingPage() {
             <Button
               variant="destructive"
               onClick={() => cancelRoomMutation.mutate()}
-              disabled={cancelRoomMutation.isPending || cancelReason.trim().length < 5}
+              disabled={
+                cancelRoomMutation.isPending ||
+                cancelReason.trim().length < 5 ||
+                (!!cancelRoom && !canManageMeeting(cancelRoom.id))
+              }
             >
               {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
             </Button>
