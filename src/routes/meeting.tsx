@@ -381,6 +381,7 @@ function MeetingPage() {
   const listFetching = rangeActive ? rangeQuery.isFetching : rooms.isFetching;
 
   // Panel "Sắp diễn ra": luôn lấy dữ liệu thật, độc lập với bộ lọc đang chọn.
+  useMeetingsRealtime(activeWs ?? null);
   const upcomingPanel = useQuery({
     queryKey: ["meeting-rooms", "upcoming-panel", activeWs ?? null],
     enabled: !!activeWs,
