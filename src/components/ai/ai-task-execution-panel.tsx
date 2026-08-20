@@ -1,6 +1,7 @@
 // AI TASK EXECUTION V1 — UI giao việc cho nhân sự AI và duyệt bản bàn giao.
 // Bất biến UX: nút "Nghiệm thu" chỉ xuất hiện cho con người, khi lượt chạy ở CHỜ DUYỆT.
 import { useMemo, useState } from "react";
+import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Bot, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, Loader2, Lock, Play, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
@@ -35,7 +36,7 @@ const input =
 
 export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onChanged: () => void }) {
   const qc = useQueryClient();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = usePanelCollapse("ai-task-execution");
   const [workerId, setWorkerId] = useState(task.ai_worker_id ?? "");
   const [deliverable, setDeliverable] = useState(task.expected_deliverable ?? "");
   const [criteria, setCriteria] = useState(task.acceptance_criteria ?? "");

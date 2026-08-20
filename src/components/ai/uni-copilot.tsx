@@ -1,6 +1,7 @@
 // UNI WORKSPACE COPILOT V1 — panel toàn cục (desktop: side panel, mobile: bottom sheet).
 // Read-only. Chỉ gọi AI khi người dùng chủ động gửi câu hỏi (không auto-call khi load trang).
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Sparkles, X, ArrowUp, RotateCcw, Copy, Square, Maximize2, Minimize2, History, CornerDownLeft, ChevronLeft, ChevronRight } from "lucide-react";
@@ -71,7 +72,7 @@ export function UniCopilot() {
   // Mobile bottom sheet: 'half' (mặc định) ↔ 'full', kéo xuống để đóng.
   const [snap, setSnap] = useState<"half" | "full">("half");
   // Desktop: thu gọn panel để giải phóng không gian, giữ ngữ cảnh và lịch sử.
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = usePanelCollapse("uni-copilot");
   // Lịch sử follow-up đã hỏi (kèm nguồn trích dẫn) — mở/đóng bằng nút Lịch sử.
   const [showHistory, setShowHistory] = useState(false);
   const [dragY, setDragY] = useState(0);
