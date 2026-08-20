@@ -438,6 +438,35 @@ function MeetingPage() {
   const [cancelStep, setCancelStep] = useState<"edit" | "review">("edit");
   const [reviewCountdown, setReviewCountdown] = useState(10);
 
+  const openCancel = (r: RoomItem) => {
+    setCancelRoom(r);
+    setCancelReason("");
+    setCancelStep("edit");
+    setReviewCountdown(10);
+  };
+
+  const closeCancel = () => {
+    setCancelRoom(null);
+    setCancelReason("");
+    setCancelStep("edit");
+    setReviewCountdown(10);
+  };
+
+  const startCancelReview = () => {
+    setCancelStep("review");
+    setReviewCountdown(10);
+  };
+
+  useEffect(() => {
+    if (cancelStep !== "review" || cancelRoom === null) return;
+    if (reviewCountdown <= 0) {
+      cancelRoomMutation.mutate();
+      return;
+    }
+    const t = setTimeout(() => setReviewCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cancelStep, reviewCountdown, cancelRoom]);
+
   const openEdit = (r: RoomItem) => {
     setEditRoom(r);
     setEditTitle(r.title);
