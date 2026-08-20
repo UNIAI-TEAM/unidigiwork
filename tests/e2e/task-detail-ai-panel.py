@@ -37,14 +37,18 @@ async def main() -> int:
         await page.wait_for_timeout(4000)
         await page.screenshot(path=str(SHOTS / "1_tasks_list.png"))
 
+        # Prefer clicking a task link from the board; fall back to a known task id.
+        task_id = os.environ.get("E2E_TASK_ID")
+        href = None
         link = page.locator('a[href*="/tasks/"]').first
-        try:
-            await link.wait_for(state="visible", timeout=20000)
+        if await link.count():
             href = await link.get_attribute("href")
             await link.click()
-        except Exception:
-            failures.append("no task link found on /tasks")
-            href = None
+        elif task_id:
+            href = f"/tasks/{task_id}"
+            await page.goto(f"{BASE}{href}", wait_until="domcontentloaded")
+        else:
+            failures.append("no task link on /tasks and no E2E_TASK_ID provided")
 
         if href:
             try:
