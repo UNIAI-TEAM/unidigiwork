@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Users,
   Sparkles,
+  ClipboardList,
   Hand,
   MoreHorizontal,
   MonitorUp,
