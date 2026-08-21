@@ -37,9 +37,11 @@ import {
   BookmarkPlus,
   X,
   PanelRightClose,
+  Maximize2,
+  Minimize2,
   PanelRightOpen,
 } from "lucide-react";
-import { usePanelCollapse } from "@/hooks/use-panel-collapse";
+import { usePanelCollapse, usePanelCollapseControls } from "@/hooks/use-panel-collapse";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
   DropdownMenu,
@@ -1214,6 +1216,32 @@ function MyTasks({ tasks, onViewAll }: { tasks: Task[]; onViewAll: () => void })
   );
 }
 
+const TASKS_AI_PANEL_IDS = ["tasks-copilot", "ai-task-execution", "uni-copilot"];
+
+function ExpandCollapseAllButtons({ panelIds }: { panelIds: string[] }) {
+  const { expandAll, collapseAll } = usePanelCollapseControls(panelIds);
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={expandAll}
+        title="Mở rộng tất cả"
+        className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-surface px-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+      >
+        <Maximize2 className="h-3 w-3" /> Mở rộng tất cả
+      </button>
+      <button
+        type="button"
+        onClick={collapseAll}
+        title="Thu gọn tất cả"
+        className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-surface px-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+      >
+        <Minimize2 className="h-3 w-3" /> Thu gọn tất cả
+      </button>
+    </div>
+  );
+}
+
 function CopilotPanel({
   onGantt,
   onResource,
@@ -1286,6 +1314,11 @@ function CopilotPanel({
           <PanelRightClose className="h-4 w-4" />
         </button>
       </div>
+
+      <div className="flex items-center gap-1 border-b border-border px-5 py-2">
+        <ExpandCollapseAllButtons panelIds={TASKS_AI_PANEL_IDS} />
+      </div>
+
 
 
       <section className="px-5 py-4">
