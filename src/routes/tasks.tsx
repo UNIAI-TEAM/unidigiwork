@@ -41,7 +41,7 @@ import {
   Minimize2,
   PanelRightOpen,
 } from "lucide-react";
-import { usePanelCollapse } from "@/hooks/use-panel-collapse";
+import { usePanelCollapse, usePanelCollapseControls } from "@/hooks/use-panel-collapse";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
   DropdownMenu,
@@ -1288,6 +1288,11 @@ function CopilotPanel({
           <PanelRightClose className="h-4 w-4" />
         </button>
       </div>
+
+      <div className="flex items-center gap-1 border-b border-border px-5 py-2">
+        <ExpandCollapseAllButtons panelIds={TASKS_AI_PANEL_IDS} />
+      </div>
+
 
 
       <section className="px-5 py-4">
