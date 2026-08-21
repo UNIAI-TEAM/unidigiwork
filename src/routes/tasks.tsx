@@ -37,6 +37,8 @@ import {
   BookmarkPlus,
   X,
   PanelRightClose,
+  Maximize2,
+  Minimize2,
   PanelRightOpen,
 } from "lucide-react";
 import { usePanelCollapse } from "@/hooks/use-panel-collapse";
