@@ -36,7 +36,10 @@ import {
   Loader2,
   BookmarkPlus,
   X,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
+import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import {
   DropdownMenu,
