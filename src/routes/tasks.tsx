@@ -1240,6 +1240,26 @@ function CopilotPanel({
     "Bổ sung 1 tester cho team",
     "Cập nhật tài liệu API Spec",
   ];
+  const [collapsed, setCollapsed] = usePanelCollapse("tasks-copilot");
+
+  if (collapsed) {
+    return (
+      <aside className="hidden w-12 shrink-0 flex-col items-center gap-3 border-l border-border bg-surface py-4 xl:flex">
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          aria-expanded={false}
+          aria-label="Mở rộng panel AI"
+          title="Mở rộng panel AI"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+        >
+          <PanelRightOpen className="h-4 w-4" />
+        </button>
+        <Sparkles className="h-4 w-4 text-primary" />
+      </aside>
+    );
+  }
+
   return (
     <aside className="hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface xl:flex">
       <div className="flex items-center gap-2 border-b border-border px-5 py-4">
@@ -1255,7 +1275,18 @@ function CopilotPanel({
         >
           <Plus className="h-4 w-4" />
         </button>
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          aria-expanded
+          aria-label="Thu gọn panel AI"
+          title="Thu gọn panel AI"
+          className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+        >
+          <PanelRightClose className="h-4 w-4" />
+        </button>
       </div>
+
 
       <section className="px-5 py-4">
         <div className="flex items-center justify-between text-sm">
