@@ -101,7 +101,6 @@ import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
 import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
-import { Route as AuthenticatedWorkspaceIdStosRouteImport } from './routes/_authenticated/workspace.$id.stos'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
@@ -595,12 +594,6 @@ const ApiAdminTraceCorrelationIdRoute =
     path: '/api/admin/trace/$correlationId',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedWorkspaceIdStosRoute =
-  AuthenticatedWorkspaceIdStosRouteImport.update({
-    id: '/stos',
-    path: '/stos',
-    getParentRoute: () => AuthenticatedWorkspaceIdRoute,
-  } as any)
 const AuthenticatedMEmailIdRoute = AuthenticatedMEmailIdRouteImport.update({
   id: '/email/$id',
   path: '/email/$id',
@@ -692,7 +685,7 @@ export interface FileRoutesByFullPath {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
-  '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/workspace/invite-emails': typeof AuthenticatedWorkspaceInviteEmailsRoute
@@ -706,7 +699,6 @@ export interface FileRoutesByFullPath {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
-  '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -787,7 +779,7 @@ export interface FileRoutesByTo {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
-  '/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/workspace/invite-emails': typeof AuthenticatedWorkspaceInviteEmailsRoute
@@ -801,7 +793,6 @@ export interface FileRoutesByTo {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
-  '/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -886,7 +877,7 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
-  '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRouteWithChildren
+  '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/_authenticated/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
   '/_authenticated/workspace/invite-emails': typeof AuthenticatedWorkspaceInviteEmailsRoute
@@ -900,7 +891,6 @@ export interface FileRoutesById {
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
-  '/_authenticated/workspace/$id/stos': typeof AuthenticatedWorkspaceIdStosRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -999,7 +989,6 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
-    | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1094,7 +1083,6 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
-    | '/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1192,7 +1180,6 @@ export interface FileRouteTypes {
     | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/email/$id'
-    | '/_authenticated/workspace/$id/stos'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1881,13 +1868,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminTraceCorrelationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/workspace/$id/stos': {
-      id: '/_authenticated/workspace/$id/stos'
-      path: '/stos'
-      fullPath: '/workspace/$id/stos'
-      preLoaderRoute: typeof AuthenticatedWorkspaceIdStosRouteImport
-      parentRoute: typeof AuthenticatedWorkspaceIdRoute
-    }
     '/_authenticated/m/email/$id': {
       id: '/_authenticated/m/email/$id'
       path: '/email/$id'
@@ -2013,20 +1993,6 @@ const AuthenticatedNotificationsRouteWithChildren =
     AuthenticatedNotificationsRouteChildren,
   )
 
-interface AuthenticatedWorkspaceIdRouteChildren {
-  AuthenticatedWorkspaceIdStosRoute: typeof AuthenticatedWorkspaceIdStosRoute
-}
-
-const AuthenticatedWorkspaceIdRouteChildren: AuthenticatedWorkspaceIdRouteChildren =
-  {
-    AuthenticatedWorkspaceIdStosRoute: AuthenticatedWorkspaceIdStosRoute,
-  }
-
-const AuthenticatedWorkspaceIdRouteWithChildren =
-  AuthenticatedWorkspaceIdRoute._addFileChildren(
-    AuthenticatedWorkspaceIdRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAiWorkforceRoute: typeof AuthenticatedAiWorkforceRoute
@@ -2049,7 +2015,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
   AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
-  AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRouteWithChildren
+  AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRoute
   AuthenticatedWorkspaceAuditRoute: typeof AuthenticatedWorkspaceAuditRoute
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
   AuthenticatedWorkspaceInviteEmailsRoute: typeof AuthenticatedWorkspaceInviteEmailsRoute
@@ -2082,7 +2048,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
   AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
-  AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRouteWithChildren,
+  AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRoute,
   AuthenticatedWorkspaceAuditRoute: AuthenticatedWorkspaceAuditRoute,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
   AuthenticatedWorkspaceInviteEmailsRoute:
