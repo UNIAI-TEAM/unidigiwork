@@ -7292,6 +7292,15 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string; _limit?: number }
         Returns: Json
       }
+      get_workspace_meeting_stats: {
+        Args: { _workspace_id: string }
+        Returns: {
+          live_count: number
+          recording_count: number
+          summary_count: number
+          today_count: number
+        }[]
+      }
       global_search: {
         Args: {
           _assignee_id?: string

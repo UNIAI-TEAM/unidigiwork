@@ -103,18 +103,17 @@ const MAILBOXES: { key: string; label: string; icon: LucideIcon }[] = [
 ];
 
 type LabelWithCount = LabelDef & { count: number };
-const INITIAL_LABELS: LabelWithCount[] = [
-  { name: "Dự án STOS", color: "bg-emerald-500", count: 24 },
-  { name: "Khách hàng", color: "bg-amber-500", count: 18 },
-  { name: "Hợp đồng", color: "bg-violet-500", count: 15 },
-  { name: "Nhân sự", color: "bg-sky-500", count: 6 },
-  { name: "Hóa đơn", color: "bg-rose-500", count: 9 },
-];
+// Nhãn và tài khoản email ngoài chưa có backend: khởi tạo rỗng, hiển thị
+// trạng thái "chưa cấu hình" thay vì số liệu bịa.
+const INITIAL_LABELS: LabelWithCount[] = [];
 
-const ACCOUNTS = [
-  { provider: "M365", label: "M", color: "bg-sky-600", email: "nguyenvana@ubos.vn", count: 128 },
-  { provider: "Gmail", label: "G", color: "bg-rose-500", email: "nguyenvana@ubos.vn", count: 46 },
-];
+const ACCOUNTS: Array<{
+  provider: string;
+  label: string;
+  color: string;
+  email: string;
+  count: number;
+}> = [];
 
 type Email = {
   id: string;
@@ -213,26 +212,8 @@ function EmailHubPage() {
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
   const [labels, setLabels] = useState<LabelWithCount[]>(INITIAL_LABELS);
-  const [rules, setRules] = useState<RuleDef[]>([
-    {
-      id: "r1",
-      name: t("em.1"),
-      whenField: "from",
-      whenContains: "@stos.vn",
-      thenAction: "label",
-      thenValue: t("em.2"),
-      active: true,
-    },
-    {
-      id: "r2",
-      name: t("em.3"),
-      whenField: "subject",
-      whenContains: t("em.4"),
-      thenAction: "archive",
-      thenValue: "",
-      active: false,
-    },
-  ]);
+  // Rule tự động chưa có backend lưu trữ — bắt đầu rỗng thay vì rule mẫu.
+  const [rules, setRules] = useState<RuleDef[]>([]);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composePrefill, setComposePrefill] = useState({ to: "", subject: "", body: "", cc: "" });
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -654,6 +635,9 @@ function EmailHubPage() {
                 </button>
               </div>
               <ul className="space-y-0.5">
+                {labels.length === 0 && (
+                  <li className="px-3 py-1.5 text-xs text-muted-foreground">Chưa có nhãn</li>
+                )}
                 {labels.map((l) => {
                   const active = filterLabel === l.name;
                   return (
@@ -691,6 +675,11 @@ function EmailHubPage() {
                 </button>
               </div>
               <ul className="space-y-0.5">
+                {ACCOUNTS.length === 0 && (
+                  <li className="px-3 py-1.5 text-xs text-muted-foreground">
+                    Chưa kết nối tài khoản
+                  </li>
+                )}
                 {ACCOUNTS.map((a, i) => (
                   <li key={i}>
                     <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
@@ -709,10 +698,7 @@ function EmailHubPage() {
 
             <div className="border-t border-border px-4 py-3">
               <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>{t("em.33")}</span>
-              </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
-                <div className="h-full rounded-full bg-primary" style={{ width: "28%" }} />
+                <span>Hạn mức dung lượng: chưa cấu hình</span>
               </div>
             </div>
           </aside>
@@ -1303,6 +1289,11 @@ function EmailHubPage() {
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="text-sm font-semibold">{t("em.84")}</div>
               <ul className="mt-3 space-y-3 text-sm">
+                {ACCOUNTS.length === 0 && (
+                  <li className="text-xs text-muted-foreground">
+                    Chưa kết nối tài khoản email nào.
+                  </li>
+                )}
                 {ACCOUNTS.map((a, i) => (
                   <li key={i} className="flex items-center gap-2">
                     <span

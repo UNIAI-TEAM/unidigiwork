@@ -10,6 +10,7 @@ import {
   createMeetingInviteLink,
   inviteMeetingParticipant,
   listMyMeetingRooms,
+  getWorkspaceMeetingStats,
   listMyWorkspaces,
   listMeetingParticipants,
   redeemMeetingInviteLink,
@@ -393,6 +394,15 @@ function MeetingPage() {
   });
   const upcomingItems = (upcomingPanel.data?.items ?? []) as unknown as ListRoom[];
 
+  // Thống kê thật qua RPC (kiểm tra quyền thành viên phía server).
+  const statsQuery = useQuery({
+    queryKey: ["meeting-stats", activeWs ?? null],
+    enabled: !!activeWs,
+    staleTime: 30_000,
+    queryFn: () => getWorkspaceMeetingStats({ data: { workspaceId: activeWs as string } }),
+  });
+  const stats = statsQuery.data ?? { today: 0, live: 0, recordings: 0, summaries: 0 };
+
   // Phân quyền: chỉ chủ trì / quản trị tổ chức mới được hủy buổi họp.
   const permIds = useMemo(
     () =>
@@ -634,28 +644,28 @@ function MeetingPage() {
               <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                   label="Hôm nay"
-                  value="4"
+                  value={String(stats.today)}
                   sub="cuộc họp"
                   icon={Calendar}
                   color="text-primary"
                 />
                 <StatCard
                   label="Đang diễn ra"
-                  value="1"
+                  value={String(stats.live)}
                   sub="LIVE"
                   icon={Circle}
                   color="text-destructive"
                 />
                 <StatCard
-                  label="Bản ghi tuần này"
-                  value="12"
-                  sub="2.4 GB"
+                  label="Bản ghi 7 ngày"
+                  value={String(stats.recordings)}
+                  sub="bản ghi"
                   icon={Video}
                   color="text-sky-300"
                 />
                 <StatCard
                   label="Tóm tắt AI"
-                  value="38"
+                  value={String(stats.summaries)}
                   sub="tháng này"
                   icon={Sparkles}
                   color="text-violet-300"
