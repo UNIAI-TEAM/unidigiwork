@@ -1,0 +1,3701 @@
+{
+ "/home": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nChào buổi trưa\n\nHôm nay bạn không có việc gấp\n\nLàm mới\nCông việc\nCuộc họp\nTin nhắn\n0\nHôm nay\n0\nQuá hạn\n0\nNhắc đến bạn\n0\nChờ duyệt\n0\nCuộc họp\nCông việc của tôi\nJ/K di chuyển · X chọn · C hoàn thành · O mở · R trang liên quan\nXem tất cả\n\nKhông có việc cần xử lý\n\nBạn không còn công việc quá hạn hay đến hạn hôm nay. Tạo việc mới hoặc xem toàn bộ danh sách.\n\nTạo công việc\nXem tất cả công việc\nSắp tới\nXem tất cả\n\nKhông có cuộc họp hay deadline\n\nLịch của bạn trống trong hôm nay và ngày mai. Tạo cuộc họp hoặc mở lịch để xem xa hơn.\n\nTạo cuộc họp\nMở lịch\nHộp việc\nXem tất cả\n\nHộp việc trống\n\nKhông có thông báo, nhắc đến hay email nào đang chờ bạn xử lý.\n\nXem thông báo\nMở email\nTóm tắt hôm nay\nTừ dữ liệu thật\nLàm mới\n\nKhông có dữ liệu công việc nào để tóm tắt.",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Làm mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Công việc",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cuộc họp",
+    "href": "/meeting",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tin nhắn",
+    "href": "/chat",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0\nHôm nay",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0\nQuá hạn",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0\nNhắc đến bạn",
+    "href": "/notifications",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0\nChờ duyệt",
+    "href": "/notifications",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0\nCuộc họp",
+    "href": "/meeting",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Xem tất cả",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tạo công việc",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Xem tất cả công việc",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Xem tất cả",
+    "href": "/calendar",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tạo cuộc họp",
+    "href": "/meeting",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Mở lịch",
+    "href": "/calendar",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Xem tất cả",
+    "href": "/notifications",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Xem thông báo",
+    "href": "/notifications",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Mở email",
+    "href": "/email",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Làm mới",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/dashboard": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nDashboard\n\nTổng quan hoạt động của tổ chức\n\n7 ngày qua\n30 ngày qua\n90 ngày qua\nTắt tự động\nMỗi 1 phút\nMỗi 5 phút\nMỗi 15 phút\nLàm mới\nTuỳ chỉnh\nTổng người dùng\n1\n7 ngày qua\nNgười dùng hoạt động\n0\n7 ngày qua\nKhông gian làm việc\n1\n+100%\nso với kỳ trước\nNhiệm vụ\n0\n0%\nso với kỳ trước\nCuộc họp\n0\n0%\nso với kỳ trước\nHoạt động tổng quan\n7 ngày qua\n0\n1\n3\n4\n5\n16-08\n17-08\n18-08\n19-08\n20-08\n21-08\n22-08\n23-08\nNhiệm vụ tạo mới\n0\n0%\nCuộc họp\n0\n0%\nNhiệm vụ hoàn thành\n0\n0%\nTài liệu cập nhật\n0\n0%\nPhân bổ công việc\n0\nTổng nhiệm vụ\nHoàn thành\n0 (0%)\nĐang thực hiện\n0 (0%)\nChờ xử lý\n0 (0%)\nBị chặn\n0 (0%)\nĐã hủy\n0 (0%)\nDự án nổi bật\nXem tất cả\nG\nGeneral\nTiến độ: 0% · 0 nhiệm vụ · 1 thành viên\nHoạt động gần đây\nXem tất cả\n\nChưa có hoạt động nào.\n\nLịch họp hôm nay\nXem lịch đầy đủ\n\nHôm nay không có cuộc họp.\n\nTổng quan theo không gian làm việc\nSo sánh\nG\nGeneral\n1\nthành viên\n0\nnhiệm vụ\nAI Assistant\nBeta\nChào stab_a,\n\nĐây là những thông tin AI tổng hợp cho bạn hôm nay.\n\n0 tài liệu cần cập nhật\nXem chi tiết →\n0 nhiệm vụ đang quá hạn\nXem chi tiết →\n0 cuộc họp trong hôm nay\nXem lịch →\n0 quy trình cần phê duyệt\nXem chi tiết →\nThông báo quan trọng\nMới nhất\nKhông có thông",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Làm mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tuỳ chỉnh",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tổng người dùng\n1\n7 ngày qua",
+    "href": "/people",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Người dùng hoạt động\n0\n7 ngày qua",
+    "href": "/people",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Không gian làm việc\n1\n+100%\nso với kỳ tr",
+    "href": "/workspace",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Nhiệm vụ\n0\n0%\nso với kỳ trước",
+    "href": "/tasks?range=7",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cuộc họp\n0\n0%\nso với kỳ trước",
+    "href": "/meeting?from=2026-08-16&to=2026-08-23",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem tất cả",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem tất cả",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem lịch đầy đủ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "So sánh",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0 tài liệu cần cập nhật\nXem chi tiết →",
+    "href": "/documents?filter=stale",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0 nhiệm vụ đang quá hạn\nXem chi tiết →",
+    "href": "/tasks?filter=overdue",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0 cuộc họp trong hôm nay\nXem lịch →",
+    "href": "/calendar?view=week&kind=meeting&day=2026-08-23",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "0 quy trình cần phê duyệt\nXem chi tiết →",
+    "href": "/workflows/permissions",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": true
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới nhất",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Xem tất cả thông báo",
+    "href": "/notifications",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hướng dẫn sử dụng",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/tasks": {
+  "main": "G\nGeneral\nTổng quan\nBảng\nDanh sách\nTimeline\nLịch\nBáo cáo\nTệp\nTrang chủ\nCông việc\nTất cả\nTất cả công việc\nGeneral\n\nPhát triển nền tảng quản lý và vận hành doanh nghiệp STOS\n\nGeneral\nCài đặt dự án\nTiến độ\n0%\nCông việc\n0\n0 quá hạn\nHoàn thành\n0\nĐang thực hiện\n0\nCần làm\n0\nBị chặn\n0\nBộ lọc đã lưu:\nChưa có view nào\nLưu bộ lọc hiện tại\nLọc:\nMọi mức ưu tiên\nThấp\nBình thường\nCao\nKhẩn cấp\nSắp xếp:\nMặc định\nƯu tiên: cao → thấp\nƯu tiên: thấp → cao\nNhãn: A → Z\nNhãn: Z → A\nChưa có nhãn nào\nCần làm\n0\nThêm công việc\nĐang thực hiện\n0\nThêm công việc\nBị chặn\n0\nThêm công việc\nHoàn tất\n0\nThêm công việc\nĐã huỷ\n0\nThêm công việc\nTổng quan dự án\nSprint này\n0\nTổng công việc\nHoàn tất\n0 (0%)\nĐang thực hiện\n0 (0%)\nCần làm\n0 (0%)\nBị chặn\n0 (0%)\nBiểu đồ Burndown\n6 tuần gần nhất\nLý tưởng\nCòn lại\nĐã xong\nCông việc của tôi (0)\nXem tất cả\nXem toàn bộ công việc",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "G\nGeneral",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tổng quan",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bảng",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Danh sách",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Timeline",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Báo cáo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tệp",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trang chủ",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Công việc",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Cài đặt dự án",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lưu bộ lọc hiện tại",
+    "href": null,
+    "disabled": true
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm công việc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm công việc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm công việc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm công việc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm công việc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Sprint này",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem tất cả",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem toàn bộ công việc",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/calendar": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nTrang chủ\nLịch\nTháng\nLịch\n\nTổng hợp họp, công việc và hạn chót của workspace\n\nTạo sự kiện\nXuất lịch (.ics)\nBỘ LỌC\nHọp\n0\nCông việc\n0\nHạn chót\n0\nTRẠNG THÁI HỌP\nSắp tới\n0\nĐã diễn ra\n0\nĐã huỷ\n0\nMỨC ĐỘ CÔNG VIỆC\nKhẩn cấp\n0\nƯu tiên cao\n0\nKhác\n0\nTháng 8 Năm 2026\nT2\nT3\nT4\nT5\nT6\nT7\nCN\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\nMẹo: bấm vào một ngày trong lịch để xem chi tiết. Bộ lọc áp dụng cho cả hai chế độ xem.\nHôm nay\nTháng 8 Năm 2026\nKhông có sự kiện trong khoảng thời gian này\nTháng\nTuần\nTHỨ 2\nTHỨ 3\nTHỨ 4\nTHỨ 5\nTHỨ 6\nTHỨ 7\nCHỦ NHẬT\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trang chủ",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Lịch",
+    "href": "/calendar",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tạo sự kiện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xuất lịch (.ics)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "27",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "28",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "29",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "30",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "31",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "1",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "2",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "3",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "4",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "5",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "6",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "7",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "8",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "9",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "10",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "11",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "12",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "13",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "14",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "15",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "16",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "17",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "18",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "19",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "20",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "21",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "22",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "23",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "24",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "25",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "26",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "27",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "28",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "29",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "30",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "31",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "1",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "2",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "3",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "4",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "5",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "6",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hôm nay",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Trước",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Sau",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tháng",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tuần",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/documents": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nG\nGeneral\nChưa có tài liệu nào. Bấm + để tạo mới\nStorage\n342.6 GB of 1 TB used\n34%\nTrang chủ\nTài liệu\nTất cả\nTất cả tài liệu\nGeneral\n/\n—\n/\nChưa chọn tài liệu\nChia sẻ\nChỉnh sửa\nChọn hoặc tạo tài liệu\n—\n0 thành viên\n0 tài liệu\nTiêu đề\nH1\nH2\nH3\nH4\n\nChọn một tài liệu từ thanh bên trái, hoặc tạo mới trong workspace General.\n\nTạo tài liệu mới\nTiếng Việt\nAI Copilot\nBình luận\nThành viên\nTóm tắt AI\n\nChọn một tài liệu để xem tóm tắt AI.\n\nHỏi AI",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "G\nGeneral",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thành viên",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đăng xuất",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tài liệu mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trang chủ",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tài liệu",
+    "href": "/documents",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chia sẻ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chỉnh sửa",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bình luận",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch sử",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đường kẻ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Trích dẫn",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "In đậm",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "In nghiêng",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Gạch chân",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Gạch ngang",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Code",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Danh sách",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Danh sách số",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Canh trái / trích dẫn",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Canh giữa",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Liên kết",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hình ảnh",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bảng",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Khối code",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tạo tài liệu mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI Copilot",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bình luận",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thành viên",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": true
+   }
+  ]
+ },
+ "/chat": {
+  "main": "U\nUNIWORK\nDigital Workplace Platform\nTất cả workspace\nTRANG CHỦ\nTrang chủ\nCông việc của tôi\nHộp việc\nCÔNG VIỆC\nKhông gian làm việc\nLịch\nNhân sự\nTRAO ĐỔI\nTrò chuyện\nHọp\nTrực tiếp\nEmail Hub\nTRI THỨC\nTài liệu\nKho tri thức\nTỰ ĐỘNG HOÁ\nQuy trình\nTrợ lý AI\nAI Workforce\nAI Market\nPHÂN TÍCH\nBảng điều khiển\nBáo cáo\nKHÔNG GIAN LÀM VIỆC\nG\nGeneral\nQuản lý workspace\nNguyễn Văn A\n28°C · Hà Nội\nCài đặt\nTrợ giúp\nThu gọn menu\n⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nKênh trò chuyện\n\nChưa có kênh nào. Tạo kênh đầu tiên để bắt đầu trò chuyện.\n\nChọn một kênh để bắt đầu trò chuyện",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Close sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tất cả workspace",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trang chủ",
+    "href": "/home",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Công việc của tôi",
+    "href": "/tasks",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Hộp việc",
+    "href": "/notifications",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "CÔNG VIỆC",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Không gian làm việc",
+    "href": "/workspace",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Lịch",
+    "href": "/calendar",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Nhân sự",
+    "href": "/people",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "TRAO ĐỔI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trò chuyện",
+    "href": "/chat",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Họp\nTrực tiếp",
+    "href": "/meeting",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Email Hub",
+    "href": "/email",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "TRI THỨC",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tài liệu",
+    "href": "/documents",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Kho tri thức",
+    "href": "/knowledge",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "TỰ ĐỘNG HOÁ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Quy trình",
+    "href": "/workflows",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ lý AI",
+    "href": "/ai",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "AI Workforce",
+    "href": "/ai-workforce",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "AI Market",
+    "href": "/ai-market",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "PHÂN TÍCH",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảng điều khiển",
+    "href": "/dashboard",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Báo cáo",
+    "href": "/reports",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tạo workspace mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "G\nGeneral",
+    "href": "/workspace/3ef5ab49-20ec-44e2-8b36-02da0e1db6d1",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Quản lý workspace",
+    "href": "/workspace",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhắn tin riêng",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tạo kênh mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hỏi UNI",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/meeting": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nHọp\n\nLên lịch, tham gia và xem lại cuộc họp với AI Copilot.\n\nBắt đầu họp ngay\nLên lịch\nTham gia bằng mã\nLịch sử họp\nHôm nay\n4\ncuộc họp\nĐang diễn ra\n1\nLIVE\nBản ghi tuần này\n12\n2.4 GB\nTóm tắt AI\n38\ntháng này\nPhòng họp trực tuyến\nCần bật camera/micro khi trình duyệt hỏi quyền\nTạo phòng nhanh\nGeneral\nTất cả\nĐang diễn ra\nSắp diễn ra\nĐã kết thúc\nTừ\nđến\nNgày bắt đầu ↑\n\nWorkspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera.\n\nSắp tới\nĐang diễn ra\nĐã kết thúc\nBản ghi\nPhòng họp\nKhông tìm thấy cuộc họp nào\nTháng 8, 2026\nT2\nT3\nT4\nT5\nT6\nT7\nCN\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\nSắp diễn ra\nTất cả\n\nChưa có cuộc họp nào sắp diễn ra.\n\nTích hợp\nGoogle Calendar\nĐang bật\nOutlook 365\nĐang bật\nZalo OA Notify\nĐang bật\nSlack Reminders\nTắt",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bắt đầu họp ngay",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lên lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tham gia bằng mã",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Lịch sử họp",
+    "href": "/meeting/history",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tạo phòng nhanh",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tất cả",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đang diễn ra",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Sắp diễn ra",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đã kết thúc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Ngày bắt đầu ↑",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Sắp tới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đang diễn ra",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đã kết thúc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bản ghi",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Phòng họp",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lọc trạng thái phòng họp",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tháng trước",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tháng sau",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "1",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "2",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "3",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "4",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "5",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "6",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "7",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "8",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "9",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "10",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "11",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "12",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "13",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "14",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "15",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "16",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "17",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "18",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "19",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "20",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "21",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "22",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "23",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "24",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "25",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "26",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "27",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "28",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "29",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "30",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "31",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tất cả",
+    "href": "/calendar",
+    "disabled": false
+   }
+  ]
+ },
+ "/email": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nEmail Hub\nTất cả email của bạn tại một nơi\nSoạn email\nNhãn & Quy tắc tự động\nMAILBOXES\nHộp đến\n0\nQuan trọng\n0\nĐã gửi\n0\nBản nháp\n0\nLưu trữ\n0\nĐã xóa\n0\nLABELS\nDự án STOS\n24\nKhách hàng\n18\nHợp đồng\n15\nNhân sự\n6\nHóa đơn\n9\nMore\nACCOUNTS\nM\nnguyenvana@ubos.vn\n128\nG\nnguyenvana@ubos.vn\n46\nĐã dùng 28.4 GB / 100 GB\nChưa đọc\nSắp xếp\nLọc nâng cao\n0 thư\nChọn\n0\nChưa có email nào\nEmail mới sẽ hiển thị tại đây\nChưa chọn email\n\nChọn một email ở danh sách bên trái để xem nội dung\n\nAI Email Assistant\nTóm tắt nhanh\nTổng email\n0\nĐã đọc\n0\nChưa đọc\n0\nĐã gửi\n0\nChuyển tiếp\n0\nĐã giải quyết\n0\nĐã hủy\n0\nChưa đọc ở hộp đến\n0\nƯu tiên xử lý\nKhông có email cần ưu tiên.\nXem tất cả (12)\nThống kê email\nTuần này\n0\nEmail\nĐã đọc\n0 (0%)\nChưa đọc\n0 (0%)\nĐã gửi\n0 (0%)\nChuyển tiếp\n0 (0%)\nĐã giải quyết\n0 (0%)\nĐã hủy\n0 (0%)\nKết nối tài khoản\nM\nMicrosoft 365\nnguyenvana@ubos.vn\n✓ Đã kết nối\nG\nGmail\nnguyenvana@ubos.vn\n✓ Đã kết nối\nThêm tài khoản email",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Soạn email",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tùy chọn soạn email",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhãn & Quy tắc tự động",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hộp đến\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Quan trọng\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đã gửi\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bản nháp\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lưu trữ\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đã xóa\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Dự án STOS\n24",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Khách hàng\n18",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hợp đồng\n15",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhân sự\n6",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hóa đơn\n9",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "More",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "M\nnguyenvana@ubos.vn\n128",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "G\nnguyenvana@ubos.vn\n46",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chưa đọc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Sắp xếp",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lọc nâng cao",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Làm mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": true
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": true
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem tất cả (12)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tuần này",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm tài khoản email",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/search": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nTÌM KIẾM HỢP NHẤT\nTìm mọi thứ trong UNIWORK\n\nDự án, công việc, cuộc họp, tài liệu, email, kênh chat và nhân sự — chỉ hiển thị dữ liệu bạn có quyền xem.\n\nTìm\nTất cả dự án\nGeneral\nTất cả\n0\nDự án\n0\nCông việc\n0\nCuộc họp\n0\nKết quả họp\n0\nTài liệu\n0\nEmail\n0\nKênh chat\n0\nNhân sự\n0\nNhập tối thiểu 2 ký tự để tìm kiếm\nBắt đầu tìm kiếm\n\nThử từ khoá khác, bỏ bộ lọc dự án hoặc mở bảng lệnh bằng ⌘K.",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tìm",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tất cả\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Dự án\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Công việc\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Cuộc họp\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Kết quả họp\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tài liệu\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Email\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Kênh chat\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhân sự\n0",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/notifications": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nThông báo\n\n0 chưa đọc · 0 tổng cộng\n\nTất cả\n0\nNhắc tên\n0\nNhiệm vụ\n0\nHọp\n0\nTài liệu\n0\nQuy trình\n0\nHệ thống\n0\nCấu hình kênh thông báo & tần suất\nHộp thư\nChưa đọc (0)\nĐã đọc (0)\nNhắc tên\nĐã lưu trữ\nBộ lọc\nMới nhất\nĐánh dấu tất cả đã đọc\nChưa có thông báo nào\n\nThông báo mới sẽ hiển thị khi có hoạt động liên quan đến bạn\n\nVề Trang chủ",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tất cả\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhắc tên\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhiệm vụ\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Họp\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tài liệu\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Quy trình\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hệ thống\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cấu hình kênh thông báo & tần suất",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hộp thư",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chưa đọc (0)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đã đọc (0)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhắc tên",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đã lưu trữ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bộ lọc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới nhất",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đánh dấu tất cả đã đọc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Về Trang chủ",
+    "href": "/dashboard",
+    "disabled": false
+   }
+  ]
+ },
+ "/people": {
+  "main": "Danh bạ Nhân sự\n\nQuản lý nhân sự, vai trò, kỹ năng và thông tin liên hệ trong toàn hệ thống.\n\nNhập\nXuất\nThêm người\nPhòng ban\nVai trò\ntenant_owner\nĐịa điểm\nLọc thêm\nLưới\nDanh sách\nTất cả\n1\nNhóm\n0\nPhòng ban\n0\nVị trí\n0\nKỹ năng\nSơ đồ tổ chức\nstab_a\ntenant_owner\n—\n—\nstab_a@example.com",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Nhập",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xuất",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Thêm người",
+    "href": "/workspace/invite",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lọc thêm",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lưới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Danh sách",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tất cả\n1",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhóm\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Phòng ban\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Vị trí\n0",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Kỹ năng",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Sơ đồ tổ chức",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "stab_a\ntenant_owner\n—\n—\nstab_a@example.c",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhắn tin",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Gửi email",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Gọi điện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/workspace": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nKhông gian làm việc\n\nTạo, chỉnh sửa, lưu trữ workspace và phân quyền thành viên.\n\nNhật ký\nCài đặt workspace\nQuản lý nhãn\nQuản lý thành viên\nMời thành viên\nTạo workspace\nGE\nGeneral\nChủ sở hữu\n1 thành viên\nAsia/Ho_Chi_Minh\nPhân quyền\nSửa\nXóa",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Nhật ký",
+    "href": "/workspace/audit",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt workspace",
+    "href": "/workspace/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Quản lý nhãn",
+    "href": "/workspace/tags",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Quản lý thành viên",
+    "href": "/workspace/members",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Mời thành viên",
+    "href": "/workspace/invite",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tạo workspace",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "General",
+    "href": "/workspace/3ef5ab49-20ec-44e2-8b36-02da0e1db6d1",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Phân quyền",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Sửa",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xóa",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/knowledge": {
+  "main": "Kho tri thức\nTrung tâm tri thức nội bộ\n\nSOP, playbook, wiki kỹ thuật và chính sách của tổ chức.\n\nQuản trị nội dung\nTất cả\nChưa có bài viết nào. Tạo bài viết đầu tiên trong trang Quản trị.",
+  "controls": [
+   {
+    "tag": "A",
+    "label": "Quản trị nội dung",
+    "href": "/admin/knowledge",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tất cả",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/workflows": {
+  "main": "Quy trình\n\nTự động hoá và quản lý quy trình nghiệp vụ tại một nơi.\n\nWorkspace: General\nQuy trình mới\nLịch chạy\nAgent Builder\nLịch sử chạy\nPhân quyền\nTổng quy trình\n0\nĐang chạy\n0\nHoàn thành (tháng này)\n0\nChờ phê duyệt\n0\nThời gian TB\n—\nQuyền hiệu lực của tôi\n\nNhững gì bạn được phép làm với quy trình trong không gian làm việc này và nguồn cấp quyền.\n\nQuản lý phân quyền\nGeneral\nChủ không gian làm việc\nVai trò: Chủ tổ chức\nChỉnh sửa quy trình\nĐược phép\nChủ không gian làm việc\nPhát hành quy trình\nĐược phép\nChủ không gian làm việc\nChạy quy trình\nĐược phép\nChủ không gian làm việc\nTrạng thái: All\nTrạng thái: Bản nháp\nTrạng thái: Đang chạy\nTrạng thái: Tạm dừng\n\nTự động hoá và quản lý quy trình nghiệp vụ tại một nơi.\n\nTạo quy trình mới",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Quy trình mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Lịch chạy",
+    "href": "/workflows/calendar",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Agent Builder",
+    "href": "/workflows/agents",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Lịch sử chạy",
+    "href": "/workflows/runs",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Phân quyền",
+    "href": "/workflows/permissions",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Quản lý phân quyền",
+    "href": "/workflows/permissions",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tạo quy trình mới",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/ai": {
+  "main": "Trợ lý AI\nBeta\n\nTrợ lý thông minh giúp bạn tăng năng suất\n\nCuộc trò chuyện mới\nTrò chuyện\nTrợ lý\nMẫu lời nhắc\nTri thức\nCông cụ\nThống kê\nTôi có thể giúp gì cho bạn hôm nay?\n\nTrợ lý thông minh giúp bạn tăng năng suất\n\nTóm tắt cuộc họp\nTóm tắt nội dung cuộc họp Sprint 6 Daily Standup hôm nay\nTrạng thái dự án\nCho tôi biết tiến độ các dự án đang phụ trách\nPhân tích báo cáo\nPhân tích báo cáo doanh thu quý 2 năm 2025\nÝ tưởng cải tiến\nGợi ý các giải pháp cải thiện hiệu suất làm việc nhóm\n/summary\nTóm tắt nội dung\n/translate\nDịch ngôn ngữ\n/draft\nSoạn thảo văn bản\n/analysis\nPhân tích dữ liệu\nThêm lời nhắc\n\nTrợ lý AI có thể mắc sai sót. Vui lòng kiểm tra thông tin quan trọng.",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Cuộc trò chuyện mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Trò chuyện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Trợ lý",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mẫu lời nhắc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tri thức",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Công cụ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thống kê",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tóm tắt cuộc họp\nTóm tắt nội dung cuộc h",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Trạng thái dự án\nCho tôi biết tiến độ cá",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Phân tích báo cáo\nPhân tích báo cáo doan",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Ý tưởng cải tiến\nGợi ý các giải pháp cải",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "/summary\nTóm tắt nội dung",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "/translate\nDịch ngôn ngữ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "/draft\nSoạn thảo văn bản",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "/analysis\nPhân tích dữ liệu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thêm lời nhắc",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/ai-workforce": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nAI Workforce\n\nXây dựng, quản lý và làm việc cùng đội ngũ AI của bạn.\n\nTuyển nhân sự AI\nNhân sự AI\nHợp đồng AI\nĐánh giá hiệu quả\nKỹ năng AI\nKhông gian làm việc\nAI Project Assistant\nQuản lý dự án\nĐang hoạt động\nXem hồ sơ\nAI Research Analyst\nNghiên cứu & Phân tích\nĐang hoạt động\nXem hồ sơ\nAI Sales Assistant\nKinh doanh & CRM\nĐang hoạt động\nXem hồ sơ\nAI Data Analyst\nDữ liệu & BI\nĐang hoạt động\nXem hồ sơ\nAI HR Assistant\nNhân sự\nĐang hoạt động\nXem hồ sơ\nAI Customer Support\nHỗ trợ khách hàng\nĐang hoạt động\nXem hồ sơ\nAI Legal Assistant\nPháp lý & Tuân thủ\nĐang hoạt động\nXem hồ sơ\nAI Content Specialist\nNội dung & Marketing\nĐang hoạt động\nXem hồ sơ",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tuyển nhân sự AI",
+    "href": "/ai-market",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nhân sự AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hợp đồng AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đánh giá hiệu quả",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Kỹ năng AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Không gian làm việc",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem hồ sơ",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/ai-market": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nAI Market\n\nChợ tuyển dụng nhân sự AI — tìm ứng viên, phỏng vấn, đàm phán lương rồi cho thử việc.\n\nTìm kiếm nâng cao\nNhân sự đã tuyển\nTất cả lĩnh vực\nĐánh giá cao nhất\n\nKhông tìm thấy ứng viên phù hợp.",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Tìm kiếm nâng cao",
+    "href": "/ai-market/search",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Nhân sự đã tuyển",
+    "href": "/ai-workforce",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tất cả lĩnh vực",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đánh giá cao nhất",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/billing": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nGói dịch vụ\nGói dịch vụ & thanh toán\n\nXem gói hiện tại, hạn mức sử dụng và tự nâng cấp, hạ cấp hoặc hủy đăng ký.\n\nFree\nĐang hoạt động\n\nKỳ hiện tại: 23/08/2026 → không giới hạn\n\nChu kỳ thanh toán\n\nBắt đầu kỳ\n\n23/08/2026\n\nGia hạn kế tiếp\n\n—\n\nTự động gia hạn\n\nĐang bật\n\nHủy gia hạn vào cuối kỳ\n\nGói sẽ tự động gia hạn vào ngày kết thúc kỳ. Hủy gia hạn vẫn giữ đầy đủ tính năng đến hết kỳ.\n\nPhương thức thanh toán\nMôi trường mô phỏng\n—\n\nChưa có phương thức thanh toán\n\nThêm thẻ để tự động gia hạn gói dịch vụ.\n\nCập nhật phương thức thanh toán\n\nThông tin thẻ được xử lý trên Stripe Customer Portal, hệ thống UNIWORK không lưu số thẻ.\n\nHóa đơn & trạng thái thanh toán\n\nChưa có hóa đơn nào cho tổ chức này.\n\nCác gói khả dụng\nFree\nĐang dùng\n\nGói miễn phí cho nhóm nhỏ\n\nmember.count · 5\nworkspace.count · 2\nstorage.bytes · 1.073.741.824\nmeeting.minutes · 300\nai.tokens · 50.000\nai.transcription.min · 30\nGói hiện tại\nPro\n\nGói chuyên nghiệp cho team đang lớn\n\nmember.count · 25\nworkspace.count · 10\nstorage.bytes · 21.474.836.480\nmeeting.minutes · 3.000\nmeeting.recording\nai.tokens · 1.000.000\nNâng cấp\nBusiness\n\nGói doanh nghiệp đầy đủ tính năng\n\nmember.count · 10",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hủy gia hạn vào cuối kỳ",
+    "href": null,
+    "disabled": true
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Cập nhật phương thức thanh toán",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Gói hiện tại",
+    "href": null,
+    "disabled": true
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nâng cấp",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nâng cấp",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/settings": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nCài đặt\n\nQuản lý tài khoản, thông báo, tích hợp và bảo mật\n\nHồ sơ cá nhân\nTên, ảnh đại diện, chức danh\nTài khoản\nEmail, tên đăng nhập\nĐổi mật khẩu\nMật khẩu, xác thực 2 lớp\nThông báo\nEmail, in-app, push\nGiao diện\nChủ đề sáng/tối, mật độ\nNgôn ngữ & múi giờ\nTiếng Việt, GMT+7\nTích hợp\nGoogle, Slack, GitHub\nThành viên & vai trò\nQuản lý quyền truy cập\nBảo mật\n2FA, phiên đăng nhập\nGói & thanh toán\nGói hiện tại, hóa đơn\nDữ liệu\nSao lưu, xuất, xóa\nHồ sơ cá nhân\n\nTên, ảnh đại diện, chức danh\n\nLưu thay đổi\nNguyễn Văn A\nẢnh đại diện hiển thị trên hồ sơ và các bình luận\nTải lên\nHọ và tên\nChức danh\nPhòng ban\nSố điện thoại\nTiểu sử ngắn\n\nTối đa 240 ký tự, hiển thị công khai trong workspace.",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hồ sơ cá nhân\nTên, ảnh đại diện, chức da",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tài khoản\nEmail, tên đăng nhập",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đổi mật khẩu\nMật khẩu, xác thực 2 lớp",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo\nEmail, in-app, push",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Giao diện\nChủ đề sáng/tối, mật độ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Ngôn ngữ & múi giờ\nTiếng Việt, GMT+7",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tích hợp\nGoogle, Slack, GitHub",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thành viên & vai trò\nQuản lý quyền truy ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bảo mật\n2FA, phiên đăng nhập",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Gói & thanh toán\nGói hiện tại, hóa đơn",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Dữ liệu\nSao lưu, xuất, xóa",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lưu thay đổi",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tải lên",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ },
+ "/admin": {
+  "main": "⌘K\nMới\nAI\nVI\nNguyễn Văn A\nGiám đốc Điều hành\nQuản trị hệ thống\nBảng điều khiển quản trị\n\nCấu hình tài khoản, vai trò và các quy tắc chung của workspace.\n\nKhông có quyền truy cập\n\nTrang này chỉ dành cho quản trị viên. Liên hệ quản trị viên workspace để được cấp quyền.\n\nVề Trang chủ",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "Open sidebar",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thu gọn menu",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "AI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Trợ giúp",
+    "href": "/help",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "VI",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Chọn tone màu giao diện",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Toggle theme",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Bảo mật",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Cài đặt",
+    "href": "/settings",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thông báo",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Lịch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Nguyễn Văn A\nGiám đốc Điều hành",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Về Trang chủ",
+    "href": "/dashboard",
+    "disabled": false
+   }
+  ]
+ },
+ "/reports": {
+  "main": "Báo cáo\n\nTheo dõi hiệu suất, phân tích dữ liệu và ra quyết định tốt hơn.\n\n25/07/2026 – 23/08/2026\nTuỳ chỉnh\nLàm mới\nXuất CSV\nXuất PDF\nXem chi tiết\nTổng quan\nDự án\nĐội nhóm\nNăng suất\nCộng tác\nQuy trình\nIT & Hệ thống\nBáo cáo tuỳ chỉnh\n\nĐang so sánh với kỳ trước: 25/06/2026 – 24/07/2026 (30 ngày)\n\nCập nhật lúc: 13:00:12\n\nTổng người dùng\n1\n—\nso với tuần trước\nNgười dùng hoạt động\n0\n—\nso với tuần trước\nTổng dự án\n1\n+100%\nso với tuần trước\nCông việc hoàn thành\n0\n0%\nso với tuần trước\nCuộc họp\n0\n0%\nso với tuần trước\nTổng quan hoạt động\n30 ngày\n0\n1\n2\n3\n4\n5\n25-07\n30-07\n04-08\n09-08\n14-08\n19-08\nTask theo trạng thái\nTask hoàn thành\nCuộc họp\nFile đã tải lên\nTask theo trạng thái\n0\nTổng task\nHoàn thành\n0% (0)\nĐang làm\n0% (0)\nCần làm\n0% (0)\nBị chặn\n0% (0)\nSức khoẻ dự án\n1\nTổng dự án\nĐúng tiến độ\n0% (0)\nNguy cơ\n0% (0)\nChưa bắt đầu\n100% (1)\nDự án hoạt động nhất\nDỰ ÁN\tTIẾN ĐỘ\tTASKS\tTHÀNH VIÊN\tTRẠNG THÁI\n\nG\nGeneral\n\t\n0%\n\t0\t\n\tChưa bắt đầu\nXem tất cả dự án\nTổng quan cộng tác\nTin nhắn\n2,512\n+18.6%\nFile chia sẻ\n624\n+12.3%\nCuộc họp\n48\n+6.1%\nGiờ họp\n96.5\n+8.4%\nNgười tham gia\n320\n+10.7%\nKhối lượng theo bộ phận\nCao\nTrung bình\nBình thường\nThấp\nEngineering\n40%\n40%\n15%\n5%\nProduct\n25%\n41%\n20%\n10%\nDesign\n20%\n40%\n25",
+  "controls": [
+   {
+    "tag": "BUTTON",
+    "label": "25/07/2026 – 23/08/2026",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tuỳ chỉnh",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Làm mới",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xuất CSV",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xuất PDF",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "A",
+    "label": "Xem chi tiết",
+    "href": "/reports/overview",
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Thao tác khác",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tổng quan",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Dự án",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đội nhóm",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Năng suất",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Cộng tác",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Quy trình",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "IT & Hệ thống",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Báo cáo tuỳ chỉnh",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "30 ngày",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hoàn thành\n0% (0)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Đang làm\n0% (0)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Cần làm\n0% (0)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Bị chặn\n0% (0)",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem tất cả dự án",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tóm tắt điều hành\nTổng quan cấp cao tất ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Năng suất đội nhóm\nPhân tích hiệu suất v",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Hiệu suất dự án\nTiến độ và trạng thái ch",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Tương tác người dùng\nHoạt động và mức độ",
+    "href": null,
+    "disabled": false
+   },
+   {
+    "tag": "BUTTON",
+    "label": "Xem tất cả báo cáo",
+    "href": null,
+    "disabled": false
+   }
+  ]
+ }
+}

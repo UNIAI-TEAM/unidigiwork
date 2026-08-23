@@ -1,0 +1,53 @@
+{
+ "tag": "490096",
+ "results": [
+  {
+   "id": "TASK-CREATE",
+   "name": "tạo công việc từ UI",
+   "status": "UNCONFIRMED",
+   "detail": "dialogFilled=True submitted=True inList=False"
+  },
+  {
+   "id": "TASK-PERSIST",
+   "name": "công việc còn sau reload",
+   "status": "FAIL",
+   "detail": "False"
+  },
+  {
+   "id": "SEARCH-01",
+   "name": "search_universal",
+   "status": "PARTIAL",
+   "detail": "Tất cả workspace TRANG CHỦ Trang chủ Công việc của tôi Hộp việc CÔNG VIỆC Không gian làm việc Lịch Nhân sự TRAO ĐỔI Trò "
+  },
+  {
+   "id": "COP-01",
+   "name": "UNI Copilot trả lời",
+   "status": "PASS_UI",
+   "detail": "len=1662"
+  },
+  {
+   "id": "DOC-CREATE",
+   "name": "tạo tài liệu",
+   "status": "PASS_UI",
+   "detail": "clicked=True"
+  },
+  {
+   "id": "NOTI-01",
+   "name": "danh sách thông báo",
+   "status": "PASS_UI",
+   "detail": "True"
+  },
+  {
+   "id": "TEN-ISO",
+   "name": "tenant B không thấy task của A",
+   "status": "PASS_REAL",
+   "detail": "True"
+  },
+  {
+   "id": "TEN-ISO-SEARCH",
+   "name": "search cross-tenant",
+   "status": "PASS_REAL",
+   "detail": "True"
+  }
+ ]
+}
