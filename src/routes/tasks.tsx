@@ -139,6 +139,7 @@ function exportTasksCsv(rows: Task[]) {
 
 function TasksPage() {
   const [open, setOpen] = useSidebarState();
+  const [quickCreate, setQuickCreate] = useState<QuickCreateKind | null>(null);
   const { t } = useI18n();
   const [tab, setTab] = useState<
     "overview" | "board" | "list" | "timeline" | "calendar" | "reports" | "files"
