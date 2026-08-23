@@ -64,6 +64,7 @@ import { toast } from "sonner";
 import { TenantSwitcher } from "@/components/tenant-switcher";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
+import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-create-dialog";
 import { useAvailableTenants } from "@/features/tenants/hooks";
 import { DesktopNavigation } from "@/components/navigation/desktop-nav";
@@ -358,7 +359,6 @@ export function AppSidebar({
 }) {
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
-  const identity = useCurrentIdentity();
   const [wsOpen, setWsOpen] = useState(false);
   const { unreadCount } = useUnreadNotifications();
 
@@ -1476,6 +1476,7 @@ export function AppTopbar({
   }, [notifOpen]);
 
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+  const identity = useCurrentIdentity();
 
   const navigate = useNavigate();
   const { unreadCount: topbarUnread } = useUnreadNotifications();
