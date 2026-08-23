@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-create-dialog";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
 import { suggestCandidatesForTask } from "@/lib/api/ai-market.functions";
@@ -316,7 +317,11 @@ function TasksPage() {
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="tasks" open={open} onClose={() => setOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TasksTopbar onOpenSidebar={() => setOpen(true)} />
+        <TasksTopbar
+          onOpenSidebar={() => setOpen(true)}
+          onNew={() => setQuickCreate("task")}
+        />
+        <QuickCreateDialog kind={quickCreate} onOpenChange={(o) => !o && setQuickCreate(null)} />
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
@@ -763,30 +768,18 @@ function TasksPage() {
   );
 }
 
-function TasksTopbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
-  const { t } = useI18n();
-  return (
-    <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6">
-      <AppTopbarStub
-        onOpenSidebar={onOpenSidebar}
-        newLabel={t("tasks.new")}
-        filtersLabel={t("tasks.filters")}
-      />
-    </header>
-  );
-}
-
-function AppTopbarStub({
+function TasksTopbar({
   onOpenSidebar,
-  newLabel,
-  filtersLabel,
+  onNew,
 }: {
   onOpenSidebar: () => void;
-  newLabel: string;
-  filtersLabel: string;
+  onNew: () => void;
 }) {
-  // Use shared AppTopbar variant via re-render: simpler — just use AppTopbar variant=documents
-  return <AppTopbar variant="documents" onOpenSidebar={onOpenSidebar} />;
+  return (
+    <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6">
+      <AppTopbar variant="documents" onOpenSidebar={onOpenSidebar} onNew={onNew} />
+    </header>
+  );
 }
 
 function KpiCard({
