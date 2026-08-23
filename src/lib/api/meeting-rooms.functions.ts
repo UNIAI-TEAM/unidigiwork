@@ -340,3 +340,22 @@ export const listMeetingParticipants = createServerFn({ method: "POST" })
       };
     });
   });
+
+// Thống kê thật cho dashboard /meeting (RPC SECURITY DEFINER kiểm tra thành viên).
+export const getWorkspaceMeetingStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc(
+      "get_workspace_meeting_stats" as never,
+      { _workspace_id: data.workspaceId } as never,
+    );
+    if (error) mapPgError(error);
+    const r = (rows as unknown as Array<Record<string, number>> | null)?.[0];
+    return {
+      today: Number(r?.["today_count"] ?? 0),
+      live: Number(r?.["live_count"] ?? 0),
+      recordings: Number(r?.["recording_count"] ?? 0),
+      summaries: Number(r?.["summary_count"] ?? 0),
+    };
+  });
