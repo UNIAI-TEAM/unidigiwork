@@ -887,12 +887,8 @@ function DocumentsPage() {
             </div>
             <div className="border-t border-border p-3 text-xs">
               <div className="mb-1.5 font-medium">Storage</div>
-              <div className="mb-1 text-muted-foreground">342.6 GB of 1 TB used</div>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-                  <div className="h-full w-[34%] rounded-full bg-primary" />
-                </div>
-                <span className="text-muted-foreground">34%</span>
+              <div className="text-muted-foreground">
+                {docs.length} tài liệu · hạn mức dung lượng chưa cấu hình
               </div>
             </div>
           </aside>
