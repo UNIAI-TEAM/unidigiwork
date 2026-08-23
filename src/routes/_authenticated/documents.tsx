@@ -81,6 +81,30 @@ type Member = {
   role: string;
   profiles: { email: string; display_name: string | null } | null;
 };
+// workspace_members.user_id không có FK tới public.profiles nên PostgREST
+// không embed được `profiles(...)` (HTTP 400). Đọc 2 bước, vẫn theo RLS.
+async function fetchWorkspaceMembers(workspaceId: string): Promise<Member[]> {
+  const { data: rows, error } = await supabase
+    .from("workspace_members")
+    .select("user_id, role")
+    .eq("workspace_id", workspaceId);
+  if (error || !rows || rows.length === 0) return [];
+  const ids = rows.map((r) => r.user_id);
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, email, display_name")
+    .in("id", ids);
+  const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+  return rows.map((r) => {
+    const p = byId.get(r.user_id);
+    return {
+      user_id: r.user_id,
+      role: r.role,
+      profiles: p ? { email: p.email, display_name: p.display_name } : null,
+    };
+  });
+}
+
 type ShareCandidate = {
   userId: string;
   role: string;
