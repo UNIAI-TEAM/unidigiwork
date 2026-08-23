@@ -23,7 +23,35 @@ import { parseQueryIntent } from "@/domain/ai-context/query-intent";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
 
+// Stopword tiếng Việt/Anh thường gặp trong câu hỏi — loại bỏ để lấy từ khoá tra cứu.
+const QUERY_STOPWORDS = new Set([
+  "là","gì","của","có","cho","các","những","và","hay","hoặc","với","về","trong","ngoài","trên","dưới",
+  "bao","nhiêu","nào","ai","khi","thì","này","đó","được","bị","đang","đã","sẽ","cần","phải","tôi","bạn",
+  "chúng","ta","hãy","xin","vui","lòng","một","cái","số","thế","sao","tại","vì","để","theo","từ","đến",
+  "what","is","the","a","an","of","for","to","in","on","and","or","how","many","much","who","when","why",
+  "please","tell","me","my","our","current","status",
+]);
+
+function deriveSearchQueries(raw: string): string[] {
+  const full = raw.trim().slice(0, 200);
+  const out: string[] = [];
+  if (full.length >= 2) out.push(full);
+  const tokens = full
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !QUERY_STOPWORDS.has(t));
+  if (tokens.length) {
+    const phrase = tokens.slice(0, 6).join(" ");
+    if (phrase.length >= 2 && phrase !== full.toLowerCase()) out.push(phrase);
+    const ranked = [...new Set(tokens)].sort((a, b) => b.length - a.length).slice(0, 3);
+    for (const t of ranked) if (t.length >= 3) out.push(t);
+  }
+  return [...new Set(out)].slice(0, 5);
+}
+
 const SEARCH_TO_GRAPH: Record<string, AiContextEntityType> = {
+
   PROJECT: "WORKSPACE",
   TASK: "TASK",
   MEETING: "MEETING",
@@ -407,17 +435,29 @@ export async function buildAiContextPack(
   let searchItems: ReturnType<typeof mapRow>[] = [];
   if (request.query.trim().length >= 2) {
     const entityTypes = (request.requestedEntityTypes ?? intent.entityHints).map((t) => GRAPH_TO_SEARCH[t]);
-    const { data: rows, error } = await supabase.rpc("search_universal", {
-      _q: request.query.trim().slice(0, 200),
-      _tenant_id: tenantId,
-      _entity_types: entityTypes.length ? entityTypes : undefined,
-      _workspace_id: request.workspaceId ?? undefined,
-      _limit: AI_CONTEXT_POLICY.searchCandidates,
-      _offset: 0,
-    });
-    if (error) failures.push("SEARCH");
-    else searchItems = ((rows ?? []) as Array<Record<string, unknown>>).map(mapRow);
+    // Câu hỏi tự nhiên không khớp LIKE toàn chuỗi → thử lần lượt: câu đầy đủ,
+    // cụm từ khoá (bỏ stopword), rồi từng từ khoá dài nhất.
+    for (const q of deriveSearchQueries(request.query)) {
+      const { data: rows, error } = await supabase.rpc("search_universal", {
+        _q: q,
+        _tenant_id: tenantId,
+        _entity_types: entityTypes.length ? entityTypes : undefined,
+        _workspace_id: request.workspaceId ?? undefined,
+        _limit: AI_CONTEXT_POLICY.searchCandidates,
+        _offset: 0,
+      });
+      if (error) {
+        failures.push("SEARCH");
+        break;
+      }
+      const items = ((rows ?? []) as Array<Record<string, unknown>>).map(mapRow);
+      if (items.length) {
+        searchItems = items;
+        break;
+      }
+    }
   }
+
   timings["search"] = Date.now() - tSearch;
 
   if (!root && searchItems.length) {
