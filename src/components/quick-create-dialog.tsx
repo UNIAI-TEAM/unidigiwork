@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { useActiveWorkspace } from "@/lib/active-workspace";
+import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +62,11 @@ export function QuickCreateDialog({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { workspaceId } = useActiveWorkspace();
+  const { data: workspaces } = useMyWorkspaces();
+  const [pickedWs, setPickedWs] = useState<string | null>(null);
+  // Khi đang ở chế độ "Tất cả workspace", cho phép chọn workspace đích ngay
+  // trong dialog thay vì chặn nút tạo.
+  const targetWs = workspaceId ?? pickedWs ?? workspaces?.[0]?.id ?? null;
   const [f, setF] = useState<Fields>(EMPTY);
 
   useEffect(() => {
@@ -81,7 +86,12 @@ export function QuickCreateDialog({
         case "task":
           return {
             r: await createTask({
-              data: { workspaceId: workspaceId!, title, description: f.body || undefined, idempotencyKey },
+              data: {
+                workspaceId: targetWs!,
+                title,
+                description: f.body || undefined,
+                idempotencyKey,
+              },
             }),
             to: "/tasks" as const,
             keys: ["tasks"],
@@ -90,7 +100,7 @@ export function QuickCreateDialog({
           return {
             r: await createWorkflow({
               data: {
-                workspaceId: workspaceId!,
+                workspaceId: targetWs!,
                 name: title,
                 description: f.body || undefined,
                 definition: { steps: [] },
@@ -105,7 +115,7 @@ export function QuickCreateDialog({
           return {
             r: await scheduleMeeting({
               data: {
-                workspaceId: workspaceId!,
+                workspaceId: targetWs!,
                 title,
                 startAt: new Date(f.start).toISOString(),
                 endAt: new Date(f.end).toISOString(),
@@ -127,7 +137,10 @@ export function QuickCreateDialog({
           return {
             r: await saveEmailDraft({
               data: {
-                to: f.extra.split(",").map((s) => s.trim()).filter(Boolean),
+                to: f.extra
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
                 cc: [],
                 subject: title,
                 body: f.body,
@@ -139,7 +152,14 @@ export function QuickCreateDialog({
         case "doc":
           return {
             r: await createDocument({
-              data: { workspaceId: workspaceId!, title, folder: f.extra.trim() || "My Documents", tags: [], sizeBytes: 0, idempotencyKey },
+              data: {
+                workspaceId: targetWs!,
+                title,
+                folder: f.extra.trim() || "My Documents",
+                tags: [],
+                sizeBytes: 0,
+                idempotencyKey,
+              },
             }),
             to: "/documents" as const,
             keys: ["documents"],
@@ -147,7 +167,12 @@ export function QuickCreateDialog({
         case "wiki":
           return {
             r: await saveKnowledgeArticle({
-              data: { title, summary: f.extra || undefined, content: f.body || undefined, status: "draft" },
+              data: {
+                title,
+                summary: f.extra || undefined,
+                content: f.body || undefined,
+                status: "draft",
+              },
             }),
             to: "/knowledge" as const,
             keys: ["knowledge"],
@@ -171,11 +196,16 @@ export function QuickCreateDialog({
   if (!kind) return null;
 
   const needsWorkspace = ["task", "workflow", "meeting", "event", "doc"].includes(kind);
-  const missingWorkspace = needsWorkspace && !workspaceId;
+  const missingWorkspace = needsWorkspace && !targetWs;
   const isTime = kind === "meeting" || kind === "event";
   const titleLabel =
-    kind === "workflow" || kind === "message" ? t("qc.f.name") : kind === "email" ? t("qc.f.subject") : t("qc.f.title");
-  const canSubmit = f.title.trim().length > 0 && !missingWorkspace && (!isTime || (!!f.start && !!f.end));
+    kind === "workflow" || kind === "message"
+      ? t("qc.f.name")
+      : kind === "email"
+        ? t("qc.f.subject")
+        : t("qc.f.title");
+  const canSubmit =
+    f.title.trim().length > 0 && !missingWorkspace && (!isTime || (!!f.start && !!f.end));
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -202,21 +232,34 @@ export function QuickCreateDialog({
           {kind === "email" && (
             <div className="space-y-1.5">
               <Label htmlFor="qc-to">{t("qc.f.to")}</Label>
-              <Input id="qc-to" value={f.extra} onChange={(e) => set("extra", e.target.value)} placeholder="a@b.com, c@d.com" />
+              <Input
+                id="qc-to"
+                value={f.extra}
+                onChange={(e) => set("extra", e.target.value)}
+                placeholder="a@b.com, c@d.com"
+              />
             </div>
           )}
 
           {kind === "doc" && (
             <div className="space-y-1.5">
               <Label htmlFor="qc-folder">{t("qc.f.folder")}</Label>
-              <Input id="qc-folder" value={f.extra} onChange={(e) => set("extra", e.target.value)} />
+              <Input
+                id="qc-folder"
+                value={f.extra}
+                onChange={(e) => set("extra", e.target.value)}
+              />
             </div>
           )}
 
           {kind === "wiki" && (
             <div className="space-y-1.5">
               <Label htmlFor="qc-summary">{t("qc.f.summary")}</Label>
-              <Input id="qc-summary" value={f.extra} onChange={(e) => set("extra", e.target.value)} />
+              <Input
+                id="qc-summary"
+                value={f.extra}
+                onChange={(e) => set("extra", e.target.value)}
+              />
             </div>
           )}
 
@@ -224,19 +267,52 @@ export function QuickCreateDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="qc-start">{t("qc.f.start")}</Label>
-                <Input id="qc-start" type="datetime-local" value={f.start} onChange={(e) => set("start", e.target.value)} />
+                <Input
+                  id="qc-start"
+                  type="datetime-local"
+                  value={f.start}
+                  onChange={(e) => set("start", e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="qc-end">{t("qc.f.end")}</Label>
-                <Input id="qc-end" type="datetime-local" value={f.end} onChange={(e) => set("end", e.target.value)} />
+                <Input
+                  id="qc-end"
+                  type="datetime-local"
+                  value={f.end}
+                  onChange={(e) => set("end", e.target.value)}
+                />
               </div>
             </div>
           )}
 
           <div className="space-y-1.5">
             <Label htmlFor="qc-body">{kind === "email" ? t("qc.f.body") : t("qc.f.desc")}</Label>
-            <Textarea id="qc-body" rows={3} value={f.body} onChange={(e) => set("body", e.target.value)} />
+            <Textarea
+              id="qc-body"
+              rows={3}
+              value={f.body}
+              onChange={(e) => set("body", e.target.value)}
+            />
           </div>
+
+          {needsWorkspace && !workspaceId && (workspaces?.length ?? 0) > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-ws">Workspace</Label>
+              <select
+                id="qc-ws"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={targetWs ?? ""}
+                onChange={(e) => setPickedWs(e.target.value)}
+              >
+                {(workspaces ?? []).map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {missingWorkspace && <p className="text-xs text-destructive">{t("qc.noWorkspace")}</p>}
         </div>
