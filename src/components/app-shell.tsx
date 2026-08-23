@@ -1533,11 +1533,16 @@ export function AppTopbar({
           <div className="relative" ref={newRef}>
             <button
               onClick={() => {
+                // Khi route cung cấp hành động tạo riêng (Tasks, Documents),
+                // nút chính gọi thẳng hành động đó thay vì mở panel Tạo nhanh.
+                if (onNew) {
+                  onNew();
+                  return;
+                }
                 setNewOpen((v) => !v);
-                onNew?.();
               }}
               aria-haspopup="dialog"
-              aria-expanded={newOpen}
+              aria-expanded={onNew ? undefined : newOpen}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-3"
             >
               <Plus className="h-4 w-4" />{" "}
