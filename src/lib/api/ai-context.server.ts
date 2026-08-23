@@ -407,17 +407,29 @@ export async function buildAiContextPack(
   let searchItems: ReturnType<typeof mapRow>[] = [];
   if (request.query.trim().length >= 2) {
     const entityTypes = (request.requestedEntityTypes ?? intent.entityHints).map((t) => GRAPH_TO_SEARCH[t]);
-    const { data: rows, error } = await supabase.rpc("search_universal", {
-      _q: request.query.trim().slice(0, 200),
-      _tenant_id: tenantId,
-      _entity_types: entityTypes.length ? entityTypes : undefined,
-      _workspace_id: request.workspaceId ?? undefined,
-      _limit: AI_CONTEXT_POLICY.searchCandidates,
-      _offset: 0,
-    });
-    if (error) failures.push("SEARCH");
-    else searchItems = ((rows ?? []) as Array<Record<string, unknown>>).map(mapRow);
+    // Câu hỏi tự nhiên không khớp LIKE toàn chuỗi → thử lần lượt: câu đầy đủ,
+    // cụm từ khoá (bỏ stopword), rồi từng từ khoá dài nhất.
+    for (const q of deriveSearchQueries(request.query)) {
+      const { data: rows, error } = await supabase.rpc("search_universal", {
+        _q: q,
+        _tenant_id: tenantId,
+        _entity_types: entityTypes.length ? entityTypes : undefined,
+        _workspace_id: request.workspaceId ?? undefined,
+        _limit: AI_CONTEXT_POLICY.searchCandidates,
+        _offset: 0,
+      });
+      if (error) {
+        failures.push("SEARCH");
+        break;
+      }
+      const items = ((rows ?? []) as Array<Record<string, unknown>>).map(mapRow);
+      if (items.length) {
+        searchItems = items;
+        break;
+      }
+    }
   }
+
   timings["search"] = Date.now() - tSearch;
 
   if (!root && searchItems.length) {
