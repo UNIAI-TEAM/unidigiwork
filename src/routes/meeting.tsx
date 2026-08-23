@@ -87,6 +87,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useMeetingsRealtime } from "@/hooks/use-meetings-realtime";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/meeting")({
   validateSearch: (search: {
@@ -393,6 +394,63 @@ function MeetingPage() {
   });
   const upcomingItems = (upcomingPanel.data?.items ?? []) as unknown as ListRoom[];
 
+  // Thống kê thật (RLS áp dụng theo người dùng); không có dữ liệu thì là 0.
+  const statsQuery = useQuery({
+    queryKey: ["meeting-stats", activeWs ?? null],
+    enabled: !!activeWs,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const ws = activeWs as string;
+      const now = new Date();
+      const dayStart = new Date(now);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+      const weekStart = new Date(now.getTime() - 7 * 86_400_000);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const [today, live, ids] = await Promise.all([
+        supabase
+          .from("meetings")
+          .select("id", { count: "exact", head: true })
+          .eq("workspace_id", ws)
+          .gte("start_at", dayStart.toISOString())
+          .lt("start_at", dayEnd.toISOString()),
+        supabase
+          .from("meetings")
+          .select("id", { count: "exact", head: true })
+          .eq("workspace_id", ws)
+          .eq("status", "live"),
+        supabase.from("meetings").select("id").eq("workspace_id", ws).limit(1000),
+      ]);
+      const meetingIds = (ids.data ?? []).map((r) => r.id);
+      let recordings = 0;
+      let summaries = 0;
+      if (meetingIds.length) {
+        const [rec, sum] = await Promise.all([
+          supabase
+            .from("meeting_recordings")
+            .select("id", { count: "exact", head: true })
+            .in("meeting_id", meetingIds)
+            .gte("created_at", weekStart.toISOString()),
+          supabase
+            .from("meeting_summaries")
+            .select("id", { count: "exact", head: true })
+            .in("meeting_id", meetingIds)
+            .gte("created_at", monthStart.toISOString()),
+        ]);
+        recordings = rec.count ?? 0;
+        summaries = sum.count ?? 0;
+      }
+      return {
+        today: today.count ?? 0,
+        live: live.count ?? 0,
+        recordings,
+        summaries,
+      };
+    },
+  });
+  const stats = statsQuery.data ?? { today: 0, live: 0, recordings: 0, summaries: 0 };
+
   // Phân quyền: chỉ chủ trì / quản trị tổ chức mới được hủy buổi họp.
   const permIds = useMemo(
     () =>
@@ -634,28 +692,28 @@ function MeetingPage() {
               <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                   label="Hôm nay"
-                  value="4"
+                  value={String(stats.today)}
                   sub="cuộc họp"
                   icon={Calendar}
                   color="text-primary"
                 />
                 <StatCard
                   label="Đang diễn ra"
-                  value="1"
+                  value={String(stats.live)}
                   sub="LIVE"
                   icon={Circle}
                   color="text-destructive"
                 />
                 <StatCard
-                  label="Bản ghi tuần này"
-                  value="12"
-                  sub="2.4 GB"
+                  label="Bản ghi 7 ngày"
+                  value={String(stats.recordings)}
+                  sub="bản ghi"
                   icon={Video}
                   color="text-sky-300"
                 />
                 <StatCard
                   label="Tóm tắt AI"
-                  value="38"
+                  value={String(stats.summaries)}
                   sub="tháng này"
                   icon={Sparkles}
                   color="text-violet-300"
