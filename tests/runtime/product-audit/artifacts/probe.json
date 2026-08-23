@@ -1,25 +1,25 @@
 {
-  "run": "2708848c",
-  "tenant": "c4b9ede0-9986-42d1-b5d4-9ff3b6d3c7a2",
-  "workspace": "c4b9ede0-9986-42d1-b5d4-9ff3b6d3c7a2",
+  "run": "b7ce1b0f",
+  "tenant": "2ffac3eb-2f77-4150-a5d1-3daec6764926",
+  "workspace": "2ffac3eb-2f77-4150-a5d1-3daec6764926",
   "task": {
-    "id": "02253f58-6594-4125-87cc-47765498cb99",
-    "tenant_id": "c4b9ede0-9986-42d1-b5d4-9ff3b6d3c7a2",
-    "workspace_id": "c4b9ede0-9986-42d1-b5d4-9ff3b6d3c7a2",
+    "id": "0cc0d01a-468a-4660-b776-593767c09c77",
+    "tenant_id": "2ffac3eb-2f77-4150-a5d1-3daec6764926",
+    "workspace_id": "2ffac3eb-2f77-4150-a5d1-3daec6764926",
     "parent_task_id": null,
     "project_id": null,
-    "title": "Audit task 2708848c",
+    "title": "Audit task b7ce1b0f",
     "description": "Kiểm toán runtime: tổng hợp tiến độ dự án.",
     "status": "todo",
     "priority": "high",
     "due_at": null,
     "completed_at": null,
     "row_version": 1,
-    "created_by": "0bb45526-62f8-4d58-8037-c21f5f6a96cb",
-    "updated_by": "0bb45526-62f8-4d58-8037-c21f5f6a96cb",
+    "created_by": "dc5dec7a-4af0-4439-8ae3-91ccb2740c8a",
+    "updated_by": "dc5dec7a-4af0-4439-8ae3-91ccb2740c8a",
     "deleted_at": null,
-    "created_at": "2026-08-20T03:29:15.20007+00:00",
-    "updated_at": "2026-08-20T03:29:15.20007+00:00",
+    "created_at": "2026-08-23T12:50:16.286984+00:00",
+    "updated_at": "2026-08-23T12:50:16.286984+00:00",
     "tags": [],
     "execution_mode": "HUMAN",
     "human_owner_id": null,
@@ -34,14 +34,14 @@
       "domain": "identity",
       "name": "sign_in_password",
       "status": "PASS",
-      "detail": "uid=0bb45526-62f8-4d58-8037-c21f5f6a96cb"
+      "detail": "uid=dc5dec7a-4af0-4439-8ae3-91ccb2740c8a"
     },
     {
       "id": "TEN-01",
       "domain": "identity",
       "name": "provision_tenant",
       "status": "PASS",
-      "detail": "tenant=c4b9ede0-9986-42d1-b5d4-9ff3b6d3c7a2 ws=c4b9ede0-9986-42d1-b5d4-9ff3b6d3c7a2"
+      "detail": "tenant=2ffac3eb-2f77-4150-a5d1-3daec6764926 ws=2ffac3eb-2f77-4150-a5d1-3daec6764926"
     },
     {
       "id": "TASK-C",
@@ -55,56 +55,56 @@
       "domain": "home",
       "name": "getHomeSummary",
       "status": "FAIL",
-      "detail": "http=405 ms=6 \"expected GET method. Got POST\""
+      "detail": "http=500 ms=41 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
     },
     {
       "id": "SRCH-01",
       "domain": "search",
       "name": "searchUniversal",
       "status": "FAIL",
-      "detail": "http=500 ms=39 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+      "detail": "http=500 ms=30 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
     },
     {
       "id": "GRAPH-01",
       "domain": "work-graph",
       "name": "getWorkContext",
       "status": "FAIL",
-      "detail": "http=500 ms=43 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+      "detail": "http=500 ms=42 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
     },
     {
       "id": "AICTX-01",
       "domain": "ai-context",
       "name": "buildAiContext",
       "status": "FAIL",
-      "detail": "http=500 ms=45 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+      "detail": "http=500 ms=36 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
     },
     {
       "id": "COP-01",
       "domain": "ai-copilot",
       "name": "askUniCopilot",
       "status": "FAIL",
-      "detail": "http=500 ms=199 {\"t\":25,\"i\":0,\"s\":{\"message\":{\"t\":1,\"s\":\"Seroval Error (step: 3)\"}},\"c\":\"$TSR/Error\"}"
+      "detail": "http=500 ms=33 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
     },
     {
       "id": "AIW-01",
       "domain": "ai-workforce",
       "name": "listAiWorkers",
       "status": "FAIL",
-      "detail": "http=500 ms=41 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+      "detail": "http=500 ms=45 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
     },
     {
       "id": "NOTI-01",
       "domain": "notifications",
       "name": "listNotifications",
       "status": "FAIL",
-      "detail": "http=405 ms=2 \"expected GET method. Got POST\""
+      "detail": "http=405 ms=82 \"expected GET method. Got POST\""
     },
     {
       "id": "DASH-01",
       "domain": "dashboard",
       "name": "getDashboardSummary",
       "status": "FAIL",
-      "detail": "http=500 ms=18 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
+      "detail": "http=500 ms=17 \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <title>This page didn't load</title>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n    <style>\\n      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa"
     }
   ]
 }
