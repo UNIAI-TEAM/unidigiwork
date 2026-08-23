@@ -257,11 +257,7 @@ function DocumentsPage() {
 
   const reloadMembers = async () => {
     if (!currentWs) return;
-    const { data: m } = await supabase
-      .from("workspace_members")
-      .select("user_id, role, profiles(email, display_name)")
-      .eq("workspace_id", currentWs.id);
-    setMembers((m ?? []) as unknown as Member[]);
+    setMembers(await fetchWorkspaceMembers(currentWs.id));
   };
 
   const reloadWorkspaces = async (selectId?: string) => {
@@ -302,11 +298,7 @@ function DocumentsPage() {
       setDocs((d ?? []) as Doc[]);
       setSelected(null);
       setDetailDenied(null);
-      const { data: m } = await supabase
-        .from("workspace_members")
-        .select("user_id, role, profiles(email, display_name)")
-        .eq("workspace_id", currentWs.id);
-      setMembers((m ?? []) as unknown as Member[]);
+      setMembers(await fetchWorkspaceMembers(currentWs.id));
     })();
   }, [currentWs]);
 
