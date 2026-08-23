@@ -359,6 +359,7 @@ export function AppSidebar({
 }) {
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+  const sidebarIdentity = useCurrentIdentity();
   const [wsOpen, setWsOpen] = useState(false);
   const { unreadCount } = useUnreadNotifications();
 
@@ -442,7 +443,7 @@ export function AppSidebar({
             <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-sm">
               <Cloud className="h-5 w-5 text-sky-400" />
               <div>
-                <div className="font-medium">Nguyễn Văn A</div>
+                <div className="font-medium">{sidebarIdentity.displayName}</div>
                 <div className="text-[11px] text-muted-foreground">{t("sh.user.weather")}</div>
               </div>
             </div>
