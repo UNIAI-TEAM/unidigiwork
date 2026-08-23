@@ -1328,38 +1328,63 @@ function CopilotPanel({
       <section className="px-5 py-4">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">{t("tasks.health")}</span>
-          <span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-medium text-success">
-            {t("tasks.health.good")}
-          </span>
+          {total === 0 ? (
+            <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              Chưa có dữ liệu
+            </span>
+          ) : (
+            <span
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${overdue === 0 ? "bg-success/20 text-success" : "bg-warning/20 text-warning"}`}
+            >
+              {overdue === 0 ? "Tốt" : `${overdue} quá hạn`}
+            </span>
+          )}
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">{t("tasks.health.desc")}</p>
-        <div className="mt-2 flex items-center gap-2">
-          <div className="h-1.5 flex-1 rounded-full bg-surface-2">
-            <div className="h-full w-[75%] rounded-full bg-success" />
+        <p className="mt-1 text-xs text-muted-foreground">
+          {total === 0
+            ? "Chưa có công việc nào để đánh giá."
+            : `${done}/${total} công việc đã hoàn thành.`}
+        </p>
+        {total > 0 && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-1.5 flex-1 rounded-full bg-surface-2">
+              <div
+                className={`h-full rounded-full ${overdue === 0 ? "bg-success" : "bg-warning"}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-xs tabular-nums text-muted-foreground">{progress}%</span>
           </div>
-          <span className="text-xs text-muted-foreground">75%</span>
-        </div>
+        )}
       </section>
 
       <section className="border-t border-border px-5 py-4">
         <h3 className="mb-2 text-xs font-semibold text-foreground">{t("tasks.risks")}</h3>
         <ul className="space-y-1.5 text-xs text-muted-foreground">
-          {risks.map((r) => (
-            <li key={r} className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-warning" /> {r}
-            </li>
-          ))}
+          {risks.length === 0 ? (
+            <li className="text-muted-foreground">Không phát hiện rủi ro từ dữ liệu hiện có.</li>
+          ) : (
+            risks.map((r) => (
+              <li key={r} className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-warning" /> {r}
+              </li>
+            ))
+          )}
         </ul>
       </section>
 
       <section className="border-t border-border px-5 py-4">
         <h3 className="mb-2 text-xs font-semibold text-foreground">{t("tasks.suggest")}</h3>
         <ul className="space-y-1.5 text-xs text-muted-foreground">
-          {suggestions.map((r) => (
-            <li key={r} className="flex items-start gap-2">
-              <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" /> {r}
-            </li>
-          ))}
+          {suggestions.length === 0 ? (
+            <li className="text-muted-foreground">Chưa có đề xuất nào.</li>
+          ) : (
+            suggestions.map((r) => (
+              <li key={r} className="flex items-start gap-2">
+                <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" /> {r}
+              </li>
+            ))
+          )}
         </ul>
       </section>
 
@@ -1370,29 +1395,9 @@ function CopilotPanel({
             {t("tasks.viewall")}
           </button>
         </div>
-        <div className="space-y-3 text-xs">
-          <Activity
-            seed="phuong-linh"
-            name="Phương Linh"
-            action="đã cập nhật trạng thái của"
-            target="STOS-081 sang Testing"
-            time={`2 ${t("tasks.minago")}`}
-          />
-          <Activity
-            seed="tuan-nam-ba"
-            name="Tuấn Nam"
-            action="đã bình luận vào"
-            target="STOS-102"
-            time={`15 ${t("tasks.minago")}`}
-          />
-          <Activity
-            seed="duy-anh"
-            name="Duy Anh"
-            action="đã hoàn thành"
-            target="STOS-062"
-            time={`1 ${t("tasks.hago")}`}
-          />
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Nhật ký hoạt động được ghi ở trang Audit log của workspace.
+        </p>
       </section>
 
       <section className="border-t border-border px-5 py-4">
