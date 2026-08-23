@@ -334,7 +334,7 @@ function TasksPage() {
                     <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
                       {(activeWsName || "S").slice(0, 1).toUpperCase()}
                     </span>
-                    {activeWsName || t("tasks.project")}
+                    {activeWsName || "Chưa chọn workspace"}
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
@@ -460,11 +460,15 @@ function TasksPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-2xl font-bold tracking-tight">
-                    {workspaces.data?.find((w) => w.id === activeWs)?.name ?? t("tasks.project")}
+                    {workspaces.data?.find((w) => w.id === activeWs)?.name ?? "Chưa chọn workspace"}
                   </h1>
                   <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">{t("tasks.sub")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {total > 0
+                    ? `${total} công việc · ${counts.done} hoàn thành · ${overdue} quá hạn`
+                    : "Chưa có công việc nào trong workspace này."}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <select
@@ -756,6 +760,10 @@ function TasksPage() {
           </main>
 
           <CopilotPanel
+            total={total}
+            done={counts.done}
+            overdue={overdue}
+            progress={progress}
             onGantt={() => setTab("timeline")}
             onResource={() => navigateTasks({ to: "/people" })}
             onExport={() => exportTasksCsv(tasks)}
@@ -1237,6 +1245,10 @@ function ExpandCollapseAllButtons({ panelIds }: { panelIds: string[] }) {
 }
 
 function CopilotPanel({
+  total,
+  done,
+  overdue,
+  progress,
   onGantt,
   onResource,
   onExport,
@@ -1244,6 +1256,10 @@ function CopilotPanel({
   onNewTask,
   onViewActivity,
 }: {
+  total: number;
+  done: number;
+  overdue: number;
+  progress: number;
   onGantt: () => void;
   onResource: () => void;
   onExport: () => void;
@@ -1252,16 +1268,10 @@ function CopilotPanel({
   onViewActivity: () => void;
 }) {
   const { t } = useI18n();
-  const risks = [
-    "API Gateway có thể trễ 2 ngày",
-    "Thiếu 1 tester cho sprint hiện tại",
-    "Tài liệu API chưa được cập nhật",
-  ];
-  const suggestions = [
-    "Ưu tiên hoàn thành API Gateway",
-    "Bổ sung 1 tester cho team",
-    "Cập nhật tài liệu API Spec",
-  ];
+  // Chỉ suy ra từ dữ liệu thật đang hiển thị; không có dữ liệu thì để trống.
+  const risks = overdue > 0 ? [`${overdue} công việc đang quá hạn`] : [];
+  const suggestions =
+    overdue > 0 ? ["Ưu tiên xử lý các công việc quá hạn trước"] : [];
   const [collapsed, setCollapsed] = usePanelCollapse("tasks-copilot");
 
   if (collapsed) {
