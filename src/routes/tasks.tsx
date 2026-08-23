@@ -760,7 +760,7 @@ function TasksPage() {
             onResource={() => navigateTasks({ to: "/people" })}
             onExport={() => exportTasksCsv(tasks)}
             onImport={() => navigateTasks({ to: "/documents" })}
-            onNewTask={() => setTab("board")}
+            onNewTask={() => setQuickCreate("task")}
             onViewActivity={() => navigateTasks({ to: "/workspace/audit" })}
           />
         </div>
