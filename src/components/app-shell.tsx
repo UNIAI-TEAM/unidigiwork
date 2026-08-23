@@ -64,6 +64,7 @@ import { toast } from "sonner";
 import { TenantSwitcher } from "@/components/tenant-switcher";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
+import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-create-dialog";
 import { useAvailableTenants } from "@/features/tenants/hooks";
 import { DesktopNavigation } from "@/components/navigation/desktop-nav";
@@ -1475,6 +1476,7 @@ export function AppTopbar({
   }, [notifOpen]);
 
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+  const identity = useCurrentIdentity();
 
   const navigate = useNavigate();
   const { unreadCount: topbarUnread } = useUnreadNotifications();
@@ -1533,11 +1535,16 @@ export function AppTopbar({
           <div className="relative" ref={newRef}>
             <button
               onClick={() => {
+                // Khi route cung cấp hành động tạo riêng (Tasks, Documents),
+                // nút chính gọi thẳng hành động đó thay vì mở panel Tạo nhanh.
+                if (onNew) {
+                  onNew();
+                  return;
+                }
                 setNewOpen((v) => !v);
-                onNew?.();
               }}
               aria-haspopup="dialog"
-              aria-expanded={newOpen}
+              aria-expanded={onNew ? undefined : newOpen}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-3"
             >
               <Plus className="h-4 w-4" />{" "}
@@ -1632,17 +1639,18 @@ export function AppTopbar({
           )}
         >
           <span className="relative">
-            <img
-              src={avatar("nguyen-van-a-1")}
-              className="h-9 w-9 rounded-lg bg-surface object-cover ring-1 ring-border/60"
-              alt="Nguyễn Văn A"
-            />
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-xs font-semibold ring-1 ring-border/60"
+              aria-hidden
+            >
+              {identity.initials}
+            </span>
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-2 bg-emerald-400" />
           </span>
           <div className="hidden text-left leading-tight sm:block">
-            <div className="whitespace-nowrap text-sm font-semibold">Nguyễn Văn A</div>
+            <div className="whitespace-nowrap text-sm font-semibold">{identity.displayName}</div>
             <div className="whitespace-nowrap text-[11px] text-muted-foreground">
-              {t("sh.user.role")}
+              {identity.roleLabel}
             </div>
           </div>
           <ChevronDown
@@ -1661,26 +1669,26 @@ export function AppTopbar({
             {/* Header */}
             <div className="flex items-start gap-3 border-b border-border bg-gradient-to-br from-primary/15 via-surface to-surface p-4">
               <span className="relative">
-                <img
-                  src={avatar("nguyen-van-a-1")}
-                  className="h-12 w-12 rounded-xl bg-surface object-cover ring-2 ring-primary/40"
-                  alt=""
-                />
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface text-sm font-semibold ring-2 ring-primary/40"
+                  aria-hidden
+                >
+                  {identity.initials}
+                </span>
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-400" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <div className="truncate text-sm font-semibold">Nguyễn Văn A</div>
-                  <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
-                    Pro
-                  </span>
+                  <div className="truncate text-sm font-semibold">{identity.displayName}</div>
                 </div>
                 <div className="truncate text-[11px] text-muted-foreground">
-                  {t("sh.user.roleOrg")}
+                  {identity.tenantName
+                    ? `${identity.roleLabel} · ${identity.tenantName}`
+                    : identity.roleLabel}
                 </div>
                 <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Mail className="h-3 w-3" />
-                  <span className="truncate">nguyenvana@uniwork.vn</span>
+                  <span className="truncate">{identity.email ?? "—"}</span>
                 </div>
               </div>
             </div>
