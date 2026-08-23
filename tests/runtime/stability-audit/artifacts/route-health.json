@@ -1,0 +1,260 @@
+[
+ {
+  "step": "signin",
+  "url": "http://localhost:8080/tasks"
+ },
+ {
+  "route": "/home",
+  "http": 200,
+  "url": "http://localhost:8080/home",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/dashboard",
+  "http": 200,
+  "url": "http://localhost:8080/dashboard",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/tasks",
+  "http": 200,
+  "url": "http://localhost:8080/tasks",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/calendar",
+  "http": 200,
+  "url": "http://localhost:8080/calendar",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/documents",
+  "http": 200,
+  "url": "http://localhost:8080/documents",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran",
+   "Failed to load resource: the server responded with a status of 400 ()",
+   "Failed to load resource: the server responded with a status of 400 ()"
+  ],
+  "newFailedCalls": [
+   [
+    400,
+    "https://wjqsthhtadtbpophgclg.supabase.co/rest/v1/workspace_members?select=user_id%2Crole%2Cprofiles%28email%2Cdisplay_na"
+   ],
+   [
+    400,
+    "https://wjqsthhtadtbpophgclg.supabase.co/rest/v1/workspace_members?select=user_id%2Crole%2Cprofiles%28email%2Cdisplay_na"
+   ]
+  ]
+ },
+ {
+  "route": "/chat",
+  "http": 200,
+  "url": "http://localhost:8080/chat",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/meeting",
+  "http": 200,
+  "url": "http://localhost:8080/meeting?page=1",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/email",
+  "http": 200,
+  "url": "http://localhost:8080/email",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/search",
+  "http": 200,
+  "url": "http://localhost:8080/search?type=all",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/notifications",
+  "http": 200,
+  "url": "http://localhost:8080/notifications",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/people",
+  "http": 200,
+  "url": "http://localhost:8080/people",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/workspace",
+  "http": 200,
+  "url": "http://localhost:8080/workspace",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/knowledge",
+  "http": 200,
+  "url": "http://localhost:8080/knowledge",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/workflows",
+  "http": 200,
+  "url": "http://localhost:8080/workflows",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/ai",
+  "http": 200,
+  "url": "http://localhost:8080/ai",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/ai-workforce",
+  "http": 200,
+  "url": "http://localhost:8080/ai-workforce",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/ai-market",
+  "http": 200,
+  "url": "http://localhost:8080/ai-market",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/billing",
+  "http": 200,
+  "url": "http://localhost:8080/billing",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/settings",
+  "http": 200,
+  "url": "http://localhost:8080/settings",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/admin",
+  "http": 200,
+  "url": "http://localhost:8080/admin",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/reports",
+  "http": 200,
+  "url": "http://localhost:8080/reports",
+  "len": 400,
+  "text": "U | UNIWORK | Digital Workplace Platform | Tất cả workspace | TRANG CHỦ | Trang chủ | Công việc của tôi | Hộp việc | CÔNG VIỆC | Không gian làm việc | Lịch | Nhân sự | TRAO ĐỔI | Trò chuyện | Họp | Trực tiếp | Email Hub | TRI THỨC | Tài liệu | Kho tri thức | T",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran",
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ },
+ {
+  "route": "/m",
+  "http": 200,
+  "url": "http://localhost:8080/m",
+  "len": 36,
+  "text": "U | Workspace | Home | Chat | WORK | Meet | More",
+  "newConsoleErrors": [
+   "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran"
+  ],
+  "newFailedCalls": []
+ }
+]
