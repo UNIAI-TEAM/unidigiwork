@@ -23,7 +23,35 @@ import { parseQueryIntent } from "@/domain/ai-context/query-intent";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
 
+// Stopword tiếng Việt/Anh thường gặp trong câu hỏi — loại bỏ để lấy từ khoá tra cứu.
+const QUERY_STOPWORDS = new Set([
+  "là","gì","của","có","cho","các","những","và","hay","hoặc","với","về","trong","ngoài","trên","dưới",
+  "bao","nhiêu","nào","ai","khi","thì","này","đó","được","bị","đang","đã","sẽ","cần","phải","tôi","bạn",
+  "chúng","ta","hãy","xin","vui","lòng","một","cái","số","thế","sao","tại","vì","để","theo","từ","đến",
+  "what","is","the","a","an","of","for","to","in","on","and","or","how","many","much","who","when","why",
+  "please","tell","me","my","our","current","status",
+]);
+
+function deriveSearchQueries(raw: string): string[] {
+  const full = raw.trim().slice(0, 200);
+  const out: string[] = [];
+  if (full.length >= 2) out.push(full);
+  const tokens = full
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !QUERY_STOPWORDS.has(t));
+  if (tokens.length) {
+    const phrase = tokens.slice(0, 6).join(" ");
+    if (phrase.length >= 2 && phrase !== full.toLowerCase()) out.push(phrase);
+    const ranked = [...new Set(tokens)].sort((a, b) => b.length - a.length).slice(0, 3);
+    for (const t of ranked) if (t.length >= 3) out.push(t);
+  }
+  return [...new Set(out)].slice(0, 5);
+}
+
 const SEARCH_TO_GRAPH: Record<string, AiContextEntityType> = {
+
   PROJECT: "WORKSPACE",
   TASK: "TASK",
   MEETING: "MEETING",
