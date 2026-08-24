@@ -8,11 +8,33 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY: registry-harbor.ubos.vn
-      IMAGE_NAME: github-demo/uniwork
+      HARBOR_NAMESPACE: github-demo
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      REPO_NAME: ${{ github.event.repository.name }}
 
     steps:
+      - name: Require IMAGE_NAME
+        run: |
+          if [ -z "${{ vars.IMAGE_NAME }}" ]; then
+            echo "set IMAGE_NAME to repo name only e.g. pinsony"
+            exit 1
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Require Dockerfile
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "Dockerfile is missing on this branch."
+            echo "Push the Lovable app source (package.json, src/, Dockerfile) before deploy."
+            echo "Run onboard again to sync the default Dockerfile if the repo only has deploy templates."
+            exit 1
+          fi
+          if [ ! -f package.json ]; then
+            echo "package.json is missing — this repo does not look like a Lovable/Vite app yet."
+            exit 1
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,24 +52,26 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.HARBOR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.HARBOR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Deploy on server via SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
           REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_FULL_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          IMAGE_FULL_NAME: ${{ env.REGISTRY }}/${{ env.HARBOR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
+          REPO_NAME: ${{ env.REPO_NAME }}
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: REGISTRY,IMAGE_FULL_NAME,REGISTRY_USERNAME,REGISTRY_PASSWORD
+          envs: REGISTRY,IMAGE_FULL_NAME,REGISTRY_USERNAME,REGISTRY_PASSWORD,DEPLOY_ROOT,REPO_NAME
           script: |
             set -e
-            cd /home/Vietants/github-project/uniwork
+            cd "$DEPLOY_ROOT/$REPO_NAME"
             echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY" -u "$REGISTRY_USERNAME" --password-stdin
             docker compose pull
             docker compose up -d
