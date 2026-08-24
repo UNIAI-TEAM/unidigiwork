@@ -1,0 +1,52 @@
+# Synced from deploy-templates: scripts/ lives at repo root in the consuming repo.
+name: Setup SSL
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: "FQDN, must be *.demo.ubos.vn"
+        required: true
+        type: string
+      app_port:
+        description: "Host port on VPS (3000-3200)"
+        required: true
+        type: string
+
+jobs:
+  ssl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for scripts/setup-domain-certbot.sh)
+        uses: actions/checkout@v4
+
+      - name: Validate domain
+        run: |
+          D="${{ inputs.domain }}"
+          case "$D" in
+            *.demo.ubos.vn) echo "OK $D" ;;
+            *) echo "Domain not allowed: $D"; exit 1 ;;
+          esac
+
+      - name: Upload certbot script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "scripts/setup-domain-certbot.sh"
+          target: "/tmp/"
+          strip_components: 1
+
+      - name: Run certbot setup
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            sudo DOMAIN="${{ inputs.domain }}" \
+                 APP_PORT="${{ inputs.app_port }}" \
+                 EMAIL="${{ secrets.CERTBOT_EMAIL }}" \
+                 bash /tmp/setup-domain-certbot.sh
