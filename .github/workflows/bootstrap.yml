@@ -1,0 +1,147 @@
+name: Bootstrap on VPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+    outputs:
+      host_port: ${{ steps.emit.outputs.host_port }}
+    steps:
+      - name: Checkout (for .env)
+        uses: actions/checkout@v4
+
+      - name: Detect .env
+        id: env_check
+        run: |
+          if [ -f .env ]; then
+            echo "has_env=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_env=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bootstrap project dir via SSH
+        id: pick
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_ROOT: ${{ secrets.DEPLOY_ROOT }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          HAS_ENV: ${{ steps.env_check.outputs.has_env }}
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DEPLOY_ROOT,REPO_NAME,HAS_ENV
+          debug: true
+          script_stop: false
+          script: |
+            set -euo pipefail
+            DEPLOY_ROOT="$(printf '%s' "$DEPLOY_ROOT" | tr -d '\r\n')"
+            IMAGE_FULL="registry-harbor.ubos.vn/github-demo/${REPO_NAME}:latest"
+            DIR="${DEPLOY_ROOT}/${REPO_NAME}"
+            echo "Bootstrap: REPO_NAME=${REPO_NAME} DEPLOY_ROOT=${DEPLOY_ROOT} HAS_ENV=${HAS_ENV}"
+            echo "Bootstrap: DIR=${DIR}"
+            if ! mkdir -p "$DIR"; then
+              echo "Bootstrap: mkdir FAILED for ${DIR} (check DEPLOY_ROOT + permissions for SSH user)"
+              exit 1
+            fi
+            echo "Bootstrap: mkdir OK"
+
+            docker rm -f "${REPO_NAME}" 2>/dev/null || true
+            if [ -d "$DIR/docker-compose.yml" ]; then
+              rm -rf "$DIR/docker-compose.yml" || {
+                echo "Bootstrap: cannot remove docker-compose.yml directory; on VPS run: sudo rm -rf \"$DIR/docker-compose.yml\""
+                exit 1
+              }
+            fi
+            rm -f "$DIR/docker-compose.yml" 2>/dev/null || true
+
+            pick_port() {
+              used=""
+              if command -v ss >/dev/null 2>&1; then
+                used=$(ss -ltnH 2>/dev/null | awk '{print $4}' | sed -E 's/.*:([0-9]+)$/\1/' || true)
+              elif command -v netstat >/dev/null 2>&1; then
+                used=$(netstat -ltn 2>/dev/null | awk 'NR>2 {print $4}' | sed -E 's/.*:([0-9]+)$/\1/' || true)
+              fi
+              if command -v docker >/dev/null 2>&1; then
+                docker_used=$(docker ps -a --format '{{.Ports}}' 2>/dev/null \
+                  | grep -oE '0\.0\.0\.0:([0-9]+)->' \
+                  | sed -E 's/0\.0\.0\.0:([0-9]+)->/\1/' || true)
+                if [ -n "${docker_used:-}" ]; then
+                  used=$(printf '%s\n%s' "$used" "$docker_used" | sed '/^$/d' | sort -nu)
+                fi
+              fi
+              p=3000
+              while [ "$p" -le 3999 ]; do
+                if [ -z "${used:-}" ] || ! printf '%s\n' "$used" | grep -qx "$p"; then
+                  echo "$p"
+                  return
+                fi
+                p=$((p + 1))
+              done
+              echo "Bootstrap: No free port in 3000-3999"
+              exit 1
+            }
+
+            HOST_PORT=$(pick_port)
+            echo "Bootstrap: HOST_PORT=${HOST_PORT}"
+            echo "Bootstrap: writing docker-compose.yml"
+
+            {
+              echo "services:"
+              echo "  app:"
+              echo "    image: ${IMAGE_FULL}"
+              echo "    container_name: ${REPO_NAME}"
+              echo "    restart: unless-stopped"
+              echo "    ports:"
+              echo "      - \"${HOST_PORT}:3000\""
+              if [ "$HAS_ENV" = "true" ]; then
+                echo "    env_file:"
+                echo "      - .env"
+              fi
+            } > "$DIR/docker-compose.yml" || {
+              echo "Bootstrap: failed to write ${DIR}/docker-compose.yml"
+              exit 1
+            }
+
+            echo "Bootstrap: wrote docker-compose.yml"
+            echo "$HOST_PORT" > "/tmp/host_port_${REPO_NAME}"
+            echo "Bootstrap: wrote /tmp/host_port_${REPO_NAME}"
+
+      - name: Upload .env if present
+        if: hashFiles('.env') != ''
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ".env"
+          target: ${{ secrets.DEPLOY_ROOT }}/${{ github.event.repository.name }}/
+
+      - name: Read HOST_PORT via SSH
+        id: emit
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/bootstrap_key
+          chmod 600 ~/.ssh/bootstrap_key
+          PORT=$(ssh -i ~/.ssh/bootstrap_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o LogLevel=ERROR \
+            "${REMOTE_USER}@${REMOTE_HOST}" \
+            "tr -d '\r\n' < /tmp/host_port_${REPO_NAME}")
+          if ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
+            echo "Failed to read HOST_PORT from /tmp/host_port_${REPO_NAME} (got: '$PORT')" >&2
+            exit 1
+          fi
+          echo "host_port=$PORT" >> "$GITHUB_OUTPUT"
+          echo "HOST_PORT=$PORT"
