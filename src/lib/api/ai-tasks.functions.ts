@@ -17,6 +17,7 @@ import {
   type TimelineExportBundle,
   type TimelineGoldenBundle,
 } from "@/domain/work-execution/timeline-export";
+import { meterWorkExecution } from "./work-economics.server";
 import { mapPgError } from "./business.server";
 
 
@@ -309,6 +310,7 @@ export const runAiTask = createServerFn({ method: "POST" })
         },
       } as never);
       if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
+      await meterWorkExecution(context.supabase, exec.id);
       await logAiTaskAudit({
         tenantId: (t["tenant_id"] as string | null) ?? null,
         actorId: context.userId,
@@ -329,6 +331,7 @@ export const runAiTask = createServerFn({ method: "POST" })
         _status: "FAILED",
         _error_code: code,
       } as never);
+      await meterWorkExecution(context.supabase, exec.id);
       await logAiTaskAudit({
         tenantId: (t["tenant_id"] as string | null) ?? null,
         actorId: context.userId,
@@ -478,6 +481,7 @@ export const resumeAiTask = createServerFn({ method: "POST" })
       },
     } as never);
     if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
+    await meterWorkExecution(context.supabase, exec.id);
 
     await logAiTaskAudit({
       tenantId: (t["tenant_id"] as string | null) ?? null,
@@ -505,6 +509,7 @@ export const requestAiTaskChanges = createServerFn({ method: "POST" })
       _feedback: data.feedback,
     } as never);
     if (res.error) mapPgError(res.error, "AI_EXECUTION_NOT_REVIEWABLE");
+    await meterWorkExecution(context.supabase, data.executionId);
     return one<AiTaskExecutionRow>(res.data);
   });
 
@@ -527,6 +532,7 @@ export const acceptAiTaskExecution = createServerFn({ method: "POST" })
       _idempotency_key: data.idempotencyKey ?? `accept-ai:${data.executionId}`,
     } as never);
     if (res.error) mapPgError(res.error, "AI_REVIEW_FORBIDDEN");
+    await meterWorkExecution(context.supabase, data.executionId);
     return one<AiTaskExecutionRow>(res.data);
   });
 
@@ -689,6 +695,7 @@ export const retryWorkExecutionStep = createServerFn({ method: "POST" })
       },
     } as never);
     if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
+    await meterWorkExecution(context.supabase, exec.id);
 
     await logAiTaskAudit({
       tenantId: (task["tenant_id"] as string | null) ?? null,

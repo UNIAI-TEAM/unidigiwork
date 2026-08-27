@@ -28,6 +28,7 @@ import {
   type QualityStatus,
 } from "@/domain/work-execution/quality";
 import { WorkExecutionTimeline } from "./work-execution-timeline";
+import { WorkEconomicsCard } from "./work-economics-card";
 
 interface TaskLike {
   id: string;
@@ -361,6 +362,10 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
               {latest.evidence.validationPassed ? " · đạt" : " · chưa đạt"}
             </p>
           ) : null}
+
+          <WorkEconomicsCard executionId={latest.id} />
+
+
 
           {latest.evidence?.awaitingActionConfirmation ? (
             <div className="mt-3 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
