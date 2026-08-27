@@ -12,6 +12,12 @@ import {
   canRetryStepInPlace,
   type WorkExecutionStepRow,
 } from "@/domain/work-execution/contracts";
+import {
+  buildTimelineExport,
+  buildTimelineGolden,
+  type TimelineExportBundle,
+  type TimelineGoldenBundle,
+} from "@/domain/work-execution/timeline-export";
 import { mapPgError } from "./business.server";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
@@ -156,6 +162,32 @@ export const listWorkExecutionSteps = createServerFn({ method: "GET" })
     if (error) return [];
     return (rows ?? []) as unknown as WorkExecutionStepRow[];
   });
+
+/** WEE-1 — xuất timeline.json + bản golden để đối chiếu hard reload / regression. */
+export const exportWorkExecutionTimeline = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ executionId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ timeline: TimelineExportBundle; golden: TimelineGoldenBundle }> => {
+    const { data: exec, error } = await context.supabase
+      .from("ai_task_executions" as never)
+      .select("*")
+      .eq("id", data.executionId)
+      .maybeSingle();
+    if (error) mapPgError(error, "AI_EXECUTION_NOT_FOUND");
+    if (!exec) throw new ApiError({ code: "AI_EXECUTION_NOT_FOUND", message: "Không tìm thấy lượt thực thi." });
+    const { data: steps } = await context.supabase
+      .from("work_execution_steps" as never)
+      .select("*")
+      .eq("execution_id", data.executionId)
+      .order("seq", { ascending: true });
+    const timeline = buildTimelineExport({
+      execution: exec as unknown as Record<string, unknown>,
+      steps: (steps ?? []) as unknown as WorkExecutionStepRow[],
+    });
+    return { timeline, golden: buildTimelineGolden(timeline) };
+  });
+
+
 
 
 
