@@ -137,6 +137,22 @@ export const listAiTaskExecutions = createServerFn({ method: "GET" })
     return (rows ?? []) as unknown as AiTaskExecutionRow[];
   });
 
+/** WEE-1 — timeline các bước của một lượt thực thi (chỉ đọc, RLS theo tổ chức). */
+export const listWorkExecutionSteps = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ executionId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<WorkExecutionStepRow[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("work_execution_steps" as never)
+      .select("*")
+      .eq("execution_id", data.executionId)
+      .order("seq", { ascending: true });
+    if (error) return [];
+    return (rows ?? []) as unknown as WorkExecutionStepRow[];
+  });
+
+
+
 /** Giao công việc cho nhân sự AI (bắt buộc có deliverable + tiêu chí nghiệm thu). */
 export const assignTaskToAi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
