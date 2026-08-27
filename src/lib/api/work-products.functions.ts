@@ -88,7 +88,7 @@ export const preflightWorkProduct = createServerFn({ method: "POST" })
         const { data: w } = await context.supabase
           .from("ai_workers")
           .select("id, code, role, skills, allowed_tools, status, tenant_id")
-          .eq("id", task.ai_worker_id)
+          .eq("id", String(task.ai_worker_id))
           .maybeSingle();
         worker = (w as Record<string, unknown> | null) ?? null;
       }
