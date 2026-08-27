@@ -104,6 +104,10 @@ export interface AiExecutionEvidence {
   validationPassed?: boolean;
   /** WEE-1 — số đề xuất hành động đang chờ người dùng xác nhận. */
   proposedActionCount?: number;
+  /** WEE-1 — pipeline đang tạm dừng ở bước ACTION, cần bấm "Tiếp tục thực thi". */
+  awaitingActionConfirmation?: boolean;
+  /** WEE-1 — id các đề xuất đã sinh trong lượt chạy, dùng để tiếp tục pipeline. */
+  proposedActionIds?: string[];
 }
 
 export interface AiTaskExecutionRow {
