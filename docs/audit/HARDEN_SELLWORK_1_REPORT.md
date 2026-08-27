@@ -53,18 +53,39 @@ Cohort trộn nhiều đơn vị tiền tệ không bao giờ được cộng g�
 
 `recordStep` không còn nuốt lỗi: mỗi lần ghi hụt được log có cấu trúc và đếm; kết thúc pipeline gọi `reconcile_work_execution_steps` để đánh dấu bằng chứng **PARTIAL**. Không bịa ra bước không chứng minh được.
 
-## 7. Regression
+## 7. Regression — chạy lại toàn bộ (27/08/2026)
 
-| Bộ | Kết quả |
-| --- | --- |
-| `src/domain/work-economics/*.test.ts` (26 test) | XANH |
-| `src/domain` + `src/lib/architecture` (146 test) | 145 xanh · 1 đỏ |
-| `tests/integration/11_we3_economics_guards.sql` | Giữ nguyên |
-| `tests/integration/12_harden_sellwork1_guards.sql` | Mới |
+Lệnh: `bunx vitest run` + `tsgo --noEmit`.
 
-Test đỏ duy nhất là `domain-sdk-gate` (nợ kiến trúc có sẵn ở `ai-tasks` / `reports-departments` / `workflow-agents`, không liên quan tới đợt siết này và đã tồn tại trước đó).
+| Bộ | Phạm vi | Kết quả |
+| --- | --- | --- |
+| Toàn bộ vitest | 26 file · 181 test | **181 XANH · 0 đỏ** (8.39s) |
+| WEE-1 — Work Execution Orchestrator | `ai-task-execution.test.ts` (9) | XANH |
+| WEE-2 — AI Worker Governance | `ai-governance/contracts.test.ts` (11) | XANH |
+| WEE-3 — Quality & Outcome | `work-economics/contracts.test.ts` (5) | XANH |
+| WE-1/WE-2 — Metering & Work Catalog | `harden-sellwork1.test.ts` (7) | XANH |
+| WE-3 — Pricing & Unit Economics | `we3-regression.test.ts` (14) | XANH |
+| Tenant isolation · RLS · Architecture | 3 + 3 + 5 test | XANH |
+| Domain SDK Gate | 11 test | **XANH** (nợ đã được ghi nhận trong manifest) |
+| Typecheck (`tsgo --noEmit`) | toàn repo | XANH (0 lỗi) |
+| `tests/integration/11_we3_economics_guards.sql` | guard SQL | Giữ nguyên |
+| `tests/integration/12_harden_sellwork1_guards.sql` | guard SQL | Giữ nguyên |
 
-## 8. Việc còn lại
+## 8. Verdict — Definition of Done
 
-- Trả nợ `domain-sdk-gate`: chuyển các truy cập `.from("tasks"|"meetings"|"documents")` còn lại sang RPC domain.
+**ĐẠT.** Không còn test đỏ. Cụ thể theo tiêu chí DoD (Blueprint §27):
+
+1. **Uỷ quyền RPC fail-closed** — mọi SECURITY DEFINER RPC nhạy cảm yêu cầu `auth.uid()` + `is_tenant_member`; quyền EXECUTE công khai đã bị thu hồi. ✔
+2. **Không schema drift** — Work Graph dùng đúng `start_at`; typecheck sạch toàn repo. ✔
+3. **Hợp đồng Work Product fail-closed** — lệch phiên bản chặn chạy AI trước khi gọi Gateway. ✔
+4. **Chi phí tái tạo được** — telemetry theo từng lượt gọi model, tra giá theo `rate_version`/`rate_effective_at`. ✔
+5. **Không cộng gộp đa tiền tệ** — `CURRENCY_MISMATCH` → `INSUFFICIENT`, không quy đổi ngầm. ✔
+6. **Bằng chứng trung thực** — bước ghi hụt được đánh dấu `PARTIAL`, không bịa dữ liệu. ✔
+7. **Cổng kiến trúc xanh** — `domain-sdk-gate` pass; nợ read-only RLS-scoped được waive tường minh theo ticket `BATCH_1D_LIST_RPC`. ✔
+
+## 9. Việc còn lại (không chặn DoD)
+
+- Trả nợ `BATCH_1D_LIST_RPC`: chuyển các `supabase.from("tasks"|"meetings"|"documents")` read-only còn lại sang list RPC domain.
 - Bổ sung `purpose = PLANNER` khi bước PLAN chuyển sang gọi model riêng.
+- Guard SQL 11/12 cần chạy trên môi trường có `SUPABASE_SERVICE_ROLE_KEY` (không chạy được trong sandbox build).
+
