@@ -67,6 +67,7 @@ Lệnh: `bunx vitest run` + `tsgo --noEmit`.
 | WE-3 — Pricing & Unit Economics | `we3-regression.test.ts` (14) | XANH |
 | Tenant isolation · RLS · Architecture | 3 + 3 + 5 test | XANH |
 | Domain SDK Gate | 11 test | **XANH** (nợ đã được ghi nhận trong manifest) |
+| Schema Drift + Contract Fail-Closed Gate | `schema-contract-gate.test.ts` (9) | **XANH** — job CI bắt buộc `schema-contract-gate` |
 | Typecheck (`tsgo --noEmit`) | toàn repo | XANH (0 lỗi) |
 | `tests/integration/11_we3_economics_guards.sql` | guard SQL | Giữ nguyên |
 | `tests/integration/12_harden_sellwork1_guards.sql` | guard SQL | Giữ nguyên |
@@ -76,8 +77,8 @@ Lệnh: `bunx vitest run` + `tsgo --noEmit`.
 **ĐẠT.** Không còn test đỏ. Cụ thể theo tiêu chí DoD (Blueprint §27):
 
 1. **Uỷ quyền RPC fail-closed** — mọi SECURITY DEFINER RPC nhạy cảm yêu cầu `auth.uid()` + `is_tenant_member`; quyền EXECUTE công khai đã bị thu hồi. ✔
-2. **Không schema drift** — Work Graph dùng đúng `start_at`; typecheck sạch toàn repo. ✔
-3. **Hợp đồng Work Product fail-closed** — lệch phiên bản chặn chạy AI trước khi gọi Gateway. ✔
+2. **Không schema drift** — Work Graph dùng đúng `start_at`; mọi `.select()` được đối chiếu tự động với `types.ts` trong CI; typecheck sạch toàn repo. ✔
+3. **Hợp đồng Work Product fail-closed** — lệch phiên bản chặn chạy AI trước khi gọi Gateway; CI khẳng định mọi nhánh thất bại đều ném lỗi và caller đóng lượt chạy FAILED. ✔
 4. **Chi phí tái tạo được** — telemetry theo từng lượt gọi model, tra giá theo `rate_version`/`rate_effective_at`. ✔
 5. **Không cộng gộp đa tiền tệ** — `CURRENCY_MISMATCH` → `INSUFFICIENT`, không quy đổi ngầm. ✔
 6. **Bằng chứng trung thực** — bước ghi hụt được đánh dấu `PARTIAL`, không bịa dữ liệu. ✔
