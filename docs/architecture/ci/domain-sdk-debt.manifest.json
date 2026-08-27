@@ -49,7 +49,8 @@
       "src/lib/api/reports.functions.ts": "BATCH_1D_LIST_RPC",
       "src/lib/api/work-graph.functions.ts": "BATCH_1D_LIST_RPC",
       "src/lib/api/work-graph.server.ts": "BATCH_1D_LIST_RPC",
-      "src/lib/api/workspace-overview.functions.ts": "BATCH_1D_LIST_RPC"
+      "src/lib/api/workspace-overview.functions.ts": "BATCH_1D_LIST_RPC",
+      "src/lib/api/work-quality.server.ts": "BATCH_1D_LIST_RPC"
     },
     "server-domain-write-outside-rpc": {
       "src/lib/api/tasks.functions.ts": "BATCH_1D_TASK_ATTACHMENTS"

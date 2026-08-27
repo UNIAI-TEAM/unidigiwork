@@ -288,6 +288,7 @@ export const runAiTask = createServerFn({ method: "POST" })
         },
         workerRow: w as unknown as Record<string, unknown>,
         projectId: (t["project_id"] as string | null) ?? null,
+        revision: exec.revision,
       });
 
       // 3. Kết thúc lượt chạy: LUÔN dừng ở WAITING_REVIEW — AI không thể tự nghiệm thu.
@@ -338,6 +339,50 @@ export const runAiTask = createServerFn({ method: "POST" })
       throw new ApiError({ code: "AI_PROVIDER_UNAVAILABLE", message: "Nhân sự AI không hoàn thành được lượt chạy này." });
     }
   });
+
+/**
+ * WEE-3 — dựng lại ngữ cảnh chất lượng cho các đường chạy tiếp/thử lại.
+ * Context Pack được dựng lại bằng RLS của chính actor để kiểm chứng trích dẫn;
+ * nếu không dựng được, pack = null và bộ kiểm sẽ hạ điểm chiều bằng chứng.
+ */
+async function buildQualityContext(input: {
+  supabase: unknown;
+  userId: string;
+  exec: AiTaskExecutionRow;
+  brief: Record<string, unknown>;
+  worker: AiWorkerRow | null;
+  proposalIds: string[];
+}) {
+  const { buildAiContextPack } = await import("./ai-context.server");
+  const { readActiveTenantCookie } = await import("./active-tenant.server");
+  let pack = null as Awaited<ReturnType<typeof buildAiContextPack>> | null;
+  try {
+    pack = await buildAiContextPack(input.supabase as never, input.userId, readActiveTenantCookie(), {
+      query: `${String(input.brief["title"] ?? "")} ${String(input.brief["expected_deliverable"] ?? "")}`.slice(0, 500),
+      rootEntity: { type: "TASK", id: input.exec.task_id },
+      workspaceId: (input.brief["workspace_id"] as string | null) ?? null,
+    });
+  } catch {
+    pack = null;
+  }
+  return {
+    tenantId: String(input.brief["tenant_id"] ?? ""),
+    revision: input.exec.revision,
+    workspaceId: (input.brief["workspace_id"] as string | null) ?? null,
+    pack,
+    plan: [],
+    proposalIds: input.proposalIds,
+    deliverableType: input.exec.deliverable_type,
+    deliverableTitle: input.exec.deliverable_title,
+    sourceRefs: input.exec.source_refs ?? [],
+    aiWorkerId: input.worker?.id ?? null,
+    aiWorkerName: input.worker?.name ?? null,
+    generatorModel: input.exec.evidence?.model ?? null,
+    generatorInputTokens: input.exec.evidence?.inputTokens ?? 0,
+    generatorOutputTokens: input.exec.evidence?.outputTokens ?? 0,
+    startedAt: input.exec.started_at,
+  };
+}
 
 /**
  * WEE-1 — Tiếp tục lượt chạy đang tạm dừng ở bước ACTION.
@@ -395,6 +440,14 @@ export const resumeAiTask = createServerFn({ method: "POST" })
         template: templateByCode(exec.template_code),
         changeRequest: exec.change_request,
       },
+      quality: await buildQualityContext({
+        supabase: context.supabase,
+        userId: context.userId,
+        exec,
+        brief: t,
+        worker: w,
+        proposalIds: actionIds,
+      }),
     });
 
     if (outcome.pendingActions > 0) {
@@ -590,7 +643,16 @@ export const retryWorkExecutionStep = createServerFn({ method: "POST" })
     const w = (t["worker"] ?? null) as AiWorkerRow | null;
 
     const { retryWorkExecutionStepInPlace } = await import("./work-execution.server");
-    const validation = await retryWorkExecutionStepInPlace({
+    const retryQuality = await buildQualityContext({
+      supabase: context.supabase,
+      userId: context.userId,
+      exec,
+      brief: t,
+      worker: w,
+      proposalIds: exec.evidence?.proposedActionIds ?? [],
+    });
+    const retryResult = await retryWorkExecutionStepInPlace({
+      quality: retryQuality,
       supabase: context.supabase as never,
       executionId: exec.id,
       kind: data.kind,
@@ -610,6 +672,7 @@ export const retryWorkExecutionStep = createServerFn({ method: "POST" })
         changeRequest: exec.change_request,
       },
     });
+    const validation = retryResult.validation;
 
     const finish = await context.supabase.rpc("finish_ai_task_execution" as never, {
       _execution_id: exec.id,

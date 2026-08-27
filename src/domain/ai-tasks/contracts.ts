@@ -129,6 +129,17 @@ export interface AiTaskExecutionRow {
   reviewed_by: string | null;
   reviewed_at: string | null;
   created_at: string;
+  /** WEE-3 — kết quả chất lượng do server tính (nguồn sự thật, không do model tự khai). */
+  quality_status?: string | null;
+  quality_score?: number | null;
+  quality_passed?: boolean | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  quality_assessment?: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  evidence_pack?: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  outcome?: Record<string, any> | null;
+  accepted_with_warnings?: boolean | null;
 }
 
 export const AI_EXECUTION_STATUS_LABEL: Record<TaskAiExecutionStatus, string> = {
