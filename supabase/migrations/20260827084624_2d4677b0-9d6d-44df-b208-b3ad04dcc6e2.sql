@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.accept_ai_task_execution(uuid, boolean, text, uuid);
