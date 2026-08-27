@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
-import { templateByCode, type AiTaskExecutionRow, type AiWorkerRow } from "@/domain/ai-tasks/contracts";
+import { DELIVERABLE_TEMPLATES, templateByCode, type AiTaskExecutionRow, type AiWorkerRow } from "@/domain/ai-tasks/contracts";
 import {
   WORK_STEP_KINDS,
   STEP_CANCELED_CODE,
@@ -223,10 +223,15 @@ export const runAiTask = createServerFn({ method: "POST" })
     z
       .object({
         taskId: z.string().uuid(),
-        templateCode: z.string().max(60).optional(),
+        // FAIL-CLOSED: chỉ chấp nhận mã mẫu có trong sổ đăng ký; mã lạ sẽ né được
+        // hợp đồng sản phẩm công việc (không có contract ⇒ không ràng buộc).
+        templateCode: z
+          .enum(DELIVERABLE_TEMPLATES.map((t) => t.code) as [string, ...string[]])
+          .optional(),
       })
       .parse(i),
   )
+
   .handler(async ({ data, context }): Promise<AiTaskExecutionRow> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) {
