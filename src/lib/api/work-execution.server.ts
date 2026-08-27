@@ -35,6 +35,8 @@ export interface OrchestratedRun extends AiTaskRunResult {
   plan: WorkPlanItem[];
   validation: WorkValidationResult;
   proposedActionIds: string[];
+  /** True khi pipeline dừng ở bước ACTION chờ người dùng xác nhận đề xuất. */
+  paused: boolean;
 }
 
 /* ------------------------------ Step writer ------------------------------ */
