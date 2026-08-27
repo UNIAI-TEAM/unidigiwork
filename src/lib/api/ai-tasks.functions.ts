@@ -266,6 +266,8 @@ export const runAiTask = createServerFn({ method: "POST" })
           validationScore: run.validation.score,
           validationPassed: run.validation.passed,
           proposedActionCount: run.proposedActionIds.length,
+          awaitingActionConfirmation: run.paused,
+          proposedActionIds: run.proposedActionIds,
         },
       } as never);
       if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
