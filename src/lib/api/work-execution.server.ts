@@ -132,7 +132,7 @@ async function planExecution(
 /**
  * Sinh đề xuất hành động (CREATE_TASK) cho những bước kế hoạch cần ghi dữ liệu.
  * Chỉ INSERT vào ai_action_proposals ở trạng thái PROPOSED — người dùng vẫn phải
- * xác nhận qua confirmAiAction thì mới có bất kỳ thay đổi nghiệp vụ nào.
+ * xác nhận ở lớp AI Action Layer thì mới có bất kỳ thay đổi nghiệp vụ nào.
  */
 async function proposeFollowUpActions(
   supabase: Supa,
