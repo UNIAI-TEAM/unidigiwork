@@ -164,6 +164,8 @@ export interface WorkProductEconomics {
   completeness: CostCompleteness;
   missingSignals: string[];
   lowSampleSize: boolean;
+  /** True khi cohort trộn nhiều đơn vị tiền tệ → không được cộng gộp. */
+  currencyMismatch: boolean;
 }
 
 const MIN_COHORT = 3;
