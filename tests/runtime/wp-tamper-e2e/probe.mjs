@@ -166,11 +166,58 @@ const noAuthRun = await call("ai-tasks.functions.ts", "runAiTask", { taskId: TAS
 rec("WPT-11", "runAiTask without valid auth", denied(noAuthRun) ? "PASS" : "FAIL", `${noAuthRun.status} ${errMsg(noAuthRun)}`);
 
 // ---------- 7. TAMPER: template không có hợp đồng → fail-closed, KHÔNG chạy AI ----------
+const tamperStartedAt = new Date().toISOString();
 const execBefore = (await admin.from("ai_task_executions").select("id", { count: "exact", head: true }).eq("task_id", TASK)).count ?? 0;
 const badTemplate = await call("ai-tasks.functions.ts", "runAiTask", { taskId: TASK, templateCode: "TEMPLATE_KHONG_TON_TAI" });
 const execAfter = (await admin.from("ai_task_executions").select("id", { count: "exact", head: true }).eq("task_id", TASK)).count ?? 0;
 rec("WPT-12", "unknown template fail-closed", denied(badTemplate) ? "PASS" : "FAIL", `${badTemplate.status} ${errMsg(badTemplate)}`);
 rec("WPT-13", "no execution row created on tamper", execAfter <= execBefore ? "PASS" : "FAIL", `before=${execBefore} after=${execAfter}`);
+
+// ---------- 7b. Hợp đồng lỗi của validator: mã ổn định + không rò rỉ nội bộ ----------
+// Qua ranh giới RPC, hợp đồng lỗi hiển thị dưới dạng message có tiền tố mã ổn định.
+const errText = (r) => {
+  const flat = JSON.stringify(r.body ?? "");
+  const m = /"s":"([^"]*)"/.exec(flat.replace(/\\"/g, "'"));
+  return m ? m[1] : flat;
+};
+const errOf = (r) => {
+  const txt = errText(r);
+  const code = /^([A-Z_]+)(:|$)/.exec(txt)?.[1] ?? null;
+  return { code, message: txt, raw: JSON.stringify(r.body ?? "") };
+};
+const badErr = errOf(badTemplate);
+const badRaw = badErr.raw;
+rec("WPT-12A", "validator returns stable error code VALIDATION_FAILED",
+  badErr.code === "VALIDATION_FAILED" ? "PASS" : "FAIL", { code: badErr.code, message: badErr.message });
+rec("WPT-12B", "error body names offending field + allowed template codes",
+  badErr.message.includes("templateCode") && badErr.message.includes("allowed=") &&
+  badErr.message.includes("SUMMARY_REPORT") ? "PASS" : "FAIL", badErr.message.slice(0, 240));
+rec("WPT-12C", "error body leaks no stack/internals",
+  !/(ZodError|Seroval|node_modules|\bat \/|\.ts:\d+)/.test(badRaw) ? "PASS" : "FAIL", badRaw.slice(0, 200));
+
+// Các biến thể sai kiểu đều phải cùng một hợp đồng lỗi
+for (const [i, bad] of [123, null, "", { code: "SUMMARY_REPORT" }, "summary_report"].entries()) {
+  const r = await call("ai-tasks.functions.ts", "runAiTask", { taskId: TASK, templateCode: bad });
+  const e = errOf(r);
+  rec(`WPT-12D${i + 1}`, `invalid templateCode variant ${JSON.stringify(bad)}`,
+    denied(r) && e.code === "VALIDATION_FAILED" ? "PASS" : "FAIL", `${r.status} ${errMsg(r)}`);
+}
+
+// taskId sai định dạng cũng dùng chung hợp đồng lỗi
+const badTask = await call("ai-tasks.functions.ts", "runAiTask", { taskId: "not-a-uuid", templateCode: "SUMMARY_REPORT" });
+rec("WPT-12E", "invalid taskId maps to VALIDATION_FAILED",
+  denied(badTask) && errOf(badTask).code === "VALIDATION_FAILED" ? "PASS" : "FAIL", `${badTask.status} ${errMsg(badTask)}`);
+
+// Không có lượt chạy nào và không có lời gọi model nào phát sinh từ các yêu cầu bị chặn
+const execAfterAll = (await admin.from("ai_task_executions").select("id", { count: "exact", head: true }).eq("task_id", TASK)).count ?? 0;
+rec("WPT-12F", "no execution created by any invalid-template request",
+  execAfterAll <= execBefore ? "PASS" : "FAIL", `before=${execBefore} after=${execAfterAll}`);
+const { count: usageAfter } = await admin
+  .from("ai_usage_events")
+  .select("id", { count: "exact", head: true })
+  .gte("created_at", tamperStartedAt);
+rec("WPT-12G", "no AI model call recorded while validator blocked",
+  (usageAfter ?? 0) === 0 ? "PASS" : "FAIL", `usage_events_since_start=${usageAfter ?? 0}`);
 
 // ---------- 8. TAMPER: gọi thẳng RPC ràng buộc hợp đồng bằng JWT người dùng ----------
 async function rest(path, init) {

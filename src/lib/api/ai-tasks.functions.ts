@@ -219,8 +219,8 @@ export const assignTaskToAi = createServerFn({ method: "POST" })
 /** Bắt đầu một lượt AI thực thi và trả về bản nháp ở trạng thái CHỜ NGƯỜI DUYỆT. */
 export const runAiTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
+  .inputValidator((i: unknown) => {
+    const parsed = z
       .object({
         taskId: z.string().uuid(),
         // FAIL-CLOSED: chỉ chấp nhận mã mẫu có trong sổ đăng ký; mã lạ sẽ né được
@@ -229,8 +229,21 @@ export const runAiTask = createServerFn({ method: "POST" })
           .enum(DELIVERABLE_TEMPLATES.map((t) => t.code) as [string, ...string[]])
           .optional(),
       })
-      .parse(i),
-  )
+      .safeParse(i);
+    if (!parsed.success) {
+      // Trả đúng hợp đồng lỗi ổn định thay vì ZodError thô (client chỉ đọc `code`).
+      // Qua ranh giới RPC chỉ `message` sống sót, nên mã ổn định phải nằm ở đầu
+      // message (đúng quy ước hiện hành: client so khớp bằng `code`, không parse văn bản).
+      const fields = parsed.error.issues.map((iss) => iss.path.join(".")).filter(Boolean);
+      throw new ApiError({
+        code: "VALIDATION_FAILED",
+        message: `VALIDATION_FAILED: ${fields.join(",") || "input"} | allowed=${DELIVERABLE_TEMPLATES.map((t) => t.code).join(",")}`,
+        details: { fields, allowedTemplateCodes: DELIVERABLE_TEMPLATES.map((t) => t.code) },
+      });
+    }
+    return parsed.data;
+  })
+
 
   .handler(async ({ data, context }): Promise<AiTaskExecutionRow> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
