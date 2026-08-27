@@ -93,7 +93,7 @@ export function WorkExecutionTimeline({
 
   const exportTimeline = useMutation({
     mutationFn: () => exportWorkExecutionTimeline({ data: { executionId } }),
-    onSuccess: (res) => {
+    onSuccess: (res: { timeline: unknown; golden: { fingerprint: string } }) => {
       const short = executionId.slice(0, 8);
       downloadJson(`timeline-${short}.json`, res.timeline);
       downloadJson(`timeline-${short}.golden.json`, res.golden);

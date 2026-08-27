@@ -2,6 +2,8 @@
 // Thuần hàm, không I/O: dùng chung cho server function và script sinh artifact golden.
 import type { WorkExecutionStepRow, WorkStepKind, WorkStepStatus } from "./contracts";
 
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
 export const TIMELINE_EXPORT_SCHEMA = "uniwork.wee1.timeline.v1" as const;
 export const GOLDEN_EXPORT_SCHEMA = "uniwork.wee1.timeline.golden.v1" as const;
 
@@ -15,8 +17,8 @@ export interface TimelineExecutionSummary {
   deliverableTitle: string | null;
   deliverableLength: number;
   errorCode: string | null;
-  evidence: Record<string, unknown> | null;
-  sourceRefs: unknown[];
+  evidence: Record<string, JsonValue> | null;
+  sourceRefs: JsonValue[];
   createdAt: string | null;
 }
 
@@ -30,7 +32,7 @@ export interface TimelineStepEntry {
   startedAt: string | null;
   completedAt: string | null;
   durationMs: number | null;
-  output: unknown;
+  output: JsonValue;
 }
 
 export interface TimelineExportBundle {
@@ -64,8 +66,8 @@ export interface TimelineGoldenBundle {
   fingerprint: string;
 }
 
-const asRecord = (v: unknown): Record<string, unknown> | null =>
-  v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+const asRecord = (v: unknown): Record<string, JsonValue> | null =>
+  v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, JsonValue>) : null;
 
 function diffMs(from: string | null, to: string | null): number | null {
   if (!from || !to) return null;
@@ -94,7 +96,7 @@ export function buildTimelineExport(input: {
       deliverableLength: content.length,
       errorCode: (e["error_code"] as string | null) ?? null,
       evidence: asRecord(e["evidence"]),
-      sourceRefs: Array.isArray(e["source_refs"]) ? (e["source_refs"] as unknown[]) : [],
+      sourceRefs: Array.isArray(e["source_refs"]) ? (e["source_refs"] as JsonValue[]) : [],
       createdAt: (e["created_at"] as string | null) ?? null,
     },
     steps: [...input.steps]
@@ -109,7 +111,7 @@ export function buildTimelineExport(input: {
         startedAt: s.started_at ?? null,
         completedAt: s.completed_at ?? null,
         durationMs: diffMs(s.started_at ?? null, s.completed_at ?? null),
-        output: (s as { output?: unknown }).output ?? null,
+        output: ((s as { output?: JsonValue }).output ?? null) as JsonValue,
       })),
   };
 }
