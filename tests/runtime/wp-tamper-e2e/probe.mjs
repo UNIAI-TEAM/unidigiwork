@@ -420,6 +420,136 @@ if (mToken && mu?.user?.id) {
   await admin.auth.admin.deleteUser(mu.user.id);
 }
 
+
+// ---------- 10d. Response luôn khớp schema hợp đồng, kể cả khi dữ liệu DB dị dạng ----------
+const WP_ERROR_CODES = new Set([
+  "WORK_PRODUCT_NOT_FOUND", "WORK_PRODUCT_NOT_ACTIVE", "INVALID_WORK_PRODUCT_VERSION",
+  "MISSING_REQUIRED_INPUT", "INVALID_INPUT", "UNAUTHORIZED_INPUT", "NO_ELIGIBLE_EXECUTOR",
+  "CONTEXT_POLICY_INVALID", "ACTION_POLICY_CONFLICT", "QUALITY_POLICY_INVALID",
+  "OUTCOME_POLICY_INVALID", "WORK_PRODUCT_ACTION_NOT_ALLOWED", "WORK_PRODUCT_CONTRACT_IMMUTABLE",
+]);
+const isStr = (v) => typeof v === "string";
+const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+const strArr = (v) => Array.isArray(v) && v.every(isStr);
+const nullable = (f) => (v) => v === null || f(v);
+const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+
+/** Trả về danh sách vi phạm schema (rỗng = hợp lệ). Fail-closed: undefined luôn là vi phạm. */
+function checkContractSchema(c, path = "contract") {
+  const bad = [];
+  const need = (k, ok) => { if (!ok(c?.[k])) bad.push(`${path}.${k}=${JSON.stringify(c?.[k])}`); };
+  if (!plain(c)) return [`${path} không phải object`];
+  need("code", isStr); need("version", isNum); need("label", isStr);
+  need("description", nullable(isStr)); need("objective", isStr); need("category", isStr);
+  need("status", (v) => ["DRAFT", "ACTIVE", "PAUSED", "RETIRED"].includes(v));
+  need("templateCode", nullable(isStr)); need("deliverableType", isStr); need("outcomeType", isStr);
+  need("slaMachineMs", nullable(isNum)); need("contractHash", nullable(isStr));
+  const sub = (k, fn) => { if (!plain(c?.[k])) bad.push(`${path}.${k} thiếu`); else fn(c[k], `${path}.${k}`); };
+  sub("input", (v, pp) => { if (!strArr(v.required)) bad.push(`${pp}.required`); if (!plain(v.properties)) bad.push(`${pp}.properties`); });
+  sub("context", (v, pp) => { if (!strArr(v.allowedEntityTypes)) bad.push(`${pp}.allowedEntityTypes`); if (!strArr(v.optionalEntityTypes)) bad.push(`${pp}.optionalEntityTypes`); if (!nullable(isNum)(v.maxSources)) bad.push(`${pp}.maxSources`); });
+  sub("executor", (v, pp) => { if (!nullable(isStr)(v.requiredRole)) bad.push(`${pp}.requiredRole`); if (!strArr(v.requiredSkills)) bad.push(`${pp}.requiredSkills`); });
+  sub("action", (v, pp) => { if (!strArr(v.allowedActions)) bad.push(`${pp}.allowedActions`); if (!isStr(v.maxAutonomy)) bad.push(`${pp}.maxAutonomy`); });
+  sub("deliverable", (v, pp) => { if (!strArr(v.requiredSections)) bad.push(`${pp}.requiredSections`); });
+  sub("acceptance", (v, pp) => { if (!strArr(v.mandatoryCriteria)) bad.push(`${pp}.mandatoryCriteria`); });
+  sub("quality", (v, pp) => { if (!isNum(v.minimumQualityScore)) bad.push(`${pp}.minimumQualityScore`); if (!strArr(v.requiredDimensions)) bad.push(`${pp}.requiredDimensions`); });
+  sub("review", (v, pp) => { if (!["HUMAN_REVIEW_REQUIRED", "HUMAN_REVIEW_REQUIRED_IF_WARNING"].includes(v.policy)) bad.push(`${pp}.policy`); });
+  sub("sla", (v, pp) => { if (!nullable(isNum)(v.machineDurationMs)) bad.push(`${pp}.machineDurationMs`); if (!nullable(isNum)(v.wallDurationMs)) bad.push(`${pp}.wallDurationMs`); });
+  return bad;
+}
+
+function checkPreflightSchema(p) {
+  const bad = [];
+  if (!plain(p)) return ["preflight không phải object"];
+  if (typeof p.ready !== "boolean") bad.push(`ready=${JSON.stringify(p.ready)}`);
+  if (!isStr(p.code)) bad.push("code");
+  if (!isNum(p.version)) bad.push("version");
+  if (!nullable(isStr)(p.contractHash)) bad.push("contractHash");
+  if (!plain(p.inputs)) bad.push("inputs");
+  if (!nullable(isStr)(p.executorWorkerId)) bad.push("executorWorkerId");
+  if (!Array.isArray(p.issues)) bad.push("issues");
+  else for (const it of p.issues) {
+    if (!plain(it) || !isStr(it.message)) bad.push(`issue=${JSON.stringify(it)}`);
+    else if (!WP_ERROR_CODES.has(it.code)) bad.push(`issue.code lạ: ${it.code}`);
+    else if (it.field !== undefined && !nullable(isStr)(it.field)) bad.push("issue.field");
+  }
+  if (p.ready === false && p.issues?.length === 0) bad.push("ready=false nhưng không có issue (không fail-closed)");
+  return bad;
+}
+
+rec("WPT-50", "healthy contract khớp schema", checkContractSchema(baseContract).length === 0 ? "PASS" : "FAIL", checkContractSchema(baseContract));
+rec("WPT-51", "healthy preflight khớp schema", checkPreflightSchema(basePre).length === 0 ? "PASS" : "FAIL", checkPreflightSchema(basePre));
+rec("WPT-52", "preflight bị từ chối vẫn khớp schema", checkPreflightSchema(forgedTask).length === 0 ? "PASS" : "FAIL", checkPreflightSchema(forgedTask));
+rec("WPT-53", "preflight mã không tồn tại vẫn khớp schema", checkPreflightSchema(fakePre).length === 0 ? "PASS" : "FAIL", checkPreflightSchema(fakePre));
+
+const rollup = unwrap((await call("work-products.functions.ts", "getWorkProductRollup", { tenantId: TENANT }, { method: "GET" })).body);
+const rollupBad = !Array.isArray(rollup)
+  ? ["rollup không phải mảng"]
+  : rollup.flatMap((r, i) => [
+      isStr(r?.workUnitCode) ? null : `[${i}].workUnitCode`,
+      isNum(r?.workUnitVersion) ? null : `[${i}].workUnitVersion`,
+      ["runs", "acceptedRuns", "verifiedOutcomes", "qualityPassedRuns", "humanApprovals", "revisions", "slaMetRuns", "slaEvaluatedRuns"]
+        .find((k) => !isNum(r?.[k])) ?? null,
+      nullable(isNum)(r?.machineMsP50) ? null : `[${i}].machineMsP50`,
+    ].filter(Boolean));
+rec("WPT-54", "rollup rows khớp schema số liệu", rollupBad.length === 0 ? "PASS" : "FAIL", rollupBad.slice(0, 5));
+
+// Chèn dữ liệu DỊ DẠNG trực tiếp vào DB (mô phỏng PostgREST trả về row hỏng/thiếu trường)
+const MAL = `WPT_MALFORMED_${run.toUpperCase()}`;
+const RETIRED = `WPT_RETIRED_${run.toUpperCase()}`;
+const malformedRow = {
+  code: MAL, version: 1, label: "Malformed probe", objective: "",
+  deliverable_type: "SUMMARY", expected_outcome_type: "", status: "ACTIVE",
+  contract_hash: null, template_code: null,
+  input_contract: "not-an-object",
+  context_contract: { allowedEntityTypes: "TASK", optionalEntityTypes: 5, maxSources: "many" },
+  executor_contract: [1, 2, 3],
+  action_contract: { allowedActions: { a: 1 }, maxAutonomy: 42 },
+  deliverable_contract: { requiredSections: "A,B" },
+  acceptance_contract: 12345,
+  quality_contract: { minimumQualityScore: "high", requiredDimensions: null },
+  review_contract: { policy: "NO_REVIEW_AT_ALL" },
+  sla_contract: { machineDurationMs: "fast", wallDurationMs: [] },
+};
+const { error: malErr } = await admin.from("work_units").insert(malformedRow);
+const { error: retErr } = await admin.from("work_units").insert({
+  code: RETIRED, version: 1, label: "Retired probe", objective: "obj",
+  deliverable_type: "SUMMARY", expected_outcome_type: "REPORT", status: "RETIRED", contract_hash: "deadbeef",
+});
+if (malErr || retErr) {
+  rec("WPT-55", "chèn được dữ liệu dị dạng để kiểm thử", "FAIL", `${malErr?.message ?? ""} ${retErr?.message ?? ""}`);
+} else {
+  const malGet = unwrap((await call("work-products.functions.ts", "getWorkProduct", { code: MAL }, { method: "GET" })).body);
+  const malGetBad = checkContractSchema(malGet, "malformed");
+  rec("WPT-55", "row dị dạng vẫn được chuẩn hoá đúng schema", malGetBad.length === 0 ? "PASS" : "FAIL", malGetBad.slice(0, 6));
+
+  const malPre = unwrap((await call("work-products.functions.ts", "preflightWorkProduct", { code: MAL, taskId: TASK, inputs: {} })).body);
+  const malPreBad = checkPreflightSchema(malPre);
+  rec("WPT-56", "preflight trên row dị dạng khớp schema", malPreBad.length === 0 ? "PASS" : "FAIL", malPreBad.slice(0, 6));
+  rec("WPT-57", "preflight trên row dị dạng fail-closed (ready=false)",
+    malPre?.ready === false ? "PASS" : "FAIL", { ready: malPre?.ready, issues: (malPre?.issues ?? []).map((i) => i.code) });
+
+  const retPre = unwrap((await call("work-products.functions.ts", "preflightWorkProduct", { code: RETIRED, taskId: TASK, inputs: {} })).body);
+  rec("WPT-58", "hợp đồng RETIRED bị chặn bằng mã lỗi ổn định",
+    retPre?.ready === false && (retPre.issues ?? []).some((i) => i.code === "WORK_PRODUCT_NOT_ACTIVE") && checkPreflightSchema(retPre).length === 0
+      ? "PASS" : "FAIL", (retPre?.issues ?? []).map((i) => i.code));
+
+  const listAll = unwrap((await call("work-products.functions.ts", "listWorkProducts", {}, { method: "GET" })).body);
+  const listBad = Array.isArray(listAll)
+    ? listAll.flatMap((c, i) => checkContractSchema(c, `list[${i}]`))
+    : ["list không phải mảng"];
+  rec("WPT-59", "toàn bộ danh mục (gồm row dị dạng) khớp schema", listBad.length === 0 ? "PASS" : "FAIL", listBad.slice(0, 6));
+  rec("WPT-60", "row dị dạng có mặt trong danh mục nhưng không phá response",
+    Array.isArray(listAll) && listAll.some((c) => c.code === MAL) ? "PASS" : "FAIL", `n=${Array.isArray(listAll) ? listAll.length : "?"}`);
+
+  const malRun = await call("ai-tasks.functions.ts", "runAiTask", { taskId: TASK, templateCode: MAL }, {});
+  rec("WPT-61", "không thể chạy AI bằng hợp đồng dị dạng", denied(malRun) ? "PASS" : "FAIL", `${malRun.status} ${errMsg(malRun)}`);
+
+  const execNow = (await admin.from("ai_task_executions").select("id", { count: "exact", head: true }).eq("task_id", TASK)).count ?? 0;
+  rec("WPT-62", "không tạo execution nào từ hợp đồng dị dạng", execNow <= execAfterAll ? "PASS" : "FAIL", `before=${execAfterAll} after=${execNow}`);
+
+  await admin.from("work_units").delete().in("code", [MAL, RETIRED]);
+}
+
 // ---------- 11. Hợp đồng phải bất biến sau toàn bộ tamper ----------
 const after = (await admin.from("work_units").select("code, version, status, contract_hash").order("code")).data ?? [];
 const same = JSON.stringify(before) === JSON.stringify(after);
