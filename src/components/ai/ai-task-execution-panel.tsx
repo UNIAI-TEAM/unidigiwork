@@ -76,6 +76,12 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
 
   const rows = (executions.data ?? []) as AiTaskExecutionRow[];
   const latest = rows[0] ?? null;
+  const qualityBlockers = ((latest?.quality_assessment?.["blockers"] ?? []) as { code: string; message: string }[]).slice(0, 5);
+  const qualityCriteria = ((latest?.quality_assessment?.["criteria"] ?? []) as {
+    criterion: string;
+    status: string;
+    reason?: string;
+  }[]).slice(0, 6);
   const workerList = (workers.data ?? []) as AiWorkerRow[];
   const assignedWorker = useMemo(
     () => workerList.find((w) => w.id === (task.ai_worker_id ?? workerId)) ?? null,
