@@ -19,6 +19,13 @@ import {
   type WorkValidationResult,
 } from "@/domain/work-execution/contracts";
 import { AI_ACTION_TOOLS } from "@/domain/ai-actions/contracts";
+import type { AiWorkerRuntimePolicy, GovernanceEvaluation, GovernanceExecutionScope } from "@/domain/ai-governance/contracts";
+import {
+  checkAiWorkerAction,
+  logGovernanceDecision,
+  objectTypeForTool,
+  toWorkerRuntimePolicy,
+} from "./ai-governance.server";
 import type { AiTaskSpec, AiTaskRunResult } from "./ai-tasks.server";
 import { buildAiContextPack, renderContextForModel } from "./ai-context.server";
 
@@ -145,9 +152,11 @@ async function proposeFollowUpActions(
   spec: AiTaskSpec,
   plan: WorkPlanItem[],
   sourceRefs: AiTaskRunResult["sourceRefs"],
-): Promise<{ ids: string[]; titles: string[] }> {
+  governance: { worker: AiWorkerRuntimePolicy | null; execution: GovernanceExecutionScope },
+): Promise<{ ids: string[]; titles: string[]; blocked: { title: string; reason: string; code: string }[] }> {
   const needing = plan.filter((p) => p.needsAction).slice(0, MAX_PROPOSALS_PER_RUN);
-  if (needing.length === 0) return { ids: [], titles: [] };
+  const blocked: { title: string; reason: string; code: string }[] = [];
+  if (needing.length === 0) return { ids: [], titles: [], blocked };
 
   const def = AI_ACTION_TOOLS["CREATE_TASK"];
   const ids: string[] = [];
@@ -160,6 +169,39 @@ async function proposeFollowUpActions(
 
   for (const item of needing) {
     const title = item.summary.slice(0, 400);
+    const payload = { workspaceId, title, description: null, priority: "normal", dueAt: null, assigneeId: null };
+
+    // WEE-2: mọi đề xuất phải qua cổng governance trước khi được lưu (fail closed).
+    const verdict: GovernanceEvaluation = await checkAiWorkerAction({
+      supabase,
+      worker: governance.worker,
+      userId,
+      execution: governance.execution,
+      request: {
+        actionType: "CREATE_TASK",
+        target: {
+          tenantId,
+          workspaceId,
+          projectId: governance.execution.projectId,
+          objectType: objectTypeForTool("CREATE_TASK"),
+        },
+        payload,
+      },
+    });
+    await logGovernanceDecision({
+      tenantId,
+      actorId: userId,
+      executionId: governance.execution.executionId,
+      taskId: spec.taskId,
+      actionType: "CREATE_TASK",
+      evaluation: verdict,
+      phase: "PROPOSAL",
+    });
+    if (verdict.decision === "DENY") {
+      blocked.push({ title, reason: verdict.safeReason, code: verdict.reasonCode });
+      continue;
+    }
+
     try {
       const { data } = await sb
         .from("ai_action_proposals")
@@ -172,11 +214,14 @@ async function proposeFollowUpActions(
           source: PROPOSAL_SOURCE,
           title: def.label,
           description: `Từ lượt AI thực thi công việc "${spec.title}"`.slice(0, 500),
-          payload: { workspaceId, title, description: null, priority: "normal", dueAt: null, assigneeId: null },
+          payload,
           target_type: "TASK",
           target_id: spec.taskId,
           source_refs: sourceRefs.slice(0, 5),
           status: "PROPOSED",
+          ai_worker_id: governance.worker?.workerId ?? null,
+          execution_id: governance.execution.executionId,
+          governance: verdict as never,
         })
         .select("id")
         .single();
@@ -188,7 +233,7 @@ async function proposeFollowUpActions(
       // một đề xuất lỗi không làm hỏng lượt chạy
     }
   }
-  return { ids, titles };
+  return { ids, titles, blocked };
 }
 
 /* ------------------------------- VALIDATE ------------------------------- */
@@ -253,6 +298,9 @@ export interface OrchestrateInput {
   executionId: string;
   spec: AiTaskSpec;
   apiKey: string;
+  /** WEE-2: dòng ai_workers thô (từ get_ai_task_brief) để phân giải policy runtime. */
+  workerRow?: Record<string, unknown> | null;
+  projectId?: string | null;
 }
 
 /**
@@ -314,7 +362,18 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     },
   });
 
-  // 4. ACTION — chỉ đề xuất, không bao giờ tự thực thi ---------------------
+  // 4. ACTION — chỉ đề xuất, luôn qua cổng governance WEE-2 ----------------
+  
+  const workerPolicy = toWorkerRuntimePolicy(i.workerRow ?? null);
+  const executionScope: GovernanceExecutionScope = {
+    executionId,
+    tenantId: i.tenantId,
+    workspaceId: spec.workspaceId,
+    rootTaskId: spec.taskId,
+    projectId: i.projectId ?? null,
+    initiatingUserId: userId,
+    workerId: workerPolicy?.workerId ?? "",
+  };
   const proposals = await proposeFollowUpActions(
     supabase,
     userId,
@@ -323,10 +382,16 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     spec,
     plan,
     run.sourceRefs,
+    { worker: workerPolicy, execution: executionScope },
   );
   if (proposals.ids.length === 0) {
     await recordStep(supabase, executionId, "ACTION", "SKIPPED", {
-      detail: "Không có hành động ghi dữ liệu nào cần đề xuất.",
+      detail: proposals.blocked.length
+        ? `Chính sách chặn ${proposals.blocked.length} hành động: ${proposals.blocked
+            .map((b) => `${b.title} — ${b.reason}`)
+            .join(" · ")}`.slice(0, 2000)
+        : "Không có hành động ghi dữ liệu nào cần đề xuất.",
+      output: proposals.blocked.length ? { blocked: proposals.blocked as never } : undefined,
     });
   } else {
     // Pipeline DỪNG tại đây: các bước sau chỉ chạy khi người dùng đã xử lý đề xuất

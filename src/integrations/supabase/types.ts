@@ -56,13 +56,16 @@ export type Database = {
       ai_action_proposals: {
         Row: {
           action_type: string
+          ai_worker_id: string | null
           confirmed_at: string | null
           created_at: string
           description: string | null
           error_code: string | null
           executed_at: string | null
+          execution_id: string | null
           expected_row_version: number | null
           expires_at: string
+          governance: Json
           id: string
           idempotency_key: string
           payload: Json
@@ -81,13 +84,16 @@ export type Database = {
         }
         Insert: {
           action_type: string
+          ai_worker_id?: string | null
           confirmed_at?: string | null
           created_at?: string
           description?: string | null
           error_code?: string | null
           executed_at?: string | null
+          execution_id?: string | null
           expected_row_version?: number | null
           expires_at?: string
+          governance?: Json
           id?: string
           idempotency_key?: string
           payload?: Json
@@ -106,13 +112,16 @@ export type Database = {
         }
         Update: {
           action_type?: string
+          ai_worker_id?: string | null
           confirmed_at?: string | null
           created_at?: string
           description?: string | null
           error_code?: string | null
           executed_at?: string | null
+          execution_id?: string | null
           expected_row_version?: number | null
           expires_at?: string
+          governance?: Json
           id?: string
           idempotency_key?: string
           payload?: Json
@@ -129,7 +138,22 @@ export type Database = {
           user_id?: string
           workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_action_proposals_ai_worker_id_fkey"
+            columns: ["ai_worker_id"]
+            isOneToOne: false
+            referencedRelation: "ai_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_action_proposals_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_task_executions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_agent_performance: {
         Row: {
@@ -1203,6 +1227,7 @@ export type Database = {
       ai_workers: {
         Row: {
           allowed_tools: string[]
+          autonomy_policy: Json
           code: string
           created_at: string
           id: string
@@ -1210,6 +1235,9 @@ export type Database = {
           permission_scope: string
           provider_config_ref: string
           role: string
+          scope_object_types: string[]
+          scope_project_ids: string[] | null
+          scope_workspace_ids: string[] | null
           skills: string[]
           status: string
           tenant_id: string
@@ -1217,6 +1245,7 @@ export type Database = {
         }
         Insert: {
           allowed_tools?: string[]
+          autonomy_policy?: Json
           code: string
           created_at?: string
           id?: string
@@ -1224,6 +1253,9 @@ export type Database = {
           permission_scope?: string
           provider_config_ref?: string
           role: string
+          scope_object_types?: string[]
+          scope_project_ids?: string[] | null
+          scope_workspace_ids?: string[] | null
           skills?: string[]
           status?: string
           tenant_id: string
@@ -1231,6 +1263,7 @@ export type Database = {
         }
         Update: {
           allowed_tools?: string[]
+          autonomy_policy?: Json
           code?: string
           created_at?: string
           id?: string
@@ -1238,6 +1271,9 @@ export type Database = {
           permission_scope?: string
           provider_config_ref?: string
           role?: string
+          scope_object_types?: string[]
+          scope_project_ids?: string[] | null
+          scope_workspace_ids?: string[] | null
           skills?: string[]
           status?: string
           tenant_id?: string
@@ -7156,6 +7192,7 @@ export type Database = {
         Args: { _tenant_id: string }
         Returns: {
           allowed_tools: string[]
+          autonomy_policy: Json
           code: string
           created_at: string
           id: string
@@ -7163,6 +7200,9 @@ export type Database = {
           permission_scope: string
           provider_config_ref: string
           role: string
+          scope_object_types: string[]
+          scope_project_ids: string[] | null
+          scope_workspace_ids: string[] | null
           skills: string[]
           status: string
           tenant_id: string

@@ -300,6 +300,56 @@ export const confirmAiAction = createServerFn({ method: "POST" })
       }
     }
 
+    // WEE-2: đề xuất do nhân sự AI sinh ra phải qua lại cổng governance ở thời
+    // điểm xác nhận — quyền/chính sách có thể đã đổi kể từ lúc đề xuất.
+    if (row.ai_worker_id) {
+      const { loadWorkerRuntimePolicy, checkAiWorkerAction, logGovernanceDecision, objectTypeForTool } = await import(
+        "./ai-governance.server"
+      );
+      const worker = await loadWorkerRuntimePolicy(sb, row.ai_worker_id as string);
+      const verdict = await checkAiWorkerAction({
+        supabase: sb,
+        worker,
+        userId: context.userId,
+        execution: {
+          executionId: (row.execution_id as string | null) ?? String(row.id),
+          tenantId: row.tenant_id as string,
+          workspaceId: scope.workspaceId,
+          rootTaskId: (row.target_id as string | null) ?? String(row.id),
+          projectId: null,
+          initiatingUserId: context.userId,
+          workerId: (row.ai_worker_id as string) ?? "",
+        },
+        request: {
+          actionType: row.action_type as string,
+          target: {
+            tenantId: row.tenant_id as string,
+            workspaceId: scope.workspaceId,
+            projectId: null,
+            objectType: objectTypeForTool(row.action_type as AiActionType),
+          },
+          payload,
+        },
+      });
+      await logGovernanceDecision({
+        tenantId: row.tenant_id as string,
+        actorId: context.userId,
+        executionId: (row.execution_id as string | null) ?? String(row.id),
+        taskId: (row.target_id as string | null) ?? String(row.id),
+        actionType: row.action_type as string,
+        evaluation: verdict,
+        phase: "CONFIRMATION",
+        proposalId: row.id as string,
+      });
+      if (verdict.decision === "DENY") {
+        await sb
+          .from("ai_action_proposals")
+          .update({ status: "FAILED", error_code: "ACTION_FORBIDDEN", governance: verdict as never })
+          .eq("id", row.id);
+        throw fail("ACTION_FORBIDDEN", verdict.safeReason);
+      }
+    }
+
     // Khoá trạng thái: chỉ một lượt xác nhận thắng (chống double-click §46).
     const { data: locked } = await sb
       .from("ai_action_proposals")
