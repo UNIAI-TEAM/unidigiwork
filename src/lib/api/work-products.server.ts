@@ -53,6 +53,15 @@ const CONTRACT_COLUMNS =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const obj = (v: unknown): Record<string, any> => (v && typeof v === "object" ? (v as Record<string, never>) : {});
 const arr = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
+// FAIL-CLOSED: dữ liệu DB dị dạng (chuỗi/mảng/đối tượng sai kiểu) không được lọt ra response.
+const numOrNull = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const numOr = (v: unknown, fallback: number): number => numOrNull(v) ?? fallback;
+const REVIEW_POLICIES = ["HUMAN_REVIEW_REQUIRED", "HUMAN_REVIEW_REQUIRED_IF_WARNING"] as const;
+const reviewPolicy = (v: unknown): WorkProductContract["review"]["policy"] =>
+  (REVIEW_POLICIES as readonly string[]).includes(String(v))
+    ? (v as WorkProductContract["review"]["policy"])
+    : "HUMAN_REVIEW_REQUIRED";
+const strOrNull = (v: unknown): string | null => (typeof v === "string" ? v : null);
 
 export function toWorkProductContract(row: Record<string, unknown>): WorkProductContract {
   const input = obj(row["input_contract"]);
@@ -68,39 +77,39 @@ export function toWorkProductContract(row: Record<string, unknown>): WorkProduct
     code: String(row["code"]),
     version: Number(row["version"] ?? 1),
     label: String(row["label"] ?? row["code"]),
-    description: (row["description"] as string | null) ?? null,
+    description: strOrNull(row["description"]),
     objective: String(row["objective"] ?? ""),
     category: String(row["category"] ?? "WORK_INTELLIGENCE"),
     status: String(row["status"] ?? "DRAFT") as WorkProductContract["status"],
-    templateCode: (row["template_code"] as string | null) ?? null,
+    templateCode: strOrNull(row["template_code"]),
     deliverableType: String(row["deliverable_type"] ?? "SUMMARY"),
     // FAIL-CLOSED: không bịa kết quả nghiệm thu khi DB thiếu — preflight sẽ chặn.
     outcomeType: String(row["expected_outcome_type"] ?? ""),
 
-    slaMachineMs: (row["sla_machine_ms"] as number | null) ?? null,
-    contractHash: (row["contract_hash"] as string | null) ?? null,
+    slaMachineMs: numOrNull(row["sla_machine_ms"]),
+    contractHash: strOrNull(row["contract_hash"]),
     input: { required: arr(input["required"]), properties: obj(input["properties"]) },
     context: {
       allowedEntityTypes: arr(ctx["allowedEntityTypes"]),
       optionalEntityTypes: arr(ctx["optionalEntityTypes"]),
-      maxSources: (ctx["maxSources"] as number | null) ?? null,
+      maxSources: numOrNull(ctx["maxSources"]),
     },
     executor: {
-      requiredRole: (exec["requiredRole"] as string | null) ?? null,
+      requiredRole: strOrNull(exec["requiredRole"]),
       requiredSkills: arr(exec["requiredSkills"]),
-      pinnedWorkerId: (exec["pinnedWorkerId"] as string | null) ?? null,
+      pinnedWorkerId: strOrNull(exec["pinnedWorkerId"]),
     },
     action: { allowedActions: arr(act["allowedActions"]), maxAutonomy: String(act["maxAutonomy"] ?? "PROPOSE_ONLY") },
     deliverable: { type: del["type"] as string | undefined, requiredSections: arr(del["requiredSections"]) },
     acceptance: { mandatoryCriteria: arr(acc["mandatoryCriteria"]) },
     quality: {
-      minimumQualityScore: Number(q["minimumQualityScore"] ?? 0),
+      minimumQualityScore: numOr(q["minimumQualityScore"], 0),
       requiredDimensions: arr(q["requiredDimensions"]),
     },
-    review: { policy: (rev["policy"] as WorkProductContract["review"]["policy"]) ?? "HUMAN_REVIEW_REQUIRED" },
+    review: { policy: reviewPolicy(rev["policy"]) },
     sla: {
-      machineDurationMs: (sla["machineDurationMs"] as number | null) ?? (row["sla_machine_ms"] as number | null) ?? null,
-      wallDurationMs: (sla["wallDurationMs"] as number | null) ?? null,
+      machineDurationMs: numOrNull(sla["machineDurationMs"]) ?? numOrNull(row["sla_machine_ms"]),
+      wallDurationMs: numOrNull(sla["wallDurationMs"]),
     },
   };
 }
