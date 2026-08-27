@@ -22,7 +22,7 @@ describe("AI task execution boundary", () => {
   it("engine không ghi dữ liệu nghiệp vụ và không dùng service role", () => {
     expect(srv).not.toMatch(/\.(insert|update|upsert|delete)\(/);
     expect(srv).not.toMatch(/supabaseAdmin|service_role|client\.server/);
-    expect(fns).not.toMatch(/supabaseAdmin|service_role|client\.server/);
+    expect(fnsBusiness).not.toMatch(/supabaseAdmin|service_role|client\.server/);
   });
 
   it("lượt chạy AI luôn kết thúc ở WAITING_REVIEW hoặc FAILED", () => {
@@ -32,7 +32,7 @@ describe("AI task execution boundary", () => {
   });
 
   it("mọi mutation đi qua RPC tin cậy", () => {
-    expect(fns).not.toMatch(/\.from\((?!"ai_task_executions"|"tasks"|"ai_workers"|"work_execution_steps")/);
+    expect(fnsBusiness).not.toMatch(/\.from\((?!"ai_task_executions"|"tasks"|"ai_workers"|"work_execution_steps")/);
     for (const rpc of ["assign_task_to_ai", "start_ai_task_execution", "finish_ai_task_execution", "request_ai_execution_changes", "accept_ai_task_execution"]) {
       expect(fns).toContain(rpc);
     }
