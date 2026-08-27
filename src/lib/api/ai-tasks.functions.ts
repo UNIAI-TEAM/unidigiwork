@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 import { templateByCode, type AiTaskExecutionRow, type AiWorkerRow } from "@/domain/ai-tasks/contracts";
+import type { WorkExecutionStepRow } from "@/domain/work-execution/contracts";
 import { mapPgError } from "./business.server";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
