@@ -286,6 +286,8 @@ export const runAiTask = createServerFn({ method: "POST" })
           template,
           changeRequest: exec.change_request,
         },
+        workerRow: w as unknown as Record<string, unknown>,
+        projectId: (t["project_id"] as string | null) ?? null,
       });
 
       // 3. Kết thúc lượt chạy: LUÔN dừng ở WAITING_REVIEW — AI không thể tự nghiệm thu.
