@@ -54,7 +54,12 @@ const rec = (id, name, status, detail) => {
 const fnId = (file, exportName) =>
   Buffer.from(JSON.stringify({ file: `/src/lib/api/${file}?tss-serverfn-split`, export: `${exportName}_createServerFn_handler` })).toString("base64url");
 
-async function call(file, exportName, data, { method = "POST", token = TOKEN_MAIN, tenant = TENANT } = {}) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Lỗi hạ tầng (dev-server đang biên dịch lại) KHÔNG được tính là "bị chặn":
+// nếu không phân biệt, một 500 hạ tầng sẽ làm test âm tính giả xanh.
+const isInfra = (b) => typeof b === "string" && (b.includes("<!doctype") || b.includes("Invalid server function ID"));
+
+async function callOnce(file, exportName, data, { method = "POST", token = TOKEN_MAIN, tenant = TENANT } = {}) {
   const encoded = JSON.stringify(await toJSONAsync({ data }));
   const qs = method === "GET" ? `?payload=${encodeURIComponent(encoded)}` : "";
   const r = await fetch(`${BASE}/_serverFn/${fnId(file, exportName)}${qs}`, {
@@ -73,12 +78,34 @@ async function call(file, exportName, data, { method = "POST", token = TOKEN_MAI
   return { status: r.status, body };
 }
 
+async function call(file, exportName, data, opts) {
+  let last;
+  for (let i = 0; i < 5; i += 1) {
+    last = await callOnce(file, exportName, data, opts);
+    if (!isInfra(last.body)) return last;
+    await sleep(800); // module đang được biên dịch lần đầu — thử lại
+  }
+  return { ...last, infra: true };
+}
+
 const unwrap = (b) => (b && typeof b === "object" && "result" in b ? (b.result ?? b.error) : b);
-const denied = (r) => r.status !== 200 || Boolean(r.body && typeof r.body === "object" && r.body.error);
-const errMsg = (r) => JSON.stringify(r.body?.error ?? r.body)?.slice(0, 200);
+const denied = (r) =>
+  !r.infra && !isInfra(r.body) &&
+  (r.status !== 200 || Boolean(r.body && typeof r.body === "object" && (r.body.error || r.body.message)));
+const errMsg = (r) => JSON.stringify(r.body?.error ?? r.body?.message ?? r.body)?.slice(0, 200);
 const codes = (pf) => (pf?.issues ?? []).map((i) => i.code).join(",");
 
 const admin = createClient(URL_, SVC, { auth: { persistSession: false } });
+
+// ---------- Warmup: buộc dev-server biên dịch các module server-fn trước khi đo ----------
+for (const [f, e, m] of [
+  ["work-products.functions.ts", "listWorkProducts", "GET"],
+  ["ai-tasks.functions.ts", "listAiWorkers", "POST"],
+]) {
+  const w = await call(f, e, m === "GET" ? undefined : { tenantId: TENANT }, { method: m });
+  rec("WPT-WARM", `warmup ${e}`, w.infra ? "FAIL" : "PASS", w.status);
+}
+
 
 // ---------- 0. Ảnh chụp hợp đồng trước khi tamper ----------
 const before = (await admin.from("work_units").select("code, version, status, contract_hash").order("code")).data ?? [];
