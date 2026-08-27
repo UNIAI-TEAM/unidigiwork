@@ -170,13 +170,20 @@ export async function logGovernanceDecision(input: {
   proposalId?: string | null;
 }): Promise<void> {
   try {
-    const { logAiTaskAudit } = await import("./ai-tasks-audit.server");
-    await logAiTaskAudit({
-      tenantId: input.tenantId,
-      actorId: input.actorId,
-      eventType: "ai_worker.policy_evaluated",
-      taskId: input.taskId,
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("audit_events").insert({
+      tenant_id: input.tenantId,
+      actor_id: input.actorId,
+      actor_user_id: input.actorId,
+      event_type: "ai_worker.policy_evaluated",
+      action: "ai_worker.policy_evaluated",
+      aggregate_type: "task",
+      aggregate_id: input.taskId,
+      resource_type: "ai_worker_policy",
+      resource_id: input.evaluation.policy.workerId ?? input.taskId,
+      source: "app",
       payload: {
+        task_id: input.taskId,
         phase: input.phase,
         execution_id: input.executionId,
         proposal_id: input.proposalId ?? null,
