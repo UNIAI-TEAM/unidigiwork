@@ -1,7 +1,6 @@
 // AI TASK EXECUTION V1 — endpoint tin cậy cho vòng đời: giao việc → AI chạy → chờ duyệt → nghiệm thu.
 // Mọi mutation đi qua RPC SECURITY DEFINER; AI không bao giờ tự nghiệm thu.
 import { createServerFn } from "@tanstack/react-start";
-import { getCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
@@ -20,7 +19,6 @@ import {
 } from "@/domain/work-execution/timeline-export";
 import { mapPgError } from "./business.server";
 
-const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
 
 const one = <T,>(v: unknown): T => (Array.isArray(v) ? (v[0] as T) : (v as T));
 
@@ -272,7 +270,7 @@ export const runAiTask = createServerFn({ method: "POST" })
         supabase: context.supabase as never,
         userId: context.userId,
         tenantId: String(t["tenant_id"] ?? ""),
-        tenantHint: getCookie(ACTIVE_TENANT_COOKIE) ?? null,
+        tenantHint: (await import("./active-tenant.server")).readActiveTenantCookie(),
         executionId: exec.id,
         apiKey,
         spec: {
