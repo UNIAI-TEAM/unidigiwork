@@ -54,6 +54,17 @@ export interface OrchestratedRun extends AiTaskRunResult {
 
 /* ------------------------------ Step writer ------------------------------ */
 
+/**
+ * Sổ ghi các lần ghi bước THẤT BẠI trong tiến trình hiện tại.
+ * HARDEN-SELLWORK-1: quan sát không chặn công việc, nhưng cũng KHÔNG được biến mất
+ * âm thầm — mọi thất bại được log có cấu trúc và đánh dấu bằng chứng PARTIAL.
+ */
+const stepWriteFailures = new Map<string, number>();
+
+export function stepTelemetryGap(executionId: string): number {
+  return stepWriteFailures.get(executionId) ?? 0;
+}
+
 /** Ghi một bước qua RPC tin cậy. Lỗi ghi bước KHÔNG được làm hỏng lượt chạy. */
 async function recordStep(
   supabase: Supa,
@@ -62,22 +73,44 @@ async function recordStep(
   status: WorkStepStatus,
   input: { detail?: string | null; output?: Record<string, unknown>; errorCode?: string | null } = {},
 ): Promise<void> {
+  const markFailure = (reason: string) => {
+    stepWriteFailures.set(executionId, (stepWriteFailures.get(executionId) ?? 0) + 1);
+    console.error("[work-execution] ghi bước thất bại", { executionId, kind, status, reason });
+  };
+  try {
+    const res = (await (
+      supabase as never as { rpc: (n: string, a: unknown) => Promise<{ error?: unknown } | unknown> }
+    ).rpc("record_work_execution_step", {
+      _execution_id: executionId,
+      _seq: seqOf(kind),
+      _kind: kind,
+      _status: status,
+      _title: WORK_STEP_LABEL[kind],
+      _detail: input.detail ?? null,
+      _output: input.output ?? {},
+      _error_code: input.errorCode ?? null,
+    })) as { error?: unknown } | null;
+    if (res && typeof res === "object" && "error" in res && res.error) markFailure("RPC_ERROR");
+  } catch {
+    markFailure("EXCEPTION");
+  }
+}
+
+/**
+ * Đối soát nhật ký bước sau khi pipeline kết thúc: nếu có lần ghi hụt, gọi RPC sửa
+ * chữa để đánh dấu bằng chứng PARTIAL. Không bịa ra bước không chứng minh được.
+ */
+async function reconcileSteps(supabase: Supa, executionId: string): Promise<void> {
+  if (!stepWriteFailures.get(executionId)) return;
   try {
     await (supabase as never as { rpc: (n: string, a: unknown) => Promise<unknown> }).rpc(
-      "record_work_execution_step",
-      {
-        _execution_id: executionId,
-        _seq: seqOf(kind),
-        _kind: kind,
-        _status: status,
-        _title: WORK_STEP_LABEL[kind],
-        _detail: input.detail ?? null,
-        _output: input.output ?? {},
-        _error_code: input.errorCode ?? null,
-      },
+      "reconcile_work_execution_steps",
+      { _execution_id: executionId },
     );
   } catch {
-    // quan sát không được phép chặn thực thi
+    console.error("[work-execution] đối soát nhật ký bước thất bại", { executionId });
+  } finally {
+    stepWriteFailures.delete(executionId);
   }
 }
 
