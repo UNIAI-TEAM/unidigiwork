@@ -363,7 +363,7 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
   });
 
   // 4. ACTION — chỉ đề xuất, luôn qua cổng governance WEE-2 ----------------
-  const { toWorkerRuntimePolicy } = await import("./ai-governance.server");
+  
   const workerPolicy = toWorkerRuntimePolicy(i.workerRow ?? null);
   const executionScope: GovernanceExecutionScope = {
     executionId,
