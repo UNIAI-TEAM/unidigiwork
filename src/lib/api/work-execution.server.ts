@@ -463,6 +463,22 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     startedAt: null,
   });
 
+  // HARDEN-SELLWORK-1 — telemetry lượt gọi model chấm chất lượng (có thể khác model sinh).
+  {
+    const ev = quality?.assessment.evaluator ?? null;
+    if (ev && ev.evaluatorModel && ev.modelCalls > 0) {
+      const { recordAiUsageEvent } = await import("./ai-usage.server");
+      await recordAiUsageEvent(supabase, {
+        executionId,
+        purpose: "EVALUATOR",
+        model: ev.evaluatorModel,
+        inputTokens: ev.inputTokens,
+        outputTokens: ev.outputTokens,
+      });
+    }
+  }
+  await reconcileSteps(supabase, executionId);
+
   return {
     ...run,
     plan,
