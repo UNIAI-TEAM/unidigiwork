@@ -291,9 +291,27 @@ export const runAiTask = createServerFn({ method: "POST" })
     if (startRes.error) mapPgError(startRes.error, "AI_EXECUTION_NOT_FOUND");
     const exec = one<AiTaskExecutionRow>(startRes.data);
 
-    // Gắn bản chụp hợp đồng bất biến vào lượt chạy (chỉ ghi một lần).
+    // HARDEN-SELLWORK-1 — Gắn bản chụp hợp đồng bất biến TRƯỚC mọi lời gọi AI.
+    // Sản phẩm công việc chuẩn hoá KHÔNG được chạy khi bản chụp chưa gắn được:
+    // không GENERATE, không đề xuất hành động, không lượt chạy "giả hợp đồng".
+    // Công việc AI cũ (không có hợp đồng) giữ nguyên đường chạy tương thích.
     if (contract) {
-      await bindWorkProductExecution(context.supabase as never, exec.id, contract, preflightInputs);
+      try {
+        await bindWorkProductExecution(context.supabase as never, exec.id, contract, preflightInputs);
+      } catch (e) {
+        const code = e instanceof Error && e.message === "WORK_PRODUCT_CONTRACT_MISMATCH"
+          ? "WORK_PRODUCT_CONTRACT_MISMATCH"
+          : "WORK_PRODUCT_BIND_FAILED";
+        await context.supabase.rpc("finish_ai_task_execution" as never, {
+          _execution_id: exec.id,
+          _status: "FAILED",
+          _error_code: code,
+        } as never);
+        throw new ApiError({
+          code,
+          message: "Không gắn được bản chụp hợp đồng sản phẩm công việc — lượt chạy đã dừng an toàn.",
+        });
+      }
     }
 
     // 2. Chạy pipeline WEE-1 (chỉ đọc, qua AI Context Engine với RLS của chính người dùng).
