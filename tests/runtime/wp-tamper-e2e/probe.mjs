@@ -66,7 +66,7 @@ async function callOnce(file, exportName, data, { method = "POST", token = TOKEN
     method,
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${token}`,
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
       "x-tsr-serverFn": "true",
       cookie: tenant ? `uniwork_active_tenant=${tenant}` : "",
     },
@@ -338,6 +338,86 @@ if (FOREIGN_TOKEN) {
     const crossWs = unwrap((await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: { project_id: FOREIGN_WS } })).body);
     rec("WPT-36", "foreign workspace id as input rejected", crossWs?.ready === false ? "PASS" : "FAIL", { ready: crossWs?.ready, issues: codes(crossWs) });
   }
+}
+
+
+// ---------- 10c. JWT hết hạn / chữ ký sai / thiếu quyền → fail-closed, không mồi dữ liệu ----------
+const b64u = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+const reclaim = (token, patch) => {
+  const [h, p] = token.split(".");
+  const payload = JSON.parse(Buffer.from(p, "base64url").toString("utf8"));
+  return `${h}.${b64u({ ...payload, ...patch })}.${"x".repeat(43)}`;
+};
+const noPrime = (r) => {
+  const flat = JSON.stringify(r.body ?? "");
+  return !flat.includes("contractHash") && !flat.includes(CODE) && !flat.includes("qualityContract");
+};
+
+const expired = reclaim(TOKEN_MAIN, { exp: Math.floor(Date.now() / 1000) - 3600 });
+const expPre = await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: {} }, { token: expired });
+rec("WPT-37", "expired JWT blocked on preflight", denied(expPre) && noPrime(expPre) ? "PASS" : "FAIL", `${expPre.status} ${errMsg(expPre)}`);
+
+const expGet = await call("work-products.functions.ts", "getWorkProduct", { code: CODE }, { method: "GET", token: expired });
+rec("WPT-38", "expired JWT cannot read contract", denied(expGet) && noPrime(expGet) ? "PASS" : "FAIL", `${expGet.status} ${errMsg(expGet)}`);
+
+const expRoll = await call("work-products.functions.ts", "getWorkProductRollup", { tenantId: TENANT }, { method: "GET", token: expired });
+rec("WPT-39", "expired JWT cannot read rollup", noLeak(expRoll) ? "PASS" : "FAIL", `${expRoll.status} ${errMsg(expRoll)}`);
+
+const expRun = await call("ai-tasks.functions.ts", "runAiTask", { taskId: TASK, templateCode: "SUMMARY_REPORT" }, { token: expired });
+rec("WPT-40", "expired JWT cannot start AI run", denied(expRun) ? "PASS" : "FAIL", `${expRun.status} ${errMsg(expRun)}`);
+
+const roleEscalated = reclaim(TOKEN_MAIN, { role: "service_role" });
+const escRoll = await call("work-products.functions.ts", "getWorkProductRollup", { tenantId: TENANT }, { method: "GET", token: roleEscalated });
+rec("WPT-41", "forged service_role claim rejected", noLeak(escRoll) ? "PASS" : "FAIL", `${escRoll.status} ${errMsg(escRoll)}`);
+
+if (FOREIGN_TOKEN) {
+  const impersonated = reclaim(FOREIGN_TOKEN, { sub: JSON.parse(Buffer.from(TOKEN_MAIN.split(".")[1], "base64url").toString("utf8")).sub });
+  const impPre = await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: {} }, { token: impersonated });
+  rec("WPT-42", "forged sub (impersonation) rejected", denied(impPre) && noPrime(impPre) ? "PASS" : "FAIL", `${impPre.status} ${errMsg(impPre)}`);
+}
+
+const anonBearer = await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: {} }, { token: ANON });
+rec("WPT-43", "anon/publishable key as bearer rejected", denied(anonBearer) && noPrime(anonBearer) ? "PASS" : "FAIL", `${anonBearer.status} ${errMsg(anonBearer)}`);
+
+const noHeader = await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: {} }, { token: null });
+rec("WPT-44", "missing Authorization header rejected", denied(noHeader) && noPrime(noHeader) ? "PASS" : "FAIL", `${noHeader.status} ${errMsg(noHeader)}`);
+
+// Token của tài khoản đã bị xoá: chữ ký còn hợp lệ nhưng danh tính không còn ⇒ không được rò rỉ gì
+const dEmail = `wpt_deleted_${run}@example.com`;
+const dPass = `Wpt!${run}Dd`;
+const { data: du } = await admin.auth.admin.createUser({ email: dEmail, password: dPass, email_confirm: true });
+const anonD = createClient(URL_, ANON, { auth: { persistSession: false } });
+const { data: ds } = await anonD.auth.signInWithPassword({ email: dEmail, password: dPass });
+const dToken = ds?.session?.access_token;
+if (dToken && du?.user?.id) {
+  await admin.auth.admin.deleteUser(du.user.id);
+  const delPre = await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: {} }, { token: dToken, tenant: TENANT });
+  const delPreBody = unwrap(delPre.body);
+  rec("WPT-45", "deleted-user token cannot preflight our task",
+    denied(delPre) || delPreBody?.ready === false ? "PASS" : "FAIL", `${delPre.status} ${errMsg(delPre)}`);
+  const delRoll = await call("work-products.functions.ts", "getWorkProductRollup", { tenantId: TENANT }, { method: "GET", token: dToken, tenant: TENANT });
+  rec("WPT-46", "deleted-user token cannot read rollup", noLeak(delRoll) ? "PASS" : "FAIL", `${delRoll.status} ${errMsg(delRoll)}`);
+}
+
+// Thiếu quyền: thành viên hợp lệ của tổ chức nhưng không có vai trò quản lý / không ở workspace
+const mEmail = `wpt_member_${run}@example.com`;
+const mPass = `Wpt!${run}Mm`;
+const { data: mu } = await admin.auth.admin.createUser({ email: mEmail, password: mPass, email_confirm: true });
+const anonM = createClient(URL_, ANON, { auth: { persistSession: false } });
+const { data: ms } = await anonM.auth.signInWithPassword({ email: mEmail, password: mPass });
+const mToken = ms?.session?.access_token;
+if (mToken && mu?.user?.id) {
+  await admin.from("tenant_members").insert({ tenant_id: TENANT, user_id: mu.user.id, role: "member", status: "active" });
+  const acc = unwrap((await call("ai-tasks.functions.ts", "getAiTaskAccess", { taskId: TASK }, { method: "GET", token: mToken, tenant: TENANT })).body);
+  rec("WPT-47", "tenant member without manager role cannot manage task",
+    acc && acc.canManage === false && acc.canReview === false ? "PASS" : "FAIL", acc);
+  const mRun = await call("ai-tasks.functions.ts", "runAiTask", { taskId: TASK, templateCode: "SUMMARY_REPORT" }, { token: mToken, tenant: TENANT });
+  rec("WPT-48", "tenant member without permission cannot start AI run", denied(mRun) ? "PASS" : "FAIL", `${mRun.status} ${errMsg(mRun)}`);
+  const mExecBefore = execAfterAll;
+  const mExecAfter = (await admin.from("ai_task_executions").select("id", { count: "exact", head: true }).eq("task_id", TASK)).count ?? 0;
+  rec("WPT-49", "no execution created by under-privileged caller", mExecAfter <= mExecBefore ? "PASS" : "FAIL", `before=${mExecBefore} after=${mExecAfter}`);
+  await admin.from("tenant_members").delete().eq("tenant_id", TENANT).eq("user_id", mu.user.id);
+  await admin.auth.admin.deleteUser(mu.user.id);
 }
 
 // ---------- 11. Hợp đồng phải bất biến sau toàn bộ tamper ----------
