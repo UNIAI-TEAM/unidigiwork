@@ -232,13 +232,13 @@ export const runAiTask = createServerFn({ method: "POST" })
       .safeParse(i);
     if (!parsed.success) {
       // Trả đúng hợp đồng lỗi ổn định thay vì ZodError thô (client chỉ đọc `code`).
+      // Qua ranh giới RPC chỉ `message` sống sót, nên mã ổn định phải nằm ở đầu
+      // message (đúng quy ước hiện hành: client so khớp bằng `code`, không parse văn bản).
+      const fields = parsed.error.issues.map((iss) => iss.path.join(".")).filter(Boolean);
       throw new ApiError({
         code: "VALIDATION_FAILED",
-        message: "Yêu cầu chạy AI không hợp lệ.",
-        details: {
-          fields: parsed.error.issues.map((iss) => iss.path.join(".")),
-          allowedTemplateCodes: DELIVERABLE_TEMPLATES.map((t) => t.code),
-        },
+        message: `VALIDATION_FAILED: ${fields.join(",") || "input"} | allowed=${DELIVERABLE_TEMPLATES.map((t) => t.code).join(",")}`,
+        details: { fields, allowedTemplateCodes: DELIVERABLE_TEMPLATES.map((t) => t.code) },
       });
     }
     return parsed.data;

@@ -174,21 +174,24 @@ rec("WPT-12", "unknown template fail-closed", denied(badTemplate) ? "PASS" : "FA
 rec("WPT-13", "no execution row created on tamper", execAfter <= execBefore ? "PASS" : "FAIL", `before=${execBefore} after=${execAfter}`);
 
 // ---------- 7b. Hợp đồng lỗi của validator: mã ổn định + không rò rỉ nội bộ ----------
+// Qua ranh giới RPC, hợp đồng lỗi hiển thị dưới dạng message có tiền tố mã ổn định.
+const errText = (r) => {
+  const flat = JSON.stringify(r.body ?? "");
+  const m = /"s":"([^"]*)"/.exec(flat.replace(/\\"/g, "'"));
+  return m ? m[1] : flat;
+};
 const errOf = (r) => {
-  const b = r.body;
-  const raw = (b && typeof b === "object" && (b.error ?? b)) || {};
-  return typeof raw === "object" ? raw : {};
+  const txt = errText(r);
+  const code = /^([A-Z_]+)(:|$)/.exec(txt)?.[1] ?? null;
+  return { code, message: txt, raw: JSON.stringify(r.body ?? "") };
 };
 const badErr = errOf(badTemplate);
-const badRaw = JSON.stringify(badTemplate.body ?? "");
+const badRaw = badErr.raw;
 rec("WPT-12A", "validator returns stable error code VALIDATION_FAILED",
   badErr.code === "VALIDATION_FAILED" ? "PASS" : "FAIL", { code: badErr.code, message: badErr.message });
-rec("WPT-12B", "error body carries human message + allowed template codes",
-  typeof badErr.message === "string" && badErr.message.length > 0 &&
-  Array.isArray(badErr.details?.allowedTemplateCodes) &&
-  badErr.details.allowedTemplateCodes.includes("SUMMARY_REPORT") &&
-  (badErr.details?.fields ?? []).includes("templateCode") ? "PASS" : "FAIL",
-  JSON.stringify(badErr.details)?.slice(0, 240));
+rec("WPT-12B", "error body names offending field + allowed template codes",
+  badErr.message.includes("templateCode") && badErr.message.includes("allowed=") &&
+  badErr.message.includes("SUMMARY_REPORT") ? "PASS" : "FAIL", badErr.message.slice(0, 240));
 rec("WPT-12C", "error body leaks no stack/internals",
   !/(ZodError|Seroval|node_modules|\bat \/|\.ts:\d+)/.test(badRaw) ? "PASS" : "FAIL", badRaw.slice(0, 200));
 
