@@ -4985,6 +4985,173 @@ export type Database = {
           },
         ]
       }
+      work_execution_metrics: {
+        Row: {
+          ai_worker_id: string | null
+          completeness: string
+          computed_at: string
+          context_partial: boolean | null
+          context_source_count: number | null
+          created_at: string
+          evaluator_model: string | null
+          execution_id: string
+          execution_status: string | null
+          generator_model: string | null
+          human_confirmations: number
+          human_review_events: number
+          id: string
+          input_tokens: number | null
+          machine_completed_at: string | null
+          machine_duration_ms: number | null
+          machine_started_at: string | null
+          metrics_version: string
+          missing_signals: string[]
+          model_calls: number
+          outcome_accepted: boolean | null
+          outcome_type: string | null
+          outcome_verified: boolean | null
+          output_tokens: number | null
+          proposals_executed: number
+          proposals_rejected: number
+          proposals_total: number
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string | null
+          queue_wait_ms: number | null
+          revision: number
+          revision_count: number
+          sla_machine_ms: number | null
+          sla_met: boolean | null
+          step_awaiting_confirmation: number
+          step_failed: number
+          step_total: number
+          task_id: string
+          tenant_id: string
+          token_source: string
+          total_tokens: number | null
+          updated_at: string
+          wall_completed_at: string | null
+          wall_duration_ms: number | null
+          wall_started_at: string | null
+          work_unit_code: string
+          work_unit_resolved: boolean
+          work_unit_version: number
+          workspace_id: string | null
+        }
+        Insert: {
+          ai_worker_id?: string | null
+          completeness?: string
+          computed_at?: string
+          context_partial?: boolean | null
+          context_source_count?: number | null
+          created_at?: string
+          evaluator_model?: string | null
+          execution_id: string
+          execution_status?: string | null
+          generator_model?: string | null
+          human_confirmations?: number
+          human_review_events?: number
+          id?: string
+          input_tokens?: number | null
+          machine_completed_at?: string | null
+          machine_duration_ms?: number | null
+          machine_started_at?: string | null
+          metrics_version?: string
+          missing_signals?: string[]
+          model_calls?: number
+          outcome_accepted?: boolean | null
+          outcome_type?: string | null
+          outcome_verified?: boolean | null
+          output_tokens?: number | null
+          proposals_executed?: number
+          proposals_rejected?: number
+          proposals_total?: number
+          quality_passed?: boolean | null
+          quality_score?: number | null
+          quality_status?: string | null
+          queue_wait_ms?: number | null
+          revision?: number
+          revision_count?: number
+          sla_machine_ms?: number | null
+          sla_met?: boolean | null
+          step_awaiting_confirmation?: number
+          step_failed?: number
+          step_total?: number
+          task_id: string
+          tenant_id: string
+          token_source?: string
+          total_tokens?: number | null
+          updated_at?: string
+          wall_completed_at?: string | null
+          wall_duration_ms?: number | null
+          wall_started_at?: string | null
+          work_unit_code?: string
+          work_unit_resolved?: boolean
+          work_unit_version?: number
+          workspace_id?: string | null
+        }
+        Update: {
+          ai_worker_id?: string | null
+          completeness?: string
+          computed_at?: string
+          context_partial?: boolean | null
+          context_source_count?: number | null
+          created_at?: string
+          evaluator_model?: string | null
+          execution_id?: string
+          execution_status?: string | null
+          generator_model?: string | null
+          human_confirmations?: number
+          human_review_events?: number
+          id?: string
+          input_tokens?: number | null
+          machine_completed_at?: string | null
+          machine_duration_ms?: number | null
+          machine_started_at?: string | null
+          metrics_version?: string
+          missing_signals?: string[]
+          model_calls?: number
+          outcome_accepted?: boolean | null
+          outcome_type?: string | null
+          outcome_verified?: boolean | null
+          output_tokens?: number | null
+          proposals_executed?: number
+          proposals_rejected?: number
+          proposals_total?: number
+          quality_passed?: boolean | null
+          quality_score?: number | null
+          quality_status?: string | null
+          queue_wait_ms?: number | null
+          revision?: number
+          revision_count?: number
+          sla_machine_ms?: number | null
+          sla_met?: boolean | null
+          step_awaiting_confirmation?: number
+          step_failed?: number
+          step_total?: number
+          task_id?: string
+          tenant_id?: string
+          token_source?: string
+          total_tokens?: number | null
+          updated_at?: string
+          wall_completed_at?: string | null
+          wall_duration_ms?: number | null
+          wall_started_at?: string | null
+          work_unit_code?: string
+          work_unit_resolved?: boolean
+          work_unit_version?: number
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_execution_metrics_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: true
+            referencedRelation: "ai_task_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_execution_steps: {
         Row: {
           completed_at: string | null
@@ -5125,6 +5292,42 @@ export type Database = {
           system_creatable?: boolean
           target_type?: string
           user_creatable?: boolean
+        }
+        Relationships: []
+      }
+      work_units: {
+        Row: {
+          code: string
+          created_at: string
+          deliverable_type: string
+          expected_outcome_type: string
+          label: string
+          objective: string
+          sla_machine_ms: number | null
+          template_code: string | null
+          version: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          deliverable_type: string
+          expected_outcome_type: string
+          label: string
+          objective: string
+          sla_machine_ms?: number | null
+          template_code?: string | null
+          version?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          deliverable_type?: string
+          expected_outcome_type?: string
+          label?: string
+          objective?: string
+          sla_machine_ms?: number | null
+          template_code?: string | null
+          version?: number
         }
         Relationships: []
       }
@@ -7828,6 +8031,10 @@ export type Database = {
         Args: { _agent_id: string; _tenant_id: string }
         Returns: undefined
       }
+      recompute_work_execution_metrics: {
+        Args: { _execution_id: string }
+        Returns: Json
+      }
       record_meeting_usage: {
         Args: {
           _correlation_id?: string
@@ -8864,6 +9071,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      work_economics_summary: {
+        Args: {
+          _from?: string
+          _tenant_id: string
+          _to?: string
+          _workspace_id?: string
+        }
+        Returns: Json
       }
       work_graph_backfill: {
         Args: { _batch?: number; _dry_run?: boolean }
