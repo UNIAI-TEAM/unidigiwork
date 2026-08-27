@@ -20,6 +20,7 @@ import {
   requestAiTaskChanges,
   runAiTask,
 } from "@/lib/api/ai-tasks.functions";
+import { WorkExecutionTimeline } from "./work-execution-timeline";
 
 interface TaskLike {
   id: string;
