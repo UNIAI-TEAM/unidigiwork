@@ -183,10 +183,13 @@ export function toWorkProductEconomics(raw: WorkProductEconomicsRaw): WorkProduc
   if (costed < executions) missing.push("COST_NOT_COMPUTED_FOR_ALL_EXECUTIONS");
   if (raw.aiComputeCostTotal === null || raw.aiComputeCostTotal === undefined) missing.push("AI_COMPUTE");
   if (raw.humanCostTotal === null || raw.humanCostTotal === undefined) missing.push("HUMAN_REVIEW");
-  missing.push("PLATFORM", "EXTERNAL_SERVICE");
+  // Nguồn sự thật về độ đầy đủ là database (`work_execution_costs.completeness`).
+  // Chỉ khi CHƯA phải mọi lượt chạy đều FULL mới liệt kê hai thành phần chưa đo được.
+  const allFull = executions > 0 && full === executions;
+  if (!allFull) missing.push("PLATFORM", "EXTERNAL_SERVICE");
 
   let completeness: CostCompleteness = "INSUFFICIENT";
-  if (executions > 0 && full === executions && missing.length === 0) completeness = "FULL";
+  if (allFull && missing.length === 0) completeness = "FULL";
   else if (executions > 0 && costed > 0 && (raw.knownCostTotal ?? 0) > 0) completeness = "PARTIAL";
 
   const knownTotal = costed > 0 ? (raw.knownCostTotal ?? 0) : null;
