@@ -164,6 +164,39 @@ async function proposeFollowUpActions(
 
   for (const item of needing) {
     const title = item.summary.slice(0, 400);
+    const payload = { workspaceId, title, description: null, priority: "normal", dueAt: null, assigneeId: null };
+
+    // WEE-2: mọi đề xuất phải qua cổng governance trước khi được lưu (fail closed).
+    const verdict: GovernanceEvaluation = await checkAiWorkerAction({
+      supabase,
+      worker: governance.worker,
+      userId,
+      execution: governance.execution,
+      request: {
+        actionType: "CREATE_TASK",
+        target: {
+          tenantId,
+          workspaceId,
+          projectId: governance.execution.projectId,
+          objectType: objectTypeForTool("CREATE_TASK"),
+        },
+        payload,
+      },
+    });
+    await logGovernanceDecision({
+      tenantId,
+      actorId: userId,
+      executionId: governance.execution.executionId,
+      taskId: spec.taskId,
+      actionType: "CREATE_TASK",
+      evaluation: verdict,
+      phase: "PROPOSAL",
+    });
+    if (verdict.decision === "DENY") {
+      blocked.push({ title, reason: verdict.safeReason, code: verdict.reasonCode });
+      continue;
+    }
+
     try {
       const { data } = await sb
         .from("ai_action_proposals")
@@ -176,11 +209,14 @@ async function proposeFollowUpActions(
           source: PROPOSAL_SOURCE,
           title: def.label,
           description: `Từ lượt AI thực thi công việc "${spec.title}"`.slice(0, 500),
-          payload: { workspaceId, title, description: null, priority: "normal", dueAt: null, assigneeId: null },
+          payload,
           target_type: "TASK",
           target_id: spec.taskId,
           source_refs: sourceRefs.slice(0, 5),
           status: "PROPOSED",
+          ai_worker_id: governance.worker?.workerId ?? null,
+          execution_id: governance.execution.executionId,
+          governance: verdict as never,
         })
         .select("id")
         .single();
@@ -192,7 +228,7 @@ async function proposeFollowUpActions(
       // một đề xuất lỗi không làm hỏng lượt chạy
     }
   }
-  return { ids, titles };
+  return { ids, titles, blocked };
 }
 
 /* ------------------------------- VALIDATE ------------------------------- */
