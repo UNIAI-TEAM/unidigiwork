@@ -25,8 +25,25 @@ export async function meterWorkExecution(
       _execution_id: executionId,
     });
     if (res.error) return null;
+    // WE-3: chi phí đơn vị được tính lại NGAY SAU số đo, từ cùng nguồn dữ liệu.
+    // Thất bại ở lớp chi phí không bao giờ làm hỏng lượt chạy.
+    await costWorkExecution(supabase, executionId);
     return (res.data ?? null) as WorkExecutionMetricsRow | null;
   } catch {
     return null;
   }
 }
+
+/** WE-3 — tính lại chi phí đã biết cho một lượt chạy (idempotent, server-authoritative). */
+export async function costWorkExecution(supabase: unknown, executionId: string): Promise<unknown | null> {
+  try {
+    const res = await (supabase as Supa).rpc("recompute_work_execution_cost", {
+      _execution_id: executionId,
+    });
+    if (res.error) return null;
+    return res.data ?? null;
+  } catch {
+    return null;
+  }
+}
+

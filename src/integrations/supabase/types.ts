@@ -945,6 +945,57 @@ export type Database = {
           },
         ]
       }
+      ai_model_cost_rates: {
+        Row: {
+          created_at: string
+          currency: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          input_token_rate: number
+          model: string
+          output_token_rate: number
+          provider: string
+          rate_unit: string
+          rate_version: number
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          input_token_rate: number
+          model: string
+          output_token_rate: number
+          provider: string
+          rate_unit?: string
+          rate_version?: number
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          input_token_rate?: number
+          model?: string
+          output_token_rate?: number
+          provider?: string
+          rate_unit?: string
+          rate_version?: number
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_skills: {
         Row: {
           action_types: string[]
@@ -2261,6 +2312,54 @@ export type Database = {
           name?: string
           sort_order?: number
           unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      human_cost_policies: {
+        Row: {
+          approval_event_cost: number
+          basis: string
+          change_request_cost: number
+          created_at: string
+          currency: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          policy_version: number
+          review_event_cost: number
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          approval_event_cost?: number
+          basis?: string
+          change_request_cost?: number
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          policy_version?: number
+          review_event_cost?: number
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          approval_event_cost?: number
+          basis?: string
+          change_request_cost?: number
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          policy_version?: number
+          review_event_cost?: number
+          status?: string
+          tenant_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -5000,6 +5099,95 @@ export type Database = {
           },
         ]
       }
+      work_execution_costs: {
+        Row: {
+          ai_compute_cost: number | null
+          ai_compute_status: string
+          completeness: string
+          computed_at: string
+          cost_model_version: string
+          currency: string
+          execution_id: string
+          external_cost: number | null
+          external_cost_status: string
+          human_cost: number | null
+          human_cost_status: string
+          human_policy_version: number | null
+          known_cost: number
+          platform_cost: number | null
+          platform_cost_status: string
+          rate_effective_at: string | null
+          rate_model: string | null
+          rate_provider: string | null
+          rate_version: number | null
+          tenant_id: string
+          unknown_components: string[]
+          work_unit_code: string
+          work_unit_version: number
+          workspace_id: string | null
+        }
+        Insert: {
+          ai_compute_cost?: number | null
+          ai_compute_status?: string
+          completeness?: string
+          computed_at?: string
+          cost_model_version?: string
+          currency?: string
+          execution_id: string
+          external_cost?: number | null
+          external_cost_status?: string
+          human_cost?: number | null
+          human_cost_status?: string
+          human_policy_version?: number | null
+          known_cost?: number
+          platform_cost?: number | null
+          platform_cost_status?: string
+          rate_effective_at?: string | null
+          rate_model?: string | null
+          rate_provider?: string | null
+          rate_version?: number | null
+          tenant_id: string
+          unknown_components?: string[]
+          work_unit_code: string
+          work_unit_version: number
+          workspace_id?: string | null
+        }
+        Update: {
+          ai_compute_cost?: number | null
+          ai_compute_status?: string
+          completeness?: string
+          computed_at?: string
+          cost_model_version?: string
+          currency?: string
+          execution_id?: string
+          external_cost?: number | null
+          external_cost_status?: string
+          human_cost?: number | null
+          human_cost_status?: string
+          human_policy_version?: number | null
+          known_cost?: number
+          platform_cost?: number | null
+          platform_cost_status?: string
+          rate_effective_at?: string | null
+          rate_model?: string | null
+          rate_provider?: string | null
+          rate_version?: number | null
+          tenant_id?: string
+          unknown_components?: string[]
+          work_unit_code?: string
+          work_unit_version?: number
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_execution_costs_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: true
+            referencedRelation: "ai_task_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_execution_metrics: {
         Row: {
           ai_worker_id: string | null
@@ -5282,6 +5470,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      work_pricing_policies: {
+        Row: {
+          bundle_price: number | null
+          bundle_quantity: number | null
+          commercial_unit: string
+          created_at: string
+          currency: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          included_quantity: number | null
+          notes: string | null
+          pricing_model: string
+          pricing_version: number
+          status: string
+          tenant_id: string | null
+          unit_price: number | null
+          updated_at: string
+          work_unit_code: string
+          work_unit_version: number
+        }
+        Insert: {
+          bundle_price?: number | null
+          bundle_quantity?: number | null
+          commercial_unit?: string
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          included_quantity?: number | null
+          notes?: string | null
+          pricing_model: string
+          pricing_version?: number
+          status?: string
+          tenant_id?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          work_unit_code: string
+          work_unit_version: number
+        }
+        Update: {
+          bundle_price?: number | null
+          bundle_quantity?: number | null
+          commercial_unit?: string
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          included_quantity?: number | null
+          notes?: string | null
+          pricing_model?: string
+          pricing_version?: number
+          status?: string
+          tenant_id?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          work_unit_code?: string
+          work_unit_version?: number
+        }
+        Relationships: []
       }
       work_relationship_types: {
         Row: {
@@ -8117,6 +8368,41 @@ export type Database = {
         Args: { _agent_id: string; _tenant_id: string }
         Returns: undefined
       }
+      recompute_work_execution_cost: {
+        Args: { _execution_id: string }
+        Returns: {
+          ai_compute_cost: number | null
+          ai_compute_status: string
+          completeness: string
+          computed_at: string
+          cost_model_version: string
+          currency: string
+          execution_id: string
+          external_cost: number | null
+          external_cost_status: string
+          human_cost: number | null
+          human_cost_status: string
+          human_policy_version: number | null
+          known_cost: number
+          platform_cost: number | null
+          platform_cost_status: string
+          rate_effective_at: string | null
+          rate_model: string | null
+          rate_provider: string | null
+          rate_version: number | null
+          tenant_id: string
+          unknown_components: string[]
+          work_unit_code: string
+          work_unit_version: number
+          workspace_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "work_execution_costs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       recompute_work_execution_metrics: {
         Args: { _execution_id: string }
         Returns: Json
@@ -9218,6 +9504,17 @@ export type Database = {
       work_graph_health: { Args: never; Returns: Json }
       work_product_contract_payload: {
         Args: { _r: Database["public"]["Tables"]["work_units"]["Row"] }
+        Returns: Json
+      }
+      work_product_economics: {
+        Args: {
+          _code: string
+          _from?: string
+          _tenant_id: string
+          _to?: string
+          _version: number
+          _workspace_id?: string
+        }
         Returns: Json
       }
       work_product_summary: {

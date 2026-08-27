@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useI18n, type Key } from "@/lib/i18n";
 import { useState } from "react";
-import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database } from "lucide-react";
+import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database, Coins } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { useAdminAccess } from "@/features/admin/access";
 
@@ -27,7 +27,9 @@ const TABS = [
   { to: "/admin/ai-context" as const, label: "Context Budget", icon: Gauge },
   { to: "/admin/ai-actions" as const, label: "AI Action", icon: Bot },
   { to: "/admin/webhooks" as const, label: "Webhook", icon: Webhook },
+  { to: "/admin/economics" as const, label: "Kinh tế đơn vị", icon: Coins },
   { to: "/admin/backup" as const, label: "adm.tab.backup", icon: Database },
+
 ];
 
 function AdminLayout() {
