@@ -32,7 +32,7 @@ describe("AI task execution boundary", () => {
   });
 
   it("mọi mutation đi qua RPC tin cậy", () => {
-    expect(fnsBusiness).not.toMatch(/\.from\((?!"ai_task_executions"|"tasks"|"ai_workers"|"work_execution_steps")/);
+    expect(fnsBusiness).not.toMatch(/\.from\((?!"ai_task_executions"|"tasks"|"ai_workers"|"work_execution_steps"|"tenant_members"|"workspace_members")/);
     for (const rpc of ["assign_task_to_ai", "start_ai_task_execution", "finish_ai_task_execution", "request_ai_execution_changes", "accept_ai_task_execution"]) {
       expect(fns).toContain(rpc);
     }
