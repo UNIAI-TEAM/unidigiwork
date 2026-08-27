@@ -77,6 +77,12 @@ const unwrap = (b) => (b && typeof b === "object" && "result" in b ? (b.result ?
 const denied = (r) => r.status !== 200 || Boolean(r.body && typeof r.body === "object" && (r.body.error || r.body.__error));
 const admin = SVC ? createClient(URL_, SVC, { auth: { persistSession: false } }) : null;
 
+// Dev server chỉ đăng ký server function sau khi route dùng nó được tải: làm nóng trước.
+for (const p of ["/tasks", "/tasks/00000000-0000-0000-0000-000000000000", "/admin/economics"]) {
+  await fetch(`${BASE}${p}`).catch(() => {});
+}
+
+
 /* ---------------- 1. RATE CONFIG (cấu hình tài chính, không phải số bịa) ---------------- */
 const rateRes = await call("work-pricing.functions.ts", "createModelCostRate", {
   provider: "lovable-ai-gateway",
