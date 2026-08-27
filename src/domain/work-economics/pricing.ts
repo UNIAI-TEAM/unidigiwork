@@ -227,7 +227,8 @@ export function toWorkProductEconomics(raw: WorkProductEconomicsRaw): WorkProduc
     verifiedOutcomeRate: rate(raw.verifiedOutcomes, executions),
     humanInterventionsPerAcceptedWork:
       accepted > 0 ? Math.round((humanEvents * executions * 100) / accepted) / 100 : null,
-    currency: raw.currency ?? "USD",
+    currency: currencyMismatch ? "MIXED" : (raw.currency ?? currencies[0] ?? "USD"),
+    currencyMismatch,
     knownExecutionCost: knownTotal,
     knownCostPerExecution: knownTotal !== null && costed > 0 ? Math.round((knownTotal / costed) * 1e6) / 1e6 : null,
     knownCostPerAcceptedWork:
