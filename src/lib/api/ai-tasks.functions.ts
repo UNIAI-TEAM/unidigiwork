@@ -12,6 +12,12 @@ import {
   canRetryStepInPlace,
   type WorkExecutionStepRow,
 } from "@/domain/work-execution/contracts";
+import {
+  buildTimelineExport,
+  buildTimelineGolden,
+  type TimelineExportBundle,
+  type TimelineGoldenBundle,
+} from "@/domain/work-execution/timeline-export";
 import { mapPgError } from "./business.server";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
@@ -168,7 +174,7 @@ export const exportWorkExecutionTimeline = createServerFn({ method: "GET" })
       .eq("id", data.executionId)
       .maybeSingle();
     if (error) mapPgError(error, "AI_EXECUTION_NOT_FOUND");
-    if (!exec) throw new ApiError("AI_EXECUTION_NOT_FOUND", "Không tìm thấy lượt thực thi.");
+    if (!exec) throw new ApiError({ code: "AI_EXECUTION_NOT_FOUND", message: "Không tìm thấy lượt thực thi." });
     const { data: steps } = await context.supabase
       .from("work_execution_steps" as never)
       .select("*")
