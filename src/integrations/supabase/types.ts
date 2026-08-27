@@ -1022,6 +1022,7 @@ export type Database = {
       }
       ai_task_executions: {
         Row: {
+          accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
@@ -1032,7 +1033,13 @@ export type Database = {
           deliverable_type: string | null
           error_code: string | null
           evidence: Json
+          evidence_pack: Json
           id: string
+          outcome: Json
+          quality_assessment: Json
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string
           reviewed_at: string | null
           reviewed_by: string | null
           revision: number
@@ -1047,6 +1054,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          accepted_with_warnings?: boolean
           ai_worker_id: string
           change_request?: string | null
           completed_at?: string | null
@@ -1057,7 +1065,13 @@ export type Database = {
           deliverable_type?: string | null
           error_code?: string | null
           evidence?: Json
+          evidence_pack?: Json
           id?: string
+          outcome?: Json
+          quality_assessment?: Json
+          quality_passed?: boolean | null
+          quality_score?: number | null
+          quality_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           revision?: number
@@ -1072,6 +1086,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          accepted_with_warnings?: boolean
           ai_worker_id?: string
           change_request?: string | null
           completed_at?: string | null
@@ -1082,7 +1097,13 @@ export type Database = {
           deliverable_type?: string | null
           error_code?: string | null
           evidence?: Json
+          evidence_pack?: Json
           id?: string
+          outcome?: Json
+          quality_assessment?: Json
+          quality_passed?: boolean | null
+          quality_score?: number | null
+          quality_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           revision?: number
@@ -6231,6 +6252,7 @@ export type Database = {
           _idempotency_key?: string
         }
         Returns: {
+          accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
@@ -6241,7 +6263,13 @@ export type Database = {
           deliverable_type: string | null
           error_code: string | null
           evidence: Json
+          evidence_pack: Json
           id: string
+          outcome: Json
+          quality_assessment: Json
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string
           reviewed_at: string | null
           reviewed_by: string | null
           revision: number
@@ -6807,6 +6835,10 @@ export type Database = {
         Args: { _id: string; _worker: string }
         Returns: boolean
       }
+      compute_work_quality_score: {
+        Args: { _assessment: Json }
+        Returns: number
+      }
       confirm_meeting_action_item: {
         Args: {
           _assignee_id?: string
@@ -7315,6 +7347,47 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      finalize_work_outcome: {
+        Args: { _execution_id: string }
+        Returns: {
+          accepted_with_warnings: boolean
+          ai_worker_id: string
+          change_request: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deliverable_content: string | null
+          deliverable_title: string | null
+          deliverable_type: string | null
+          error_code: string | null
+          evidence: Json
+          evidence_pack: Json
+          id: string
+          outcome: Json
+          quality_assessment: Json
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: number
+          row_version: number
+          source_refs: Json
+          started_at: string | null
+          status: string
+          task_id: string
+          template_code: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ai_task_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       finish_ai_task_execution: {
         Args: {
           _correlation_id?: string
@@ -7328,6 +7401,7 @@ export type Database = {
           _status: string
         }
         Returns: {
+          accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
@@ -7338,7 +7412,13 @@ export type Database = {
           deliverable_type: string | null
           error_code: string | null
           evidence: Json
+          evidence_pack: Json
           id: string
+          outcome: Json
+          quality_assessment: Json
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string
           reviewed_at: string | null
           reviewed_by: string | null
           revision: number
@@ -7648,6 +7728,52 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      persist_work_quality: {
+        Args: {
+          _assessment: Json
+          _evidence_pack: Json
+          _execution_id: string
+          _outcome: Json
+        }
+        Returns: {
+          accepted_with_warnings: boolean
+          ai_worker_id: string
+          change_request: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deliverable_content: string | null
+          deliverable_title: string | null
+          deliverable_type: string | null
+          error_code: string | null
+          evidence: Json
+          evidence_pack: Json
+          id: string
+          outcome: Json
+          quality_assessment: Json
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: number
+          row_version: number
+          source_refs: Json
+          started_at: string | null
+          status: string
+          task_id: string
+          template_code: string | null
+          tenant_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ai_task_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       provision_default_subscription: {
         Args: { _actor: string; _tenant_id: string }
         Returns: string
@@ -7801,6 +7927,7 @@ export type Database = {
           _feedback: string
         }
         Returns: {
+          accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
@@ -7811,7 +7938,13 @@ export type Database = {
           deliverable_type: string | null
           error_code: string | null
           evidence: Json
+          evidence_pack: Json
           id: string
+          outcome: Json
+          quality_assessment: Json
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string
           reviewed_at: string | null
           reviewed_by: string | null
           revision: number
@@ -8280,6 +8413,7 @@ export type Database = {
           _template_code?: string
         }
         Returns: {
+          accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
@@ -8290,7 +8424,13 @@ export type Database = {
           deliverable_type: string | null
           error_code: string | null
           evidence: Json
+          evidence_pack: Json
           id: string
+          outcome: Json
+          quality_assessment: Json
+          quality_passed: boolean | null
+          quality_score: number | null
+          quality_status: string
           reviewed_at: string | null
           reviewed_by: string | null
           revision: number
