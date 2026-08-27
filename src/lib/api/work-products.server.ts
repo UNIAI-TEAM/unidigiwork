@@ -74,7 +74,9 @@ export function toWorkProductContract(row: Record<string, unknown>): WorkProduct
     status: String(row["status"] ?? "DRAFT") as WorkProductContract["status"],
     templateCode: (row["template_code"] as string | null) ?? null,
     deliverableType: String(row["deliverable_type"] ?? "SUMMARY"),
-    outcomeType: String(row["expected_outcome_type"] ?? "REPORT_ACCEPTED"),
+    // FAIL-CLOSED: không bịa kết quả nghiệm thu khi DB thiếu — preflight sẽ chặn.
+    outcomeType: String(row["expected_outcome_type"] ?? ""),
+
     slaMachineMs: (row["sla_machine_ms"] as number | null) ?? null,
     contractHash: (row["contract_hash"] as string | null) ?? null,
     input: { required: arr(input["required"]), properties: obj(input["properties"]) },
