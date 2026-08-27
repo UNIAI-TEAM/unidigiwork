@@ -97,6 +97,12 @@ const codes = (pf) => (pf?.issues ?? []).map((i) => i.code).join(",");
 
 const admin = createClient(URL_, SVC, { auth: { persistSession: false } });
 
+// ---------- Warmup: nạp module client để dev-server đăng ký ID server function ----------
+for (const f of ["work-products.functions.ts", "ai-tasks.functions.ts"]) {
+  const r = await fetch(`${BASE}/src/lib/api/${f}`);
+  rec("WPT-WARM", `register server fn ids ${f}`, r.ok ? "PASS" : "FAIL", r.status);
+}
+
 // ---------- Warmup: buộc dev-server biên dịch các module server-fn trước khi đo ----------
 for (const [f, e, m] of [
   ["work-products.functions.ts", "listWorkProducts", "GET"],
