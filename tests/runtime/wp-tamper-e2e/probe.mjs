@@ -565,6 +565,7 @@ const fail = results.length - pass;
 
 // Nhóm kịch bản tamper (theo dải mã WPT-xx) để tóm tắt PASS/FAIL cho người đọc.
 const GROUPS = [
+  { key: "BASELINE", label: "Khởi động & dữ liệu nền", from: 0, to: 0 },
   { key: "CONTRACT_TAMPER", label: "Giả mạo hợp đồng & phiên bản", from: 1, to: 9 },
   { key: "AUTHZ_INPUT", label: "Uỷ quyền đầu vào & template", from: 10, to: 22 },
   { key: "TENANT_ISOLATION", label: "Cô lập tenant / workspace", from: 23, to: 36 },
@@ -573,6 +574,7 @@ const GROUPS = [
 ];
 const groupOf = (id) => {
   const n = Number((id.match(/WPT-(\d+)/) ?? [])[1] ?? 0);
+  if (id.startsWith("WPT-WARM")) return { key: "BASELINE", label: "Khởi động & dữ liệu nền" };
   return GROUPS.find((g) => n >= g.from && n <= g.to) ?? { key: "OTHER", label: "Khác" };
 };
 for (const r of results) {
