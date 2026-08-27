@@ -6,6 +6,11 @@ import { AI_TERMINAL_STATUSES, canAiWriteStatus, isHumanOnlyStatus } from "@/dom
 const fns = readFileSync("src/lib/api/ai-tasks.functions.ts", "utf8");
 const srv = readFileSync("src/lib/api/ai-tasks.server.ts", "utf8");
 const orc = readFileSync("src/lib/api/work-execution.server.ts", "utf8");
+// Nhật ký audit (logAiTaskAudit) là đường ghi hạ tầng, không phải dữ liệu nghiệp vụ;
+// nó dùng service role có chủ đích nên được loại khỏi phạm vi gate nghiệp vụ.
+const AUDIT_BLOCK = /async function logAiTaskAudit[\s\S]*?\n}\n/;
+const fnsBusiness = fns.replace(AUDIT_BLOCK, "");
+
 
 describe("AI task execution boundary", () => {
   it("AI chỉ được ghi trạng thái không phải nghiệm thu", () => {
