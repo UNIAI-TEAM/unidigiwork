@@ -133,6 +133,8 @@ export interface WorkProductEconomicsRaw {
   costedExecutions?: number;
   fullCostExecutions?: number;
   currency?: string;
+  /** HARDEN-SELLWORK-1: danh sách đơn vị tiền tệ xuất hiện trong cohort. */
+  currencies?: string[];
 }
 
 export interface WorkProductEconomics {
