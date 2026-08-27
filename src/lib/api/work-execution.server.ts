@@ -26,6 +26,8 @@ import {
   objectTypeForTool,
   toWorkerRuntimePolicy,
 } from "./ai-governance.server";
+import { CRITERION_STATUS_LABEL } from "@/domain/work-execution/quality";
+import type { WorkQualityOutcome } from "./work-quality.server";
 import type { AiTaskSpec, AiTaskRunResult } from "./ai-tasks.server";
 import { buildAiContextPack, renderContextForModel } from "./ai-context.server";
 
@@ -42,6 +44,8 @@ const seqOf = (kind: WorkStepKind) => WORK_EXECUTION_PIPELINE.indexOf(kind) + 1;
 export interface OrchestratedRun extends AiTaskRunResult {
   plan: WorkPlanItem[];
   validation: WorkValidationResult;
+  /** WEE-3 — kết quả chất lượng/bằng chứng của lượt chạy (null khi pipeline tạm dừng). */
+  quality: WorkQualityOutcome | null;
   proposedActionIds: string[];
   /** True khi pipeline dừng ở bước ACTION chờ người dùng xác nhận đề xuất. */
   paused: boolean;
@@ -250,6 +254,8 @@ export interface OrchestrateInput {
   /** WEE-2: dòng ai_workers thô (từ get_ai_task_brief) để phân giải policy runtime. */
   workerRow?: Record<string, unknown> | null;
   projectId?: string | null;
+  /** WEE-3 — số hiệu revision của lượt chạy, dùng cho Evidence Pack bất biến. */
+  revision?: number;
 }
 
 /**
@@ -354,6 +360,7 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
       ...run,
       plan,
       validation: paused,
+      quality: null,
       proposedActionIds: proposals.ids,
       paused: true,
       evidence: {
