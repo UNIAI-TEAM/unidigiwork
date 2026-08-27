@@ -147,9 +147,11 @@ async function proposeFollowUpActions(
   spec: AiTaskSpec,
   plan: WorkPlanItem[],
   sourceRefs: AiTaskRunResult["sourceRefs"],
-): Promise<{ ids: string[]; titles: string[] }> {
+  governance: { worker: AiWorkerRuntimePolicy | null; execution: GovernanceExecutionScope },
+): Promise<{ ids: string[]; titles: string[]; blocked: { title: string; reason: string; code: string }[] }> {
   const needing = plan.filter((p) => p.needsAction).slice(0, MAX_PROPOSALS_PER_RUN);
-  if (needing.length === 0) return { ids: [], titles: [] };
+  const blocked: { title: string; reason: string; code: string }[] = [];
+  if (needing.length === 0) return { ids: [], titles: [], blocked };
 
   const def = AI_ACTION_TOOLS["CREATE_TASK"];
   const ids: string[] = [];
