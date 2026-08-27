@@ -274,22 +274,37 @@ export async function validateWorkProductExecution(i: PreflightInput): Promise<W
   };
 }
 
-/** Ghi bản chụp hợp đồng bất biến vào lượt chạy (RPC tin cậy, chỉ ghi một lần). */
+/**
+ * Ghi bản chụp hợp đồng bất biến vào lượt chạy (RPC tin cậy, chỉ ghi một lần).
+ *
+ * HARDEN-SELLWORK-1 — FAIL CLOSED: với sản phẩm công việc chuẩn hoá, KHÔNG được
+ * phép chạy AI khi bản chụp hợp đồng chưa gắn thành công. Hàm này ném lỗi để
+ * caller dừng trước mọi lời gọi AI Gateway.
+ */
 export async function bindWorkProductExecution(
   supabase: Supa,
   executionId: string,
   contract: WorkProductContract,
   inputs: Record<string, string>,
-): Promise<void> {
-  try {
-    await supabase.rpc("bind_work_product_execution", {
-      _execution_id: executionId,
-      _code: contract.code,
-      _version: contract.version,
-      _inputs: inputs,
-    });
-  } catch {
-    // Việc gắn bản chụp không được phép làm hỏng lượt chạy; metrics vẫn có
-    // đường dự phòng theo template_code.
+): Promise<{ bound: boolean; reason: string | null; contractHash: string | null }> {
+  const res = await supabase.rpc("bind_work_product_execution", {
+    _execution_id: executionId,
+    _code: contract.code,
+    _version: contract.version,
+    _inputs: inputs,
+  });
+  if (res.error) throw new Error("WORK_PRODUCT_BIND_FAILED");
+  const row = (res.data ?? null) as Record<string, unknown> | null;
+  if (!row) throw new Error("WORK_PRODUCT_BIND_FAILED");
+  const bound = row["bound"] === true;
+  const reason = (row["reason"] as string | null) ?? null;
+  // ALREADY_BOUND là hợp lệ (idempotent) MIỄN LÀ bản chụp trùng đúng phiên bản
+  // hợp đồng đang chạy; mọi trường hợp khác là thất bại đóng.
+  if (!bound) {
+    if (reason !== "ALREADY_BOUND") throw new Error("WORK_PRODUCT_BIND_FAILED");
+    if (String(row["workUnitCode"] ?? "") !== contract.code || Number(row["workUnitVersion"]) !== contract.version) {
+      throw new Error("WORK_PRODUCT_CONTRACT_MISMATCH");
+    }
   }
+  return { bound, reason, contractHash: (row["contractHash"] as string | null) ?? null };
 }
