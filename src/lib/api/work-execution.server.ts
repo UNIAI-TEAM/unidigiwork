@@ -357,7 +357,18 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     },
   });
 
-  // 4. ACTION — chỉ đề xuất, không bao giờ tự thực thi ---------------------
+  // 4. ACTION — chỉ đề xuất, luôn qua cổng governance WEE-2 ----------------
+  const { toWorkerRuntimePolicy } = await import("./ai-governance.server");
+  const workerPolicy = toWorkerRuntimePolicy(i.workerRow ?? null);
+  const executionScope: GovernanceExecutionScope = {
+    executionId,
+    tenantId: i.tenantId,
+    workspaceId: spec.workspaceId,
+    rootTaskId: spec.taskId,
+    projectId: i.projectId ?? null,
+    initiatingUserId: userId,
+    workerId: workerPolicy?.workerId ?? "",
+  };
   const proposals = await proposeFollowUpActions(
     supabase,
     userId,
@@ -366,10 +377,16 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     spec,
     plan,
     run.sourceRefs,
+    { worker: workerPolicy, execution: executionScope },
   );
   if (proposals.ids.length === 0) {
     await recordStep(supabase, executionId, "ACTION", "SKIPPED", {
-      detail: "Không có hành động ghi dữ liệu nào cần đề xuất.",
+      detail: proposals.blocked.length
+        ? `Chính sách chặn ${proposals.blocked.length} hành động: ${proposals.blocked
+            .map((b) => `${b.title} — ${b.reason}`)
+            .join(" · ")}`.slice(0, 2000)
+        : "Không có hành động ghi dữ liệu nào cần đề xuất.",
+      output: proposals.blocked.length ? { blocked: proposals.blocked as never } : undefined,
     });
   } else {
     // Pipeline DỪNG tại đây: các bước sau chỉ chạy khi người dùng đã xử lý đề xuất
