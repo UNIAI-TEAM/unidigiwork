@@ -210,15 +210,18 @@ export const runAiTask = createServerFn({ method: "POST" })
     if (startRes.error) mapPgError(startRes.error, "AI_EXECUTION_NOT_FOUND");
     const exec = one<AiTaskExecutionRow>(startRes.data);
 
-    // 2. Chạy AI (chỉ đọc, qua AI Context Engine với RLS của chính người dùng).
+    // 2. Chạy pipeline WEE-1 (chỉ đọc, qua AI Context Engine với RLS của chính người dùng).
     const template = templateByCode(data.templateCode ?? exec.template_code);
     try {
-      const { runAiTaskExecution } = await import("./ai-tasks.server");
-      const run = await runAiTaskExecution(
-        context.supabase as never,
-        context.userId,
-        getCookie(ACTIVE_TENANT_COOKIE) ?? null,
-        {
+      const { orchestrateWorkExecution } = await import("./work-execution.server");
+      const run = await orchestrateWorkExecution({
+        supabase: context.supabase as never,
+        userId: context.userId,
+        tenantId: String(t["tenant_id"] ?? exec.tenant_id ?? ""),
+        tenantHint: getCookie(ACTIVE_TENANT_COOKIE) ?? null,
+        executionId: exec.id,
+        apiKey,
+        spec: {
           taskId: data.taskId,
           workspaceId: t["workspace_id"] as string,
           title: String(t["title"] ?? ""),
@@ -231,8 +234,7 @@ export const runAiTask = createServerFn({ method: "POST" })
           template,
           changeRequest: exec.change_request,
         },
-        apiKey,
-      );
+      });
 
       // 3. Kết thúc lượt chạy: LUÔN dừng ở WAITING_REVIEW — AI không thể tự nghiệm thu.
       const finish = await context.supabase.rpc("finish_ai_task_execution" as never, {
@@ -242,7 +244,12 @@ export const runAiTask = createServerFn({ method: "POST" })
         _deliverable_title: run.deliverableTitle,
         _deliverable_content: run.deliverableContent,
         _source_refs: run.sourceRefs,
-        _evidence: run.evidence,
+        _evidence: {
+          ...run.evidence,
+          validationScore: run.validation.score,
+          validationPassed: run.validation.passed,
+          proposedActionCount: run.proposedActionIds.length,
+        },
       } as never);
       if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
       await logAiTaskAudit({
@@ -250,7 +257,12 @@ export const runAiTask = createServerFn({ method: "POST" })
         actorId: context.userId,
         eventType: "ai_task.run_completed",
         taskId: data.taskId,
-        payload: { execution_id: exec.id, status: "WAITING_REVIEW" },
+        payload: {
+          execution_id: exec.id,
+          status: "WAITING_REVIEW",
+          validation_score: run.validation.score,
+          proposed_actions: run.proposedActionIds.length,
+        },
       });
       return one<AiTaskExecutionRow>(finish.data);
     } catch (e) {
