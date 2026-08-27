@@ -19,6 +19,8 @@ import {
   type WorkValidationResult,
 } from "@/domain/work-execution/contracts";
 import { AI_ACTION_TOOLS } from "@/domain/ai-actions/contracts";
+import type { AiWorkerRuntimePolicy, GovernanceEvaluation, GovernanceExecutionScope } from "@/domain/ai-governance/contracts";
+import { checkAiWorkerAction, logGovernanceDecision, objectTypeForTool } from "./ai-governance.server";
 import type { AiTaskSpec, AiTaskRunResult } from "./ai-tasks.server";
 import { buildAiContextPack, renderContextForModel } from "./ai-context.server";
 
