@@ -1026,6 +1026,8 @@ export type Database = {
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
+          contract_hash: string | null
+          contract_snapshot: Json | null
           created_at: string
           created_by: string | null
           deliverable_content: string | null
@@ -1051,6 +1053,9 @@ export type Database = {
           template_code: string | null
           tenant_id: string
           updated_at: string
+          work_product_inputs: Json | null
+          work_unit_code: string | null
+          work_unit_version: number | null
           workspace_id: string
         }
         Insert: {
@@ -1058,6 +1063,8 @@ export type Database = {
           ai_worker_id: string
           change_request?: string | null
           completed_at?: string | null
+          contract_hash?: string | null
+          contract_snapshot?: Json | null
           created_at?: string
           created_by?: string | null
           deliverable_content?: string | null
@@ -1083,6 +1090,9 @@ export type Database = {
           template_code?: string | null
           tenant_id: string
           updated_at?: string
+          work_product_inputs?: Json | null
+          work_unit_code?: string | null
+          work_unit_version?: number | null
           workspace_id: string
         }
         Update: {
@@ -1090,6 +1100,8 @@ export type Database = {
           ai_worker_id?: string
           change_request?: string | null
           completed_at?: string | null
+          contract_hash?: string | null
+          contract_snapshot?: Json | null
           created_at?: string
           created_by?: string | null
           deliverable_content?: string | null
@@ -1115,6 +1127,9 @@ export type Database = {
           template_code?: string | null
           tenant_id?: string
           updated_at?: string
+          work_product_inputs?: Json | null
+          work_unit_code?: string | null
+          work_unit_version?: number | null
           workspace_id?: string
         }
         Relationships: [
@@ -5297,36 +5312,78 @@ export type Database = {
       }
       work_units: {
         Row: {
+          acceptance_contract: Json
+          action_contract: Json
+          category: string
           code: string
+          context_contract: Json
+          contract_hash: string | null
           created_at: string
+          deliverable_contract: Json
           deliverable_type: string
+          description: string | null
+          executor_contract: Json
           expected_outcome_type: string
+          input_contract: Json
           label: string
           objective: string
+          quality_contract: Json
+          review_contract: Json
+          sla_contract: Json
           sla_machine_ms: number | null
+          status: string
           template_code: string | null
+          updated_at: string
           version: number
         }
         Insert: {
+          acceptance_contract?: Json
+          action_contract?: Json
+          category?: string
           code: string
+          context_contract?: Json
+          contract_hash?: string | null
           created_at?: string
+          deliverable_contract?: Json
           deliverable_type: string
+          description?: string | null
+          executor_contract?: Json
           expected_outcome_type: string
+          input_contract?: Json
           label: string
           objective: string
+          quality_contract?: Json
+          review_contract?: Json
+          sla_contract?: Json
           sla_machine_ms?: number | null
+          status?: string
           template_code?: string | null
+          updated_at?: string
           version?: number
         }
         Update: {
+          acceptance_contract?: Json
+          action_contract?: Json
+          category?: string
           code?: string
+          context_contract?: Json
+          contract_hash?: string | null
           created_at?: string
+          deliverable_contract?: Json
           deliverable_type?: string
+          description?: string | null
+          executor_contract?: Json
           expected_outcome_type?: string
+          input_contract?: Json
           label?: string
           objective?: string
+          quality_contract?: Json
+          review_contract?: Json
+          sla_contract?: Json
           sla_machine_ms?: number | null
+          status?: string
           template_code?: string | null
+          updated_at?: string
           version?: number
         }
         Relationships: []
@@ -6459,6 +6516,8 @@ export type Database = {
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
+          contract_hash: string | null
+          contract_snapshot: Json | null
           created_at: string
           created_by: string | null
           deliverable_content: string | null
@@ -6484,6 +6543,9 @@ export type Database = {
           template_code: string | null
           tenant_id: string
           updated_at: string
+          work_product_inputs: Json | null
+          work_unit_code: string | null
+          work_unit_version: number | null
           workspace_id: string
         }
         SetofOptions: {
@@ -6723,6 +6785,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      bind_work_product_execution: {
+        Args: {
+          _code: string
+          _execution_id: string
+          _inputs?: Json
+          _version: number
+        }
+        Returns: Json
       }
       can_access_document: { Args: { _document_id: string }; Returns: boolean }
       can_manage_document_shares: {
@@ -7557,6 +7628,8 @@ export type Database = {
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
+          contract_hash: string | null
+          contract_snapshot: Json | null
           created_at: string
           created_by: string | null
           deliverable_content: string | null
@@ -7582,6 +7655,9 @@ export type Database = {
           template_code: string | null
           tenant_id: string
           updated_at: string
+          work_product_inputs: Json | null
+          work_unit_code: string | null
+          work_unit_version: number | null
           workspace_id: string
         }
         SetofOptions: {
@@ -7608,6 +7684,8 @@ export type Database = {
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
+          contract_hash: string | null
+          contract_snapshot: Json | null
           created_at: string
           created_by: string | null
           deliverable_content: string | null
@@ -7633,6 +7711,9 @@ export type Database = {
           template_code: string | null
           tenant_id: string
           updated_at: string
+          work_product_inputs: Json | null
+          work_unit_code: string | null
+          work_unit_version: number | null
           workspace_id: string
         }
         SetofOptions: {
@@ -7943,6 +8024,8 @@ export type Database = {
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
+          contract_hash: string | null
+          contract_snapshot: Json | null
           created_at: string
           created_by: string | null
           deliverable_content: string | null
@@ -7968,6 +8051,9 @@ export type Database = {
           template_code: string | null
           tenant_id: string
           updated_at: string
+          work_product_inputs: Json | null
+          work_unit_code: string | null
+          work_unit_version: number | null
           workspace_id: string
         }
         SetofOptions: {
@@ -8138,6 +8224,8 @@ export type Database = {
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
+          contract_hash: string | null
+          contract_snapshot: Json | null
           created_at: string
           created_by: string | null
           deliverable_content: string | null
@@ -8163,6 +8251,9 @@ export type Database = {
           template_code: string | null
           tenant_id: string
           updated_at: string
+          work_product_inputs: Json | null
+          work_unit_code: string | null
+          work_unit_version: number | null
           workspace_id: string
         }
         SetofOptions: {
@@ -8199,6 +8290,40 @@ export type Database = {
           _workspace_id: string
         }
         Returns: boolean
+      }
+      resolve_work_unit_for_execution: {
+        Args: { _execution_id: string }
+        Returns: {
+          acceptance_contract: Json
+          action_contract: Json
+          category: string
+          code: string
+          context_contract: Json
+          contract_hash: string | null
+          created_at: string
+          deliverable_contract: Json
+          deliverable_type: string
+          description: string | null
+          executor_contract: Json
+          expected_outcome_type: string
+          input_contract: Json
+          label: string
+          objective: string
+          quality_contract: Json
+          review_contract: Json
+          sla_contract: Json
+          sla_machine_ms: number | null
+          status: string
+          template_code: string | null
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "work_units"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       resolve_workflow_access_request: {
         Args: { _approve: boolean; _note?: string; _request_id: string }
@@ -8624,6 +8749,8 @@ export type Database = {
           ai_worker_id: string
           change_request: string | null
           completed_at: string | null
+          contract_hash: string | null
+          contract_snapshot: Json | null
           created_at: string
           created_by: string | null
           deliverable_content: string | null
@@ -8649,6 +8776,9 @@ export type Database = {
           template_code: string | null
           tenant_id: string
           updated_at: string
+          work_product_inputs: Json | null
+          work_unit_code: string | null
+          work_unit_version: number | null
           workspace_id: string
         }
         SetofOptions: {
@@ -9086,6 +9216,14 @@ export type Database = {
         Returns: Json
       }
       work_graph_health: { Args: never; Returns: Json }
+      work_product_contract_payload: {
+        Args: { _r: Database["public"]["Tables"]["work_units"]["Row"] }
+        Returns: Json
+      }
+      work_product_summary: {
+        Args: { _from?: string; _tenant_id: string; _to?: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

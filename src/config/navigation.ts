@@ -26,6 +26,7 @@ import {
   CreditCard,
   ScrollText,
   Store,
+  ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
@@ -254,6 +255,16 @@ export const NAV_ITEMS: NavItem[] = [
     visibility: "everyone",
     order: 3,
     mobile: { placement: "more", href: "/m/ai-workforce", order: 7.5 },
+  },
+  {
+    id: "work-catalog",
+    labelKey: "nav.workCatalog",
+    icon: ClipboardList,
+    href: "/work-catalog",
+    group: "automation",
+    match: ["/work-catalog"],
+    visibility: "everyone",
+    order: 3.5,
   },
   {
     id: "ai-market",

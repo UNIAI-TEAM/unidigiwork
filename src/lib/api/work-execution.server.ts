@@ -30,6 +30,7 @@ import { CRITERION_STATUS_LABEL } from "@/domain/work-execution/quality";
 import type { WorkQualityOutcome } from "./work-quality.server";
 import type { AiTaskSpec, AiTaskRunResult } from "./ai-tasks.server";
 import { buildAiContextPack, renderContextForModel } from "./ai-context.server";
+import type { WorkProductContract } from "@/domain/work-products/contracts";
 
 const ORCHESTRATOR_MODEL = "openai/gpt-5.6-sol";
 /** Nguồn hợp lệ cho đề xuất sinh ra từ lượt thực thi công việc. */
@@ -256,6 +257,8 @@ export interface OrchestrateInput {
   projectId?: string | null;
   /** WEE-3 — số hiệu revision của lượt chạy, dùng cho Evidence Pack bất biến. */
   revision?: number;
+  /** WE-2 — hợp đồng sản phẩm công việc đã gắn (chỉ SIẾT thêm, không nới lỏng). */
+  contract?: WorkProductContract | null;
 }
 
 /**
@@ -264,7 +267,16 @@ export interface OrchestrateInput {
  * tự đóng lượt chạy, giữ nguyên đường ghi vòng đời hiện có.
  */
 export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<OrchestratedRun> {
-  const { supabase, userId, tenantHint, executionId, spec, apiKey } = i;
+  const { supabase, userId, tenantHint, executionId, apiKey } = i;
+  // WE-2: tiêu chí bắt buộc của hợp đồng được CỘNG THÊM vào tiêu chí nghiệm thu
+  // của công việc — hợp đồng chỉ siết chặt, không bao giờ nới lỏng.
+  const mandatory = i.contract?.acceptance.mandatoryCriteria ?? [];
+  const spec: AiTaskSpec = mandatory.length
+    ? {
+        ...i.spec,
+        acceptanceCriteria: [i.spec.acceptanceCriteria, ...mandatory.map((c) => `- ${c}`)].join("\n"),
+      }
+    : i.spec;
 
   // 1. CONTEXT ------------------------------------------------------------
   await recordStep(supabase, executionId, "CONTEXT", "RUNNING");
@@ -329,16 +341,29 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     initiatingUserId: userId,
     workerId: workerPolicy?.workerId ?? "",
   };
-  const proposals = await proposeFollowUpActions(
-    supabase,
-    userId,
-    i.tenantId,
-    spec.workspaceId,
-    spec,
-    plan,
-    run.sourceRefs,
-    { worker: workerPolicy, execution: executionScope },
-  );
+  // WE-2: hợp đồng có thể cấm hoàn toàn hành động ghi cho sản phẩm này.
+  const contractAllowsCreateTask = !i.contract || i.contract.action.allowedActions.includes("CREATE_TASK");
+  const proposals = contractAllowsCreateTask
+    ? await proposeFollowUpActions(
+        supabase,
+        userId,
+        i.tenantId,
+        spec.workspaceId,
+        spec,
+        plan,
+        run.sourceRefs,
+        { worker: workerPolicy, execution: executionScope },
+      )
+    : {
+        ids: [] as string[],
+        titles: [] as string[],
+        blocked: [
+          {
+            title: "Tạo công việc",
+            reason: `Hợp đồng sản phẩm "${i.contract?.label ?? ""}" không cho phép hành động ghi dữ liệu.`,
+          },
+        ],
+      };
   if (proposals.ids.length === 0) {
     await recordStep(supabase, executionId, "ACTION", "SKIPPED", {
       detail: proposals.blocked.length
