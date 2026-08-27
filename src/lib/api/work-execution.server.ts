@@ -201,7 +201,7 @@ const VALIDATE_SYSTEM = [
 
 async function validateDeliverable(
   spec: AiTaskSpec,
-  run: AiTaskRunResult,
+  run: Pick<AiTaskRunResult, "deliverableContent">,
   apiKey: string,
 ): Promise<WorkValidationResult> {
   const empty: WorkValidationResult = {
@@ -384,11 +384,7 @@ async function runValidateAndReview(
   apiKey: string,
 ): Promise<WorkValidationResult> {
   await recordStep(supabase, executionId, "VALIDATE", "RUNNING");
-  const validation = await validateDeliverable(
-    spec,
-    { deliverableContent } as AiTaskRunResult,
-    apiKey,
-  );
+  const validation = await validateDeliverable(spec, { deliverableContent }, apiKey);
   // Bước tự kiểm đã CHẠY XONG kể cả khi điểm chưa đạt: trạng thái bước phản ánh
   // việc thực thi, còn "đạt/chưa đạt" nằm ở output để người duyệt cân nhắc.
   await recordStep(supabase, executionId, "VALIDATE", "SUCCEEDED", {
