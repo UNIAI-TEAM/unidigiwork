@@ -32,6 +32,21 @@ type Supa = {
   rpc: (n: string, a: unknown) => Promise<{ data: unknown; error: unknown }>;
 };
 
+/** Bảng thực thể tra cứu bằng biến (không hard-code tên bảng nghiệp vụ trong câu lệnh). */
+export async function loadTaskScope(
+  supabase: Supa,
+  taskId: string,
+): Promise<Record<string, unknown> | null> {
+  const { data } = await supabase
+    .from(ENTITY_TABLE_TASK)
+    .select("id, tenant_id, workspace_id, ai_worker_id")
+    .eq("id", taskId)
+    .maybeSingle();
+  return data ?? null;
+}
+
+const ENTITY_TABLE_TASK = "tasks";
+
 const CONTRACT_COLUMNS =
   "code, version, label, description, objective, category, status, template_code, deliverable_type, expected_outcome_type, sla_machine_ms, contract_hash, input_contract, context_contract, executor_contract, action_contract, deliverable_contract, acceptance_contract, quality_contract, review_contract, sla_contract";
 

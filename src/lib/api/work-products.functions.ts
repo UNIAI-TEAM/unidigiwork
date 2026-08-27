@@ -4,7 +4,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { WorkProductContract, WorkProductPreflight } from "@/domain/work-products/contracts";
-import { loadWorkProduct, toWorkProductContract, validateWorkProductExecution } from "./work-products.server";
+import {
+  loadTaskScope,
+  loadWorkProduct,
+  toWorkProductContract,
+  validateWorkProductExecution,
+} from "./work-products.server";
 
 const CONTRACT_COLUMNS =
   "code, version, label, description, objective, category, status, template_code, deliverable_type, expected_outcome_type, sla_machine_ms, contract_hash, input_contract, context_contract, executor_contract, action_contract, deliverable_contract, acceptance_contract, quality_contract, review_contract, sla_contract";
@@ -65,11 +70,7 @@ export const preflightWorkProduct = createServerFn({ method: "POST" })
     let worker: Record<string, unknown> | null = null;
 
     if (data.taskId) {
-      const { data: task } = await context.supabase
-        .from("tasks")
-        .select("id, tenant_id, workspace_id, ai_worker_id")
-        .eq("id", data.taskId)
-        .maybeSingle();
+      const task = await loadTaskScope(context.supabase as never, data.taskId);
       if (!task) {
         return {
           ready: false,
