@@ -92,3 +92,17 @@ export function isTerminalStepStatus(status: string): boolean {
 export function canAwaitConfirmation(kind: string): boolean {
   return kind === CONFIRMABLE_STEP_KIND;
 }
+
+/**
+ * Bước có thể chạy lại TẠI CHỖ khi FAILED: chỉ những bước không sinh lại bản
+ * bàn giao (tự kiểm / chuyển duyệt). Các bước đầu pipeline (CONTEXT, PLAN,
+ * GENERATE) phải chạy lại bằng một revision mới để giữ tính bất biến của lượt chạy.
+ */
+export const RETRYABLE_IN_PLACE_STEPS: readonly WorkStepKind[] = ["ACTION", "VALIDATE", "REVIEW"] as const;
+
+export function canRetryStepInPlace(kind: string): boolean {
+  return (RETRYABLE_IN_PLACE_STEPS as readonly string[]).includes(kind);
+}
+
+/** Mã lỗi ghi lại khi người dùng chủ động huỷ một bước đang FAILED. */
+export const STEP_CANCELED_CODE = "STEP_CANCELED_BY_USER";
