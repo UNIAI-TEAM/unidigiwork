@@ -192,11 +192,18 @@ export function toWorkProductEconomics(raw: WorkProductEconomicsRaw): WorkProduc
   const allFull = executions > 0 && full === executions;
   if (!allFull) missing.push("PLATFORM", "EXTERNAL_SERVICE");
 
+  // HARDEN-SELLWORK-1 — an toàn đa tiền tệ: cohort trộn nhiều loại tiền KHÔNG được
+  // cộng gộp thành một con số. Trả null + đánh dấu, thay vì tổng sai đơn vị.
+  const currencies = Array.from(new Set((raw.currencies ?? []).filter(Boolean)));
+  const currencyMismatch = currencies.length > 1;
+  if (currencyMismatch) missing.push("CURRENCY_MISMATCH");
+
   let completeness: CostCompleteness = "INSUFFICIENT";
-  if (allFull && missing.length === 0) completeness = "FULL";
+  if (currencyMismatch) completeness = "INSUFFICIENT";
+  else if (allFull && missing.length === 0) completeness = "FULL";
   else if (executions > 0 && costed > 0 && (raw.knownCostTotal ?? 0) > 0) completeness = "PARTIAL";
 
-  const knownTotal = costed > 0 ? (raw.knownCostTotal ?? 0) : null;
+  const knownTotal = currencyMismatch ? null : costed > 0 ? (raw.knownCostTotal ?? 0) : null;
   const humanEvents = (raw.avgHumanApprovals ?? 0) + (raw.avgHumanReviews ?? 0);
 
   return {
