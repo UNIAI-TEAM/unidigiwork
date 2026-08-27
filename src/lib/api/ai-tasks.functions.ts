@@ -157,6 +157,32 @@ export const listWorkExecutionSteps = createServerFn({ method: "GET" })
     return (rows ?? []) as unknown as WorkExecutionStepRow[];
   });
 
+/** WEE-1 — xuất timeline.json + bản golden để đối chiếu hard reload / regression. */
+export const exportWorkExecutionTimeline = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ executionId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ timeline: TimelineExportBundle; golden: TimelineGoldenBundle }> => {
+    const { data: exec, error } = await context.supabase
+      .from("ai_task_executions" as never)
+      .select("*")
+      .eq("id", data.executionId)
+      .maybeSingle();
+    if (error) mapPgError(error, "AI_EXECUTION_NOT_FOUND");
+    if (!exec) throw new ApiError("AI_EXECUTION_NOT_FOUND", "Không tìm thấy lượt thực thi.");
+    const { data: steps } = await context.supabase
+      .from("work_execution_steps" as never)
+      .select("*")
+      .eq("execution_id", data.executionId)
+      .order("seq", { ascending: true });
+    const timeline = buildTimelineExport({
+      execution: exec as unknown as Record<string, unknown>,
+      steps: (steps ?? []) as unknown as WorkExecutionStepRow[],
+    });
+    return { timeline, golden: buildTimelineGolden(timeline) };
+  });
+
+
+
 
 
 /** Giao công việc cho nhân sự AI (bắt buộc có deliverable + tiêu chí nghiệm thu). */
