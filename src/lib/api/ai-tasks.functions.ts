@@ -217,7 +217,7 @@ export const runAiTask = createServerFn({ method: "POST" })
       const run = await orchestrateWorkExecution({
         supabase: context.supabase as never,
         userId: context.userId,
-        tenantId: String(t["tenant_id"] ?? exec.tenant_id ?? ""),
+        tenantId: String(t["tenant_id"] ?? ""),
         tenantHint: getCookie(ACTIVE_TENANT_COOKIE) ?? null,
         executionId: exec.id,
         apiKey,
