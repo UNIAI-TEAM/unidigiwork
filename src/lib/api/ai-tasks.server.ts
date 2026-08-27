@@ -86,13 +86,18 @@ export async function runAiTaskExecution(
   tenantHint: string | null,
   spec: AiTaskSpec,
   apiKey: string,
+  /** WEE-1: orchestrator đã dựng sẵn context pack ở bước CONTEXT — tránh retrieval hai lần. */
+  prebuiltPack?: AiContextPack,
 ): Promise<AiTaskRunResult> {
   const startedAt = Date.now();
-  const pack = await buildAiContextPack(supabase, userId, tenantHint, {
-    query: `${spec.title} ${spec.expectedDeliverable}`.slice(0, 500),
-    rootEntity: { type: "TASK", id: spec.taskId },
-    workspaceId: spec.workspaceId,
-  });
+  const pack =
+    prebuiltPack ??
+    (await buildAiContextPack(supabase, userId, tenantHint, {
+      query: `${spec.title} ${spec.expectedDeliverable}`.slice(0, 500),
+      rootEntity: { type: "TASK", id: spec.taskId },
+      workspaceId: spec.workspaceId,
+    }));
+
 
   const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
   const provider = createLovableResponsesProvider(apiKey);
