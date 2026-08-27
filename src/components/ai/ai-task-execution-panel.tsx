@@ -297,19 +297,56 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
             </p>
           ) : null}
 
-          {typeof latest.evidence?.validationScore === "number" ? (
-            <p
-              className={`mt-3 rounded-md border p-2 text-xs ${
-                latest.evidence.validationPassed
-                  ? "border-border bg-surface text-muted-foreground"
-                  : "border-destructive/40 bg-destructive/5 text-destructive"
+          {latest.quality_status ? (
+            <div
+              className={`mt-3 rounded-md border p-3 text-xs ${
+                latest.quality_passed
+                  ? "border-success/40 bg-success/5"
+                  : "border-destructive/40 bg-destructive/5"
               }`}
             >
+              <div className="flex flex-wrap items-center gap-2">
+                <ShieldCheck className={`h-3.5 w-3.5 ${latest.quality_passed ? "text-success" : "text-destructive"}`} />
+                <span className="font-medium text-foreground">
+                  Chất lượng {latest.quality_score ?? 0}/100 ·{" "}
+                  {QUALITY_STATUS_LABEL[(latest.quality_status as QualityStatus)] ?? latest.quality_status}
+                </span>
+                <span className="text-muted-foreground">
+                  ngưỡng {(latest.quality_assessment?.["threshold"] as number) ?? 75}
+                </span>
+              </div>
+
+              {qualityBlockers.length ? (
+                <ul className="mt-2 list-disc space-y-0.5 pl-4 text-destructive">
+                  {qualityBlockers.map((b, idx) => (
+                    <li key={`${b.code}-${idx}`}>{b.message}</li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {qualityCriteria.length ? (
+                <ul className="mt-2 space-y-0.5 text-muted-foreground">
+                  {qualityCriteria.map((c, idx) => (
+                    <li key={idx}>
+                      <span className={c.status === "MET" ? "text-success" : "text-warning"}>
+                        {CRITERION_STATUS_LABEL[c.status as CriterionStatus] ?? c.status}
+                      </span>{" "}
+                      — {c.criterion}
+                      {c.reason ? `: ${c.reason}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Điểm do máy chủ tính theo mô hình chất lượng{" "}
+                {(latest.quality_assessment?.["version"] as string) ?? "wee3.quality.v1"}; AI không tự chấm mình đạt.
+              </p>
+            </div>
+          ) : typeof latest.evidence?.validationScore === "number" ? (
+            <p className="mt-3 rounded-md border border-border bg-surface p-2 text-xs text-muted-foreground">
               Tự kiểm theo tiêu chí nghiệm thu: {latest.evidence.validationScore}/100
-              {latest.evidence.validationPassed ? " · đạt" : " · chưa đạt, hãy xem kỹ trước khi nghiệm thu"}
-              {latest.evidence.proposedActionCount
-                ? ` · ${latest.evidence.proposedActionCount} đề xuất hành động đang chờ bạn xác nhận`
-                : ""}
+              {latest.evidence.validationPassed ? " · đạt" : " · chưa đạt"}
             </p>
           ) : null}
 
