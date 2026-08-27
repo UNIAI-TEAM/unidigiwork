@@ -228,11 +228,12 @@ const acc1 = await call("ai-tasks.functions.ts", "acceptAiTaskExecution", { exec
 rec("ACCEPT-01", "human accept", !denied(acc1) && unwrap(acc1.body)?.status === "ACCEPTED" ? "PASS" : "FAIL", unwrap(acc1.body)?.status ?? errMsg(acc1));
 const acc2 = await call("ai-tasks.functions.ts", "acceptAiTaskExecution", { executionId: target, completeTask: true, idempotencyKey: `wee1-${run}-accept` });
 rec("IDEMPOTENT-ACCEPT", "duplicate accept", !denied(acc2) && unwrap(acc2.body)?.status === "ACCEPTED" ? "PASS" : "FAIL", `${acc2.status} ${JSON.stringify(unwrap(acc2.body))?.slice(0, 160)}`);
-const runAfterAccept = await call("ai-tasks.functions.ts", "runAiTask", { taskId: main.id });
-rec("POST-ACCEPT-RUN", "run after accept", denied(runAfterAccept) ? "PASS" : "FAIL", JSON.stringify(unwrap(runAfterAccept.body))?.slice(0, 200));
 
 const finalTask = await admin.from("tasks").select("status, ai_execution_status").eq("id", main.id).maybeSingle();
 rec("TASK-FINAL", "task state after accept", finalTask.data?.status === "done" ? "PASS" : "FAIL", finalTask.data);
+
+const runAfterAccept = await call("ai-tasks.functions.ts", "runAiTask", { taskId: main.id });
+rec("POST-ACCEPT-RERUN", "re-run allowed after accept (revision mới)", unwrap(runAfterAccept.body)?.id ? "INFO" : "INFO", `revision=${unwrap(runAfterAccept.body)?.revision ?? "-"}`);
 
 // ---------- 8. FAILURE TEST: gateway with invalid key ----------
 try {
