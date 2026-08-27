@@ -12,6 +12,7 @@ import type { AiContextPack } from "@/domain/ai-context/contracts";
 import {
   WORK_EXECUTION_PIPELINE,
   WORK_STEP_LABEL,
+  STEP_CANCELED_CODE,
   type WorkPlanItem,
   type WorkStepKind,
   type WorkStepStatus,
@@ -444,4 +445,44 @@ export async function resumeWorkExecutionAfterAction(i: ResumeInput): Promise<Re
 
   const validation = await runValidateAndReview(supabase, executionId, spec, deliverableContent, apiKey);
   return { validation, resolvedActions: resolved, pendingActions: 0 };
+}
+
+/* ---------------------------- RETRY / CANCEL ---------------------------- */
+
+export interface RetryStepInput {
+  supabase: Supa;
+  executionId: string;
+  kind: WorkStepKind;
+  spec: AiTaskSpec;
+  deliverableContent: string;
+  apiKey: string;
+}
+
+/**
+ * Chạy lại tại chỗ một bước đã FAILED ở cuối pipeline (ACTION/VALIDATE/REVIEW).
+ * KHÔNG sinh lại bản bàn giao và KHÔNG thực thi đề xuất nào — chỉ chạy lại phần
+ * tự kiểm + chuyển duyệt trên đúng nội dung đã có.
+ */
+export async function retryWorkExecutionStepInPlace(i: RetryStepInput): Promise<WorkValidationResult> {
+  const { supabase, executionId, kind, spec, deliverableContent, apiKey } = i;
+  await recordStep(supabase, executionId, kind, "RUNNING", { detail: "Bạn đã yêu cầu chạy lại bước này." });
+  if (kind === "ACTION") {
+    await recordStep(supabase, executionId, "ACTION", "SKIPPED", {
+      detail: "Chạy lại: bỏ qua đề xuất hành động để pipeline tiếp tục an toàn.",
+    });
+  }
+  return runValidateAndReview(supabase, executionId, spec, deliverableContent, apiKey);
+}
+
+/** Huỷ một bước đang FAILED: đánh dấu SKIPPED kèm lý do, không chạy thêm gì. */
+export async function cancelWorkExecutionStepInPlace(
+  supabase: Supa,
+  executionId: string,
+  kind: WorkStepKind,
+  reason: string | null,
+): Promise<void> {
+  await recordStep(supabase, executionId, kind, "SKIPPED", {
+    detail: reason ? `Bạn đã huỷ bước này. Lý do: ${reason}`.slice(0, 500) : "Bạn đã huỷ bước này.",
+    errorCode: STEP_CANCELED_CODE,
+  });
 }

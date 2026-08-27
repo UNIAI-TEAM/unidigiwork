@@ -6,7 +6,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 import { templateByCode, type AiTaskExecutionRow, type AiWorkerRow } from "@/domain/ai-tasks/contracts";
-import type { WorkExecutionStepRow } from "@/domain/work-execution/contracts";
+import {
+  WORK_STEP_KINDS,
+  STEP_CANCELED_CODE,
+  canRetryStepInPlace,
+  type WorkExecutionStepRow,
+} from "@/domain/work-execution/contracts";
 import { mapPgError } from "./business.server";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
@@ -438,4 +443,202 @@ export const acceptAiTaskExecution = createServerFn({ method: "POST" })
     } as never);
     if (res.error) mapPgError(res.error, "AI_REVIEW_FORBIDDEN");
     return one<AiTaskExecutionRow>(res.data);
+  });
+
+/* ------------------------- WEE-1: RETRY / CANCEL BƯỚC ------------------------- */
+
+/** Chỉ chủ sở hữu việc, người tạo hoặc vai trò quản lý mới được retry/huỷ bước. */
+async function assertCanManageTask(
+  supabase: { from: (t: string) => never },
+  userId: string,
+  taskId: string,
+): Promise<Record<string, unknown>> {
+  const sb = supabase as never as {
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (c: string, v: string) => {
+          eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: Record<string, unknown> | null }> };
+          maybeSingle: () => Promise<{ data: Record<string, unknown> | null }>;
+        };
+      };
+    };
+  };
+  const { data: task } = await sb.from("tasks").select("id, tenant_id, workspace_id, human_owner_id, created_by").eq("id", taskId).maybeSingle();
+  if (!task) throw new ApiError({ code: "TASK_NOT_FOUND", message: "Không tìm thấy công việc." });
+  let ok = task["human_owner_id"] === userId || task["created_by"] === userId;
+  if (!ok) {
+    const { data: tm } = await sb
+      .from("tenant_members")
+      .select("role, status")
+      .eq("tenant_id", String(task["tenant_id"] ?? ""))
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (tm && tm["status"] === "active" && MANAGER_ROLES.has(String(tm["role"]))) ok = true;
+  }
+  if (!ok && task["workspace_id"]) {
+    const { data: wm } = await sb
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", String(task["workspace_id"]))
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (wm && MANAGER_ROLES.has(String(wm["role"]))) ok = true;
+  }
+  if (!ok) throw new ApiError({ code: "PERMISSION_DENIED", message: "Bạn không có quyền thao tác trên lượt chạy này." });
+  return task;
+}
+
+async function loadFailedStep(
+  supabase: { from: (t: string) => never },
+  executionId: string,
+  kind: string,
+): Promise<WorkExecutionStepRow> {
+  const sb = supabase as never as {
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (c: string, v: string) => {
+          eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown }> };
+        };
+      };
+    };
+  };
+  const { data } = await sb.from("work_execution_steps").select("*").eq("execution_id", executionId).eq("kind", kind).maybeSingle();
+  const step = data as WorkExecutionStepRow | null;
+  if (!step) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy bước này." });
+  if (step.status !== "FAILED") {
+    throw new ApiError({ code: "AI_STEP_NOT_FAILED", message: "Chỉ có thể thử lại hoặc huỷ bước đang ở trạng thái Thất bại." });
+  }
+  return step;
+}
+
+async function loadExecution(
+  supabase: { from: (t: string) => never },
+  executionId: string,
+): Promise<AiTaskExecutionRow> {
+  const sb = supabase as never as {
+    from: (t: string) => {
+      select: (c: string) => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown }> } };
+    };
+  };
+  const { data } = await sb.from("ai_task_executions").select("*").eq("id", executionId).maybeSingle();
+  const exec = data as AiTaskExecutionRow | null;
+  if (!exec) throw new ApiError({ code: "AI_EXECUTION_NOT_FOUND", message: "Không tìm thấy lượt chạy." });
+  return exec;
+}
+
+/**
+ * WEE-1 — Thử lại một bước đã FAILED, an toàn:
+ *  - Chỉ các bước cuối (ACTION/VALIDATE/REVIEW) chạy lại tại chỗ trên đúng bản bàn giao đã có.
+ *  - Các bước đầu (CONTEXT/PLAN/GENERATE) phải chạy lại bằng revision mới (nút "Chạy lại").
+ *  - Không thực thi bất kỳ đề xuất hành động nào.
+ */
+export const retryWorkExecutionStep = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ executionId: z.string().uuid(), kind: z.enum(WORK_STEP_KINDS) }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<AiTaskExecutionRow> => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new ApiError({ code: "AI_PROVIDER_UNAVAILABLE", message: "Nhân sự AI hiện chưa sẵn sàng." });
+
+    const exec = await loadExecution(context.supabase as never, data.executionId);
+    const task = await assertCanManageTask(context.supabase as never, context.userId, exec.task_id);
+    await loadFailedStep(context.supabase as never, data.executionId, data.kind);
+
+    if (!canRetryStepInPlace(data.kind)) {
+      throw new ApiError({
+        code: "AI_STEP_RETRY_NEEDS_NEW_REVISION",
+        message: "Bước này cần chạy lại bằng một lượt mới để đảm bảo an toàn dữ liệu.",
+      });
+    }
+
+    const briefRes = await context.supabase.rpc("get_ai_task_brief" as never, { _task_id: exec.task_id } as never);
+    if (briefRes.error) mapPgError(briefRes.error, "TASK_NOT_FOUND");
+    const t = (briefRes.data ?? {}) as Record<string, unknown>;
+    const w = (t["worker"] ?? null) as AiWorkerRow | null;
+
+    const { retryWorkExecutionStepInPlace } = await import("./work-execution.server");
+    const validation = await retryWorkExecutionStepInPlace({
+      supabase: context.supabase as never,
+      executionId: exec.id,
+      kind: data.kind,
+      deliverableContent: exec.deliverable_content ?? "",
+      apiKey,
+      spec: {
+        taskId: exec.task_id,
+        workspaceId: (t["workspace_id"] as string) ?? "",
+        title: String(t["title"] ?? ""),
+        description: (t["description"] as string | null) ?? null,
+        expectedDeliverable: String(t["expected_deliverable"] ?? ""),
+        acceptanceCriteria: String(t["acceptance_criteria"] ?? ""),
+        workerName: w?.name ?? "AI",
+        workerRole: w?.role ?? "",
+        workerSkills: w?.skills ?? [],
+        template: templateByCode(exec.template_code),
+        changeRequest: exec.change_request,
+      },
+    });
+
+    const finish = await context.supabase.rpc("finish_ai_task_execution" as never, {
+      _execution_id: exec.id,
+      _status: "WAITING_REVIEW",
+      _deliverable_type: exec.deliverable_type,
+      _deliverable_title: exec.deliverable_title,
+      _deliverable_content: exec.deliverable_content,
+      _source_refs: exec.source_refs ?? [],
+      _evidence: {
+        ...exec.evidence,
+        awaitingActionConfirmation: false,
+        validationScore: validation.score,
+        validationPassed: validation.passed,
+      },
+    } as never);
+    if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
+
+    await logAiTaskAudit({
+      tenantId: (task["tenant_id"] as string | null) ?? null,
+      actorId: context.userId,
+      eventType: "ai_task.step_retried",
+      taskId: exec.task_id,
+      payload: { execution_id: exec.id, step_kind: data.kind, validation_score: validation.score },
+    });
+    return one<AiTaskExecutionRow>(finish.data);
+  });
+
+/** WEE-1 — Huỷ một bước đã FAILED: đánh dấu bỏ qua và đóng lượt chạy ở trạng thái FAILED. */
+export const cancelWorkExecutionStep = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        executionId: z.string().uuid(),
+        kind: z.enum(WORK_STEP_KINDS),
+        reason: z.string().trim().max(500).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const exec = await loadExecution(context.supabase as never, data.executionId);
+    const task = await assertCanManageTask(context.supabase as never, context.userId, exec.task_id);
+    await loadFailedStep(context.supabase as never, data.executionId, data.kind);
+
+    const { cancelWorkExecutionStepInPlace } = await import("./work-execution.server");
+    await cancelWorkExecutionStepInPlace(context.supabase as never, exec.id, data.kind, data.reason ?? null);
+
+    if (exec.status === "RUNNING" || exec.status === "QUEUED") {
+      await context.supabase.rpc("finish_ai_task_execution" as never, {
+        _execution_id: exec.id,
+        _status: "FAILED",
+        _error_code: STEP_CANCELED_CODE,
+      } as never);
+    }
+
+    await logAiTaskAudit({
+      tenantId: (task["tenant_id"] as string | null) ?? null,
+      actorId: context.userId,
+      eventType: "ai_task.step_canceled",
+      taskId: exec.task_id,
+      payload: { execution_id: exec.id, step_kind: data.kind, reason: data.reason ?? null },
+    });
+    return { ok: true as const };
   });
