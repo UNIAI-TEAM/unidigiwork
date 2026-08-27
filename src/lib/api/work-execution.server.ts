@@ -335,10 +335,11 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
   // 5. VALIDATE -----------------------------------------------------------
   await recordStep(supabase, executionId, "VALIDATE", "RUNNING");
   const validation = await validateDeliverable(spec, run, apiKey);
-  await recordStep(supabase, executionId, "VALIDATE", validation.passed ? "SUCCEEDED" : "FAILED", {
+  // Bước tự kiểm đã CHẠY XONG kể cả khi điểm chưa đạt: trạng thái bước phản ánh
+  // việc thực thi, còn "đạt/chưa đạt" nằm ở output để người duyệt cân nhắc.
+  await recordStep(supabase, executionId, "VALIDATE", "SUCCEEDED", {
     detail: `Điểm tự chấm ${validation.score}/100${validation.passed ? "" : " — chưa đạt tiêu chí, bạn nên xem kỹ trước khi nghiệm thu"}`,
     output: { score: validation.score, passed: validation.passed, checks: validation.checks as never },
-    errorCode: validation.passed ? null : "ACCEPTANCE_NOT_MET",
   });
 
   // 6. REVIEW — caller sẽ gọi finish_ai_task_execution(WAITING_REVIEW) -----
