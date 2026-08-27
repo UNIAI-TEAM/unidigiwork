@@ -133,6 +133,8 @@ export interface WorkProductEconomicsRaw {
   costedExecutions?: number;
   fullCostExecutions?: number;
   currency?: string;
+  /** HARDEN-SELLWORK-1: danh sách đơn vị tiền tệ xuất hiện trong cohort. */
+  currencies?: string[];
 }
 
 export interface WorkProductEconomics {
@@ -162,6 +164,8 @@ export interface WorkProductEconomics {
   completeness: CostCompleteness;
   missingSignals: string[];
   lowSampleSize: boolean;
+  /** True khi cohort trộn nhiều đơn vị tiền tệ → không được cộng gộp. */
+  currencyMismatch: boolean;
 }
 
 const MIN_COHORT = 3;
@@ -188,11 +192,18 @@ export function toWorkProductEconomics(raw: WorkProductEconomicsRaw): WorkProduc
   const allFull = executions > 0 && full === executions;
   if (!allFull) missing.push("PLATFORM", "EXTERNAL_SERVICE");
 
+  // HARDEN-SELLWORK-1 — an toàn đa tiền tệ: cohort trộn nhiều loại tiền KHÔNG được
+  // cộng gộp thành một con số. Trả null + đánh dấu, thay vì tổng sai đơn vị.
+  const currencies = Array.from(new Set((raw.currencies ?? []).filter(Boolean)));
+  const currencyMismatch = currencies.length > 1;
+  if (currencyMismatch) missing.push("CURRENCY_MISMATCH");
+
   let completeness: CostCompleteness = "INSUFFICIENT";
-  if (allFull && missing.length === 0) completeness = "FULL";
+  if (currencyMismatch) completeness = "INSUFFICIENT";
+  else if (allFull && missing.length === 0) completeness = "FULL";
   else if (executions > 0 && costed > 0 && (raw.knownCostTotal ?? 0) > 0) completeness = "PARTIAL";
 
-  const knownTotal = costed > 0 ? (raw.knownCostTotal ?? 0) : null;
+  const knownTotal = currencyMismatch ? null : costed > 0 ? (raw.knownCostTotal ?? 0) : null;
   const humanEvents = (raw.avgHumanApprovals ?? 0) + (raw.avgHumanReviews ?? 0);
 
   return {
@@ -216,7 +227,8 @@ export function toWorkProductEconomics(raw: WorkProductEconomicsRaw): WorkProduc
     verifiedOutcomeRate: rate(raw.verifiedOutcomes, executions),
     humanInterventionsPerAcceptedWork:
       accepted > 0 ? Math.round((humanEvents * executions * 100) / accepted) / 100 : null,
-    currency: raw.currency ?? "USD",
+    currency: currencyMismatch ? "MIXED" : (raw.currency ?? currencies[0] ?? "USD"),
+    currencyMismatch,
     knownExecutionCost: knownTotal,
     knownCostPerExecution: knownTotal !== null && costed > 0 ? Math.round((knownTotal / costed) * 1e6) / 1e6 : null,
     knownCostPerAcceptedWork:

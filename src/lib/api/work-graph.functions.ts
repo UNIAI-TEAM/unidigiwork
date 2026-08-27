@@ -153,8 +153,8 @@ export const searchLinkableEntities = createServerFn({ method: "GET" })
           break;
         case "MEETING":
           jobs.push(
-            context.supabase.from("meetings").select("id,title,starts_at").ilike("title", term).limit(data.limit)
-              .then(({ data: rows }) => push("MEETING", rows, "title", "starts_at")),
+            context.supabase.from("meetings").select("id,title,start_at").ilike("title", term).limit(data.limit)
+              .then(({ data: rows }) => push("MEETING", rows, "title", "start_at")),
           );
           break;
         case "DOCUMENT":

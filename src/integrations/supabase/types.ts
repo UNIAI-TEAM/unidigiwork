@@ -1234,14 +1234,19 @@ export type Database = {
           created_at: string
           duration_ms: number | null
           error_message: string | null
+          execution_id: string | null
+          execution_revision: number | null
           id: string
           input_tokens: number
           message_id: string | null
           model: string
           output_tokens: number
+          provider: string | null
+          purpose: string
           run_id: string | null
           status: string
           tenant_id: string
+          token_precision: string
           total_tokens: number
           user_id: string
           workspace_id: string | null
@@ -1251,14 +1256,19 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
+          execution_id?: string | null
+          execution_revision?: number | null
           id?: string
           input_tokens?: number
           message_id?: string | null
           model: string
           output_tokens?: number
+          provider?: string | null
+          purpose?: string
           run_id?: string | null
           status?: string
           tenant_id: string
+          token_precision?: string
           total_tokens?: number
           user_id: string
           workspace_id?: string | null
@@ -1268,14 +1278,19 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
+          execution_id?: string | null
+          execution_revision?: number | null
           id?: string
           input_tokens?: number
           message_id?: string | null
           model?: string
           output_tokens?: number
+          provider?: string | null
+          purpose?: string
           run_id?: string | null
           status?: string
           tenant_id?: string
+          token_precision?: string
           total_tokens?: number
           user_id?: string
           workspace_id?: string | null
@@ -5103,6 +5118,8 @@ export type Database = {
         Row: {
           ai_compute_cost: number | null
           ai_compute_status: string
+          ai_cost_breakdown: Json
+          ai_currency: string | null
           completeness: string
           computed_at: string
           cost_model_version: string
@@ -5112,8 +5129,10 @@ export type Database = {
           external_cost_status: string
           human_cost: number | null
           human_cost_status: string
+          human_currency: string | null
           human_policy_version: number | null
-          known_cost: number
+          known_cost: number | null
+          missing_signals: string[]
           platform_cost: number | null
           platform_cost_status: string
           rate_effective_at: string | null
@@ -5129,6 +5148,8 @@ export type Database = {
         Insert: {
           ai_compute_cost?: number | null
           ai_compute_status?: string
+          ai_cost_breakdown?: Json
+          ai_currency?: string | null
           completeness?: string
           computed_at?: string
           cost_model_version?: string
@@ -5138,8 +5159,10 @@ export type Database = {
           external_cost_status?: string
           human_cost?: number | null
           human_cost_status?: string
+          human_currency?: string | null
           human_policy_version?: number | null
-          known_cost?: number
+          known_cost?: number | null
+          missing_signals?: string[]
           platform_cost?: number | null
           platform_cost_status?: string
           rate_effective_at?: string | null
@@ -5155,6 +5178,8 @@ export type Database = {
         Update: {
           ai_compute_cost?: number | null
           ai_compute_status?: string
+          ai_cost_breakdown?: Json
+          ai_currency?: string | null
           completeness?: string
           computed_at?: string
           cost_model_version?: string
@@ -5164,8 +5189,10 @@ export type Database = {
           external_cost_status?: string
           human_cost?: number | null
           human_cost_status?: string
+          human_currency?: string | null
           human_policy_version?: number | null
-          known_cost?: number
+          known_cost?: number | null
+          missing_signals?: string[]
           platform_cost?: number | null
           platform_cost_status?: string
           rate_effective_at?: string | null
@@ -8373,6 +8400,8 @@ export type Database = {
         Returns: {
           ai_compute_cost: number | null
           ai_compute_status: string
+          ai_cost_breakdown: Json
+          ai_currency: string | null
           completeness: string
           computed_at: string
           cost_model_version: string
@@ -8382,8 +8411,10 @@ export type Database = {
           external_cost_status: string
           human_cost: number | null
           human_cost_status: string
+          human_currency: string | null
           human_policy_version: number | null
-          known_cost: number
+          known_cost: number | null
+          missing_signals: string[]
           platform_cost: number | null
           platform_cost_status: string
           rate_effective_at: string | null
@@ -8406,6 +8437,23 @@ export type Database = {
       recompute_work_execution_metrics: {
         Args: { _execution_id: string }
         Returns: Json
+      }
+      reconcile_work_execution_steps: {
+        Args: { _execution_id: string }
+        Returns: Json
+      }
+      record_ai_usage_event: {
+        Args: {
+          _duration_ms?: number
+          _execution_id: string
+          _input_tokens: number
+          _model: string
+          _output_tokens: number
+          _provider?: string
+          _purpose: string
+          _token_precision?: string
+        }
+        Returns: string
       }
       record_meeting_usage: {
         Args: {
@@ -9022,6 +9070,13 @@ export type Database = {
           _workflow_id: string
         }
         Returns: Json
+      }
+      split_ai_model_identity: {
+        Args: { _raw: string }
+        Returns: {
+          model: string
+          provider: string
+        }[]
       }
       start_ai_task_execution: {
         Args: {
