@@ -562,7 +562,102 @@ rec("WPT-22", "healthy path still works after tamper", post?.contractHash === ba
 
 const pass = results.filter((r) => r.status === "PASS").length;
 const fail = results.length - pass;
-const report = { run, at: new Date().toISOString(), base: BASE, tenant: TENANT, workspace: WS, task: TASK, pass, fail, results };
-writeFileSync(`${OUT}/wp-tamper-e2e-${run}.json`, JSON.stringify(report, null, 2));
-console.log(`\n=== ${fail === 0 ? "PASS" : "FAIL"} work-product tamper e2e: ${pass} passed, ${fail} failed → ${OUT}/wp-tamper-e2e-${run}.json`);
+
+// Nhóm kịch bản tamper (theo dải mã WPT-xx) để tóm tắt PASS/FAIL cho người đọc.
+const GROUPS = [
+  { key: "BASELINE", label: "Khởi động & dữ liệu nền", from: 0, to: 0 },
+  { key: "CONTRACT_TAMPER", label: "Giả mạo hợp đồng & phiên bản", from: 1, to: 9 },
+  { key: "AUTHZ_INPUT", label: "Uỷ quyền đầu vào & template", from: 10, to: 22 },
+  { key: "TENANT_ISOLATION", label: "Cô lập tenant / workspace", from: 23, to: 36 },
+  { key: "IDENTITY_JWT", label: "JWT hết hạn, giả mạo & thiếu quyền", from: 37, to: 49 },
+  { key: "SCHEMA_FAILCLOSED", label: "Khớp schema & dữ liệu DB dị dạng", from: 50, to: 99 },
+];
+const groupOf = (id) => {
+  const n = Number((id.match(/WPT-(\d+)/) ?? [])[1] ?? 0);
+  if (id.startsWith("WPT-WARM")) return { key: "BASELINE", label: "Khởi động & dữ liệu nền" };
+  return GROUPS.find((g) => n >= g.from && n <= g.to) ?? { key: "OTHER", label: "Khác" };
+};
+for (const r of results) {
+  const g = groupOf(r.id);
+  r.group = g.key;
+  r.groupLabel = g.label;
+}
+const groups = [...GROUPS, { key: "OTHER", label: "Khác" }]
+  .map((g) => {
+    const rows = results.filter((r) => r.group === g.key);
+    return {
+      key: g.key,
+      label: g.label,
+      total: rows.length,
+      pass: rows.filter((r) => r.status === "PASS").length,
+      fail: rows.filter((r) => r.status !== "PASS").length,
+      rows,
+    };
+  })
+  .filter((g) => g.total > 0);
+
+const verdict = fail === 0 ? "PASS" : "FAIL";
+const report = {
+  run, at: new Date().toISOString(), base: BASE, tenant: TENANT, workspace: WS, task: TASK,
+  verdict, total: results.length, pass, fail,
+  groups: groups.map(({ rows: _rows, ...g }) => g),
+  results,
+};
+
+const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const html = `<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UNIWORK — Work Product Tamper E2E — ${esc(run)}</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--pass:#047857;--passbg:#ecfdf5;--fail:#b91c1c;--failbg:#fef2f2;--brand:#1d4ed8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 24px 64px}
+h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em}p.sub{color:var(--muted);margin:0 0 24px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.card .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.card .v{font-size:22px;font-weight:650;margin-top:4px}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:600;font-size:12px}
+.b-pass{background:var(--passbg);color:var(--pass)}.b-fail{background:var(--failbg);color:var(--fail)}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden}
+section>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+section>header h2{font-size:15px;margin:0;font-weight:650}
+table{width:100%;border-collapse:collapse}
+td,th{padding:10px 18px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+tr:last-child td{border-bottom:0}
+td.id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--brand);white-space:nowrap}
+td.detail{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted);word-break:break-word;max-width:420px}
+footer{color:var(--muted);font-size:12px;margin-top:24px}
+</style></head><body><div class="wrap">
+<h1>Work Product Tamper — Runtime E2E</h1>
+<p class="sub">Run <code>${esc(run)}</code> · ${esc(report.at)} · ${esc(BASE)}</p>
+<div class="cards">
+  <div class="card"><div class="k">Kết luận</div><div class="v"><span class="badge ${fail === 0 ? "b-pass" : "b-fail"}">${verdict}</span></div></div>
+  <div class="card"><div class="k">Tổng kịch bản</div><div class="v">${results.length}</div></div>
+  <div class="card"><div class="k">Đạt</div><div class="v" style="color:var(--pass)">${pass}</div></div>
+  <div class="card"><div class="k">Lỗi</div><div class="v" style="color:${fail ? "var(--fail)" : "var(--muted)"}">${fail}</div></div>
+</div>
+${groups.map((g) => `<section>
+  <header><h2>${esc(g.label)}</h2><span class="badge ${g.fail === 0 ? "b-pass" : "b-fail"}">${g.pass}/${g.total} đạt</span></header>
+  <table><thead><tr><th>Mã</th><th>Kịch bản</th><th>Kết quả</th><th>Chi tiết</th></tr></thead><tbody>
+  ${g.rows.map((r) => `<tr><td class="id">${esc(r.id)}</td><td>${esc(r.name)}</td>
+    <td><span class="badge ${r.status === "PASS" ? "b-pass" : "b-fail"}">${esc(r.status)}</span></td>
+    <td class="detail">${esc(r.detail)}</td></tr>`).join("")}
+  </tbody></table></section>`).join("")}
+<footer>Tenant ${esc(TENANT)} · Workspace ${esc(WS)} · Task ${esc(TASK)}</footer>
+</div></body></html>`;
+
+const jsonPath = `${OUT}/wp-tamper-e2e-${run}.json`;
+const htmlPath = `${OUT}/wp-tamper-e2e-${run}.html`;
+writeFileSync(jsonPath, JSON.stringify(report, null, 2));
+writeFileSync(htmlPath, html);
+// Bản "latest" để mở nhanh mà không cần tra mã run.
+writeFileSync(`${OUT}/wp-tamper-e2e-latest.json`, JSON.stringify(report, null, 2));
+writeFileSync(`${OUT}/wp-tamper-e2e-latest.html`, html);
+
+console.log("\n--- Tóm tắt theo nhóm kịch bản tamper ---");
+for (const g of groups) console.log(`${g.fail === 0 ? "PASS" : "FAIL"}  ${g.label.padEnd(38)} ${g.pass}/${g.total}`);
+console.log(`\n=== ${verdict} work-product tamper e2e: ${pass} passed, ${fail} failed`);
+console.log(`JSON → ${jsonPath}\nHTML → ${htmlPath}\nLatest → ${OUT}/wp-tamper-e2e-latest.html`);
 process.exit(fail === 0 ? 0 : 1);
