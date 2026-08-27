@@ -68,8 +68,9 @@ export async function resolveWorkEntities(
         break;
       case "MEETING":
         jobs.push(
-          supabase.from("meetings").select("id,title,starts_at,status").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("MEETING", r.id, r.title ?? "Cuộc họp", r.status, r.starts_at));
+          // HARDEN-SELLWORK-1: cột chuẩn của bảng meetings là `start_at` (không phải `starts_at`).
+          supabase.from("meetings").select("id,title,start_at,status").in("id", ids).then(({ data }) => {
+            (data ?? []).forEach((r: any) => add("MEETING", r.id, r.title ?? "Cuộc họp", r.status, r.start_at));
           }),
         );
         break;
