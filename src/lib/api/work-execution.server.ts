@@ -293,6 +293,9 @@ export interface OrchestrateInput {
   executionId: string;
   spec: AiTaskSpec;
   apiKey: string;
+  /** WEE-2: dòng ai_workers thô (từ get_ai_task_brief) để phân giải policy runtime. */
+  workerRow?: Record<string, unknown> | null;
+  projectId?: string | null;
 }
 
 /**
