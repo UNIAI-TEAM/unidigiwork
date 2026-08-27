@@ -62,7 +62,8 @@ export interface WorkExecutionStepRow {
   status: WorkStepStatus;
   title: string;
   detail: string | null;
-  output: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  output: Record<string, any>;
   error_code: string | null;
   started_at: string | null;
   completed_at: string | null;
