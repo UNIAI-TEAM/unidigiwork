@@ -21,6 +21,12 @@ import {
   resumeAiTask,
   runAiTask,
 } from "@/lib/api/ai-tasks.functions";
+import {
+  CRITERION_STATUS_LABEL,
+  QUALITY_STATUS_LABEL,
+  type CriterionStatus,
+  type QualityStatus,
+} from "@/domain/work-execution/quality";
 import { WorkExecutionTimeline } from "./work-execution-timeline";
 
 interface TaskLike {
