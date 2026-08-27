@@ -362,6 +362,19 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     },
   });
 
+  // HARDEN-SELLWORK-1 — telemetry chi phí theo TỪNG lượt gọi model (sinh nội dung).
+  {
+    const { recordAiUsageEvent } = await import("./ai-usage.server");
+    await recordAiUsageEvent(supabase, {
+      executionId,
+      purpose: "GENERATOR",
+      model: String(run.evidence.model ?? ""),
+      inputTokens: run.evidence.inputTokens ?? 0,
+      outputTokens: run.evidence.outputTokens ?? 0,
+      durationMs: run.evidence.durationMs ?? null,
+    });
+  }
+
   // 4. ACTION — chỉ đề xuất, luôn qua cổng governance WEE-2 ----------------
   
   const workerPolicy = toWorkerRuntimePolicy(i.workerRow ?? null);
