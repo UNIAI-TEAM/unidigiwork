@@ -201,6 +201,11 @@ rec("WPT-16", "INSERT work_units as user", insert.status >= 400 ? "PASS" : "FAIL
 const del = await rest(`/rest/v1/work_units?code=eq.${CODE}`, { method: "DELETE", headers: { prefer: "return=representation" } });
 rec("WPT-17", "DELETE work_units as user", del.status >= 400 || del.body === "[]" ? "PASS" : "FAIL", `${del.status} ${del.body}`);
 
+let FOREIGN_TENANT = null;
+let FOREIGN_WS = null;
+let FOREIGN_TOKEN = null;
+const noLeak = (r) => denied(r) || (Array.isArray(unwrap(r.body)) && unwrap(r.body).length === 0);
+
 // ---------- 10. TAMPER: người dùng tenant khác ----------
 const fEmail = `wpt_foreign_${run}@example.com`;
 const fPass = `Wpt!${run}Aa`;
@@ -209,7 +214,17 @@ const anonC = createClient(URL_, ANON, { auth: { persistSession: false } });
 const { data: fs } = await anonC.auth.signInWithPassword({ email: fEmail, password: fPass });
 const fToken = fs?.session?.access_token;
 if (fToken) {
-  await anonC.rpc("provision_tenant", { _name: `wpt_${run}`, _slug: `wpt-${run}`, _owner_id: fu.user.id, _default_workspace_name: "General", _idempotency_key: `wpt-${run}` });
+  const prov = await anonC.rpc("provision_tenant", { _name: `wpt_${run}`, _slug: `wpt-${run}`, _owner_id: fu.user.id, _default_workspace_name: "General", _idempotency_key: `wpt-${run}` });
+  FOREIGN_TENANT = (prov?.data && (prov.data.tenant_id ?? prov.data?.[0]?.tenant_id)) ?? null;
+  if (!FOREIGN_TENANT) {
+    const { data: t } = await admin.from("tenants").select("id").eq("slug", `wpt-${run}`).maybeSingle();
+    FOREIGN_TENANT = t?.id ?? null;
+  }
+  if (FOREIGN_TENANT) {
+    const { data: w } = await admin.from("workspaces").select("id").eq("tenant_id", FOREIGN_TENANT).limit(1).maybeSingle();
+    FOREIGN_WS = w?.id ?? null;
+  }
+  FOREIGN_TOKEN = fToken;
   const fPre = unwrap((await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: {} }, { token: fToken, tenant: null })).body);
   rec("WPT-18", "foreign tenant preflight on our task", fPre?.ready === false && codes(fPre).includes("UNAUTHORIZED_INPUT") ? "PASS" : "FAIL",
     { ready: fPre?.ready, issues: codes(fPre) });
@@ -218,6 +233,64 @@ if (fToken) {
   const fRoll = unwrap((await call("work-products.functions.ts", "getWorkProductRollup", { tenantId: TENANT }, { method: "GET", token: fToken, tenant: null })).body);
   const leaked = Array.isArray(fRoll) ? fRoll.filter((r) => (r.runs ?? 0) > 0) : [];
   rec("WPT-20", "foreign tenant rollup leakage", leaked.length === 0 ? "PASS" : "FAIL", JSON.stringify(fRoll)?.slice(0, 200));
+}
+
+
+// ---------- 10b. TAMPER tenantId/workspaceId trong request (token hợp lệ của ta) ----------
+const randTenant = randomUUID();
+const rollRand = await call("work-products.functions.ts", "getWorkProductRollup", { tenantId: randTenant }, { method: "GET" });
+rec("WPT-23", "rollup with random tenantId", noLeak(rollRand) ? "PASS" : "FAIL", `${rollRand.status} ${errMsg(rollRand)}`);
+
+const workersRand = await call("ai-tasks.functions.ts", "listAiWorkers", { tenantId: randTenant });
+rec("WPT-24", "listAiWorkers with random tenantId", noLeak(workersRand) ? "PASS" : "FAIL", `${workersRand.status} ${errMsg(workersRand)}`);
+
+if (FOREIGN_TENANT) {
+  const rollF = await call("work-products.functions.ts", "getWorkProductRollup", { tenantId: FOREIGN_TENANT }, { method: "GET" });
+  rec("WPT-25", "rollup with foreign tenantId", noLeak(rollF) ? "PASS" : "FAIL", `${rollF.status} ${errMsg(rollF)}`);
+
+  const wBefore = (await admin.from("ai_workers").select("id", { count: "exact", head: true }).eq("tenant_id", FOREIGN_TENANT)).count ?? 0;
+  const workersF = await call("ai-tasks.functions.ts", "listAiWorkers", { tenantId: FOREIGN_TENANT });
+  const wAfter = (await admin.from("ai_workers").select("id", { count: "exact", head: true }).eq("tenant_id", FOREIGN_TENANT)).count ?? 0;
+  rec("WPT-26", "listAiWorkers with foreign tenantId", noLeak(workersF) ? "PASS" : "FAIL", `${workersF.status} ${errMsg(workersF)}`);
+  rec("WPT-27", "no ai_workers seeded into foreign tenant", wAfter <= wBefore ? "PASS" : "FAIL", `before=${wBefore} after=${wAfter}`);
+
+  // Cookie tenant giả không được nâng quyền / không đổi ngữ cảnh hợp đồng
+  const spoof = unwrap((await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: {} }, { tenant: FOREIGN_TENANT })).body);
+  rec("WPT-28", "spoofed active-tenant cookie does not change contract scope",
+    spoof?.contractHash === basePre?.contractHash && spoof?.ready === basePre?.ready ? "PASS" : "FAIL",
+    { ready: spoof?.ready, hash: spoof?.contractHash?.slice(0, 16) });
+
+  const accSpoof = unwrap((await call("ai-tasks.functions.ts", "getAiTaskAccess", { taskId: TASK }, { method: "GET", tenant: FOREIGN_TENANT })).body);
+  rec("WPT-29", "spoofed cookie does not escalate task access", accSpoof && accSpoof.canView === true ? "PASS" : "FAIL", accSpoof);
+}
+
+if (FOREIGN_TOKEN) {
+  const wOurs = await call("ai-tasks.functions.ts", "listAiWorkers", { tenantId: TENANT }, { token: FOREIGN_TOKEN, tenant: null });
+  rec("WPT-30", "foreign token + our tenantId listAiWorkers", noLeak(wOurs) ? "PASS" : "FAIL", `${wOurs.status} ${errMsg(wOurs)}`);
+
+  const wSpoofCookie = await call("ai-tasks.functions.ts", "listAiWorkers", { tenantId: TENANT }, { token: FOREIGN_TOKEN, tenant: TENANT });
+  rec("WPT-31", "foreign token + our tenant cookie listAiWorkers", noLeak(wSpoofCookie) ? "PASS" : "FAIL", `${wSpoofCookie.status} ${errMsg(wSpoofCookie)}`);
+
+  const accF = unwrap((await call("ai-tasks.functions.ts", "getAiTaskAccess", { taskId: TASK }, { method: "GET", token: FOREIGN_TOKEN, tenant: TENANT })).body);
+  rec("WPT-32", "foreign token cannot view our task access", accF?.canView === false ? "PASS" : "FAIL", accF);
+
+  const execF = await call("ai-tasks.functions.ts", "listAiTaskExecutions", { taskId: TASK }, { method: "GET", token: FOREIGN_TOKEN, tenant: TENANT });
+  rec("WPT-33", "foreign token cannot list our executions", noLeak(execF) ? "PASS" : "FAIL", `${execF.status} ${errMsg(execF)}`);
+
+  const { data: anyExec } = await admin.from("ai_task_executions").select("id").eq("task_id", TASK).limit(1).maybeSingle();
+  if (anyExec?.id) {
+    const stepsF = await call("ai-tasks.functions.ts", "listWorkExecutionSteps", { executionId: anyExec.id }, { method: "GET", token: FOREIGN_TOKEN, tenant: TENANT });
+    rec("WPT-34", "foreign token cannot read our execution steps", noLeak(stepsF) ? "PASS" : "FAIL", `${stepsF.status} ${errMsg(stepsF)}`);
+    const tlF = await call("ai-tasks.functions.ts", "exportWorkExecutionTimeline", { executionId: anyExec.id }, { method: "GET", token: FOREIGN_TOKEN, tenant: TENANT });
+    const tlBody = unwrap(tlF.body);
+    rec("WPT-35", "foreign token cannot export our timeline",
+      denied(tlF) || !tlBody || (Array.isArray(tlBody?.steps) && tlBody.steps.length === 0) ? "PASS" : "FAIL", `${tlF.status} ${errMsg(tlF)}`);
+  }
+
+  if (FOREIGN_WS) {
+    const crossWs = unwrap((await call("work-products.functions.ts", "preflightWorkProduct", { code: CODE, taskId: TASK, inputs: { project_id: FOREIGN_WS } })).body);
+    rec("WPT-36", "foreign workspace id as input rejected", crossWs?.ready === false ? "PASS" : "FAIL", { ready: crossWs?.ready, issues: codes(crossWs) });
+  }
 }
 
 // ---------- 11. Hợp đồng phải bất biến sau toàn bộ tamper ----------
