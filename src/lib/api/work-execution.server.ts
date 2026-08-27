@@ -35,6 +35,8 @@ export interface OrchestratedRun extends AiTaskRunResult {
   plan: WorkPlanItem[];
   validation: WorkValidationResult;
   proposedActionIds: string[];
+  /** True khi pipeline dừng ở bước ACTION chờ người dùng xác nhận đề xuất. */
+  paused: boolean;
 }
 
 /* ------------------------------ Step writer ------------------------------ */
@@ -199,7 +201,7 @@ const VALIDATE_SYSTEM = [
 
 async function validateDeliverable(
   spec: AiTaskSpec,
-  run: AiTaskRunResult,
+  run: Pick<AiTaskRunResult, "deliverableContent">,
   apiKey: string,
 ): Promise<WorkValidationResult> {
   const empty: WorkValidationResult = {
@@ -326,32 +328,38 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
       detail: "Không có hành động ghi dữ liệu nào cần đề xuất.",
     });
   } else {
+    // Pipeline DỪNG tại đây: các bước sau chỉ chạy khi người dùng đã xử lý đề xuất
+    // và bấm "Tiếp tục thực thi".
     await recordStep(supabase, executionId, "ACTION", "AWAITING_CONFIRMATION", {
       detail: proposals.titles.join("\n").slice(0, 2000),
       output: { actionIds: proposals.ids, actionType: "CREATE_TASK" },
     });
+    const paused: WorkValidationResult = { score: 0, passed: false, checks: [] };
+    return {
+      ...run,
+      plan,
+      validation: paused,
+      proposedActionIds: proposals.ids,
+      paused: true,
+      evidence: {
+        ...run.evidence,
+        limitations: [
+          ...(run.evidence.limitations ?? []),
+          `Đang chờ bạn xác nhận ${proposals.ids.length} đề xuất hành động trước khi AI tự kiểm.`,
+        ],
+      },
+    };
   }
 
   // 5. VALIDATE -----------------------------------------------------------
-  await recordStep(supabase, executionId, "VALIDATE", "RUNNING");
-  const validation = await validateDeliverable(spec, run, apiKey);
-  // Bước tự kiểm đã CHẠY XONG kể cả khi điểm chưa đạt: trạng thái bước phản ánh
-  // việc thực thi, còn "đạt/chưa đạt" nằm ở output để người duyệt cân nhắc.
-  await recordStep(supabase, executionId, "VALIDATE", "SUCCEEDED", {
-    detail: `Điểm tự chấm ${validation.score}/100${validation.passed ? "" : " — chưa đạt tiêu chí, bạn nên xem kỹ trước khi nghiệm thu"}`,
-    output: { score: validation.score, passed: validation.passed, checks: validation.checks as never },
-  });
-
-  // 6. REVIEW — caller sẽ gọi finish_ai_task_execution(WAITING_REVIEW) -----
-  await recordStep(supabase, executionId, "REVIEW", "SUCCEEDED", {
-    detail: "Bản bàn giao đã chuyển cho con người duyệt. AI không thể tự nghiệm thu.",
-  });
+  const validation = await runValidateAndReview(supabase, executionId, spec, run.deliverableContent, apiKey);
 
   return {
     ...run,
     plan,
     validation,
     proposedActionIds: proposals.ids,
+    paused: false,
     evidence: {
       ...run.evidence,
       assumptions: run.evidence.assumptions,
@@ -363,4 +371,77 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
           ],
     },
   };
+}
+
+/* --------------------------- VALIDATE + REVIEW --------------------------- */
+
+/** Hai bước cuối của pipeline — dùng chung cho lượt chạy liền mạch và lượt tiếp tục. */
+async function runValidateAndReview(
+  supabase: Supa,
+  executionId: string,
+  spec: AiTaskSpec,
+  deliverableContent: string,
+  apiKey: string,
+): Promise<WorkValidationResult> {
+  await recordStep(supabase, executionId, "VALIDATE", "RUNNING");
+  const validation = await validateDeliverable(spec, { deliverableContent }, apiKey);
+  // Bước tự kiểm đã CHẠY XONG kể cả khi điểm chưa đạt: trạng thái bước phản ánh
+  // việc thực thi, còn "đạt/chưa đạt" nằm ở output để người duyệt cân nhắc.
+  await recordStep(supabase, executionId, "VALIDATE", "SUCCEEDED", {
+    detail: `Điểm tự chấm ${validation.score}/100${validation.passed ? "" : " — chưa đạt tiêu chí, bạn nên xem kỹ trước khi nghiệm thu"}`,
+    output: { score: validation.score, passed: validation.passed, checks: validation.checks as never },
+  });
+
+  await recordStep(supabase, executionId, "REVIEW", "SUCCEEDED", {
+    detail: "Bản bàn giao đã chuyển cho con người duyệt. AI không thể tự nghiệm thu.",
+  });
+  return validation;
+}
+
+/* -------------------------------- RESUME -------------------------------- */
+
+export interface ResumeInput {
+  supabase: Supa;
+  executionId: string;
+  actionIds: string[];
+  spec: AiTaskSpec;
+  deliverableContent: string;
+  apiKey: string;
+}
+
+export interface ResumeOutcome {
+  validation: WorkValidationResult;
+  resolvedActions: number;
+  pendingActions: number;
+}
+
+/**
+ * Tiếp tục pipeline sau khi người dùng đã xử lý mọi đề xuất ở bước ACTION.
+ * KHÔNG thực thi đề xuất — chỉ đọc kết quả người dùng đã quyết định, rồi chạy
+ * hai bước còn lại (VALIDATE, REVIEW).
+ */
+export async function resumeWorkExecutionAfterAction(i: ResumeInput): Promise<ResumeOutcome> {
+  const { supabase, executionId, actionIds, spec, deliverableContent, apiKey } = i;
+
+  const sb = supabase as never as {
+    from: (t: string) => {
+      select: (c: string) => { in: (col: string, v: string[]) => Promise<{ data: { id: string; status: string }[] | null }> };
+    };
+  };
+  const { data } = await sb.from("ai_action_proposals").select("id, status").in("id", actionIds);
+  const rows = data ?? [];
+  const stillOpen = rows.filter((r) => r.status === "PROPOSED").length;
+  const resolved = rows.length - stillOpen;
+
+  if (stillOpen > 0) {
+    return { validation: { score: 0, passed: false, checks: [] }, resolvedActions: resolved, pendingActions: stillOpen };
+  }
+
+  await recordStep(supabase, executionId, "ACTION", "SUCCEEDED", {
+    detail: `Bạn đã xử lý ${resolved}/${rows.length} đề xuất hành động. Pipeline tiếp tục.`,
+    output: { actionIds, resolved },
+  });
+
+  const validation = await runValidateAndReview(supabase, executionId, spec, deliverableContent, apiKey);
+  return { validation, resolvedActions: resolved, pendingActions: 0 };
 }

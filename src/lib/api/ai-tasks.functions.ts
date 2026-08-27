@@ -266,6 +266,8 @@ export const runAiTask = createServerFn({ method: "POST" })
           validationScore: run.validation.score,
           validationPassed: run.validation.passed,
           proposedActionCount: run.proposedActionIds.length,
+          awaitingActionConfirmation: run.paused,
+          proposedActionIds: run.proposedActionIds,
         },
       } as never);
       if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
@@ -298,6 +300,107 @@ export const runAiTask = createServerFn({ method: "POST" })
       });
       throw new ApiError({ code: "AI_PROVIDER_UNAVAILABLE", message: "Nhân sự AI không hoàn thành được lượt chạy này." });
     }
+  });
+
+/**
+ * WEE-1 — Tiếp tục lượt chạy đang tạm dừng ở bước ACTION.
+ * Chỉ chạy được khi mọi đề xuất hành động đã được người dùng xác nhận hoặc huỷ;
+ * hàm này KHÔNG thực thi đề xuất nào (việc đó thuộc AI Action Layer).
+ */
+export const resumeAiTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ executionId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<AiTaskExecutionRow> => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) {
+      throw new ApiError({ code: "AI_PROVIDER_UNAVAILABLE", message: "Nhân sự AI hiện chưa sẵn sàng." });
+    }
+
+    const { data: execRow, error: execErr } = await context.supabase
+      .from("ai_task_executions" as never)
+      .select("*")
+      .eq("id", data.executionId)
+      .maybeSingle();
+    if (execErr) mapPgError(execErr, "AI_EXECUTION_NOT_FOUND");
+    const exec = execRow as unknown as AiTaskExecutionRow | null;
+    if (!exec) throw new ApiError({ code: "AI_EXECUTION_NOT_FOUND", message: "Không tìm thấy lượt chạy." });
+    const actionIds = exec.evidence?.proposedActionIds ?? [];
+    if (!exec.evidence?.awaitingActionConfirmation || actionIds.length === 0) {
+      throw new ApiError({
+        code: "AI_EXECUTION_NOT_PAUSED",
+        message: "Lượt chạy này không đang tạm dừng chờ xác nhận đề xuất.",
+      });
+    }
+
+    const briefRes = await context.supabase.rpc("get_ai_task_brief" as never, { _task_id: exec.task_id } as never);
+    if (briefRes.error) mapPgError(briefRes.error, "TASK_NOT_FOUND");
+    const t = (briefRes.data ?? null) as Record<string, unknown> | null;
+    if (!t) throw new ApiError({ code: "TASK_NOT_FOUND", message: "Không tìm thấy công việc." });
+    const w = (t["worker"] ?? null) as AiWorkerRow | null;
+
+    const { resumeWorkExecutionAfterAction } = await import("./work-execution.server");
+    const outcome = await resumeWorkExecutionAfterAction({
+      supabase: context.supabase as never,
+      executionId: exec.id,
+      actionIds,
+      deliverableContent: exec.deliverable_content ?? "",
+      apiKey,
+      spec: {
+        taskId: exec.task_id,
+        workspaceId: (t["workspace_id"] as string) ?? "",
+        title: String(t["title"] ?? ""),
+        description: (t["description"] as string | null) ?? null,
+        expectedDeliverable: String(t["expected_deliverable"] ?? ""),
+        acceptanceCriteria: String(t["acceptance_criteria"] ?? ""),
+        workerName: w?.name ?? "AI",
+        workerRole: w?.role ?? "",
+        workerSkills: w?.skills ?? [],
+        template: templateByCode(exec.template_code),
+        changeRequest: exec.change_request,
+      },
+    });
+
+    if (outcome.pendingActions > 0) {
+      throw new ApiError({
+        code: "AI_ACTIONS_PENDING",
+        message: `Còn ${outcome.pendingActions} đề xuất chưa được xác nhận hoặc huỷ.`,
+      });
+    }
+
+    const finish = await context.supabase.rpc("finish_ai_task_execution" as never, {
+      _execution_id: exec.id,
+      _status: "WAITING_REVIEW",
+      _deliverable_type: exec.deliverable_type,
+      _deliverable_title: exec.deliverable_title,
+      _deliverable_content: exec.deliverable_content,
+      _source_refs: exec.source_refs ?? [],
+      _evidence: {
+        ...exec.evidence,
+        awaitingActionConfirmation: false,
+        validationScore: outcome.validation.score,
+        validationPassed: outcome.validation.passed,
+        limitations: [
+          ...(exec.evidence?.limitations ?? []).filter((l) => !l.startsWith("Đang chờ bạn xác nhận")),
+          ...(outcome.validation.passed
+            ? []
+            : [`Tự chấm ${outcome.validation.score}/100 — có tiêu chí nghiệm thu chưa đạt.`]),
+        ],
+      },
+    } as never);
+    if (finish.error) mapPgError(finish.error, "AI_EXECUTION_NOT_FOUND");
+
+    await logAiTaskAudit({
+      tenantId: (t["tenant_id"] as string | null) ?? null,
+      actorId: context.userId,
+      eventType: "ai_task.run_resumed",
+      taskId: exec.task_id,
+      payload: {
+        execution_id: exec.id,
+        resolved_actions: outcome.resolvedActions,
+        validation_score: outcome.validation.score,
+      },
+    });
+    return one<AiTaskExecutionRow>(finish.data);
   });
 
 /** Người duyệt yêu cầu chỉnh sửa — lượt sau sẽ là một revision mới. */

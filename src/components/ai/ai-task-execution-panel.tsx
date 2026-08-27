@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Bot, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, Loader2, Lock, Play, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { Bot, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, Loader2, Lock, Play, PlayCircle, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import {
   AI_EXECUTION_STATUS_LABEL,
   DELIVERABLE_TEMPLATES,
@@ -18,6 +18,7 @@ import {
   listAiTaskExecutions,
   listAiWorkers,
   requestAiTaskChanges,
+  resumeAiTask,
   runAiTask,
 } from "@/lib/api/ai-tasks.functions";
 import { WorkExecutionTimeline } from "./work-execution-timeline";
@@ -109,6 +110,12 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
   const accept = useMutation({
     mutationFn: (executionId: string) => acceptAiTaskExecution({ data: { executionId, completeTask: true } }),
     onSuccess: () => { refresh(); toast.success("Đã nghiệm thu và hoàn tất công việc"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const resume = useMutation({
+    mutationFn: (executionId: string) => resumeAiTask({ data: { executionId } }),
+    onSuccess: () => { refresh(); toast.success("Đã tiếp tục thực thi và hoàn tất tự kiểm"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -304,6 +311,25 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
                 ? ` · ${latest.evidence.proposedActionCount} đề xuất hành động đang chờ bạn xác nhận`
                 : ""}
             </p>
+          ) : null}
+
+          {latest.evidence?.awaitingActionConfirmation ? (
+            <div className="mt-3 rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
+              <p className="text-muted-foreground">
+                Pipeline đang tạm dừng ở bước “Đề xuất hành động”. Hãy xác nhận hoặc huỷ
+                {" "}{latest.evidence.proposedActionCount ?? 0} đề xuất trong Trung tâm hành động AI, rồi bấm tiếp tục.
+              </p>
+              {canManage ? (
+                <button
+                  onClick={() => resume.mutate(latest.id)}
+                  disabled={resume.isPending}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                >
+                  {resume.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlayCircle className="h-3.5 w-3.5" />}
+                  Tiếp tục thực thi
+                </button>
+              ) : null}
+            </div>
           ) : null}
 
           <WorkExecutionTimeline executionId={latest.id} />
