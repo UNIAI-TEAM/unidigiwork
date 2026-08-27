@@ -1,7 +1,7 @@
 // WEE-1 — Timeline các bước AI đã thực hiện trong một lượt chạy.
 // Chỉ hiển thị; mọi hành động ghi vẫn phải đi qua đường xác nhận riêng.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Check, CircleDashed, Clock, Loader2, MinusCircle, RotateCcw, ShieldQuestion, XCircle } from "lucide-react";
+import { AlertTriangle, Check, CircleDashed, Clock, Download, Loader2, MinusCircle, RotateCcw, ShieldQuestion, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,9 +14,20 @@ import {
 } from "@/domain/work-execution/contracts";
 import {
   cancelWorkExecutionStep,
+  exportWorkExecutionTimeline,
   listWorkExecutionSteps,
   retryWorkExecutionStep,
 } from "@/lib/api/ai-tasks.functions";
+
+function downloadJson(filename: string, value: unknown) {
+  const blob = new Blob([`${JSON.stringify(value, null, 2)}\n`], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const ICONS: Record<WorkStepStatus, typeof Check> = {
   PENDING: CircleDashed,
@@ -80,6 +91,17 @@ export function WorkExecutionTimeline({
     onError: () => toast.error("Không huỷ được bước này."),
   });
 
+  const exportTimeline = useMutation({
+    mutationFn: () => exportWorkExecutionTimeline({ data: { executionId } }),
+    onSuccess: (res) => {
+      const short = executionId.slice(0, 8);
+      downloadJson(`timeline-${short}.json`, res.timeline);
+      downloadJson(`timeline-${short}.golden.json`, res.golden);
+      toast.success(`Đã tải timeline.json và bản golden (${res.golden.fingerprint}).`);
+    },
+    onError: () => toast.error("Không xuất được timeline."),
+  });
+
   const busy = retry.isPending || cancel.isPending;
   const rows = (steps.data ?? []) as WorkExecutionStepRow[];
   if (steps.isLoading) {
@@ -93,7 +115,23 @@ export function WorkExecutionTimeline({
 
   return (
     <div className="mt-4 border-t border-border pt-3">
-      <p className="mb-2 text-xs font-medium text-muted-foreground">Tiến trình AI đã thực hiện</p>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground">Tiến trình AI đã thực hiện</p>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 px-2 text-xs"
+          disabled={exportTimeline.isPending}
+          onClick={() => exportTimeline.mutate()}
+        >
+          {exportTimeline.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5" />
+          )}
+          Xuất timeline.json
+        </Button>
+      </div>
       <ol className="space-y-2">
         {rows.map((s) => {
           const status = s.status;
