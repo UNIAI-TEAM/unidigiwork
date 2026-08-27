@@ -1,14 +1,22 @@
 // WEE-1 — Timeline các bước AI đã thực hiện trong một lượt chạy.
 // Chỉ hiển thị; mọi hành động ghi vẫn phải đi qua đường xác nhận riêng.
-import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Check, CircleDashed, Clock, Loader2, MinusCircle, ShieldQuestion } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, Check, CircleDashed, Clock, Loader2, MinusCircle, RotateCcw, ShieldQuestion, XCircle } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   WORK_STEP_LABEL,
   WORK_STEP_STATUS_LABEL,
+  canRetryStepInPlace,
   type WorkExecutionStepRow,
+  type WorkStepKind,
   type WorkStepStatus,
 } from "@/domain/work-execution/contracts";
-import { listWorkExecutionSteps } from "@/lib/api/ai-tasks.functions";
+import {
+  cancelWorkExecutionStep,
+  listWorkExecutionSteps,
+  retryWorkExecutionStep,
+} from "@/lib/api/ai-tasks.functions";
 
 const ICONS: Record<WorkStepStatus, typeof Check> = {
   PENDING: CircleDashed,
@@ -28,13 +36,51 @@ const TONE: Record<WorkStepStatus, string> = {
   AWAITING_CONFIRMATION: "text-warning",
 };
 
-export function WorkExecutionTimeline({ executionId }: { executionId: string }) {
+export function WorkExecutionTimeline({
+  executionId,
+  canManage = false,
+}: {
+  executionId: string;
+  canManage?: boolean;
+}) {
+  const qc = useQueryClient();
   const steps = useQuery({
     queryKey: ["work-execution-steps", executionId],
     queryFn: () => listWorkExecutionSteps({ data: { executionId } }),
     staleTime: 15_000,
   });
 
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["work-execution-steps", executionId] });
+    void qc.invalidateQueries({ queryKey: ["ai-task-executions"] });
+  };
+
+  const retry = useMutation({
+    mutationFn: (kind: WorkStepKind) => retryWorkExecutionStep({ data: { executionId, kind } }),
+    onSuccess: () => {
+      toast.success("Đã chạy lại bước và cập nhật kết quả tự kiểm.");
+      refresh();
+    },
+    onError: (e: unknown) => {
+      const code = (e as { code?: string })?.code;
+      toast.error(
+        code === "AI_STEP_RETRY_NEEDS_NEW_REVISION"
+          ? "Bước này cần chạy lại bằng một lượt mới (nút Chạy lại ở trên)."
+          : "Không chạy lại được bước này.",
+      );
+    },
+  });
+
+  const cancel = useMutation({
+    mutationFn: (kind: WorkStepKind) => cancelWorkExecutionStep({ data: { executionId, kind } }),
+    onSuccess: () => {
+      toast.success("Đã huỷ bước và đóng lượt chạy.");
+      refresh();
+    },
+    onError: () => toast.error("Không huỷ được bước này."),
+  });
+
+  const busy = retry.isPending || cancel.isPending;
   const rows = (steps.data ?? []) as WorkExecutionStepRow[];
   if (steps.isLoading) {
     return (
@@ -77,6 +123,35 @@ export function WorkExecutionTimeline({ executionId }: { executionId: string }) 
                 ) : null}
                 {s.error_code ? (
                   <p className="mt-0.5 text-xs text-destructive">Mã lỗi: {s.error_code}</p>
+                ) : null}
+                {canManage && status === "FAILED" ? (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1.5 text-xs"
+                      disabled={busy}
+                      onClick={() => retry.mutate(s.kind)}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Thử lại bước
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1.5 text-xs text-destructive hover:text-destructive"
+                      disabled={busy}
+                      onClick={() => cancel.mutate(s.kind)}
+                    >
+                      <XCircle className="h-3 w-3" />
+                      Huỷ bước
+                    </Button>
+                    {!canRetryStepInPlace(s.kind) ? (
+                      <span className="text-xs text-muted-foreground">
+                        Bước này sẽ cần chạy lại bằng một lượt mới.
+                      </span>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </li>

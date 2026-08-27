@@ -332,7 +332,7 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
             </div>
           ) : null}
 
-          <WorkExecutionTimeline executionId={latest.id} />
+          <WorkExecutionTimeline executionId={latest.id} canManage={canManage} />
 
           {latest.status === "WAITING_REVIEW" && canReview ? (
             <div className="mt-4 space-y-2 border-t border-border pt-3">
