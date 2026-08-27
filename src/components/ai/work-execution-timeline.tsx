@@ -1,0 +1,88 @@
+// WEE-1 — Timeline các bước AI đã thực hiện trong một lượt chạy.
+// Chỉ hiển thị; mọi hành động ghi vẫn phải đi qua đường xác nhận riêng.
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, Check, CircleDashed, Clock, Loader2, MinusCircle, ShieldQuestion } from "lucide-react";
+import {
+  WORK_STEP_LABEL,
+  WORK_STEP_STATUS_LABEL,
+  type WorkExecutionStepRow,
+  type WorkStepStatus,
+} from "@/domain/work-execution/contracts";
+import { listWorkExecutionSteps } from "@/lib/api/ai-tasks.functions";
+
+const ICONS: Record<WorkStepStatus, typeof Check> = {
+  PENDING: CircleDashed,
+  RUNNING: Loader2,
+  SUCCEEDED: Check,
+  FAILED: AlertTriangle,
+  SKIPPED: MinusCircle,
+  AWAITING_CONFIRMATION: ShieldQuestion,
+};
+
+const TONE: Record<WorkStepStatus, string> = {
+  PENDING: "text-muted-foreground",
+  RUNNING: "text-primary",
+  SUCCEEDED: "text-primary",
+  FAILED: "text-destructive",
+  SKIPPED: "text-muted-foreground",
+  AWAITING_CONFIRMATION: "text-warning",
+};
+
+export function WorkExecutionTimeline({ executionId }: { executionId: string }) {
+  const steps = useQuery({
+    queryKey: ["work-execution-steps", executionId],
+    queryFn: () => listWorkExecutionSteps({ data: { executionId } }),
+    staleTime: 15_000,
+  });
+
+  const rows = (steps.data ?? []) as WorkExecutionStepRow[];
+  if (steps.isLoading) {
+    return (
+      <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải tiến trình thực thi…
+      </p>
+    );
+  }
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <p className="mb-2 text-xs font-medium text-muted-foreground">Tiến trình AI đã thực hiện</p>
+      <ol className="space-y-2">
+        {rows.map((s) => {
+          const status = s.status;
+          const Icon = ICONS[status] ?? CircleDashed;
+          const duration =
+            s.started_at && s.completed_at
+              ? Math.max(0, Math.round((new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 1000))
+              : null;
+          return (
+            <li key={s.id} className="flex gap-2.5">
+              <Icon
+                className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${TONE[status] ?? "text-muted-foreground"} ${status === "RUNNING" ? "animate-spin" : ""}`}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-x-2 text-xs">
+                  <span className="font-medium text-foreground">{WORK_STEP_LABEL[s.kind] ?? s.title}</span>
+                  <span className="text-muted-foreground">· {WORK_STEP_STATUS_LABEL[status] ?? status}</span>
+                  {duration !== null ? (
+                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {duration}s
+                    </span>
+                  ) : null}
+                </p>
+                {s.detail ? (
+                  <p className="mt-0.5 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">{s.detail}</p>
+                ) : null}
+                {s.error_code ? (
+                  <p className="mt-0.5 text-xs text-destructive">Mã lỗi: {s.error_code}</p>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}

@@ -5,6 +5,12 @@ import { AI_TERMINAL_STATUSES, canAiWriteStatus, isHumanOnlyStatus } from "@/dom
 
 const fns = readFileSync("src/lib/api/ai-tasks.functions.ts", "utf8");
 const srv = readFileSync("src/lib/api/ai-tasks.server.ts", "utf8");
+const orc = readFileSync("src/lib/api/work-execution.server.ts", "utf8");
+// Nhật ký audit (logAiTaskAudit) là đường ghi hạ tầng, không phải dữ liệu nghiệp vụ;
+// nó dùng service role có chủ đích nên được loại khỏi phạm vi gate nghiệp vụ.
+const AUDIT_BLOCK = /async function logAiTaskAudit[\s\S]*?\n}\n/;
+const fnsBusiness = fns.replace(AUDIT_BLOCK, "");
+
 
 describe("AI task execution boundary", () => {
   it("AI chỉ được ghi trạng thái không phải nghiệm thu", () => {
@@ -16,7 +22,7 @@ describe("AI task execution boundary", () => {
   it("engine không ghi dữ liệu nghiệp vụ và không dùng service role", () => {
     expect(srv).not.toMatch(/\.(insert|update|upsert|delete)\(/);
     expect(srv).not.toMatch(/supabaseAdmin|service_role|client\.server/);
-    expect(fns).not.toMatch(/supabaseAdmin|service_role|client\.server/);
+    expect(fnsBusiness).not.toMatch(/supabaseAdmin|service_role|client\.server/);
   });
 
   it("lượt chạy AI luôn kết thúc ở WAITING_REVIEW hoặc FAILED", () => {
@@ -26,7 +32,7 @@ describe("AI task execution boundary", () => {
   });
 
   it("mọi mutation đi qua RPC tin cậy", () => {
-    expect(fns).not.toMatch(/\.from\((?!"ai_task_executions"|"tasks"|"ai_workers")/);
+    expect(fnsBusiness).not.toMatch(/\.from\((?!"ai_task_executions"|"tasks"|"ai_workers"|"work_execution_steps"|"tenant_members"|"workspace_members")/);
     for (const rpc of ["assign_task_to_ai", "start_ai_task_execution", "finish_ai_task_execution", "request_ai_execution_changes", "accept_ai_task_execution"]) {
       expect(fns).toContain(rpc);
     }
@@ -34,5 +40,31 @@ describe("AI task execution boundary", () => {
 
   it("prompt có phòng vệ prompt injection", () => {
     expect(srv).toMatch(/KHÔNG ĐÁNG TIN CẬY/);
+    expect(orc).toMatch(/không phải mệnh lệnh/);
+  });
+});
+
+describe("WEE-1 orchestrator boundary", () => {
+  it("orchestrator không dùng service role", () => {
+    expect(orc).not.toMatch(/supabaseAdmin|service_role|client\.server/);
+  });
+
+  it("orchestrator chỉ ghi bảng đề xuất và bảng bước, không ghi bảng nghiệp vụ", () => {
+    const writes = [...orc.matchAll(/\.from\("([a-z_]+)"\)/g)].map((m) => m[1]);
+    expect(writes.length).toBeGreaterThan(0);
+    for (const t of writes) expect(["ai_action_proposals"]).toContain(t);
+    expect(orc).not.toMatch(/rpc\(\s*"(create_task|update_task|schedule_meeting|assign_task)"/);
+  });
+
+  it("đề xuất luôn ở trạng thái PROPOSED, không tự thực thi", () => {
+    expect(orc).toMatch(/status:\s*"PROPOSED"/);
+    expect(orc).not.toMatch(/status:\s*"(CONFIRMED|EXECUTING|SUCCEEDED)"/);
+    expect(orc).not.toMatch(/confirmAiAction|executorFor|ACTION_EXECUTORS/);
+  });
+
+  it("chỉ bước ACTION được dừng ở chờ xác nhận", () => {
+    const awaits = [...orc.matchAll(/"([A-Z]+)",\s*"AWAITING_CONFIRMATION"/g)].map((m) => m[1]);
+    expect(awaits.length).toBeGreaterThan(0);
+    for (const k of awaits) expect(k).toBe("ACTION");
   });
 });

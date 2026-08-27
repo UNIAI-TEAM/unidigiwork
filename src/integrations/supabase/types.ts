@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -4928,6 +4928,71 @@ export type Database = {
           },
         ]
       }
+      work_execution_steps: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          detail: string | null
+          error_code: string | null
+          execution_id: string
+          id: string
+          kind: string
+          output: Json
+          seq: number
+          started_at: string | null
+          status: string
+          task_id: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          detail?: string | null
+          error_code?: string | null
+          execution_id: string
+          id?: string
+          kind: string
+          output?: Json
+          seq: number
+          started_at?: string | null
+          status?: string
+          task_id: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          detail?: string | null
+          error_code?: string | null
+          execution_id?: string
+          id?: string
+          kind?: string
+          output?: Json
+          seq?: number
+          started_at?: string | null
+          status?: string
+          task_id?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_execution_steps_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_task_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_nodes: {
         Row: {
           created_at: string
@@ -7626,6 +7691,42 @@ export type Database = {
           _workspace_id?: string
         }
         Returns: string
+      }
+      record_work_execution_step: {
+        Args: {
+          _detail?: string
+          _error_code?: string
+          _execution_id: string
+          _kind: string
+          _output?: Json
+          _seq: number
+          _status: string
+          _title: string
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          detail: string | null
+          error_code: string | null
+          execution_id: string
+          id: string
+          kind: string
+          output: Json
+          seq: number
+          started_at: string | null
+          status: string
+          task_id: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "work_execution_steps"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       redeem_meeting_invite_link: { Args: { _token: string }; Returns: Json }
       refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
