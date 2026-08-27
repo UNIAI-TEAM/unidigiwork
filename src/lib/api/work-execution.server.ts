@@ -366,13 +366,30 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     };
   }
 
-  // 5. VALIDATE -----------------------------------------------------------
-  const validation = await runValidateAndReview(supabase, executionId, spec, run.deliverableContent, apiKey);
+  // 5. VALIDATE — WEE-3 Quality, Evidence & Outcome Engine ------------------
+  const { validation, quality } = await runValidateAndReview(supabase, executionId, spec, run.deliverableContent, apiKey, {
+    tenantId: i.tenantId,
+    revision: i.revision ?? 1,
+    workspaceId: spec.workspaceId,
+    pack,
+    plan,
+    proposalIds: proposals.ids,
+    deliverableType: run.deliverableType,
+    deliverableTitle: run.deliverableTitle,
+    sourceRefs: run.sourceRefs,
+    aiWorkerId: workerPolicy?.workerId ?? null,
+    aiWorkerName: spec.workerName,
+    generatorModel: run.evidence.model ?? null,
+    generatorInputTokens: run.evidence.inputTokens ?? 0,
+    generatorOutputTokens: run.evidence.outputTokens ?? 0,
+    startedAt: null,
+  });
 
   return {
     ...run,
     plan,
     validation,
+    quality,
     proposedActionIds: proposals.ids,
     paused: false,
     evidence: {
@@ -382,7 +399,7 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
         ? run.evidence.limitations
         : [
             ...(run.evidence.limitations ?? []),
-            `Tự chấm ${validation.score}/100 — có tiêu chí nghiệm thu chưa đạt.`,
+            `Kiểm chất lượng ${validation.score}/100 — chưa đạt ngưỡng nghiệm thu.`,
           ],
     },
   };
@@ -390,27 +407,138 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
 
 /* --------------------------- VALIDATE + REVIEW --------------------------- */
 
-/** Hai bước cuối của pipeline — dùng chung cho lượt chạy liền mạch và lượt tiếp tục. */
+/** Ngữ cảnh chất lượng cần cho bước VALIDATE (WEE-3). */
+export interface QualityStepContext {
+  tenantId: string;
+  revision: number;
+  workspaceId: string | null;
+  pack: AiContextPack | null;
+  plan: WorkPlanItem[];
+  proposalIds: string[];
+  deliverableType: string | null;
+  deliverableTitle: string | null;
+  sourceRefs: { sourceId: string; title: string; href: string; entityType: string }[];
+  aiWorkerId: string | null;
+  aiWorkerName: string | null;
+  generatorModel: string | null;
+  generatorInputTokens: number;
+  generatorOutputTokens: number;
+  startedAt: string | null;
+}
+
+export interface ValidateReviewResult {
+  validation: WorkValidationResult;
+  quality: WorkQualityOutcome | null;
+}
+
+/**
+ * WEE-3 — VALIDATE = kiểm tất định → kiểm trích dẫn → đánh giá từng tiêu chí →
+ * evaluator riêng → server tổng hợp điểm → hard gate → lưu Evidence Pack.
+ *
+ * Trạng thái bước phản ánh CƠ CHẾ chấm, không phản ánh chất lượng:
+ *  - SUCCEEDED: cơ chế chạy xong (kể cả khi chất lượng chưa đạt).
+ *  - FAILED: chính cơ chế chấm hỏng (evaluator lỗi / payload sai / lưu thất bại).
+ */
 async function runValidateAndReview(
   supabase: Supa,
   executionId: string,
   spec: AiTaskSpec,
   deliverableContent: string,
   apiKey: string,
-): Promise<WorkValidationResult> {
+  ctx: QualityStepContext,
+): Promise<ValidateReviewResult> {
   await recordStep(supabase, executionId, "VALIDATE", "RUNNING");
-  const validation = await validateDeliverable(spec, { deliverableContent }, apiKey);
-  // Bước tự kiểm đã CHẠY XONG kể cả khi điểm chưa đạt: trạng thái bước phản ánh
-  // việc thực thi, còn "đạt/chưa đạt" nằm ở output để người duyệt cân nhắc.
-  await recordStep(supabase, executionId, "VALIDATE", "SUCCEEDED", {
-    detail: `Điểm tự chấm ${validation.score}/100${validation.passed ? "" : " — chưa đạt tiêu chí, bạn nên xem kỹ trước khi nghiệm thu"}`,
-    output: { score: validation.score, passed: validation.passed, checks: validation.checks as never },
-  });
+
+  const { assessWorkQuality, persistWorkQuality } = await import("./work-quality.server");
+  let quality: WorkQualityOutcome;
+  try {
+    quality = await assessWorkQuality({
+      supabase: supabase as never,
+      apiKey,
+      executionId,
+      revision: ctx.revision,
+      taskId: spec.taskId,
+      tenantId: ctx.tenantId,
+      workspaceId: ctx.workspaceId,
+      objective: spec.title,
+      acceptanceCriteria: spec.acceptanceCriteria,
+      expectedDeliverable: spec.expectedDeliverable,
+      templateOutline: spec.template.outline,
+      deliverableType: ctx.deliverableType,
+      deliverableTitle: ctx.deliverableTitle,
+      deliverableContent,
+      sourceRefs: ctx.sourceRefs,
+      pack: ctx.pack,
+      plan: ctx.plan,
+      proposalIds: ctx.proposalIds,
+      aiWorkerId: ctx.aiWorkerId,
+      aiWorkerName: ctx.aiWorkerName,
+      generatorModel: ctx.generatorModel,
+      generatorInputTokens: ctx.generatorInputTokens,
+      generatorOutputTokens: ctx.generatorOutputTokens,
+      startedAt: ctx.startedAt,
+      changeRequest: spec.changeRequest ?? null,
+    });
+  } catch (e) {
+    await recordStep(supabase, executionId, "VALIDATE", "FAILED", {
+      errorCode: "QUALITY_MECHANISM_FAILED",
+      detail: e instanceof Error ? e.message.slice(0, 300) : "Cơ chế kiểm chất lượng gặp sự cố.",
+    });
+    return { validation: { score: 0, passed: false, checks: [] }, quality: null };
+  }
+
+  try {
+    await persistWorkQuality(supabase as never, executionId, quality);
+  } catch (e) {
+    await recordStep(supabase, executionId, "VALIDATE", "FAILED", {
+      errorCode: "QUALITY_PERSIST_FAILED",
+      detail: e instanceof Error ? e.message.slice(0, 300) : null,
+    });
+    return { validation: { score: 0, passed: false, checks: [] }, quality };
+  }
+
+  const a = quality.assessment;
+  const validation: WorkValidationResult = {
+    score: a.score,
+    passed: a.passed,
+    checks: a.criteria.map((c) => ({
+      criterion: c.criterion,
+      met: c.status === "MET",
+      note: c.reason || CRITERION_STATUS_LABEL[c.status],
+    })),
+  };
+
+  if (quality.mechanismFailed) {
+    // Cơ chế chấm hỏng → bước FAILED, và KHÔNG có bất kỳ kết luận "đạt" nào.
+    await recordStep(supabase, executionId, "VALIDATE", "FAILED", {
+      errorCode: "QUALITY_EVALUATION_ERROR",
+      detail: "Bộ kiểm định chất lượng không trả kết quả hợp lệ. Không có kết luận chất lượng cho bản này.",
+      output: { qualityStatus: a.status },
+    });
+  } else {
+    await recordStep(supabase, executionId, "VALIDATE", "SUCCEEDED", {
+      detail:
+        `Chất lượng ${a.score}/${a.threshold} — ${a.passed ? "đạt" : "chưa đạt"}` +
+        (a.blockers.length ? ` · ${a.blockers.length} lỗi chặn` : "") +
+        (a.warnings.length ? ` · ${a.warnings.length} cảnh báo` : ""),
+      output: {
+        qualityStatus: a.status,
+        score: a.score,
+        passed: a.passed,
+        threshold: a.threshold,
+        blockers: a.blockers as never,
+        criteria: a.criteria as never,
+        modelCalls: quality.modelCalls,
+        latencyMs: quality.latency.totalMs,
+      },
+    });
+  }
 
   await recordStep(supabase, executionId, "REVIEW", "SUCCEEDED", {
     detail: "Bản bàn giao đã chuyển cho con người duyệt. AI không thể tự nghiệm thu.",
+    output: { outcomeType: quality.outcome.type, outcomeStatus: quality.outcome.status },
   });
-  return validation;
+  return { validation, quality };
 }
 
 /* -------------------------------- RESUME -------------------------------- */
@@ -422,10 +550,12 @@ export interface ResumeInput {
   spec: AiTaskSpec;
   deliverableContent: string;
   apiKey: string;
+  quality: QualityStepContext;
 }
 
 export interface ResumeOutcome {
   validation: WorkValidationResult;
+  quality: WorkQualityOutcome | null;
   resolvedActions: number;
   pendingActions: number;
 }
@@ -433,7 +563,7 @@ export interface ResumeOutcome {
 /**
  * Tiếp tục pipeline sau khi người dùng đã xử lý mọi đề xuất ở bước ACTION.
  * KHÔNG thực thi đề xuất — chỉ đọc kết quả người dùng đã quyết định, rồi chạy
- * hai bước còn lại (VALIDATE, REVIEW).
+ * hai bước còn lại (VALIDATE, REVIEW) kèm kiểm chứng hành động thật.
  */
 export async function resumeWorkExecutionAfterAction(i: ResumeInput): Promise<ResumeOutcome> {
   const { supabase, executionId, actionIds, spec, deliverableContent, apiKey } = i;
@@ -449,7 +579,12 @@ export async function resumeWorkExecutionAfterAction(i: ResumeInput): Promise<Re
   const resolved = rows.length - stillOpen;
 
   if (stillOpen > 0) {
-    return { validation: { score: 0, passed: false, checks: [] }, resolvedActions: resolved, pendingActions: stillOpen };
+    return {
+      validation: { score: 0, passed: false, checks: [] },
+      quality: null,
+      resolvedActions: resolved,
+      pendingActions: stillOpen,
+    };
   }
 
   await recordStep(supabase, executionId, "ACTION", "SUCCEEDED", {
@@ -457,8 +592,11 @@ export async function resumeWorkExecutionAfterAction(i: ResumeInput): Promise<Re
     output: { actionIds, resolved },
   });
 
-  const validation = await runValidateAndReview(supabase, executionId, spec, deliverableContent, apiKey);
-  return { validation, resolvedActions: resolved, pendingActions: 0 };
+  const res = await runValidateAndReview(supabase, executionId, spec, deliverableContent, apiKey, {
+    ...i.quality,
+    proposalIds: actionIds,
+  });
+  return { ...res, resolvedActions: resolved, pendingActions: 0 };
 }
 
 /* ---------------------------- RETRY / CANCEL ---------------------------- */
@@ -470,14 +608,15 @@ export interface RetryStepInput {
   spec: AiTaskSpec;
   deliverableContent: string;
   apiKey: string;
+  quality: QualityStepContext;
 }
 
 /**
  * Chạy lại tại chỗ một bước đã FAILED ở cuối pipeline (ACTION/VALIDATE/REVIEW).
  * KHÔNG sinh lại bản bàn giao và KHÔNG thực thi đề xuất nào — chỉ chạy lại phần
- * tự kiểm + chuyển duyệt trên đúng nội dung đã có.
+ * kiểm chất lượng + chuyển duyệt trên đúng nội dung đã có.
  */
-export async function retryWorkExecutionStepInPlace(i: RetryStepInput): Promise<WorkValidationResult> {
+export async function retryWorkExecutionStepInPlace(i: RetryStepInput): Promise<ValidateReviewResult> {
   const { supabase, executionId, kind, spec, deliverableContent, apiKey } = i;
   await recordStep(supabase, executionId, kind, "RUNNING", { detail: "Bạn đã yêu cầu chạy lại bước này." });
   if (kind === "ACTION") {
@@ -485,7 +624,7 @@ export async function retryWorkExecutionStepInPlace(i: RetryStepInput): Promise<
       detail: "Chạy lại: bỏ qua đề xuất hành động để pipeline tiếp tục an toàn.",
     });
   }
-  return runValidateAndReview(supabase, executionId, spec, deliverableContent, apiKey);
+  return runValidateAndReview(supabase, executionId, spec, deliverableContent, apiKey, i.quality);
 }
 
 /** Huỷ một bước đang FAILED: đánh dấu SKIPPED kèm lý do, không chạy thêm gì. */
