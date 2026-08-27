@@ -255,13 +255,46 @@ export const runAiTask = createServerFn({ method: "POST" })
       },
     });
 
-    // 1. Mở lượt chạy (RPC kiểm tra quyền tenant + workspace, ghi audit + outbox).
+    // 1. WE-2 PREFLIGHT — hợp đồng sản phẩm công việc phải hợp lệ TRƯỚC khi mở lượt chạy.
+    const templateCode = data.templateCode ?? "SUMMARY_REPORT";
+    const { loadWorkProductByTemplate, validateWorkProductExecution, bindWorkProductExecution } = await import(
+      "./work-products.server"
+    );
+    const contract = await loadWorkProductByTemplate(context.supabase as never, templateCode);
+    let preflightInputs: Record<string, string> = {};
+    if (contract) {
+      const preflight = await validateWorkProductExecution({
+        supabase: context.supabase as never,
+        contract,
+        rawInputs: {
+          ...(t["project_id"] ? { project_id: String(t["project_id"]) } : {}),
+          ...(t["meeting_id"] ? { meeting_id: String(t["meeting_id"]) } : {}),
+        },
+        worker: w as never,
+        tenantId: (t["tenant_id"] as string | null) ?? null,
+        workspaceId: (t["workspace_id"] as string | null) ?? null,
+      });
+      if (!preflight.ready) {
+        throw new ApiError({
+          code: "WORK_PRODUCT_PREFLIGHT_FAILED",
+          message: preflight.issues.map((x) => x.message).join(" "),
+        });
+      }
+      preflightInputs = preflight.inputs;
+    }
+
+    // 2. Mở lượt chạy (RPC kiểm tra quyền tenant + workspace, ghi audit + outbox).
     const startRes = await context.supabase.rpc("start_ai_task_execution" as never, {
       _task_id: data.taskId,
-      _template_code: data.templateCode ?? "SUMMARY_REPORT",
+      _template_code: templateCode,
     } as never);
     if (startRes.error) mapPgError(startRes.error, "AI_EXECUTION_NOT_FOUND");
     const exec = one<AiTaskExecutionRow>(startRes.data);
+
+    // Gắn bản chụp hợp đồng bất biến vào lượt chạy (chỉ ghi một lần).
+    if (contract) {
+      await bindWorkProductExecution(context.supabase as never, exec.id, contract, preflightInputs);
+    }
 
     // 2. Chạy pipeline WEE-1 (chỉ đọc, qua AI Context Engine với RLS của chính người dùng).
     const template = templateByCode(data.templateCode ?? exec.template_code);
@@ -290,6 +323,7 @@ export const runAiTask = createServerFn({ method: "POST" })
         workerRow: w as unknown as Record<string, unknown>,
         projectId: (t["project_id"] as string | null) ?? null,
         revision: exec.revision,
+        contract,
       });
 
       // 3. Kết thúc lượt chạy: LUÔN dừng ở WAITING_REVIEW — AI không thể tự nghiệm thu.

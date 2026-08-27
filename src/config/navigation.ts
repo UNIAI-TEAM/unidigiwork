@@ -256,6 +256,16 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/m/ai-workforce", order: 7.5 },
   },
   {
+    id: "work-catalog",
+    labelKey: "nav.workCatalog",
+    icon: ClipboardList,
+    href: "/work-catalog",
+    group: "automation",
+    match: ["/work-catalog"],
+    visibility: "everyone",
+    order: 3.5,
+  },
+  {
     id: "ai-market",
     labelKey: "nav.aiMarket",
     icon: Store,
