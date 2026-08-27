@@ -1,3 +1,4 @@
+import { z } from "zod";
 // WE-3 — Work Pricing & Unit Economics: contracts + toán tất định (client-safe, không I/O).
 //
 // Nguyên tắc trung thực (tiếp nối WE-1):
@@ -421,3 +422,14 @@ export function formatMoney(v: number | null | undefined, currency: string): str
   if (v === null || v === undefined) return "—";
   return `${v.toLocaleString("vi-VN", { maximumFractionDigits: 6 })} ${currency}`;
 }
+
+/* ------------------------------ Schema dùng chung ------------------------------ */
+// Đặt ở domain (không phải file server function) để lớp RPC giữ đúng dạng vỏ mỏng.
+export const CURRENCY_SCHEMA = z.enum(["USD", "VND", "EUR"]);
+export const PRICING_MODEL_SCHEMA = z.enum([
+  "PER_EXECUTION",
+  "PER_ACCEPTED_OUTCOME",
+  "BUNDLE",
+  "SUBSCRIPTION_INCLUDED",
+  "CUSTOM",
+]);

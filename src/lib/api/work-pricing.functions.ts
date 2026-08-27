@@ -21,16 +21,10 @@ import {
   type WorkPricingPolicy,
   type WorkProductEconomics,
   type WorkProductEconomicsRaw,
+  CURRENCY_SCHEMA as CURRENCY,
+  PRICING_MODEL_SCHEMA as PRICING_MODEL,
 } from "@/domain/work-economics/pricing";
 
-const CURRENCY = z.enum(["USD", "VND", "EUR"]);
-const PRICING_MODEL = z.enum([
-  "PER_EXECUTION",
-  "PER_ACCEPTED_OUTCOME",
-  "BUNDLE",
-  "SUBSCRIPTION_INCLUDED",
-  "CUSTOM",
-]);
 
 /* ------------------------------ Bảng giá model ------------------------------ */
 
