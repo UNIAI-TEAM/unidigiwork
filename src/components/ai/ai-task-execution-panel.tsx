@@ -289,6 +289,24 @@ export function AiTaskExecutionPanel({ task, onChanged }: { task: TaskLike; onCh
             </p>
           ) : null}
 
+          {typeof latest.evidence?.validationScore === "number" ? (
+            <p
+              className={`mt-3 rounded-md border p-2 text-xs ${
+                latest.evidence.validationPassed
+                  ? "border-border bg-surface text-muted-foreground"
+                  : "border-destructive/40 bg-destructive/5 text-destructive"
+              }`}
+            >
+              Tự kiểm theo tiêu chí nghiệm thu: {latest.evidence.validationScore}/100
+              {latest.evidence.validationPassed ? " · đạt" : " · chưa đạt, hãy xem kỹ trước khi nghiệm thu"}
+              {latest.evidence.proposedActionCount
+                ? ` · ${latest.evidence.proposedActionCount} đề xuất hành động đang chờ bạn xác nhận`
+                : ""}
+            </p>
+          ) : null}
+
+          <WorkExecutionTimeline executionId={latest.id} />
+
           {latest.status === "WAITING_REVIEW" && canReview ? (
             <div className="mt-4 space-y-2 border-t border-border pt-3">
               <textarea
