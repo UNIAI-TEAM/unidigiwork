@@ -99,6 +99,11 @@ export interface AiExecutionEvidence {
   partialContext?: boolean;
   invalidCitations?: string[];
   durationMs?: number;
+  /** WEE-1 — điểm tự kiểm theo tiêu chí nghiệm thu (0..100). */
+  validationScore?: number;
+  validationPassed?: boolean;
+  /** WEE-1 — số đề xuất hành động đang chờ người dùng xác nhận. */
+  proposedActionCount?: number;
 }
 
 export interface AiTaskExecutionRow {
