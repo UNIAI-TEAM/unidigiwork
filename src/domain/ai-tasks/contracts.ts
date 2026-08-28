@@ -40,7 +40,13 @@ export interface DeliverableTemplate {
   deliverableType: "SUMMARY" | "ANALYSIS" | "PLAN" | "DRAFT";
   /** Hướng dẫn cấu trúc bản bàn giao — ghép vào prompt hệ thống. */
   outline: string;
+  /**
+   * SWP-1 — Hướng dẫn riêng của sản phẩm công việc (adapter mỏng quanh WEE-1).
+   * Chỉ SIẾT thêm hành vi; mọi ràng buộc an toàn toàn cục vẫn giữ nguyên.
+   */
+  productInstructions?: string;
 }
+
 
 export const DELIVERABLE_TEMPLATES: readonly DeliverableTemplate[] = [
   {
