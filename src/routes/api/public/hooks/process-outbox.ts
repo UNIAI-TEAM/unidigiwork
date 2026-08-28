@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/public/hooks/process-outbox")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!authorized(request)) return new Response("Unauthorized", { status: 401 });
+        if (!(await authorized(request))) return new Response("Unauthorized", { status: 401 });
         let batch = 20;
         try {
           const body = (await request.json()) as { batch?: number };
