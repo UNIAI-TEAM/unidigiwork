@@ -4108,6 +4108,375 @@ export type Database = {
         }
         Relationships: []
       }
+      sell_work_commercial_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          occurred_at: string
+          payload: Json
+          pilot_id: string
+          tenant_id: string
+          work_unit_code: string | null
+          work_unit_version: number | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          pilot_id: string
+          tenant_id: string
+          work_unit_code?: string | null
+          work_unit_version?: number | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          pilot_id?: string
+          tenant_id?: string
+          work_unit_code?: string | null
+          work_unit_version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sell_work_commercial_events_pilot_id_fkey"
+            columns: ["pilot_id"]
+            isOneToOne: false
+            referencedRelation: "sell_work_pilots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sell_work_pilot_products: {
+        Row: {
+          activated_at: string | null
+          commercial_hypothesis: string | null
+          created_at: string
+          expected_deliverable: string | null
+          expected_frequency: string | null
+          expected_user_group: string | null
+          id: string
+          measurable_outcome: string | null
+          pilot_id: string
+          status: string
+          success_criteria: string | null
+          target_problem: string | null
+          updated_at: string
+          work_unit_code: string
+          work_unit_version: number
+        }
+        Insert: {
+          activated_at?: string | null
+          commercial_hypothesis?: string | null
+          created_at?: string
+          expected_deliverable?: string | null
+          expected_frequency?: string | null
+          expected_user_group?: string | null
+          id?: string
+          measurable_outcome?: string | null
+          pilot_id: string
+          status?: string
+          success_criteria?: string | null
+          target_problem?: string | null
+          updated_at?: string
+          work_unit_code: string
+          work_unit_version?: number
+        }
+        Update: {
+          activated_at?: string | null
+          commercial_hypothesis?: string | null
+          created_at?: string
+          expected_deliverable?: string | null
+          expected_frequency?: string | null
+          expected_user_group?: string | null
+          id?: string
+          measurable_outcome?: string | null
+          pilot_id?: string
+          status?: string
+          success_criteria?: string | null
+          target_problem?: string | null
+          updated_at?: string
+          work_unit_code?: string
+          work_unit_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sell_work_pilot_products_pilot_id_fkey"
+            columns: ["pilot_id"]
+            isOneToOne: false
+            referencedRelation: "sell_work_pilots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sell_work_pilot_support: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          minutes: number | null
+          occurred_at: string
+          pilot_id: string
+          summary: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          minutes?: number | null
+          occurred_at?: string
+          pilot_id: string
+          summary?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          minutes?: number | null
+          occurred_at?: string
+          pilot_id?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sell_work_pilot_support_pilot_id_fkey"
+            columns: ["pilot_id"]
+            isOneToOne: false
+            referencedRelation: "sell_work_pilots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sell_work_pilots: {
+        Row: {
+          activated_at: string | null
+          commercial_feedback: string | null
+          commercial_model: string | null
+          contract_value: number | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          customer_segment: string | null
+          id: string
+          industry: string | null
+          last_active_at: string | null
+          lost_primary_reason: string | null
+          lost_secondary_reason: string | null
+          notes: string | null
+          paid_evidence_reference: string | null
+          paid_verified_at: string | null
+          paid_verified_by: string | null
+          pilot_owner: string | null
+          start_date: string
+          status: string
+          success_criteria: Json
+          target_end_date: string | null
+          tenant_id: string
+          updated_at: string
+          wtp_amount: number | null
+          wtp_billing_basis: string | null
+          wtp_currency: string | null
+          wtp_signal: string
+        }
+        Insert: {
+          activated_at?: string | null
+          commercial_feedback?: string | null
+          commercial_model?: string | null
+          contract_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_segment?: string | null
+          id?: string
+          industry?: string | null
+          last_active_at?: string | null
+          lost_primary_reason?: string | null
+          lost_secondary_reason?: string | null
+          notes?: string | null
+          paid_evidence_reference?: string | null
+          paid_verified_at?: string | null
+          paid_verified_by?: string | null
+          pilot_owner?: string | null
+          start_date?: string
+          status?: string
+          success_criteria?: Json
+          target_end_date?: string | null
+          tenant_id: string
+          updated_at?: string
+          wtp_amount?: number | null
+          wtp_billing_basis?: string | null
+          wtp_currency?: string | null
+          wtp_signal?: string
+        }
+        Update: {
+          activated_at?: string | null
+          commercial_feedback?: string | null
+          commercial_model?: string | null
+          contract_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_segment?: string | null
+          id?: string
+          industry?: string | null
+          last_active_at?: string | null
+          lost_primary_reason?: string | null
+          lost_secondary_reason?: string | null
+          notes?: string | null
+          paid_evidence_reference?: string | null
+          paid_verified_at?: string | null
+          paid_verified_by?: string | null
+          pilot_owner?: string | null
+          start_date?: string
+          status?: string
+          success_criteria?: Json
+          target_end_date?: string | null
+          tenant_id?: string
+          updated_at?: string
+          wtp_amount?: number | null
+          wtp_billing_basis?: string | null
+          wtp_currency?: string | null
+          wtp_signal?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sell_work_pilots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sell_work_pricing_experiments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_response: string
+          id: string
+          included_volume: number | null
+          notes: string | null
+          overage_price: number | null
+          pilot_id: string
+          price: number
+          pricing_basis: string
+          proposed_at: string
+          responded_at: string | null
+          updated_at: string
+          work_unit_code: string
+          work_unit_version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          customer_response?: string
+          id?: string
+          included_volume?: number | null
+          notes?: string | null
+          overage_price?: number | null
+          pilot_id: string
+          price: number
+          pricing_basis: string
+          proposed_at?: string
+          responded_at?: string | null
+          updated_at?: string
+          work_unit_code: string
+          work_unit_version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_response?: string
+          id?: string
+          included_volume?: number | null
+          notes?: string | null
+          overage_price?: number | null
+          pilot_id?: string
+          price?: number
+          pricing_basis?: string
+          proposed_at?: string
+          responded_at?: string | null
+          updated_at?: string
+          work_unit_code?: string
+          work_unit_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sell_work_pricing_experiments_pilot_id_fkey"
+            columns: ["pilot_id"]
+            isOneToOne: false
+            referencedRelation: "sell_work_pilots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sell_work_revenue_records: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          evidence_reference: string | null
+          id: string
+          period_end: string | null
+          period_start: string | null
+          pilot_id: string
+          revenue_class: string
+          revenue_group: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          evidence_reference?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          pilot_id: string
+          revenue_class: string
+          revenue_group: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          evidence_reference?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          pilot_id?: string
+          revenue_class?: string
+          revenue_group?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sell_work_revenue_records_pilot_id_fkey"
+            columns: ["pilot_id"]
+            isOneToOne: false
+            referencedRelation: "sell_work_pilots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null
@@ -7457,6 +7826,14 @@ export type Database = {
         Args: { _id: string; _worker: string }
         Returns: boolean
       }
+      compute_sell_work_pilot_metrics: {
+        Args: { _from?: string; _pilot_id: string; _to?: string }
+        Returns: Json
+      }
+      compute_sell_work_pilot_portfolio: {
+        Args: { _from?: string; _to?: string }
+        Returns: Json
+      }
       compute_work_product_cohort: {
         Args: {
           _code: string
@@ -7552,6 +7929,20 @@ export type Database = {
           _meeting_id: string
         }
         Returns: Json
+      }
+      create_sell_work_pilot: {
+        Args: {
+          _commercial_model?: string
+          _customer_segment?: string
+          _industry?: string
+          _notes?: string
+          _pilot_owner?: string
+          _start_date?: string
+          _success_criteria?: Json
+          _target_end_date?: string
+          _tenant_id: string
+        }
+        Returns: string
       }
       create_subtask: {
         Args: {
@@ -8551,6 +8942,29 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_sell_work_pilot_support: {
+        Args: {
+          _category: string
+          _minutes?: number
+          _pilot_id: string
+          _summary?: string
+        }
+        Returns: string
+      }
+      record_sell_work_pricing_experiment: {
+        Args: {
+          _code: string
+          _currency: string
+          _included_volume?: number
+          _notes?: string
+          _overage_price?: number
+          _pilot_id: string
+          _price: number
+          _pricing_basis: string
+          _version: number
+        }
+        Returns: string
+      }
       record_tenant_invitation_rejection: {
         Args: {
           _actor_id: string
@@ -9060,6 +9474,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_sell_work_pilot_status: {
+        Args: {
+          _pilot_id: string
+          _reason?: string
+          _secondary_reason?: string
+          _status: string
+        }
+        Returns: Json
+      }
+      set_sell_work_pilot_wtp: {
+        Args: {
+          _amount?: number
+          _billing_basis?: string
+          _currency?: string
+          _pilot_id: string
+          _signal: string
+        }
+        Returns: undefined
+      }
+      set_sell_work_pricing_response: {
+        Args: { _experiment_id: string; _notes?: string; _response: string }
+        Returns: undefined
+      }
       set_task_tags: {
         Args: { _tags: string[]; _task_id: string }
         Returns: {
@@ -9346,6 +9783,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      swp2_assert_admin_read: { Args: never; Returns: undefined }
+      swp2_assert_admin_write: { Args: never; Returns: undefined }
       sync_meeting_artifacts: { Args: { _meeting_id: string }; Returns: number }
       transfer_meeting_host: {
         Args: {
@@ -9591,6 +10030,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      upsert_sell_work_pilot_product: {
+        Args: {
+          _activate?: boolean
+          _code: string
+          _commercial_hypothesis?: string
+          _expected_deliverable?: string
+          _expected_frequency?: string
+          _expected_user_group?: string
+          _measurable_outcome?: string
+          _pilot_id: string
+          _success_criteria?: string
+          _target_problem?: string
+          _version?: number
+        }
+        Returns: string
+      }
       upsert_workflow_trigger: {
         Args: {
           _at_hour?: number
@@ -9633,6 +10088,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      verify_sell_work_paid_pilot: {
+        Args: {
+          _amount: number
+          _currency: string
+          _evidence_reference: string
+          _pilot_id: string
+          _revenue_class?: string
+          _revenue_group?: string
+        }
+        Returns: undefined
       }
       work_economics_summary: {
         Args: {
