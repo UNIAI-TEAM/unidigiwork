@@ -6,7 +6,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, ShieldAlert } from "lucide-react";
 import { listFlagshipCohorts } from "@/lib/api/sell-work-cohort.functions";
+import { getPilotPortfolio } from "@/lib/api/sell-work-pilots.functions";
 import { COHORT_STATUS_LABEL, COHORT_THRESHOLDS, type WorkProductCohort } from "@/domain/sell-work/cohort";
+import {
+  COMMERCIAL_PROOF_LABEL,
+  PRODUCT_DECISION_LABEL,
+  PROOF_THRESHOLDS,
+  classifyCommercialProof,
+  suggestProductDecision,
+  type PilotPortfolio,
+} from "@/domain/sell-work/pilot";
 
 export const Route = createFileRoute("/_authenticated/admin/proof")({
   head: () => ({
@@ -110,6 +119,111 @@ function ProofPage() {
         })}
       </div>
       {!data && <p className="text-sm text-muted-foreground">Đang tổng hợp bằng chứng…</p>}
+
+      <CommercialProof cohorts={data ?? []} />
     </div>
+  );
+}
+
+/* ------------------------- SWP-2 — Bằng chứng thương mại ------------------------- */
+
+function CommercialProof({ cohorts }: { cohorts: { code: string; label: string; cohort: WorkProductCohort | null }[] }) {
+  const fetchPortfolio = useServerFn(getPilotPortfolio);
+  const { data: portfolio } = useQuery({
+    queryKey: ["swp2", "portfolio", "proof"],
+    queryFn: () => fetchPortfolio({ data: { days: 365 } }) as Promise<PilotPortfolio>,
+  });
+
+  if (!portfolio) return <p className="text-sm text-muted-foreground">Đang tổng hợp bằng chứng thương mại…</p>;
+
+  const s = portfolio.summary;
+  const dep = portfolio.servicesDependency;
+
+  return (
+    <section className="space-y-4">
+      <header>
+        <h2 className="text-lg font-semibold">Bằng chứng thương mại</h2>
+        <p className="text-sm text-muted-foreground">
+          Quan tâm KHÔNG phải doanh thu. Chỉ pilot có tham chiếu bằng chứng mới được tính là trả phí. Mọi tỉ lệ đều kèm cỡ mẫu.
+        </p>
+      </header>
+
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {[
+          ["Tổng pilot", String(s.totalPilots)],
+          ["Đang chạy thật", String(s.activePilots)],
+          ["Trả phí đã xác minh", String(s.paidPilots)],
+          ["Tín hiệu mở rộng", String(s.expansionSignals)],
+          ["Đã dừng / mất", `${s.pausedPilots} / ${s.lostPilots}`],
+          ["Có tín hiệu chi trả", String(s.customersWithWtpSignal)],
+        ].map(([k, v]) => (
+          <div key={k} className="rounded-xl border border-border bg-surface p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{k}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{v}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface p-5">
+        <h3 className="text-base font-semibold">Mức phụ thuộc dịch vụ (tín hiệu chống ảo tưởng sản phẩm)</h3>
+        <div className="mt-2 grid gap-1 sm:grid-cols-2">
+          <Row label="Pilot cần kỹ thuật riêng" value={`${dep.pilotsWithCustomEngineering}/${dep.pilotsTotal}`} />
+          <Row label="Pilot cần dựng dữ liệu thủ công" value={`${dep.pilotsWithManualDataSetup}/${dep.pilotsTotal}`} />
+          <Row label="Pilot cần hỗ trợ lặp lại" value={`${dep.pilotsWithRepeatedSupport}/${dep.pilotsTotal}`} />
+          <Row label="Tổng phút hỗ trợ" value={String(dep.supportMinutesTotal)} />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Doanh thu đã xác minh: phần mềm {portfolio.revenue.software} · sell work {portfolio.revenue.sellWork} · dịch vụ{" "}
+          {portfolio.revenue.services} {portfolio.revenue.currencies.join("/")}
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        {cohorts.map(({ code, label, cohort }) => {
+          const rows = portfolio.pilots.filter((p) => p.products.includes(code));
+          const input = {
+            code,
+            pilotCount: rows.length,
+            paidPilotCount: rows.filter((p) => p.paidVerifiedAt).length,
+            customersWithRepeatUsage: rows.filter((p) => p.acceptedExecutions >= 2).length,
+            wtpConfirmations: rows.filter((p) => p.wtpSignal === "CONTRACTED" || p.wtpSignal === "PAID_PILOT" || p.wtpSignal === "WILL_PAY_AT_RIGHT_PRICE" || p.paidVerifiedAt).length,
+            acceptedExecutions: cohort?.acceptedExecutions ?? 0,
+            knownCostPerAcceptedWork: cohort?.knownCostPerAcceptedWork ?? null,
+            economicsCompleteness: (cohort?.economicsCompleteness ?? "INSUFFICIENT") as "FULL" | "PARTIAL" | "INSUFFICIENT",
+            finalAcceptanceRate: cohort?.finalAcceptanceRate ?? null,
+            pilotsWithCustomEngineering: dep.pilotsWithCustomEngineering,
+          };
+          const proof = classifyCommercialProof(input);
+          const decision = suggestProductDecision(input);
+          return (
+            <div key={code} className="rounded-2xl border border-border bg-surface p-5">
+              <h3 className="text-base font-semibold">{label}</h3>
+              <p className="font-mono text-[11px] text-muted-foreground">{code}</p>
+              <div className="mt-3">
+                <Row label="Bằng chứng thương mại" value={COMMERCIAL_PROOF_LABEL[proof]} />
+                <Row label="Khách hàng thí điểm" value={String(input.pilotCount)} />
+                <Row label="Trả phí đã xác minh" value={String(input.paidPilotCount)} />
+                <Row label="Khách dùng lặp lại" value={String(input.customersWithRepeatUsage)} />
+                <Row
+                  label={`Kết quả nghiệm thu (cần ≥ ${PROOF_THRESHOLDS.ECONOMICS_ACCEPTED_MIN})`}
+                  value={String(input.acceptedExecutions)}
+                />
+                <Row
+                  label="Chi phí đã biết / việc nghiệm thu"
+                  value={
+                    input.knownCostPerAcceptedWork === null
+                      ? "Không đủ dữ liệu"
+                      : `${input.knownCostPerAcceptedWork.toFixed(4)} ${cohort?.currency ?? ""}`.trim()
+                  }
+                />
+              </div>
+              <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs">
+                Gợi ý (tham khảo): <strong>{PRODUCT_DECISION_LABEL[decision.decision]}</strong> — {decision.reason}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

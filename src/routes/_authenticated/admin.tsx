@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useI18n, type Key } from "@/lib/i18n";
 import { useState } from "react";
-import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database, Coins } from "lucide-react";
+import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database, Coins, BadgeDollarSign } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { useAdminAccess } from "@/features/admin/access";
 
@@ -29,6 +29,7 @@ const TABS = [
   { to: "/admin/webhooks" as const, label: "Webhook", icon: Webhook },
   { to: "/admin/economics" as const, label: "Kinh tế đơn vị", icon: Coins },
   { to: "/admin/cohorts" as const, label: "Cohort", icon: Gauge },
+  { to: "/admin/sell-work/pilots" as const, label: "Pilot thương mại", icon: BadgeDollarSign },
   { to: "/admin/proof" as const, label: "Bằng chứng", icon: ShieldCheck },
   { to: "/admin/backup" as const, label: "adm.tab.backup", icon: Database },
 
