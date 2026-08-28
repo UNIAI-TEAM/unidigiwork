@@ -6,7 +6,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, ShieldAlert } from "lucide-react";
 import { listFlagshipCohorts } from "@/lib/api/sell-work-cohort.functions";
+import { getPilotPortfolio } from "@/lib/api/sell-work-pilots.functions";
 import { COHORT_STATUS_LABEL, COHORT_THRESHOLDS, type WorkProductCohort } from "@/domain/sell-work/cohort";
+import {
+  COMMERCIAL_PROOF_LABEL,
+  PRODUCT_DECISION_LABEL,
+  PROOF_THRESHOLDS,
+  classifyCommercialProof,
+  suggestProductDecision,
+  type PilotPortfolio,
+} from "@/domain/sell-work/pilot";
 
 export const Route = createFileRoute("/_authenticated/admin/proof")({
   head: () => ({
