@@ -8,7 +8,9 @@ import { ArrowLeft, Gauge, Play, ShieldCheck, Timer } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { listWorkProducts } from "@/lib/api/work-products.functions";
 import { getWorkProductCohort } from "@/lib/api/sell-work-cohort.functions";
-import { listRunnableAiTasks, listWorkProductRuns } from "@/lib/api/sell-work-runs.functions";
+import { listWorkProductRuns } from "@/lib/api/sell-work-runs.functions";
+import { listTasks } from "@/lib/api/tasks.functions";
+import { useActiveWorkspace, useMyWorkspaces } from "@/lib/active-workspace";
 import { getActiveTenant } from "@/lib/api/active-tenant.functions";
 import { runAiTask } from "@/lib/api/ai-tasks.functions";
 import { SWP1_FLAGSHIP_TEMPLATE } from "@/domain/ai-tasks/contracts";
@@ -49,7 +51,7 @@ function WorkProductDetailPage() {
   const fetchProducts = useServerFn(listWorkProducts);
   const fetchCohort = useServerFn(getWorkProductCohort);
   const fetchRuns = useServerFn(listWorkProductRuns);
-  const fetchTasks = useServerFn(listRunnableAiTasks);
+  const fetchTasks = useServerFn(listTasks);
   const fetchTenant = useServerFn(getActiveTenant);
   const startRun = useServerFn(runAiTask);
 
@@ -63,7 +65,22 @@ function WorkProductDetailPage() {
     enabled: Boolean(tenant?.tenantId),
   });
   const { data: runs } = useQuery({ queryKey: ["swp1", "runs", code], queryFn: () => fetchRuns({ data: { code } }) });
-  const { data: tasks } = useQuery({ queryKey: ["swp1", "runnable"], queryFn: () => fetchTasks({ data: {} }) });
+  // Chỉ liệt kê công việc trong không gian làm việc đang chọn (RLS vẫn là nguồn ủy quyền).
+  const { workspaceId } = useActiveWorkspace();
+  const { data: workspaces } = useMyWorkspaces();
+  const effectiveWorkspaceId = workspaceId ?? workspaces?.[0]?.id ?? null;
+  const { data: taskRows } = useQuery({
+    queryKey: ["swp1", "runnable", effectiveWorkspaceId],
+    enabled: Boolean(effectiveWorkspaceId),
+    queryFn: () => fetchTasks({ data: { workspaceId: effectiveWorkspaceId!, limit: 100 } }),
+  });
+  const tasks = useMemo(
+    () =>
+      ((taskRows ?? []) as Record<string, unknown>[])
+        .filter((t) => Boolean(t["ai_worker_id"]))
+        .map((t) => ({ id: t["id"] as string, title: (t["title"] as string) ?? "" })),
+    [taskRows],
+  );
 
   const [taskId, setTaskId] = useState("");
   const [meetingId, setMeetingId] = useState("");
@@ -156,7 +173,7 @@ function WorkProductDetailPage() {
                   className="rounded-lg border border-border bg-surface px-2 py-1.5"
                 >
                   <option value="">— Chọn công việc —</option>
-                  {(tasks ?? []).map((t) => (
+                  {tasks.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.title}
                     </option>
