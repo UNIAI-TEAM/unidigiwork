@@ -87,6 +87,7 @@ import { Route as AuthenticatedAdminTraceRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminTenantRouteImport } from './routes/_authenticated/admin.tenant'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminQuotaRouteImport } from './routes/_authenticated/admin.quota'
+import { Route as AuthenticatedAdminProofRouteImport } from './routes/_authenticated/admin.proof'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
@@ -516,6 +517,11 @@ const AuthenticatedAdminQuotaRoute = AuthenticatedAdminQuotaRouteImport.update({
   path: '/quota',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminProofRoute = AuthenticatedAdminProofRouteImport.update({
+  id: '/proof',
+  path: '/proof',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -688,6 +694,7 @@ export interface FileRoutesByFullPath {
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/admin/proof': typeof AuthenticatedAdminProofRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/tenant': typeof AuthenticatedAdminTenantRoute
@@ -785,6 +792,7 @@ export interface FileRoutesByTo {
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/admin/proof': typeof AuthenticatedAdminProofRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/tenant': typeof AuthenticatedAdminTenantRoute
@@ -886,6 +894,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/_authenticated/admin/proof': typeof AuthenticatedAdminProofRoute
   '/_authenticated/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/_authenticated/admin/tenant': typeof AuthenticatedAdminTenantRoute
@@ -987,6 +996,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/plans'
+    | '/admin/proof'
     | '/admin/quota'
     | '/admin/rules'
     | '/admin/tenant'
@@ -1084,6 +1094,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/plans'
+    | '/admin/proof'
     | '/admin/quota'
     | '/admin/rules'
     | '/admin/tenant'
@@ -1184,6 +1195,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/plans'
+    | '/_authenticated/admin/proof'
     | '/_authenticated/admin/quota'
     | '/_authenticated/admin/rules'
     | '/_authenticated/admin/tenant'
@@ -1809,6 +1821,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQuotaRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/proof': {
+      id: '/_authenticated/admin/proof'
+      path: '/proof'
+      fullPath: '/admin/proof'
+      preLoaderRoute: typeof AuthenticatedAdminProofRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/plans': {
       id: '/_authenticated/admin/plans'
       path: '/plans'
@@ -1962,6 +1981,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
+  AuthenticatedAdminProofRoute: typeof AuthenticatedAdminProofRoute
   AuthenticatedAdminQuotaRoute: typeof AuthenticatedAdminQuotaRoute
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
   AuthenticatedAdminTenantRoute: typeof AuthenticatedAdminTenantRoute
@@ -1981,6 +2001,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
+  AuthenticatedAdminProofRoute: AuthenticatedAdminProofRoute,
   AuthenticatedAdminQuotaRoute: AuthenticatedAdminQuotaRoute,
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
   AuthenticatedAdminTenantRoute: AuthenticatedAdminTenantRoute,
