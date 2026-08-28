@@ -31,3 +31,11 @@ dist-ssr
 *.sln
 *.sw?
 .lovable/reports/
+
+# Secrets — Gate 1 (Investor Tech Hardening)
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
