@@ -6,11 +6,11 @@ async function run(batch: number) {
   return drainOutbox(supabaseAdmin as never, { batch });
 }
 
-function authorized(request: Request): boolean {
-  const apikey = request.headers.get("apikey");
-  const expected = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-  return Boolean(apikey && expected && apikey === expected);
+async function authorized(request: Request): Promise<boolean> {
+  const { isAuthorizedCronRequest } = await import("@/lib/api/cron-auth.server");
+  return isAuthorizedCronRequest(request);
 }
+
 
 export const Route = createFileRoute("/api/public/hooks/process-outbox")({
   server: {
