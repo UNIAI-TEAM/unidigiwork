@@ -1,11 +1,22 @@
 // HOME V2 — Trang chủ điều hành công việc cá nhân (My Work · Upcoming · Work Inbox).
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CalendarClock, CheckCircle2, Inbox, Plus, RefreshCw } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Inbox,
+  Plus,
+  RefreshCw,
+  SlidersHorizontal,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHomePrefs } from "@/components/home/use-home-prefs";
+import { HomeCustomizePanel } from "@/components/home/home-customize";
+import type { HomeLayout, HomeSectionKey } from "@/lib/home-prefs";
+
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getHomeSummary,
@@ -283,6 +294,185 @@ function HomePage() {
       ?.scrollIntoView({ block: "nearest" });
   }, [selectedIdx]);
 
+  const { prefs, saving, update, reset } = useHomePrefs();
+  const [customizing, setCustomizing] = useState(false);
+
+  const blocks: Record<HomeSectionKey, ReactNode> = {
+    stats: failed ? (
+      <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+        Không tải được dữ liệu trang chủ.{" "}
+        <button
+          type="button"
+          className="font-medium text-primary underline-offset-2 hover:underline"
+          onClick={() => homeQuery.refetch()}
+        >
+          Thử lại
+        </button>
+      </div>
+    ) : (
+      <TodaySummary counts={data?.counts} />
+    ),
+
+    mywork: (
+      <SectionCard
+        title="Công việc của tôi"
+        action={
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs text-muted-foreground md:inline">
+              J/K di chuyển · X chọn · C hoàn thành · O mở · R trang liên quan
+            </span>
+            <ViewAll to="/tasks" />
+          </div>
+        }
+      >
+        {openTasks.length ? (
+          <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-2/60 px-4 py-2">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                className="h-4 w-4 cursor-pointer accent-primary"
+                checked={allChecked}
+                onChange={(e) =>
+                  setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])
+                }
+                aria-label="Chọn tất cả công việc"
+              />
+              Chọn tất cả
+            </label>
+            <span className="text-xs text-muted-foreground">
+              Đã chọn {checkedIds.length}/{openTasks.length}
+            </span>
+            <div className="ml-auto flex items-center gap-2">
+              {checkedIds.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setCheckedIds([])}
+                  className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-surface-2"
+                >
+                  Bỏ chọn
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={bulkComplete}
+                disabled={!checkedIds.length || bulkRunning}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+              >
+                {bulkRunning ? "Đang xử lý…" : `Hoàn thành ${checkedIds.length || ""}`.trim()}
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {partialSet.has("tasks") ? (
+          <PartialNotice
+            label="Không tải được đầy đủ danh sách công việc."
+            onRetry={() => homeQuery.refetch()}
+            retrying={homeQuery.isFetching}
+          />
+        ) : null}
+        {homeQuery.isLoading ? (
+          <SkeletonRows rows={4} />
+        ) : !data?.myWork.length ? (
+          <EmptyState
+            icon={CheckCircle2}
+            title="Không có việc cần xử lý"
+            description="Bạn không còn công việc quá hạn hay đến hạn hôm nay. Tạo việc mới hoặc xem toàn bộ danh sách."
+            actions={[
+              { label: "Tạo công việc", to: "/tasks" },
+              { label: "Xem tất cả công việc", to: "/tasks" },
+            ]}
+          />
+        ) : (
+          data.myWork.map((t, i) => (
+            <MyWorkRow
+              key={t.id}
+              task={t}
+              selected={i === selectedIdx}
+              completing={completingId === t.id}
+              checked={checkedSet.has(t.id)}
+              onCheckedChange={toggleChecked}
+              onComplete={(task) => complete.mutate(task)}
+            />
+          ))
+        )}
+      </SectionCard>
+    ),
+
+    upcoming: (
+      <SectionCard title="Sắp tới" action={<ViewAll to="/calendar" />}>
+        {partialSet.has("upcoming") ? (
+          <PartialNotice
+            label="Không tải được lịch họp/deadline."
+            onRetry={() => homeQuery.refetch()}
+            retrying={homeQuery.isFetching}
+          />
+        ) : null}
+        {homeQuery.isLoading ? (
+          <SkeletonRows rows={3} />
+        ) : !data?.upcoming.length ? (
+          <EmptyState
+            icon={CalendarClock}
+            title="Không có cuộc họp hay deadline"
+            description="Lịch của bạn trống trong hôm nay và ngày mai. Tạo cuộc họp hoặc mở lịch để xem xa hơn."
+            actions={[
+              { label: "Tạo cuộc họp", to: "/meeting" },
+              { label: "Mở lịch", to: "/calendar" },
+            ]}
+          />
+        ) : (
+          data.upcoming.map((u) => <UpcomingRow key={u.id} item={u} />)
+        )}
+      </SectionCard>
+    ),
+
+    inbox: (
+      <SectionCard title="Hộp việc" action={<ViewAll to="/notifications" />}>
+        {partialSet.has("unread") ? (
+          <PartialNotice
+            label="Không lấy được số liệu chưa đọc (nhắc đến, email). Danh sách có thể chưa đầy đủ."
+            onRetry={() => homeQuery.refetch()}
+            retrying={homeQuery.isFetching}
+          />
+        ) : null}
+        {homeQuery.isLoading ? (
+          <SkeletonRows rows={4} />
+        ) : !data?.inbox.length ? (
+          <EmptyState
+            icon={Inbox}
+            title="Hộp việc trống"
+            description="Không có thông báo, nhắc đến hay email nào đang chờ bạn xử lý."
+            actions={[
+              { label: "Xem thông báo", to: "/notifications" },
+              { label: "Mở email", to: "/email" },
+            ]}
+          />
+        ) : (
+          data.inbox.map((i) => (
+            <InboxRow
+              key={i.id}
+              item={i}
+              onOpen={openInboxItem}
+              onMarkRead={(item) => readMutation.mutate(item)}
+            />
+          ))
+        )}
+      </SectionCard>
+    ),
+
+    aibrief: (
+      <AiBrief
+        aiBullets={brief?.available ? brief.bullets : []}
+        factBrief={data?.brief ?? []}
+        loading={briefQuery.isLoading || briefQuery.isFetching}
+        unavailableMessage={brief && !brief.available ? brief.message : null}
+        onRefresh={() => briefQuery.refetch()}
+        generatedAt={brief?.generatedAt ?? null}
+      />
+    ),
+  };
+
+  const visible = prefs.order.filter((k) => prefs.enabled[k]);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="dashboard" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -296,6 +486,17 @@ function HomePage() {
               <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setCustomizing((v) => !v)}
+                aria-expanded={customizing}
+                className={cn(
+                  "inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-2",
+                  customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
+                )}
+              >
+                <SlidersHorizontal className="h-4 w-4" /> Tuỳ chỉnh
+              </button>
               <button
                 type="button"
                 onClick={refreshAll}
@@ -326,171 +527,36 @@ function HomePage() {
             </div>
           </header>
 
-          {failed ? (
+          {customizing ? (
+            <HomeCustomizePanel
+              prefs={prefs}
+              saving={saving}
+              onChange={update}
+              onReset={reset}
+              onClose={() => setCustomizing(false)}
+            />
+          ) : null}
+
+          {visible.length === 0 ? (
             <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
-              Không tải được dữ liệu trang chủ.{" "}
+              Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
               <button
                 type="button"
                 className="font-medium text-primary underline-offset-2 hover:underline"
-                onClick={() => homeQuery.refetch()}
+                onClick={() => setCustomizing(true)}
               >
-                Thử lại
+                Mở tuỳ chỉnh
               </button>
             </div>
           ) : (
-            <TodaySummary counts={data?.counts} />
+            <div className={cn("grid gap-5", gridClass(prefs.layout))}>
+              {visible.map((key) => (
+                <div key={key} className={spanClass(key, prefs.layout)}>
+                  {blocks[key]}
+                </div>
+              ))}
+            </div>
           )}
-
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <SectionCard
-              title="Công việc của tôi"
-              action={
-                <div className="flex items-center gap-3">
-                  <span className="hidden text-xs text-muted-foreground md:inline">
-                    J/K di chuyển · X chọn · C hoàn thành · O mở · R trang liên quan
-                  </span>
-                  <ViewAll to="/tasks" />
-                </div>
-              }
-            >
-              {openTasks.length ? (
-                <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-2/60 px-4 py-2">
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 cursor-pointer accent-primary"
-                      checked={allChecked}
-                      onChange={(e) =>
-                        setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])
-                      }
-                      aria-label="Chọn tất cả công việc"
-                    />
-                    Chọn tất cả
-                  </label>
-                  <span className="text-xs text-muted-foreground">
-                    Đã chọn {checkedIds.length}/{openTasks.length}
-                  </span>
-                  <div className="ml-auto flex items-center gap-2">
-                    {checkedIds.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => setCheckedIds([])}
-                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-surface-2"
-                      >
-                        Bỏ chọn
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={bulkComplete}
-                      disabled={!checkedIds.length || bulkRunning}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
-                    >
-                      {bulkRunning ? "Đang xử lý…" : `Hoàn thành ${checkedIds.length || ""}`.trim()}
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-              {partialSet.has("tasks") ? (
-                <PartialNotice
-                  label="Không tải được đầy đủ danh sách công việc."
-                  onRetry={() => homeQuery.refetch()}
-                  retrying={homeQuery.isFetching}
-                />
-              ) : null}
-              {homeQuery.isLoading ? (
-                <SkeletonRows rows={4} />
-              ) : !data?.myWork.length ? (
-                <EmptyState
-                  icon={CheckCircle2}
-                  title="Không có việc cần xử lý"
-                  description="Bạn không còn công việc quá hạn hay đến hạn hôm nay. Tạo việc mới hoặc xem toàn bộ danh sách."
-                  actions={[
-                    { label: "Tạo công việc", to: "/tasks" },
-                    { label: "Xem tất cả công việc", to: "/tasks" },
-                  ]}
-                />
-              ) : (
-                data.myWork.map((t, i) => (
-                  <MyWorkRow
-                    key={t.id}
-                    task={t}
-                    selected={i === selectedIdx}
-                    completing={completingId === t.id}
-                    checked={checkedSet.has(t.id)}
-                    onCheckedChange={toggleChecked}
-                    onComplete={(task) => complete.mutate(task)}
-                  />
-                ))
-              )}
-            </SectionCard>
-
-            <SectionCard title="Sắp tới" action={<ViewAll to="/calendar" />}>
-              {partialSet.has("upcoming") ? (
-                <PartialNotice
-                  label="Không tải được lịch họp/deadline."
-                  onRetry={() => homeQuery.refetch()}
-                  retrying={homeQuery.isFetching}
-                />
-              ) : null}
-              {homeQuery.isLoading ? (
-                <SkeletonRows rows={3} />
-              ) : !data?.upcoming.length ? (
-                <EmptyState
-                  icon={CalendarClock}
-                  title="Không có cuộc họp hay deadline"
-                  description="Lịch của bạn trống trong hôm nay và ngày mai. Tạo cuộc họp hoặc mở lịch để xem xa hơn."
-                  actions={[
-                    { label: "Tạo cuộc họp", to: "/meeting" },
-                    { label: "Mở lịch", to: "/calendar" },
-                  ]}
-                />
-              ) : (
-                data.upcoming.map((u) => <UpcomingRow key={u.id} item={u} />)
-              )}
-            </SectionCard>
-          </div>
-
-          <SectionCard title="Hộp việc" action={<ViewAll to="/notifications" />}>
-            {partialSet.has("unread") ? (
-              <PartialNotice
-                label="Không lấy được số liệu chưa đọc (nhắc đến, email). Danh sách có thể chưa đầy đủ."
-                onRetry={() => homeQuery.refetch()}
-                retrying={homeQuery.isFetching}
-              />
-            ) : null}
-            {homeQuery.isLoading ? (
-              <SkeletonRows rows={4} />
-            ) : !data?.inbox.length ? (
-              <EmptyState
-                icon={Inbox}
-                title="Hộp việc trống"
-                description="Không có thông báo, nhắc đến hay email nào đang chờ bạn xử lý."
-                actions={[
-                  { label: "Xem thông báo", to: "/notifications" },
-                  { label: "Mở email", to: "/email" },
-                ]}
-              />
-            ) : (
-              data.inbox.map((i) => (
-                <InboxRow
-                    key={i.id}
-                    item={i}
-                    onOpen={openInboxItem}
-                    onMarkRead={(item) => readMutation.mutate(item)}
-                  />
-              ))
-            )}
-          </SectionCard>
-
-          <AiBrief
-            aiBullets={brief?.available ? brief.bullets : []}
-            factBrief={data?.brief ?? []}
-            loading={briefQuery.isLoading || briefQuery.isFetching}
-            unavailableMessage={brief && !brief.available ? brief.message : null}
-            onRefresh={() => briefQuery.refetch()}
-            generatedAt={brief?.generatedAt ?? null}
-          />
 
           {data?.partial.length ? (
             <p className="text-xs text-muted-foreground">
@@ -514,3 +580,20 @@ function HomePage() {
     </div>
   );
 }
+
+function gridClass(layout: HomeLayout) {
+  if (layout === "compact") return "grid-cols-1";
+  return "xl:grid-cols-3";
+}
+
+function spanClass(key: HomeSectionKey, layout: HomeLayout) {
+  if (layout === "compact") return "col-span-1";
+  if (key === "stats" || key === "aibrief") return "xl:col-span-3";
+  if (layout === "balanced") {
+    if (key === "mywork") return "xl:col-span-2";
+    if (key === "inbox") return "xl:col-span-3";
+    return "xl:col-span-1";
+  }
+  return "xl:col-span-1";
+}
+
