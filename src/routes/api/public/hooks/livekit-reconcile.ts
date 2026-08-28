@@ -9,11 +9,9 @@ export const Route = createFileRoute("/api/public/hooks/livekit-reconcile")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-        if (!apikey || !expected || apikey !== expected) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const { isAuthorizedCronRequest, cronUnauthorizedResponse } = await import("@/lib/api/cron-auth.server");
+        if (!isAuthorizedCronRequest(request)) return cronUnauthorizedResponse();
+
 
         const { readLiveKitConfig, listRooms } = await import("@/lib/api/livekit.server");
         const config = readLiveKitConfig();
