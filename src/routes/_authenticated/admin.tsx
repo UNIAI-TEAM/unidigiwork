@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useI18n, type Key } from "@/lib/i18n";
 import { useState } from "react";
-import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database, Coins } from "lucide-react";
+import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database, Coins, BadgeDollarSign } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { useAdminAccess } from "@/features/admin/access";
 
