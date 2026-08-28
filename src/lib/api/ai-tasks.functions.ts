@@ -290,9 +290,12 @@ export const runAiTask = createServerFn({ method: "POST" })
         supabase: context.supabase as never,
         contract,
         rawInputs: {
+          ...(data.inputs ?? {}),
+          // Nguồn hệ thống luôn thắng đầu vào từ client.
           ...(t["project_id"] ? { project_id: String(t["project_id"]) } : {}),
           ...(t["meeting_id"] ? { meeting_id: String(t["meeting_id"]) } : {}),
         },
+
         worker: w as never,
         tenantId: (t["tenant_id"] as string | null) ?? null,
         workspaceId: (t["workspace_id"] as string | null) ?? null,
