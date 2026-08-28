@@ -109,6 +109,7 @@ import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/adm
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
+import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
@@ -645,6 +646,12 @@ const AuthenticatedMAiMarketIdRoute =
     path: '/ai-market/$id',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
+const AuthenticatedAdminSellWorkPilotsRoute =
+  AuthenticatedAdminSellWorkPilotsRouteImport.update({
+    id: '/sell-work/pilots',
+    path: '/sell-work/pilots',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -735,6 +742,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRoute
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -834,6 +842,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
+  '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRoute
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -937,6 +946,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
+  '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRoute
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -1040,6 +1050,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/ai-market/'
     | '/workspace/'
+    | '/admin/sell-work/pilots'
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
@@ -1139,6 +1150,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ai-market'
     | '/workspace'
+    | '/admin/sell-work/pilots'
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
@@ -1241,6 +1253,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/ai-market/'
     | '/_authenticated/workspace/'
+    | '/_authenticated/admin/sell-work/pilots'
     | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/email/$id'
@@ -1988,6 +2001,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMAiMarketIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/admin/sell-work/pilots': {
+      id: '/_authenticated/admin/sell-work/pilots'
+      path: '/sell-work/pilots'
+      fullPath: '/admin/sell-work/pilots'
+      preLoaderRoute: typeof AuthenticatedAdminSellWorkPilotsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
@@ -2009,6 +2029,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminWebhooksRoute: typeof AuthenticatedAdminWebhooksRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminSellWorkPilotsRoute: typeof AuthenticatedAdminSellWorkPilotsRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -2029,6 +2050,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminWebhooksRoute: AuthenticatedAdminWebhooksRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminSellWorkPilotsRoute: AuthenticatedAdminSellWorkPilotsRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =
