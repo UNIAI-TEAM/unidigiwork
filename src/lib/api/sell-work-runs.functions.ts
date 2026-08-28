@@ -53,37 +53,3 @@ export const listWorkProductRuns = createServerFn({ method: "POST" })
       createdAt: r["created_at"] as string,
     }));
   });
-
-export interface RunnableTaskRow {
-  id: string;
-  title: string;
-  status: string;
-  aiExecutionStatus: string | null;
-  workspaceId: string;
-}
-
-/** Công việc đã gán nhân sự AI mà người dùng có thể khởi chạy sản phẩm công việc. */
-export const listRunnableAiTasks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ workspaceId: z.string().uuid().nullish(), limit: z.number().int().min(1).max(50).default(25) }).parse(i),
-  )
-  .handler(async ({ data, context }): Promise<RunnableTaskRow[]> => {
-    let q = context.supabase
-      .from("tasks")
-      .select("id, title, status, ai_execution_status, workspace_id")
-      .not("ai_worker_id", "is", null)
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(data.limit);
-    if (data.workspaceId) q = q.eq("workspace_id", data.workspaceId);
-    const res = await q;
-    if (res.error) return [];
-    return ((res.data ?? []) as Record<string, unknown>[]).map((r) => ({
-      id: r["id"] as string,
-      title: (r["title"] as string) ?? "",
-      status: (r["status"] as string) ?? "",
-      aiExecutionStatus: (r["ai_execution_status"] as string | null) ?? null,
-      workspaceId: r["workspace_id"] as string,
-    }));
-  });
