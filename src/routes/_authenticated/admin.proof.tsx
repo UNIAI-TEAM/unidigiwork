@@ -186,7 +186,7 @@ function CommercialProof({ cohorts }: { cohorts: { code: string; label: string; 
             pilotCount: rows.length,
             paidPilotCount: rows.filter((p) => p.paidVerifiedAt).length,
             customersWithRepeatUsage: rows.filter((p) => p.acceptedExecutions >= 2).length,
-            wtpConfirmations: rows.filter((p) => p.wtpSignal === "CONFIRMED_WILLING" || p.paidVerifiedAt).length,
+            wtpConfirmations: rows.filter((p) => p.wtpSignal === "CONTRACTED" || p.wtpSignal === "PAID_PILOT" || p.wtpSignal === "WILL_PAY_AT_RIGHT_PRICE" || p.paidVerifiedAt).length,
             acceptedExecutions: cohort?.acceptedExecutions ?? 0,
             knownCostPerAcceptedWork: cohort?.knownCostPerAcceptedWork ?? null,
             economicsCompleteness: (cohort?.economicsCompleteness ?? "INSUFFICIENT") as "FULL" | "PARTIAL" | "INSUFFICIENT",
