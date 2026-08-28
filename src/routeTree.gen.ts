@@ -110,6 +110,7 @@ import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
+import { Route as AuthenticatedAdminSellWorkPilotsPilotIdRouteImport } from './routes/_authenticated/admin.sell-work.pilots.$pilotId'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
@@ -652,6 +653,12 @@ const AuthenticatedAdminSellWorkPilotsRoute =
     path: '/sell-work/pilots',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminSellWorkPilotsPilotIdRoute =
+  AuthenticatedAdminSellWorkPilotsPilotIdRouteImport.update({
+    id: '/$pilotId',
+    path: '/$pilotId',
+    getParentRoute: () => AuthenticatedAdminSellWorkPilotsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -742,7 +749,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
-  '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRoute
+  '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -754,6 +761,7 @@ export interface FileRoutesByFullPath {
   '/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email/': typeof AuthenticatedMEmailIndexRoute
+  '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -842,7 +850,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
-  '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRoute
+  '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -854,6 +862,7 @@ export interface FileRoutesByTo {
   '/m/ai-market': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email': typeof AuthenticatedMEmailIndexRoute
+  '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -946,7 +955,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
-  '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRoute
+  '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
@@ -958,6 +967,7 @@ export interface FileRoutesById {
   '/_authenticated/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/_authenticated/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/_authenticated/m/email/': typeof AuthenticatedMEmailIndexRoute
+  '/_authenticated/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1062,6 +1072,7 @@ export interface FileRouteTypes {
     | '/m/ai-market/'
     | '/m/ai-workforce/'
     | '/m/email/'
+    | '/admin/sell-work/pilots/$pilotId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1162,6 +1173,7 @@ export interface FileRouteTypes {
     | '/m/ai-market'
     | '/m/ai-workforce'
     | '/m/email'
+    | '/admin/sell-work/pilots/$pilotId'
   id:
     | '__root__'
     | '/'
@@ -1265,6 +1277,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/ai-market/'
     | '/_authenticated/m/ai-workforce/'
     | '/_authenticated/m/email/'
+    | '/_authenticated/admin/sell-work/pilots/$pilotId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2008,8 +2021,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSellWorkPilotsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/sell-work/pilots/$pilotId': {
+      id: '/_authenticated/admin/sell-work/pilots/$pilotId'
+      path: '/$pilotId'
+      fullPath: '/admin/sell-work/pilots/$pilotId'
+      preLoaderRoute: typeof AuthenticatedAdminSellWorkPilotsPilotIdRouteImport
+      parentRoute: typeof AuthenticatedAdminSellWorkPilotsRoute
+    }
   }
 }
+
+interface AuthenticatedAdminSellWorkPilotsRouteChildren {
+  AuthenticatedAdminSellWorkPilotsPilotIdRoute: typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+}
+
+const AuthenticatedAdminSellWorkPilotsRouteChildren: AuthenticatedAdminSellWorkPilotsRouteChildren =
+  {
+    AuthenticatedAdminSellWorkPilotsPilotIdRoute:
+      AuthenticatedAdminSellWorkPilotsPilotIdRoute,
+  }
+
+const AuthenticatedAdminSellWorkPilotsRouteWithChildren =
+  AuthenticatedAdminSellWorkPilotsRoute._addFileChildren(
+    AuthenticatedAdminSellWorkPilotsRouteChildren,
+  )
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAccountsRoute: typeof AuthenticatedAdminAccountsRoute
@@ -2029,7 +2064,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminWebhooksRoute: typeof AuthenticatedAdminWebhooksRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
-  AuthenticatedAdminSellWorkPilotsRoute: typeof AuthenticatedAdminSellWorkPilotsRoute
+  AuthenticatedAdminSellWorkPilotsRoute: typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -2050,7 +2085,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminWebhooksRoute: AuthenticatedAdminWebhooksRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
-  AuthenticatedAdminSellWorkPilotsRoute: AuthenticatedAdminSellWorkPilotsRoute,
+  AuthenticatedAdminSellWorkPilotsRoute:
+    AuthenticatedAdminSellWorkPilotsRouteWithChildren,
 }
 
 const AuthenticatedAdminRouteWithChildren =
