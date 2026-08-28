@@ -4,11 +4,9 @@ export const Route = createFileRoute("/api/public/hooks/process-quota-exports")(
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        if (!apikey || !expected || apikey !== expected) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const { isAuthorizedCronRequest, cronUnauthorizedResponse } = await import("@/lib/api/cron-auth.server");
+        if (!isAuthorizedCronRequest(request)) return cronUnauthorizedResponse();
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { claimAndProcessPending } = await import("@/lib/api/quota-export-processor.server");
         try {
