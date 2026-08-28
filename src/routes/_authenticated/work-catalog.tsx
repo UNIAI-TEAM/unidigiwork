@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -90,6 +90,7 @@ function WorkCatalogPage() {
                   className="cursor-pointer transition-shadow hover:shadow-md"
                   onClick={() => setSelected(p)}
                 >
+
                   <CardHeader className="space-y-2">
                     <div className="flex items-start justify-between gap-3">
                       <CardTitle className="text-base">{p.label}</CardTitle>
@@ -132,6 +133,14 @@ function WorkCatalogPage() {
                   {selected.contractHash ? ` · ${selected.contractHash.slice(0, 12)}` : ""}
                 </SheetDescription>
               </SheetHeader>
+              <Link
+                to="/work-products/$code"
+                params={{ code: selected.code }}
+                className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+              >
+                Xem bằng chứng & khởi chạy
+              </Link>
+
               <div className="mt-6 space-y-5">
                 <Section title="Mục tiêu nghiệp vụ">{selected.objective}</Section>
                 <Section title="Đầu vào">

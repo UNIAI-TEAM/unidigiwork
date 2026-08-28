@@ -228,7 +228,12 @@ export const runAiTask = createServerFn({ method: "POST" })
         templateCode: z
           .enum(DELIVERABLE_TEMPLATES.map((t) => t.code) as [string, ...string[]])
           .optional(),
+        // SWP-1 — đầu vào do sản phẩm công việc khai báo (vd. meeting_id cho MTE_V1).
+        // KHÔNG tự cấp quyền: preflight kiểm tra từng thực thể theo RLS của actor và
+        // phạm vi tổ chức/không gian làm việc, sai ⇒ UNAUTHORIZED_INPUT.
+        inputs: z.record(z.string().max(64), z.string().min(1).max(200)).optional(),
       })
+
       .safeParse(i);
     if (!parsed.success) {
       // Trả đúng hợp đồng lỗi ổn định thay vì ZodError thô (client chỉ đọc `code`).
@@ -285,9 +290,12 @@ export const runAiTask = createServerFn({ method: "POST" })
         supabase: context.supabase as never,
         contract,
         rawInputs: {
+          ...(data.inputs ?? {}),
+          // Nguồn hệ thống luôn thắng đầu vào từ client.
           ...(t["project_id"] ? { project_id: String(t["project_id"]) } : {}),
           ...(t["meeting_id"] ? { meeting_id: String(t["meeting_id"]) } : {}),
         },
+
         worker: w as never,
         tenantId: (t["tenant_id"] as string | null) ?? null,
         workspaceId: (t["workspace_id"] as string | null) ?? null,

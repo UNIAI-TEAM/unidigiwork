@@ -1076,6 +1076,8 @@ export type Database = {
           accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
+          cohort_class: string
+          cohort_exclusion_reason: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_snapshot: Json | null
@@ -1113,6 +1115,8 @@ export type Database = {
           accepted_with_warnings?: boolean
           ai_worker_id: string
           change_request?: string | null
+          cohort_class?: string
+          cohort_exclusion_reason?: string | null
           completed_at?: string | null
           contract_hash?: string | null
           contract_snapshot?: Json | null
@@ -1150,6 +1154,8 @@ export type Database = {
           accepted_with_warnings?: boolean
           ai_worker_id?: string
           change_request?: string | null
+          cohort_class?: string
+          cohort_exclusion_reason?: string | null
           completed_at?: string | null
           contract_hash?: string | null
           contract_snapshot?: Json | null
@@ -5215,6 +5221,68 @@ export type Database = {
           },
         ]
       }
+      work_execution_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string
+          design_partner: boolean
+          estimated_time_saved_minutes: number | null
+          execution_id: string
+          id: string
+          segment_industry: string | null
+          segment_team_size: string | null
+          tenant_id: string
+          updated_at: string
+          usefulness: string
+          work_unit_code: string | null
+          work_unit_version: number | null
+          would_use_again: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          design_partner?: boolean
+          estimated_time_saved_minutes?: number | null
+          execution_id: string
+          id?: string
+          segment_industry?: string | null
+          segment_team_size?: string | null
+          tenant_id: string
+          updated_at?: string
+          usefulness: string
+          work_unit_code?: string | null
+          work_unit_version?: number | null
+          would_use_again: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          design_partner?: boolean
+          estimated_time_saved_minutes?: number | null
+          execution_id?: string
+          id?: string
+          segment_industry?: string | null
+          segment_team_size?: string | null
+          tenant_id?: string
+          updated_at?: string
+          usefulness?: string
+          work_unit_code?: string | null
+          work_unit_version?: number | null
+          would_use_again?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_execution_feedback_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_task_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_execution_metrics: {
         Row: {
           ai_worker_id: string | null
@@ -6793,6 +6861,8 @@ export type Database = {
           accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
+          cohort_class: string
+          cohort_exclusion_reason: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_snapshot: Json | null
@@ -7387,6 +7457,17 @@ export type Database = {
         Args: { _id: string; _worker: string }
         Returns: boolean
       }
+      compute_work_product_cohort: {
+        Args: {
+          _code: string
+          _from?: string
+          _include_synthetic?: boolean
+          _tenant_id?: string
+          _to?: string
+          _version?: number
+        }
+        Returns: Json
+      }
       compute_work_quality_score: {
         Args: { _assessment: Json }
         Returns: number
@@ -7905,6 +7986,8 @@ export type Database = {
           accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
+          cohort_class: string
+          cohort_exclusion_reason: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_snapshot: Json | null
@@ -7961,6 +8044,8 @@ export type Database = {
           accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
+          cohort_class: string
+          cohort_exclusion_reason: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_snapshot: Json | null
@@ -8301,6 +8386,8 @@ export type Database = {
           accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
+          cohort_class: string
+          cohort_exclusion_reason: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_snapshot: Json | null
@@ -8557,6 +8644,8 @@ export type Database = {
           accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
+          cohort_class: string
+          cohort_exclusion_reason: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_snapshot: Json | null
@@ -9089,6 +9178,8 @@ export type Database = {
           accepted_with_warnings: boolean
           ai_worker_id: string
           change_request: string | null
+          cohort_class: string
+          cohort_exclusion_reason: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_snapshot: Json | null

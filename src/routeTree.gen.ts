@@ -66,6 +66,7 @@ import { Route as AuthenticatedWorkspaceInviteEmailsRouteImport } from './routes
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceAuditRouteImport } from './routes/_authenticated/workspace.audit'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedWorkProductsCodeRouteImport } from './routes/_authenticated/work-products_.$code'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
@@ -87,10 +88,12 @@ import { Route as AuthenticatedAdminTraceRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminTenantRouteImport } from './routes/_authenticated/admin.tenant'
 import { Route as AuthenticatedAdminRulesRouteImport } from './routes/_authenticated/admin.rules'
 import { Route as AuthenticatedAdminQuotaRouteImport } from './routes/_authenticated/admin.quota'
+import { Route as AuthenticatedAdminProofRouteImport } from './routes/_authenticated/admin.proof'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
 import { Route as AuthenticatedAdminEconomicsRouteImport } from './routes/_authenticated/admin.economics'
+import { Route as AuthenticatedAdminCohortsRouteImport } from './routes/_authenticated/admin.cohorts'
 import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenticated/admin.backup'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
 import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
@@ -403,6 +406,12 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkProductsCodeRoute =
+  AuthenticatedWorkProductsCodeRouteImport.update({
+    id: '/work-products_/$code',
+    path: '/work-products/$code',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
   id: '/people_/$id',
   path: '/people/$id',
@@ -515,6 +524,11 @@ const AuthenticatedAdminQuotaRoute = AuthenticatedAdminQuotaRouteImport.update({
   path: '/quota',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminProofRoute = AuthenticatedAdminProofRouteImport.update({
+  id: '/proof',
+  path: '/proof',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -535,6 +549,12 @@ const AuthenticatedAdminEconomicsRoute =
   AuthenticatedAdminEconomicsRouteImport.update({
     id: '/economics',
     path: '/economics',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCohortsRoute =
+  AuthenticatedAdminCohortsRouteImport.update({
+    id: '/cohorts',
+    path: '/cohorts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminBackupRoute =
@@ -676,10 +696,12 @@ export interface FileRoutesByFullPath {
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/admin/proof': typeof AuthenticatedAdminProofRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/tenant': typeof AuthenticatedAdminTenantRoute
@@ -701,6 +723,7 @@ export interface FileRoutesByFullPath {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/work-products/$code': typeof AuthenticatedWorkProductsCodeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -772,10 +795,12 @@ export interface FileRoutesByTo {
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/admin/proof': typeof AuthenticatedAdminProofRoute
   '/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/admin/tenant': typeof AuthenticatedAdminTenantRoute
@@ -797,6 +822,7 @@ export interface FileRoutesByTo {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/work-products/$code': typeof AuthenticatedWorkProductsCodeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -872,10 +898,12 @@ export interface FileRoutesById {
   '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/_authenticated/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/_authenticated/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/_authenticated/admin/economics': typeof AuthenticatedAdminEconomicsRoute
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/_authenticated/admin/proof': typeof AuthenticatedAdminProofRoute
   '/_authenticated/admin/quota': typeof AuthenticatedAdminQuotaRoute
   '/_authenticated/admin/rules': typeof AuthenticatedAdminRulesRoute
   '/_authenticated/admin/tenant': typeof AuthenticatedAdminTenantRoute
@@ -897,6 +925,7 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
+  '/_authenticated/work-products_/$code': typeof AuthenticatedWorkProductsCodeRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/_authenticated/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -972,10 +1001,12 @@ export interface FileRouteTypes {
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
+    | '/admin/cohorts'
     | '/admin/economics'
     | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/plans'
+    | '/admin/proof'
     | '/admin/quota'
     | '/admin/rules'
     | '/admin/tenant'
@@ -997,6 +1028,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
+    | '/work-products/$code'
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
@@ -1068,10 +1100,12 @@ export interface FileRouteTypes {
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
+    | '/admin/cohorts'
     | '/admin/economics'
     | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/plans'
+    | '/admin/proof'
     | '/admin/quota'
     | '/admin/rules'
     | '/admin/tenant'
@@ -1093,6 +1127,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
+    | '/work-products/$code'
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
@@ -1167,10 +1202,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/ai-actions'
     | '/_authenticated/admin/ai-context'
     | '/_authenticated/admin/backup'
+    | '/_authenticated/admin/cohorts'
     | '/_authenticated/admin/economics'
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/plans'
+    | '/_authenticated/admin/proof'
     | '/_authenticated/admin/quota'
     | '/_authenticated/admin/rules'
     | '/_authenticated/admin/tenant'
@@ -1192,6 +1229,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/tasks'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
+    | '/_authenticated/work-products_/$code'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/audit'
     | '/_authenticated/workspace/invite'
@@ -1649,6 +1687,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/work-products_/$code': {
+      id: '/_authenticated/work-products_/$code'
+      path: '/work-products/$code'
+      fullPath: '/work-products/$code'
+      preLoaderRoute: typeof AuthenticatedWorkProductsCodeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/people_/$id': {
       id: '/_authenticated/people_/$id'
       path: '/people/$id'
@@ -1796,6 +1841,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQuotaRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/proof': {
+      id: '/_authenticated/admin/proof'
+      path: '/proof'
+      fullPath: '/admin/proof'
+      preLoaderRoute: typeof AuthenticatedAdminProofRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/plans': {
       id: '/_authenticated/admin/plans'
       path: '/plans'
@@ -1822,6 +1874,13 @@ declare module '@tanstack/react-router' {
       path: '/economics'
       fullPath: '/admin/economics'
       preLoaderRoute: typeof AuthenticatedAdminEconomicsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/cohorts': {
+      id: '/_authenticated/admin/cohorts'
+      path: '/cohorts'
+      fullPath: '/admin/cohorts'
+      preLoaderRoute: typeof AuthenticatedAdminCohortsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/backup': {
@@ -1937,10 +1996,12 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAiActionsRoute: typeof AuthenticatedAdminAiActionsRoute
   AuthenticatedAdminAiContextRoute: typeof AuthenticatedAdminAiContextRoute
   AuthenticatedAdminBackupRoute: typeof AuthenticatedAdminBackupRoute
+  AuthenticatedAdminCohortsRoute: typeof AuthenticatedAdminCohortsRoute
   AuthenticatedAdminEconomicsRoute: typeof AuthenticatedAdminEconomicsRoute
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
+  AuthenticatedAdminProofRoute: typeof AuthenticatedAdminProofRoute
   AuthenticatedAdminQuotaRoute: typeof AuthenticatedAdminQuotaRoute
   AuthenticatedAdminRulesRoute: typeof AuthenticatedAdminRulesRoute
   AuthenticatedAdminTenantRoute: typeof AuthenticatedAdminTenantRoute
@@ -1955,10 +2016,12 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAiActionsRoute: AuthenticatedAdminAiActionsRoute,
   AuthenticatedAdminAiContextRoute: AuthenticatedAdminAiContextRoute,
   AuthenticatedAdminBackupRoute: AuthenticatedAdminBackupRoute,
+  AuthenticatedAdminCohortsRoute: AuthenticatedAdminCohortsRoute,
   AuthenticatedAdminEconomicsRoute: AuthenticatedAdminEconomicsRoute,
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
+  AuthenticatedAdminProofRoute: AuthenticatedAdminProofRoute,
   AuthenticatedAdminQuotaRoute: AuthenticatedAdminQuotaRoute,
   AuthenticatedAdminRulesRoute: AuthenticatedAdminRulesRoute,
   AuthenticatedAdminTenantRoute: AuthenticatedAdminTenantRoute,
@@ -2058,6 +2121,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
   AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
+  AuthenticatedWorkProductsCodeRoute: typeof AuthenticatedWorkProductsCodeRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRoute
   AuthenticatedWorkspaceAuditRoute: typeof AuthenticatedWorkspaceAuditRoute
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
@@ -2092,6 +2156,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
   AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
+  AuthenticatedWorkProductsCodeRoute: AuthenticatedWorkProductsCodeRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRoute,
   AuthenticatedWorkspaceAuditRoute: AuthenticatedWorkspaceAuditRoute,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,

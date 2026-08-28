@@ -28,7 +28,10 @@ const TABS = [
   { to: "/admin/ai-actions" as const, label: "AI Action", icon: Bot },
   { to: "/admin/webhooks" as const, label: "Webhook", icon: Webhook },
   { to: "/admin/economics" as const, label: "Kinh tế đơn vị", icon: Coins },
+  { to: "/admin/cohorts" as const, label: "Cohort", icon: Gauge },
+  { to: "/admin/proof" as const, label: "Bằng chứng", icon: ShieldCheck },
   { to: "/admin/backup" as const, label: "adm.tab.backup", icon: Database },
+
 
 ];
 
