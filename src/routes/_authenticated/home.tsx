@@ -1,11 +1,22 @@
 // HOME V2 — Trang chủ điều hành công việc cá nhân (My Work · Upcoming · Work Inbox).
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CalendarClock, CheckCircle2, Inbox, Plus, RefreshCw } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Inbox,
+  Plus,
+  RefreshCw,
+  SlidersHorizontal,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHomePrefs } from "@/components/home/use-home-prefs";
+import { HomeCustomizePanel } from "@/components/home/home-customize";
+import type { HomeLayout, HomeSectionKey } from "@/lib/home-prefs";
+
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
   getHomeSummary,
