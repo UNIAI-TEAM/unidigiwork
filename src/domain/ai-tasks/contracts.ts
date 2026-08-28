@@ -73,7 +73,6 @@ export const DELIVERABLE_TEMPLATES: readonly DeliverableTemplate[] = [
     deliverableType: "DRAFT",
     outline: "## Câu hỏi nghiên cứu\n## Phát hiện chính\n## Khoảng trống dữ liệu\n## Đề xuất",
   },
-] as const;
 
   /* --------- SWP-1 — Ba sản phẩm công việc chủ lực (flagship) --------- */
   {
