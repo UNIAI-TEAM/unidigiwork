@@ -133,6 +133,14 @@ function WorkCatalogPage() {
                   {selected.contractHash ? ` · ${selected.contractHash.slice(0, 12)}` : ""}
                 </SheetDescription>
               </SheetHeader>
+              <Link
+                to="/work-products_/$code"
+                params={{ code: selected.code }}
+                className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+              >
+                Xem bằng chứng & khởi chạy
+              </Link>
+
               <div className="mt-6 space-y-5">
                 <Section title="Mục tiêu nghiệp vụ">{selected.objective}</Section>
                 <Section title="Đầu vào">
