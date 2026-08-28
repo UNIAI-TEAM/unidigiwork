@@ -90,6 +90,7 @@ function WorkCatalogPage() {
                   className="cursor-pointer transition-shadow hover:shadow-md"
                   onClick={() => setSelected(p)}
                 >
+
                   <CardHeader className="space-y-2">
                     <div className="flex items-start justify-between gap-3">
                       <CardTitle className="text-base">{p.label}</CardTitle>

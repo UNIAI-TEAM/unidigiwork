@@ -66,6 +66,7 @@ import { Route as AuthenticatedWorkspaceInviteEmailsRouteImport } from './routes
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceAuditRouteImport } from './routes/_authenticated/workspace.audit'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
+import { Route as AuthenticatedWorkProductsCodeRouteImport } from './routes/_authenticated/work-products_.$code'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
@@ -405,6 +406,12 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkProductsCodeRoute =
+  AuthenticatedWorkProductsCodeRouteImport.update({
+    id: '/work-products_/$code',
+    path: '/work-products/$code',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
   id: '/people_/$id',
   path: '/people/$id',
@@ -716,6 +723,7 @@ export interface FileRoutesByFullPath {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/work-products/$code': typeof AuthenticatedWorkProductsCodeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -814,6 +822,7 @@ export interface FileRoutesByTo {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/work-products/$code': typeof AuthenticatedWorkProductsCodeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -916,6 +925,7 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
+  '/_authenticated/work-products_/$code': typeof AuthenticatedWorkProductsCodeRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/_authenticated/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -1018,6 +1028,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
+    | '/work-products/$code'
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
@@ -1116,6 +1127,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
+    | '/work-products/$code'
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
@@ -1217,6 +1229,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/tasks'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
+    | '/_authenticated/work-products_/$code'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/audit'
     | '/_authenticated/workspace/invite'
@@ -1674,6 +1687,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/work-products_/$code': {
+      id: '/_authenticated/work-products_/$code'
+      path: '/work-products/$code'
+      fullPath: '/work-products/$code'
+      preLoaderRoute: typeof AuthenticatedWorkProductsCodeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/people_/$id': {
       id: '/_authenticated/people_/$id'
       path: '/people/$id'
@@ -2101,6 +2121,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
   AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
+  AuthenticatedWorkProductsCodeRoute: typeof AuthenticatedWorkProductsCodeRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRoute
   AuthenticatedWorkspaceAuditRoute: typeof AuthenticatedWorkspaceAuditRoute
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
@@ -2135,6 +2156,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
   AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
+  AuthenticatedWorkProductsCodeRoute: AuthenticatedWorkProductsCodeRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRoute,
   AuthenticatedWorkspaceAuditRoute: AuthenticatedWorkspaceAuditRoute,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
