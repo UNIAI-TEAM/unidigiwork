@@ -21,7 +21,7 @@ export function BrandWordmark({ className }: { className?: string }) {
     <img
       src={wordmarkAsset.url}
       alt="UNIWORK"
-      className={cn("h-8 w-auto object-contain dark:brightness-0 dark:invert", className)}
+      className={cn("h-8 w-auto object-contain", className)}
       loading="eager"
       decoding="async"
     />
