@@ -39,11 +39,7 @@ export function MobileShell() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <MobileTopbar />
-      <SwipeableMain
-        className="flex-1"
-        activeTab={activeTab}
-        enabled={isTab && !hideTabBar}
-      >
+      <SwipeableMain className="flex-1" activeTab={activeTab} enabled={isTab && !hideTabBar}>
         <Outlet />
       </SwipeableMain>
       {!hideTabBar && <BottomTabBar activeTab={activeTab} />}
@@ -144,10 +140,7 @@ function SwipeableMain({
       onPointerCancel={onPointerCancel}
     >
       <div
-        className={cn(
-          "min-h-full",
-          isAnimating && "transition-transform duration-200 ease-out"
-        )}
+        className={cn("min-h-full", isAnimating && "transition-transform duration-200 ease-out")}
         style={{
           transform: offset || isAnimating ? `translateX(${offset}px)` : undefined,
         }}
@@ -179,7 +172,7 @@ function MobileTopbar() {
       >
         <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 truncate font-medium">
-          {isLoading ? "Đang tải…" : workspaceName ?? "Workspace"}
+          {isLoading ? "Đang tải…" : (workspaceName ?? "Workspace")}
         </span>
       </button>
 
@@ -258,13 +251,16 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                       : "text-muted-foreground hover:bg-primary/10 hover:text-foreground active:bg-primary/15",
                   )}
                   aria-label={
-                    badgeFor(tab.id) > 0
-                      ? `${tab.label}, ${badgeFor(tab.id)} chưa đọc`
-                      : tab.label
+                    badgeFor(tab.id) > 0 ? `${tab.label}, ${badgeFor(tab.id)} chưa đọc` : tab.label
                   }
                 >
                   <span className="relative">
-                    <tab.icon className={cn("h-6 w-6 transition-transform duration-200", active && "stroke-[2.5px]")} />
+                    <tab.icon
+                      className={cn(
+                        "h-6 w-6 transition-transform duration-200",
+                        active && "stroke-[2.5px]",
+                      )}
+                    />
                     {badgeFor(tab.id) > 0 && (
                       <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-surface bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground shadow-sm">
                         {badgeFor(tab.id) > 99 ? "99+" : badgeFor(tab.id)}

@@ -80,18 +80,18 @@ function AuthPage() {
             <p className="mt-1 text-xs text-muted-foreground">{t("ac.13")}</p>
           </div>
         ) : (
-        <div className="mb-4 flex rounded-lg bg-surface-2 p-0.5">
-          {(["signin", "signup"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`flex-1 rounded-md py-1.5 text-sm font-medium ${mode === m ? "bg-background text-foreground shadow" : "text-muted-foreground"}`}
-            >
-              {m === "signin" ? t("ac.1") : t("ac.2")}
-            </button>
-          ))}
-        </div>
+          <div className="mb-4 flex rounded-lg bg-surface-2 p-0.5">
+            {(["signin", "signup"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={`flex-1 rounded-md py-1.5 text-sm font-medium ${mode === m ? "bg-background text-foreground shadow" : "text-muted-foreground"}`}
+              >
+                {m === "signin" ? t("ac.1") : t("ac.2")}
+              </button>
+            ))}
+          </div>
         )}
         <form onSubmit={submit} noValidate={false} className="space-y-3">
           {!reset && mode === "signup" && (
@@ -117,18 +117,18 @@ function AuthPage() {
             />
           </div>
           {!reset && (
-          <div>
-            <label className="mb-1 block text-xs font-medium">{t("ac.5")}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("ac.5")}</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
           )}
           <button
             type="submit"

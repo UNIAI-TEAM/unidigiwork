@@ -40,9 +40,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
             <Link
               key={it.key}
               to={it.to}
-              className={
-                active === it.key ? "text-foreground" : "hover:text-foreground"
-              }
+              className={active === it.key ? "text-foreground" : "hover:text-foreground"}
             >
               {it.label}
             </Link>
@@ -51,7 +49,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <ToneToggle />
-      <ThemeToggle />
+          <ThemeToggle />
           <Link
             to="/auth"
             className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground sm:inline"
@@ -126,13 +124,7 @@ function PublicFooter() {
   );
 }
 
-function FooterCol({
-  title,
-  items,
-}: {
-  title: string;
-  items: { label: string; to: string }[];
-}) {
+function FooterCol({ title, items }: { title: string; items: { label: string; to: string }[] }) {
   return (
     <div>
       <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
