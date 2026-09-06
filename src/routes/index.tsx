@@ -91,19 +91,35 @@ function Landing() {
       <header className="fixed inset-x-0 top-0 z-50 border-b border-landing-line bg-landing-canvas/90 backdrop-blur-xl">
         <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Brand />
-          <nav className="hidden items-center gap-7 text-sm font-medium text-landing-muted lg:flex" aria-label={t("land.nav.features")}>
-            <a className="transition-colors hover:text-landing-blue" href="#platform">{t("land.nav.features")}</a>
-            <Link className="transition-colors hover:text-landing-blue" to="/pricing">{t("land.nav.pricing")}</Link>
-            <Link className="transition-colors hover:text-landing-blue" to="/about">{t("land.nav.about")}</Link>
-            <Link className="transition-colors hover:text-landing-blue" to="/blog">Blog</Link>
-            <Link className="transition-colors hover:text-landing-blue" to="/contact">{t("land.nav.contact")}</Link>
+          <nav
+            className="hidden items-center gap-7 text-sm font-medium text-landing-muted lg:flex"
+            aria-label={t("land.nav.features")}
+          >
+            <a className="transition-colors hover:text-landing-blue" href="#platform">
+              {t("land.nav.features")}
+            </a>
+            <Link className="transition-colors hover:text-landing-blue" to="/pricing">
+              {t("land.nav.pricing")}
+            </Link>
+            <Link className="transition-colors hover:text-landing-blue" to="/about">
+              {t("land.nav.about")}
+            </Link>
+            <Link className="transition-colors hover:text-landing-blue" to="/blog">
+              Blog
+            </Link>
+            <Link className="transition-colors hover:text-landing-blue" to="/contact">
+              {t("land.nav.contact")}
+            </Link>
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <LanguageToggle />
             <Button asChild variant="ghost" className="hidden text-landing-ink sm:inline-flex">
               <a href="#login">{t("land.nav.login")}</a>
             </Button>
-            <Button asChild className="hidden rounded-full bg-landing-blue px-5 text-landing-on-accent hover:bg-landing-blue/90 sm:inline-flex">
+            <Button
+              asChild
+              className="hidden rounded-full bg-landing-blue px-5 text-landing-on-accent hover:bg-landing-blue/90 sm:inline-flex"
+            >
               <Link to="/auth">{t("land.cta.start")}</Link>
             </Button>
             <Button
@@ -120,20 +136,40 @@ function Landing() {
           </div>
         </div>
         {menuOpen && (
-          <nav className="border-t border-landing-line bg-landing-canvas px-4 py-4 lg:hidden" aria-label={t("land.nav.open")}>
+          <nav
+            className="border-t border-landing-line bg-landing-canvas px-4 py-4 lg:hidden"
+            aria-label={t("land.nav.open")}
+          >
             <div className="mx-auto grid max-w-7xl gap-1 text-sm font-medium">
-              <a className="rounded-lg px-3 py-3 hover:bg-landing-tint" href="#platform" onClick={() => setMenuOpen(false)}>{t("land.nav.features")}</a>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/pricing">{t("land.nav.pricing")}</Link>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/about">{t("land.nav.about")}</Link>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/blog">Blog</Link>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/contact">{t("land.nav.contact")}</Link>
+              <a
+                className="rounded-lg px-3 py-3 hover:bg-landing-tint"
+                href="#platform"
+                onClick={() => setMenuOpen(false)}
+              >
+                {t("land.nav.features")}
+              </a>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/pricing">
+                {t("land.nav.pricing")}
+              </Link>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/about">
+                {t("land.nav.about")}
+              </Link>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/blog">
+                Blog
+              </Link>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/contact">
+                {t("land.nav.contact")}
+              </Link>
             </div>
           </nav>
         )}
       </header>
 
       <main>
-        <section className="relative isolate min-h-[760px] overflow-hidden pt-18 sm:min-h-[820px]" aria-labelledby="landing-title">
+        <section
+          className="relative isolate min-h-[760px] overflow-hidden pt-18 sm:min-h-[820px]"
+          aria-labelledby="landing-title"
+        >
           <img
             src={assetUrl(peopleAi)}
             alt={t("land.hero.imageAlt")}
@@ -146,33 +182,63 @@ function Landing() {
               <span className="inline-flex items-center gap-2 rounded-full border border-landing-blue/20 bg-landing-canvas/80 px-3 py-1.5 text-xs font-semibold text-landing-blue backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" /> {t("land.hero.eyebrow")}
               </span>
-              <h1 id="landing-title" className="mt-6 font-heading text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl">
-                {t("land.hero.titleA")} <span className="text-landing-blue">+</span><br />
+              <h1
+                id="landing-title"
+                className="mt-6 font-heading text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl"
+              >
+                {t("land.hero.titleA")} <span className="text-landing-blue">+</span>
+                <br />
                 <span className="text-landing-magenta">{t("land.hero.titleB")}</span>
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-landing-muted sm:text-xl">{t("land.hero.sub")}</p>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-landing-muted sm:text-xl">
+                {t("land.hero.sub")}
+              </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild size="lg" className="h-12 rounded-lg bg-landing-dark px-6 text-landing-on-dark hover:bg-landing-dark/90">
-                  <Link to="/auth">{t("land.cta.start")} <ArrowRight /></Link>
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-12 rounded-lg bg-landing-dark px-6 text-landing-on-dark hover:bg-landing-dark/90"
+                >
+                  <Link to="/auth">
+                    {t("land.cta.start")} <ArrowRight />
+                  </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="h-12 rounded-lg border-landing-line bg-landing-canvas/80 px-6 text-landing-ink backdrop-blur hover:bg-landing-tint">
-                  <Link to="/meeting"><Video /> {t("land.cta.demo")}</Link>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="h-12 rounded-lg border-landing-line bg-landing-canvas/80 px-6 text-landing-ink backdrop-blur hover:bg-landing-tint"
+                >
+                  <Link to="/meeting">
+                    <Video /> {t("land.cta.demo")}
+                  </Link>
                 </Button>
               </div>
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-landing-muted">
-                {(["land.bullet.security", "land.bullet.vi", "land.bullet.deploy"] as const).map((key) => (
-                  <span key={key} className="flex items-center gap-1.5"><Check className="h-4 w-4 text-landing-blue" /> {t(key)}</span>
-                ))}
+                {(["land.bullet.security", "land.bullet.vi", "land.bullet.deploy"] as const).map(
+                  (key) => (
+                    <span key={key} className="flex items-center gap-1.5">
+                      <Check className="h-4 w-4 text-landing-blue" /> {t(key)}
+                    </span>
+                  ),
+                )}
               </div>
             </div>
           </div>
         </section>
 
-        <section id="platform" className="border-y border-landing-line bg-landing-soft py-20 sm:py-28">
+        <section
+          id="platform"
+          className="border-y border-landing-line bg-landing-soft py-20 sm:py-28"
+        >
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="max-w-3xl">
-              <p className="text-sm font-semibold text-landing-blue">{t("land.platform.eyebrow")}</p>
-              <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{t("land.feat.title")}</h2>
+              <p className="text-sm font-semibold text-landing-blue">
+                {t("land.platform.eyebrow")}
+              </p>
+              <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">
+                {t("land.feat.title")}
+              </h2>
               <p className="mt-4 text-lg text-landing-muted">{t("land.feat.sub")}</p>
             </div>
             <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-landing-line bg-landing-line sm:grid-cols-2 lg:grid-cols-3">
@@ -222,18 +288,32 @@ function Landing() {
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
             <div>
               <p className="text-sm font-semibold text-landing-blue">{t("land.memory.eyebrow")}</p>
-              <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{t("land.memory.title")}</h2>
-              <p className="mt-5 text-lg leading-relaxed text-landing-on-dark/65">{t("land.memory.sub")}</p>
+              <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">
+                {t("land.memory.title")}
+              </h2>
+              <p className="mt-5 text-lg leading-relaxed text-landing-on-dark/65">
+                {t("land.memory.sub")}
+              </p>
               <div className="mt-8 space-y-4">
-                {(["land.memory.point1", "land.memory.point2", "land.memory.point3"] as const).map((key) => (
-                  <div key={key} className="flex items-start gap-3 text-sm text-landing-on-dark/80">
-                    <Layers3 className="mt-0.5 h-4 w-4 shrink-0 text-landing-magenta" /> {t(key)}
-                  </div>
-                ))}
+                {(["land.memory.point1", "land.memory.point2", "land.memory.point3"] as const).map(
+                  (key) => (
+                    <div
+                      key={key}
+                      className="flex items-start gap-3 text-sm text-landing-on-dark/80"
+                    >
+                      <Layers3 className="mt-0.5 h-4 w-4 shrink-0 text-landing-magenta" /> {t(key)}
+                    </div>
+                  ),
+                )}
               </div>
             </div>
             <figure className="overflow-hidden rounded-lg border border-landing-on-dark/10 bg-landing-on-dark shadow-2xl shadow-landing-blue/10">
-              <img src={assetUrl(workGraph)} alt={t("land.memory.imageAlt")} className="h-full w-full object-cover" loading="lazy" />
+              <img
+                src={assetUrl(workGraph)}
+                alt={t("land.memory.imageAlt")}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
             </figure>
           </div>
         </section>
@@ -242,19 +322,41 @@ function Landing() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-semibold text-landing-magenta">{t("land.hire.badge")}</p>
-              <h2 id="ai-workforce-title" className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{t("land.hire.title")}</h2>
+              <h2
+                id="ai-workforce-title"
+                className="mt-3 font-heading text-4xl font-bold sm:text-5xl"
+              >
+                {t("land.hire.title")}
+              </h2>
               <p className="mt-4 text-lg text-landing-muted">{t("land.hire.sub")}</p>
             </div>
             <div className="mt-14 grid gap-6 lg:grid-cols-2">
-              {[{ asset: aiWorkforce, alt: t("land.workforce.imageAlt") }, { asset: aiWorkforceAlt, alt: t("land.workforce.imageAlt2") }].map((item, index) => (
-                <figure key={index} className="group overflow-hidden rounded-lg border border-landing-line bg-landing-soft shadow-sm">
-                  <img src={assetUrl(item.asset)} alt={item.alt} className="aspect-[4/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" loading="lazy" />
+              {[
+                { asset: aiWorkforce, alt: t("land.workforce.imageAlt") },
+                { asset: aiWorkforceAlt, alt: t("land.workforce.imageAlt2") },
+              ].map((item, index) => (
+                <figure
+                  key={index}
+                  className="group overflow-hidden rounded-lg border border-landing-line bg-landing-soft shadow-sm"
+                >
+                  <img
+                    src={assetUrl(item.asset)}
+                    alt={item.alt}
+                    className="aspect-[4/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    loading="lazy"
+                  />
                 </figure>
               ))}
             </div>
             <div className="mt-10 flex justify-center">
-              <Button asChild size="lg" className="h-12 rounded-lg bg-landing-blue px-7 text-landing-on-accent hover:bg-landing-blue/90">
-                <Link to="/pricing">{t("land.hire.cta")} <ArrowRight /></Link>
+              <Button
+                asChild
+                size="lg"
+                className="h-12 rounded-lg bg-landing-blue px-7 text-landing-on-accent hover:bg-landing-blue/90"
+              >
+                <Link to="/pricing">
+                  {t("land.hire.cta")} <ArrowRight />
+                </Link>
               </Button>
             </div>
           </div>
@@ -264,7 +366,9 @@ function Landing() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
             <div>
               <ShieldCheck className="h-9 w-9 text-landing-blue" />
-              <h2 className="mt-5 font-heading text-4xl font-bold sm:text-5xl">{t("land.cta2.h")}</h2>
+              <h2 className="mt-5 font-heading text-4xl font-bold sm:text-5xl">
+                {t("land.cta2.h")}
+              </h2>
               <p className="mt-4 text-lg leading-relaxed text-landing-muted">{t("land.cta2.p")}</p>
             </div>
             <LoginPanel />
@@ -274,19 +378,33 @@ function Landing() {
 
       <footer className="border-t border-landing-line bg-landing-canvas py-12">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:grid-cols-[1.4fr_1fr_1fr] sm:px-6">
-          <div><Brand /><p className="mt-4 max-w-sm text-sm text-landing-muted">{t("land.footer.sub")}</p></div>
+          <div>
+            <Brand />
+            <p className="mt-4 max-w-sm text-sm text-landing-muted">{t("land.footer.sub")}</p>
+          </div>
           <div>
             <div className="text-sm font-semibold">{t("land.footer.product")}</div>
-            <div className="mt-3 grid gap-2 text-sm text-landing-muted"><Link to="/pricing">{t("land.nav.pricing")}</Link><Link to="/meeting">{t("land.nav.demo")}</Link><Link to="/workflows">Workflow</Link></div>
+            <div className="mt-3 grid gap-2 text-sm text-landing-muted">
+              <Link to="/pricing">{t("land.nav.pricing")}</Link>
+              <Link to="/meeting">{t("land.nav.demo")}</Link>
+              <Link to="/workflows">Workflow</Link>
+            </div>
           </div>
           <div>
             <div className="text-sm font-semibold">{t("land.footer.company")}</div>
-            <div className="mt-3 grid gap-2 text-sm text-landing-muted"><Link to="/about">{t("land.nav.about")}</Link><Link to="/blog">Blog</Link><Link to="/contact">{t("land.nav.contact")}</Link></div>
+            <div className="mt-3 grid gap-2 text-sm text-landing-muted">
+              <Link to="/about">{t("land.nav.about")}</Link>
+              <Link to="/blog">Blog</Link>
+              <Link to="/contact">{t("land.nav.contact")}</Link>
+            </div>
           </div>
         </div>
         <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-landing-line px-4 pt-6 text-xs text-landing-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span>© 2026 Unicom JSC</span>
-          <span className="flex gap-4"><Link to="/privacy">{t("land.footer.privacy")}</Link><Link to="/terms">{t("land.footer.terms")}</Link></span>
+          <span className="flex gap-4">
+            <Link to="/privacy">{t("land.footer.privacy")}</Link>
+            <Link to="/terms">{t("land.footer.terms")}</Link>
+          </span>
         </div>
       </footer>
     </div>
@@ -319,20 +437,78 @@ function ProductBand({
   action?: { label: string; to: "/auth" };
 }) {
   return (
-    <section className={dark ? "bg-landing-dark py-20 text-landing-on-dark sm:py-28" : "bg-landing-canvas py-20 sm:py-28"}>
+    <section
+      className={
+        dark
+          ? "bg-landing-dark py-20 text-landing-on-dark sm:py-28"
+          : "bg-landing-canvas py-20 sm:py-28"
+      }
+    >
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
         <div className={reverse ? "lg:order-2" : ""}>
-          <p className={dark ? "text-sm font-semibold text-landing-blue" : "text-sm font-semibold text-landing-magenta"}>{eyebrow}</p>
+          <p
+            className={
+              dark
+                ? "text-sm font-semibold text-landing-blue"
+                : "text-sm font-semibold text-landing-magenta"
+            }
+          >
+            {eyebrow}
+          </p>
           <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{title}</h2>
-          <p className={dark ? "mt-5 text-lg leading-relaxed text-landing-on-dark/65" : "mt-5 text-lg leading-relaxed text-landing-muted"}>{description}</p>
-          {points && <ul className="mt-7 space-y-3">{points.map((point) => <li key={point} className="flex items-center gap-3 text-sm"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-landing-blue/15 text-landing-blue"><Check className="h-3.5 w-3.5" /></span>{point}</li>)}</ul>}
-          {action && <Button asChild variant="ghost" className="mt-7 px-0 text-landing-blue hover:bg-transparent hover:text-landing-blue/80"><Link to={action.to}>{action.label}<ChevronRight /></Link></Button>}
+          <p
+            className={
+              dark
+                ? "mt-5 text-lg leading-relaxed text-landing-on-dark/65"
+                : "mt-5 text-lg leading-relaxed text-landing-muted"
+            }
+          >
+            {description}
+          </p>
+          {points && (
+            <ul className="mt-7 space-y-3">
+              {points.map((point) => (
+                <li key={point} className="flex items-center gap-3 text-sm">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-landing-blue/15 text-landing-blue">
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                  {point}
+                </li>
+              ))}
+            </ul>
+          )}
+          {action && (
+            <Button
+              asChild
+              variant="ghost"
+              className="mt-7 px-0 text-landing-blue hover:bg-transparent hover:text-landing-blue/80"
+            >
+              <Link to={action.to}>
+                {action.label}
+                <ChevronRight />
+              </Link>
+            </Button>
+          )}
         </div>
         <div className={reverse ? "relative lg:order-1" : "relative"}>
           <figure className="overflow-hidden rounded-lg border border-landing-line bg-landing-canvas shadow-xl shadow-landing-dark/5">
-            <img src={assetUrl(image)} alt={alt} className="aspect-square w-full object-cover" loading="lazy" />
+            <img
+              src={assetUrl(image)}
+              alt={alt}
+              className="aspect-square w-full object-cover"
+              loading="lazy"
+            />
           </figure>
-          {companion && <figure className="absolute -bottom-6 -right-2 hidden w-[42%] overflow-hidden rounded-lg border-4 border-landing-canvas bg-landing-canvas shadow-xl sm:block"><img src={assetUrl(companion)} alt={companionAlt ?? ""} className="aspect-[4/5] w-full object-cover" loading="lazy" /></figure>}
+          {companion && (
+            <figure className="absolute -bottom-6 -right-2 hidden w-[42%] overflow-hidden rounded-lg border-4 border-landing-canvas bg-landing-canvas shadow-xl sm:block">
+              <img
+                src={assetUrl(companion)}
+                alt={companionAlt ?? ""}
+                className="aspect-[4/5] w-full object-cover"
+                loading="lazy"
+              />
+            </figure>
+          )}
         </div>
       </div>
     </section>
@@ -350,14 +526,25 @@ function LoginPanel() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!email.trim() || !password) return toast.error(`${t("land.email")} / ${t("land.password")}`);
+    if (!email.trim() || !password)
+      return toast.error(`${t("land.email")} / ${t("land.password")}`);
     setLoading(true);
     try {
       if (signupMode) {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: window.location.origin, data: { display_name: fullName.trim() || email.split("@")[0] } } });
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { display_name: fullName.trim() || email.split("@")[0] },
+          },
+        });
         if (error) throw error;
         toast.success(t("ac.9"));
-        if (!data.session) { setSignupMode(false); return; }
+        if (!data.session) {
+          setSignupMode(false);
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
@@ -372,18 +559,64 @@ function LoginPanel() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-landing-line bg-landing-canvas p-6 shadow-xl shadow-landing-dark/5 sm:p-8">
-      <h3 className="font-heading text-2xl font-bold">{signupMode ? t("ac.8") : t("land.login.title")}</h3>
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-lg border border-landing-line bg-landing-canvas p-6 shadow-xl shadow-landing-dark/5 sm:p-8"
+    >
+      <h3 className="font-heading text-2xl font-bold">
+        {signupMode ? t("ac.8") : t("land.login.title")}
+      </h3>
       <p className="mt-1 text-sm text-landing-muted">{t("land.login.sub")}</p>
       <div className="mt-6 space-y-4">
-        {signupMode && <label className="block text-sm font-medium">{t("ac.3")}<input value={fullName} onChange={(event) => setFullName(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30" /></label>}
-        <label className="block text-sm font-medium">{t("land.email")}<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30" /></label>
-        <label className="block text-sm font-medium">{t("land.password")}<input type="password" autoComplete={signupMode ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30" /></label>
+        {signupMode && (
+          <label className="block text-sm font-medium">
+            {t("ac.3")}
+            <input
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
+            />
+          </label>
+        )}
+        <label className="block text-sm font-medium">
+          {t("land.email")}
+          <input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@company.com"
+            className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
+          />
+        </label>
+        <label className="block text-sm font-medium">
+          {t("land.password")}
+          <input
+            type="password"
+            autoComplete={signupMode ? "new-password" : "current-password"}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••"
+            className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
+          />
+        </label>
       </div>
-      <Button type="submit" disabled={loading} className="mt-6 h-11 w-full rounded-lg bg-landing-blue text-landing-on-accent hover:bg-landing-blue/90">
-        {loading ? <Loader2 className="animate-spin" /> : <LogIn />}{signupMode ? t("ac.8") : t("land.signin")}
+      <Button
+        type="submit"
+        disabled={loading}
+        className="mt-6 h-11 w-full rounded-lg bg-landing-blue text-landing-on-accent hover:bg-landing-blue/90"
+      >
+        {loading ? <Loader2 className="animate-spin" /> : <LogIn />}
+        {signupMode ? t("ac.8") : t("land.signin")}
       </Button>
-      <Button type="button" variant="link" className="mt-2 w-full text-landing-blue" onClick={() => setSignupMode((value) => !value)}>{signupMode ? t("ac.16") : t("land.create.account")}</Button>
+      <Button
+        type="button"
+        variant="link"
+        className="mt-2 w-full text-landing-blue"
+        onClick={() => setSignupMode((value) => !value)}
+      >
+        {signupMode ? t("ac.16") : t("land.create.account")}
+      </Button>
     </form>
   );
 }
