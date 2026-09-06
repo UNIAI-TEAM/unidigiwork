@@ -3,8 +3,10 @@ import { Globe } from "lucide-react";
 import { my } from "./i18n-locales/my";
 import { km } from "./i18n-locales/km";
 import { lo } from "./i18n-locales/lo";
+import { id } from "./i18n-locales/id";
+import { ms } from "./i18n-locales/ms";
 
-export type Lang = "vi" | "en" | "my" | "km" | "lo";
+export type Lang = "vi" | "en" | "my" | "km" | "lo" | "id" | "ms";
 
 const dict = {
   vi: {
@@ -3314,10 +3316,12 @@ const dict = {
 export type Key = keyof (typeof dict)["vi"];
 
 type PartialDict = Partial<Record<Key, string>>;
-const extraDicts: Record<"my" | "km" | "lo", PartialDict> = {
+const extraDicts: Record<"my" | "km" | "lo" | "id" | "ms", PartialDict> = {
   my: my as PartialDict,
   km: km as PartialDict,
   lo: lo as PartialDict,
+  id: id as PartialDict,
+  ms: ms as PartialDict,
 };
 
 export const LANGS: { code: Lang; label: string; short: string }[] = [
@@ -3326,6 +3330,8 @@ export const LANGS: { code: Lang; label: string; short: string }[] = [
   { code: "my", label: "မြန်မာ (Myanmar)", short: "MY" },
   { code: "km", label: "ភាសាខ្មែរ (Khmer)", short: "KM" },
   { code: "lo", label: "ພາສາລາວ (Lao)", short: "LO" },
+  { code: "id", label: "Bahasa Indonesia", short: "ID" },
+  { code: "ms", label: "Bahasa Melayu", short: "MS" },
 ];
 const LANG_CODES = LANGS.map((l) => l.code);
 
@@ -3415,7 +3421,9 @@ export const useI18n = () => useContext(LangCtx);
 
 /** BCP-47 tag cho định dạng ngày/giờ theo ngôn ngữ đang chọn. */
 export const localeTag = (lang: Lang): string =>
-  ({ vi: "vi-VN", en: "en-US", my: "my-MM", km: "km-KH", lo: "lo-LA" })[lang] ?? "vi-VN";
+  ({ vi: "vi-VN", en: "en-US", my: "my-MM", km: "km-KH", lo: "lo-LA", id: "id-ID", ms: "ms-MY" })[
+    lang
+  ] ?? "vi-VN";
 
 export function LanguageToggle({ className = "" }: { className?: string }) {
   const { lang, setLang } = useI18n();
