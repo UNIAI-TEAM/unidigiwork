@@ -160,7 +160,7 @@ function Landing() {
                 </Button>
               </div>
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-landing-muted">
-                {["land.bullet.security", "land.bullet.vi", "land.bullet.deploy"].map((key) => (
+                {(["land.bullet.security", "land.bullet.vi", "land.bullet.deploy"] as const).map((key) => (
                   <span key={key} className="flex items-center gap-1.5"><Check className="h-4 w-4 text-landing-blue" /> {t(key)}</span>
                 ))}
               </div>
@@ -225,7 +225,7 @@ function Landing() {
               <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{t("land.memory.title")}</h2>
               <p className="mt-5 text-lg leading-relaxed text-landing-on-dark/65">{t("land.memory.sub")}</p>
               <div className="mt-8 space-y-4">
-                {["land.memory.point1", "land.memory.point2", "land.memory.point3"].map((key) => (
+                {(["land.memory.point1", "land.memory.point2", "land.memory.point3"] as const).map((key) => (
                   <div key={key} className="flex items-start gap-3 text-sm text-landing-on-dark/80">
                     <Layers3 className="mt-0.5 h-4 w-4 shrink-0 text-landing-magenta" /> {t(key)}
                   </div>
