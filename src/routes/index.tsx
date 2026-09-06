@@ -167,37 +167,37 @@ function Landing() {
 
       <main>
         <section
-          className="relative isolate min-h-[760px] overflow-hidden pt-18 sm:min-h-[820px]"
+          className="relative isolate overflow-hidden pt-18 sm:min-h-[820px]"
           aria-labelledby="landing-title"
         >
           <img
             src={assetUrl(peopleAi)}
             alt={t("land.hero.imageAlt")}
-            className="absolute inset-y-0 right-0 -z-10 h-full w-full object-cover object-[62%_center] sm:w-[74%] lg:w-[68%]"
+            className="absolute inset-y-0 right-0 -z-10 hidden h-full w-[74%] object-cover object-[62%_center] sm:block lg:w-[68%]"
           />
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--landing-canvas)_0%,var(--landing-canvas)_37%,color-mix(in_oklab,var(--landing-canvas)_88%,transparent)_54%,transparent_80%)]" />
-          <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-[linear-gradient(0deg,var(--landing-canvas),transparent)]" />
-          <div className="mx-auto flex min-h-[690px] max-w-7xl items-center px-4 py-16 sm:px-6">
-            <div className="max-w-2xl pt-10">
+          <div className="absolute inset-0 -z-10 hidden bg-[linear-gradient(90deg,var(--landing-canvas)_0%,var(--landing-canvas)_37%,color-mix(in_oklab,var(--landing-canvas)_88%,transparent)_54%,transparent_80%)] sm:block" />
+          <div className="absolute inset-x-0 bottom-0 -z-10 hidden h-40 bg-[linear-gradient(0deg,var(--landing-canvas),transparent)] sm:block" />
+          <div className="mx-auto flex max-w-7xl items-center px-4 pb-10 pt-12 sm:min-h-[748px] sm:px-6 sm:py-16">
+            <div className="max-w-2xl sm:pt-10">
               <span className="inline-flex items-center gap-2 rounded-full border border-landing-blue/20 bg-landing-canvas/80 px-3 py-1.5 text-xs font-semibold text-landing-blue backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" /> {t("land.hero.eyebrow")}
               </span>
               <h1
                 id="landing-title"
-                className="mt-6 font-heading text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl"
+                className="mt-5 font-heading text-5xl font-bold leading-[1.05] sm:mt-6 sm:text-6xl lg:text-7xl"
               >
                 {t("land.hero.titleA")} <span className="text-landing-blue">+</span>
                 <br />
                 <span className="text-landing-magenta">{t("land.hero.titleB")}</span>
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-landing-muted sm:text-xl">
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-landing-muted sm:mt-6 sm:text-xl">
                 {t("land.hero.sub")}
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-7 grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:mt-8 sm:flex sm:flex-wrap">
                 <Button
                   asChild
                   size="lg"
-                  className="h-12 rounded-lg bg-landing-dark px-6 text-landing-on-dark hover:bg-landing-dark/90"
+                  className="h-12 w-full rounded-lg bg-landing-dark px-5 text-landing-on-dark hover:bg-landing-dark/90 sm:w-auto sm:px-6"
                 >
                   <Link to="/auth">
                     {t("land.cta.start")} <ArrowRight />
@@ -207,14 +207,14 @@ function Landing() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="h-12 rounded-lg border-landing-line bg-landing-canvas/80 px-6 text-landing-ink backdrop-blur hover:bg-landing-tint"
+                  className="h-12 w-full rounded-lg border-landing-line bg-landing-canvas px-5 text-landing-ink hover:bg-landing-tint sm:w-auto sm:bg-landing-canvas/80 sm:px-6 sm:backdrop-blur"
                 >
                   <Link to="/meeting">
                     <Video /> {t("land.cta.demo")}
                   </Link>
                 </Button>
               </div>
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-landing-muted">
+              <div className="mt-7 grid grid-cols-1 gap-2 text-sm text-landing-muted min-[390px]:grid-cols-2 sm:mt-8 sm:flex sm:flex-wrap sm:gap-x-6">
                 {(["land.bullet.security", "land.bullet.vi", "land.bullet.deploy"] as const).map(
                   (key) => (
                     <span key={key} className="flex items-center gap-1.5">
@@ -225,6 +225,15 @@ function Landing() {
               </div>
             </div>
           </div>
+          <figure className="relative h-[410px] overflow-hidden border-t border-landing-line sm:hidden">
+            <img
+              src={assetUrl(peopleAi)}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-[64%_center]"
+            />
+            <div className="absolute inset-x-0 top-0 h-16 bg-[linear-gradient(180deg,var(--landing-canvas),transparent)]" />
+          </figure>
         </section>
 
         <section
