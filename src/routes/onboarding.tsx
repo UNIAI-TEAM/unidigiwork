@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { BrandMark } from "@/components/brand-logo";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getActiveTenant } from "@/lib/api/active-tenant.functions";
@@ -47,10 +48,7 @@ function OnboardingPage() {
   const setActive = useSetActiveTenant();
 
   // Idempotency key: stable for the lifetime of this page render.
-  const idempotencyKey = useMemo(
-    () => `onboard-${crypto.randomUUID()}`,
-    [],
-  );
+  const idempotencyKey = useMemo(() => `onboard-${crypto.randomUUID()}`, []);
 
   const autoSlug = slugTouched ? slug : slugify(name);
   const slugValid = SLUG_PATTERN.test(autoSlug);
@@ -84,8 +82,7 @@ function OnboardingPage() {
       toast.success("Đã tạo tenant thành công");
       navigate({ to: "/tasks" });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Không thể tạo tenant";
+      const message = err instanceof Error ? err.message : "Không thể tạo tenant";
       toast.error(
         message === "TENANT_SLUG_CONFLICT"
           ? "Slug đã được sử dụng. Vui lòng chọn slug khác."
@@ -101,14 +98,10 @@ function OnboardingPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-2xl">
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-            U
-          </div>
+          <BrandMark className="h-10 w-10" />
           <div>
             <div className="text-lg font-bold tracking-tight">UNIWORK</div>
-            <div className="text-xs text-muted-foreground">
-              Thiết lập tổ chức của bạn
-            </div>
+            <div className="text-xs text-muted-foreground">Thiết lập tổ chức của bạn</div>
           </div>
         </div>
 
@@ -118,9 +111,7 @@ function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-semibold tracking-tight">
-                  Thông tin tổ chức
-                </h2>
+                <h2 className="text-xl font-semibold tracking-tight">Thông tin tổ chức</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Đặt tên và slug định danh cho tenant.
                 </p>
@@ -158,19 +149,14 @@ function OnboardingPage() {
                   </p>
                 )}
               </Field>
-              <StepFooter
-                disabled={!step1Valid}
-                onNext={() => setStep(2)}
-              />
+              <StepFooter disabled={!step1Valid} onNext={() => setStep(2)} />
             </div>
           )}
 
           {step === 2 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-semibold tracking-tight">
-                  Workspace mặc định
-                </h2>
+                <h2 className="text-xl font-semibold tracking-tight">Workspace mặc định</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Workspace đầu tiên sẽ được tạo cùng tenant.
                 </p>
@@ -222,9 +208,7 @@ function OnboardingPage() {
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-semibold tracking-tight">
-                  Xác nhận và tạo
-                </h2>
+                <h2 className="text-xl font-semibold tracking-tight">Xác nhận và tạo</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Bạn sẽ trở thành tenant owner sau khi tạo.
                 </p>
@@ -239,7 +223,13 @@ function OnboardingPage() {
               <StepFooter
                 onBack={() => setStep(2)}
                 nextLabel={provision.isPending ? "Đang tạo…" : "Tạo tenant"}
-                nextIcon={provision.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                nextIcon={
+                  provision.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4" />
+                  )
+                }
                 disabled={provision.isPending || setActive.isPending}
                 onNext={onCreate}
               />

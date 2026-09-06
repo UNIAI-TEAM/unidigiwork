@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { BrandMark } from "@/components/brand-logo";
 import { LogIn } from "lucide-react";
 import { useI18n, LanguageToggle } from "@/lib/i18n";
 import { ThemeToggle, ToneToggle } from "@/lib/theme";
@@ -28,9 +29,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-            U
-          </div>
+          <BrandMark className="h-9 w-9" />
           <div className="leading-tight">
             <div className="text-base font-bold tracking-wide">UNIWORK</div>
             <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
@@ -41,9 +40,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
             <Link
               key={it.key}
               to={it.to}
-              className={
-                active === it.key ? "text-foreground" : "hover:text-foreground"
-              }
+              className={active === it.key ? "text-foreground" : "hover:text-foreground"}
             >
               {it.label}
             </Link>
@@ -52,7 +49,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <ToneToggle />
-      <ThemeToggle />
+          <ThemeToggle />
           <Link
             to="/auth"
             className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground sm:inline"
@@ -77,9 +74,7 @@ function PublicFooter() {
       <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-              U
-            </div>
+            <BrandMark className="h-8 w-8" />
             <span className="font-semibold">UNIWORK</span>
           </Link>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -129,13 +124,7 @@ function PublicFooter() {
   );
 }
 
-function FooterCol({
-  title,
-  items,
-}: {
-  title: string;
-  items: { label: string; to: string }[];
-}) {
+function FooterCol({ title, items }: { title: string; items: { label: string; to: string }[] }) {
   return (
     <div>
       <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
