@@ -5,8 +5,7 @@ export const ms = {
   "land.cta.demo": "Lihat demo Mesyuarat",
   "land.cta.start": "Mula sekarang",
   "land.cta2.h": "Sedia untuk perusahaan anda",
-  "land.cta2.p":
-    "Infrastruktur selamat, kebenaran mengikut ruang kerja, data dihoskan di Vietnam.",
+  "land.cta2.p": "Infrastruktur selamat, kebenaran mengikut ruang kerja, data dihoskan di Vietnam.",
   "land.email": "E-mel",
   "land.email.title": "E-mel lebih pintar. Kerja lebih lancar.",
   "land.feat.sub": "Gantikan 5–7 alat berasingan dengan satu platform.",
@@ -14,8 +13,7 @@ export const ms = {
   "land.footer.company": "Syarikat",
   "land.footer.privacy": "Privasi",
   "land.footer.product": "Produk",
-  "land.footer.sub":
-    "Tempat kerja digital di mana manusia dan AI membina hasil bersama.",
+  "land.footer.sub": "Tempat kerja digital di mana manusia dan AI membina hasil bersama.",
   "land.footer.terms": "Terma",
   "land.hero.eyebrow": "Ruang kerja untuk pasukan moden",
   "land.hero.imageAlt": "Pasukan manusia dan tenaga kerja AI UNIWORK",

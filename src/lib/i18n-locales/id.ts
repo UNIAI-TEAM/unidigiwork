@@ -5,8 +5,7 @@ export const id = {
   "land.cta.demo": "Lihat demo Meeting",
   "land.cta.start": "Mulai sekarang",
   "land.cta2.h": "Siap untuk perusahaan Anda",
-  "land.cta2.p":
-    "Infrastruktur aman, izin per ruang kerja, data disimpan di Vietnam.",
+  "land.cta2.p": "Infrastruktur aman, izin per ruang kerja, data disimpan di Vietnam.",
   "land.email": "Email",
   "land.email.title": "Email lebih cerdas. Kerja lebih lancar.",
   "land.feat.sub": "Gantikan 5–7 alat terpisah dengan satu platform.",
@@ -14,8 +13,7 @@ export const id = {
   "land.footer.company": "Perusahaan",
   "land.footer.privacy": "Privasi",
   "land.footer.product": "Produk",
-  "land.footer.sub":
-    "Ruang kerja digital tempat manusia dan AI membangun hasil bersama.",
+  "land.footer.sub": "Ruang kerja digital tempat manusia dan AI membangun hasil bersama.",
   "land.footer.terms": "Ketentuan",
   "land.hero.eyebrow": "Ruang kerja untuk tim modern",
   "land.hero.imageAlt": "Tim manusia dan tenaga kerja AI UNIWORK",
