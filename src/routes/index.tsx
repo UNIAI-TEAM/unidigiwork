@@ -27,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import peopleAi from "@/assets/landing/people-ai.png.asset.json";
 import meetings from "@/assets/landing/meetings.png.asset.json";
 import emailHub from "@/assets/landing/email-hub.png.asset.json";
-import aiWorkforce from "@/assets/landing/ai-workforce.png.asset.json";
 import aiWorkforceAlt from "@/assets/landing/ai-workforce-alt.png.asset.json";
 import workGraph from "@/assets/landing/work-graph.png.asset.json";
 import chatTasksAi from "@/assets/landing/chat-tasks-ai.png.asset.json";
@@ -337,24 +336,15 @@ function Landing() {
               </h2>
               <p className="mt-4 text-lg text-landing-muted">{t("land.hire.sub")}</p>
             </div>
-            <div className="mt-14 grid gap-6 lg:grid-cols-2">
-              {[
-                { asset: aiWorkforce, alt: t("land.workforce.imageAlt") },
-                { asset: aiWorkforceAlt, alt: t("land.workforce.imageAlt2") },
-              ].map((item, index) => (
-                <figure
-                  key={index}
-                  className="group overflow-hidden rounded-lg border border-landing-line bg-landing-soft shadow-sm"
-                >
-                  <img
-                    src={assetUrl(item.asset)}
-                    alt={item.alt}
-                    className="aspect-[4/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
-                </figure>
-              ))}
-            </div>
+            <figure className="group mx-auto mt-14 max-w-5xl overflow-hidden rounded-lg border border-landing-line bg-landing-soft shadow-sm">
+              <img
+                src={assetUrl(aiWorkforceAlt)}
+                alt={t("land.workforce.imageAlt")}
+                className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
+                loading="lazy"
+              />
+            </figure>
+
             <div className="mt-10 flex justify-center">
               <Button
                 asChild
