@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { assetUrl } from "@/lib/asset-url";
 import { useI18n, LanguageToggle } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { AiSalesChat } from "@/components/landing/ai-sales-chat";
 import peopleAi from "@/assets/landing/people-ai.png.asset.json";
 import meetings from "@/assets/landing/meetings.png.asset.json";
 import emailHub from "@/assets/landing/email-hub.png.asset.json";
@@ -404,7 +405,9 @@ function Landing() {
           </span>
         </div>
       </footer>
+      <AiSalesChat />
     </div>
+
   );
 }
 
