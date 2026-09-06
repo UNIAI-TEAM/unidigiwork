@@ -27,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import peopleAi from "@/assets/landing/people-ai.png.asset.json";
 import meetings from "@/assets/landing/meetings.png.asset.json";
 import emailHub from "@/assets/landing/email-hub.png.asset.json";
-import aiWorkforce from "@/assets/landing/ai-workforce.png.asset.json";
 import aiWorkforceAlt from "@/assets/landing/ai-workforce-alt.png.asset.json";
 import workGraph from "@/assets/landing/work-graph.png.asset.json";
 import chatTasksAi from "@/assets/landing/chat-tasks-ai.png.asset.json";
