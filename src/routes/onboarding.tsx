@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { BrandMark } from "@/components/brand-logo";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getActiveTenant } from "@/lib/api/active-tenant.functions";
@@ -101,9 +102,7 @@ function OnboardingPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-2xl">
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-            U
-          </div>
+          <BrandMark className="h-10 w-10" />
           <div>
             <div className="text-lg font-bold tracking-tight">UNIWORK</div>
             <div className="text-xs text-muted-foreground">

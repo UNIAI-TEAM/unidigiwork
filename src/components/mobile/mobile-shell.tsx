@@ -1,4 +1,5 @@
 import { useActiveWorkspace } from "@/lib/active-workspace";
+import { BrandMark } from "@/components/brand-logo";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Home,
@@ -169,9 +170,7 @@ function MobileTopbar() {
         className="flex items-center gap-2"
         aria-label="Menu"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-          U
-        </span>
+        <BrandMark className="h-8 w-8" />
       </button>
 
       <button

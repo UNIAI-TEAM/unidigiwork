@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { BrandWordmark } from "@/components/brand-logo";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -67,10 +68,7 @@ const capabilities = [
 function Brand() {
   return (
     <Link to="/" className="flex items-center gap-2.5" aria-label="UNIWORK">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-landing-blue font-heading text-lg font-bold text-landing-on-accent shadow-sm">
-        w
-      </span>
-      <span className="font-heading text-xl font-bold text-landing-ink">uniwork</span>
+      <BrandWordmark className="h-8 sm:h-9" />
     </Link>
   );
 }

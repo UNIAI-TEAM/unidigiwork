@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { BrandMark } from "@/components/brand-logo";
 import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -389,9 +390,7 @@ export function AppSidebar({
             collapsed ? "px-2 lg:justify-center" : "px-5",
           )}
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-            U
-          </div>
+          <BrandMark className="h-9 w-9" />
           {!collapsed && (
             <div className="flex-1 leading-tight">
               <div className="text-base font-bold tracking-wide">UNIWORK</div>

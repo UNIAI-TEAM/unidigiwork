@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { BrandMark } from "@/components/brand-logo";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -67,9 +68,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-xl">
         <div className="mb-4 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-            U
-          </div>
+          <BrandMark className="h-9 w-9" />
           <div>
             <div className="text-base font-bold tracking-wide">UNIWORK</div>
             <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
