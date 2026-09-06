@@ -1,136 +1,368 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Sparkles,
-  MessageSquare,
-  Video,
-  FileText,
-  BookOpen,
-  Workflow,
-  Bot,
-  ShieldCheck,
   ArrowRight,
+  Bot,
+  BrainCircuit,
   Check,
-  LogIn,
+  ChevronRight,
+  Layers3,
   Loader2,
-  KanbanSquare,
+  LogIn,
   Mail,
-  Users,
-  Zap,
-  ListChecks,
-  Calendar,
-  Send,
-  CheckCircle2,
-  BriefcaseBusiness,
-  BarChart3,
-  Headphones,
-  Settings2,
-  Plug,
-  Calculator,
-  Minus,
-  Plus,
-  HelpCircle,
-  ChevronDown,
-  Quote,
+  Menu,
+  MessageSquare,
+  ShieldCheck,
+  Sparkles,
+  Video,
+  Workflow,
+  X,
 } from "lucide-react";
-import { z } from "zod";
-import { submitDemoRequest } from "@/lib/api/demo-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { assetUrl } from "@/lib/asset-url";
-import shotMeeting from "@/assets/shot-meeting.png.asset.json";
-import shotKnowledge from "@/assets/shot-knowledge.png.asset.json";
-import shotTasks from "@/assets/shot-tasks.png.asset.json";
-import shotEmail from "@/assets/shot-email.png.asset.json";
 import { useI18n, LanguageToggle } from "@/lib/i18n";
-import { ThemeToggle, ToneToggle } from "@/lib/theme";
+import { Button } from "@/components/ui/button";
+import peopleAi from "@/assets/landing/people-ai.png.asset.json";
+import meetings from "@/assets/landing/meetings.png.asset.json";
+import emailHub from "@/assets/landing/email-hub.png.asset.json";
+import aiWorkforce from "@/assets/landing/ai-workforce.png.asset.json";
+import aiWorkforceAlt from "@/assets/landing/ai-workforce-alt.png.asset.json";
+import workGraph from "@/assets/landing/work-graph.png.asset.json";
+import chatTasksAi from "@/assets/landing/chat-tasks-ai.png.asset.json";
+import projectsTasksAi from "@/assets/landing/projects-tasks-ai.png.asset.json";
+
+const seoDescription =
+  "UNIWORK kết nối con người, công việc, cuộc họp, email và nhân sự AI trong một không gian làm việc số thống nhất.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "UNIWORK — Digital Workplace Platform cho doanh nghiệp" },
-      {
-        name: "description",
-        content: "Họp video, tài liệu, knowledge base và workflow trong một nền tảng duy nhất.",
-      },
-      { property: "og:title", content: "UNIWORK — Digital Workplace Platform" },
-      {
-        property: "og:description",
-        content: "Tất cả trong một nơi làm việc số: meeting, documents, knowledge, AI copilot.",
-      },
+      { title: "UNIWORK — People + AI Workforce" },
+      { name: "description", content: seoDescription },
+      { property: "og:title", content: "UNIWORK — People + AI Workforce" },
+      { property: "og:description", content: seoDescription },
+      { property: "og:type", content: "website" },
       { property: "og:url", content: "https://unidigiwork.lovable.app/" },
-      { property: "og:image", content: assetUrl(shotKnowledge) },
+      { property: "og:image", content: assetUrl(peopleAi) },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "UNIWORK — People + AI Workforce" },
+      { name: "twitter:description", content: seoDescription },
+      { name: "twitter:image", content: assetUrl(peopleAi) },
     ],
     links: [{ rel: "canonical", href: "https://unidigiwork.lovable.app/" }],
   }),
   component: Landing,
 });
 
-function formatMoney(n: number, lang: string): string {
-  if (lang !== "vi") {
-    return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(n)} VND`;
-  }
-  return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(n).replace(/,/g, ".")}đ`;
+const capabilities = [
+  { icon: MessageSquare, key: "land.feat.chat.t", desc: "land.feat.chat.d" },
+  { icon: Workflow, key: "land.feat.flow.t", desc: "land.feat.flow.d" },
+  { icon: Video, key: "land.feat.meet.t", desc: "land.feat.meet.d" },
+  { icon: Mail, key: "land.feat.email.t", desc: "land.feat.email.d" },
+  { icon: BrainCircuit, key: "land.feat.kb.t", desc: "land.feat.kb.d" },
+  { icon: Bot, key: "land.feat.ai.t", desc: "land.feat.ai.d" },
+] as const;
+
+function Brand() {
+  return (
+    <Link to="/" className="flex items-center gap-2.5" aria-label="UNIWORK">
+      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-landing-blue font-heading text-lg font-bold text-landing-on-accent shadow-sm">
+        w
+      </span>
+      <span className="font-heading text-xl font-bold text-landing-ink">uniwork</span>
+    </Link>
+  );
 }
 
 function Landing() {
-  const { t, lang } = useI18n();
-  const features = [
-    { icon: Video, title: t("land.feat.meet.t"), desc: t("land.feat.meet.d") },
-    { icon: FileText, title: t("land.feat.docs.t"), desc: t("land.feat.docs.d") },
-    { icon: BookOpen, title: t("land.feat.kb.t"), desc: t("land.feat.kb.d") },
-    { icon: MessageSquare, title: t("land.feat.chat.t"), desc: t("land.feat.chat.d") },
-    { icon: Workflow, title: t("land.feat.flow.t"), desc: t("land.feat.flow.d") },
-    { icon: Bot, title: t("land.feat.ai.t"), desc: t("land.feat.ai.d") },
-    { icon: Mail, title: t("land.feat.email.t"), desc: t("land.feat.email.d") },
-  ];
+  const { t } = useI18n();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loginReady, setLoginReady] = useState(false);
-  const [signupMode, setSignupMode] = useState(false);
-  const [fullName, setFullName] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // If already signed in, jump straight to the app
   useEffect(() => {
-    setLoginReady(true);
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/tasks" });
     });
   }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!loginReady || loading) return;
-    if (!email || !password) {
-      toast.error(t("land.email") + " / " + t("land.password"));
-      return;
-    }
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-landing-canvas font-sans text-landing-ink">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-landing-line bg-landing-canvas/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <Brand />
+          <nav className="hidden items-center gap-7 text-sm font-medium text-landing-muted lg:flex" aria-label={t("land.nav.features")}>
+            <a className="transition-colors hover:text-landing-blue" href="#platform">{t("land.nav.features")}</a>
+            <Link className="transition-colors hover:text-landing-blue" to="/pricing">{t("land.nav.pricing")}</Link>
+            <Link className="transition-colors hover:text-landing-blue" to="/about">{t("land.nav.about")}</Link>
+            <Link className="transition-colors hover:text-landing-blue" to="/blog">Blog</Link>
+            <Link className="transition-colors hover:text-landing-blue" to="/contact">{t("land.nav.contact")}</Link>
+          </nav>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <LanguageToggle />
+            <Button asChild variant="ghost" className="hidden text-landing-ink sm:inline-flex">
+              <a href="#login">{t("land.nav.login")}</a>
+            </Button>
+            <Button asChild className="hidden rounded-full bg-landing-blue px-5 text-landing-on-accent hover:bg-landing-blue/90 sm:inline-flex">
+              <Link to="/auth">{t("land.cta.start")}</Link>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-landing-ink lg:hidden"
+              aria-label={menuOpen ? t("land.nav.close") : t("land.nav.open")}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((value) => !value)}
+            >
+              {menuOpen ? <X /> : <Menu />}
+            </Button>
+          </div>
+        </div>
+        {menuOpen && (
+          <nav className="border-t border-landing-line bg-landing-canvas px-4 py-4 lg:hidden" aria-label={t("land.nav.open")}>
+            <div className="mx-auto grid max-w-7xl gap-1 text-sm font-medium">
+              <a className="rounded-lg px-3 py-3 hover:bg-landing-tint" href="#platform" onClick={() => setMenuOpen(false)}>{t("land.nav.features")}</a>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/pricing">{t("land.nav.pricing")}</Link>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/about">{t("land.nav.about")}</Link>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/blog">Blog</Link>
+              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/contact">{t("land.nav.contact")}</Link>
+            </div>
+          </nav>
+        )}
+      </header>
+
+      <main>
+        <section className="relative isolate min-h-[760px] overflow-hidden pt-18 sm:min-h-[820px]" aria-labelledby="landing-title">
+          <img
+            src={assetUrl(peopleAi)}
+            alt={t("land.hero.imageAlt")}
+            className="absolute inset-y-0 right-0 -z-10 h-full w-full object-cover object-[62%_center] sm:w-[74%] lg:w-[68%]"
+          />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--landing-canvas)_0%,var(--landing-canvas)_37%,color-mix(in_oklab,var(--landing-canvas)_88%,transparent)_54%,transparent_80%)]" />
+          <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-[linear-gradient(0deg,var(--landing-canvas),transparent)]" />
+          <div className="mx-auto flex min-h-[690px] max-w-7xl items-center px-4 py-16 sm:px-6">
+            <div className="max-w-2xl pt-10">
+              <span className="inline-flex items-center gap-2 rounded-full border border-landing-blue/20 bg-landing-canvas/80 px-3 py-1.5 text-xs font-semibold text-landing-blue backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" /> {t("land.hero.eyebrow")}
+              </span>
+              <h1 id="landing-title" className="mt-6 font-heading text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl">
+                {t("land.hero.titleA")} <span className="text-landing-blue">+</span><br />
+                <span className="text-landing-magenta">{t("land.hero.titleB")}</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-landing-muted sm:text-xl">{t("land.hero.sub")}</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button asChild size="lg" className="h-12 rounded-lg bg-landing-dark px-6 text-landing-on-dark hover:bg-landing-dark/90">
+                  <Link to="/auth">{t("land.cta.start")} <ArrowRight /></Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-12 rounded-lg border-landing-line bg-landing-canvas/80 px-6 text-landing-ink backdrop-blur hover:bg-landing-tint">
+                  <Link to="/meeting"><Video /> {t("land.cta.demo")}</Link>
+                </Button>
+              </div>
+              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-landing-muted">
+                {["land.bullet.security", "land.bullet.vi", "land.bullet.deploy"].map((key) => (
+                  <span key={key} className="flex items-center gap-1.5"><Check className="h-4 w-4 text-landing-blue" /> {t(key)}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="platform" className="border-y border-landing-line bg-landing-soft py-20 sm:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold text-landing-blue">{t("land.platform.eyebrow")}</p>
+              <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{t("land.feat.title")}</h2>
+              <p className="mt-4 text-lg text-landing-muted">{t("land.feat.sub")}</p>
+            </div>
+            <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-landing-line bg-landing-line sm:grid-cols-2 lg:grid-cols-3">
+              {capabilities.map((item) => (
+                <div key={item.key} className="group bg-landing-canvas p-6 sm:p-8">
+                  <item.icon className="h-6 w-6 text-landing-blue transition-transform duration-200 group-hover:translate-x-1" />
+                  <h3 className="mt-8 font-heading text-xl font-bold">{t(item.key)}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-landing-muted">{t(item.desc)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <ProductBand
+          dark
+          eyebrow={t("land.preview.meet.tag")}
+          title={t("land.meeting.title")}
+          description={t("land.preview.meet.p")}
+          image={meetings}
+          alt={t("land.preview.meet.h")}
+          points={[t("land.meeting.point1"), t("land.meeting.point2"), t("land.meeting.point3")]}
+        />
+
+        <ProductBand
+          reverse
+          eyebrow={t("land.projects.eyebrow")}
+          title={t("land.projects.title")}
+          description={t("land.preview.tasks.p")}
+          image={projectsTasksAi}
+          alt={t("land.projects.imageAlt")}
+          companion={chatTasksAi}
+          companionAlt={t("land.chat.imageAlt")}
+          action={{ label: t("land.projects.cta"), to: "/auth" }}
+        />
+
+        <ProductBand
+          eyebrow={t("land.preview.email.tag")}
+          title={t("land.email.title")}
+          description={t("land.preview.email.p")}
+          image={emailHub}
+          alt={t("land.preview.email.h")}
+          action={{ label: t("land.preview.email.cta"), to: "/auth" }}
+        />
+
+        <section className="border-y border-landing-line bg-landing-dark py-20 text-landing-on-dark sm:py-28">
+          <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
+            <div>
+              <p className="text-sm font-semibold text-landing-blue">{t("land.memory.eyebrow")}</p>
+              <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{t("land.memory.title")}</h2>
+              <p className="mt-5 text-lg leading-relaxed text-landing-on-dark/65">{t("land.memory.sub")}</p>
+              <div className="mt-8 space-y-4">
+                {["land.memory.point1", "land.memory.point2", "land.memory.point3"].map((key) => (
+                  <div key={key} className="flex items-start gap-3 text-sm text-landing-on-dark/80">
+                    <Layers3 className="mt-0.5 h-4 w-4 shrink-0 text-landing-magenta" /> {t(key)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <figure className="overflow-hidden rounded-lg border border-landing-on-dark/10 bg-landing-on-dark shadow-2xl shadow-landing-blue/10">
+              <img src={assetUrl(workGraph)} alt={t("land.memory.imageAlt")} className="h-full w-full object-cover" loading="lazy" />
+            </figure>
+          </div>
+        </section>
+
+        <section className="py-20 sm:py-28" aria-labelledby="ai-workforce-title">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm font-semibold text-landing-magenta">{t("land.hire.badge")}</p>
+              <h2 id="ai-workforce-title" className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{t("land.hire.title")}</h2>
+              <p className="mt-4 text-lg text-landing-muted">{t("land.hire.sub")}</p>
+            </div>
+            <div className="mt-14 grid gap-6 lg:grid-cols-2">
+              {[{ asset: aiWorkforce, alt: t("land.workforce.imageAlt") }, { asset: aiWorkforceAlt, alt: t("land.workforce.imageAlt2") }].map((item, index) => (
+                <figure key={index} className="group overflow-hidden rounded-lg border border-landing-line bg-landing-soft shadow-sm">
+                  <img src={assetUrl(item.asset)} alt={item.alt} className="aspect-[4/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" loading="lazy" />
+                </figure>
+              ))}
+            </div>
+            <div className="mt-10 flex justify-center">
+              <Button asChild size="lg" className="h-12 rounded-lg bg-landing-blue px-7 text-landing-on-accent hover:bg-landing-blue/90">
+                <Link to="/pricing">{t("land.hire.cta")} <ArrowRight /></Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section id="login" className="border-t border-landing-line bg-landing-soft py-20 sm:py-28">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
+            <div>
+              <ShieldCheck className="h-9 w-9 text-landing-blue" />
+              <h2 className="mt-5 font-heading text-4xl font-bold sm:text-5xl">{t("land.cta2.h")}</h2>
+              <p className="mt-4 text-lg leading-relaxed text-landing-muted">{t("land.cta2.p")}</p>
+            </div>
+            <LoginPanel />
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-landing-line bg-landing-canvas py-12">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:grid-cols-[1.4fr_1fr_1fr] sm:px-6">
+          <div><Brand /><p className="mt-4 max-w-sm text-sm text-landing-muted">{t("land.footer.sub")}</p></div>
+          <div>
+            <div className="text-sm font-semibold">{t("land.footer.product")}</div>
+            <div className="mt-3 grid gap-2 text-sm text-landing-muted"><Link to="/pricing">{t("land.nav.pricing")}</Link><Link to="/meeting">{t("land.nav.demo")}</Link><Link to="/workflows">Workflow</Link></div>
+          </div>
+          <div>
+            <div className="text-sm font-semibold">{t("land.footer.company")}</div>
+            <div className="mt-3 grid gap-2 text-sm text-landing-muted"><Link to="/about">{t("land.nav.about")}</Link><Link to="/blog">Blog</Link><Link to="/contact">{t("land.nav.contact")}</Link></div>
+          </div>
+        </div>
+        <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-landing-line px-4 pt-6 text-xs text-landing-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <span>© 2026 Unicom JSC</span>
+          <span className="flex gap-4"><Link to="/privacy">{t("land.footer.privacy")}</Link><Link to="/terms">{t("land.footer.terms")}</Link></span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function ProductBand({
+  dark = false,
+  reverse = false,
+  eyebrow,
+  title,
+  description,
+  image,
+  alt,
+  companion,
+  companionAlt,
+  points,
+  action,
+}: {
+  dark?: boolean;
+  reverse?: boolean;
+  eyebrow: string;
+  title: string;
+  description: string;
+  image: { url: string };
+  alt: string;
+  companion?: { url: string };
+  companionAlt?: string;
+  points?: string[];
+  action?: { label: string; to: "/auth" };
+}) {
+  return (
+    <section className={dark ? "bg-landing-dark py-20 text-landing-on-dark sm:py-28" : "bg-landing-canvas py-20 sm:py-28"}>
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
+        <div className={reverse ? "lg:order-2" : ""}>
+          <p className={dark ? "text-sm font-semibold text-landing-blue" : "text-sm font-semibold text-landing-magenta"}>{eyebrow}</p>
+          <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{title}</h2>
+          <p className={dark ? "mt-5 text-lg leading-relaxed text-landing-on-dark/65" : "mt-5 text-lg leading-relaxed text-landing-muted"}>{description}</p>
+          {points && <ul className="mt-7 space-y-3">{points.map((point) => <li key={point} className="flex items-center gap-3 text-sm"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-landing-blue/15 text-landing-blue"><Check className="h-3.5 w-3.5" /></span>{point}</li>)}</ul>}
+          {action && <Button asChild variant="ghost" className="mt-7 px-0 text-landing-blue hover:bg-transparent hover:text-landing-blue/80"><Link to={action.to}>{action.label}<ChevronRight /></Link></Button>}
+        </div>
+        <div className={reverse ? "relative lg:order-1" : "relative"}>
+          <figure className="overflow-hidden rounded-lg border border-landing-line bg-landing-canvas shadow-xl shadow-landing-dark/5">
+            <img src={assetUrl(image)} alt={alt} className="aspect-square w-full object-cover" loading="lazy" />
+          </figure>
+          {companion && <figure className="absolute -bottom-6 -right-2 hidden w-[42%] overflow-hidden rounded-lg border-4 border-landing-canvas bg-landing-canvas shadow-xl sm:block"><img src={assetUrl(companion)} alt={companionAlt ?? ""} className="aspect-[4/5] w-full object-cover" loading="lazy" /></figure>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoginPanel() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [signupMode, setSignupMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim() || !password) return toast.error(`${t("land.email")} / ${t("land.password")}`);
     setLoading(true);
     try {
       if (signupMode) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: { display_name: fullName.trim() || email.trim().split("@")[0] },
-          },
-        });
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: window.location.origin, data: { display_name: fullName.trim() || email.split("@")[0] } } });
         if (error) throw error;
         toast.success(t("ac.9"));
-        if (data.session) {
-          navigate({ to: "/tasks" });
-        } else {
-          setSignupMode(false);
-        }
-        return;
+        if (!data.session) { setSignupMode(false); return; }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
+        toast.success(t("land.signin"));
       }
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (error) throw error;
-      toast.success(t("land.signin"));
       navigate({ to: "/tasks" });
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : t("ac.10"));
@@ -140,950 +372,18 @@ function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link to="/" className="flex min-w-0 items-center gap-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-              U
-            </div>
-            <div className="min-w-0 leading-tight">
-              <div className="truncate text-base font-bold tracking-wide">UNIWORK</div>
-              <div className="hidden truncate text-[10px] text-muted-foreground sm:block">
-                Digital Workplace Platform
-              </div>
-            </div>
-          </Link>
-          <nav className="hidden min-w-0 items-center gap-4 text-sm text-muted-foreground lg:flex xl:gap-6">
-            <a href="#features" className="whitespace-nowrap hover:text-foreground">
-              {t("land.nav.features")}
-            </a>
-            <a href="#preview" className="whitespace-nowrap hover:text-foreground">
-              {t("land.nav.preview")}
-            </a>
-            <a href="#hire-ai" className="hidden whitespace-nowrap hover:text-foreground xl:inline">
-              {t("land.hire.badge")}
-            </a>
-            <a href="#ai-skills" className="hidden whitespace-nowrap hover:text-foreground xl:inline">
-              {t("land.skill.badge")}
-            </a>
-            <a href="#login" className="whitespace-nowrap hover:text-foreground">
-              {t("land.nav.login")}
-            </a>
-            <Link to="/meeting" className="whitespace-nowrap hover:text-foreground">
-              {t("land.nav.demo")}
-            </Link>
-          </nav>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <LanguageToggle />
-            <ToneToggle />
-            <ThemeToggle />
-            <Link
-              to="/auth"
-              className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground md:inline"
-            >
-              {t("land.nav.signup")}
-            </Link>
-            <a
-              href="#login"
-              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              <LogIn className="h-4 w-4" /> {t("land.nav.login")}
-            </a>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,theme(colors.primary/20),transparent_60%)]" />
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
-          <div className="flex flex-col justify-center">
-            <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3.5 w-3.5" /> {t("land.tagline")}
-            </span>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              {t("land.h1.a")}
-              <br />
-              <span className="bg-gradient-to-r from-primary to-violet-400 bg-clip-text text-transparent">
-                {t("land.h1.b")}
-              </span>
-            </h1>
-            <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-              {t("land.sub")}
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a
-                href="#login"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                {t("land.cta.start")} <ArrowRight className="h-4 w-4" />
-              </a>
-              <Link
-                to="/meeting"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-5 py-3 text-sm hover:bg-surface-2"
-              >
-                <Video className="h-4 w-4" /> {t("land.cta.demo")}
-              </Link>
-            </div>
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-success" /> {t("land.bullet.security")}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-success" /> {t("land.bullet.vi")}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-success" /> {t("land.bullet.deploy")}
-              </span>
-            </div>
-          </div>
-
-          {/* Inline login card */}
-          <div id="login" className="flex items-center justify-center">
-            <div className="w-full max-w-md rounded-2xl border border-border bg-surface/80 p-6 shadow-2xl shadow-primary/5 backdrop-blur">
-              <h2 className="text-xl font-semibold">
-                {signupMode ? t("ac.8") : t("land.login.title")}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">{t("land.login.sub")}</p>
-              <form onSubmit={handleLogin} className="mt-5 space-y-3">
-                {signupMode && (
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground">{t("ac.3")}</label>
-                    <input
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">
-                    {t("land.email")}
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">
-                    {t("land.password")}
-                  </label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={!loginReady || loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                >
-                  {!loginReady || loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <LogIn className="h-4 w-4" />
-                  )}
-                  {signupMode ? t("ac.8") : t("land.signin")}
-                </button>
-              </form>
-              <div className="mt-4 text-center text-xs text-muted-foreground">
-                {signupMode ? "" : `${t("land.no.account")} `}
-                <button
-                  type="button"
-                  onClick={() => setSignupMode((v) => !v)}
-                  className="text-primary hover:underline"
-                >
-                  {signupMode ? t("ac.16") : t("land.create.account")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Preview screenshots */}
-      <section id="preview" className="border-t border-border/60 bg-surface/30 py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold sm:text-4xl">{t("land.preview.title")}</h2>
-            <p className="mt-3 text-muted-foreground">{t("land.preview.sub")}</p>
-          </div>
-
-          <div className="mt-12 space-y-16">
-            <div className="grid items-center gap-8 md:grid-cols-2">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
-                  <Video className="h-3.5 w-3.5" /> {t("land.preview.meet.tag")}
-                </span>
-                <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.meet.h")}</h3>
-                <p className="mt-2 text-muted-foreground">{t("land.preview.meet.p")}</p>
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10">
-                <img
-                  src={assetUrl(shotMeeting)}
-                  alt={t("land.preview.meet.h")}
-                  className="w-full"
-                  loading="lazy"
-                />
-              </div>
-            </div>
-
-            <div className="grid items-center gap-8 md:grid-cols-2">
-              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 md:order-first">
-                <img
-                  src={assetUrl(shotKnowledge)}
-                  alt={t("land.preview.kb.tag")}
-                  className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-              <div className="md:order-last">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-300">
-                  <BookOpen className="h-3.5 w-3.5" /> {t("land.preview.kb.tag")}
-                </span>
-                <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.kb.h")}</h3>
-                <p className="mt-2 text-muted-foreground">{t("land.preview.kb.p")}</p>
-              </div>
-            </div>
-
-            <div className="grid items-center gap-8 md:grid-cols-2">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300">
-                  <KanbanSquare className="h-3.5 w-3.5" /> {t("land.preview.tasks.tag")}
-                </span>
-                <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.tasks.h")}</h3>
-                <p className="mt-2 text-muted-foreground">{t("land.preview.tasks.p")}</p>
-              </div>
-              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20">
-                <img
-                  src={assetUrl(shotTasks)}
-                  alt={t("land.preview.tasks.tag")}
-                  className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-            </div>
-
-            <div className="grid items-center gap-8 md:grid-cols-2">
-              <div className="group overflow-hidden rounded-2xl border border-border bg-background shadow-2xl shadow-primary/10 transition-all duration-500 ease-out hover:border-primary/30 hover:shadow-primary/20 md:order-first">
-                <img
-                  src={assetUrl(shotEmail)}
-                  alt={t("land.preview.email.tag")}
-                  className="w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-              <div className="md:order-last">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-300">
-                  <Mail className="h-3.5 w-3.5" /> {t("land.preview.email.tag")}
-                </span>
-                <h3 className="mt-3 text-2xl font-semibold">{t("land.preview.email.h")}</h3>
-                <p className="mt-2 text-muted-foreground">{t("land.preview.email.p")}</p>
-                <Link
-                  to="/auth"
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  {t("land.preview.email.cta")} <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="border-t border-border/60 py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold sm:text-4xl">{t("land.feat.title")}</h2>
-            <p className="mt-3 text-muted-foreground">{t("land.feat.sub")}</p>
-          </div>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                className="rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-primary/40"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <f.icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 text-base font-semibold">{f.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Không gian tương tác Human + AI */}
-      <section
-        id="hybrid"
-        className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
-        aria-labelledby="hybrid-title"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3.5 w-3.5" /> {t("land.hybrid.badge")}
-            </span>
-            <h2 id="hybrid-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              {t("land.hybrid.title")}
-            </h2>
-            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.hybrid.sub")}</p>
-          </div>
-
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {([
-              { icon: Users, t: "land.hybrid.c1.t", d: "land.hybrid.c1.d" },
-              { icon: ListChecks, t: "land.hybrid.c2.t", d: "land.hybrid.c2.d" },
-              { icon: MessageSquare, t: "land.hybrid.c3.t", d: "land.hybrid.c3.d" },
-              { icon: ShieldCheck, t: "land.hybrid.c4.t", d: "land.hybrid.c4.d" },
-            ] as const).map((c) => (
-              <div
-                key={c.t}
-                className="rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <c.icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 text-base font-semibold">{t(c.t)}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t(c.d)}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 grid gap-4 rounded-2xl border border-border bg-card p-6 md:grid-cols-3 md:p-8">
-            <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <Users className="h-4 w-4" />
-              </span>
-              <div>
-                <div className="text-sm font-semibold">Human</div>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {t("land.hybrid.c1.d")}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <Zap className="h-4 w-4" />
-              </span>
-              <div>
-                <div className="text-sm font-semibold">Workflow</div>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {t("land.hybrid.c4.d")}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <Bot className="h-4 w-4" />
-              </span>
-              <div>
-                <div className="text-sm font-semibold">AI Agent</div>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {t("land.hybrid.c2.d")}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/ai"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              {t("land.hybrid.cta")} <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/contact"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
-            >
-              <Calendar className="h-4 w-4" /> {t("land.hybrid.demo")}
-            </Link>
-          </div>
-
-          <div className="mx-auto mt-10 w-full max-w-md">
-            <DemoLeadForm />
-          </div>
-        </div>
-      </section>
-
-      {/* Thuê nhân sự AI */}
-      <section
-        id="hire-ai"
-        className="border-t border-border/60 py-16 sm:py-24"
-        aria-labelledby="hire-ai-title"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <BriefcaseBusiness className="h-3.5 w-3.5" /> {t("land.hire.badge")}
-            </span>
-            <h2 id="hire-ai-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              {t("land.hire.title")}
-            </h2>
-            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.hire.sub")}</p>
-          </div>
-
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {([
-              { icon: Calendar, t: "land.hire.r1.t", d: "land.hire.r1.d", price: 1900000 },
-              { icon: BarChart3, t: "land.hire.r2.t", d: "land.hire.r2.d", price: 2900000 },
-              { icon: Headphones, t: "land.hire.r3.t", d: "land.hire.r3.d", price: 2400000 },
-              { icon: Settings2, t: "land.hire.r4.t", d: "land.hire.r4.d", price: 3500000 },
-            ] as const).map((r) => (
-              <article
-                key={r.t}
-                className="flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <r.icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 text-base font-semibold">{t(r.t)}</h3>
-                <p className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">{t(r.d)}</p>
-                <div className="mt-4 border-t border-border pt-4">
-                  <div className="text-xs text-muted-foreground">{t("land.hire.price")}</div>
-                  <div className="text-lg font-semibold tracking-tight">
-                    {formatMoney(r.price, lang)}
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">
-                      {t("land.hire.unit")}
-                    </span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-12">
-            <HireEstimator />
-          </div>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/pricing"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              {t("land.hire.cta")} <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/contact"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
-            >
-              <MessageSquare className="h-4 w-4" /> {t("land.hire.contact")}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Skill cho nhân sự AI */}
-      <section
-        id="hire-ai-consult"
-        className="border-t border-border/60 bg-surface/30 py-16 sm:py-20"
-        aria-labelledby="hire-ai-consult-title"
-      >
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <MessageSquare className="h-3.5 w-3.5" /> {t("land.hireform.badge")}
-            </span>
-            <h2
-              id="hire-ai-consult-title"
-              className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl"
-            >
-              {t("land.hireform.title")}
-            </h2>
-            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.hireform.sub")}</p>
-          </div>
-          <div className="mt-8">
-            <HireConsultForm />
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="ai-skills"
-        className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
-        aria-labelledby="ai-skills-title"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Plug className="h-3.5 w-3.5" /> {t("land.skill.badge")}
-            </span>
-            <h2 id="ai-skills-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              {t("land.skill.title")}
-            </h2>
-            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.skill.sub")}</p>
-          </div>
-
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {([
-              { icon: Video, t: "land.skill.s1.t", d: "land.skill.s1.d" },
-              { icon: BookOpen, t: "land.skill.s2.t", d: "land.skill.s2.d" },
-              { icon: Mail, t: "land.skill.s3.t", d: "land.skill.s3.d" },
-              { icon: Workflow, t: "land.skill.s4.t", d: "land.skill.s4.d" },
-              { icon: BarChart3, t: "land.skill.s5.t", d: "land.skill.s5.d" },
-              { icon: ShieldCheck, t: "land.skill.s6.t", d: "land.skill.s6.d" },
-            ] as const).map((s) => (
-              <div
-                key={s.t}
-                className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <s.icon className="h-4 w-4" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-semibold">{t(s.t)}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t(s.d)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 flex justify-center">
-            <Link
-              to="/ai"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
-            >
-              <Bot className="h-4 w-4" /> {t("land.skill.cta")}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Case study / Testimonial */}
-      <section
-        id="hire-ai-case"
-        className="border-t border-border/60 py-16 sm:py-24"
-        aria-labelledby="hire-ai-case-title"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Users className="h-3.5 w-3.5" /> {t("land.case.badge")}
-            </span>
-            <h2 id="hire-ai-case-title" className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              {t("land.case.title")}
-            </h2>
-            <p className="mt-3 leading-relaxed text-muted-foreground">{t("land.case.sub")}</p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {([
-              {
-                name: "land.case.c1.name",
-                role: "land.case.c1.role",
-                quote: "land.case.c1.quote",
-                metrics: [
-                  { label: "land.case.c1.m1", value: "land.case.c1.v1" },
-                  { label: "land.case.c1.m2", value: "land.case.c1.v2" },
-                  { label: "land.case.c1.m3", value: "land.case.c1.v3" },
-                ],
-              },
-              {
-                name: "land.case.c2.name",
-                role: "land.case.c2.role",
-                quote: "land.case.c2.quote",
-                metrics: [
-                  { label: "land.case.c2.m1", value: "land.case.c2.v1" },
-                  { label: "land.case.c2.m2", value: "land.case.c2.v2" },
-                  { label: "land.case.c2.m3", value: "land.case.c2.v3" },
-                ],
-              },
-              {
-                name: "land.case.c3.name",
-                role: "land.case.c3.role",
-                quote: "land.case.c3.quote",
-                metrics: [
-                  { label: "land.case.c3.m1", value: "land.case.c3.v1" },
-                  { label: "land.case.c3.m2", value: "land.case.c3.v2" },
-                  { label: "land.case.c3.m3", value: "land.case.c3.v3" },
-                ],
-              },
-            ] as const).map((c) => (
-              <article
-                key={c.name}
-                className="flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
-              >
-                <Quote className="h-6 w-6 text-primary/70" />
-                <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
-                  &ldquo;{t(c.quote)}&rdquo;
-                </blockquote>
-                <div className="mt-6 border-t border-border pt-4">
-                  <div className="text-sm font-semibold">{t(c.name)}</div>
-                  <div className="text-xs text-muted-foreground">{t(c.role)}</div>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {c.metrics.map((m) => (
-                    <div key={m.label} className="rounded-lg bg-surface p-3 text-center">
-                      <div className="text-base font-bold text-primary">{t(m.value)}</div>
-                      <div className="text-[10px] leading-tight text-muted-foreground">
-                        {t(m.label)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ về nhân sự AI */}
-      <section
-        id="hire-ai-faq"
-        className="border-t border-border/60 bg-surface/30 py-16 sm:py-24"
-        aria-labelledby="hire-ai-faq-title"
-      >
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <HelpCircle className="h-3.5 w-3.5" /> {t("land.hire.faq.badge")}
-            </span>
-            <h2
-              id="hire-ai-faq-title"
-              className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl"
-            >
-              {t("land.hire.faq.title")}
-            </h2>
-          </div>
-
-          <div className="mt-10 space-y-3">
-            {([
-              { q: "land.hire.faq.q1", a: "land.hire.faq.a1" },
-              { q: "land.hire.faq.q2", a: "land.hire.faq.a2" },
-              { q: "land.hire.faq.q3", a: "land.hire.faq.a3" },
-              { q: "land.hire.faq.q4", a: "land.hire.faq.a4" },
-              { q: "land.hire.faq.q5", a: "land.hire.faq.a5" },
-            ] as const).map((item) => (
-              <details
-                key={item.q}
-                className="group rounded-xl border border-border bg-card open:bg-surface/40"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 text-sm font-semibold transition-colors hover:bg-muted/40 sm:p-5">
-                  <span className="pr-2">{t(item.q)}</span>
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-                </summary>
-                <p className="px-4 pb-4 text-sm leading-relaxed text-muted-foreground sm:px-5 sm:pb-5">
-                  {t(item.a)}
-                </p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t border-border/60 bg-gradient-to-br from-primary/15 via-violet-500/10 to-transparent py-16">
-        <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 text-center sm:px-6">
-          <ShieldCheck className="h-8 w-8 text-primary" />
-          <h2 className="text-3xl font-bold sm:text-4xl">{t("land.cta2.h")}</h2>
-          <p className="max-w-2xl text-muted-foreground">{t("land.cta2.p")}</p>
-          <a
-            href="#login"
-            className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            {t("land.cta2.btn")} <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border/60 py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-xs font-bold text-primary-foreground">
-              U
-            </div>
-            <span className="font-semibold text-foreground">UNIWORK</span>
-            <span>— Digital Workplace Platform</span>
-          </div>
-          <div>Unicom @2026</div>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-function DemoLeadForm() {
-  return <LeadForm variant="demo" />;
-}
-
-function HireConsultForm() {
-  return <LeadForm variant="hire" />;
-}
-
-function LeadForm({ variant }: { variant: "demo" | "hire" }) {
-  const { t } = useI18n();
-  const isHire = variant === "hire";
-  const idp = isHire ? "hire" : "demo";
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const schema = z.object({
-    name: z.string().trim().min(1, { message: t("land.demo.form.required") }).max(100),
-    email: z.string().trim().email({ message: t("land.demo.form.email.invalid") }).max(255),
-    role: z.string().trim().min(1, { message: t("land.demo.form.required") }).max(100),
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-    const result = schema.safeParse({ name, email, role });
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
-        const path = issue.path[0];
-        if (typeof path === "string") fieldErrors[path] = issue.message;
-      });
-      setErrors(fieldErrors);
-      return;
-    }
-    setLoading(true);
-    try {
-      await submitDemoRequest({ data: result.data });
-      setSuccess(true);
-      setName("");
-      setEmail("");
-      setRole("");
-    } catch (err) {
-      toast.error(t("land.demo.form.error"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (success) {
-    return (
-      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-        <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
-        <h3 className="mt-3 text-base font-semibold">{t("land.demo.form.success")}</h3>
-        <button
-          onClick={() => setSuccess(false)}
-          className="mt-3 text-sm text-primary hover:underline"
-        >
-          {isHire ? t("land.hireform.submit") : t("land.demo.form.submit")}
-        </button>
+    <form onSubmit={handleSubmit} className="rounded-lg border border-landing-line bg-landing-canvas p-6 shadow-xl shadow-landing-dark/5 sm:p-8">
+      <h3 className="font-heading text-2xl font-bold">{signupMode ? t("ac.8") : t("land.login.title")}</h3>
+      <p className="mt-1 text-sm text-landing-muted">{t("land.login.sub")}</p>
+      <div className="mt-6 space-y-4">
+        {signupMode && <label className="block text-sm font-medium">{t("ac.3")}<input value={fullName} onChange={(event) => setFullName(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30" /></label>}
+        <label className="block text-sm font-medium">{t("land.email")}<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30" /></label>
+        <label className="block text-sm font-medium">{t("land.password")}<input type="password" autoComplete={signupMode ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30" /></label>
       </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-name`}>
-            {t("land.demo.form.name")}
-          </label>
-          <input
-            id={`${idp}-name`}
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("land.demo.form.name.placeholder")}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-            disabled={loading}
-          />
-          {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-role`}>
-            {isHire ? t("land.hireform.need") : t("land.demo.form.role")}
-          </label>
-          <input
-            id={`${idp}-role`}
-            type="text"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            maxLength={100}
-            placeholder={
-              isHire ? t("land.hireform.need.placeholder") : t("land.demo.form.role.placeholder")
-            }
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-            disabled={loading}
-          />
-          {errors.role && <p className="mt-1 text-xs text-destructive">{errors.role}</p>}
-        </div>
-      </div>
-      <div className="mt-4">
-        <label className="text-xs font-medium text-muted-foreground" htmlFor={`${idp}-email`}>
-          {t("land.demo.form.email")}
-        </label>
-        <input
-          id={`${idp}-email`}
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={t("land.demo.form.email.placeholder")}
-          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-          disabled={loading}
-        />
-        {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-      >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {isHire ? t("land.hireform.submit") : t("land.demo.form.submit")}
-      </button>
+      <Button type="submit" disabled={loading} className="mt-6 h-11 w-full rounded-lg bg-landing-blue text-landing-on-accent hover:bg-landing-blue/90">
+        {loading ? <Loader2 className="animate-spin" /> : <LogIn />}{signupMode ? t("ac.8") : t("land.signin")}
+      </Button>
+      <Button type="button" variant="link" className="mt-2 w-full text-landing-blue" onClick={() => setSignupMode((value) => !value)}>{signupMode ? t("ac.16") : t("land.create.account")}</Button>
     </form>
   );
 }
-
-function HireEstimator() {
-  const { t, lang } = useI18n();
-  const roles = [
-    { key: "assistant", label: t("land.hire.r1.t"), price: 1900000 },
-    { key: "analyst", label: t("land.hire.r2.t"), price: 2900000 },
-    { key: "support", label: t("land.hire.r3.t"), price: 2400000 },
-    { key: "operations", label: t("land.hire.r4.t"), price: 3500000 },
-  ];
-  const durations = [
-    { value: 1, label: t("land.hire.estimator.duration.1"), discount: 0 },
-    { value: 3, label: t("land.hire.estimator.duration.3"), discount: 0.05 },
-    { value: 6, label: t("land.hire.estimator.duration.6"), discount: 0.1 },
-    { value: 12, label: t("land.hire.estimator.duration.12"), discount: 0.15 },
-  ];
-
-  const [roleKey, setRoleKey] = useState<string>(roles[0].key);
-  const [qty, setQty] = useState<number>(1);
-  const [duration, setDuration] = useState<number>(1);
-
-  const selectedRole = roles.find((r) => r.key === roleKey) ?? roles[0];
-  const selectedDuration = durations.find((d) => d.value === duration) ?? durations[0];
-  const baseTotal = selectedRole.price * qty * duration;
-  const discountAmount = baseTotal * selectedDuration.discount;
-  const total = baseTotal - discountAmount;
-
-  const formatVnd = (n: number) => formatMoney(n, lang);
-
-  const changeQty = (delta: number) => {
-    setQty((prev) => Math.max(1, prev + delta));
-  };
-
-  return (
-    <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-          <Calculator className="h-4 w-4" />
-        </span>
-        <h3 className="text-lg font-semibold">{t("land.hire.estimator.title")}</h3>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">{t("land.hire.estimator.sub")}</p>
-
-      <div className="mt-6 grid gap-5 sm:grid-cols-3">
-        <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor="est-role">
-            {t("land.hire.estimator.role")}
-          </label>
-          <select
-            id="est-role"
-            value={roleKey}
-            onChange={(e) => setRoleKey(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-          >
-            <option value="" disabled>
-              {t("land.hire.estimator.role.placeholder")}
-            </option>
-            {roles.map((r) => (
-              <option key={r.key} value={r.key}>
-                {r.label} — {formatVnd(r.price)}/{t("land.hire.unit")}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="text-xs font-medium text-muted-foreground">{t("land.hire.estimator.qty")}</label>
-          <div className="mt-1 flex items-center rounded-lg border border-border bg-background">
-            <button
-              type="button"
-              onClick={() => changeQty(-1)}
-              className="flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-              aria-label="Decrease quantity"
-              disabled={qty <= 1}
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={qty}
-              onChange={(e) => {
-                const v = parseInt(e.target.value, 10);
-                setQty(Number.isNaN(v) ? 1 : Math.max(1, Math.min(99, v)));
-              }}
-              className="h-10 w-full border-x border-border bg-background px-3 py-2 text-center text-sm focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => changeQty(1)}
-              className="flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Increase quantity"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-medium text-muted-foreground" htmlFor="est-duration">
-            {t("land.hire.estimator.duration")}
-          </label>
-          <select
-            id="est-duration"
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
-          >
-            {durations.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/5 p-5 sm:flex-row">
-        <div>
-          <div className="text-sm text-muted-foreground">{t("land.hire.estimator.total")}</div>
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-3xl font-bold tracking-tight text-primary">{formatVnd(total)}</span>
-            <span className="text-sm text-muted-foreground">/{duration} {t("land.hire.estimator.duration.unit")}</span>
-          </div>
-          {selectedDuration.discount > 0 && (
-            <div className="mt-1 text-xs text-success">
-              {t("land.hire.estimator.discount")} {formatVnd(discountAmount)} ({Math.round(selectedDuration.discount * 100)}%)
-            </div>
-          )}
-          <div className="mt-1 text-xs text-muted-foreground">{t("land.hire.estimator.total.note")}</div>
-        </div>
-        <Link
-          to="/contact"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
-        >
-          {t("land.hire.estimator.cta")} <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-    </div>
-  );
-}
-

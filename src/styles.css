@@ -19,6 +19,8 @@
  */
 
 @theme inline {
+  --font-sans: "DM Sans", sans-serif;
+  --font-heading: "Space Grotesk", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -63,6 +65,17 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-landing-canvas: var(--landing-canvas);
+  --color-landing-soft: var(--landing-soft);
+  --color-landing-tint: var(--landing-tint);
+  --color-landing-ink: var(--landing-ink);
+  --color-landing-muted: var(--landing-muted);
+  --color-landing-line: var(--landing-line);
+  --color-landing-blue: var(--landing-blue);
+  --color-landing-magenta: var(--landing-magenta);
+  --color-landing-dark: var(--landing-dark);
+  --color-landing-on-accent: var(--landing-on-accent);
+  --color-landing-on-dark: var(--landing-on-dark);
 }
 
 :root {
@@ -104,6 +117,17 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  --landing-canvas: oklch(1 0 0);
+  --landing-soft: oklch(0.985 0.006 270);
+  --landing-tint: oklch(0.96 0.025 255);
+  --landing-ink: oklch(0.22 0.07 278);
+  --landing-muted: oklch(0.48 0.025 270);
+  --landing-line: oklch(0.91 0.012 270);
+  --landing-blue: oklch(0.59 0.22 255);
+  --landing-magenta: oklch(0.58 0.27 325);
+  --landing-dark: oklch(0.20 0.08 278);
+  --landing-on-accent: oklch(1 0 0);
+  --landing-on-dark: oklch(0.98 0.005 270);
 }
 
 .dark {
