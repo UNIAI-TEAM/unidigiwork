@@ -46,6 +46,8 @@ import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocxRoundTripPanel } from "@/components/work-products/docx-roundtrip-panel";
+import { WorkGraphLinksPanel } from "@/components/work-products/work-graph-links";
+
 import { FileType2 } from "lucide-react";
 import {
   Select,
