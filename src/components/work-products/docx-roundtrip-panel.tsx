@@ -359,14 +359,14 @@ export function DocxRoundTripPanel({
 
   // Sau khi chấp nhận, tự động tạo công việc thực từ nội dung vừa thay đổi.
   const autoCreateTasks = useMutation({
-    mutationFn: (items: Array<{ title: string; detail: string; priority: string }>) =>
+    mutationFn: (items: FollowUpSuggestion[]) =>
       createFollowUpsFromWorkProduct({
         data: {
           id: productId,
           items: items.map((f) => ({
             kind: "TASK" as const,
             title: f.title,
-            detail: f.detail,
+            detail: withReason(f),
             priority: f.priority as "low",
           })),
         },
