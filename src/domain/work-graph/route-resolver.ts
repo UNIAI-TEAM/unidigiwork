@@ -19,6 +19,8 @@ export function workEntityHref(type: string, id: string, mobile = false): string
       // Artifacts live inside their meeting page; the server resolver supplies
       // the precise meeting-scoped href when the parent meeting is known.
       return `/meeting?artifact=${id}`;
+    case "WORK_PRODUCT":
+      return `/work-products/${id}`;
     case "PERSON":
       return `/people/${id}`;
     default:

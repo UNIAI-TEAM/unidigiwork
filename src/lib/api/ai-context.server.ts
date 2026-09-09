@@ -108,6 +108,7 @@ const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
   MEETING_ARTIFACT: 0.72,
   PERSON: 0.3,
   TENANT: 0,
+  WORK_PRODUCT: 0.6,
 };
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
