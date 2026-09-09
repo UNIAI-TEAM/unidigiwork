@@ -363,7 +363,11 @@ function markdownTable(grid: string[][]): string {
 }
 
 /** Đọc một DOCX có sẵn thành các khối có neo về tài liệu gốc, kèm nhận diện ngữ nghĩa. */
-export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxImport> {
+export async function parseDocxToBlocks(
+  bytes: Uint8Array,
+  weightsInput?: Partial<DetectionWeights> | null,
+): Promise<ParsedDocxImport> {
+  const weights = normalizeWeights(weightsInput);
   const parsed = await parseDocx(bytes);
   const visible = (parsed.blocks as unknown as Array<Record<string, unknown>>).filter(
     (b) => !b["hidden"],
@@ -374,6 +378,7 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
   let ordinal = 0;
   let currentSection: string | null = null;
   let seenBodyText = false;
+  let prevWasTable = false;
 
   for (const b of visible) {
     const type = String(b["type"] ?? "paragraph");
@@ -392,11 +397,17 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
     let detectedBy: "style" | "outline" | "heuristic" | null = null;
     let grid: string[][] = [];
     let table: TableSummary | null = null;
+    let score: number | null = null;
+    let signals: string[] = [];
 
     if (type === "table") {
       role = "TABLE";
       grid = tableGrid(b);
-      table = tableSummaryOf(grid);
+      table = tableSummaryOf(grid, weights.table);
+      detectedBy = "style";
+      score = table.headerConfidence ?? null;
+      signals = table.headers.length ? ["có dòng tiêu đề"] : [];
+      if (table.numericCols?.length) signals.push(`${table.numericCols.length} cột số liệu`);
       // Bảng không sửa được, nhưng cần có chữ để tìm kiếm và cho AI đọc hiểu.
       if (!text.trim() && grid.length) text = markdownTable(grid);
     } else if (type === "image" || type === "passthrough") {
@@ -405,53 +416,45 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
       role = "HEADING";
       headingLevel = Math.min(Math.max(Number(rawLevel ?? styled.level ?? 1), 1), 9);
       detectedBy = b["outlineOnly"] ? "outline" : "style";
+      signals = ["style Word"];
     } else if (type === "listItem" || listInfo?.kind) {
       role = "LIST_ITEM";
       detectedBy = "style";
+      signals = ["danh sách Word"];
     } else if (styled.role) {
       role = styled.role;
       headingLevel = styled.role === "HEADING" ? (styled.level ?? rawLevel ?? 1) : null;
       if (styled.role === "TITLE") headingLevel = 0;
       detectedBy = "style";
+      signals = [`style "${styleId}"`];
     } else if (typeof rawLevel === "number") {
       role = "HEADING";
       headingLevel = Math.min(Math.max(rawLevel, 1), 9);
       detectedBy = "outline";
+      signals = ["cấp outline"];
     } else if (trimmed) {
-      // Heuristic: tài liệu Việt Nam thường không dùng style Heading chuẩn.
-      const numDepth = headingNumberDepth(trimmed);
-      const short = trimmed.length <= 120 && !/[.;:!?]$/.test(trimmed);
-      const bold = allRunsBold(b);
-      const upper =
-        trimmed.length <= 120 &&
-        trimmed === trimmed.toLocaleUpperCase("vi") &&
-        /\p{L}/u.test(trimmed);
-      const centered = format["align"] === "center";
-      if (numDepth && (bold || short)) {
-        role = "HEADING";
-        headingLevel = numDepth;
+      // Chấm điểm theo tín hiệu: tài liệu Việt Nam thường không dùng style Heading chuẩn.
+      const guess = scoreRoles({
+        text: trimmed,
+        bold: allRunsBold(b),
+        italic: allRunsItalic(b),
+        format,
+        seenBodyText,
+        prevWasTable,
+        weights,
+      });
+      score = guess.score;
+      if (guess.role !== "PARAGRAPH") {
+        role = guess.role;
+        headingLevel = guess.headingLevel;
         detectedBy = "heuristic";
-      } else if ((bold && short) || upper) {
-        role = !seenBodyText && (centered || upper) ? "TITLE" : "HEADING";
-        headingLevel = role === "TITLE" ? 0 : 2;
-        detectedBy = "heuristic";
-      } else if (
-        allRunsItalic(b) &&
-        (Number(format["indentLeft"] ?? 0) >= 360 || /^[“"'«].*[”"'»]$/.test(trimmed))
-      ) {
-        role = "QUOTE";
-        detectedBy = "heuristic";
-      } else if (
-        /^(hình|bảng|biểu|figure|table)\s*\d+([.:]|\s)/i.test(trimmed) &&
-        trimmed.length <= 160
-      ) {
-        role = "CAPTION";
-        detectedBy = "heuristic";
+        signals = guess.signals;
       }
     }
 
     if (role === "PARAGRAPH" && trimmed) seenBodyText = true;
     if (role === "HEADING" || role === "TITLE") currentSection = trimmed || currentSection;
+    prevWasTable = type === "table";
 
     ordinal += 1;
     blocks.push({
