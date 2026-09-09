@@ -179,10 +179,15 @@ export function DocxRoundTripPanel({
       kind: "TASK" | "DECISION" | "MEETING";
       title: string;
       detail: string;
+      reason?: string;
       priority: string;
+      confidence?: number;
+      evidenceIndexes?: number[];
       checked: boolean;
     }>
   >([]);
+  const [followUpEvidence, setFollowUpEvidence] = useState<FollowUpEvidence[]>([]);
+  const [followUpDetail, setFollowUpDetail] = useState<number | null>(null);
   const [showWeights, setShowWeights] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
 
