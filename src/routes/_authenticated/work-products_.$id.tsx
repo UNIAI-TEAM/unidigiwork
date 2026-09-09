@@ -925,7 +925,9 @@ function WorkProductDetail() {
                       </div>
                     ))}
                   </div>
+                  <EngineBenchmarkPanel workProductId={id} version={data.currentVersion ?? 1} />
                 </TabsContent>
+
 
                 <TabsContent value="links" className="mt-0 space-y-2">
                   {(links ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("wp.links.empty")}</p>}
