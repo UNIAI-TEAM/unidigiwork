@@ -6040,6 +6040,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          engine: string | null
           format: string
           generated_by: string
           id: string
@@ -6055,6 +6056,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          engine?: string | null
           format: string
           generated_by?: string
           id?: string
@@ -6070,6 +6072,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          engine?: string | null
           format?: string
           generated_by?: string
           id?: string
@@ -6156,6 +6159,98 @@ export type Database = {
           },
           {
             foreignKeyName: "work_product_comments_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_product_engine_benchmarks: {
+        Row: {
+          builtin_artifact_id: string | null
+          comparison_json: Json
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          failure_reason: string | null
+          format: string
+          genoffice_artifact_id: string | null
+          genoffice_commit_sha: string | null
+          genoffice_engine_version: string | null
+          id: string
+          mode: string
+          started_at: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          version: number
+          work_product_id: string
+        }
+        Insert: {
+          builtin_artifact_id?: string | null
+          comparison_json?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failure_reason?: string | null
+          format: string
+          genoffice_artifact_id?: string | null
+          genoffice_commit_sha?: string | null
+          genoffice_engine_version?: string | null
+          id?: string
+          mode?: string
+          started_at?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          version: number
+          work_product_id: string
+        }
+        Update: {
+          builtin_artifact_id?: string | null
+          comparison_json?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failure_reason?: string | null
+          format?: string
+          genoffice_artifact_id?: string | null
+          genoffice_commit_sha?: string | null
+          genoffice_engine_version?: string | null
+          id?: string
+          mode?: string
+          started_at?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          version?: number
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_engine_benchmarks_builtin_artifact_id_fkey"
+            columns: ["builtin_artifact_id"]
+            isOneToOne: false
+            referencedRelation: "work_product_artifacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_engine_benchmarks_genoffice_artifact_id_fkey"
+            columns: ["genoffice_artifact_id"]
+            isOneToOne: false
+            referencedRelation: "work_product_artifacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_engine_benchmarks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_engine_benchmarks_work_product_id_fkey"
             columns: ["work_product_id"]
             isOneToOne: false
             referencedRelation: "work_products"

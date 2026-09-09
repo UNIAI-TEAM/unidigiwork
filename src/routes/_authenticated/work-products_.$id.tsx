@@ -57,6 +57,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useI18n, localeTag } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DocumentPreview } from "@/components/work-products/document-preview";
+import { EngineBenchmarkPanel } from "@/components/work-products/engine-benchmark";
 import { workEntityHref } from "@/domain/work-graph/route-resolver";
 import {
   WP_STATUSES,
@@ -925,7 +926,9 @@ function WorkProductDetail() {
                       </div>
                     ))}
                   </div>
+                  <EngineBenchmarkPanel workProductId={product.id} version={product.current_version} />
                 </TabsContent>
+
 
                 <TabsContent value="links" className="mt-0 space-y-2">
                   {(links ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("wp.links.empty")}</p>}
