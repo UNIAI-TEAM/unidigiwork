@@ -30,6 +30,8 @@ import {
   proposeWorkProductChanges,
   proposeTasksFromWorkProduct,
   createTasksFromWorkProduct,
+  proposeFollowUpsFromDocxChanges,
+  createFollowUpsFromWorkProduct,
   listWorkProductDocxVersions,
   compareWorkProductDocxVersions,
   reanalyzeWorkProductDocx,
