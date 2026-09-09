@@ -124,8 +124,8 @@ function WorkProductDetail() {
   const [reviewerId, setReviewerId] = useState("");
   const [reviewNote, setReviewNote] = useState("");
   const [documentSearch, setDocumentSearch] = useState("");
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
 
   const { data: documents } = useQuery({
     queryKey: ["work-deliverables", { limit: 60 }],
@@ -150,6 +150,12 @@ function WorkProductDetail() {
       return next;
     });
   }, [sources]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1280px)").matches;
+    setLeftPanelOpen(desktop);
+    setRightPanelOpen(desktop);
+  }, []);
 
   const fmt = useMemo(
     () => new Intl.DateTimeFormat(localeTag(lang), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
@@ -209,13 +215,13 @@ function WorkProductDetail() {
   });
 
   const runAi = useMutation({
-    mutationFn: () =>
+    mutationFn: (prompt?: string) =>
       runWorkDeliverableAi({
         data: {
           id,
           action: aiAction,
           locale: lang,
-          instruction: instruction.trim() || undefined,
+          instruction: (prompt ?? instruction).trim() || undefined,
           selection: content.slice(selection.start, selection.end) || undefined,
           sources: activeSources.map((s) => ({
             type: s.type,
@@ -313,13 +319,16 @@ function WorkProductDetail() {
 
         <div className="flex min-h-0 min-w-0 flex-1">
           {leftPanelOpen && (
-            <aside className="hidden w-64 shrink-0 flex-col border-r bg-card lg:flex">
+            <aside className="fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 flex-col border-r bg-card shadow-md lg:static lg:z-auto lg:w-64 lg:shadow-none">
               <div className="border-b p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-semibold">{t("wp.title")}</p>
-                  <Button asChild variant="ghost" size="icon-sm" aria-label={t("wp.new")}>
-                    <Link to="/work-products"><MoreHorizontal /></Link>
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button asChild variant="ghost" size="icon-sm" aria-label={t("wp.new")}>
+                      <Link to="/work-products"><MoreHorizontal /></Link>
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => setLeftPanelOpen(false)} aria-label="Đóng danh sách"><PanelLeft /></Button>
+                  </div>
                 </div>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -404,12 +413,13 @@ function WorkProductDetail() {
             </ScrollArea>
           </section>
 
-          {rightPanelOpen && <aside className="hidden w-[360px] shrink-0 border-l bg-card xl:block">
+          {rightPanelOpen && <aside className="fixed inset-x-0 bottom-0 top-28 z-40 w-full shrink-0 border-l bg-card shadow-md sm:left-auto sm:w-[360px] xl:static xl:z-auto xl:shadow-none">
             <Tabs defaultValue="ai" className="flex h-full flex-col">
               <div className="border-b px-4 py-4">
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Sparkles className="h-4 w-4" /></span>
-                  <div><p className="text-sm font-semibold">{t("wp.tab.ai")}</p><p className="text-xs text-muted-foreground">UNI Assistant</p></div>
+                  <div className="flex-1"><p className="text-sm font-semibold">{t("wp.tab.ai")}</p><p className="text-xs text-muted-foreground">UNI Assistant</p></div>
+                  <Button variant="ghost" size="icon-sm" onClick={() => setRightPanelOpen(false)} aria-label="Đóng trợ lý"><PanelRight /></Button>
                 </div>
               </div>
               <TabsList className="mx-3 mt-3 grid grid-cols-6">
@@ -443,7 +453,7 @@ function WorkProductDetail() {
                       </Button>
                     ))}
                   </div>
-                  <PromptInput onSubmit={(message) => { setInstruction(message.text); runAi.mutate(); }} className="bg-background">
+                  <PromptInput onSubmit={(message) => { setInstruction(message.text); runAi.mutate(message.text); }} className="bg-background">
                     <PromptInputTextarea value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder={t("wp.ai.instruction")} />
                     <PromptInputFooter className="justify-between">
                       <span className="text-[11px] text-muted-foreground">{activeSources.length} {t("wp.tab.context")}</span>
