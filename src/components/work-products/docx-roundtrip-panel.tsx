@@ -37,6 +37,9 @@ import {
   reanalyzeWorkProductDocx,
   getAiProposalAccuracyReport,
   getDocxRecognitionReport,
+  getTenantDocxProfile,
+  saveTenantDocxProfile,
+
 } from "@/lib/api/work-products-docx.functions";
 
 type RecognitionReport = {
