@@ -203,6 +203,21 @@ export function DocxRoundTripPanel({
       ),
   });
 
+  const reanalyze = useMutation({
+    mutationFn: () => reanalyzeWorkProductDocx({ data: { id: productId, weights } }),
+    onSuccess: (r: { updated: number; counts: Record<string, number> }) => {
+      qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
+      toast.success(`Đã nhận diện lại ${r.updated} đoạn`);
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NOT_IMPORTED_DOCX")
+          ? "Chỉ áp dụng cho tài liệu Word đã nhập."
+          : "Không phân tích lại được tài liệu.",
+      ),
+  });
+
+
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wp-change-ops", productId] });
     qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
