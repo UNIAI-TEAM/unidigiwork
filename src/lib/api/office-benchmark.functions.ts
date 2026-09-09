@@ -189,7 +189,11 @@ export const benchmarkOfficeEngines = createServerFn({ method: "POST" })
 
     const cmp = await compareEngines(builtin.bytes, genoffice.bytes, content);
 
-    let roundTrip: Record<string, unknown> | null = null;
+    type RoundTripReport = Awaited<ReturnType<typeof comparePartPreservation>> & {
+      editedBlocks: number;
+      totalBlocks: number;
+    };
+    let roundTrip: RoundTripReport | null = null;
     if (data.mode === "ROUND_TRIP") {
       // Tài liệu gốc là tệp DOCX do GenOffice tạo ở bước trên; sửa đúng một đoạn rồi ghi lại.
       const firstLine = content
