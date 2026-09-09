@@ -1,7 +1,7 @@
 // Tài liệu Word đã nhập — sửa từng đoạn, xem đối chiếu và vá giữ nguyên bản gốc.
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ListChecks, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
+import { Check, GitCompare, ListChecks, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,41 @@ import {
   proposeWorkProductChanges,
   proposeTasksFromWorkProduct,
   createTasksFromWorkProduct,
+  listWorkProductDocxVersions,
+  compareWorkProductDocxVersions,
 } from "@/lib/api/work-products-docx.functions";
+
+type DocxVersion = {
+  id: string;
+  role: string;
+  version: number | null;
+  created_at: string;
+};
+
+type DiffWord = { op: "same" | "del" | "ins"; text: string };
+type DiffRow = {
+  key: string;
+  ordinal: number;
+  blockType: string;
+  change: "ADDED" | "REMOVED" | "MODIFIED";
+  before: string;
+  after: string;
+  words: DiffWord[];
+};
+type CompareResult = {
+  base: { id: string; role: string; version: number | null };
+  target: { id: string; role: string; version: number | null };
+  totals: {
+    changed: number;
+    added: number;
+    removed: number;
+    modified: number;
+  };
+  diffs: DiffRow[];
+};
+
+const versionLabel = (v: DocxVersion) =>
+  v.role === "SOURCE_ORIGINAL" ? "Bản gốc" : `Phiên bản ${v.version ?? "?"}`;
 
 type Block = {
   id: string;
@@ -59,6 +93,32 @@ export function DocxRoundTripPanel({
   const { data: ops } = useQuery({
     queryKey: ["wp-change-ops", productId],
     queryFn: () => listWorkProductChangeOps({ data: { id: productId } }) as Promise<ChangeOp[]>,
+  });
+
+  const [showCompare, setShowCompare] = useState(false);
+  const [baseId, setBaseId] = useState<string>("");
+  const [targetId, setTargetId] = useState<string>("");
+  const { data: versions } = useQuery({
+    queryKey: ["wp-docx-versions", productId],
+    queryFn: () =>
+      listWorkProductDocxVersions({ data: { id: productId } }) as Promise<DocxVersion[]>,
+  });
+  const compare = useMutation({
+    mutationFn: () =>
+      compareWorkProductDocxVersions({
+        data: {
+          id: productId,
+          ...(baseId ? { baseArtifactId: baseId } : {}),
+          ...(targetId ? { targetArtifactId: targetId } : {}),
+        },
+      }) as Promise<CompareResult>,
+    onSuccess: () => setShowCompare(true),
+    onError: (e: any) =>
+      toast.error(
+        e?.message?.includes("NOT_ENOUGH_VERSIONS")
+          ? "Chưa có phiên bản sửa đổi để so sánh."
+          : "Không so sánh được hai bản.",
+      ),
   });
 
   const refresh = () => {
@@ -166,6 +226,114 @@ export function DocxRoundTripPanel({
           {editable.length}/{(blocks ?? []).length} đoạn có thể sửa
         </span>
       </div>
+
+      {/* So sánh bản gốc và bản đã sửa */}
+      <Card className="space-y-3 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium">So sánh bản gốc và bản đã sửa</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            disabled={compare.isPending || (versions ?? []).length < 2}
+            onClick={() => compare.mutate()}
+          >
+            {compare.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <GitCompare className="h-3 w-3" />
+            )}
+            So sánh nội dung
+          </Button>
+        </div>
+
+        {(versions ?? []).length >= 2 ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <select
+              className="h-8 rounded-md border bg-background px-2"
+              value={baseId}
+              onChange={(e) => setBaseId(e.target.value)}
+            >
+              <option value="">Bản gốc</option>
+              {(versions ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {versionLabel(v)}
+                </option>
+              ))}
+            </select>
+            <span className="text-muted-foreground">so với</span>
+            <select
+              className="h-8 rounded-md border bg-background px-2"
+              value={targetId}
+              onChange={(e) => setTargetId(e.target.value)}
+            >
+              <option value="">Bản mới nhất</option>
+              {(versions ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {versionLabel(v)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Cần ít nhất một phiên bản đã sửa để so sánh.
+          </p>
+        )}
+
+        {showCompare && compare.data && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <Badge variant="secondary">{compare.data.totals.changed} đoạn khác nhau</Badge>
+              <Badge variant="outline">Sửa {compare.data.totals.modified}</Badge>
+              <Badge variant="outline">Thêm {compare.data.totals.added}</Badge>
+              <Badge variant="outline">Xoá {compare.data.totals.removed}</Badge>
+              <button
+                type="button"
+                className="ml-auto text-muted-foreground underline"
+                onClick={() => setShowCompare(false)}
+              >
+                Ẩn
+              </button>
+            </div>
+
+            {compare.data.diffs.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Hai bản có nội dung giống nhau.</p>
+            ) : (
+              <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+                {compare.data.diffs.map((d) => (
+                  <div key={d.key} className="rounded-md border p-2 text-xs">
+                    <div className="mb-1 flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {d.change === "ADDED"
+                          ? "Thêm mới"
+                          : d.change === "REMOVED"
+                            ? "Đã xoá"
+                            : "Đã sửa"}
+                      </Badge>
+                      <span className="text-muted-foreground">Đoạn {d.ordinal}</span>
+                    </div>
+                    <p className="leading-relaxed">
+                      {d.words.map((w, i) => (
+                        <span
+                          key={`${d.key}-${i}`}
+                          className={cn(
+                            w.op === "del" &&
+                              "bg-destructive/10 text-destructive line-through decoration-destructive/60",
+                            w.op === "ins" && "bg-primary/10 text-primary",
+                          )}
+                        >
+                          {w.text}
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
 
       {/* Tạo công việc từ tài liệu */}
       <Card className="space-y-2 p-3">
