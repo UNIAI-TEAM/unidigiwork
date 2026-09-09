@@ -5998,6 +5998,337 @@ export type Database = {
         }
         Relationships: []
       }
+      work_product_artifacts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          format: string
+          generated_by: string
+          id: string
+          mime_type: string | null
+          role: string
+          size_bytes: number | null
+          storage_ref: string | null
+          tenant_id: string
+          updated_at: string
+          version: number
+          work_product_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          format: string
+          generated_by?: string
+          id?: string
+          mime_type?: string | null
+          role?: string
+          size_bytes?: number | null
+          storage_ref?: string | null
+          tenant_id: string
+          updated_at?: string
+          version?: number
+          work_product_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          format?: string
+          generated_by?: string
+          id?: string
+          mime_type?: string | null
+          role?: string
+          size_bytes?: number | null
+          storage_ref?: string | null
+          tenant_id?: string
+          updated_at?: string
+          version?: number
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_artifacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_artifacts_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_product_comments: {
+        Row: {
+          anchor: Json | null
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          tenant_id: string
+          updated_at: string
+          work_product_id: string
+        }
+        Insert: {
+          anchor?: Json | null
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          tenant_id: string
+          updated_at?: string
+          work_product_id: string
+        }
+        Update: {
+          anchor?: Json | null
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          tenant_id?: string
+          updated_at?: string
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "work_product_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_comments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_comments_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_product_reviews: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decision_note: string | null
+          due_at: string | null
+          id: string
+          requested_by: string | null
+          reviewer_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          version: number | null
+          work_product_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          due_at?: string | null
+          id?: string
+          requested_by?: string | null
+          reviewer_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          version?: number | null
+          work_product_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          due_at?: string | null
+          id?: string
+          requested_by?: string | null
+          reviewer_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          version?: number | null
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_reviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_reviews_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_product_versions: {
+        Row: {
+          ai_generated: boolean
+          artifacts_snapshot: Json
+          author_agent_id: string | null
+          author_id: string | null
+          content: string
+          created_at: string
+          id: string
+          provenance: Json
+          summary: string | null
+          tenant_id: string
+          title: string | null
+          version: number
+          work_product_id: string
+        }
+        Insert: {
+          ai_generated?: boolean
+          artifacts_snapshot?: Json
+          author_agent_id?: string | null
+          author_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          provenance?: Json
+          summary?: string | null
+          tenant_id: string
+          title?: string | null
+          version: number
+          work_product_id: string
+        }
+        Update: {
+          ai_generated?: boolean
+          artifacts_snapshot?: Json
+          author_agent_id?: string | null
+          author_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          provenance?: Json
+          summary?: string | null
+          tenant_id?: string
+          title?: string | null
+          version?: number
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_versions_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_products: {
+        Row: {
+          ai_generated: boolean
+          business_type: string
+          content: string
+          created_at: string
+          created_by: string | null
+          created_by_agent_id: string | null
+          current_version: number
+          deleted_at: string | null
+          description: string | null
+          id: string
+          owner_id: string | null
+          primary_context_id: string | null
+          primary_context_type: string | null
+          status: string
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          ai_generated?: boolean
+          business_type?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_agent_id?: string | null
+          current_version?: number
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          primary_context_id?: string | null
+          primary_context_type?: string | null
+          status?: string
+          tags?: string[]
+          tenant_id: string
+          title: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          ai_generated?: boolean
+          business_type?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_agent_id?: string | null
+          current_version?: number
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          primary_context_id?: string | null
+          primary_context_type?: string | null
+          status?: string
+          tags?: string[]
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_products_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_relationship_types: {
         Row: {
           code: string
@@ -7513,6 +7844,7 @@ export type Database = {
         Returns: Json
       }
       can_access_document: { Args: { _document_id: string }; Returns: boolean }
+      can_edit_work_product: { Args: { _id: string }; Returns: boolean }
       can_manage_document_shares: {
         Args: { _document_id: string }
         Returns: boolean
@@ -7533,6 +7865,7 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string }
         Returns: boolean
       }
+      can_view_work_product: { Args: { _id: string }; Returns: boolean }
       cancel_meeting: {
         Args: {
           _correlation_id?: string

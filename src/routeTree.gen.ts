@@ -39,6 +39,7 @@ import { Route as MeetingIdRouteImport } from './routes/meeting_.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AuthenticatedWorkProductsRouteImport } from './routes/_authenticated/work-products'
 import { Route as AuthenticatedWorkCatalogRouteImport } from './routes/_authenticated/work-catalog'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
@@ -66,7 +67,7 @@ import { Route as AuthenticatedWorkspaceInviteEmailsRouteImport } from './routes
 import { Route as AuthenticatedWorkspaceInviteRouteImport } from './routes/_authenticated/workspace.invite'
 import { Route as AuthenticatedWorkspaceAuditRouteImport } from './routes/_authenticated/workspace.audit'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
-import { Route as AuthenticatedWorkProductsCodeRouteImport } from './routes/_authenticated/work-products_.$code'
+import { Route as AuthenticatedWorkCatalogCodeRouteImport } from './routes/_authenticated/work-catalog_.$code'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
@@ -261,6 +262,12 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => BlogRoute,
 } as any)
+const AuthenticatedWorkProductsRoute =
+  AuthenticatedWorkProductsRouteImport.update({
+    id: '/work-products',
+    path: '/work-products',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWorkCatalogRoute =
   AuthenticatedWorkCatalogRouteImport.update({
     id: '/work-catalog',
@@ -408,10 +415,10 @@ const AuthenticatedWorkspaceIdRoute =
     path: '/workspace/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedWorkProductsCodeRoute =
-  AuthenticatedWorkProductsCodeRouteImport.update({
-    id: '/work-products_/$code',
-    path: '/work-products/$code',
+const AuthenticatedWorkCatalogCodeRoute =
+  AuthenticatedWorkCatalogCodeRouteImport.update({
+    id: '/work-catalog_/$code',
+    path: '/work-catalog/$code',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
@@ -692,6 +699,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work-catalog': typeof AuthenticatedWorkCatalogRoute
+  '/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
@@ -737,7 +745,7 @@ export interface FileRoutesByFullPath {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
-  '/work-products/$code': typeof AuthenticatedWorkProductsCodeRoute
+  '/work-catalog/$code': typeof AuthenticatedWorkCatalogCodeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -793,6 +801,7 @@ export interface FileRoutesByTo {
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work-catalog': typeof AuthenticatedWorkCatalogRoute
+  '/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
@@ -838,7 +847,7 @@ export interface FileRoutesByTo {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
-  '/work-products/$code': typeof AuthenticatedWorkProductsCodeRoute
+  '/work-catalog/$code': typeof AuthenticatedWorkCatalogCodeRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -898,6 +907,7 @@ export interface FileRoutesById {
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work-catalog': typeof AuthenticatedWorkCatalogRoute
+  '/_authenticated/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
@@ -943,7 +953,7 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
-  '/_authenticated/work-products_/$code': typeof AuthenticatedWorkProductsCodeRoute
+  '/_authenticated/work-catalog_/$code': typeof AuthenticatedWorkCatalogCodeRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/_authenticated/workspace/audit': typeof AuthenticatedWorkspaceAuditRoute
   '/_authenticated/workspace/invite': typeof AuthenticatedWorkspaceInviteRoute
@@ -1003,6 +1013,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/work-catalog'
+    | '/work-products'
     | '/blog/$slug'
     | '/invite/$token'
     | '/knowledge/$slug'
@@ -1048,7 +1059,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
-    | '/work-products/$code'
+    | '/work-catalog/$code'
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
@@ -1104,6 +1115,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/work-catalog'
+    | '/work-products'
     | '/blog/$slug'
     | '/invite/$token'
     | '/knowledge/$slug'
@@ -1149,7 +1161,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
-    | '/work-products/$code'
+    | '/work-catalog/$code'
     | '/workspace/$id'
     | '/workspace/audit'
     | '/workspace/invite'
@@ -1208,6 +1220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/_authenticated/work-catalog'
+    | '/_authenticated/work-products'
     | '/blog/$slug'
     | '/invite/$token'
     | '/knowledge/$slug'
@@ -1253,7 +1266,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/tasks'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
-    | '/_authenticated/work-products_/$code'
+    | '/_authenticated/work-catalog_/$code'
     | '/_authenticated/workspace/$id'
     | '/_authenticated/workspace/audit'
     | '/_authenticated/workspace/invite'
@@ -1524,6 +1537,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/_authenticated/work-products': {
+      id: '/_authenticated/work-products'
+      path: '/work-products'
+      fullPath: '/work-products'
+      preLoaderRoute: typeof AuthenticatedWorkProductsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/work-catalog': {
       id: '/_authenticated/work-catalog'
       path: '/work-catalog'
@@ -1713,11 +1733,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/work-products_/$code': {
-      id: '/_authenticated/work-products_/$code'
-      path: '/work-products/$code'
-      fullPath: '/work-products/$code'
-      preLoaderRoute: typeof AuthenticatedWorkProductsCodeRouteImport
+    '/_authenticated/work-catalog_/$code': {
+      id: '/_authenticated/work-catalog_/$code'
+      path: '/work-catalog/$code'
+      fullPath: '/work-catalog/$code'
+      preLoaderRoute: typeof AuthenticatedWorkCatalogCodeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/people_/$id': {
@@ -2173,13 +2193,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkCatalogRoute: typeof AuthenticatedWorkCatalogRoute
+  AuthenticatedWorkProductsRoute: typeof AuthenticatedWorkProductsRoute
   AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
   AuthenticatedAiMarketSearchRoute: typeof AuthenticatedAiMarketSearchRoute
   AuthenticatedChatChannelIdRoute: typeof AuthenticatedChatChannelIdRoute
   AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
   AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
-  AuthenticatedWorkProductsCodeRoute: typeof AuthenticatedWorkProductsCodeRoute
+  AuthenticatedWorkCatalogCodeRoute: typeof AuthenticatedWorkCatalogCodeRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRoute
   AuthenticatedWorkspaceAuditRoute: typeof AuthenticatedWorkspaceAuditRoute
   AuthenticatedWorkspaceInviteRoute: typeof AuthenticatedWorkspaceInviteRoute
@@ -2208,13 +2229,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkCatalogRoute: AuthenticatedWorkCatalogRoute,
+  AuthenticatedWorkProductsRoute: AuthenticatedWorkProductsRoute,
   AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,
   AuthenticatedAiMarketSearchRoute: AuthenticatedAiMarketSearchRoute,
   AuthenticatedChatChannelIdRoute: AuthenticatedChatChannelIdRoute,
   AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
   AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
-  AuthenticatedWorkProductsCodeRoute: AuthenticatedWorkProductsCodeRoute,
+  AuthenticatedWorkCatalogCodeRoute: AuthenticatedWorkCatalogCodeRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRoute,
   AuthenticatedWorkspaceAuditRoute: AuthenticatedWorkspaceAuditRoute,
   AuthenticatedWorkspaceInviteRoute: AuthenticatedWorkspaceInviteRoute,
