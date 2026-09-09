@@ -328,7 +328,7 @@ function scoreRoles(args: {
 
   // ---- Chú thích
   if (/^(hình|bảng|biểu|biểu đồ|sơ đồ|figure|fig|table|chart)\s*\d*\s*([.:–-]|\s)/i.test(text))
-    add("CAPTION", 0.9, "mở đầu bằng Hình/Bảng");
+    add("CAPTION", 1.05, "mở đầu bằng Hình/Bảng");
   if (prevWasTable && short && italic) add("CAPTION", 0.4, "ngay sau bảng, chữ nghiêng");
   if (len > 200) raw["CAPTION"] -= 0.6;
 
