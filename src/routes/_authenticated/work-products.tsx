@@ -20,6 +20,7 @@ import {
   BUSINESS_TYPES,
   WP_STATUSES,
   createWorkDeliverable,
+  getWorkDeliverableWeeklyReport,
   listWorkDeliverables,
 } from "@/lib/api/work-deliverables.functions";
 
@@ -51,6 +52,56 @@ const STATUS_TONE: Record<string, string> = {
   FINAL: "bg-primary/15 text-primary",
   ARCHIVED: "bg-muted text-muted-foreground",
 };
+
+/** Báo cáo 7 ngày: tài liệu mới, đã duyệt, số phiên bản theo loại. */
+function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
+  const { t } = useI18n();
+  const { data } = useQuery({
+    queryKey: ["wp-weekly", workspaceId],
+    queryFn: () => getWorkDeliverableWeeklyReport({ data: { workspaceId, days: 7 } }),
+  });
+  const rows = data?.rows ?? [];
+  return (
+    <Card className="mb-4 overflow-hidden">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
+        <h2 className="text-sm font-semibold">{t("wp.weekly.title")}</h2>
+        <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
+      </div>
+      {rows.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">{t("wp.weekly.empty")}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[420px] text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="px-4 py-2 font-medium">{t("wp.weekly.type")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.created")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approved")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.versions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.businessType} className="border-t">
+                  <td className="px-4 py-2">{t(`wp.type.${r.businessType}` as never)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.created}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.approved}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.versions}</td>
+                </tr>
+              ))}
+              <tr className="border-t bg-muted/40 font-medium">
+                <td className="px-4 py-2">{t("wp.weekly.total")}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.created ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approved ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 function WorkProductsPage() {
   const { t, lang } = useI18n();
@@ -190,6 +241,10 @@ function WorkProductsPage() {
               </Button>
             </div>
           </div>
+
+          <WeeklyReportCard workspaceId={workspaceId === "ALL" ? null : workspaceId} />
+
+
 
           {isLoading && (
             <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground">

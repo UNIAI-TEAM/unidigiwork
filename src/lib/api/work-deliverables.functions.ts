@@ -676,3 +676,102 @@ export const listWorkDeliverableReviewers = createServerFn({ method: "GET" })
       name: (p.display_name ?? p.email ?? p.id) as string,
     }));
   });
+
+/* --------------------------------------------------- báo cáo tuần (7 ngày) */
+
+export type WeeklyReportRow = {
+  businessType: string;
+  created: number;
+  approved: number;
+  versions: number;
+};
+
+export type WeeklyReport = {
+  from: string;
+  to: string;
+  rows: WeeklyReportRow[];
+  totals: WeeklyReportRow;
+};
+
+export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid().nullable().optional(),
+        days: z.number().int().min(1).max(90).default(7),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<WeeklyReport> => {
+    const to = new Date();
+    const from = new Date(to.getTime() - data.days * 86400_000);
+    const fromISO = from.toISOString();
+    const toISO = to.toISOString();
+
+    let scope = context.supabase
+      .from("work_products")
+      .select("id, business_type, status, created_at")
+      .is("deleted_at", null)
+      .limit(2000);
+    if (data.workspaceId) scope = scope.eq("workspace_id", data.workspaceId);
+    const { data: products, error } = await scope;
+    if (error) mapPgError(error);
+
+    const typeById = new Map<string, string>();
+    for (const p of (products ?? []) as any[]) typeById.set(p.id as string, (p.business_type as string) ?? "OTHER");
+    const ids = [...typeById.keys()];
+
+    const [versionsRes, reviewsRes] = await Promise.all([
+      ids.length
+        ? context.supabase
+            .from("work_product_versions")
+            .select("work_product_id, created_at")
+            .in("work_product_id", ids)
+            .gte("created_at", fromISO)
+            .lte("created_at", toISO)
+            .limit(5000)
+        : Promise.resolve({ data: [] as any[] }),
+      ids.length
+        ? context.supabase
+            .from("work_product_reviews")
+            .select("work_product_id, status, decided_at")
+            .in("work_product_id", ids)
+            .eq("status", "APPROVED")
+            .gte("decided_at", fromISO)
+            .lte("decided_at", toISO)
+            .limit(5000)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const acc = new Map<string, WeeklyReportRow>();
+    const bump = (type: string, key: "created" | "approved" | "versions") => {
+      const row = acc.get(type) ?? { businessType: type, created: 0, approved: 0, versions: 0 };
+      row[key] += 1;
+      acc.set(type, row);
+    };
+
+    for (const p of (products ?? []) as any[]) {
+      if (p.created_at >= fromISO && p.created_at <= toISO) bump(p.business_type ?? "OTHER", "created");
+    }
+    for (const v of ((versionsRes as any).data ?? []) as any[]) {
+      bump(typeById.get(v.work_product_id) ?? "OTHER", "versions");
+    }
+    for (const r of ((reviewsRes as any).data ?? []) as any[]) {
+      bump(typeById.get(r.work_product_id) ?? "OTHER", "approved");
+    }
+
+    const order = BUSINESS_TYPES as readonly string[];
+    const rows = [...acc.values()].sort((a, b) => order.indexOf(a.businessType) - order.indexOf(b.businessType));
+    const totals = rows.reduce<WeeklyReportRow>(
+      (t, r) => ({
+        businessType: "TOTAL",
+        created: t.created + r.created,
+        approved: t.approved + r.approved,
+        versions: t.versions + r.versions,
+      }),
+      { businessType: "TOTAL", created: 0, approved: 0, versions: 0 },
+    );
+
+    return { from: fromISO, to: toISO, rows, totals };
+  });
