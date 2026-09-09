@@ -94,9 +94,13 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
     );
 
     // Đọc tài liệu bằng bộ máy GenOffice thật trước khi tạo bản ghi.
+    // Trọng số nhận diện lấy theo hồ sơ của tổ chức đang làm việc.
+    const { loadTenantDocxProfile } = await import("./docx-profile.server");
+    const tenantProfile = await loadTenantDocxProfile(context.supabase as never, tenantId);
     let parsed;
     try {
-      parsed = await parseDocxToBlocks(bytes);
+      parsed = await parseDocxToBlocks(bytes, tenantProfile.weights);
+
     } catch (e) {
       throw new ApiError({
         code: "VALIDATION_FAILED",
