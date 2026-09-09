@@ -161,6 +161,7 @@ const ENTITY_LABELS: Record<WorkEntityType, { vi: string; en: string }> = {
   DOCUMENT: { vi: "Tài liệu", en: "Document" },
   EMAIL: { vi: "Email", en: "Email" },
   MEETING_ARTIFACT: { vi: "Kết quả cuộc họp", en: "Meeting artifact" },
+  WORK_PRODUCT: { vi: "Kết quả công việc", en: "Work product" },
 };
 
 export function entityTypeLabel(type: string, lang: "vi" | "en" = "vi"): string {
