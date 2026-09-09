@@ -5998,6 +5998,44 @@ export type Database = {
         }
         Relationships: []
       }
+      work_product_access_policies: {
+        Row: {
+          admin_override: boolean
+          created_at: string
+          edit_scope: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          view_scope: string
+        }
+        Insert: {
+          admin_override?: boolean
+          created_at?: string
+          edit_scope?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          view_scope?: string
+        }
+        Update: {
+          admin_override?: boolean
+          created_at?: string
+          edit_scope?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          view_scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_access_policies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_product_artifacts: {
         Row: {
           created_at: string
@@ -10465,6 +10503,21 @@ export type Database = {
       work_product_summary: {
         Args: { _from?: string; _tenant_id: string; _to?: string }
         Returns: Json
+      }
+      wp_access_scope: {
+        Args: { _kind: string; _tenant_id: string }
+        Returns: string
+      }
+      wp_admin_override: { Args: { _tenant_id: string }; Returns: boolean }
+      wp_scope_allows: {
+        Args: {
+          _created_by: string
+          _kind: string
+          _owner_id: string
+          _tenant_id: string
+          _workspace_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

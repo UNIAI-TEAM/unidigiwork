@@ -2,7 +2,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2 } from "lucide-react";
+import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { FilterPageHeader } from "@/components/filter-page-header";
@@ -21,7 +21,10 @@ import {
   WP_STATUSES,
   createWorkDeliverable,
   getWorkDeliverableWeeklyReport,
+  getWorkProductAccessPolicy,
   listWorkDeliverables,
+  updateWorkProductAccessPolicy,
+  WP_SCOPES,
 } from "@/lib/api/work-deliverables.functions";
 
 export const Route = createFileRoute("/_authenticated/work-products")({
@@ -109,6 +112,118 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
   );
 }
 
+/** Cài đặt quyền xem/sửa Kết quả công việc cho tổ chức hiện tại. */
+function AccessPolicyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["wp-access-policy"],
+    queryFn: () => getWorkProductAccessPolicy(),
+    enabled: open,
+  });
+  const [viewScope, setViewScope] = useState<string | null>(null);
+  const [editScope, setEditScope] = useState<string | null>(null);
+  const [adminOverride, setAdminOverride] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const view = viewScope ?? data?.viewScope ?? "TENANT";
+  const edit = editScope ?? data?.editScope ?? "OWNER";
+  const override = adminOverride ?? data?.adminOverride ?? true;
+  const canManage = data?.canManage ?? false;
+
+  async function save() {
+    setSaving(true);
+    try {
+      await updateWorkProductAccessPolicy({
+        data: { viewScope: view as never, editScope: edit as never, adminOverride: override },
+      });
+      await qc.invalidateQueries({ queryKey: ["wp-access-policy"] });
+      await qc.invalidateQueries({ queryKey: ["work-products"] });
+      toast.success(t("wp.access.saved"));
+      onOpenChange(false);
+    } catch {
+      toast.error(t("wp.access.saveError"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t("wp.access.title")}</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">{t("wp.access.intro")}</p>
+        {isLoading ? (
+          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> {t("wp.loading")}
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("wp.access.viewScope")}</label>
+              <Select value={view} onValueChange={setViewScope} disabled={!canManage}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WP_SCOPES.map((sc) => (
+                    <SelectItem key={sc} value={sc}>
+                      {t(`wp.access.scope.${sc}` as never)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t(`wp.access.viewHint.${view}` as never)}</p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("wp.access.editScope")}</label>
+              <Select value={edit} onValueChange={setEditScope} disabled={!canManage}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WP_SCOPES.map((sc) => (
+                    <SelectItem key={sc} value={sc}>
+                      {t(`wp.access.scope.${sc}` as never)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t(`wp.access.editHint.${edit}` as never)}</p>
+            </div>
+            <label className="flex items-start gap-2 rounded-md border p-3">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={override}
+                disabled={!canManage}
+                onChange={(e) => setAdminOverride(e.target.checked)}
+              />
+              <span>
+                <span className="block text-sm font-medium">{t("wp.access.adminOverride")}</span>
+                <span className="block text-xs text-muted-foreground">{t("wp.access.adminOverrideHint")}</span>
+              </span>
+            </label>
+            <p className="text-xs text-muted-foreground">{t("wp.access.tenantNote")}</p>
+            {!canManage && <p className="text-xs text-amber-600 dark:text-amber-400">{t("wp.access.readOnly")}</p>}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("wp.cancel")}
+          </Button>
+          <Button onClick={save} disabled={!canManage || saving || isLoading}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t("wp.access.save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function WorkProductsPage() {
   const { t, lang } = useI18n();
   const [open, setOpen] = useSidebarState();
@@ -121,6 +236,7 @@ function WorkProductsPage() {
   const [workspaceId, setWorkspaceId] = useState<string>("ALL");
   const [mine, setMine] = useState(false);
   const [view, setView] = useState<"list" | "grid">("list");
+  const [accessOpen, setAccessOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data: workspaces } = useQuery({
@@ -232,6 +348,10 @@ function WorkProductsPage() {
               {t("wp.mine")}
             </Button>
             <div className="ml-auto flex items-center gap-1">
+              <Button variant="outline" className="gap-2" onClick={() => setAccessOpen(true)}>
+                <ShieldCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("wp.access.button")}</span>
+              </Button>
               {hasFilters && (
                 <Button variant="ghost" size="icon" onClick={clearFilters} aria-label={t("wp.clearFilters")}>
                   <X className="h-4 w-4" />
@@ -247,6 +367,8 @@ function WorkProductsPage() {
               </Button>
             </div>
           </div>
+
+          <AccessPolicyDialog open={accessOpen} onOpenChange={setAccessOpen} />
 
           <WeeklyReportCard workspaceId={workspaceId === "ALL" ? null : workspaceId} />
 
