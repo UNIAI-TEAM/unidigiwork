@@ -19,6 +19,7 @@ const TABS = [
   { to: "/admin" as const, label: "adm.tab.overview", icon: LayoutGrid, exact: true },
   { to: "/admin/users" as const, label: "adm.tab.users", icon: Users },
   { to: "/admin/accounts" as const, label: "acct.title", icon: UserCog },
+  { to: "/admin/document-access" as const, label: "acc.tab", icon: ShieldCheck },
   { to: "/admin/rules" as const, label: "adm.tab.rules", icon: ListFilter },
   { to: "/admin/plans" as const, label: "adm.tab.plans", icon: CreditCard },
   { to: "/admin/knowledge" as const, label: "Knowledge", icon: BookOpen },

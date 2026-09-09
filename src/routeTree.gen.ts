@@ -95,6 +95,7 @@ import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
 import { Route as AuthenticatedAdminEconomicsRouteImport } from './routes/_authenticated/admin.economics'
+import { Route as AuthenticatedAdminDocumentAccessRouteImport } from './routes/_authenticated/admin.document-access'
 import { Route as AuthenticatedAdminCohortsRouteImport } from './routes/_authenticated/admin.cohorts'
 import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenticated/admin.backup'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
@@ -567,6 +568,12 @@ const AuthenticatedAdminEconomicsRoute =
     path: '/economics',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminDocumentAccessRoute =
+  AuthenticatedAdminDocumentAccessRouteImport.update({
+    id: '/document-access',
+    path: '/document-access',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCohortsRoute =
   AuthenticatedAdminCohortsRouteImport.update({
     id: '/cohorts',
@@ -726,6 +733,7 @@ export interface FileRoutesByFullPath {
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
+  '/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -829,6 +837,7 @@ export interface FileRoutesByTo {
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
+  '/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -936,6 +945,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/_authenticated/admin/backup': typeof AuthenticatedAdminBackupRoute
   '/_authenticated/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
+  '/_authenticated/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/_authenticated/admin/economics': typeof AuthenticatedAdminEconomicsRoute
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -1043,6 +1053,7 @@ export interface FileRouteTypes {
     | '/admin/ai-context'
     | '/admin/backup'
     | '/admin/cohorts'
+    | '/admin/document-access'
     | '/admin/economics'
     | '/admin/knowledge'
     | '/admin/leads'
@@ -1146,6 +1157,7 @@ export interface FileRouteTypes {
     | '/admin/ai-context'
     | '/admin/backup'
     | '/admin/cohorts'
+    | '/admin/document-access'
     | '/admin/economics'
     | '/admin/knowledge'
     | '/admin/leads'
@@ -1252,6 +1264,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/ai-context'
     | '/_authenticated/admin/backup'
     | '/_authenticated/admin/cohorts'
+    | '/_authenticated/admin/document-access'
     | '/_authenticated/admin/economics'
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
@@ -1942,6 +1955,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEconomicsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/document-access': {
+      id: '/_authenticated/admin/document-access'
+      path: '/document-access'
+      fullPath: '/admin/document-access'
+      preLoaderRoute: typeof AuthenticatedAdminDocumentAccessRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/cohorts': {
       id: '/_authenticated/admin/cohorts'
       path: '/cohorts'
@@ -2092,6 +2112,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAiContextRoute: typeof AuthenticatedAdminAiContextRoute
   AuthenticatedAdminBackupRoute: typeof AuthenticatedAdminBackupRoute
   AuthenticatedAdminCohortsRoute: typeof AuthenticatedAdminCohortsRoute
+  AuthenticatedAdminDocumentAccessRoute: typeof AuthenticatedAdminDocumentAccessRoute
   AuthenticatedAdminEconomicsRoute: typeof AuthenticatedAdminEconomicsRoute
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
@@ -2113,6 +2134,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAiContextRoute: AuthenticatedAdminAiContextRoute,
   AuthenticatedAdminBackupRoute: AuthenticatedAdminBackupRoute,
   AuthenticatedAdminCohortsRoute: AuthenticatedAdminCohortsRoute,
+  AuthenticatedAdminDocumentAccessRoute: AuthenticatedAdminDocumentAccessRoute,
   AuthenticatedAdminEconomicsRoute: AuthenticatedAdminEconomicsRoute,
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
