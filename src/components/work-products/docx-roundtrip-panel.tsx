@@ -1,12 +1,25 @@
 // Tài liệu Word đã nhập — sửa từng đoạn, xem đối chiếu và vá giữ nguyên bản gốc.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, GitCompare, ListChecks, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
+import {
+  Check,
+  GitCompare,
+  ListChecks,
+  Loader2,
+  Lock,
+  RotateCcw,
+  SlidersHorizontal,
+  Sparkles,
+  Undo2,
+  Wand2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import {
   applyWorkProductAcceptedChanges,
@@ -19,7 +32,44 @@ import {
   createTasksFromWorkProduct,
   listWorkProductDocxVersions,
   compareWorkProductDocxVersions,
+  reanalyzeWorkProductDocx,
 } from "@/lib/api/work-products-docx.functions";
+
+const WEIGHT_KEYS = ["title", "heading", "listItem", "quote", "caption", "table"] as const;
+type WeightKey = (typeof WEIGHT_KEYS)[number];
+type Weights = Record<WeightKey, number>;
+
+const DEFAULT_WEIGHTS: Weights = {
+  title: 1,
+  heading: 1,
+  listItem: 1,
+  quote: 1,
+  caption: 1,
+  table: 1,
+};
+
+const WEIGHT_LABELS: Record<WeightKey, string> = {
+  title: "Tiêu đề tài liệu",
+  heading: "Tiêu đề mục",
+  listItem: "Gạch đầu dòng",
+  quote: "Trích dẫn",
+  caption: "Chú thích",
+  table: "Bảng",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  TITLE: "Tiêu đề tài liệu",
+  HEADING: "Tiêu đề mục",
+  PARAGRAPH: "Đoạn văn",
+  LIST_ITEM: "Gạch đầu dòng",
+  TABLE: "Bảng",
+  QUOTE: "Trích dẫn",
+  CAPTION: "Chú thích",
+  FOOTNOTE: "Chú thích cuối trang",
+  OTHER: "Khác",
+};
+
+const WEIGHTS_STORAGE_KEY = "uniwork.docx-detection-weights";
 
 type DocxVersion = {
   id: string;
@@ -53,6 +103,15 @@ type CompareResult = {
 const versionLabel = (v: DocxVersion) =>
   v.role === "SOURCE_ORIGINAL" ? "Bản gốc" : `Phiên bản ${v.version ?? "?"}`;
 
+type BlockAnchor = {
+  role?: string | null;
+  headingLevel?: number | null;
+  section?: string | null;
+  score?: number | null;
+  signals?: string[] | null;
+  table?: { rows?: number; cols?: number; headerConfidence?: number } | null;
+} | null;
+
 type Block = {
   id: string;
   block_key: string;
@@ -60,6 +119,7 @@ type Block = {
   block_type: string;
   text: string | null;
   editability: string;
+  source_anchor?: BlockAnchor;
 };
 
 type ChangeOp = {
@@ -85,6 +145,27 @@ export function DocxRoundTripPanel({
   const [taskSuggestions, setTaskSuggestions] = useState<
     Array<{ title: string; priority: string; checked: boolean }>
   >([]);
+  const [showWeights, setShowWeights] = useState(false);
+  const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
+
+  // Trọng số lưu theo trình duyệt của người dùng, đọc sau khi gắn để tránh lệch hiển thị.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WEIGHTS_STORAGE_KEY);
+      if (raw) setWeights({ ...DEFAULT_WEIGHTS, ...(JSON.parse(raw) as Partial<Weights>) });
+    } catch {
+      /* bỏ qua dữ liệu hỏng */
+    }
+  }, []);
+
+  const saveWeights = (next: Weights) => {
+    setWeights(next);
+    try {
+      localStorage.setItem(WEIGHTS_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* bỏ qua khi trình duyệt chặn lưu */
+    }
+  };
 
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["wp-blocks", productId],
@@ -118,6 +199,20 @@ export function DocxRoundTripPanel({
         e?.message?.includes("NOT_ENOUGH_VERSIONS")
           ? "Chưa có phiên bản sửa đổi để so sánh."
           : "Không so sánh được hai bản.",
+      ),
+  });
+
+  const reanalyze = useMutation({
+    mutationFn: () => reanalyzeWorkProductDocx({ data: { id: productId, weights } }),
+    onSuccess: (r: { updated: number; counts: Record<string, number> }) => {
+      qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
+      toast.success(`Đã nhận diện lại ${r.updated} đoạn`);
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NOT_IMPORTED_DOCX")
+          ? "Chỉ áp dụng cho tài liệu Word đã nhập."
+          : "Không phân tích lại được tài liệu.",
       ),
   });
 
@@ -217,6 +312,11 @@ export function DocxRoundTripPanel({
   }
 
   const editable = (blocks ?? []).filter((b) => b.editability === "EDITABLE");
+  const roleCounts = (blocks ?? []).reduce<Record<string, number>>((acc, b) => {
+    const role = b.source_anchor?.role || "PARAGRAPH";
+    acc[role] = (acc[role] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-4">
@@ -225,7 +325,76 @@ export function DocxRoundTripPanel({
         <span className="text-xs text-muted-foreground">
           {editable.length}/{(blocks ?? []).length} đoạn có thể sửa
         </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto h-7 gap-1 px-2 text-xs"
+          onClick={() => setShowWeights((v) => !v)}
+        >
+          <SlidersHorizontal className="h-3 w-3" />
+          Cấu hình nhận diện
+        </Button>
       </div>
+
+      {/* Trọng số nhận diện từng loại nội dung */}
+      {showWeights && (
+        <Card className="space-y-3 p-3">
+          <p className="text-xs text-muted-foreground">
+            Tăng trọng số nếu tài liệu của bạn hay bị bỏ sót loại đó; giảm nếu bị nhận nhầm. Chỉ ảnh
+            hưởng cách đọc hiểu, không sửa tệp gốc.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {WEIGHT_KEYS.map((k) => (
+              <div key={k} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span>{WEIGHT_LABELS[k]}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {weights[k].toFixed(1)}×
+                  </span>
+                </div>
+                <Slider
+                  value={[weights[k]]}
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  onValueChange={(v) => saveWeights({ ...weights, [k]: v[0] ?? 1 })}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={reanalyze.isPending}
+              onClick={() => reanalyze.mutate()}
+            >
+              {reanalyze.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Wand2 className="h-3 w-3" />
+              )}
+              Nhận diện lại tài liệu
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={() => saveWeights(DEFAULT_WEIGHTS)}
+            >
+              <RotateCcw className="h-3 w-3" />
+              Mặc định
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(roleCounts).map(([role, n]) => (
+              <Badge key={role} variant="outline" className="text-[10px]">
+                {ROLE_LABELS[role] ?? role}: {n}
+              </Badge>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* So sánh bản gốc và bản đã sửa */}
       <Card className="space-y-3 p-3">
@@ -432,6 +601,22 @@ export function DocxRoundTripPanel({
                 isOpen && "border-primary",
               )}
             >
+              <div className="mb-1 flex flex-wrap items-center gap-1">
+                <Badge variant="outline" className="text-[10px]">
+                  {ROLE_LABELS[b.source_anchor?.role || "PARAGRAPH"] ?? "Đoạn văn"}
+                  {b.source_anchor?.headingLevel ? ` ${b.source_anchor.headingLevel}` : ""}
+                </Badge>
+                {b.source_anchor?.table && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {b.source_anchor.table.rows ?? 0}×{b.source_anchor.table.cols ?? 0} ô
+                  </Badge>
+                )}
+                {(b.source_anchor?.signals ?? []).slice(0, 3).map((s) => (
+                  <span key={s} className="text-[10px] text-muted-foreground">
+                    · {s}
+                  </span>
+                ))}
+              </div>
               <div className="flex items-start gap-2">
                 <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">
                   {b.text || <span className="text-muted-foreground">(không có nội dung chữ)</span>}

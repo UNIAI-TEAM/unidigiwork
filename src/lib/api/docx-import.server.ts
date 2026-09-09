@@ -30,6 +30,47 @@ export interface TableSummary {
   headers: string[];
   /** Xem trước tối đa vài dòng đầu để AI hiểu dữ liệu. */
   preview: string[][];
+  /** Độ tin cậy dòng đầu là dòng tiêu đề (0..1). */
+  headerConfidence?: number;
+  /** Chỉ số các cột chủ yếu là số liệu. */
+  numericCols?: number[];
+  /** Có ô gộp / cấu trúc bất thường không. */
+  ragged?: boolean;
+}
+
+/** Trọng số nhận diện từng loại — người dùng có thể hiệu chỉnh. */
+export interface DetectionWeights {
+  title: number;
+  heading: number;
+  listItem: number;
+  quote: number;
+  caption: number;
+  table: number;
+}
+
+export const DEFAULT_DETECTION_WEIGHTS: DetectionWeights = {
+  title: 1,
+  heading: 1,
+  listItem: 1,
+  quote: 1,
+  caption: 1,
+  table: 1,
+};
+
+/** Điểm tối thiểu để chấp nhận một vai trò suy đoán. */
+export const DETECTION_THRESHOLD = 1;
+
+export function normalizeWeights(w?: Partial<DetectionWeights> | null): DetectionWeights {
+  const clamp = (v: unknown, d: number) =>
+    typeof v === "number" && Number.isFinite(v) ? Math.min(Math.max(v, 0), 3) : d;
+  return {
+    title: clamp(w?.title, 1),
+    heading: clamp(w?.heading, 1),
+    listItem: clamp(w?.listItem, 1),
+    quote: clamp(w?.quote, 1),
+    caption: clamp(w?.caption, 1),
+    table: clamp(w?.table, 1),
+  };
 }
 
 export interface ImportedBlock {
@@ -51,6 +92,10 @@ export interface ImportedBlock {
     table?: TableSummary | null;
     /** Vì sao khối được nhận là tiêu đề/trích dẫn (heuristic hay style Word). */
     detectedBy?: "style" | "outline" | "heuristic" | null;
+    /** Điểm tin cậy của vai trò đã chọn (sau khi nhân trọng số). */
+    score?: number;
+    /** Các tín hiệu dẫn tới kết luận, để người dùng hiểu và hiệu chỉnh. */
+    signals?: string[];
   };
 }
 
@@ -173,15 +218,142 @@ function tableGrid(b: Record<string, unknown>): string[][] {
   });
 }
 
-function tableSummaryOf(grid: string[][]): TableSummary {
+const NUMERIC_RE = /^[\s(]*[-+]?[\d.,%]+\s*(vnd|đ|usd|%|tr|k)?[\s).]*$/i;
+
+function tableSummaryOf(grid: string[][], weight: number): TableSummary {
   const cols = grid.reduce((m, r) => Math.max(m, r.length), 0);
   const first = grid[0] ?? [];
-  const headerLike = first.some((c) => c.trim().length > 0);
+  const body = grid.slice(1);
+
+  // Cột nào chủ yếu là số liệu.
+  const numericCols: number[] = [];
+  for (let c = 0; c < cols; c += 1) {
+    const vals = body.map((r) => (r[c] ?? "").trim()).filter(Boolean);
+    if (vals.length >= 2 && vals.filter((v) => NUMERIC_RE.test(v)).length / vals.length >= 0.6)
+      numericCols.push(c);
+  }
+
+  // Dòng đầu là tiêu đề khi: có chữ ở mọi ô, ngắn, và không phải số ở các cột số liệu.
+  const filled = first.filter((c) => c.trim().length > 0).length;
+  let conf = 0;
+  if (cols > 0) {
+    conf += (filled / cols) * 0.5;
+    if (first.every((c) => c.trim().length <= 40)) conf += 0.2;
+    if (numericCols.length && numericCols.every((c) => !NUMERIC_RE.test((first[c] ?? "").trim())))
+      conf += 0.3;
+  }
+  conf = Math.min(1, conf * (weight || 1));
+
   return {
     rows: grid.length,
     cols,
-    headers: headerLike ? first : [],
+    headers: conf >= 0.5 ? first : [],
     preview: grid.slice(0, 6),
+    headerConfidence: Math.round(conf * 100) / 100,
+    numericCols,
+    ragged: grid.some((r) => r.length !== cols),
+  };
+}
+
+/** Bảng điểm cho từng vai trò suy đoán, kèm tín hiệu để giải thích. */
+function scoreRoles(args: {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+  format: Record<string, unknown>;
+  seenBodyText: boolean;
+  prevWasTable: boolean;
+  weights: DetectionWeights;
+}): { role: BlockSemanticRole; score: number; signals: string[]; headingLevel: number | null } {
+  const { text, bold, italic, format, seenBodyText, prevWasTable, weights } = args;
+  const raw: Record<string, number> = { TITLE: 0, HEADING: 0, LIST_ITEM: 0, QUOTE: 0, CAPTION: 0 };
+  const sig: Record<string, string[]> = {
+    TITLE: [],
+    HEADING: [],
+    LIST_ITEM: [],
+    QUOTE: [],
+    CAPTION: [],
+  };
+  const add = (role: string, v: number, why: string) => {
+    raw[role] += v;
+    if (v > 0) sig[role].push(why);
+  };
+
+  const len = text.length;
+  const short = len <= 120;
+  const centered = format["align"] === "center";
+  const indent = Number(format["indentLeft"] ?? 0);
+  const endsSentence = /[.;!?]$/.test(text);
+  const numDepth = headingNumberDepth(text);
+  const upper = short && text === text.toLocaleUpperCase("vi") && /\p{L}/u.test(text);
+
+  // ---- Tiêu đề mục
+  if (numDepth) add("HEADING", 0.8, "đánh số mục");
+  if (
+    /^(điều|dieu|chương|chuong|phần|phan|mục|muc|article|chapter|section|phụ lục|phu luc)\b/i.test(
+      text,
+    )
+  )
+    add("HEADING", 0.5, "từ khoá mục");
+  if (bold) add("HEADING", 0.45, "chữ đậm");
+  if (upper) add("HEADING", 0.5, "chữ in hoa");
+  if (short && !endsSentence) add("HEADING", 0.35, "ngắn, không kết câu");
+  if (centered) add("HEADING", 0.15, "căn giữa");
+  if (endsSentence) raw["HEADING"] -= 0.5;
+  if (len > 160) raw["HEADING"] -= 0.8;
+  if (/:$/.test(text) && !bold) raw["HEADING"] -= 0.3;
+
+  // ---- Tiêu đề tài liệu
+  if (!seenBodyText) {
+    if (upper) add("TITLE", 0.6, "in hoa ở đầu tài liệu");
+    if (centered) add("TITLE", 0.5, "căn giữa ở đầu tài liệu");
+    if (bold && short) add("TITLE", 0.4, "đậm và ngắn");
+    if (numDepth) raw["TITLE"] -= 0.8;
+  } else {
+    raw["TITLE"] -= 1;
+  }
+
+  // ---- Gạch đầu dòng
+  if (/^([-–—•●▪*+]|\p{L}\)|\(\p{L}\)|\d+[.)])\s+\S/u.test(text))
+    add("LIST_ITEM", 0.9, "ký hiệu đầu dòng");
+  if (indent >= 360 && !italic) add("LIST_ITEM", 0.2, "thụt lề");
+
+  // ---- Trích dẫn
+  if (/^[“"'«].*[”"'»]\s*$/.test(text)) add("QUOTE", 0.9, "nằm trong dấu ngoặc kép");
+  else if (/^[“"'«].*[”"'»]/.test(text)) add("QUOTE", 0.7, "mở đầu bằng dấu ngoặc kép");
+  if (italic) add("QUOTE", 0.45, "chữ nghiêng");
+  if (indent >= 360) add("QUOTE", 0.4, "thụt lề");
+  if (/(^|\s)[—–-]\s*\p{Lu}[\p{L}\s.]{2,40}$/u.test(text)) add("QUOTE", 0.3, "có nguồn dẫn");
+  if (bold) raw["QUOTE"] -= 0.3;
+
+  // ---- Chú thích
+  if (/^(hình|bảng|biểu|biểu đồ|sơ đồ|figure|fig|table|chart)\s*\d*\s*([.:–-]|\s)/i.test(text))
+    add("CAPTION", 1.05, "mở đầu bằng Hình/Bảng");
+  if (prevWasTable && short && italic) add("CAPTION", 0.4, "ngay sau bảng, chữ nghiêng");
+  if (len > 200) raw["CAPTION"] -= 0.6;
+
+  const weighted: Array<[BlockSemanticRole, number]> = [
+    ["TITLE", raw["TITLE"] * weights.title],
+    ["HEADING", raw["HEADING"] * weights.heading],
+    ["LIST_ITEM", raw["LIST_ITEM"] * weights.listItem],
+    ["QUOTE", raw["QUOTE"] * weights.quote],
+    ["CAPTION", raw["CAPTION"] * weights.caption],
+  ];
+  weighted.sort((a, b) => b[1] - a[1]);
+  const [best, score] = weighted[0];
+  if (score < DETECTION_THRESHOLD)
+    return {
+      role: "PARAGRAPH",
+      score: Math.round(score * 100) / 100,
+      signals: [],
+      headingLevel: null,
+    };
+
+  return {
+    role: best,
+    score: Math.round(score * 100) / 100,
+    signals: sig[best] ?? [],
+    headingLevel: best === "TITLE" ? 0 : best === "HEADING" ? (numDepth ?? (upper ? 1 : 2)) : null,
   };
 }
 
@@ -202,7 +374,11 @@ function markdownTable(grid: string[][]): string {
 }
 
 /** Đọc một DOCX có sẵn thành các khối có neo về tài liệu gốc, kèm nhận diện ngữ nghĩa. */
-export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxImport> {
+export async function parseDocxToBlocks(
+  bytes: Uint8Array,
+  weightsInput?: Partial<DetectionWeights> | null,
+): Promise<ParsedDocxImport> {
+  const weights = normalizeWeights(weightsInput);
   const parsed = await parseDocx(bytes);
   const visible = (parsed.blocks as unknown as Array<Record<string, unknown>>).filter(
     (b) => !b["hidden"],
@@ -213,6 +389,7 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
   let ordinal = 0;
   let currentSection: string | null = null;
   let seenBodyText = false;
+  let prevWasTable = false;
 
   for (const b of visible) {
     const type = String(b["type"] ?? "paragraph");
@@ -231,11 +408,17 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
     let detectedBy: "style" | "outline" | "heuristic" | null = null;
     let grid: string[][] = [];
     let table: TableSummary | null = null;
+    let score: number | null = null;
+    let signals: string[] = [];
 
     if (type === "table") {
       role = "TABLE";
       grid = tableGrid(b);
-      table = tableSummaryOf(grid);
+      table = tableSummaryOf(grid, weights.table);
+      detectedBy = "style";
+      score = table.headerConfidence ?? null;
+      signals = table.headers.length ? ["có dòng tiêu đề"] : [];
+      if (table.numericCols?.length) signals.push(`${table.numericCols.length} cột số liệu`);
       // Bảng không sửa được, nhưng cần có chữ để tìm kiếm và cho AI đọc hiểu.
       if (!text.trim() && grid.length) text = markdownTable(grid);
     } else if (type === "image" || type === "passthrough") {
@@ -244,53 +427,45 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
       role = "HEADING";
       headingLevel = Math.min(Math.max(Number(rawLevel ?? styled.level ?? 1), 1), 9);
       detectedBy = b["outlineOnly"] ? "outline" : "style";
+      signals = ["style Word"];
     } else if (type === "listItem" || listInfo?.kind) {
       role = "LIST_ITEM";
       detectedBy = "style";
+      signals = ["danh sách Word"];
     } else if (styled.role) {
       role = styled.role;
       headingLevel = styled.role === "HEADING" ? (styled.level ?? rawLevel ?? 1) : null;
       if (styled.role === "TITLE") headingLevel = 0;
       detectedBy = "style";
+      signals = [`style "${styleId}"`];
     } else if (typeof rawLevel === "number") {
       role = "HEADING";
       headingLevel = Math.min(Math.max(rawLevel, 1), 9);
       detectedBy = "outline";
+      signals = ["cấp outline"];
     } else if (trimmed) {
-      // Heuristic: tài liệu Việt Nam thường không dùng style Heading chuẩn.
-      const numDepth = headingNumberDepth(trimmed);
-      const short = trimmed.length <= 120 && !/[.;:!?]$/.test(trimmed);
-      const bold = allRunsBold(b);
-      const upper =
-        trimmed.length <= 120 &&
-        trimmed === trimmed.toLocaleUpperCase("vi") &&
-        /\p{L}/u.test(trimmed);
-      const centered = format["align"] === "center";
-      if (numDepth && (bold || short)) {
-        role = "HEADING";
-        headingLevel = numDepth;
+      // Chấm điểm theo tín hiệu: tài liệu Việt Nam thường không dùng style Heading chuẩn.
+      const guess = scoreRoles({
+        text: trimmed,
+        bold: allRunsBold(b),
+        italic: allRunsItalic(b),
+        format,
+        seenBodyText,
+        prevWasTable,
+        weights,
+      });
+      score = guess.score;
+      if (guess.role !== "PARAGRAPH") {
+        role = guess.role;
+        headingLevel = guess.headingLevel;
         detectedBy = "heuristic";
-      } else if ((bold && short) || upper) {
-        role = !seenBodyText && (centered || upper) ? "TITLE" : "HEADING";
-        headingLevel = role === "TITLE" ? 0 : 2;
-        detectedBy = "heuristic";
-      } else if (
-        allRunsItalic(b) &&
-        (Number(format["indentLeft"] ?? 0) >= 360 || /^[“"'«].*[”"'»]$/.test(trimmed))
-      ) {
-        role = "QUOTE";
-        detectedBy = "heuristic";
-      } else if (
-        /^(hình|bảng|biểu|figure|table)\s*\d+([.:]|\s)/i.test(trimmed) &&
-        trimmed.length <= 160
-      ) {
-        role = "CAPTION";
-        detectedBy = "heuristic";
+        signals = guess.signals;
       }
     }
 
     if (role === "PARAGRAPH" && trimmed) seenBodyText = true;
     if (role === "HEADING" || role === "TITLE") currentSection = trimmed || currentSection;
+    prevWasTable = type === "table";
 
     ordinal += 1;
     blocks.push({
@@ -309,6 +484,8 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
         listKind: listInfo?.kind ?? null,
         table,
         detectedBy,
+        ...(score === null ? {} : { score }),
+        ...(signals.length ? { signals } : {}),
       },
     });
 

@@ -1116,3 +1116,95 @@ function wordDiff(
   }
   return out;
 }
+
+/* ------------------------------------------- phân tích lại theo trọng số */
+
+const weightsSchema = z
+  .object({
+    title: z.number().min(0).max(3),
+    heading: z.number().min(0).max(3),
+    listItem: z.number().min(0).max(3),
+    quote: z.number().min(0).max(3),
+    caption: z.number().min(0).max(3),
+    table: z.number().min(0).max(3),
+  })
+  .partial();
+
+/**
+ * Đọc lại tệp Word gốc với trọng số nhận diện mới và cập nhật metadata từng đoạn.
+ * Không đụng tới tệp gốc, không tạo phiên bản mới; chỉ làm rõ vai trò của đoạn.
+ */
+export const reanalyzeWorkProductDocx = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        weights: weightsSchema.optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: product, error: pErr } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, origin, source_artifact_id")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+    if (product.origin !== "IMPORTED_DOCX")
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NOT_IMPORTED_DOCX" });
+
+    const { data: art, error: aErr } = await context.supabase
+      .from("work_product_artifacts")
+      .select("id, storage_ref")
+      .eq("work_product_id", data.id)
+      .eq("role", "SOURCE_ORIGINAL")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (aErr) mapPgError(aErr);
+    if (!art?.storage_ref)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "SOURCE_ARTIFACT_NOT_FOUND" });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: blob, error: dErr } = await supabaseAdmin.storage
+      .from(WP_BUCKET)
+      .download(art.storage_ref as string);
+    if (dErr || !blob)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
+
+    const { parseDocxToBlocks } = await import("./docx-import.server");
+    const parsed = await parseDocxToBlocks(new Uint8Array(await blob.arrayBuffer()), data.weights);
+
+    const { data: existing, error: bErr } = await context.supabase
+      .from("work_product_blocks")
+      .select("id, block_key")
+      .eq("work_product_id", data.id)
+      .limit(2000);
+    if (bErr) mapPgError(bErr);
+    const byKey = new Map(
+      (existing ?? []).map((b: any) => [b.block_key as string, b.id as string]),
+    );
+
+    const counts: Record<string, number> = {};
+    let updated = 0;
+    for (const b of parsed.blocks) {
+      const role = b.sourceAnchor.role ?? "PARAGRAPH";
+      counts[role] = (counts[role] ?? 0) + 1;
+      const id = byKey.get(b.blockKey);
+      if (!id) continue;
+      // Chỉ cập nhật metadata nhận diện — nội dung gốc giữ nguyên.
+      const { error: uErr } = await context.supabase
+        .from("work_product_blocks")
+        .update({ source_anchor: b.sourceAnchor as unknown as never })
+        .eq("id", id);
+      if (uErr) mapPgError(uErr);
+      updated += 1;
+    }
+
+    return { updated, totalBlocks: parsed.totalBlocks, counts };
+  });
