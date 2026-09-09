@@ -914,7 +914,7 @@ function WorkProductDetail() {
                           size="sm"
                           variant="outline"
                           disabled={!canEdit || exportArtifact.isPending}
-                          onClick={() => exportArtifact.mutate(f)}
+                          onClick={() => exportArtifact.mutate({ format: f })}
                           className="gap-2"
                         >
                           {exportArtifact.isPending && exportingFormat === f ? <Loader2 className="animate-spin" /> : <FileText />}
@@ -922,6 +922,22 @@ function WorkProductDetail() {
                         </Button>
                       ))}
                     </div>
+                    <Button
+                      size="sm"
+                      className="mt-2 w-full gap-2"
+                      disabled={!canEdit || exportArtifact.isPending}
+                      onClick={() => exportArtifact.mutate({ format: "DOCX", engine: "GENOFFICE" })}
+                    >
+                      {exportArtifact.isPending && exportingFormat === "DOCX:GENOFFICE" ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <FileText />
+                      )}
+                      Xuất Word bằng GenOffice
+                    </Button>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Tạo tệp Word gốc từ nội dung đang lưu, không cần tài liệu nhập trước đó.
+                    </p>
                   </div>
                   <div className="space-y-2">
                     {(data.artifacts ?? []).length === 0 && (
