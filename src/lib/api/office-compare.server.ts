@@ -265,7 +265,9 @@ export async function compareEngines(
   sourceText: string,
 ): Promise<EngineComparison> {
   const [builtin, genoffice] = await Promise.all([inspectDocx(builtinBytes), inspectDocx(genofficeBytes)]);
-  const src = normalizeText(sourceText);
+  // So với chữ thuần của nội dung gốc (bỏ ký hiệu markdown) để đo trung thực nội dung.
+  const { parseContentBlocks, blockText, plainText } = await import("@/domain/work-products/office-engine");
+  const src = normalizeText(parseContentBlocks(sourceText).map((b) => plainText(blockText(b))).join(" "));
   return {
     builtin,
     genoffice,
