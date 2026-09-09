@@ -987,7 +987,7 @@ export const updateWorkProductAccessPolicy = createServerFn({ method: "POST" })
     const tenantId = await currentTenantId(context.supabase, context.userId);
     const role = await tenantRoleOf(context.supabase, tenantId, context.userId);
     if (role !== "tenant_owner" && role !== "tenant_admin") {
-      throw new ApiError("FORBIDDEN", "Chỉ chủ sở hữu hoặc quản trị tổ chức mới được đổi cài đặt quyền.");
+      throw new ApiError({ code: "PERMISSION_DENIED", message: "WORK_PRODUCT_POLICY_FORBIDDEN" });
     }
     const { error } = await context.supabase.from("work_product_access_policies").upsert(
       {
