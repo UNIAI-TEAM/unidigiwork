@@ -210,6 +210,17 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/documents", order: 2 },
   },
   {
+    id: "work-products",
+    labelKey: "nav.workProducts",
+    icon: FileText,
+    href: "/work-products",
+    group: "knowledge",
+    match: ["/work-products"],
+    visibility: "everyone",
+    order: 2,
+    mobile: { placement: "more", href: "/work-products", order: 3 },
+  },
+  {
     id: "knowledge",
     labelKey: "nav.knowledge",
     icon: BookOpen,
@@ -217,8 +228,8 @@ export const NAV_ITEMS: NavItem[] = [
     group: "knowledge",
     match: ["/knowledge"],
     visibility: "everyone",
-    order: 2,
-    mobile: { placement: "more", href: "/knowledge", order: 3 },
+    order: 3,
+    mobile: { placement: "more", href: "/knowledge", order: 4 },
   },
 
   // AUTOMATION

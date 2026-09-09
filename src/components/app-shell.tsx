@@ -101,6 +101,7 @@ type NavKey =
   | "calendar"
   | "tasks"
   | "documents"
+  | "work-products"
   | "knowledge"
   | "workflows"
   | "people"

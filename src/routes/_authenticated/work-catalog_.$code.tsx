@@ -24,7 +24,7 @@ import {
 } from "@/domain/sell-work/cohort";
 import { formatDurationMs } from "@/domain/work-economics/contracts";
 
-export const Route = createFileRoute("/_authenticated/work-products_/$code")({
+export const Route = createFileRoute("/_authenticated/work-catalog_/$code")({
   head: ({ params }) => ({
     meta: [
       { title: `Sản phẩm công việc ${params.code} — UNIWORK` },
