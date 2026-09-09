@@ -59,6 +59,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedAiMarketIndexRouteImport } from './routes/_authenticated/ai-market.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-graph.$token'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as AuthenticatedWorkspaceTagsRouteImport } from './routes/_authenticated/workspace.tags'
 import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace.settings'
@@ -104,6 +105,7 @@ import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authen
 import { Route as AuthenticatedMEmailIndexRouteImport } from './routes/_authenticated/m/email.index'
 import { Route as AuthenticatedMAiWorkforceIndexRouteImport } from './routes/_authenticated/m/ai-workforce.index'
 import { Route as AuthenticatedMAiMarketIndexRouteImport } from './routes/_authenticated/m/ai-market.index'
+import { Route as ApiPublicWorkGraphTokenRouteImport } from './routes/api/public/work-graph/$token'
 import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/api/public/hooks/process-quota-exports'
 import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/public/hooks/process-outbox'
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
@@ -371,6 +373,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const ShareWorkGraphTokenRoute = ShareWorkGraphTokenRouteImport.update({
+  id: '/share/work-graph/$token',
+  path: '/share/work-graph/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   id: '/category/$category',
   path: '/category/$category',
@@ -623,6 +630,11 @@ const AuthenticatedMAiMarketIndexRoute =
     path: '/ai-market/',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
+const ApiPublicWorkGraphTokenRoute = ApiPublicWorkGraphTokenRouteImport.update({
+  id: '/api/public/work-graph/$token',
+  path: '/api/public/work-graph/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksProcessQuotaExportsRoute =
   ApiPublicHooksProcessQuotaExportsRouteImport.update({
     id: '/api/public/hooks/process-quota-exports',
@@ -777,6 +789,7 @@ export interface FileRoutesByFullPath {
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -789,6 +802,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
+  '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
   '/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email/': typeof AuthenticatedMEmailIndexRoute
@@ -882,6 +896,7 @@ export interface FileRoutesByTo {
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
@@ -894,6 +909,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
+  '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
   '/m/ai-market': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email': typeof AuthenticatedMEmailIndexRoute
@@ -991,6 +1007,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/_authenticated/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -1003,6 +1020,7 @@ export interface FileRoutesById {
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
+  '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
   '/_authenticated/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/_authenticated/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/_authenticated/m/email/': typeof AuthenticatedMEmailIndexRoute
@@ -1100,6 +1118,7 @@ export interface FileRouteTypes {
     | '/workspace/settings'
     | '/workspace/tags'
     | '/blog/category/$category'
+    | '/share/work-graph/$token'
     | '/admin/'
     | '/ai-market/'
     | '/workspace/'
@@ -1112,6 +1131,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
+    | '/api/public/work-graph/$token'
     | '/m/ai-market/'
     | '/m/ai-workforce/'
     | '/m/email/'
@@ -1205,6 +1225,7 @@ export interface FileRouteTypes {
     | '/workspace/settings'
     | '/workspace/tags'
     | '/blog/category/$category'
+    | '/share/work-graph/$token'
     | '/admin'
     | '/ai-market'
     | '/workspace'
@@ -1217,6 +1238,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
+    | '/api/public/work-graph/$token'
     | '/m/ai-market'
     | '/m/ai-workforce'
     | '/m/email'
@@ -1313,6 +1335,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/settings'
     | '/_authenticated/workspace/tags'
     | '/blog/category/$category'
+    | '/share/work-graph/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/ai-market/'
     | '/_authenticated/workspace/'
@@ -1325,6 +1348,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
+    | '/api/public/work-graph/$token'
     | '/_authenticated/m/ai-market/'
     | '/_authenticated/m/ai-workforce/'
     | '/_authenticated/m/email/'
@@ -1357,11 +1381,13 @@ export interface RootRouteChildren {
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
+  ShareWorkGraphTokenRoute: typeof ShareWorkGraphTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
   ApiPublicHooksProcessOutboxRoute: typeof ApiPublicHooksProcessOutboxRoute
   ApiPublicHooksProcessQuotaExportsRoute: typeof ApiPublicHooksProcessQuotaExportsRoute
+  ApiPublicWorkGraphTokenRoute: typeof ApiPublicWorkGraphTokenRoute
   ApiInternalOfficeV1RenderRoute: typeof ApiInternalOfficeV1RenderRoute
 }
 
@@ -1717,6 +1743,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/share/work-graph/$token': {
+      id: '/share/work-graph/$token'
+      path: '/share/work-graph/$token'
+      fullPath: '/share/work-graph/$token'
+      preLoaderRoute: typeof ShareWorkGraphTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/category/$category': {
       id: '/blog/category/$category'
       path: '/category/$category'
@@ -2031,6 +2064,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/m/ai-market/'
       preLoaderRoute: typeof AuthenticatedMAiMarketIndexRouteImport
       parentRoute: typeof AuthenticatedMRoute
+    }
+    '/api/public/work-graph/$token': {
+      id: '/api/public/work-graph/$token'
+      path: '/api/public/work-graph/$token'
+      fullPath: '/api/public/work-graph/$token'
+      preLoaderRoute: typeof ApiPublicWorkGraphTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/process-quota-exports': {
       id: '/api/public/hooks/process-quota-exports'
@@ -2393,12 +2433,14 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
+  ShareWorkGraphTokenRoute: ShareWorkGraphTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,
   ApiPublicHooksProcessOutboxRoute: ApiPublicHooksProcessOutboxRoute,
   ApiPublicHooksProcessQuotaExportsRoute:
     ApiPublicHooksProcessQuotaExportsRoute,
+  ApiPublicWorkGraphTokenRoute: ApiPublicWorkGraphTokenRoute,
   ApiInternalOfficeV1RenderRoute: ApiInternalOfficeV1RenderRoute,
 }
 export const routeTree = rootRouteImport

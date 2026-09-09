@@ -5884,6 +5884,62 @@ export type Database = {
           },
         ]
       }
+      work_graph_public_shares: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          include_documents: boolean
+          include_tasks: boolean
+          label: string
+          last_viewed_at: string | null
+          revoked_at: string | null
+          tenant_id: string
+          token_hash: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          include_documents?: boolean
+          include_tasks?: boolean
+          label?: string
+          last_viewed_at?: string | null
+          revoked_at?: string | null
+          tenant_id: string
+          token_hash: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          include_documents?: boolean
+          include_tasks?: boolean
+          label?: string
+          last_viewed_at?: string | null
+          revoked_at?: string | null
+          tenant_id?: string
+          token_hash?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_graph_public_shares_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_nodes: {
         Row: {
           created_at: string
