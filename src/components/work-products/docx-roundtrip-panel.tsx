@@ -1,7 +1,7 @@
 // Tài liệu Word đã nhập — sửa từng đoạn, xem đối chiếu và vá giữ nguyên bản gốc.
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
+import { Check, ListChecks, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import {
   listWorkProductChangeOps,
   proposeAiWorkProductBlockEdits,
   proposeWorkProductChanges,
+  proposeTasksFromWorkProduct,
+  createTasksFromWorkProduct,
 } from "@/lib/api/work-products-docx.functions";
 
 type Block = {
@@ -46,6 +48,9 @@ export function DocxRoundTripPanel({
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [instruction, setInstruction] = useState("");
+  const [taskSuggestions, setTaskSuggestions] = useState<
+    Array<{ title: string; priority: string; checked: boolean }>
+  >([]);
 
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["wp-blocks", productId],
@@ -86,6 +91,34 @@ export function DocxRoundTripPanel({
       setInstruction("");
       refresh();
       toast.success("AI đã đề xuất chỉnh sửa");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const suggestTasks = useMutation({
+    mutationFn: () => proposeTasksFromWorkProduct({ data: { id: productId } }),
+    onSuccess: (r: { suggestions: Array<{ title: string; priority: string }> }) => {
+      setTaskSuggestions(r.suggestions.map((s) => ({ ...s, checked: true })));
+      toast.success("AI đã gợi ý công việc");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createTasks = useMutation({
+    mutationFn: () =>
+      createTasksFromWorkProduct({
+        data: {
+          id: productId,
+          tasks: taskSuggestions
+            .filter((t) => t.checked)
+            .map((t) => ({ title: t.title, priority: t.priority as "low" })),
+        },
+      }),
+    onSuccess: (r: { created: Array<{ id: string }> }) => {
+      setTaskSuggestions([]);
+      qc.invalidateQueries({ queryKey: ["work-deliverable-links", productId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success(`Đã tạo ${r.created.length} công việc và liên kết vào tài liệu`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -133,6 +166,65 @@ export function DocxRoundTripPanel({
           {editable.length}/{(blocks ?? []).length} đoạn có thể sửa
         </span>
       </div>
+
+      {/* Tạo công việc từ tài liệu */}
+      <Card className="space-y-2 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium">Tạo công việc từ tài liệu</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            disabled={suggestTasks.isPending}
+            onClick={() => suggestTasks.mutate()}
+          >
+            {suggestTasks.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <ListChecks className="h-3 w-3" />
+            )}
+            Gợi ý công việc
+          </Button>
+        </div>
+        {taskSuggestions.length > 0 && (
+          <div className="space-y-1">
+            {taskSuggestions.map((t, i) => (
+              <label
+                key={`${t.title}-${i}`}
+                className="flex items-start gap-2 rounded-md border p-2 text-xs"
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={t.checked}
+                  onChange={(e) =>
+                    setTaskSuggestions((prev) =>
+                      prev.map((x, xi) => (xi === i ? { ...x, checked: e.target.checked } : x)),
+                    )
+                  }
+                />
+                <span className="flex-1">{t.title}</span>
+                <Badge variant="outline" className="text-[10px]">
+                  {t.priority}
+                </Badge>
+              </label>
+            ))}
+            <Button
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={createTasks.isPending || !taskSuggestions.some((t) => t.checked)}
+              onClick={() => createTasks.mutate()}
+            >
+              {createTasks.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              Tạo công việc đã chọn
+            </Button>
+          </div>
+        )}
+      </Card>
 
       {/* Nhờ AI sửa */}
       <Card className="space-y-2 p-3">

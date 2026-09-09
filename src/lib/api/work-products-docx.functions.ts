@@ -785,3 +785,147 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
       })),
     };
   });
+
+/* ------------------------------------- tạo công việc từ tài liệu đã nhập */
+
+/** Đề xuất danh sách công việc từ nội dung tài liệu (chỉ gợi ý, không tạo). */
+export const proposeTasksFromWorkProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        locale: z.string().max(8).default("vi"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_UNAVAILABLE" });
+
+    // RLS quyết định khả năng đọc: người ngoài tổ chức không thấy tài liệu này.
+    const { data: product } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, workspace_id, title, business_type")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const { data: blocks } = await context.supabase
+      .from("work_product_blocks")
+      .select("text, ordinal")
+      .eq("work_product_id", data.id)
+      .order("ordinal", { ascending: true })
+      .limit(200);
+    const body = (blocks ?? [])
+      .map((b: any) => (b.text ?? "").trim())
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, 12000);
+    if (!body) throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_CONTENT" });
+
+    const model = "openai/gpt-5.6-sol";
+    const { streamText } = await import("ai");
+    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    const result = streamText({
+      model: createLovableResponsesProvider(apiKey).responses(model),
+      system:
+        "Bạn trích xuất công việc cần làm từ tài liệu nghiệp vụ trong UNIWORK. " +
+        "Chỉ dùng dữ kiện có trong tài liệu, không bịa deadline hay người phụ trách. " +
+        `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Tài liệu: ${product.title} (${product.business_type})\n\nNỘI DUNG:\n${body}\n\n` +
+            "Liệt kê tối đa 10 công việc cần làm. Mỗi dòng theo mẫu `- [mức độ] tiêu đề` " +
+            "với mức độ thuộc low|normal|high|urgent. Không thêm giải thích.",
+        },
+      ],
+      providerOptions: { lovable: { max_completion_tokens: 800 } },
+    });
+    const text = (await result.text).trim();
+
+    const priorities = new Set(["low", "normal", "high", "urgent"]);
+    const suggestions: Array<{ title: string; priority: string }> = [];
+    for (const line of text.split(/\r?\n/)) {
+      const m = /^\s*[-*]?\s*\[(\w+)\]\s*(.+)$/.exec(line);
+      if (!m) continue;
+      const priority = priorities.has(m[1].toLowerCase()) ? m[1].toLowerCase() : "normal";
+      const title = m[2].trim().slice(0, 300);
+      if (title) suggestions.push({ title, priority });
+      if (suggestions.length >= 10) break;
+    }
+    if (!suggestions.length)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_EMPTY_PROPOSAL" });
+
+    return { model, workspaceId: product.workspace_id as string | null, suggestions };
+  });
+
+/** Tạo công việc thật sau khi người dùng xác nhận và liên kết vào Work Graph. */
+export const createTasksFromWorkProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        workspaceId: z.string().uuid().optional(),
+        tasks: z
+          .array(
+            z.object({
+              title: z.string().trim().min(1).max(300),
+              priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+            }),
+          )
+          .min(1)
+          .max(10),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: product } = await context.supabase
+      .from("work_products")
+      .select("id, title, workspace_id")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const workspaceId = (data.workspaceId ?? product.workspace_id) as string | null;
+    if (!workspaceId)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "WORKSPACE_REQUIRED" });
+
+    const created: Array<{ id: string; title: string; linked: boolean }> = [];
+    for (let idx = 0; idx < data.tasks.length; idx += 1) {
+      const t = data.tasks[idx];
+      // create_task chạy dưới RLS người dùng → sai tổ chức sẽ bị từ chối.
+      const res = await context.supabase.rpc("create_task", {
+        _workspace_id: workspaceId,
+        _title: t.title,
+        _description: `Tạo từ tài liệu: ${product.title}`,
+        _priority: t.priority,
+        _idempotency_key: `${data.idempotencyKey}:${idx}`,
+        _correlation_id: data.correlationId ?? undefined,
+      });
+      if (res.error) mapPgError(res.error);
+      const row: any = Array.isArray(res.data) ? (res.data as any[])[0] : res.data;
+      const taskId = row?.id as string | undefined;
+      if (!taskId) continue;
+      const link = await context.supabase.rpc("link_work_entities", {
+        _source_type: "WORK_PRODUCT",
+        _source_id: data.id,
+        _target_type: "TASK",
+        _target_id: taskId,
+        _relationship: "GENERATES",
+      });
+      created.push({ id: taskId, title: t.title, linked: !link.error });
+    }
+    if (!created.length)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "TASKS_NOT_CREATED" });
+    return { created };
+  });
