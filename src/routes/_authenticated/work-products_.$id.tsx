@@ -198,6 +198,25 @@ function WorkProductDetail() {
     requestAnimationFrame(() => editorRef.current?.focus());
   };
 
+  /** Chèn khối ở đầu dòng hiện tại (tiêu đề, danh sách, trích dẫn…). */
+  const applyLinePrefix = (prefix: string) => {
+    if (!canEdit) return;
+    const start = content.lastIndexOf("\n", Math.max(selection.start - 1, 0)) + 1;
+    const cleaned = content.slice(start).replace(/^(#{1,3}\s+|[-*•]\s+|\d+[.)]\s+|>\s+)/, "");
+    setContent(`${content.slice(0, start)}${prefix}${cleaned}`);
+    setDirty(true);
+    requestAnimationFrame(() => editorRef.current?.focus());
+  };
+
+  /** Chèn một khối mới (bảng, ngắt trang) tại vị trí con trỏ. */
+  const insertBlock = (snippet: string) => {
+    if (!canEdit) return;
+    const at = selection.start;
+    setContent(`${content.slice(0, at)}\n${snippet}\n${content.slice(at)}`);
+    setDirty(true);
+    requestAnimationFrame(() => editorRef.current?.focus());
+  };
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["work-deliverable", id] });
     qc.invalidateQueries({ queryKey: ["work-deliverables"] });
