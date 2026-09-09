@@ -686,6 +686,10 @@ export type WeeklyReportRow = {
   created: number;
   approved: number;
   versions: number;
+  /** Đang ở trạng thái chờ duyệt tại thời điểm xem (không giới hạn 7 ngày). */
+  inReview: number;
+  /** Đang ở trạng thái đã duyệt tại thời điểm xem (không giới hạn 7 ngày). */
+  approvedNow: number;
 };
 
 export type WeeklyReport = {
@@ -747,14 +751,17 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
     ]);
 
     const acc = new Map<string, WeeklyReportRow>();
-    const bump = (type: string, key: "created" | "approved" | "versions") => {
-      const row = acc.get(type) ?? { businessType: type, created: 0, approved: 0, versions: 0 };
+    const bump = (type: string, key: "created" | "approved" | "versions" | "inReview" | "approvedNow") => {
+      const row = acc.get(type) ?? { businessType: type, created: 0, approved: 0, versions: 0, inReview: 0, approvedNow: 0 };
       row[key] += 1;
       acc.set(type, row);
     };
 
     for (const p of (products ?? []) as any[]) {
-      if (p.created_at >= fromISO && p.created_at <= toISO) bump(p.business_type ?? "OTHER", "created");
+      const type = p.business_type ?? "OTHER";
+      if (p.created_at >= fromISO && p.created_at <= toISO) bump(type, "created");
+      if (p.status === "IN_REVIEW") bump(type, "inReview");
+      if (p.status === "APPROVED") bump(type, "approvedNow");
     }
     for (const v of ((versionsRes as any).data ?? []) as any[]) {
       bump(typeById.get(v.work_product_id) ?? "OTHER", "versions");
@@ -771,8 +778,10 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
         created: t.created + r.created,
         approved: t.approved + r.approved,
         versions: t.versions + r.versions,
+        inReview: t.inReview + r.inReview,
+        approvedNow: t.approvedNow + r.approvedNow,
       }),
-      { businessType: "TOTAL", created: 0, approved: 0, versions: 0 },
+      { businessType: "TOTAL", created: 0, approved: 0, versions: 0, inReview: 0, approvedNow: 0 },
     );
 
     return { from: fromISO, to: toISO, rows, totals };

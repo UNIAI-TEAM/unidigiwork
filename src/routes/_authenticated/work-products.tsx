@@ -71,12 +71,14 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
         <p className="px-4 py-6 text-sm text-muted-foreground">{t("wp.weekly.empty")}</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[420px] text-sm">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-2 font-medium">{t("wp.weekly.type")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.created")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approved")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.inReview")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approvedNow")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.versions")}</th>
               </tr>
             </thead>
@@ -86,6 +88,8 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                   <td className="px-4 py-2">{t(`wp.type.${r.businessType}` as never)}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.created}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.approved}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.inReview}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.approvedNow}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.versions}</td>
                 </tr>
               ))}
@@ -93,6 +97,8 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                 <td className="px-4 py-2">{t("wp.weekly.total")}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.created ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approved ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.inReview ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approvedNow ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
               </tr>
             </tbody>
