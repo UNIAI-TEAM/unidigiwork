@@ -58,10 +58,16 @@ function DocumentAccessPage() {
   const [allDocuments, setAllDocuments] = useState(false);
   const [permission, setPermission] = useState<"VIEW" | "EDIT">("VIEW");
   const [expiry, setExpiry] = useState("");
+  const [detailUser, setDetailUser] = useState<string | null>(null);
 
   const { data: memberData, isLoading } = useQuery({
     queryKey: ["access-members"],
     queryFn: () => listAccessMembers(),
+  });
+  const { data: grants, isLoading: grantsLoading } = useQuery({
+    queryKey: ["member-grants", detailUser],
+    queryFn: () => listMemberGrants({ data: { userId: detailUser as string } }),
+    enabled: Boolean(detailUser),
   });
   const { data: docs } = useQuery({
     queryKey: ["access-documents", docQuery],
