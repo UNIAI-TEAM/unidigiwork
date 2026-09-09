@@ -203,6 +203,115 @@ export const revokeDocumentAccess = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export type MemberGrant = {
+  id: string;
+  productId: string;
+  title: string;
+  permission: "VIEW" | "EDIT";
+  status: string;
+  expiresAt: string | null;
+};
+
+/** Chi tiết các tài liệu đang chia sẻ trực tiếp cho một thành viên. */
+export const listMemberGrants = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ userId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<MemberGrant[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("work_product_shares")
+      .select("id, work_product_id, permission, status, expires_at")
+      .eq("shared_with_user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) mapPgError(error);
+    const list = (rows ?? []) as any[];
+    const ids = Array.from(new Set(list.map((r) => r.work_product_id as string)));
+    const titles = new Map<string, string>();
+    if (ids.length) {
+      const { data: wp } = await context.supabase.from("work_products").select("id, title").in("id", ids);
+      for (const w of (wp ?? []) as any[]) titles.set(w.id as string, (w.title as string) ?? "—");
+    }
+    return list.map((r) => ({
+      id: r.id as string,
+      productId: r.work_product_id as string,
+      title: titles.get(r.work_product_id as string) ?? "—",
+      permission: ((r.permission as string) === "EDIT" ? "EDIT" : "VIEW") as "VIEW" | "EDIT",
+      status: (r.status as string) ?? "ACTIVE",
+      expiresAt: (r.expires_at as string) ?? null,
+    }));
+  });
+
+/** Sửa hoặc thu hồi một quyền cụ thể (không cần chỉnh thủ công từng bản ghi). */
+export const updateMemberGrant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        shareId: z.string().uuid(),
+        action: z.enum(["SET_VIEW", "SET_EDIT", "REVOKE", "RESTORE", "DELETE"]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { role } = await tenantOf(context.supabase, context.userId);
+    if (!MANAGER_ROLES.includes(role)) {
+      throw new ApiError({ code: "PERMISSION_DENIED", message: "ACCESS_ADMIN_FORBIDDEN" });
+    }
+    if (data.action === "DELETE") {
+      const { error } = await context.supabase.from("work_product_shares").delete().eq("id", data.shareId);
+      if (error) mapPgError(error);
+      return { ok: true as const };
+    }
+    const patch =
+      data.action === "SET_VIEW"
+        ? { permission: "VIEW" }
+        : data.action === "SET_EDIT"
+          ? { permission: "EDIT" }
+          : data.action === "REVOKE"
+            ? { status: "REVOKED" }
+            : { status: "ACTIVE" };
+    const { error } = await context.supabase
+      .from("work_product_shares")
+      .update(patch as never)
+      .eq("id", data.shareId);
+    if (error) mapPgError(error);
+    return { ok: true as const };
+  });
+
+/** Tạm ngưng / khôi phục / gỡ thành viên khỏi tổ chức. */
+export const setAccessMemberStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        userId: z.string().uuid(),
+        status: z.enum(["active", "suspended", "removed"]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { tenantId, role } = await tenantOf(context.supabase, context.userId);
+    if (!MANAGER_ROLES.includes(role)) {
+      throw new ApiError({ code: "PERMISSION_DENIED", message: "ACCESS_ADMIN_FORBIDDEN" });
+    }
+    if (data.userId === context.userId) {
+      throw new ApiError({ code: "VALIDATION_ERROR", message: "ACCESS_ADMIN_SELF_STATUS" });
+    }
+    const { error } = await context.supabase.rpc("change_tenant_member_status", {
+      _tenant_id: tenantId,
+      _user_id: data.userId,
+      _new_status: data.status,
+      _correlation_id: null,
+    } as never);
+    if (error) mapPgError(error);
+    if (data.status === "removed") {
+      await context.supabase.from("work_product_shares").delete().eq("shared_with_user_id", data.userId);
+    }
+    return { ok: true as const };
+  });
+
 /** Đổi vai trò thành viên trong tổ chức. */
 export const setAccessMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
