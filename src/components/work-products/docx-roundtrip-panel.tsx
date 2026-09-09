@@ -227,6 +227,115 @@ export function DocxRoundTripPanel({
         </span>
       </div>
 
+      {/* So sánh bản gốc và bản đã sửa */}
+      <Card className="space-y-3 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium">So sánh bản gốc và bản đã sửa</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            disabled={compare.isPending || (versions ?? []).length < 2}
+            onClick={() => compare.mutate()}
+          >
+            {compare.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <GitCompare className="h-3 w-3" />
+            )}
+            So sánh nội dung
+          </Button>
+        </div>
+
+        {(versions ?? []).length >= 2 ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <select
+              className="h-8 rounded-md border bg-background px-2"
+              value={baseId}
+              onChange={(e) => setBaseId(e.target.value)}
+            >
+              <option value="">Bản gốc</option>
+              {(versions ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {versionLabel(v)}
+                </option>
+              ))}
+            </select>
+            <span className="text-muted-foreground">so với</span>
+            <select
+              className="h-8 rounded-md border bg-background px-2"
+              value={targetId}
+              onChange={(e) => setTargetId(e.target.value)}
+            >
+              <option value="">Bản mới nhất</option>
+              {(versions ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {versionLabel(v)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Cần ít nhất một phiên bản đã sửa để so sánh.
+          </p>
+        )}
+
+        {showCompare && compare.data && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <Badge variant="secondary">{compare.data.totals.changed} đoạn khác nhau</Badge>
+              <Badge variant="outline">Sửa {compare.data.totals.modified}</Badge>
+              <Badge variant="outline">Thêm {compare.data.totals.added}</Badge>
+              <Badge variant="outline">Xoá {compare.data.totals.removed}</Badge>
+              <button
+                type="button"
+                className="ml-auto text-muted-foreground underline"
+                onClick={() => setShowCompare(false)}
+              >
+                Ẩn
+              </button>
+            </div>
+
+            {compare.data.diffs.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Hai bản có nội dung giống nhau.</p>
+            ) : (
+              <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+                {compare.data.diffs.map((d) => (
+                  <div key={d.key} className="rounded-md border p-2 text-xs">
+                    <div className="mb-1 flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {d.change === "ADDED"
+                          ? "Thêm mới"
+                          : d.change === "REMOVED"
+                            ? "Đã xoá"
+                            : "Đã sửa"}
+                      </Badge>
+                      <span className="text-muted-foreground">Đoạn {d.ordinal}</span>
+                    </div>
+                    <p className="leading-relaxed">
+                      {d.words.map((w, i) => (
+                        <span
+                          key={`${d.key}-${i}`}
+                          className={cn(
+                            w.op === "del" &&
+                              "bg-destructive/10 text-destructive line-through decoration-destructive/60",
+                            w.op === "ins" && "bg-primary/10 text-primary",
+                          )}
+                        >
+                          {w.text}
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+
       {/* Tạo công việc từ tài liệu */}
       <Card className="space-y-2 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
