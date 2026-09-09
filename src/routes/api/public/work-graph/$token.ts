@@ -9,9 +9,8 @@ export const Route = createFileRoute("/api/public/work-graph/$token")({
           return Response.json({ ok: false, error: "INVALID_LINK" }, { status: 404 });
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { hashShareToken, buildPublicWorkGraph } = await import(
-          "@/lib/api/work-graph-share.server"
-        );
+        const { hashShareToken, buildPublicWorkGraph } =
+          await import("@/lib/api/work-graph-share.server");
 
         const tokenHash = await hashShareToken(token);
         const { data: share } = await (supabaseAdmin as any)

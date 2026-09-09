@@ -13,7 +13,10 @@ export async function hashShareToken(token: string): Promise<string> {
 export function generateShareToken(): string {
   const raw = new Uint8Array(32);
   crypto.getRandomValues(raw);
-  return [...raw].map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 48);
+  return [...raw]
+    .map((b) => b.toString(36).padStart(2, "0"))
+    .join("")
+    .slice(0, 48);
 }
 
 export type PublicGraphNode = {
