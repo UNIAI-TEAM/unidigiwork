@@ -90,7 +90,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
           <h2 className="text-sm font-semibold">{t("wp.weekly.title")}</h2>
           <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <Button variant={format === null ? "secondary" : "ghost"} size="sm" className="h-7 px-2 text-xs" onClick={() => setFormat(null)}>
             {t("wp.weekly.allFormats")}
           </Button>
@@ -99,6 +99,10 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
               {f}
             </Button>
           ))}
+          <Button variant="outline" size="sm" className="ml-1 h-7 gap-1 px-2 text-xs" disabled={exporting} onClick={exportXlsx}>
+            {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            {t("wp.weekly.exportXlsx")}
+          </Button>
         </div>
       </div>
       {rows.length === 0 ? (
