@@ -1276,30 +1276,10 @@ function WorkProductDetail() {
                     />
                   </TabsContent>
 
-                  <TabsContent value="links" className="mt-0 space-y-2">
-                    {(links ?? []).length === 0 && (
-                      <p className="text-sm text-muted-foreground">{t("wp.links.empty")}</p>
-                    )}
-                    {(links ?? []).map((l) => (
-                      <div
-                        key={l.edgeId}
-                        className="flex items-center gap-2 rounded-lg border bg-background p-3"
-                      >
-                        <Badge variant="outline" className="text-[10px]">
-                          {l.entityType}
-                        </Badge>
-                        <span className="truncate text-xs text-muted-foreground">
-                          {l.relationship}
-                        </span>
-                        <a
-                          href={workEntityHref(l.entityType, l.entityId)}
-                          className="ml-auto text-xs text-primary hover:underline"
-                        >
-                          {t("wp.links.open")}
-                        </a>
-                      </div>
-                    ))}
+                  <TabsContent value="links" className="mt-0">
+                    <WorkGraphLinksPanel workProductId={product.id} />
                   </TabsContent>
+
 
                   <TabsContent value="share" className="mt-0 space-y-3">
                     <p className="text-xs text-muted-foreground">{t("wp.share.hint")}</p>
