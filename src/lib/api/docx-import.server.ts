@@ -91,7 +91,11 @@ export interface ParsedDocxImport {
   editableBlocks: number;
 }
 
-const norm = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const norm = (s: string) =>
+  s
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
 /** Nhận diện theo tên style Word (đa ngôn ngữ: Heading/Tiêu đề/Title/Quote/Caption...). */
 function roleFromStyle(styleId: string | null): {
@@ -116,7 +120,11 @@ function headingNumberDepth(text: string): number | null {
   const t = text.trim();
   const dotted = /^(\d+(?:\.\d+){0,4})[.)]?\s+\S/.exec(t);
   if (dotted) return Math.min(dotted[1].split(".").length, 5);
-  if (/^(điều|dieu|article|chương|chuong|chapter|phần|phan|part|mục|muc|section)\s+([0-9IVXLCM]+|[A-ZĐ])\b/i.test(t))
+  if (
+    /^(điều|dieu|article|chương|chuong|chapter|phần|phan|part|mục|muc|section)\s+([0-9IVXLCM]+|[A-ZĐ])\b/i.test(
+      t,
+    )
+  )
     return 1;
   return null;
 }
@@ -124,14 +132,18 @@ function headingNumberDepth(text: string): number | null {
 function allRunsBold(b: Record<string, unknown>): boolean {
   const runs = b["runs"];
   if (!Array.isArray(runs) || !runs.length) return false;
-  const withText = (runs as Array<{ text?: string; bold?: boolean }>).filter((r) => (r.text ?? "").trim());
+  const withText = (runs as Array<{ text?: string; bold?: boolean }>).filter((r) =>
+    (r.text ?? "").trim(),
+  );
   return withText.length > 0 && withText.every((r) => r.bold === true);
 }
 
 function allRunsItalic(b: Record<string, unknown>): boolean {
   const runs = b["runs"];
   if (!Array.isArray(runs) || !runs.length) return false;
-  const withText = (runs as Array<{ text?: string; italic?: boolean }>).filter((r) => (r.text ?? "").trim());
+  const withText = (runs as Array<{ text?: string; italic?: boolean }>).filter((r) =>
+    (r.text ?? "").trim(),
+  );
   return withText.length > 0 && withText.every((r) => r.italic === true);
 }
 
@@ -151,7 +163,9 @@ function cellText(cell: Record<string, unknown>): string {
 
 /** Bóc nội dung bảng thành lưới chữ để AI đọc được (không đổi tài liệu gốc). */
 function tableGrid(b: Record<string, unknown>): string[][] {
-  const model = b["table"] as { rows?: Array<{ cells?: Array<Record<string, unknown>> }> } | undefined;
+  const model = b["table"] as
+    | { rows?: Array<{ cells?: Array<Record<string, unknown>> }> }
+    | undefined;
   const rows = model?.rows;
   if (!Array.isArray(rows)) return [];
   return rows.map((r) => (Array.isArray(r.cells) ? r.cells.map((c) => cellText(c)) : []));
@@ -176,14 +190,21 @@ function markdownTable(grid: string[][]): string {
     Array.from({ length: cols }, (_, i) => (r[i] ?? "").replace(/\|/g, "\\|") || " ");
   const out = [`| ${pad(grid[0]).join(" | ")} |`, `| ${Array(cols).fill("---").join(" | ")} |`];
   for (const r of grid.slice(1, 30)) out.push(`| ${pad(r).join(" | ")} |`);
-  if (grid.length > 30) out.push(`| … còn ${grid.length - 30} dòng | ${Array(cols - 1).fill(" ").join(" | ")} |`);
+  if (grid.length > 30)
+    out.push(
+      `| … còn ${grid.length - 30} dòng | ${Array(cols - 1)
+        .fill(" ")
+        .join(" | ")} |`,
+    );
   return out.join("\n");
 }
 
 /** Đọc một DOCX có sẵn thành các khối có neo về tài liệu gốc, kèm nhận diện ngữ nghĩa. */
 export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxImport> {
   const parsed = await parseDocx(bytes);
-  const visible = (parsed.blocks as unknown as Array<Record<string, unknown>>).filter((b) => !b["hidden"]);
+  const visible = (parsed.blocks as unknown as Array<Record<string, unknown>>).filter(
+    (b) => !b["hidden"],
+  );
 
   const blocks: ImportedBlock[] = [];
   const lines: string[] = [];
@@ -238,7 +259,10 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
       const numDepth = headingNumberDepth(trimmed);
       const short = trimmed.length <= 120 && !/[.;:!?]$/.test(trimmed);
       const bold = allRunsBold(b);
-      const upper = trimmed.length <= 120 && trimmed === trimmed.toLocaleUpperCase("vi") && /\p{L}/u.test(trimmed);
+      const upper =
+        trimmed.length <= 120 &&
+        trimmed === trimmed.toLocaleUpperCase("vi") &&
+        /\p{L}/u.test(trimmed);
       const centered = format["align"] === "center";
       if (numDepth && (bold || short)) {
         role = "HEADING";
@@ -254,7 +278,10 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
       ) {
         role = "QUOTE";
         detectedBy = "heuristic";
-      } else if (/^(hình|bảng|biểu|figure|table)\s*\d+([.:]|\s)/i.test(trimmed) && trimmed.length <= 160) {
+      } else if (
+        /^(hình|bảng|biểu|figure|table)\s*\d+([.:]|\s)/i.test(trimmed) &&
+        trimmed.length <= 160
+      ) {
         role = "CAPTION";
         detectedBy = "heuristic";
       }
@@ -346,10 +373,15 @@ function runsOf(text: string) {
  * Khối không nằm trong danh sách sửa được giữ nguyên nguyên văn.
  * Neo không khớp / nội dung gốc đã đổi → PATCH_UNSAFE, không sửa gì cả.
  */
-export async function patchDocxAnchored(original: Uint8Array, edits: AnchoredEdit[]): Promise<PatchResult> {
+export async function patchDocxAnchored(
+  original: Uint8Array,
+  edits: AnchoredEdit[],
+): Promise<PatchResult> {
   if (!edits.length) throw new PatchUnsafeError("NO_EDITS");
   const parsed = await parseDocx(original);
-  const visible = (parsed.blocks as unknown as Array<Record<string, unknown>>).filter((b) => !b["hidden"]);
+  const visible = (parsed.blocks as unknown as Array<Record<string, unknown>>).filter(
+    (b) => !b["hidden"],
+  );
   const byIndex = new Map<number, Record<string, unknown>>();
   for (const b of visible) {
     const idx = b["docxIndex"];
@@ -361,7 +393,8 @@ export async function patchDocxAnchored(original: Uint8Array, edits: AnchoredEdi
     const target = byIndex.get(e.docxIndex);
     if (!target) throw new PatchUnsafeError(`ANCHOR_NOT_FOUND:${e.blockKey}`);
     const text = runsText(target);
-    if (editabilityOf(target, text) !== "EDITABLE") throw new PatchUnsafeError(`BLOCK_NOT_EDITABLE:${e.blockKey}`);
+    if (editabilityOf(target, text) !== "EDITABLE")
+      throw new PatchUnsafeError(`BLOCK_NOT_EDITABLE:${e.blockKey}`);
     if (text.trim() !== e.before.trim()) throw new PatchUnsafeError(`SOURCE_CHANGED:${e.blockKey}`);
   }
 
@@ -378,5 +411,10 @@ export async function patchDocxAnchored(original: Uint8Array, edits: AnchoredEdi
   });
 
   const bytes = await saveDocx(parsed, blocks, { savedAt: new Date().toISOString() });
-  return { bytes, editedBlocks: edited, totalBlocks: visible.length, appliedKeys: edits.map((e) => e.blockKey) };
+  return {
+    bytes,
+    editedBlocks: edited,
+    totalBlocks: visible.length,
+    appliedKeys: edits.map((e) => e.blockKey),
+  };
 }
