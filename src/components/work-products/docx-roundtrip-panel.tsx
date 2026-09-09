@@ -331,12 +331,38 @@ export function DocxRoundTripPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const suggestFollowUps = useMutation({
-    mutationFn: (version?: number) =>
-      proposeFollowUpsFromDocxChanges({
-        data: { id: productId, ...(version ? { version } : {}) },
+  // Sau khi chấp nhận, tự động tạo công việc thực từ nội dung vừa thay đổi.
+  const autoCreateTasks = useMutation({
+    mutationFn: (items: Array<{ title: string; detail: string; priority: string }>) =>
+      createFollowUpsFromWorkProduct({
+        data: {
+          id: productId,
+          items: items.map((f) => ({
+            kind: "TASK" as const,
+            title: f.title,
+            detail: f.detail,
+            priority: f.priority as "low",
+          })),
+        },
       }),
+    onSuccess: (r: { created: Array<{ kind: string }> }) => {
+      qc.invalidateQueries({ queryKey: ["work-deliverable-links", productId] });
+      qc.invalidateQueries({ queryKey: ["work-graph-overview"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      if (r.created.length) {
+        toast.success(`Đã tự động tạo ${r.created.length} công việc và gắn vào bản đồ công việc`);
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const suggestFollowUps = useMutation({
+    mutationFn: (v?: { version?: number; auto?: boolean }) =>
+      proposeFollowUpsFromDocxChanges({
+        data: { id: productId, ...(v?.version ? { version: v.version } : {}) },
+      }).then((r) => ({ ...r, auto: v?.auto ?? false })),
     onSuccess: (r: {
+      auto: boolean;
       suggestions: Array<{
         kind: "TASK" | "DECISION" | "MEETING";
         title: string;
@@ -344,6 +370,15 @@ export function DocxRoundTripPanel({
         priority: string;
       }>;
     }) => {
+      if (r.auto) {
+        const tasks = r.suggestions.filter((s) => s.kind === "TASK");
+        // Công việc được tạo ngay; quyết định và cuộc họp vẫn chờ người dùng chọn.
+        setFollowUps(
+          r.suggestions.filter((s) => s.kind !== "TASK").map((s) => ({ ...s, checked: true })),
+        );
+        if (tasks.length) autoCreateTasks.mutate(tasks);
+        return;
+      }
       setFollowUps(r.suggestions.map((s) => ({ ...s, checked: true })));
     },
     onError: (e: Error) =>
@@ -388,7 +423,7 @@ export function DocxRoundTripPanel({
         `Đã tạo phiên bản v${r.version} — giữ nguyên ${r.preservation.preservedRatio}% cấu trúc gốc`,
       );
       // Sau khi chấp nhận, tự động phân tích nội dung vừa đổi để gợi ý bước tiếp theo.
-      suggestFollowUps.mutate(r.version);
+      suggestFollowUps.mutate({ version: r.version, auto: true });
     },
     onError: (e: Error) =>
       toast.error(

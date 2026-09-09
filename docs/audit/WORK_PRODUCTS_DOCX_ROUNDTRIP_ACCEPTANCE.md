@@ -135,3 +135,17 @@ Luồng chạy thật mỗi fixture: nhập → parse anchored blocks → 1 sử
 Mọi fixture đều đạt: mở được, không thiếu part bắt buộc, nội dung mới có/nội dung cũ mất, không thêm/xoá part, số bảng giữ nguyên, số block ổn định, SHA-256 bản gốc không đổi. Neo sai vẫn bị chặn bằng `PATCH_UNSAFE`.
 
 Kiểm chứng độc lập: `pandoc` đọc cả 3 tệp đầu ra, tiếng Việt và cấu trúc còn nguyên.
+
+## Mục 18 — Tự động tạo công việc sau khi chấp nhận (2026-09-09)
+
+- Sau khi áp dụng thay đổi (`applyWorkProductAcceptedChanges`), UI tự động phân tích nội dung vừa đổi và **tạo ngay** các công việc đề xuất qua `createFollowUpsFromWorkProduct` (kind `TASK`). Quyết định/cuộc họp vẫn chờ người dùng chọn.
+- Công việc tạo bằng RPC `create_task`, tự liên kết `WORK_PRODUCT → TASK` (`GENERATES`) trong Work Graph.
+- Bổ sung RPC `rebuild_tenant_work_graph` + `tenant_work_graph_stats`; tab "Liên kết" cho phép gắn/gỡ Task, Meeting, Meeting Artifact (quyết định), Document.
+
+### Kiểm tra cách ly tổ chức (chạy thật trên DB)
+
+| Kiểm tra | Kết quả |
+| --- | --- |
+| Tenant A owner chạy `rebuild_tenant_work_graph` | PASS — nodes 77 → 80, edges 89 |
+| Tenant B member chạy cùng RPC | PASS — chặn `WORK_GRAPH_REBUILD_FORBIDDEN` |
+| Tenant B đọc work product / blocks / artifacts / tasks / work_nodes / work_edges của Tenant A | PASS — 0 dòng cho mọi bảng |
