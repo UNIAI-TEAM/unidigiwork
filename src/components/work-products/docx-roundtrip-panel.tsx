@@ -38,6 +38,27 @@ import {
   getAiProposalAccuracyReport,
 } from "@/lib/api/work-products-docx.functions";
 
+type FollowUpEvidence = {
+  index: number;
+  blockKey: string;
+  role: string;
+  heading: string | null;
+  section: string | null;
+  origin: string;
+  before: string;
+  after: string;
+};
+
+type FollowUpSuggestion = {
+  kind: "TASK" | "DECISION" | "MEETING";
+  title: string;
+  detail: string;
+  reason?: string;
+  priority: string;
+  confidence?: number;
+  evidenceIndexes?: number[];
+};
+
 type AccuracyReport = {
   total: number;
   accepted: number;
