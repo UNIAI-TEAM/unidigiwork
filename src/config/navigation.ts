@@ -210,7 +210,6 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/documents", order: 2 },
   },
   {
-  {
     id: "work-products",
     labelKey: "nav.workProducts",
     icon: FileText,
