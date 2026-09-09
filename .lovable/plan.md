@@ -46,12 +46,18 @@
 - Đi hết hành trình nghiệm thu: tạo từ dự án → soạn → AI sửa → ghi phiên bản → gắn quyết định → yêu cầu duyệt → duyệt → tìm kiếm thấy.
 - Xuất `WORK_PRODUCTS_IMPLEMENTATION_REPORT.md`.
 
-## Không làm trong MVP
-Bản sao Word/Excel/PowerPoint, công thức bảng tính nâng cao, hiệu ứng thuyết trình, sửa PDF nâng cao, đồng soạn thảo thời gian thực, tích hợp engine tài liệu bên ngoài (chỉ chuẩn bị lớp cắm).
+## Không làm trong MVP (Phase 1)
+Bản sao Word/Excel/PowerPoint, công thức bảng tính nâng cao, hiệu ứng thuyết trình, sửa PDF nâng cao, đồng soạn thảo thời gian thực, và **cắm engine tài liệu ngoài** — Phase 1 chỉ định nghĩa lớp `OfficeEngineAdapter` với bản cài đặt tối thiểu.
+
+## Điều kiện nghiệm thu trước khi sang Phase 2
+Phase 1 phải PASS: mô hình dữ liệu + Work Graph + trình soạn thảo + nguồn gốc thay đổi của AI + xem xét/duyệt. Sau khi PASS mới làm Phase 2: cắm engine vào `OfficeEngineAdapter` để DOCX/XLSX/PPTX/PDF trở thành các biểu diễn của cùng một kết quả công việc.
+
+## Ghi chú thuật ngữ
+MVP dùng "Kết quả công việc" cho giao diện tiếng Việt vì `/work-catalog` đang giữ tên "Work Products". Sẽ xem lại taxonomy của `/work-catalog` ở giai đoạn sau — tên cũ không được khóa thuật ngữ sản phẩm mới.
 
 ## Cách triển khai theo đợt
-1. Dữ liệu + bảo mật + liên kết Work Graph.
+1. Dữ liệu + bảo mật + liên kết Work Graph + bảng biểu diễn.
 2. Trang danh sách + tạo mới + trang chi tiết với soạn thảo và tự lưu.
-3. Phiên bản, bình luận, xem xét, duyệt, nguồn gốc thay đổi.
-4. AI (thanh công cụ chọn văn bản, bảng AI, tạo việc từ nội dung).
+3. Phiên bản (kèm ảnh chụp nguồn gốc), bình luận, xem xét, duyệt.
+4. AI (thanh công cụ chọn văn bản, bảng chọn nguồn ngữ cảnh, tạo việc từ nội dung).
 5. Tích hợp tìm kiếm/Home/liên kết ngược, bản điện thoại, kiểm thử, báo cáo.
