@@ -97,8 +97,8 @@ function WorkProductsPage() {
   };
 
   const fmt = useMemo(
-    () => new Intl.DateTimeFormat(localeTag(locale), { day: "2-digit", month: "2-digit", year: "numeric" }),
-    [locale],
+    () => new Intl.DateTimeFormat(localeTag(lang), { day: "2-digit", month: "2-digit", year: "numeric" }),
+    [lang],
   );
 
   return (
