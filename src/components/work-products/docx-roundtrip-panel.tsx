@@ -59,6 +59,14 @@ type FollowUpSuggestion = {
   evidenceIndexes?: number[];
 };
 
+/** Ghi kèm lý do đề xuất vào mô tả để người nhận việc hiểu vì sao có mục này. */
+function withReason(f: { detail: string; reason?: string }) {
+  const detail = f.detail?.trim() ?? "";
+  const reason = f.reason?.trim();
+  if (!reason) return detail.slice(0, 500);
+  return `${detail ? `${detail}\n\n` : ""}Lý do đề xuất: ${reason}`.slice(0, 500);
+}
+
 type AccuracyReport = {
   total: number;
   accepted: number;
