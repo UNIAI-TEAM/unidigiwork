@@ -21,6 +21,9 @@ import {
   grantDocumentAccess,
   revokeDocumentAccess,
   setAccessMemberRole,
+  listMemberGrants,
+  updateMemberGrant,
+  setAccessMemberStatus,
 } from "@/lib/api/access-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/document-access")({
@@ -55,10 +58,16 @@ function DocumentAccessPage() {
   const [allDocuments, setAllDocuments] = useState(false);
   const [permission, setPermission] = useState<"VIEW" | "EDIT">("VIEW");
   const [expiry, setExpiry] = useState("");
+  const [detailUser, setDetailUser] = useState<string | null>(null);
 
   const { data: memberData, isLoading } = useQuery({
     queryKey: ["access-members"],
     queryFn: () => listAccessMembers(),
+  });
+  const { data: grants, isLoading: grantsLoading } = useQuery({
+    queryKey: ["member-grants", detailUser],
+    queryFn: () => listMemberGrants({ data: { userId: detailUser as string } }),
+    enabled: Boolean(detailUser),
   });
   const { data: docs } = useQuery({
     queryKey: ["access-documents", docQuery],
@@ -75,8 +84,11 @@ function DocumentAccessPage() {
     );
   }, [memberData, memberQuery]);
 
-  function refresh() {
-    return qc.invalidateQueries({ queryKey: ["access-members"] });
+  const detailMember = (memberData?.members ?? []).find((m) => m.userId === detailUser) ?? null;
+
+  async function refresh() {
+    await qc.invalidateQueries({ queryKey: ["access-members"] });
+    await qc.invalidateQueries({ queryKey: ["member-grants"] });
   }
 
   const grant = useMutation({
@@ -114,6 +126,33 @@ function DocumentAccessPage() {
     onSuccess: async () => {
       await refresh();
       toast.success(t("acc.roleUpdated"));
+    },
+    onError: () => toast.error(t("acc.error")),
+  });
+
+  const changeStatus = useMutation({
+    mutationFn: (v: { userId: string; status: "active" | "suspended" | "removed" }) =>
+      setAccessMemberStatus({
+        data: { ...v, idempotencyKey: `status-${v.userId}-${v.status}-${Date.now()}` },
+      }),
+    onSuccess: async () => {
+      await refresh();
+      toast.success(t("acc.statusUpdated"));
+    },
+    onError: () => toast.error(t("acc.error")),
+  });
+
+  const editGrant = useMutation({
+    mutationFn: (v: {
+      shareId: string;
+      action: "SET_VIEW" | "SET_EDIT" | "REVOKE" | "RESTORE" | "DELETE";
+    }) =>
+      updateMemberGrant({
+        data: { ...v, idempotencyKey: `grant-${v.shareId}-${v.action}-${Date.now()}` },
+      }),
+    onSuccess: async () => {
+      await refresh();
+      toast.success(t("acc.grantUpdated"));
     },
     onError: () => toast.error(t("acc.error")),
   });
@@ -166,7 +205,9 @@ function DocumentAccessPage() {
           {isLoading ? (
             <p className="py-8 text-center text-sm text-muted-foreground">{t("acc.loading")}</p>
           ) : members.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">{t("acc.emptyMembers")}</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("acc.emptyMembers")}
+            </p>
           ) : (
             <ul className="space-y-2">
               {members.map((m) => (
@@ -205,6 +246,30 @@ function DocumentAccessPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <Select
+                    value={m.status}
+                    onValueChange={(v) =>
+                      changeStatus.mutate({
+                        userId: m.userId,
+                        status: v as "active" | "suspended" | "removed",
+                      })
+                    }
+                    disabled={!canManage || m.isSelf}
+                  >
+                    <SelectTrigger className="w-36" aria-label={t("acc.memberStatus")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["active", "suspended", "removed"] as const).map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {t(`acc.memberStatus.${s}` as never)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" onClick={() => setDetailUser(m.userId)}>
+                    {t("acc.view")}
+                  </Button>
                   {canManage && (
                     <Button
                       variant="ghost"
@@ -309,6 +374,91 @@ function DocumentAccessPage() {
           </Button>
         </section>
       </div>
+
+      <section className="rounded-2xl border border-border bg-surface p-4">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-medium">{t("acc.detail")}</h3>
+          {detailMember && (
+            <Badge variant="outline" className="text-[10px]">
+              {detailMember.name}
+            </Badge>
+          )}
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">{t("acc.detailHint")}</p>
+
+        {!detailUser ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("acc.selectMember")}</p>
+        ) : grantsLoading ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("acc.loading")}</p>
+        ) : (grants ?? []).length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("acc.noGrants")}</p>
+        ) : (
+          <ul className="space-y-2">
+            {(grants ?? []).map((g) => (
+              <li
+                key={g.id}
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-background p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{g.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t("acc.expiresAt")}:{" "}
+                    {g.expiresAt ? new Date(g.expiresAt).toLocaleString() : t("acc.noExpiry")}
+                  </p>
+                </div>
+                <Badge
+                  variant={g.status === "ACTIVE" ? "secondary" : "outline"}
+                  className="text-[10px]"
+                >
+                  {t(`acc.status.${g.status === "ACTIVE" ? "ACTIVE" : "REVOKED"}` as never)}
+                </Badge>
+                <Select
+                  value={g.permission}
+                  onValueChange={(v) =>
+                    editGrant.mutate({
+                      shareId: g.id,
+                      action: v === "EDIT" ? "SET_EDIT" : "SET_VIEW",
+                    })
+                  }
+                  disabled={!canManage}
+                >
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VIEW">{t("acc.perm.view")}</SelectItem>
+                    <SelectItem value="EDIT">{t("acc.perm.edit")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {canManage && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        editGrant.mutate({
+                          shareId: g.id,
+                          action: g.status === "ACTIVE" ? "REVOKE" : "RESTORE",
+                        })
+                      }
+                    >
+                      {g.status === "ACTIVE" ? t("acc.revokeOne") : t("acc.restoreOne")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("acc.deleteOne")}
+                      onClick={() => editGrant.mutate({ shareId: g.id, action: "DELETE" })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
