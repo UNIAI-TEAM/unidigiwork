@@ -799,10 +799,14 @@ async function computeWeeklyReport(supabase: any, workspaceId: string | null, da
     }
 
     if (ids.length) {
+      // Chỉ tính lượt chia sẻ đang hiệu lực và chưa hết hạn.
+      const nowISO = new Date().toISOString();
       const { data: shares } = await context.supabase
         .from("work_product_shares")
-        .select("work_product_id")
+        .select("work_product_id, status, expires_at")
         .in("work_product_id", ids)
+        .eq("status", "ACTIVE")
+        .or(`expires_at.is.null,expires_at.gt.${nowISO}`)
         .limit(5000);
       const perProduct = new Map<string, number>();
       for (const sh of ((shares ?? []) as any[])) {
