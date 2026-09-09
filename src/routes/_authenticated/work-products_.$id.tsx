@@ -326,22 +326,42 @@ function WorkProductDetail() {
   });
 
   const exportArtifact = useMutation({
-    mutationFn: async (format: "DOCX" | "XLSX" | "PPTX" | "PDF") => {
-      setExportingFormat(format);
+    mutationFn: async (v: {
+      format: "DOCX" | "XLSX" | "PPTX" | "PDF";
+      engine?: "AUTO" | "GENOFFICE";
+    }) => {
+      setExportingFormat(v.engine === "GENOFFICE" ? `${v.format}:GENOFFICE` : v.format);
       if (dirty) await updateWorkDeliverable({ data: { id, title: title.trim() || undefined, content } });
-      return exportWorkDeliverableArtifact({ data: { idempotencyKey: crypto.randomUUID(), id, format } });
+      return exportWorkDeliverableArtifact({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          id,
+          format: v.format,
+          ...(v.engine ? { engine: v.engine } : {}),
+        },
+      });
     },
     onSuccess: (res: any) => {
       setDirty(false);
       setExportingFormat(null);
-      toast.success(t("wp.files.exported").replace("{f}", String(res?.artifact?.format ?? "")));
+      const engine = String(res?.engine ?? "").toLowerCase();
+      toast.success(
+        `${t("wp.files.exported").replace("{f}", String(res?.artifact?.format ?? ""))}${
+          engine === "genoffice" ? " · GenOffice" : ""
+        }`,
+      );
       invalidate();
     },
-    onError: () => {
+    onError: (e: any) => {
       setExportingFormat(null);
-      toast.error(t("wp.files.exportFailed"));
+      toast.error(
+        String(e?.message ?? "").includes("GENOFFICE_RENDER_FAILED")
+          ? "Bộ máy GenOffice chưa tạo được tệp Word. Bạn có thể xuất bằng cách thông thường."
+          : t("wp.files.exportFailed"),
+      );
     },
   });
+
 
   const downloadArtifact = async (artifactId: string) => {
     try {
