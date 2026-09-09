@@ -105,7 +105,7 @@ export async function inspectDocx(bytes: Uint8Array): Promise<DocxInspection> {
   const dangling = used.filter((id) => !relIds.has(id));
 
   const text = normalizeText(
-    Array.from(xml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g))
+    Array.from(xml.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g))
       .map((m) => decodeEntities(m[1]!))
       .join(" "),
   );
