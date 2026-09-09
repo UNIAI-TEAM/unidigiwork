@@ -912,6 +912,8 @@ export const exportWorkDeliverableArtifact = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         format: z.enum(["DOCX", "XLSX", "PPTX", "PDF"]),
         version: z.number().int().positive().optional(),
+        /** AUTO giữ hành vi cũ; GENOFFICE ép bộ máy GenOffice, không thay thế ngầm. */
+        engine: z.enum(["AUTO", "BUILTIN", "GENOFFICE"]).optional(),
       })
       .parse(i),
   )
