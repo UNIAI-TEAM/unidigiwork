@@ -604,6 +604,22 @@ export function DocxRoundTripPanel({
                 isOpen && "border-primary",
               )}
             >
+              <div className="mb-1 flex flex-wrap items-center gap-1">
+                <Badge variant="outline" className="text-[10px]">
+                  {ROLE_LABELS[b.source_anchor?.role || "PARAGRAPH"] ?? "Đoạn văn"}
+                  {b.source_anchor?.headingLevel ? ` ${b.source_anchor.headingLevel}` : ""}
+                </Badge>
+                {b.source_anchor?.table && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {b.source_anchor.table.rows ?? 0}×{b.source_anchor.table.cols ?? 0} ô
+                  </Badge>
+                )}
+                {(b.source_anchor?.signals ?? []).slice(0, 3).map((s) => (
+                  <span key={s} className="text-[10px] text-muted-foreground">
+                    · {s}
+                  </span>
+                ))}
+              </div>
               <div className="flex items-start gap-2">
                 <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">
                   {b.text || <span className="text-muted-foreground">(không có nội dung chữ)</span>}
