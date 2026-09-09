@@ -317,6 +317,12 @@ export function DocxRoundTripPanel({
       }) as Promise<AccuracyReport>,
   });
 
+  // Báo cáo nhận diện Word của toàn tổ chức, dùng để chỉnh trọng số.
+  const { data: recognition } = useQuery({
+    queryKey: ["wp-docx-recognition", weights],
+    queryFn: () => getDocxRecognitionReport({ data: { weights } }) as Promise<RecognitionReport>,
+  });
+
   const reanalyze = useMutation({
     mutationFn: () => reanalyzeWorkProductDocx({ data: { id: productId, weights } }),
     onSuccess: (r: { updated: number; counts: Record<string, number> }) => {
