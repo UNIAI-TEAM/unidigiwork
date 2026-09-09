@@ -124,7 +124,7 @@ function WorkProductDetail() {
   const [aiOut, setAiOut] = useState("");
   // Ghi nhận việc nội dung hiện tại có dùng AI + nguồn ngữ cảnh lúc áp dụng, để snapshot lưu đúng provenance.
   const [aiApplied, setAiApplied] = useState(false);
-  const [aiProvenance, setAiProvenance] = useState<Array<{ type: string; id: string; title: string; stamp?: string }>>([]);
+  const [aiProvenance, setAiProvenance] = useState<Array<{ type: string; id: string; title: string; stamp: string | null }>>([]);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [comment, setComment] = useState("");
   const [reviewerId, setReviewerId] = useState("");
