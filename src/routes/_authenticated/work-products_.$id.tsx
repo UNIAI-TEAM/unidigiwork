@@ -660,7 +660,7 @@ function WorkProductDetail() {
                         <SelectContent>
                           {(reviewers ?? []).map((r) => (
                             <SelectItem key={r.id} value={r.id}>
-                              {r.name}
+                              {(r as { self?: boolean }).self ? `${r.name} ${t("wp.review.self")}` : r.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

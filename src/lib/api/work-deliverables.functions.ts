@@ -668,12 +668,14 @@ export const listWorkDeliverableReviewers = createServerFn({ method: "GET" })
       .eq("tenant_id", product.tenant_id)
       .eq("status", "active")
       .limit(200);
-    const ids = (members ?? []).map((m: any) => m.user_id).filter((id: string) => id !== context.userId);
-    if (!ids.length) return [];
+    const others = (members ?? []).map((m: any) => m.user_id).filter((id: string) => id !== context.userId);
+    // Tổ chức chỉ có một thành viên: cho phép tự duyệt để luồng phê duyệt không bị chặn.
+    const ids = others.length ? others : [context.userId];
     const { data: profiles } = await context.supabase.from("profiles").select("id, display_name, email").in("id", ids);
     return ((profiles ?? []) as any[]).map((p) => ({
       id: p.id as string,
       name: (p.display_name ?? p.email ?? p.id) as string,
+      self: (p.id as string) === context.userId,
     }));
   });
 
