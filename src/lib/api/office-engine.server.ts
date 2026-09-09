@@ -60,21 +60,51 @@ function genOfficeAdapter(baseUrl: string, apiKey: string | undefined): OfficeEn
 
 export type OfficeRenderOutcome = OfficeRenderResult & { fallbackReason?: string };
 
-/** Bộ máy ngoài đã cấu hình hay chưa. */
+/** Lựa chọn bộ máy kết xuất. COMPARE do lớp đối chứng xử lý, không dùng ở đây. */
+export const OFFICE_ENGINE_CHOICES = ["AUTO", "BUILTIN", "GENOFFICE", "COMPARE"] as const;
+export type OfficeEngineChoice = (typeof OFFICE_ENGINE_CHOICES)[number];
+
+/** Dịch vụ Office Engine đặt ở máy chủ khác (của UniWork) đã cấu hình chưa. */
 export function officeEngineConfigured(): boolean {
   return Boolean(process.env["GENOFFICE_URL"]);
 }
 
-/** Kết xuất một bản thể hiện; tự chuyển sang bộ máy nội bộ nếu GenOffice lỗi. */
-export async function renderOfficeArtifact(req: OfficeRenderRequest): Promise<OfficeRenderOutcome> {
+/**
+ * Nhánh GenOffice: ưu tiên dịch vụ Office Engine riêng của UniWork nếu có
+ * `GENOFFICE_URL`; nếu không, chạy trực tiếp bộ máy GenOffice đã nhúng
+ * (hiện chỉ hỗ trợ DOCX). Không bao giờ trả kết quả của bộ máy nội bộ dưới
+ * nhãn genoffice.
+ */
+export async function renderWithGenOffice(req: OfficeRenderRequest): Promise<OfficeRenderResult> {
+  const baseUrl = process.env["GENOFFICE_URL"];
+  if (baseUrl) return genOfficeAdapter(baseUrl, process.env["GENOFFICE_API_KEY"]).render(req);
+  if (req.format !== "DOCX") throw new Error("GENOFFICE_FORMAT_UNSUPPORTED");
+  const { renderDocxWithGenOffice } = await import("./office-genoffice.server");
+  return renderDocxWithGenOffice(req);
+}
+
+/**
+ * Kết xuất một bản thể hiện.
+ * - AUTO: giữ hành vi an toàn hiện tại (thử GenOffice, hỏng thì dùng bộ máy nội bộ).
+ * - BUILTIN / GENOFFICE: ép đúng một bộ máy, không thay thế ngầm.
+ * Kết quả luôn ghi lại bộ máy đã dùng thật sự.
+ */
+export async function renderOfficeArtifact(
+  req: OfficeRenderRequest,
+  opts: { engine?: OfficeEngineChoice } = {},
+): Promise<OfficeRenderOutcome> {
   const withTemplate: OfficeRenderRequest = {
     ...req,
     template: req.template ?? officeTemplateFor(req.businessType),
   };
-  const baseUrl = process.env["GENOFFICE_URL"];
-  if (baseUrl) {
+  const engine = opts.engine ?? "AUTO";
+  if (engine === "BUILTIN") return builtinOfficeEngine.render(withTemplate);
+  if (engine === "GENOFFICE") return renderWithGenOffice(withTemplate);
+
+  const canGenOffice = Boolean(process.env["GENOFFICE_URL"]) || withTemplate.format === "DOCX";
+  if (canGenOffice) {
     try {
-      return await genOfficeAdapter(baseUrl, process.env["GENOFFICE_API_KEY"]).render(withTemplate);
+      return await renderWithGenOffice(withTemplate);
     } catch (e) {
       const reason = e instanceof Error ? e.message : "GENOFFICE_UNAVAILABLE";
       const out = await builtinOfficeEngine.render(withTemplate);
