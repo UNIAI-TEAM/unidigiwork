@@ -228,8 +228,8 @@ export const NAV_ITEMS: NavItem[] = [
     group: "knowledge",
     match: ["/knowledge"],
     visibility: "everyone",
-    order: 2,
-    mobile: { placement: "more", href: "/knowledge", order: 3 },
+    order: 3,
+    mobile: { placement: "more", href: "/knowledge", order: 4 },
   },
 
   // AUTOMATION
