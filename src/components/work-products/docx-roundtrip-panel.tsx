@@ -35,7 +35,44 @@ import {
   listWorkProductDocxVersions,
   compareWorkProductDocxVersions,
   reanalyzeWorkProductDocx,
+  getAiProposalAccuracyReport,
 } from "@/lib/api/work-products-docx.functions";
+
+const ROLE_LABELS: Record<string, string> = {
+  TITLE: "Tiêu đề tài liệu",
+  HEADING: "Tiêu đề mục",
+  LIST_ITEM: "Gạch đầu dòng",
+  QUOTE: "Trích dẫn",
+  CAPTION: "Chú thích",
+  TABLE: "Bảng",
+  PARAGRAPH: "Đoạn văn",
+};
+
+type AccuracyReport = {
+  total: number;
+  accepted: number;
+  rejected: number;
+  pending: number;
+  accuracy: number | null;
+  avgSimilarity: number;
+  roles: Array<{
+    role: string;
+    total: number;
+    accepted: number;
+    rejected: number;
+    accuracy: number | null;
+    avgSimilarity: number;
+  }>;
+  weakest: Array<{ role: string; accuracy: number | null; rejected: number }>;
+  recent: Array<{
+    id: string;
+    role: string;
+    status: string;
+    similarity: number;
+    before: string;
+    after: string;
+  }>;
+};
 
 const WEIGHT_KEYS = ["title", "heading", "listItem", "quote", "caption", "table"] as const;
 type WeightKey = (typeof WEIGHT_KEYS)[number];
