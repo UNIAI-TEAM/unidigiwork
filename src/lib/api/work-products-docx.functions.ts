@@ -100,7 +100,6 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
     let parsed;
     try {
       parsed = await parseDocxToBlocks(bytes, tenantProfile.weights);
-
     } catch (e) {
       throw new ApiError({
         code: "VALIDATION_FAILED",
@@ -1530,7 +1529,6 @@ export const reanalyzeWorkProductDocx = createServerFn({ method: "POST" })
       effectiveWeights,
     );
 
-
     const { data: existing, error: bErr } = await context.supabase
       .from("work_product_blocks")
       .select("id, block_key")
@@ -1906,4 +1904,92 @@ export const getDocxRecognitionReport = createServerFn({ method: "GET" })
       overallAccuracy: decidedAll ? Math.round((acceptedAll / decidedAll) * 100) : null,
       roles,
     };
+  });
+
+/* ------------------------------------- hồ sơ nhận diện Word theo tổ chức */
+
+/** Đọc hồ sơ nhận diện của tổ chức đang làm việc, kèm quyền chỉnh sửa. */
+export const getTenantDocxProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({ ...commandMetadataSchema.shape, workspaceId: z.string().uuid().optional() })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { resolveTenantId } = await import("./work-deliverables.server");
+    const { readActiveTenantCookie } = await import("./active-tenant.server");
+    const tenantId = await resolveTenantId(
+      context.supabase as never,
+      context.userId,
+      data.workspaceId ?? null,
+      readActiveTenantCookie(),
+    );
+    const { loadTenantDocxProfile } = await import("./docx-profile.server");
+    const profile = await loadTenantDocxProfile(context.supabase as never, tenantId);
+
+    const { data: member } = await context.supabase
+      .from("tenant_members")
+      .select("role")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", context.userId)
+      .eq("status", "active")
+      .maybeSingle();
+    const canEdit = ["tenant_owner", "tenant_admin"].includes(String(member?.role ?? ""));
+
+    return { tenantId, canEdit, ...profile };
+  });
+
+/** Lưu hồ sơ nhận diện của tổ chức. Chỉ chủ sở hữu và quản trị viên được lưu. */
+export const saveTenantDocxProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        workspaceId: z.string().uuid().optional(),
+        weights: weightsSchema.optional(),
+        aiGuidance: z.string().max(2000).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { resolveTenantId } = await import("./work-deliverables.server");
+    const { readActiveTenantCookie } = await import("./active-tenant.server");
+    const tenantId = await resolveTenantId(
+      context.supabase as never,
+      context.userId,
+      data.workspaceId ?? null,
+      readActiveTenantCookie(),
+    );
+
+    const { data: member } = await context.supabase
+      .from("tenant_members")
+      .select("role")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", context.userId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (!["tenant_owner", "tenant_admin"].includes(String(member?.role ?? "")))
+      throw new ApiError({ code: "FORBIDDEN", message: "DOCX_PROFILE_FORBIDDEN" });
+
+    const { loadTenantDocxProfile, normalizeProfileWeights } =
+      await import("./docx-profile.server");
+    const current = await loadTenantDocxProfile(context.supabase as never, tenantId);
+    const weights = normalizeProfileWeights({ ...current.weights, ...(data.weights ?? {}) });
+    const aiGuidance = (data.aiGuidance ?? current.aiGuidance).slice(0, 2000);
+
+    const { error } = await context.supabase.from("work_docx_recognition_profiles").upsert(
+      {
+        tenant_id: tenantId,
+        weights,
+        ai_guidance: aiGuidance,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "tenant_id" },
+    );
+    if (error) mapPgError(error);
+
+    return { tenantId, weights, aiGuidance };
   });
