@@ -193,7 +193,7 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
 
   for (const b of visible) {
     const type = String(b["type"] ?? "paragraph");
-    const text = runsText(b);
+    let text = runsText(b);
     const trimmed = text.trim();
     const editability = editabilityOf(b, text);
     const docxIndex = (b["docxIndex"] as number | null | undefined) ?? null;
