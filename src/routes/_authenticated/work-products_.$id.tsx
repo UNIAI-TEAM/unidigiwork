@@ -444,12 +444,37 @@ function WorkProductDetail() {
                 <SelectTrigger className="mr-2 h-8 w-[145px] border-0 bg-surface-2 shadow-none"><SelectValue /></SelectTrigger>
                 <SelectContent>{WP_STATUSES.map((status) => <SelectItem key={status} value={status}>{t(`wp.status.${status}` as never)}</SelectItem>)}</SelectContent>
               </Select>
-              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("**")} aria-label="In đậm"><Bold /></Button>
-              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("_")} aria-label="In nghiêng"><Italic /></Button>
-              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("<u>", "</u>")} aria-label="Gạch chân"><Underline /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("**")} aria-label={t("wp.editor.bold")}><Bold /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("_")} aria-label={t("wp.editor.italic")}><Italic /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("<u>", "</u>")} aria-label={t("wp.editor.underline")}><Underline /></Button>
               <span className="mx-1 h-5 w-px bg-border" />
-              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("\n- ", "")} aria-label="Danh sách"><List /></Button>
-              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("[", "](https://)")} aria-label="Liên kết"><Link2 /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => applyLinePrefix("# ")} aria-label={t("wp.editor.h1")}><Heading1 /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => applyLinePrefix("## ")} aria-label={t("wp.editor.h2")}><Heading2 /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => applyLinePrefix("### ")} aria-label={t("wp.editor.h3")}><Heading3 /></Button>
+              <span className="mx-1 h-5 w-px bg-border" />
+              <Button variant="ghost" size="icon-sm" onClick={() => applyLinePrefix("- ")} aria-label={t("wp.editor.bullet")}><List /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => applyLinePrefix("1. ")} aria-label={t("wp.editor.numbered")}><ListOrdered /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => applyLinePrefix("> ")} aria-label={t("wp.editor.quote")}><Quote /></Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => insertBlock("| Cột 1 | Cột 2 |\n| --- | --- |\n|  |  |")}
+                aria-label={t("wp.editor.table")}
+              >
+                <TableIcon />
+              </Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => insertBlock("---")} aria-label={t("wp.editor.pagebreak")}><Minus /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("[", "](https://)")} aria-label={t("wp.editor.link")}><Link2 /></Button>
+              <span className="mx-1 h-5 w-px bg-border" />
+              <Button
+                variant={previewMode ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setPreviewMode((v) => !v)}
+                className="gap-1.5"
+              >
+                {previewMode ? <Pencil /> : <Eye />}
+                <span className="hidden sm:inline">{previewMode ? t("wp.editor.edit") : t("wp.editor.preview")}</span>
+              </Button>
               <div className="ml-auto flex items-center gap-2 pr-2 text-xs text-muted-foreground">
                 <Badge variant="outline">{t(`wp.type.${product.business_type}` as never)}</Badge>
                 {data.workspace?.name && <span className="hidden xl:inline">{data.workspace.name}</span>}
@@ -457,28 +482,39 @@ function WorkProductDetail() {
             </div>
             {!canEdit && <p className="border-b px-5 py-2 text-xs text-muted-foreground">{t("wp.readonly")}</p>}
             <ScrollArea className="min-h-0 flex-1">
-              <div className="mx-auto my-5 min-h-[calc(100vh-13rem)] w-[calc(100%-2rem)] max-w-[820px] border bg-card shadow-sm sm:my-8 sm:w-[calc(100%-4rem)]">
-                <div className="px-6 py-8 sm:px-12 sm:py-12 lg:px-16">
-                  <Input
-                    value={title}
-                    readOnly={!canEdit}
-                    onChange={(event) => { setTitle(event.target.value); setDirty(true); }}
-                    aria-label={t("wp.create.name")}
-                    className="h-auto border-0 px-0 font-heading text-3xl font-semibold shadow-none focus-visible:ring-0"
-                  />
-                  <div className="mt-4 flex flex-wrap items-center gap-2 border-b pb-5 text-xs text-muted-foreground">
-                    <span>{t(`wp.status.${product.status}` as never)}</span><span>·</span><span>v{product.current_version}</span><span>·</span><span>{fmt.format(new Date(product.updated_at))}</span>
-                  </div>
-                  <Textarea
-                    ref={editorRef}
-                    value={content}
-                    readOnly={!canEdit}
-                    onChange={(event) => { setContent(event.target.value); setDirty(true); }}
-                    onSelect={(event) => setSelection({ start: event.currentTarget.selectionStart, end: event.currentTarget.selectionEnd })}
-                    className="mt-6 min-h-[760px] resize-none border-0 bg-transparent px-0 font-sans text-[15px] leading-8 shadow-none focus-visible:ring-0"
+              {previewMode ? (
+                <div className="my-5 px-4 sm:my-8 sm:px-8">
+                  <DocumentPreview
+                    title={title}
+                    content={content}
+                    businessType={product.business_type as string}
+                    version={product.current_version}
                   />
                 </div>
-              </div>
+              ) : (
+                <div className="mx-auto my-5 min-h-[calc(100vh-13rem)] w-[calc(100%-2rem)] max-w-[820px] border bg-card shadow-sm sm:my-8 sm:w-[calc(100%-4rem)]">
+                  <div className="px-6 py-8 sm:px-12 sm:py-12 lg:px-16">
+                    <Input
+                      value={title}
+                      readOnly={!canEdit}
+                      onChange={(event) => { setTitle(event.target.value); setDirty(true); }}
+                      aria-label={t("wp.create.name")}
+                      className="h-auto border-0 px-0 font-heading text-3xl font-semibold shadow-none focus-visible:ring-0"
+                    />
+                    <div className="mt-4 flex flex-wrap items-center gap-2 border-b pb-5 text-xs text-muted-foreground">
+                      <span>{t(`wp.status.${product.status}` as never)}</span><span>·</span><span>v{product.current_version}</span><span>·</span><span>{fmt.format(new Date(product.updated_at))}</span>
+                    </div>
+                    <Textarea
+                      ref={editorRef}
+                      value={content}
+                      readOnly={!canEdit}
+                      onChange={(event) => { setContent(event.target.value); setDirty(true); }}
+                      onSelect={(event) => setSelection({ start: event.currentTarget.selectionStart, end: event.currentTarget.selectionEnd })}
+                      className="mt-6 min-h-[760px] resize-none border-0 bg-transparent px-0 font-sans text-[15px] leading-8 shadow-none focus-visible:ring-0"
+                    />
+                  </div>
+                </div>
+              )}
             </ScrollArea>
           </section>
 
