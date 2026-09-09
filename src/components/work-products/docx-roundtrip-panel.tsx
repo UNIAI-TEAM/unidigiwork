@@ -1,7 +1,7 @@
 // Tài liệu Word đã nhập — sửa từng đoạn, xem đối chiếu và vá giữ nguyên bản gốc.
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ListChecks, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
+import { Check, GitCompare, ListChecks, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,41 @@ import {
   proposeWorkProductChanges,
   proposeTasksFromWorkProduct,
   createTasksFromWorkProduct,
+  listWorkProductDocxVersions,
+  compareWorkProductDocxVersions,
 } from "@/lib/api/work-products-docx.functions";
+
+type DocxVersion = {
+  id: string;
+  role: string;
+  version: number | null;
+  created_at: string;
+};
+
+type DiffWord = { op: "same" | "del" | "ins"; text: string };
+type DiffRow = {
+  key: string;
+  ordinal: number;
+  blockType: string;
+  change: "ADDED" | "REMOVED" | "MODIFIED";
+  before: string;
+  after: string;
+  words: DiffWord[];
+};
+type CompareResult = {
+  base: { id: string; role: string; version: number | null };
+  target: { id: string; role: string; version: number | null };
+  totals: {
+    changed: number;
+    added: number;
+    removed: number;
+    modified: number;
+  };
+  diffs: DiffRow[];
+};
+
+const versionLabel = (v: DocxVersion) =>
+  v.role === "SOURCE_ORIGINAL" ? "Bản gốc" : `Phiên bản ${v.version ?? "?"}`;
 
 type Block = {
   id: string;
