@@ -4,14 +4,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  Bold,
   Check,
+  ChevronRight,
+  FileText,
   History,
+  Italic,
   Layers,
+  Link2,
+  List,
   Loader2,
   MessageSquare,
+  MoreHorizontal,
+  PanelLeft,
+  PanelRight,
   Save,
+  Search,
   Sparkles,
   Trash2,
+  Underline,
   UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +35,14 @@ import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useI18n, localeTag } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { workEntityHref } from "@/domain/work-graph/route-resolver";
@@ -34,6 +53,7 @@ import {
   decideWorkDeliverableReview,
   deleteWorkDeliverable,
   getWorkDeliverable,
+  listWorkDeliverables,
   listWorkDeliverableContext,
   listWorkDeliverableLinks,
   listWorkDeliverableReviewers,
@@ -103,6 +123,14 @@ function WorkProductDetail() {
   const [comment, setComment] = useState("");
   const [reviewerId, setReviewerId] = useState("");
   const [reviewNote, setReviewNote] = useState("");
+  const [documentSearch, setDocumentSearch] = useState("");
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+
+  const { data: documents } = useQuery({
+    queryKey: ["work-deliverables", { limit: 60 }],
+    queryFn: () => listWorkDeliverables({ data: { limit: 60 } }),
+  });
 
   useEffect(() => {
     if (!data?.product) return;
@@ -130,6 +158,20 @@ function WorkProductDetail() {
 
   const activeSources = (sources ?? []).filter((s) => enabled[`${s.type}:${s.id}`]);
   const canEdit = data?.canEdit ?? false;
+  const visibleDocuments = (documents ?? []).filter((item) =>
+    item.title.toLocaleLowerCase().includes(documentSearch.trim().toLocaleLowerCase()),
+  );
+
+  const wrapSelection = (before: string, after = before) => {
+    if (!canEdit) return;
+    const start = selection.start;
+    const end = selection.end;
+    const selected = content.slice(start, end);
+    const next = content.slice(0, start) + before + selected + after + content.slice(end);
+    setContent(next);
+    setDirty(true);
+    requestAnimationFrame(() => editorRef.current?.focus());
+  };
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["work-deliverable", id] });
@@ -220,162 +262,199 @@ function WorkProductDetail() {
   const product = data.product;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <AppSidebar active="work-products" open={open} onClose={() => setOpen(false)} />
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
-
-        <div className="flex min-w-0 flex-1 flex-col xl:flex-row">
-          {/* Editor */}
-          <section className="min-w-0 flex-1 px-4 py-5 sm:px-6">
-            <Link
-              to="/work-products"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        <header className="border-b bg-card px-4 py-3 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button asChild variant="ghost" size="icon" aria-label={t("wp.back")}>
+              <Link to="/work-products"><ArrowLeft /></Link>
+            </Button>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <h1 className="truncate font-heading text-lg font-semibold">{t("wp.title")}</h1>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate text-sm text-muted-foreground">{title}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{dirty ? t("wp.save") : t("wp.saved")} · v{product.current_version}</p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setLeftPanelOpen((value) => !value)} aria-label="Danh sách tài liệu">
+              <PanelLeft />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setRightPanelOpen((value) => !value)} aria-label={t("wp.tab.ai")}>
+              <PanelRight />
+            </Button>
+            <Button variant="outline" onClick={() => snapshot.mutate()} disabled={!canEdit || snapshot.isPending} className="hidden gap-2 sm:inline-flex">
+              {snapshot.isPending ? <Loader2 className="animate-spin" /> : <History />}
+              {t("wp.snapshot")}
+            </Button>
+            <Button onClick={() => save.mutate()} disabled={!canEdit || !dirty || save.isPending} className="gap-2">
+              {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+              <span className="hidden sm:inline">{t("wp.save")}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("wp.delete")}
+              disabled={!canEdit}
+              onClick={() => {
+                if (!window.confirm(t("wp.deleteConfirm"))) return;
+                deleteWorkDeliverable({ data: { idempotencyKey: crypto.randomUUID(), id } }).then(() => {
+                  toast.success(t("wp.deleted"));
+                  navigate({ to: "/work-products" });
+                });
+              }}
             >
-              <ArrowLeft className="h-4 w-4" /> {t("wp.back")}
-            </Link>
+              <Trash2 className="text-destructive" />
+            </Button>
+          </div>
+        </header>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{t(`wp.type.${product.business_type}` as never)}</Badge>
-              <Badge variant="secondary">{t(`wp.status.${product.status}` as never)}</Badge>
-              <span className="text-xs text-muted-foreground">v{product.current_version}</span>
-              {data.workspace?.name && <span className="text-xs text-muted-foreground">· {data.workspace.name}</span>}
-              <div className="ml-auto flex flex-wrap items-center gap-2">
-                {canEdit && (
-                  <Select
-                    value={product.status}
-                    onValueChange={(v) =>
-                      changeWorkDeliverableStatus({ data: { idempotencyKey: crypto.randomUUID(), id, status: v as (typeof WP_STATUSES)[number] } })
-                        .then(invalidate)
-                        .catch(() => toast.error(t("wp.saveFailed")))
-                    }
-                  >
-                    <SelectTrigger className="h-9 w-[160px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WP_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {t(`wp.status.${s}` as never)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                <Button variant="outline" onClick={() => snapshot.mutate()} disabled={!canEdit || snapshot.isPending} className="gap-2">
-                  {snapshot.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <History className="h-4 w-4" />}
-                  {t("wp.snapshot")}
-                </Button>
-                <Button onClick={() => save.mutate()} disabled={!canEdit || !dirty || save.isPending} className="gap-2">
-                  {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  {t("wp.save")}
-                </Button>
-                {canEdit && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("wp.delete")}
-                    onClick={() => {
-                      if (!window.confirm(t("wp.deleteConfirm"))) return;
-                      deleteWorkDeliverable({ data: { idempotencyKey: crypto.randomUUID(), id } }).then(() => {
-                        toast.success(t("wp.deleted"));
-                        navigate({ to: "/work-products" });
-                      });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+        <div className="flex min-h-0 min-w-0 flex-1">
+          {leftPanelOpen && (
+            <aside className="hidden w-64 shrink-0 flex-col border-r bg-card lg:flex">
+              <div className="border-b p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-semibold">{t("wp.title")}</p>
+                  <Button asChild variant="ghost" size="icon-sm" aria-label={t("wp.new")}>
+                    <Link to="/work-products"><MoreHorizontal /></Link>
                   </Button>
-                )}
+                </div>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder={t("wp.search")} className="h-9 bg-background pl-9" />
+                </div>
+              </div>
+              <ScrollArea className="min-h-0 flex-1">
+                <nav className="space-y-1 p-2" aria-label={t("wp.title")}>
+                  {visibleDocuments.map((item) => (
+                    <Link
+                      key={item.id}
+                      to="/work-products/$id"
+                      params={{ id: item.id }}
+                      className={cn(
+                        "flex items-start gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-surface-2",
+                        item.id === id && "bg-primary/10 text-primary",
+                      )}
+                    >
+                      <FileText className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{item.title}</span>
+                        <span className="mt-1 block truncate text-[11px] text-muted-foreground">
+                          {t(`wp.type.${item.business_type}` as never)} · v{item.current_version}
+                        </span>
+                      </span>
+                    </Link>
+                  ))}
+                </nav>
+              </ScrollArea>
+            </aside>
+          )}
+
+          <section className="flex min-w-0 flex-1 flex-col bg-surface">
+            <div className="flex min-h-12 items-center gap-1 overflow-x-auto border-b bg-card px-3">
+              <Select
+                value={product.status}
+                disabled={!canEdit}
+                onValueChange={(value) =>
+                  changeWorkDeliverableStatus({ data: { idempotencyKey: crypto.randomUUID(), id, status: value as (typeof WP_STATUSES)[number] } })
+                    .then(invalidate)
+                    .catch(() => toast.error(t("wp.saveFailed")))
+                }
+              >
+                <SelectTrigger className="mr-2 h-8 w-[145px] border-0 bg-surface-2 shadow-none"><SelectValue /></SelectTrigger>
+                <SelectContent>{WP_STATUSES.map((status) => <SelectItem key={status} value={status}>{t(`wp.status.${status}` as never)}</SelectItem>)}</SelectContent>
+              </Select>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("**")} aria-label="In đậm"><Bold /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("_")} aria-label="In nghiêng"><Italic /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("<u>", "</u>")} aria-label="Gạch chân"><Underline /></Button>
+              <span className="mx-1 h-5 w-px bg-border" />
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("\n- ", "")} aria-label="Danh sách"><List /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => wrapSelection("[", "](https://)")} aria-label="Liên kết"><Link2 /></Button>
+              <div className="ml-auto flex items-center gap-2 pr-2 text-xs text-muted-foreground">
+                <Badge variant="outline">{t(`wp.type.${product.business_type}` as never)}</Badge>
+                {data.workspace?.name && <span className="hidden xl:inline">{data.workspace.name}</span>}
               </div>
             </div>
-
-            {!canEdit && <p className="mt-3 text-xs text-muted-foreground">{t("wp.readonly")}</p>}
-
-            <Input
-              value={title}
-              readOnly={!canEdit}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setDirty(true);
-              }}
-              className="mt-4 h-auto border-0 px-0 text-2xl font-semibold shadow-none focus-visible:ring-0"
-            />
-
-            <Textarea
-              ref={editorRef}
-              value={content}
-              readOnly={!canEdit}
-              onChange={(e) => {
-                setContent(e.target.value);
-                setDirty(true);
-              }}
-              onSelect={(e) => {
-                const el = e.currentTarget;
-                setSelection({ start: el.selectionStart, end: el.selectionEnd });
-              }}
-              className="mt-3 min-h-[60vh] resize-none rounded-xl border bg-card p-4 font-mono text-sm leading-relaxed"
-            />
+            {!canEdit && <p className="border-b px-5 py-2 text-xs text-muted-foreground">{t("wp.readonly")}</p>}
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="mx-auto my-5 min-h-[calc(100vh-13rem)] w-[calc(100%-2rem)] max-w-[820px] border bg-card shadow-sm sm:my-8 sm:w-[calc(100%-4rem)]">
+                <div className="px-6 py-8 sm:px-12 sm:py-12 lg:px-16">
+                  <Input
+                    value={title}
+                    readOnly={!canEdit}
+                    onChange={(event) => { setTitle(event.target.value); setDirty(true); }}
+                    aria-label={t("wp.create.name")}
+                    className="h-auto border-0 px-0 font-heading text-3xl font-semibold shadow-none focus-visible:ring-0"
+                  />
+                  <div className="mt-4 flex flex-wrap items-center gap-2 border-b pb-5 text-xs text-muted-foreground">
+                    <span>{t(`wp.status.${product.status}` as never)}</span><span>·</span><span>v{product.current_version}</span><span>·</span><span>{fmt.format(new Date(product.updated_at))}</span>
+                  </div>
+                  <Textarea
+                    ref={editorRef}
+                    value={content}
+                    readOnly={!canEdit}
+                    onChange={(event) => { setContent(event.target.value); setDirty(true); }}
+                    onSelect={(event) => setSelection({ start: event.currentTarget.selectionStart, end: event.currentTarget.selectionEnd })}
+                    className="mt-6 min-h-[760px] resize-none border-0 bg-transparent px-0 font-sans text-[15px] leading-8 shadow-none focus-visible:ring-0"
+                  />
+                </div>
+              </div>
+            </ScrollArea>
           </section>
 
-          {/* Panel phải */}
-          <aside className="w-full shrink-0 border-t bg-card/40 xl:w-[400px] xl:border-l xl:border-t-0">
+          {rightPanelOpen && <aside className="hidden w-[360px] shrink-0 border-l bg-card xl:block">
             <Tabs defaultValue="ai" className="flex h-full flex-col">
-              <TabsList className="m-3 grid grid-cols-3">
-                <TabsTrigger value="ai" className="gap-1">
-                  <Sparkles className="h-3.5 w-3.5" /> {t("wp.tab.ai")}
-                </TabsTrigger>
-                <TabsTrigger value="context" className="gap-1">
-                  <Layers className="h-3.5 w-3.5" /> {t("wp.tab.context")}
-                </TabsTrigger>
-                <TabsTrigger value="versions" className="gap-1">
-                  <History className="h-3.5 w-3.5" /> {t("wp.tab.versions")}
-                </TabsTrigger>
-              </TabsList>
-              <TabsList className="mx-3 mb-3 grid grid-cols-3">
-                <TabsTrigger value="comments" className="gap-1">
-                  <MessageSquare className="h-3.5 w-3.5" /> {t("wp.tab.comments")}
-                </TabsTrigger>
-                <TabsTrigger value="review" className="gap-1">
-                  <UserCheck className="h-3.5 w-3.5" /> {t("wp.tab.review")}
-                </TabsTrigger>
-                <TabsTrigger value="links">{t("wp.tab.links")}</TabsTrigger>
+              <div className="border-b px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Sparkles className="h-4 w-4" /></span>
+                  <div><p className="text-sm font-semibold">{t("wp.tab.ai")}</p><p className="text-xs text-muted-foreground">UNI Assistant</p></div>
+                </div>
+              </div>
+              <TabsList className="mx-3 mt-3 grid grid-cols-6">
+                <TabsTrigger value="ai" aria-label={t("wp.tab.ai")}><Sparkles /></TabsTrigger>
+                <TabsTrigger value="context" aria-label={t("wp.tab.context")}><Layers /></TabsTrigger>
+                <TabsTrigger value="versions" aria-label={t("wp.tab.versions")}><History /></TabsTrigger>
+                <TabsTrigger value="comments" aria-label={t("wp.tab.comments")}><MessageSquare /></TabsTrigger>
+                <TabsTrigger value="review" aria-label={t("wp.tab.review")}><UserCheck /></TabsTrigger>
+                <TabsTrigger value="links" aria-label={t("wp.tab.links")}><Link2 /></TabsTrigger>
               </TabsList>
 
-              <ScrollArea className="h-[70vh] px-3 pb-6">
+              <ScrollArea className="min-h-0 flex-1 px-4 pb-5">
                 {/* AI */}
-                <TabsContent value="ai" className="mt-0 space-y-3">
-                  <div className="flex flex-wrap gap-1.5">
+                <TabsContent value="ai" className="mt-4 space-y-4">
+                  <Message from="assistant">
+                    <MessageContent>
+                      <MessageResponse>{t("wp.ai.selectionHint")}</MessageResponse>
+                    </MessageContent>
+                  </Message>
+                  <div className="grid grid-cols-2 gap-2">
                     {AI_ACTIONS.map((a) => (
-                      <button
+                      <Button
                         key={a}
                         type="button"
+                        variant={aiAction === a ? "secondary" : "outline"}
+                        size="sm"
                         onClick={() => setAiAction(a)}
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-xs transition-colors",
-                          aiAction === a ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent",
-                        )}
+                        className="justify-start"
                       >
                         {t(`wp.ai.${a}` as never)}
-                      </button>
+                      </Button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {activeSources.length === 0 ? t("wp.ai.noSource") : t("wp.ai.selectionHint")}
-                  </p>
-                  <Textarea
-                    rows={3}
-                    value={instruction}
-                    onChange={(e) => setInstruction(e.target.value)}
-                    placeholder={t("wp.ai.instruction")}
-                  />
-                  <Button onClick={() => runAi.mutate()} disabled={runAi.isPending} className="w-full gap-2">
-                    {runAi.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    {t("wp.ai.run")}
-                  </Button>
+                  <PromptInput onSubmit={(message) => { setInstruction(message.text); runAi.mutate(); }} className="bg-background">
+                    <PromptInputTextarea value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder={t("wp.ai.instruction")} />
+                    <PromptInputFooter className="justify-between">
+                      <span className="text-[11px] text-muted-foreground">{activeSources.length} {t("wp.tab.context")}</span>
+                      <PromptInputSubmit status={runAi.isPending ? "submitted" : undefined} disabled={runAi.isPending} />
+                    </PromptInputFooter>
+                  </PromptInput>
+                  {runAi.isPending && <Shimmer className="text-sm">{t("wp.ai.run")}...</Shimmer>}
                   {aiOut && (
-                    <div className="rounded-lg border bg-background p-3">
+                    <div className="border-t pt-4">
                       <p className="mb-2 text-xs font-medium text-muted-foreground">{t("wp.ai.result")}</p>
-                      <p className="whitespace-pre-wrap text-sm">{aiOut}</p>
+                      <Message from="assistant"><MessageContent><MessageResponse>{aiOut}</MessageResponse></MessageContent></Message>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Button size="sm" onClick={() => applyAi("insert")} disabled={!canEdit}>
                           {t("wp.ai.insert")}
@@ -636,7 +715,7 @@ function WorkProductDetail() {
                 </TabsContent>
               </ScrollArea>
             </Tabs>
-          </aside>
+          </aside>}
         </div>
       </main>
     </div>
