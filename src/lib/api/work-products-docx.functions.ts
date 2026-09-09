@@ -94,9 +94,12 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
     );
 
     // Đọc tài liệu bằng bộ máy GenOffice thật trước khi tạo bản ghi.
+    // Trọng số nhận diện lấy theo hồ sơ của tổ chức đang làm việc.
+    const { loadTenantDocxProfile } = await import("./docx-profile.server");
+    const tenantProfile = await loadTenantDocxProfile(context.supabase as never, tenantId);
     let parsed;
     try {
-      parsed = await parseDocxToBlocks(bytes);
+      parsed = await parseDocxToBlocks(bytes, tenantProfile.weights);
     } catch (e) {
       throw new ApiError({
         code: "VALIDATION_FAILED",
@@ -712,6 +715,11 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
         return `[${i + 1}] (${kind}${lvl}${sec})\n${b.text}`;
       })
       .join("\n\n");
+    const { loadTenantDocxProfile, tenantGuidanceBlock } = await import("./docx-profile.server");
+    const tenantProfile = await loadTenantDocxProfile(
+      context.supabase as never,
+      product.tenant_id as string,
+    );
     const result = streamText({
       model: createLovableResponsesProvider(apiKey).responses(model),
       system:
@@ -719,7 +727,9 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
         "Chỉ dùng dữ kiện trong nội dung và nguồn ngữ cảnh được cung cấp; không bịa số liệu hay cam kết. " +
         "Mỗi đoạn có ghi rõ loại (tiêu đề, gạch đầu dòng, trích dẫn, chú thích, bảng) và mục chứa nó: " +
         "giữ đúng loại đó khi viết lại — tiêu đề vẫn ngắn gọn, gạch đầu dòng vẫn một ý, trích dẫn giữ nguyên ý người nói. " +
+        tenantGuidanceBlock(tenantProfile.aiGuidance) +
         `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+
       messages: [
         {
           role: "user",
@@ -1037,6 +1047,12 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
     const model = "openai/gpt-5.6-sol";
     const { streamText } = await import("ai");
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    // Hồ sơ nhận diện riêng của tổ chức: cùng một tệp có thể cho đề xuất khác nhau.
+    const { loadTenantDocxProfile, tenantGuidanceBlock } = await import("./docx-profile.server");
+    const tenantProfile = await loadTenantDocxProfile(
+      context.supabase as never,
+      product.tenant_id as string,
+    );
     const result = streamText({
       model: createLovableResponsesProvider(apiKey).responses(model),
       system:
@@ -1044,7 +1060,9 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
         "và đề xuất hành động tiếp theo. Chỉ dựa trên thay đổi, không bịa số liệu, deadline hay người phụ trách. " +
         "Phân loại đúng bản chất: việc phải làm = TASK; điều cần chốt/phê duyệt = DECISION; " +
         "việc cần nhiều bên bàn bạc = MEETING. Bỏ qua thay đổi chỉ sửa chính tả hoặc định dạng. " +
+        tenantGuidanceBlock(tenantProfile.aiGuidance) +
         `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+
       messages: [
         {
           role: "user",
@@ -1501,7 +1519,15 @@ export const reanalyzeWorkProductDocx = createServerFn({ method: "POST" })
       throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
 
     const { parseDocxToBlocks } = await import("./docx-import.server");
-    const parsed = await parseDocxToBlocks(new Uint8Array(await blob.arrayBuffer()), data.weights);
+    // Không truyền trọng số thì dùng hồ sơ nhận diện của tổ chức sở hữu tài liệu.
+    const { loadTenantDocxProfile } = await import("./docx-profile.server");
+    const effectiveWeights =
+      data.weights ??
+      (await loadTenantDocxProfile(context.supabase as never, product.tenant_id as string)).weights;
+    const parsed = await parseDocxToBlocks(
+      new Uint8Array(await blob.arrayBuffer()),
+      effectiveWeights,
+    );
 
     const { data: existing, error: bErr } = await context.supabase
       .from("work_product_blocks")
@@ -1878,4 +1904,92 @@ export const getDocxRecognitionReport = createServerFn({ method: "GET" })
       overallAccuracy: decidedAll ? Math.round((acceptedAll / decidedAll) * 100) : null,
       roles,
     };
+  });
+
+/* ------------------------------------- hồ sơ nhận diện Word theo tổ chức */
+
+/** Đọc hồ sơ nhận diện của tổ chức đang làm việc, kèm quyền chỉnh sửa. */
+export const getTenantDocxProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({ ...commandMetadataSchema.shape, workspaceId: z.string().uuid().optional() })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { resolveTenantId } = await import("./work-deliverables.server");
+    const { readActiveTenantCookie } = await import("./active-tenant.server");
+    const tenantId = await resolveTenantId(
+      context.supabase as never,
+      context.userId,
+      data.workspaceId ?? null,
+      readActiveTenantCookie(),
+    );
+    const { loadTenantDocxProfile } = await import("./docx-profile.server");
+    const profile = await loadTenantDocxProfile(context.supabase as never, tenantId);
+
+    const { data: member } = await context.supabase
+      .from("tenant_members")
+      .select("role")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", context.userId)
+      .eq("status", "active")
+      .maybeSingle();
+    const canEdit = ["tenant_owner", "tenant_admin"].includes(String(member?.role ?? ""));
+
+    return { tenantId, canEdit, ...profile };
+  });
+
+/** Lưu hồ sơ nhận diện của tổ chức. Chỉ chủ sở hữu và quản trị viên được lưu. */
+export const saveTenantDocxProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        workspaceId: z.string().uuid().optional(),
+        weights: weightsSchema.optional(),
+        aiGuidance: z.string().max(2000).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { resolveTenantId } = await import("./work-deliverables.server");
+    const { readActiveTenantCookie } = await import("./active-tenant.server");
+    const tenantId = await resolveTenantId(
+      context.supabase as never,
+      context.userId,
+      data.workspaceId ?? null,
+      readActiveTenantCookie(),
+    );
+
+    const { data: member } = await context.supabase
+      .from("tenant_members")
+      .select("role")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", context.userId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (!["tenant_owner", "tenant_admin"].includes(String(member?.role ?? "")))
+      throw new ApiError({ code: "DOCX_PROFILE_FORBIDDEN", message: "DOCX_PROFILE_FORBIDDEN" });
+
+    const { loadTenantDocxProfile, normalizeProfileWeights } =
+      await import("./docx-profile.server");
+    const current = await loadTenantDocxProfile(context.supabase as never, tenantId);
+    const weights = normalizeProfileWeights({ ...current.weights, ...(data.weights ?? {}) });
+    const aiGuidance = (data.aiGuidance ?? current.aiGuidance).slice(0, 2000);
+
+    const { error } = await context.supabase.from("work_docx_recognition_profiles").upsert(
+      {
+        tenant_id: tenantId,
+        weights,
+        ai_guidance: aiGuidance,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "tenant_id" },
+    );
+    if (error) mapPgError(error);
+
+    return { tenantId, weights, aiGuidance };
   });

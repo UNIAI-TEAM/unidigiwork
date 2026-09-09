@@ -5418,6 +5418,41 @@ export type Database = {
         }
         Relationships: []
       }
+      work_docx_recognition_profiles: {
+        Row: {
+          ai_guidance: string
+          created_at: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          weights: Json
+        }
+        Insert: {
+          ai_guidance?: string
+          created_at?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          weights?: Json
+        }
+        Update: {
+          ai_guidance?: string
+          created_at?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          weights?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_docx_recognition_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_edges: {
         Row: {
           created_at: string

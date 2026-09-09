@@ -37,6 +37,8 @@ import {
   reanalyzeWorkProductDocx,
   getAiProposalAccuracyReport,
   getDocxRecognitionReport,
+  getTenantDocxProfile,
+  saveTenantDocxProfile,
 } from "@/lib/api/work-products-docx.functions";
 
 type RecognitionReport = {
@@ -252,16 +254,42 @@ export function DocxRoundTripPanel({
   const [followUpDetail, setFollowUpDetail] = useState<number | null>(null);
   const [showWeights, setShowWeights] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
+  const [guidance, setGuidance] = useState("");
 
-  // Trọng số lưu theo trình duyệt của người dùng, đọc sau khi gắn để tránh lệch hiển thị.
+  // Hồ sơ nhận diện theo tổ chức: cùng một tệp có thể cho đề xuất khác nhau ở mỗi tổ chức.
+  const { data: profile } = useQuery({
+    queryKey: ["docx-tenant-profile"],
+    queryFn: () =>
+      getTenantDocxProfile({ data: {} }) as Promise<{
+        tenantId: string;
+        canEdit: boolean;
+        weights: Weights;
+        aiGuidance: string;
+      }>,
+  });
+
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(WEIGHTS_STORAGE_KEY);
-      if (raw) setWeights({ ...DEFAULT_WEIGHTS, ...(JSON.parse(raw) as Partial<Weights>) });
-    } catch {
-      /* bỏ qua dữ liệu hỏng */
-    }
-  }, []);
+    if (!profile) return;
+    setWeights({ ...DEFAULT_WEIGHTS, ...profile.weights });
+    setGuidance(profile.aiGuidance ?? "");
+  }, [profile]);
+
+  const saveProfile = useMutation({
+    mutationFn: (input: { weights?: Weights; aiGuidance?: string }) =>
+      saveTenantDocxProfile({ data: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["docx-tenant-profile"] });
+      toast.success("Đã lưu cấu hình nhận diện của tổ chức");
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("DOCX_PROFILE_FORBIDDEN")
+          ? "Chỉ chủ sở hữu hoặc quản trị viên tổ chức được đổi cấu hình."
+          : "Không lưu được cấu hình nhận diện.",
+      ),
+  });
+
+  const canEditProfile = profile?.canEdit ?? false;
 
   const saveWeights = (next: Weights) => {
     setWeights(next);
@@ -545,8 +573,9 @@ export function DocxRoundTripPanel({
       {showWeights && (
         <Card className="space-y-3 p-3">
           <p className="text-xs text-muted-foreground">
-            Tăng trọng số nếu tài liệu của bạn hay bị bỏ sót loại đó; giảm nếu bị nhận nhầm. Chỉ ảnh
-            hưởng cách đọc hiểu, không sửa tệp gốc.
+            Cấu hình áp dụng cho cả tổ chức: cùng một tệp Word có thể được đọc hiểu và đề xuất khác
+            nhau ở mỗi tổ chức. Không sửa tệp gốc.
+            {!canEditProfile && " Bạn chỉ xem được; chủ sở hữu hoặc quản trị viên mới đổi được."}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {WEIGHT_KEYS.map((k) => (
@@ -562,13 +591,45 @@ export function DocxRoundTripPanel({
                   min={0}
                   max={2}
                   step={0.1}
+                  disabled={!canEditProfile}
                   onValueChange={(v) => saveWeights({ ...weights, [k]: v[0] ?? 1 })}
                 />
               </div>
             ))}
           </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-medium">Hướng dẫn riêng cho AI của tổ chức</p>
+            <Textarea
+              rows={3}
+              value={guidance}
+              disabled={!canEditProfile}
+              onChange={(e) => setGuidance(e.target.value)}
+              placeholder="Ví dụ: tài liệu của chúng tôi luôn có mục Điều khoản thanh toán; ưu tiên đề xuất công việc pháp lý và mốc nghiệm thu."
+              className="text-xs"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              AI dùng hướng dẫn này khi viết lại nội dung và khi đề xuất công việc, quyết định, cuộc
+              họp.
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <Button
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || saveProfile.isPending}
+              onClick={() => saveProfile.mutate({ weights, aiGuidance: guidance })}
+            >
+              {saveProfile.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <SlidersHorizontal className="h-3 w-3" />
+              )}
+              Lưu cho tổ chức
+            </Button>
+            <Button
+              variant="secondary"
               size="sm"
               className="h-7 gap-1 px-2 text-xs"
               disabled={reanalyze.isPending}
@@ -585,12 +646,14 @@ export function DocxRoundTripPanel({
               variant="ghost"
               size="sm"
               className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile}
               onClick={() => saveWeights(DEFAULT_WEIGHTS)}
             >
               <RotateCcw className="h-3 w-3" />
               Mặc định
             </Button>
           </div>
+
           <div className="flex flex-wrap gap-1">
             {Object.entries(roleCounts).map(([role, n]) => (
               <Badge key={role} variant="outline" className="text-[10px]">
