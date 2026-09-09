@@ -39,7 +39,6 @@ import {
   getDocxRecognitionReport,
   getTenantDocxProfile,
   saveTenantDocxProfile,
-
 } from "@/lib/api/work-products-docx.functions";
 
 type RecognitionReport = {
@@ -300,7 +299,6 @@ export function DocxRoundTripPanel({
       /* bỏ qua khi trình duyệt chặn lưu */
     }
   };
-
 
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["wp-blocks", productId],
