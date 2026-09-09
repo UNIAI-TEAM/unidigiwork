@@ -286,10 +286,14 @@ export function DocxRoundTripPanel({
       ),
   });
 
+  // Xem theo tài liệu hiện tại hoặc tổng hợp nhiều tài liệu Word của tổ chức.
+  const [accuracyScope, setAccuracyScope] = useState<"THIS" | "ALL">("THIS");
   const { data: accuracy } = useQuery({
-    queryKey: ["wp-ai-accuracy", productId],
+    queryKey: ["wp-ai-accuracy", productId, accuracyScope],
     queryFn: () =>
-      getAiProposalAccuracyReport({ data: { id: productId } }) as Promise<AccuracyReport>,
+      getAiProposalAccuracyReport({
+        data: accuracyScope === "THIS" ? { id: productId } : {},
+      }) as Promise<AccuracyReport>,
   });
 
   const reanalyze = useMutation({
