@@ -1741,6 +1741,7 @@ export const getAiProposalAccuracyReport = createServerFn({ method: "GET" })
         ? Math.round(([...byRole.values()].reduce((s, b) => s + b.similaritySum, 0) / total) * 100)
         : 0,
       roles,
+      documents,
       weakest,
       recent,
     };
