@@ -21,6 +21,9 @@ import {
   grantDocumentAccess,
   revokeDocumentAccess,
   setAccessMemberRole,
+  listMemberGrants,
+  updateMemberGrant,
+  setAccessMemberStatus,
 } from "@/lib/api/access-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/document-access")({
