@@ -101,3 +101,22 @@ Luồng lõi — nhập DOCX, giữ bản gốc, AI đề xuất, người duy�
   - `work_edges_select/delete` → `is_tenant_member(tenant_id)` + tồn tại node hai đầu.
   - `create_task` chạy dưới RLS người dùng → workspace khác tổ chức bị từ chối tại DB, không phụ thuộc kiểm tra ở tầng ứng dụng.
 - Quan hệ `WORK_PRODUCT GENERATES TASK` đã tồn tại trong `work_relationship_types`.
+
+## 19. Fixture Word thật — chạy hết luồng (PASS 3/3)
+
+Fixture sinh bằng `docx-js` (không dùng engine của UNIWORK) tại `fixtures/docx/`:
+`hop-dong-dich-vu.docx`, `bao-cao-thang.docx`, `bao-gia-trien-khai.docx` — đều có heading, bullet list, bảng và tiếng Việt có dấu.
+
+Script: `scripts/docx-fixtures-generate.ts`, `scripts/docx-fixtures-roundtrip.ts`.
+
+Luồng chạy thật mỗi fixture: nhập → parse anchored blocks → 1 sửa tay + 1 đề xuất AI (Lovable AI Gateway, model `openai/gpt-5.6-sol`) → chấp nhận → GenOffice patch theo neo → kiểm tra OOXML → xuất tệp tải xuống.
+
+| Fixture | Blocks | Sửa được | Vá | Chỉ `word/document.xml` đổi | Preservation | Kết quả |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hợp đồng | 11 | 10 | 2 | có | 93.8% | PASS |
+| Báo cáo | 10 | 9 | 2 | có | 93.8% | PASS |
+| Báo giá | 9 | 8 | 2 | có | 93.8% | PASS |
+
+Mọi fixture đều đạt: mở được, không thiếu part bắt buộc, nội dung mới có/nội dung cũ mất, không thêm/xoá part, số bảng giữ nguyên, số block ổn định, SHA-256 bản gốc không đổi. Neo sai vẫn bị chặn bằng `PATCH_UNSAFE`.
+
+Kiểm chứng độc lập: `pandoc` đọc cả 3 tệp đầu ra, tiếng Việt và cấu trúc còn nguyên.
