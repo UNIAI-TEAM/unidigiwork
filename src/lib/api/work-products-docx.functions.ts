@@ -939,7 +939,7 @@ export const listWorkProductDocxVersions = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("work_product_artifacts")
-      .select("id, role, version, engine, created_at, byte_size")
+      .select("id, role, version, engine, created_at")
       .eq("work_product_id", data.id)
       .in("role", ["SOURCE_ORIGINAL", "SOURCE_VERSION"])
       .order("version", { ascending: true })
