@@ -1456,3 +1456,146 @@ export const reanalyzeWorkProductDocx = createServerFn({ method: "POST" })
 
     return { updated, totalBlocks: parsed.totalBlocks, counts };
   });
+
+/* ------------------------------- độ chính xác của đề xuất AI so với bản gốc */
+
+/** Tỉ lệ giống nhau theo từ giữa hai đoạn (0..1) — dùng LCS đơn giản. */
+function wordSimilarity(a: string, b: string): number {
+  const x = a.trim().split(/\s+/).filter(Boolean);
+  const y = b.trim().split(/\s+/).filter(Boolean);
+  if (!x.length && !y.length) return 1;
+  if (!x.length || !y.length) return 0;
+  let prev = new Array(y.length + 1).fill(0);
+  for (let i = 1; i <= x.length; i += 1) {
+    const cur = new Array(y.length + 1).fill(0);
+    for (let j = 1; j <= y.length; j += 1) {
+      cur[j] = x[i - 1] === y[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], cur[j - 1]);
+    }
+    prev = cur;
+  }
+  return (2 * prev[y.length]) / (x.length + y.length);
+}
+
+/**
+ * Nhật ký đề xuất AI: đối chiếu từng đề xuất với đoạn gốc, tính độ chính xác
+ * trung bình (tỉ lệ được người duyệt chấp nhận) và loại thay đổi hay bị từ chối.
+ */
+export const getAiProposalAccuracyReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        limit: z.number().int().min(10).max(500).default(300),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    // RLS giới hạn theo tổ chức: không đọc được đề xuất của tổ chức khác.
+    let q = context.supabase
+      .from("work_product_change_ops")
+      .select(
+        "id, work_product_id, block_key, source_anchor, before_text, after_text, status, created_at, decided_at, proposal_id",
+      )
+      .eq("origin", "AI")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.id) q = q.eq("work_product_id", data.id);
+    const { data: rows, error } = await q;
+    if (error) mapPgError(error);
+
+    const ops = (rows ?? []) as any[];
+    const accepted = (s: string) => s === "ACCEPTED" || s === "APPLIED";
+
+    type Bucket = {
+      role: string;
+      total: number;
+      accepted: number;
+      rejected: number;
+      pending: number;
+      similaritySum: number;
+    };
+    const byRole = new Map<string, Bucket>();
+    const recent: Array<{
+      id: string;
+      workProductId: string;
+      role: string;
+      status: string;
+      similarity: number;
+      before: string;
+      after: string;
+      createdAt: string;
+    }> = [];
+
+    for (const o of ops) {
+      const role = (o.source_anchor?.role as string) || "PARAGRAPH";
+      const b = byRole.get(role) ?? {
+        role,
+        total: 0,
+        accepted: 0,
+        rejected: 0,
+        pending: 0,
+        similaritySum: 0,
+      };
+      const sim = wordSimilarity(o.before_text ?? "", o.after_text ?? "");
+      b.total += 1;
+      b.similaritySum += sim;
+      if (accepted(o.status)) b.accepted += 1;
+      else if (o.status === "REJECTED") b.rejected += 1;
+      else b.pending += 1;
+      byRole.set(role, b);
+
+      if (recent.length < 20) {
+        recent.push({
+          id: o.id,
+          workProductId: o.work_product_id,
+          role,
+          status: o.status,
+          similarity: Math.round(sim * 100),
+          before: (o.before_text ?? "").slice(0, 240),
+          after: (o.after_text ?? "").slice(0, 240),
+          createdAt: o.created_at,
+        });
+      }
+    }
+
+    const total = ops.length;
+    const acceptedTotal = ops.filter((o) => accepted(o.status)).length;
+    const rejectedTotal = ops.filter((o) => o.status === "REJECTED").length;
+    const decided = acceptedTotal + rejectedTotal;
+    const roles = [...byRole.values()]
+      .map((b) => {
+        const d = b.accepted + b.rejected;
+        return {
+          role: b.role,
+          total: b.total,
+          accepted: b.accepted,
+          rejected: b.rejected,
+          pending: b.pending,
+          accuracy: d ? Math.round((b.accepted / d) * 100) : null,
+          avgSimilarity: b.total ? Math.round((b.similaritySum / b.total) * 100) : 0,
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+
+    // Loại thay đổi hay sai: có ít nhất 2 lần bị duyệt và tỉ lệ chấp nhận thấp nhất.
+    const weakest = roles
+      .filter((r) => r.accuracy !== null && r.accepted + r.rejected >= 2)
+      .sort((a, b) => (a.accuracy as number) - (b.accuracy as number))
+      .slice(0, 3);
+
+    return {
+      scope: data.id ? "PRODUCT" : "TENANT",
+      total,
+      accepted: acceptedTotal,
+      rejected: rejectedTotal,
+      pending: total - decided,
+      accuracy: decided ? Math.round((acceptedTotal / decided) * 100) : null,
+      avgSimilarity: total
+        ? Math.round(([...byRole.values()].reduce((s, b) => s + b.similaritySum, 0) / total) * 100)
+        : 0,
+      roles,
+      weakest,
+      recent,
+    };
+  });
