@@ -83,6 +83,18 @@ type AccuracyReport = {
     avgSimilarity: number;
   }>;
   weakest: Array<{ role: string; accuracy: number | null; rejected: number }>;
+  documents: Array<{
+    workProductId: string;
+    title: string;
+    businessType: string | null;
+    total: number;
+    accepted: number;
+    rejected: number;
+    pending: number;
+    accuracy: number | null;
+    avgSimilarity: number;
+    worstRole: { role: string; rejected: number } | null;
+  }>;
   recent: Array<{
     id: string;
     role: string;
