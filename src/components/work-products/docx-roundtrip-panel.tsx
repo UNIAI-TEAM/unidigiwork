@@ -1045,15 +1045,42 @@ export function DocxRoundTripPanel({
         </Card>
       )}
       {/* Nhật ký đề xuất AI và độ chính xác */}
-      {accuracy && accuracy.total > 0 && (
+      {accuracy && (
         <Card className="space-y-3 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">Đề xuất AI so với bản gốc</h3>
-            <p className="text-xs text-muted-foreground">
-              {accuracy.total} đề xuất · {accuracy.accepted} chấp nhận · {accuracy.rejected} từ chối
-              · {accuracy.pending} chờ duyệt
-            </p>
+            <div className="flex items-center gap-1 rounded-md border p-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={accuracyScope === "THIS" ? "secondary" : "ghost"}
+                className="h-6 px-2 text-[11px]"
+                onClick={() => setAccuracyScope("THIS")}
+              >
+                Tài liệu này
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={accuracyScope === "ALL" ? "secondary" : "ghost"}
+                className="h-6 px-2 text-[11px]"
+                onClick={() => setAccuracyScope("ALL")}
+              >
+                Tất cả tài liệu Word
+              </Button>
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {accuracy.total} đề xuất · {accuracy.accepted} chấp nhận · {accuracy.rejected} từ chối ·{" "}
+            {accuracy.pending} chờ duyệt
+            {accuracyScope === "ALL" ? ` · ${accuracy.documents.length} tài liệu` : ""}
+          </p>
+          {accuracy.total === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Chưa có đề xuất AI nào để đối chiếu. Hãy nhờ AI sửa một vài tài liệu Word rồi duyệt
+              hoặc từ chối để có số liệu.
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">Độ chính xác trung bình</p>
