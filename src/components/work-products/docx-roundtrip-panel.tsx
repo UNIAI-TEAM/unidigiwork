@@ -95,6 +95,32 @@ export function DocxRoundTripPanel({
     queryFn: () => listWorkProductChangeOps({ data: { id: productId } }) as Promise<ChangeOp[]>,
   });
 
+  const [showCompare, setShowCompare] = useState(false);
+  const [baseId, setBaseId] = useState<string>("");
+  const [targetId, setTargetId] = useState<string>("");
+  const { data: versions } = useQuery({
+    queryKey: ["wp-docx-versions", productId],
+    queryFn: () =>
+      listWorkProductDocxVersions({ data: { id: productId } }) as Promise<DocxVersion[]>,
+  });
+  const compare = useMutation({
+    mutationFn: () =>
+      compareWorkProductDocxVersions({
+        data: {
+          id: productId,
+          ...(baseId ? { baseArtifactId: baseId } : {}),
+          ...(targetId ? { targetArtifactId: targetId } : {}),
+        },
+      }) as Promise<CompareResult>,
+    onSuccess: () => setShowCompare(true),
+    onError: (e: any) =>
+      toast.error(
+        e?.message?.includes("NOT_ENOUGH_VERSIONS")
+          ? "Chưa có phiên bản sửa đổi để so sánh."
+          : "Không so sánh được hai bản.",
+      ),
+  });
+
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wp-change-ops", productId] });
     qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
