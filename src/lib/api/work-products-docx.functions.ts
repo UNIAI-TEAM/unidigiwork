@@ -1746,3 +1746,136 @@ export const getAiProposalAccuracyReport = createServerFn({ method: "GET" })
       recent,
     };
   });
+
+/**
+ * Báo cáo nhận diện Word theo tổ chức: từng loại nhận diện, trọng số đang dùng,
+ * điểm tin cậy khi đọc hiểu và độ chính xác thực tế từ đề xuất AI đã được duyệt.
+ */
+export const getDocxRecognitionReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        weights: z.record(z.string(), z.number().min(0).max(2)).optional(),
+        limit: z.number().int().min(100).max(5000).default(3000),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    // RLS giới hạn theo tổ chức: chỉ đọc block và đề xuất của tổ chức hiện tại.
+    const { data: blockRows, error: bErr } = await context.supabase
+      .from("work_product_blocks")
+      .select("work_product_id, block_type, source_anchor")
+      .limit(data.limit);
+    if (bErr) mapPgError(bErr);
+
+    type RoleStat = {
+      role: string;
+      blocks: number;
+      scored: number;
+      scoreSum: number;
+      lowConfidence: number;
+      docs: Set<string>;
+      accepted: number;
+      rejected: number;
+      pending: number;
+    };
+    const stats = new Map<string, RoleStat>();
+    const bucket = (role: string) => {
+      const s = stats.get(role) ?? {
+        role,
+        blocks: 0,
+        scored: 0,
+        scoreSum: 0,
+        lowConfidence: 0,
+        docs: new Set<string>(),
+        accepted: 0,
+        rejected: 0,
+        pending: 0,
+      };
+      stats.set(role, s);
+      return s;
+    };
+
+    for (const b of (blockRows ?? []) as any[]) {
+      const anchor = (b.source_anchor ?? {}) as any;
+      const role = (anchor.role as string) || (b.block_type as string) || "PARAGRAPH";
+      const s = bucket(role);
+      s.blocks += 1;
+      s.docs.add(b.work_product_id);
+      const score = typeof anchor.score === "number" ? anchor.score : null;
+      if (score !== null) {
+        s.scored += 1;
+        s.scoreSum += score;
+        if (score < 1) s.lowConfidence += 1;
+      }
+    }
+
+    const { data: opRows, error: oErr } = await context.supabase
+      .from("work_product_change_ops")
+      .select("source_anchor, status")
+      .eq("origin", "AI")
+      .limit(1000);
+    if (oErr) mapPgError(oErr);
+    for (const o of (opRows ?? []) as any[]) {
+      const role = ((o.source_anchor ?? {}).role as string) || "PARAGRAPH";
+      const s = bucket(role);
+      if (o.status === "ACCEPTED" || o.status === "APPLIED") s.accepted += 1;
+      else if (o.status === "REJECTED") s.rejected += 1;
+      else s.pending += 1;
+    }
+
+    const weights = (data.weights ?? {}) as Record<string, number>;
+    const weightKeyByRole: Record<string, string> = {
+      TITLE: "title",
+      HEADING: "heading",
+      LIST_ITEM: "listItem",
+      QUOTE: "quote",
+      CAPTION: "caption",
+      TABLE: "table",
+    };
+
+    const roles = [...stats.values()]
+      .map((s) => {
+        const decided = s.accepted + s.rejected;
+        const accuracy = decided ? Math.round((s.accepted / decided) * 100) : null;
+        const avgScore = s.scored ? Math.round((s.scoreSum / s.scored) * 100) / 100 : null;
+        const weightKey = weightKeyByRole[s.role] ?? null;
+        const weight = weightKey ? (weights[weightKey] ?? 1) : null;
+        // Gợi ý chỉnh trọng số: nhận diện yếu hoặc AI hay sai → tăng; rất chắc và luôn đúng → có thể giảm.
+        let advice: "INCREASE" | "DECREASE" | "KEEP" = "KEEP";
+        if (weightKey) {
+          const weak = (avgScore !== null && avgScore < 1.2) || s.lowConfidence > s.blocks * 0.3;
+          const wrong = accuracy !== null && decided >= 2 && accuracy < 60;
+          const solid = avgScore !== null && avgScore >= 2 && (accuracy === null || accuracy >= 90);
+          if (weak || wrong) advice = "INCREASE";
+          else if (solid && (weight ?? 1) > 1) advice = "DECREASE";
+        }
+        return {
+          role: s.role,
+          weightKey,
+          weight,
+          blocks: s.blocks,
+          documents: s.docs.size,
+          avgScore,
+          lowConfidence: s.lowConfidence,
+          accepted: s.accepted,
+          rejected: s.rejected,
+          pending: s.pending,
+          accuracy,
+          advice,
+        };
+      })
+      .sort((a, b) => b.blocks - a.blocks);
+
+    const totalBlocks = roles.reduce((n, r) => n + r.blocks, 0);
+    const decidedAll = roles.reduce((n, r) => n + r.accepted + r.rejected, 0);
+    const acceptedAll = roles.reduce((n, r) => n + r.accepted, 0);
+
+    return {
+      totalBlocks,
+      totalDocuments: new Set(((blockRows ?? []) as any[]).map((b) => b.work_product_id)).size,
+      overallAccuracy: decidedAll ? Math.round((acceptedAll / decidedAll) * 100) : null,
+      roles,
+    };
+  });
