@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public._rebuild_tenant_work_graph_core(uuid) FROM PUBLIC, anon, authenticated;
