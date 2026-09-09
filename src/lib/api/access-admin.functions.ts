@@ -297,7 +297,7 @@ export const setAccessMemberStatus = createServerFn({ method: "POST" })
       throw new ApiError({ code: "PERMISSION_DENIED", message: "ACCESS_ADMIN_FORBIDDEN" });
     }
     if (data.userId === context.userId) {
-      throw new ApiError({ code: "VALIDATION_ERROR", message: "ACCESS_ADMIN_SELF_STATUS" });
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "ACCESS_ADMIN_SELF_STATUS" });
     }
     const { error } = await context.supabase.rpc("change_tenant_member_status", {
       _tenant_id: tenantId,
