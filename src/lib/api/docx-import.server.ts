@@ -319,7 +319,8 @@ function scoreRoles(args: {
   if (indent >= 360 && !italic) add("LIST_ITEM", 0.2, "thụt lề");
 
   // ---- Trích dẫn
-  if (/^[“"'«].*[”"'»]\s*$/.test(text)) add("QUOTE", 0.8, "nằm trong dấu ngoặc kép");
+  if (/^[“"'«].*[”"'»]\s*$/.test(text)) add("QUOTE", 0.9, "nằm trong dấu ngoặc kép");
+  else if (/^[“"'«].*[”"'»]/.test(text)) add("QUOTE", 0.7, "mở đầu bằng dấu ngoặc kép");
   if (italic) add("QUOTE", 0.45, "chữ nghiêng");
   if (indent >= 360) add("QUOTE", 0.4, "thụt lề");
   if (/(^|\s)[—–-]\s*\p{Lu}[\p{L}\s.]{2,40}$/u.test(text)) add("QUOTE", 0.3, "có nguồn dẫn");
