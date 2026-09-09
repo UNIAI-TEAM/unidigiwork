@@ -218,15 +218,131 @@ function tableGrid(b: Record<string, unknown>): string[][] {
   });
 }
 
-function tableSummaryOf(grid: string[][]): TableSummary {
+const NUMERIC_RE = /^[\s(]*[-+]?[\d.,%]+\s*(vnd|đ|usd|%|tr|k)?[\s).]*$/i;
+
+function tableSummaryOf(grid: string[][], weight: number): TableSummary {
   const cols = grid.reduce((m, r) => Math.max(m, r.length), 0);
   const first = grid[0] ?? [];
-  const headerLike = first.some((c) => c.trim().length > 0);
+  const body = grid.slice(1);
+
+  // Cột nào chủ yếu là số liệu.
+  const numericCols: number[] = [];
+  for (let c = 0; c < cols; c += 1) {
+    const vals = body.map((r) => (r[c] ?? "").trim()).filter(Boolean);
+    if (vals.length >= 2 && vals.filter((v) => NUMERIC_RE.test(v)).length / vals.length >= 0.6)
+      numericCols.push(c);
+  }
+
+  // Dòng đầu là tiêu đề khi: có chữ ở mọi ô, ngắn, và không phải số ở các cột số liệu.
+  const filled = first.filter((c) => c.trim().length > 0).length;
+  let conf = 0;
+  if (cols > 0) {
+    conf += (filled / cols) * 0.5;
+    if (first.every((c) => c.trim().length <= 40)) conf += 0.2;
+    if (numericCols.length && numericCols.every((c) => !NUMERIC_RE.test((first[c] ?? "").trim())))
+      conf += 0.3;
+  }
+  conf = Math.min(1, conf * (weight || 1));
+
   return {
     rows: grid.length,
     cols,
-    headers: headerLike ? first : [],
+    headers: conf >= 0.5 ? first : [],
     preview: grid.slice(0, 6),
+    headerConfidence: Math.round(conf * 100) / 100,
+    numericCols,
+    ragged: grid.some((r) => r.length !== cols),
+  };
+}
+
+/** Bảng điểm cho từng vai trò suy đoán, kèm tín hiệu để giải thích. */
+function scoreRoles(args: {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+  format: Record<string, unknown>;
+  seenBodyText: boolean;
+  prevWasTable: boolean;
+  weights: DetectionWeights;
+}): { role: BlockSemanticRole; score: number; signals: string[]; headingLevel: number | null } {
+  const { text, bold, italic, format, seenBodyText, prevWasTable, weights } = args;
+  const raw: Record<string, number> = { TITLE: 0, HEADING: 0, LIST_ITEM: 0, QUOTE: 0, CAPTION: 0 };
+  const sig: Record<string, string[]> = {
+    TITLE: [],
+    HEADING: [],
+    LIST_ITEM: [],
+    QUOTE: [],
+    CAPTION: [],
+  };
+  const add = (role: string, v: number, why: string) => {
+    raw[role] += v;
+    if (v > 0) sig[role].push(why);
+  };
+
+  const len = text.length;
+  const short = len <= 120;
+  const centered = format["align"] === "center";
+  const indent = Number(format["indentLeft"] ?? 0);
+  const endsSentence = /[.;!?]$/.test(text);
+  const numDepth = headingNumberDepth(text);
+  const upper = short && text === text.toLocaleUpperCase("vi") && /\p{L}/u.test(text);
+
+  // ---- Tiêu đề mục
+  if (numDepth) add("HEADING", 0.8, "đánh số mục");
+  if (/^(điều|dieu|chương|chuong|phần|phan|mục|muc|article|chapter|section|phụ lục|phu luc)\b/i.test(text))
+    add("HEADING", 0.5, "từ khoá mục");
+  if (bold) add("HEADING", 0.45, "chữ đậm");
+  if (upper) add("HEADING", 0.5, "chữ in hoa");
+  if (short && !endsSentence) add("HEADING", 0.35, "ngắn, không kết câu");
+  if (centered) add("HEADING", 0.15, "căn giữa");
+  if (endsSentence) raw["HEADING"] -= 0.5;
+  if (len > 160) raw["HEADING"] -= 0.8;
+  if (/:$/.test(text) && !bold) raw["HEADING"] -= 0.3;
+
+  // ---- Tiêu đề tài liệu
+  if (!seenBodyText) {
+    if (upper) add("TITLE", 0.6, "in hoa ở đầu tài liệu");
+    if (centered) add("TITLE", 0.5, "căn giữa ở đầu tài liệu");
+    if (bold && short) add("TITLE", 0.4, "đậm và ngắn");
+    if (numDepth) raw["TITLE"] -= 0.8;
+  } else {
+    raw["TITLE"] -= 1;
+  }
+
+  // ---- Gạch đầu dòng
+  if (/^([-–—•●▪*+]|\p{L}\)|\(\p{L}\)|\d+[.)])\s+\S/u.test(text)) add("LIST_ITEM", 0.9, "ký hiệu đầu dòng");
+  if (indent >= 360 && !italic) add("LIST_ITEM", 0.2, "thụt lề");
+
+  // ---- Trích dẫn
+  if (/^[“"'«].*[”"'»]\s*$/.test(text)) add("QUOTE", 0.8, "nằm trong dấu ngoặc kép");
+  if (italic) add("QUOTE", 0.45, "chữ nghiêng");
+  if (indent >= 360) add("QUOTE", 0.4, "thụt lề");
+  if (/(^|\s)[—–-]\s*\p{Lu}[\p{L}\s.]{2,40}$/u.test(text)) add("QUOTE", 0.3, "có nguồn dẫn");
+  if (bold) raw["QUOTE"] -= 0.3;
+
+  // ---- Chú thích
+  if (/^(hình|bảng|biểu|biểu đồ|sơ đồ|figure|fig|table|chart)\s*\d*\s*([.:–-]|\s)/i.test(text))
+    add("CAPTION", 0.9, "mở đầu bằng Hình/Bảng");
+  if (prevWasTable && short && italic) add("CAPTION", 0.4, "ngay sau bảng, chữ nghiêng");
+  if (len > 200) raw["CAPTION"] -= 0.6;
+
+  const weighted: Array<[BlockSemanticRole, number]> = [
+    ["TITLE", raw["TITLE"] * weights.title],
+    ["HEADING", raw["HEADING"] * weights.heading],
+    ["LIST_ITEM", raw["LIST_ITEM"] * weights.listItem],
+    ["QUOTE", raw["QUOTE"] * weights.quote],
+    ["CAPTION", raw["CAPTION"] * weights.caption],
+  ];
+  weighted.sort((a, b) => b[1] - a[1]);
+  const [best, score] = weighted[0];
+  if (score < DETECTION_THRESHOLD)
+    return { role: "PARAGRAPH", score: Math.round(score * 100) / 100, signals: [], headingLevel: null };
+
+  return {
+    role: best,
+    score: Math.round(score * 100) / 100,
+    signals: sig[best] ?? [],
+    headingLevel: best === "TITLE" ? 0 : best === "HEADING" ? (numDepth ?? (upper ? 1 : 2)) : null,
   };
 }
 
