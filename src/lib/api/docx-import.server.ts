@@ -473,6 +473,8 @@ export async function parseDocxToBlocks(
         listKind: listInfo?.kind ?? null,
         table,
         detectedBy,
+        ...(score === null ? {} : { score }),
+        ...(signals.length ? { signals } : {}),
       },
     });
 
