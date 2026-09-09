@@ -1121,6 +1121,29 @@ export function DocxRoundTripPanel({
             ))}
           </div>
 
+          {accuracyScope === "ALL" && accuracy.documents.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium">So sánh giữa các tài liệu Word</p>
+              {accuracy.documents.map((d) => (
+                <div
+                  key={d.workProductId}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0 flex-1 truncate font-medium" title={d.title}>
+                    {d.title}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {d.total} đề xuất · {d.accuracy === null ? "chưa duyệt" : `đúng ${d.accuracy}%`}{" "}
+                    · giữ gốc {d.avgSimilarity}%
+                    {d.worstRole
+                      ? ` · hay sai: ${ROLE_LABELS[d.worstRole.role] ?? d.worstRole.role}`
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground">
               Nhật ký đề xuất gần đây
