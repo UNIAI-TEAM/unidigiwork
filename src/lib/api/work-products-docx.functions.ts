@@ -192,7 +192,7 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
       ordinal: b.ordinal,
       block_type: b.blockType,
       text: b.text,
-      source_anchor: b.sourceAnchor,
+      source_anchor: b.sourceAnchor as unknown as never,
       editability: b.editability,
     }));
     for (let i = 0; i < rows.length; i += 500) {
