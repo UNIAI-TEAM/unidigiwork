@@ -717,6 +717,8 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
       system:
         "Bạn là trợ lý biên tập tài liệu nghiệp vụ trong UNIWORK. " +
         "Chỉ dùng dữ kiện trong nội dung và nguồn ngữ cảnh được cung cấp; không bịa số liệu hay cam kết. " +
+        "Mỗi đoạn có ghi rõ loại (tiêu đề, gạch đầu dòng, trích dẫn, chú thích, bảng) và mục chứa nó: " +
+        "giữ đúng loại đó khi viết lại — tiêu đề vẫn ngắn gọn, gạch đầu dòng vẫn một ý, trích dẫn giữ nguyên ý người nói. " +
         `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
       messages: [
         {
