@@ -168,9 +168,7 @@ function tableGrid(b: Record<string, unknown>): string[][] {
   if (!Array.isArray(rows)) return [];
   // GenOffice có hai dạng: mảng ô trực tiếp, hoặc { cells: [...] }.
   return rows.map((r) => {
-    const cells = Array.isArray(r)
-      ? r
-      : ((r as { cells?: unknown[] } | null)?.cells ?? []);
+    const cells = Array.isArray(r) ? r : ((r as { cells?: unknown[] } | null)?.cells ?? []);
     return (cells as Array<Record<string, unknown>>).map((c) => cellText(c ?? {}));
   });
 }
