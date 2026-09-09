@@ -192,7 +192,7 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
       ordinal: b.ordinal,
       block_type: b.blockType,
       text: b.text,
-      source_anchor: b.sourceAnchor,
+      source_anchor: b.sourceAnchor as unknown as never,
       editability: b.editability,
     }));
     for (let i = 0; i < rows.length; i += 500) {
@@ -694,12 +694,31 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
     const { streamText } = await import("ai");
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
 
-    const numbered = targets.map((b: any, i: number) => `[${i + 1}] ${b.text}`).join("\n");
+    const roleLabel: Record<string, string> = {
+      TITLE: "tiêu đề tài liệu",
+      HEADING: "tiêu đề mục",
+      LIST_ITEM: "gạch đầu dòng",
+      QUOTE: "trích dẫn",
+      CAPTION: "chú thích",
+      TABLE: "bảng",
+      PARAGRAPH: "đoạn văn",
+    };
+    const numbered = targets
+      .map((b: any, i: number) => {
+        const a = (b.source_anchor ?? {}) as Record<string, any>;
+        const kind = roleLabel[String(a.role ?? "PARAGRAPH")] ?? "đoạn văn";
+        const lvl = a.role === "HEADING" && a.headingLevel ? ` cấp ${a.headingLevel}` : "";
+        const sec = a.section ? ` | thuộc mục: ${a.section}` : "";
+        return `[${i + 1}] (${kind}${lvl}${sec})\n${b.text}`;
+      })
+      .join("\n\n");
     const result = streamText({
       model: createLovableResponsesProvider(apiKey).responses(model),
       system:
         "Bạn là trợ lý biên tập tài liệu nghiệp vụ trong UNIWORK. " +
         "Chỉ dùng dữ kiện trong nội dung và nguồn ngữ cảnh được cung cấp; không bịa số liệu hay cam kết. " +
+        "Mỗi đoạn có ghi rõ loại (tiêu đề, gạch đầu dòng, trích dẫn, chú thích, bảng) và mục chứa nó: " +
+        "giữ đúng loại đó khi viết lại — tiêu đề vẫn ngắn gọn, gạch đầu dòng vẫn một ý, trích dẫn giữ nguyên ý người nói. " +
         `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
       messages: [
         {
