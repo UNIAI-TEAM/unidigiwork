@@ -145,6 +145,28 @@ export function DocxRoundTripPanel({
   const [taskSuggestions, setTaskSuggestions] = useState<
     Array<{ title: string; priority: string; checked: boolean }>
   >([]);
+  const [showWeights, setShowWeights] = useState(false);
+  const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
+
+  // Trọng số lưu theo trình duyệt của người dùng, đọc sau khi gắn để tránh lệch hiển thị.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WEIGHTS_STORAGE_KEY);
+      if (raw) setWeights({ ...DEFAULT_WEIGHTS, ...(JSON.parse(raw) as Partial<Weights>) });
+    } catch {
+      /* bỏ qua dữ liệu hỏng */
+    }
+  }, []);
+
+  const saveWeights = (next: Weights) => {
+    setWeights(next);
+    try {
+      localStorage.setItem(WEIGHTS_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* bỏ qua khi trình duyệt chặn lưu */
+    }
+  };
+
 
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["wp-blocks", productId],
