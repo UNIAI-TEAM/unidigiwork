@@ -917,3 +917,88 @@ export const getWorkDeliverableArtifactUrl = createServerFn({ method: "POST" })
     }
     return { url: signed.signedUrl };
   });
+
+/* ------------------------------------------- cài đặt quyền theo tổ chức */
+
+export const WP_SCOPES = ["TENANT", "WORKSPACE", "OWNER"] as const;
+
+export type WorkProductAccessPolicy = {
+  tenantId: string;
+  viewScope: (typeof WP_SCOPES)[number];
+  editScope: (typeof WP_SCOPES)[number];
+  adminOverride: boolean;
+  canManage: boolean;
+  updatedAt: string | null;
+};
+
+async function currentTenantId(supabase: any, userId: string): Promise<string> {
+  const { resolveTenantId } = await import("./work-deliverables.server");
+  const { readActiveTenantCookie } = await import("./active-tenant.server");
+  return resolveTenantId(supabase, userId, null, readActiveTenantCookie());
+}
+
+async function tenantRoleOf(supabase: any, tenantId: string, userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("tenant_members")
+    .select("role")
+    .eq("tenant_id", tenantId)
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .maybeSingle();
+  return (data?.role as string) ?? null;
+}
+
+export const getWorkProductAccessPolicy = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<WorkProductAccessPolicy> => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    const [{ data: row, error }, role] = await Promise.all([
+      context.supabase
+        .from("work_product_access_policies")
+        .select("view_scope, edit_scope, admin_override, updated_at")
+        .eq("tenant_id", tenantId)
+        .maybeSingle(),
+      tenantRoleOf(context.supabase, tenantId, context.userId),
+    ]);
+    if (error) mapPgError(error);
+    return {
+      tenantId,
+      viewScope: ((row?.view_scope as any) ?? "TENANT") as WorkProductAccessPolicy["viewScope"],
+      editScope: ((row?.edit_scope as any) ?? "OWNER") as WorkProductAccessPolicy["editScope"],
+      adminOverride: (row?.admin_override as boolean) ?? true,
+      canManage: role === "tenant_owner" || role === "tenant_admin",
+      updatedAt: (row?.updated_at as string) ?? null,
+    };
+  });
+
+export const updateWorkProductAccessPolicy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        viewScope: z.enum(WP_SCOPES),
+        editScope: z.enum(WP_SCOPES),
+        adminOverride: z.boolean(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    const role = await tenantRoleOf(context.supabase, tenantId, context.userId);
+    if (role !== "tenant_owner" && role !== "tenant_admin") {
+      throw new ApiError("FORBIDDEN", "Chỉ chủ sở hữu hoặc quản trị tổ chức mới được đổi cài đặt quyền.");
+    }
+    const { error } = await context.supabase.from("work_product_access_policies").upsert(
+      {
+        tenant_id: tenantId,
+        view_scope: data.viewScope,
+        edit_scope: data.editScope,
+        admin_override: data.adminOverride,
+        updated_by: context.userId,
+      },
+      { onConflict: "tenant_id" },
+    );
+    if (error) mapPgError(error);
+    return { ok: true as const };
+  });
