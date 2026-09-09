@@ -36,7 +36,28 @@ import {
   compareWorkProductDocxVersions,
   reanalyzeWorkProductDocx,
   getAiProposalAccuracyReport,
+  getDocxRecognitionReport,
 } from "@/lib/api/work-products-docx.functions";
+
+type RecognitionReport = {
+  totalBlocks: number;
+  totalDocuments: number;
+  overallAccuracy: number | null;
+  roles: Array<{
+    role: string;
+    weightKey: string | null;
+    weight: number | null;
+    blocks: number;
+    documents: number;
+    avgScore: number | null;
+    lowConfidence: number;
+    accepted: number;
+    rejected: number;
+    pending: number;
+    accuracy: number | null;
+    advice: "INCREASE" | "DECREASE" | "KEEP";
+  }>;
+};
 
 type FollowUpEvidence = {
   index: number;
