@@ -431,7 +431,7 @@ export function DocxRoundTripPanel({
             .map((f) => ({
               kind: f.kind,
               title: f.title,
-              detail: f.detail,
+              detail: withReason(f),
               priority: f.priority as "low",
             })),
         },
