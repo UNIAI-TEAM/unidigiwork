@@ -290,6 +290,55 @@ export function DocxRoundTripPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const suggestFollowUps = useMutation({
+    mutationFn: (version?: number) =>
+      proposeFollowUpsFromDocxChanges({
+        data: { id: productId, ...(version ? { version } : {}) },
+      }),
+    onSuccess: (r: {
+      suggestions: Array<{
+        kind: "TASK" | "DECISION" | "MEETING";
+        title: string;
+        detail: string;
+        priority: string;
+      }>;
+    }) => {
+      setFollowUps(r.suggestions.map((s) => ({ ...s, checked: true })));
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NO_APPLIED_CHANGES")
+          ? "Chưa có thay đổi nào được áp dụng để phân tích."
+          : "Chưa gợi ý được hành động tiếp theo.",
+      ),
+  });
+
+  const createFollowUps = useMutation({
+    mutationFn: () =>
+      createFollowUpsFromWorkProduct({
+        data: {
+          id: productId,
+          items: followUps
+            .filter((f) => f.checked)
+            .map((f) => ({
+              kind: f.kind,
+              title: f.title,
+              detail: f.detail,
+              priority: f.priority as "low",
+            })),
+        },
+      }),
+    onSuccess: (r: { created: Array<{ kind: string }> }) => {
+      setFollowUps([]);
+      qc.invalidateQueries({ queryKey: ["work-deliverable-links", productId] });
+      qc.invalidateQueries({ queryKey: ["work-deliverable-comments", productId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success(`Đã tạo ${r.created.length} mục tiếp theo`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const apply = useMutation({
     mutationFn: () => applyWorkProductAcceptedChanges({ data: { id: productId } }),
     onSuccess: (r: { version: number; preservation: { preservedRatio: number } }) => {
@@ -297,6 +346,8 @@ export function DocxRoundTripPanel({
       toast.success(
         `Đã tạo phiên bản v${r.version} — giữ nguyên ${r.preservation.preservedRatio}% cấu trúc gốc`,
       );
+      // Sau khi chấp nhận, tự động phân tích nội dung vừa đổi để gợi ý bước tiếp theo.
+      suggestFollowUps.mutate(r.version);
     },
     onError: (e: Error) =>
       toast.error(
