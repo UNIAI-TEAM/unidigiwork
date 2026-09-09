@@ -103,6 +103,15 @@ type CompareResult = {
 const versionLabel = (v: DocxVersion) =>
   v.role === "SOURCE_ORIGINAL" ? "Bản gốc" : `Phiên bản ${v.version ?? "?"}`;
 
+type BlockAnchor = {
+  role?: string | null;
+  headingLevel?: number | null;
+  section?: string | null;
+  score?: number | null;
+  signals?: string[] | null;
+  table?: { rows?: number; cols?: number; headerConfidence?: number } | null;
+} | null;
+
 type Block = {
   id: string;
   block_key: string;
@@ -110,6 +119,7 @@ type Block = {
   block_type: string;
   text: string | null;
   editability: string;
+  source_anchor?: BlockAnchor;
 };
 
 type ChangeOp = {
