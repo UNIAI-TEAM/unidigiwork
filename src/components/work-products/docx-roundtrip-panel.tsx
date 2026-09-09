@@ -373,7 +373,9 @@ export function DocxRoundTripPanel({
       if (r.auto) {
         const tasks = r.suggestions.filter((s) => s.kind === "TASK");
         // Công việc được tạo ngay; quyết định và cuộc họp vẫn chờ người dùng chọn.
-        setFollowUps(r.suggestions.filter((s) => s.kind !== "TASK").map((s) => ({ ...s, checked: true })));
+        setFollowUps(
+          r.suggestions.filter((s) => s.kind !== "TASK").map((s) => ({ ...s, checked: true })),
+        );
         if (tasks.length) autoCreateTasks.mutate(tasks);
         return;
       }
@@ -386,7 +388,6 @@ export function DocxRoundTripPanel({
           : "Chưa gợi ý được hành động tiếp theo.",
       ),
   });
-
 
   const createFollowUps = useMutation({
     mutationFn: () =>
@@ -422,7 +423,7 @@ export function DocxRoundTripPanel({
         `Đã tạo phiên bản v${r.version} — giữ nguyên ${r.preservation.preservedRatio}% cấu trúc gốc`,
       );
       // Sau khi chấp nhận, tự động phân tích nội dung vừa đổi để gợi ý bước tiếp theo.
-      suggestFollowUps.mutate(r.version);
+      suggestFollowUps.mutate({ version: r.version, auto: true });
     },
     onError: (e: Error) =>
       toast.error(
