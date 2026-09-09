@@ -142,6 +142,7 @@ function WorkProductDetail() {
   const [documentSearch, setDocumentSearch] = useState("");
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
 
   const { data: documents } = useQuery({
     queryKey: ["work-deliverables", { limit: 60 }],
