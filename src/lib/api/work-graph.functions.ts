@@ -4,7 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapPgError } from "./business.server";
 import { resolveWorkEntities, entityKey } from "./work-graph.server";
-import { WORK_ENTITY_TYPES, WORK_RELATIONSHIP_CODES, isRelationshipAllowed } from "@/domain/work-graph/relationship-types";
+import {
+  WORK_ENTITY_TYPES,
+  WORK_RELATIONSHIP_CODES,
+  isRelationshipAllowed,
+} from "@/domain/work-graph/relationship-types";
 
 const entityTypeSchema = z.enum(WORK_ENTITY_TYPES);
 const relationshipSchema = z.enum(WORK_RELATIONSHIP_CODES);
@@ -140,41 +144,65 @@ export const searchLinkableEntities = createServerFn({ method: "GET" })
       switch (t) {
         case "TASK":
           jobs.push(
-            context.supabase.from("tasks").select("id,title,status").ilike("title", term)
-              .is("deleted_at", null).limit(data.limit)
+            context.supabase
+              .from("tasks")
+              .select("id,title,status")
+              .ilike("title", term)
+              .is("deleted_at", null)
+              .limit(data.limit)
               .then(({ data: rows }) => push("TASK", rows, "title", "status")),
           );
           break;
         case "WORKSPACE":
           jobs.push(
-            context.supabase.from("workspaces").select("id,name").ilike("name", term).limit(data.limit)
+            context.supabase
+              .from("workspaces")
+              .select("id,name")
+              .ilike("name", term)
+              .limit(data.limit)
               .then(({ data: rows }) => push("WORKSPACE", rows, "name")),
           );
           break;
         case "MEETING":
           jobs.push(
-            context.supabase.from("meetings").select("id,title,start_at").ilike("title", term).limit(data.limit)
+            context.supabase
+              .from("meetings")
+              .select("id,title,start_at")
+              .ilike("title", term)
+              .limit(data.limit)
               .then(({ data: rows }) => push("MEETING", rows, "title", "start_at")),
           );
           break;
         case "DOCUMENT":
           jobs.push(
-            context.supabase.from("documents").select("id,title,folder").ilike("title", term)
-              .is("deleted_at", null).limit(data.limit)
+            context.supabase
+              .from("documents")
+              .select("id,title,folder")
+              .ilike("title", term)
+              .is("deleted_at", null)
+              .limit(data.limit)
               .then(({ data: rows }) => push("DOCUMENT", rows, "title", "folder")),
           );
           break;
         case "EMAIL":
           jobs.push(
-            context.supabase.from("email_threads").select("id,subject").ilike("subject", term)
-              .is("deleted_at", null).limit(data.limit)
+            context.supabase
+              .from("email_threads")
+              .select("id,subject")
+              .ilike("subject", term)
+              .is("deleted_at", null)
+              .limit(data.limit)
               .then(({ data: rows }) => push("EMAIL", rows, "subject")),
           );
           break;
         case "CHAT_CHANNEL":
           jobs.push(
-            context.supabase.from("chat_channels").select("id,name").ilike("name", term)
-              .is("deleted_at", null).limit(data.limit)
+            context.supabase
+              .from("chat_channels")
+              .select("id,name")
+              .ilike("name", term)
+              .is("deleted_at", null)
+              .limit(data.limit)
               .then(({ data: rows }) => push("CHAT_CHANNEL", rows, "name")),
           );
           break;
@@ -305,7 +333,11 @@ export const listWorkGraphTargets = createServerFn({ method: "GET" })
             ? "id, title, kind, created_at"
             : "id, title, updated_at";
     const orderCol =
-      data.type === "MEETING" ? "start_at" : data.type === "MEETING_ARTIFACT" ? "created_at" : "updated_at";
+      data.type === "MEETING"
+        ? "start_at"
+        : data.type === "MEETING_ARTIFACT"
+          ? "created_at"
+          : "updated_at";
 
     let q = context.supabase
       .from(table)
@@ -320,12 +352,14 @@ export const listWorkGraphTargets = createServerFn({ method: "GET" })
     return ((rows ?? []) as any[]).map((r) => ({
       type: data.type,
       id: r.id as string,
-      title: (r.title as string) ?? (ARTIFACT_LABEL[r.kind] ?? "(Không tiêu đề)"),
+      title: (r.title as string) ?? ARTIFACT_LABEL[r.kind] ?? "(Không tiêu đề)",
       subtitle:
         data.type === "MEETING_ARTIFACT"
           ? (ARTIFACT_LABEL[r.kind] ?? r.kind ?? null)
           : data.type === "MEETING"
-            ? (r.start_at ? new Date(r.start_at).toLocaleString("vi-VN") : (r.status ?? null))
+            ? r.start_at
+              ? new Date(r.start_at).toLocaleString("vi-VN")
+              : (r.status ?? null)
             : data.type === "TASK"
               ? (r.status ?? null)
               : null,

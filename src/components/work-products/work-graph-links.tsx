@@ -110,11 +110,7 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
             disabled={rebuildMut.isPending}
             onClick={() => rebuildMut.mutate()}
           >
-            {rebuildMut.isPending ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <RefreshCw />
-            )}
+            {rebuildMut.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
             Dựng lại bản đồ
           </Button>
         )}

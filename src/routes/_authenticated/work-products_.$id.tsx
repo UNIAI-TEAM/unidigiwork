@@ -1282,7 +1282,6 @@ function WorkProductDetail() {
                     <WorkGraphLinksPanel workProductId={product.id} />
                   </TabsContent>
 
-
                   <TabsContent value="share" className="mt-0 space-y-3">
                     <p className="text-xs text-muted-foreground">{t("wp.share.hint")}</p>
                     {shareData?.canManage && (
