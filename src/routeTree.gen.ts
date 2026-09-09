@@ -113,6 +113,7 @@ import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
+import { Route as ApiInternalOfficeV1RenderRouteImport } from './routes/api/internal/office/v1/render'
 import { Route as AuthenticatedAdminSellWorkPilotsPilotIdRouteImport } from './routes/_authenticated/admin.sell-work.pilots.$pilotId'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -674,6 +675,12 @@ const AuthenticatedAdminSellWorkPilotsRoute =
     path: '/sell-work/pilots',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiInternalOfficeV1RenderRoute =
+  ApiInternalOfficeV1RenderRouteImport.update({
+    id: '/api/internal/office/v1/render',
+    path: '/api/internal/office/v1/render',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminSellWorkPilotsPilotIdRoute =
   AuthenticatedAdminSellWorkPilotsPilotIdRouteImport.update({
     id: '/$pilotId',
@@ -786,6 +793,7 @@ export interface FileRoutesByFullPath {
   '/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email/': typeof AuthenticatedMEmailIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -890,6 +898,7 @@ export interface FileRoutesByTo {
   '/m/ai-workforce': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email': typeof AuthenticatedMEmailIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -998,6 +1007,7 @@ export interface FileRoutesById {
   '/_authenticated/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/_authenticated/m/email/': typeof AuthenticatedMEmailIndexRoute
   '/_authenticated/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1106,6 +1116,7 @@ export interface FileRouteTypes {
     | '/m/ai-workforce/'
     | '/m/email/'
     | '/admin/sell-work/pilots/$pilotId'
+    | '/api/internal/office/v1/render'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1210,6 +1221,7 @@ export interface FileRouteTypes {
     | '/m/ai-workforce'
     | '/m/email'
     | '/admin/sell-work/pilots/$pilotId'
+    | '/api/internal/office/v1/render'
   id:
     | '__root__'
     | '/'
@@ -1317,6 +1329,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/ai-workforce/'
     | '/_authenticated/m/email/'
     | '/_authenticated/admin/sell-work/pilots/$pilotId'
+    | '/api/internal/office/v1/render'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1349,6 +1362,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
   ApiPublicHooksProcessOutboxRoute: typeof ApiPublicHooksProcessOutboxRoute
   ApiPublicHooksProcessQuotaExportsRoute: typeof ApiPublicHooksProcessQuotaExportsRoute
+  ApiInternalOfficeV1RenderRoute: typeof ApiInternalOfficeV1RenderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2081,6 +2095,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSellWorkPilotsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/internal/office/v1/render': {
+      id: '/api/internal/office/v1/render'
+      path: '/api/internal/office/v1/render'
+      fullPath: '/api/internal/office/v1/render'
+      preLoaderRoute: typeof ApiInternalOfficeV1RenderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/sell-work/pilots/$pilotId': {
       id: '/_authenticated/admin/sell-work/pilots/$pilotId'
       path: '/$pilotId'
@@ -2378,6 +2399,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksProcessOutboxRoute: ApiPublicHooksProcessOutboxRoute,
   ApiPublicHooksProcessQuotaExportsRoute:
     ApiPublicHooksProcessQuotaExportsRoute,
+  ApiInternalOfficeV1RenderRoute: ApiInternalOfficeV1RenderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
