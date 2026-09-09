@@ -954,21 +954,29 @@ export const exportWorkDeliverableArtifact = createServerFn({ method: "POST" })
 
     let rendered;
     try {
-      rendered = await renderOfficeArtifact({
-        format: data.format,
-        title: title || "Kết quả công việc",
-        content,
-        businessType: (product.business_type as string) ?? "DOCUMENT",
-        version,
-        workProductId: data.id,
-        provenance,
-      });
+      rendered = await renderOfficeArtifact(
+        {
+          format: data.format,
+          title: title || "Kết quả công việc",
+          content,
+          businessType: (product.business_type as string) ?? "DOCUMENT",
+          version,
+          workProductId: data.id,
+          provenance,
+        },
+        { engine: data.engine ?? "AUTO" },
+      );
     } catch (e) {
+      const reason = e instanceof Error ? e.message : "unknown";
       throw new ApiError({
         code: "INTERNAL_ERROR",
-        message: `OFFICE_RENDER_FAILED: ${e instanceof Error ? e.message : "unknown"}`,
+        message:
+          data.engine === "GENOFFICE"
+            ? `GENOFFICE_RENDER_FAILED: ${reason}`
+            : `OFFICE_RENDER_FAILED: ${reason}`,
       });
     }
+
 
     const fileName = officeFileName(title || "work-product", version, data.format);
     const objectKey = `${product.tenant_id}/${data.id}/v${version}/${Date.now()}-${fileName}`;
