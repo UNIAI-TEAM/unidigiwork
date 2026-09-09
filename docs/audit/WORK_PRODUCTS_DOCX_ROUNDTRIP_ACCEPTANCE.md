@@ -102,6 +102,21 @@ Luồng lõi — nhập DOCX, giữ bản gốc, AI đề xuất, người duy�
   - `create_task` chạy dưới RLS người dùng → workspace khác tổ chức bị từ chối tại DB, không phụ thuộc kiểm tra ở tầng ứng dụng.
 - Quan hệ `WORK_PRODUCT GENERATES TASK` đã tồn tại trong `work_relationship_types`.
 
+### 18.1 Kiểm tra cách ly hai tổ chức trên dữ liệu thật — PASS
+
+Chạy trực tiếp trên DB với `role authenticated` + `request.jwt.claims` của từng người dùng.
+
+| Bước | Chủ thể | Kết quả |
+| --- | --- | --- |
+| `create_task` trong workspace của mình | Tenant A (`d0ebb237…`, user `7177e35b…`) | Tạo task `3c0dcbef-204b-4bd0-b525-bbe9b8b984b9` |
+| `link_work_entities(WORK_PRODUCT → TASK, GENERATES)` | Tenant A | Edge `c2190141-0555-48b3-be5c-754b7118cd5e`, `tenant_id = d0ebb237…` |
+| Đọc `work_products` / `work_product_blocks` / `work_product_artifacts` / `tasks` / `work_edges` của A | Tenant B (`3ef5ab49…`, user `671df962…`) | 0 dòng cho cả 5 bảng |
+| `create_task` vào workspace của A | Tenant B | Bị chặn — không có dòng nào được tạo (`intruder_tasks = 0`) |
+| `link_work_entities` lên tài liệu của A | Tenant B | Bị chặn — chỉ còn đúng 1 edge do A tạo |
+
+Kết luận: tạo việc thật từ tài liệu Word, liên kết Work Graph và cách ly tổ chức đều đạt.
+
+
 ## 19. Fixture Word thật — chạy hết luồng (PASS 3/3)
 
 Fixture sinh bằng `docx-js` (không dùng engine của UNIWORK) tại `fixtures/docx/`:
