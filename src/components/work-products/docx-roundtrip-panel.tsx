@@ -1,12 +1,25 @@
 // Tài liệu Word đã nhập — sửa từng đoạn, xem đối chiếu và vá giữ nguyên bản gốc.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, GitCompare, ListChecks, Loader2, Lock, Sparkles, Undo2, X } from "lucide-react";
+import {
+  Check,
+  GitCompare,
+  ListChecks,
+  Loader2,
+  Lock,
+  RotateCcw,
+  SlidersHorizontal,
+  Sparkles,
+  Undo2,
+  Wand2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import {
   applyWorkProductAcceptedChanges,
@@ -19,7 +32,44 @@ import {
   createTasksFromWorkProduct,
   listWorkProductDocxVersions,
   compareWorkProductDocxVersions,
+  reanalyzeWorkProductDocx,
 } from "@/lib/api/work-products-docx.functions";
+
+const WEIGHT_KEYS = ["title", "heading", "listItem", "quote", "caption", "table"] as const;
+type WeightKey = (typeof WEIGHT_KEYS)[number];
+type Weights = Record<WeightKey, number>;
+
+const DEFAULT_WEIGHTS: Weights = {
+  title: 1,
+  heading: 1,
+  listItem: 1,
+  quote: 1,
+  caption: 1,
+  table: 1,
+};
+
+const WEIGHT_LABELS: Record<WeightKey, string> = {
+  title: "Tiêu đề tài liệu",
+  heading: "Tiêu đề mục",
+  listItem: "Gạch đầu dòng",
+  quote: "Trích dẫn",
+  caption: "Chú thích",
+  table: "Bảng",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  TITLE: "Tiêu đề tài liệu",
+  HEADING: "Tiêu đề mục",
+  PARAGRAPH: "Đoạn văn",
+  LIST_ITEM: "Gạch đầu dòng",
+  TABLE: "Bảng",
+  QUOTE: "Trích dẫn",
+  CAPTION: "Chú thích",
+  FOOTNOTE: "Chú thích cuối trang",
+  OTHER: "Khác",
+};
+
+const WEIGHTS_STORAGE_KEY = "uniwork.docx-detection-weights";
 
 type DocxVersion = {
   id: string;
