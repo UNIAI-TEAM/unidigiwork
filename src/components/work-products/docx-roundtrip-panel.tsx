@@ -103,7 +103,9 @@ export function DocxRoundTripPanel({
     mutationFn: () => applyWorkProductAcceptedChanges({ data: { id: productId } }),
     onSuccess: (r: { version: number; preservation: { preservedRatio: number } }) => {
       refresh();
-      toast.success(`Đã tạo phiên bản v${r.version} — giữ nguyên ${r.preservation.preservedRatio}% cấu trúc gốc`);
+      toast.success(
+        `Đã tạo phiên bản v${r.version} — giữ nguyên ${r.preservation.preservedRatio}% cấu trúc gốc`,
+      );
     },
     onError: (e: Error) =>
       toast.error(
@@ -147,7 +149,11 @@ export function DocxRoundTripPanel({
           disabled={!instruction.trim() || !selected || askAi.isPending}
           onClick={() => selected && askAi.mutate([selected])}
         >
-          {askAi.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {askAi.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
           Đề xuất cho đoạn đang chọn
         </Button>
       </Card>
@@ -160,14 +166,21 @@ export function DocxRoundTripPanel({
           return (
             <div
               key={b.id}
-              className={cn("rounded-lg border p-3 text-sm", locked && "bg-muted/40", isOpen && "border-primary")}
+              className={cn(
+                "rounded-lg border p-3 text-sm",
+                locked && "bg-muted/40",
+                isOpen && "border-primary",
+              )}
             >
               <div className="flex items-start gap-2">
                 <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">
                   {b.text || <span className="text-muted-foreground">(không có nội dung chữ)</span>}
                 </p>
                 {locked ? (
-                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="Giữ nguyên" />
+                  <Lock
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                    aria-label="Giữ nguyên"
+                  />
                 ) : (
                   <Button
                     variant="ghost"
@@ -184,7 +197,11 @@ export function DocxRoundTripPanel({
               </div>
               {isOpen && !locked && (
                 <div className="mt-2 space-y-2">
-                  <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} className="min-h-[80px] text-sm" />
+                  <Textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    className="min-h-[80px] text-sm"
+                  />
                   <Button
                     size="sm"
                     disabled={!draft.trim() || draft === b.text || propose.isPending}
@@ -205,10 +222,20 @@ export function DocxRoundTripPanel({
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium">Đối chiếu thay đổi ({pending.length})</p>
             <div className="flex gap-1">
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => decide.mutate({ decision: "ACCEPTED", all: true })}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => decide.mutate({ decision: "ACCEPTED", all: true })}
+              >
                 Chấp nhận tất cả
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => decide.mutate({ decision: "REJECTED", all: true })}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => decide.mutate({ decision: "REJECTED", all: true })}
+              >
                 Từ chối tất cả
               </Button>
             </div>
@@ -216,17 +243,31 @@ export function DocxRoundTripPanel({
           {pending.map((o) => (
             <div key={o.id} className="rounded-md border p-2 text-xs">
               <div className="mb-1 flex items-center gap-2">
-                <Badge variant={o.origin === "AI" ? "default" : "secondary"} className="text-[10px]">
+                <Badge
+                  variant={o.origin === "AI" ? "default" : "secondary"}
+                  className="text-[10px]"
+                >
                   {o.origin === "AI" ? "AI đề xuất" : "Người dùng sửa"}
                 </Badge>
               </div>
               <p className="whitespace-pre-wrap text-destructive">- {o.before_text}</p>
-              <p className="whitespace-pre-wrap text-emerald-600 dark:text-emerald-400">+ {o.after_text}</p>
+              <p className="whitespace-pre-wrap text-emerald-600 dark:text-emerald-400">
+                + {o.after_text}
+              </p>
               <div className="mt-2 flex gap-1">
-                <Button size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => decide.mutate({ changeIds: [o.id], decision: "ACCEPTED" })}>
+                <Button
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs"
+                  onClick={() => decide.mutate({ changeIds: [o.id], decision: "ACCEPTED" })}
+                >
                   <Check className="h-3 w-3" /> Chấp nhận
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => decide.mutate({ changeIds: [o.id], decision: "REJECTED" })}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs"
+                  onClick={() => decide.mutate({ changeIds: [o.id], decision: "REJECTED" })}
+                >
                   <X className="h-3 w-3" /> Từ chối
                 </Button>
               </div>
@@ -241,8 +282,17 @@ export function DocxRoundTripPanel({
           <p className="text-xs text-muted-foreground">
             {accepted.length} thay đổi đã chấp nhận, chờ ghi vào tệp Word mới.
           </p>
-          <Button size="sm" className="gap-2" disabled={apply.isPending} onClick={() => apply.mutate()}>
-            {apply.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
+          <Button
+            size="sm"
+            className="gap-2"
+            disabled={apply.isPending}
+            onClick={() => apply.mutate()}
+          >
+            {apply.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Undo2 className="h-4 w-4" />
+            )}
             Tạo phiên bản Word mới
           </Button>
         </Card>

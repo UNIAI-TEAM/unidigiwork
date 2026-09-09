@@ -34,23 +34,39 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
         base64: z.string().min(1).max(MAX_BASE64),
         title: z.string().min(1).max(300).optional(),
         businessType: z
-          .enum(["PROPOSAL", "REPORT", "ANALYSIS", "CONTRACT", "PLAN", "PRESENTATION", "MEMO", "DOCUMENT", "OTHER"])
+          .enum([
+            "PROPOSAL",
+            "REPORT",
+            "ANALYSIS",
+            "CONTRACT",
+            "PLAN",
+            "PRESENTATION",
+            "MEMO",
+            "DOCUMENT",
+            "OTHER",
+          ])
           .default("DOCUMENT"),
         workspaceId: z.string().uuid().nullable().optional(),
-        primaryContextType: z.enum(["WORKSPACE", "MEETING", "TASK", "DOCUMENT", "EMAIL"]).nullable().optional(),
+        primaryContextType: z
+          .enum(["WORKSPACE", "MEETING", "TASK", "DOCUMENT", "EMAIL"])
+          .nullable()
+          .optional(),
         primaryContextId: z.string().uuid().nullable().optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { DOCX_MIME, DOCX_MAX_BYTES, sha256Hex, parseDocxToBlocks, GENOFFICE_ENGINE_VERSION } = await import(
-      "./docx-import.server"
-    );
+    const { DOCX_MIME, DOCX_MAX_BYTES, sha256Hex, parseDocxToBlocks, GENOFFICE_ENGINE_VERSION } =
+      await import("./docx-import.server");
 
     if (!/\.docx$/i.test(data.fileName)) {
       throw new ApiError({ code: "VALIDATION_FAILED", message: "DOCX_ONLY" });
     }
-    if (data.mimeType && data.mimeType !== DOCX_MIME && data.mimeType !== "application/octet-stream") {
+    if (
+      data.mimeType &&
+      data.mimeType !== DOCX_MIME &&
+      data.mimeType !== "application/octet-stream"
+    ) {
       throw new ApiError({ code: "VALIDATION_FAILED", message: "DOCX_MIME_INVALID" });
     }
 
@@ -61,7 +77,8 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
       throw new ApiError({ code: "VALIDATION_FAILED", message: "FILE_DECODE_FAILED" });
     }
     if (!bytes.byteLength) throw new ApiError({ code: "VALIDATION_FAILED", message: "FILE_EMPTY" });
-    if (bytes.byteLength > DOCX_MAX_BYTES) throw new ApiError({ code: "VALIDATION_FAILED", message: "FILE_TOO_LARGE" });
+    if (bytes.byteLength > DOCX_MAX_BYTES)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "FILE_TOO_LARGE" });
     // Chữ ký gói OOXML (ZIP).
     if (!(bytes[0] === 0x50 && bytes[1] === 0x4b)) {
       throw new ApiError({ code: "VALIDATION_FAILED", message: "DOCX_SIGNATURE_INVALID" });
@@ -122,8 +139,14 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
       .from(WP_BUCKET)
       .upload(objectKey, bytes, { contentType: DOCX_MIME, upsert: false });
     if (upErr) {
-      await context.supabase.from("work_products").update({ deleted_at: importedAt }).eq("id", productId);
-      throw new ApiError({ code: "INTERNAL_ERROR", message: `SOURCE_UPLOAD_FAILED: ${upErr.message}` });
+      await context.supabase
+        .from("work_products")
+        .update({ deleted_at: importedAt })
+        .eq("id", productId);
+      throw new ApiError({
+        code: "INTERNAL_ERROR",
+        message: `SOURCE_UPLOAD_FAILED: ${upErr.message}`,
+      });
     }
 
     const { data: artifact, error: aErr } = await context.supabase
@@ -147,7 +170,10 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
       .single();
     if (aErr) {
       await supabaseAdmin.storage.from(WP_BUCKET).remove([objectKey]);
-      await context.supabase.from("work_products").update({ deleted_at: importedAt }).eq("id", productId);
+      await context.supabase
+        .from("work_products")
+        .update({ deleted_at: importedAt })
+        .eq("id", productId);
       mapPgError(aErr);
     }
     const sourceArtifactId = artifact.id as string;
@@ -170,7 +196,9 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
       editability: b.editability,
     }));
     for (let i = 0; i < rows.length; i += 500) {
-      const { error: bErr } = await context.supabase.from("work_product_blocks").insert(rows.slice(i, i + 500));
+      const { error: bErr } = await context.supabase
+        .from("work_product_blocks")
+        .insert(rows.slice(i, i + 500));
       if (bErr) mapPgError(bErr);
     }
 
@@ -195,7 +223,11 @@ export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
       ],
     });
 
-    if (data.primaryContextType && data.primaryContextId && data.primaryContextType !== "WORKSPACE") {
+    if (
+      data.primaryContextType &&
+      data.primaryContextId &&
+      data.primaryContextType !== "WORKSPACE"
+    ) {
       await context.supabase.rpc("link_work_entities", {
         _source_type: "WORK_PRODUCT",
         _source_id: productId,
@@ -222,7 +254,9 @@ export const listWorkProductBlocks = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("work_product_blocks")
-      .select("id, block_key, ordinal, block_type, text, source_anchor, editability, source_version")
+      .select(
+        "id, block_key, ordinal, block_type, text, source_anchor, editability, source_version",
+      )
       .eq("work_product_id", data.id)
       .order("ordinal", { ascending: true })
       .limit(2000);
@@ -258,7 +292,8 @@ export const proposeWorkProductChanges = createServerFn({ method: "POST" })
       .is("deleted_at", null)
       .maybeSingle();
     if (pErr) mapPgError(pErr);
-    if (!product) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
 
     const ids = data.changes.map((c) => c.blockId);
     const { data: blocks, error: bErr } = await context.supabase
@@ -272,7 +307,8 @@ export const proposeWorkProductChanges = createServerFn({ method: "POST" })
     const rows = data.changes.map((c) => {
       const b = map.get(c.blockId);
       if (!b) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "BLOCK_NOT_FOUND" });
-      if (b.editability !== "EDITABLE") throw new ApiError({ code: "VALIDATION_FAILED", message: "PATCH_UNSAFE" });
+      if (b.editability !== "EDITABLE")
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "PATCH_UNSAFE" });
       return {
         tenant_id: product.tenant_id,
         work_product_id: data.id,
@@ -301,7 +337,10 @@ export const listWorkProductChangeOps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
     z
-      .object({ id: z.string().uuid(), status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "APPLIED"]).optional() })
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "APPLIED"]).optional(),
+      })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -335,11 +374,16 @@ export const decideWorkProductChangeOps = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("work_product_change_ops")
-      .update({ status: data.decision, decided_by: context.userId, decided_at: new Date().toISOString() })
+      .update({
+        status: data.decision,
+        decided_by: context.userId,
+        decided_at: new Date().toISOString(),
+      })
       .eq("work_product_id", data.id)
       .eq("status", "PENDING");
     if (!data.all) {
-      if (!data.changeIds?.length) throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_CHANGES_SELECTED" });
+      if (!data.changeIds?.length)
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_CHANGES_SELECTED" });
       q = q.in("id", data.changeIds);
     }
     const { data: rows, error } = await q.select("id");
@@ -357,7 +401,13 @@ export const decideWorkProductChangeOps = createServerFn({ method: "POST" })
 export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({ ...commandMetadataSchema.shape, id: z.string().uuid(), note: z.string().max(500).optional() }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        note: z.string().max(500).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: product, error: pErr } = await context.supabase
@@ -367,20 +417,24 @@ export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" }
       .is("deleted_at", null)
       .maybeSingle();
     if (pErr) mapPgError(pErr);
-    if (!product) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
     if (product.origin !== "IMPORTED_DOCX" || !product.source_artifact_id) {
       throw new ApiError({ code: "VALIDATION_FAILED", message: "NOT_IMPORTED_DOCX" });
     }
 
     const { data: ops, error: oErr } = await context.supabase
       .from("work_product_change_ops")
-      .select("id, block_key, source_anchor, before_text, after_text, origin, proposal_id, author_id")
+      .select(
+        "id, block_key, source_anchor, before_text, after_text, origin, proposal_id, author_id",
+      )
       .eq("work_product_id", data.id)
       .eq("status", "ACCEPTED")
       .order("created_at", { ascending: true })
       .limit(200);
     if (oErr) mapPgError(oErr);
-    if (!ops?.length) throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_ACCEPTED_CHANGES" });
+    if (!ops?.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_ACCEPTED_CHANGES" });
 
     // Tệp nguồn hiện hành: phiên bản mới nhất, nếu chưa có thì bản gốc.
     const { data: artifacts } = await context.supabase
@@ -391,22 +445,36 @@ export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" }
       .order("version", { ascending: false })
       .limit(1);
     const base = artifacts?.[0];
-    if (!base?.storage_ref) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "SOURCE_ARTIFACT_NOT_FOUND" });
+    if (!base?.storage_ref)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "SOURCE_ARTIFACT_NOT_FOUND" });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: blob, error: dErr } = await supabaseAdmin.storage
       .from(WP_BUCKET)
       .download(base.storage_ref as string);
-    if (dErr || !blob) throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
+    if (dErr || !blob)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
     const original = new Uint8Array(await blob.arrayBuffer());
 
-    const { patchDocxAnchored, PatchUnsafeError, DOCX_MIME, sha256Hex, GENOFFICE_ENGINE_VERSION, GENOFFICE_COMMIT } =
-      await import("./docx-import.server");
+    const {
+      patchDocxAnchored,
+      PatchUnsafeError,
+      DOCX_MIME,
+      sha256Hex,
+      GENOFFICE_ENGINE_VERSION,
+      GENOFFICE_COMMIT,
+    } = await import("./docx-import.server");
 
     const edits = ops.map((o: any) => {
       const idx = (o.source_anchor ?? {}).docxIndex;
-      if (typeof idx !== "number") throw new ApiError({ code: "VALIDATION_FAILED", message: "PATCH_UNSAFE" });
-      return { blockKey: o.block_key as string, docxIndex: idx, before: o.before_text ?? "", after: o.after_text ?? "" };
+      if (typeof idx !== "number")
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "PATCH_UNSAFE" });
+      return {
+        blockKey: o.block_key as string,
+        docxIndex: idx,
+        before: o.before_text ?? "",
+        after: o.after_text ?? "",
+      };
     });
 
     let patched;
@@ -433,14 +501,20 @@ export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" }
     const nextVersion = (product.current_version ?? 1) + 1;
     const sha256 = await sha256Hex(patched.bytes);
     const fileName = safeName(
-      (product.source_filename as string | null)?.replace(/\.docx$/i, "") || (product.title as string) || "document",
+      (product.source_filename as string | null)?.replace(/\.docx$/i, "") ||
+        (product.title as string) ||
+        "document",
     );
     const objectKey = `${product.tenant_id}/${data.id}/v${nextVersion}/${Date.now()}-${fileName}-v${nextVersion}.docx`;
 
     const { error: upErr } = await supabaseAdmin.storage
       .from(WP_BUCKET)
       .upload(objectKey, patched.bytes, { contentType: DOCX_MIME, upsert: false });
-    if (upErr) throw new ApiError({ code: "INTERNAL_ERROR", message: `ARTIFACT_UPLOAD_FAILED: ${upErr.message}` });
+    if (upErr)
+      throw new ApiError({
+        code: "INTERNAL_ERROR",
+        message: `ARTIFACT_UPLOAD_FAILED: ${upErr.message}`,
+      });
 
     const { data: artifact, error: aErr } = await context.supabase
       .from("work_product_artifacts")
@@ -467,7 +541,9 @@ export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" }
     }
 
     // Nội dung native theo khối mới (chỉ để hiển thị/tìm kiếm).
-    const afterByKey = new Map(ops.map((o: any) => [o.block_key as string, o.after_text as string]));
+    const afterByKey = new Map(
+      ops.map((o: any) => [o.block_key as string, o.after_text as string]),
+    );
     const { data: blocks } = await context.supabase
       .from("work_product_blocks")
       .select("id, block_key, text, ordinal")
@@ -481,7 +557,9 @@ export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" }
 
     const now = new Date().toISOString();
     const aiOps = ops.filter((o: any) => o.origin === "AI");
-    const proposalIds = [...new Set(aiOps.map((o: any) => o.proposal_id).filter(Boolean))] as string[];
+    const proposalIds = [
+      ...new Set(aiOps.map((o: any) => o.proposal_id).filter(Boolean)),
+    ] as string[];
     let contextSources: unknown[] = [];
     if (proposalIds.length) {
       const { data: props } = await context.supabase
@@ -492,7 +570,10 @@ export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" }
         const src = Array.isArray((p as any).context_sources) ? (p as any).context_sources : [];
         contextSources = contextSources.concat(src);
       }
-      await context.supabase.from("work_product_ai_proposals").update({ status: "APPLIED" }).in("id", proposalIds);
+      await context.supabase
+        .from("work_product_ai_proposals")
+        .update({ status: "APPLIED" })
+        .in("id", proposalIds);
     }
 
     const provenance = [
@@ -568,7 +649,10 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
         blockKeys: z.array(z.string().max(80)).min(1).max(20),
         instruction: z.string().min(1).max(2000),
         locale: z.string().max(8).default("vi"),
-        sources: z.array(z.object({ type: z.string().max(40), id: z.string().max(80) })).max(20).default([]),
+        sources: z
+          .array(z.object({ type: z.string().max(40), id: z.string().max(80) }))
+          .max(20)
+          .default([]),
       })
       .parse(i),
   )
@@ -582,7 +666,8 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .is("deleted_at", null)
       .maybeSingle();
-    if (!product) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
 
     const { data: blocks } = await context.supabase
       .from("work_product_blocks")
@@ -591,7 +676,8 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
       .in("block_key", data.blockKeys)
       .order("ordinal", { ascending: true });
     const targets = (blocks ?? []).filter((b: any) => b.editability === "EDITABLE");
-    if (!targets.length) throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_EDITABLE_BLOCKS" });
+    if (!targets.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_EDITABLE_BLOCKS" });
 
     // Ngữ cảnh chuẩn do máy chủ nạp theo quyền người dùng.
     const { collectContextSources } = await import("./work-deliverables.server");
@@ -599,7 +685,9 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
     const wanted = new Set(data.sources.map((s) => `${s.type}:${s.id}`));
     const resolved = allowed.filter((s) => wanted.has(`${s.type}:${s.id}`));
     const contextBlock = resolved.length
-      ? resolved.map((s) => `- [${s.type}] ${s.title}${s.stamp ? ` (${s.stamp})` : ""}: ${s.snippet}`).join("\n")
+      ? resolved
+          .map((s) => `- [${s.type}] ${s.title}${s.stamp ? ` (${s.stamp})` : ""}: ${s.snippet}`)
+          .join("\n")
       : "(không bật nguồn ngữ cảnh nào)";
 
     const model = "openai/gpt-5.6-sol";
@@ -631,7 +719,8 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
       const m = /^\s*\[(\d+)\]\s*(.+)$/.exec(line);
       if (m) proposed.set(Number(m[1]), m[2].trim());
     }
-    if (!proposed.size) throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_EMPTY_PROPOSAL" });
+    if (!proposed.size)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_EMPTY_PROPOSAL" });
 
     const baseVersion = (product.current_version as number | null) ?? 1;
     const { data: proposal, error: prErr } = await context.supabase
@@ -675,7 +764,8 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
         };
       })
       .filter(Boolean);
-    if (!rows.length) throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_CHANGES_PROPOSED" });
+    if (!rows.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_CHANGES_PROPOSED" });
 
     const { data: created, error: cErr } = await context.supabase
       .from("work_product_change_ops")
@@ -687,6 +777,11 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
       proposalId: proposal.id as string,
       model,
       changes: created ?? [],
-      usedSources: resolved.map((s) => ({ type: s.type, id: s.id, title: s.title, stamp: s.stamp ?? null })),
+      usedSources: resolved.map((s) => ({
+        type: s.type,
+        id: s.id,
+        title: s.title,
+        stamp: s.stamp ?? null,
+      })),
     };
   });
