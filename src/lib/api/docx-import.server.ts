@@ -213,6 +213,8 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
       role = "TABLE";
       grid = tableGrid(b);
       table = tableSummaryOf(grid);
+      // Bảng không sửa được, nhưng cần có chữ để tìm kiếm và cho AI đọc hiểu.
+      if (!text.trim() && grid.length) text = markdownTable(grid);
     } else if (type === "image" || type === "passthrough") {
       role = "OTHER";
     } else if (type === "heading") {
