@@ -41,6 +41,7 @@ const KINDS: SearchKind[] = [
   "meeting",
   "artifact",
   "document",
+  "workproduct",
   "email",
   "chat",
   "person",
@@ -105,6 +106,12 @@ const TYPE_META: Record<
     icon: Sparkles,
     chip: "bg-sky-500/10 text-sky-600 border-sky-500/25",
     iconBg: "bg-sky-500/10 text-sky-600",
+  },
+  workproduct: {
+    label: "Kết quả công việc",
+    icon: FileText,
+    chip: "bg-violet-500/15 text-violet-500 border-violet-500/30",
+    iconBg: "bg-violet-500/15 text-violet-500",
   },
   document: {
     label: "Tài liệu",
