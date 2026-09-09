@@ -38,16 +38,6 @@ import {
   getAiProposalAccuracyReport,
 } from "@/lib/api/work-products-docx.functions";
 
-const ROLE_LABELS: Record<string, string> = {
-  TITLE: "Tiêu đề tài liệu",
-  HEADING: "Tiêu đề mục",
-  LIST_ITEM: "Gạch đầu dòng",
-  QUOTE: "Trích dẫn",
-  CAPTION: "Chú thích",
-  TABLE: "Bảng",
-  PARAGRAPH: "Đoạn văn",
-};
-
 type AccuracyReport = {
   total: number;
   accepted: number;
