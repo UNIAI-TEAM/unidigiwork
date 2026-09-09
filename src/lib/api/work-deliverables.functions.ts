@@ -1079,55 +1079,80 @@ export const updateWorkProductAccessPolicy = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/* ------------------------------------------- chia sẻ giữa không gian làm việc */
+/* ------------------------------------------- chia sẻ tài liệu */
 
 export const WP_SHARE_PERMISSIONS = ["VIEW", "EDIT"] as const;
+export const WP_SHARE_STATUSES = ["ACTIVE", "REVOKED"] as const;
 
 export type WorkProductShare = {
   id: string;
-  workspaceId: string;
-  workspaceName: string;
+  targetType: "WORKSPACE" | "USER";
+  targetId: string;
+  targetName: string;
   permission: string;
+  status: string;
+  expiresAt: string | null;
+  expired: boolean;
   note: string | null;
   createdAt: string;
 };
 
-/** Danh sách không gian làm việc đã được chia sẻ tài liệu này. */
+/** Danh sách nơi/người đã được chia sẻ tài liệu này. */
 export const listWorkProductShares = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<{ shares: WorkProductShare[]; canManage: boolean }> => {
     const { data: rows, error } = await context.supabase
       .from("work_product_shares")
-      .select("id, workspace_id, permission, note, created_at")
+      .select("id, workspace_id, shared_with_user_id, permission, note, status, expires_at, created_at")
       .eq("work_product_id", data.id)
       .order("created_at", { ascending: true });
     if (error) mapPgError(error);
 
-    const ids = [...new Set(((rows ?? []) as any[]).map((r) => r.workspace_id as string))];
+    const list = (rows ?? []) as any[];
+    const wsIds = [...new Set(list.map((r) => r.workspace_id as string | null).filter(Boolean))] as string[];
+    const userIds = [...new Set(list.map((r) => r.shared_with_user_id as string | null).filter(Boolean))] as string[];
     const names = new Map<string, string>();
-    if (ids.length) {
-      const { data: ws } = await context.supabase.from("workspaces").select("id, name").in("id", ids);
+    if (wsIds.length) {
+      const { data: ws } = await context.supabase.from("workspaces").select("id, name").in("id", wsIds);
       for (const w of (ws ?? []) as any[]) names.set(w.id as string, (w.name as string) ?? "—");
     }
+    if (userIds.length) {
+      const { data: us } = await context.supabase
+        .from("users")
+        .select("id, display_name, primary_email")
+        .in("id", userIds);
+      for (const u of (us ?? []) as any[])
+        names.set(u.id as string, (u.display_name as string) ?? (u.primary_email as string) ?? "—");
+    }
+    const now = Date.now();
     const { data: canEdit } = await context.supabase.rpc("can_edit_work_product", { _id: data.id } as never);
     return {
-      shares: ((rows ?? []) as any[]).map((r) => ({
-        id: r.id as string,
-        workspaceId: r.workspace_id as string,
-        workspaceName: names.get(r.workspace_id as string) ?? "—",
-        permission: (r.permission as string) ?? "VIEW",
-        note: (r.note as string) ?? null,
-        createdAt: r.created_at as string,
-      })),
+      shares: list.map((r) => {
+        const isUser = Boolean(r.shared_with_user_id);
+        const targetId = (isUser ? r.shared_with_user_id : r.workspace_id) as string;
+        const expiresAt = (r.expires_at as string) ?? null;
+        return {
+          id: r.id as string,
+          targetType: isUser ? ("USER" as const) : ("WORKSPACE" as const),
+          targetId,
+          targetName: names.get(targetId) ?? "—",
+          permission: (r.permission as string) ?? "VIEW",
+          status: (r.status as string) ?? "ACTIVE",
+          expiresAt,
+          expired: Boolean(expiresAt && new Date(expiresAt).getTime() <= now),
+          note: (r.note as string) ?? null,
+          createdAt: r.created_at as string,
+        };
+      }),
       canManage: Boolean(canEdit),
     };
   });
 
-/** Không gian làm việc người dùng là thành viên — dùng làm nơi nhận chia sẻ. */
+/** Không gian làm việc và thành viên tổ chức — dùng làm nơi nhận chia sẻ. */
 export const listShareableWorkspaces = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ id: string; name: string }[]> => {
+  .handler(async ({ context }): Promise<{ workspaces: { id: string; name: string }[]; people: { id: string; name: string }[] }> => {
     const { data: mem, error } = await context.supabase
       .from("workspace_members")
       .select("workspace_id")
@@ -1135,12 +1160,39 @@ export const listShareableWorkspaces = createServerFn({ method: "GET" })
       .limit(200);
     if (error) mapPgError(error);
     const ids = [...new Set(((mem ?? []) as any[]).map((m) => m.workspace_id as string))];
-    if (!ids.length) return [];
-    const { data: ws } = await context.supabase.from("workspaces").select("id, name").in("id", ids).order("name");
-    return ((ws ?? []) as any[]).map((w) => ({ id: w.id as string, name: (w.name as string) ?? "—" }));
+    let workspaces: { id: string; name: string }[] = [];
+    if (ids.length) {
+      const { data: ws } = await context.supabase.from("workspaces").select("id, name").in("id", ids).order("name");
+      workspaces = ((ws ?? []) as any[]).map((w) => ({ id: w.id as string, name: (w.name as string) ?? "—" }));
+    }
+
+    let people: { id: string; name: string }[] = [];
+    try {
+      const tenantId = await currentTenantId(context.supabase, context.userId);
+      const { data: tm } = await context.supabase
+        .from("tenant_members")
+        .select("user_id")
+        .eq("tenant_id", tenantId)
+        .eq("status", "active")
+        .limit(500);
+      const userIds = [...new Set(((tm ?? []) as any[]).map((m) => m.user_id as string))];
+      if (userIds.length) {
+        const { data: us } = await context.supabase
+          .from("users")
+          .select("id, display_name, primary_email")
+          .in("id", userIds);
+        people = ((us ?? []) as any[]).map((u) => ({
+          id: u.id as string,
+          name: (u.display_name as string) ?? (u.primary_email as string) ?? "—",
+        }));
+      }
+    } catch {
+      people = [];
+    }
+    return { workspaces, people };
   });
 
-/** Chia sẻ tài liệu sang một không gian làm việc (hoặc đổi quyền nếu đã chia sẻ). */
+/** Chia sẻ tài liệu tới một không gian làm việc hoặc một người (hoặc cập nhật nếu đã có). */
 export const shareWorkProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
@@ -1148,28 +1200,63 @@ export const shareWorkProduct = createServerFn({ method: "POST" })
       .object({
         ...commandMetadataSchema.shape,
         id: z.string().uuid(),
-        workspaceId: z.string().uuid(),
+        targetType: z.enum(["WORKSPACE", "USER"]).default("WORKSPACE"),
+        targetId: z.string().uuid(),
         permission: z.enum(WP_SHARE_PERMISSIONS).default("VIEW"),
+        status: z.enum(WP_SHARE_STATUSES).default("ACTIVE"),
+        expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
         note: z.string().max(300).nullable().optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const isUser = data.targetType === "USER";
     const { error } = await context.supabase.from("work_product_shares").upsert(
       {
         work_product_id: data.id,
-        workspace_id: data.workspaceId,
+        workspace_id: isUser ? null : data.targetId,
+        shared_with_user_id: isUser ? data.targetId : null,
         permission: data.permission,
+        status: data.status,
+        expires_at: data.expiresAt ?? null,
         note: data.note ?? null,
         shared_by: context.userId,
       } as never,
-      { onConflict: "work_product_id,workspace_id" },
+      { onConflict: isUser ? "work_product_id,shared_with_user_id" : "work_product_id,workspace_id" },
     );
     if (error) mapPgError(error);
     return { ok: true };
   });
 
-/** Gỡ chia sẻ khỏi một không gian làm việc. */
+/** Cập nhật quyền, thời hạn hoặc trạng thái của một lượt chia sẻ. */
+export const updateWorkProductShare = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        shareId: z.string().uuid(),
+        permission: z.enum(WP_SHARE_PERMISSIONS).optional(),
+        status: z.enum(WP_SHARE_STATUSES).optional(),
+        expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const patch: Record<string, unknown> = {};
+    if (data.permission) patch['permission'] = data.permission;
+    if (data.status) patch['status'] = data.status;
+    if (data.expiresAt !== undefined) patch['expires_at'] = data.expiresAt;
+    if (!Object.keys(patch).length) return { ok: true };
+    const { error } = await context.supabase
+      .from("work_product_shares")
+      .update(patch as never)
+      .eq("id", data.shareId);
+    if (error) mapPgError(error);
+    return { ok: true };
+  });
+
+/** Gỡ một lượt chia sẻ. */
 export const unshareWorkProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>

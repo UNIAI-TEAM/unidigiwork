@@ -81,6 +81,7 @@ import {
   listShareableWorkspaces,
   shareWorkProduct,
   unshareWorkProduct,
+  updateWorkProductShare,
 } from "@/lib/api/work-deliverables.functions";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
@@ -137,21 +138,49 @@ function WorkProductDetail() {
     queryKey: ["wp-shareable-workspaces"],
     queryFn: () => listShareableWorkspaces(),
   });
+  const [shareKind, setShareKind] = useState<"WORKSPACE" | "USER">("WORKSPACE");
   const [shareTarget, setShareTarget] = useState<string>("");
   const [sharePerm, setSharePerm] = useState<"VIEW" | "EDIT">("VIEW");
+  const [shareExpiry, setShareExpiry] = useState<string>("");
   const [sharing, setSharing] = useState(false);
+  const shareOptions =
+    shareKind === "USER" ? (shareWorkspaces?.people ?? []) : (shareWorkspaces?.workspaces ?? []);
   async function addShare() {
     if (!shareTarget) return;
     setSharing(true);
     try {
-      await shareWorkProduct({ data: { id, workspaceId: shareTarget, permission: sharePerm, idempotencyKey: `wp-share-${id}-${shareTarget}-${sharePerm}` } });
+      await shareWorkProduct({
+        data: {
+          id,
+          targetType: shareKind,
+          targetId: shareTarget,
+          permission: sharePerm,
+          status: "ACTIVE",
+          expiresAt: shareExpiry ? new Date(shareExpiry).toISOString() : null,
+          idempotencyKey: `wp-share-${id}-${shareTarget}-${sharePerm}-${shareExpiry || "none"}`,
+        },
+      });
       await qc.invalidateQueries({ queryKey: ["work-deliverable-shares", id] });
       setShareTarget("");
+      setShareExpiry("");
       toast.success(t("wp.share.added"));
     } catch {
       toast.error(t("wp.share.error"));
-    } finally {
-      setSharing(false);
+    }
+    setSharing(false);
+  }
+  async function patchShare(
+    shareId: string,
+    patch: { permission?: "VIEW" | "EDIT"; status?: "ACTIVE" | "REVOKED"; expiresAt?: string | null },
+  ) {
+    try {
+      await updateWorkProductShare({
+        data: { shareId, ...patch, idempotencyKey: `wp-share-upd-${shareId}-${Date.now()}` },
+      });
+      await qc.invalidateQueries({ queryKey: ["work-deliverable-shares", id] });
+      toast.success(t("wp.share.updated"));
+    } catch {
+      toast.error(t("wp.share.error"));
     }
   }
   async function removeShare(shareId: string) {
@@ -920,11 +949,30 @@ function WorkProductDetail() {
                   <p className="text-xs text-muted-foreground">{t("wp.share.hint")}</p>
                   {shareData?.canManage && (
                     <div className="space-y-2 rounded-lg border bg-background p-3">
-                      <Select value={shareTarget} onValueChange={setShareTarget}>
-                        <SelectTrigger><SelectValue placeholder={t("wp.share.pickWorkspace")} /></SelectTrigger>
+                      <Select
+                        value={shareKind}
+                        onValueChange={(v) => {
+                          setShareKind(v as "WORKSPACE" | "USER");
+                          setShareTarget("");
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {(shareWorkspaces ?? [])
-                            .filter((w) => !(shareData?.shares ?? []).some((s) => s.workspaceId === w.id))
+                          <SelectItem value="WORKSPACE">{t("wp.share.kindWorkspace")}</SelectItem>
+                          <SelectItem value="USER">{t("wp.share.kindUser")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={shareTarget} onValueChange={setShareTarget}>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              shareKind === "USER" ? t("wp.share.pickUser") : t("wp.share.pickWorkspace")
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {shareOptions
+                            .filter((w) => !(shareData?.shares ?? []).some((s) => s.targetId === w.id))
                             .map((w) => (
                               <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                             ))}
@@ -937,6 +985,17 @@ function WorkProductDetail() {
                           <SelectItem value="EDIT">{t("wp.share.edit")}</SelectItem>
                         </SelectContent>
                       </Select>
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-muted-foreground" htmlFor="wp-share-expiry">
+                          {t("wp.share.expiry")}
+                        </label>
+                        <Input
+                          id="wp-share-expiry"
+                          type="datetime-local"
+                          value={shareExpiry}
+                          onChange={(e) => setShareExpiry(e.target.value)}
+                        />
+                      </div>
                       <Button size="sm" className="w-full gap-2" disabled={!shareTarget || sharing} onClick={addShare}>
                         {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
                         {t("wp.share.add")}
@@ -947,15 +1006,64 @@ function WorkProductDetail() {
                     <p className="text-sm text-muted-foreground">{t("wp.share.empty")}</p>
                   )}
                   {(shareData?.shares ?? []).map((s) => (
-                    <div key={s.id} className="flex items-center gap-2 rounded-lg border bg-background p-3">
-                      <span className="min-w-0 flex-1 truncate text-sm">{s.workspaceName}</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {s.permission === "EDIT" ? t("wp.share.edit") : t("wp.share.view")}
-                      </Badge>
+                    <div key={s.id} className="space-y-2 rounded-lg border bg-background p-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {s.targetType === "USER" ? t("wp.share.kindUser") : t("wp.share.kindWorkspace")}
+                        </Badge>
+                        <span className="min-w-0 flex-1 truncate text-sm">{s.targetName}</span>
+                        <Badge
+                          variant={s.status === "REVOKED" || s.expired ? "destructive" : "outline"}
+                          className="text-[10px]"
+                        >
+                          {s.status === "REVOKED"
+                            ? t("wp.share.revoked")
+                            : s.expired
+                              ? t("wp.share.expired")
+                              : t("wp.share.active")}
+                        </Badge>
+                        {shareData?.canManage && (
+                          <Button variant="ghost" size="icon-sm" aria-label={t("wp.share.remove")} onClick={() => removeShare(s.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                        <Badge variant="outline" className="text-[10px]">
+                          {s.permission === "EDIT" ? t("wp.share.edit") : t("wp.share.view")}
+                        </Badge>
+                        <span>
+                          {s.expiresAt
+                            ? `${t("wp.share.expiresAt")}: ${fmt.format(new Date(s.expiresAt))}`
+                            : t("wp.share.noExpiry")}
+                        </span>
+                      </div>
                       {shareData?.canManage && (
-                        <Button variant="ghost" size="icon-sm" aria-label={t("wp.share.remove")} onClick={() => removeShare(s.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              patchShare(s.id, { permission: s.permission === "EDIT" ? "VIEW" : "EDIT" })
+                            }
+                          >
+                            {s.permission === "EDIT" ? t("wp.share.view") : t("wp.share.edit")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              patchShare(s.id, { status: s.status === "REVOKED" ? "ACTIVE" : "REVOKED" })
+                            }
+                          >
+                            {s.status === "REVOKED" ? t("wp.share.restore") : t("wp.share.revoke")}
+                          </Button>
+                          {s.expiresAt && (
+                            <Button size="sm" variant="ghost" onClick={() => patchShare(s.id, { expiresAt: null })}>
+                              {t("wp.share.clearExpiry")}
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
