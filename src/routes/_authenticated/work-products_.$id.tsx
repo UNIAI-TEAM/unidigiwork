@@ -144,7 +144,7 @@ function WorkProductDetail() {
     if (!shareTarget) return;
     setSharing(true);
     try {
-      await shareWorkProduct({ data: { id, workspaceId: shareTarget, permission: sharePerm } });
+      await shareWorkProduct({ data: { id, workspaceId: shareTarget, permission: sharePerm, idempotencyKey: `wp-share-${id}-${shareTarget}-${sharePerm}` } });
       await qc.invalidateQueries({ queryKey: ["work-deliverable-shares", id] });
       setShareTarget("");
       toast.success(t("wp.share.added"));
@@ -156,7 +156,7 @@ function WorkProductDetail() {
   }
   async function removeShare(shareId: string) {
     try {
-      await unshareWorkProduct({ data: { shareId } });
+      await unshareWorkProduct({ data: { shareId, idempotencyKey: `wp-unshare-${shareId}` } });
       await qc.invalidateQueries({ queryKey: ["work-deliverable-shares", id] });
       toast.success(t("wp.share.removed"));
     } catch {
