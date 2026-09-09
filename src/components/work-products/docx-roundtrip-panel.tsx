@@ -619,6 +619,74 @@ export function DocxRoundTripPanel({
         )}
       </Card>
 
+      {/* Đề xuất tiếp theo từ nội dung vừa thay đổi */}
+      {(suggestFollowUps.isPending || followUps.length > 0) && (
+        <Card className="space-y-2 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium">Đề xuất tiếp theo từ thay đổi vừa duyệt</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={suggestFollowUps.isPending}
+              onClick={() => suggestFollowUps.mutate(undefined)}
+            >
+              {suggestFollowUps.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <ListChecks className="h-3 w-3" />
+              )}
+              Phân tích lại
+            </Button>
+          </div>
+          {suggestFollowUps.isPending && (
+            <p className="text-xs text-muted-foreground">AI đang đọc phần nội dung vừa đổi…</p>
+          )}
+          {followUps.map((f, i) => (
+            <label
+              key={`${f.kind}-${f.title}-${i}`}
+              className="flex items-start gap-2 rounded-md border p-2 text-xs"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={f.checked}
+                onChange={(e) =>
+                  setFollowUps((prev) =>
+                    prev.map((x, xi) => (xi === i ? { ...x, checked: e.target.checked } : x)),
+                  )
+                }
+              />
+              <span className="flex-1">
+                <span className="font-medium">{f.title}</span>
+                {f.detail ? (
+                  <span className="block text-muted-foreground">{f.detail}</span>
+                ) : null}
+              </span>
+              <Badge variant="outline" className="shrink-0 text-[10px]">
+                {f.kind === "TASK" ? "Công việc" : f.kind === "DECISION" ? "Quyết định" : "Cuộc họp"}
+              </Badge>
+            </label>
+          ))}
+          {followUps.length > 0 && (
+            <Button
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={createFollowUps.isPending || !followUps.some((f) => f.checked)}
+              onClick={() => createFollowUps.mutate()}
+            >
+              {createFollowUps.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              Tạo mục đã chọn
+            </Button>
+          )}
+        </Card>
+      )}
+
+
       {/* Nhờ AI sửa */}
       <Card className="space-y-2 p-3">
         <p className="text-xs font-medium">Nhờ AI đề xuất chỉnh sửa</p>
