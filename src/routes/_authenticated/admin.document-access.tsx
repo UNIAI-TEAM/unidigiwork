@@ -84,6 +84,8 @@ function DocumentAccessPage() {
     );
   }, [memberData, memberQuery]);
 
+  const detailMember = (memberData?.members ?? []).find((m) => m.userId === detailUser) ?? null;
+
   async function refresh() {
     await qc.invalidateQueries({ queryKey: ["access-members"] });
     await qc.invalidateQueries({ queryKey: ["member-grants"] });
