@@ -711,7 +711,13 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
       })
       .parse(i ?? {}),
   )
-  .handler(async ({ data, context }): Promise<WeeklyReport> => {
+  .handler(async ({ data, context }): Promise<WeeklyReport> => computeWeeklyReport(context.supabase, data.workspaceId ?? null, data.days));
+
+/** Tính báo cáo kỳ (mặc định 7 ngày) — dùng chung cho giao diện và bản xuất Excel. */
+async function computeWeeklyReport(supabase: any, workspaceId: string | null, days: number): Promise<WeeklyReport> {
+  const data = { workspaceId, days };
+  const context = { supabase };
+  {
     const to = new Date();
     const from = new Date(to.getTime() - data.days * 86400_000);
     const fromISO = from.toISOString();
@@ -808,7 +814,30 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
     );
 
     return { from: fromISO, to: toISO, rows, totals };
+  }
+}
+
+/** Xuất báo cáo tuần thành tệp Excel (.xlsx) để quản trị viên tải về / gửi kèm email. */
+export const exportWorkDeliverableWeeklyReportXlsx = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid().nullable().optional(),
+        days: z.number().int().min(1).max(90).default(7),
+        format: z.enum(["DOCX", "XLSX", "PPTX", "PDF"]).nullable().optional(),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const report = await computeWeeklyReport(context.supabase, data.workspaceId ?? null, data.days);
+    const { buildWeeklyReportXlsx } = await import("./weekly-report-xlsx.server");
+    const base64 = buildWeeklyReportXlsx(report, data.format ?? null);
+    const stamp = new Date().toISOString().slice(0, 10);
+    return { fileName: `bao-cao-tuan-ket-qua-cong-viec-${stamp}.xlsx`, base64 };
   });
+
+
 
 /* ---------------------------------------- bản thể hiện Office (Phase 2) */
 

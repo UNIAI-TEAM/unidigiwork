@@ -2,7 +2,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck } from "lucide-react";
+import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck, Download } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { FilterPageHeader } from "@/components/filter-page-header";
@@ -21,6 +21,7 @@ import {
   WP_STATUSES,
   createWorkDeliverable,
   getWorkDeliverableWeeklyReport,
+  exportWorkDeliverableWeeklyReportXlsx,
   getWorkProductAccessPolicy,
   listWorkDeliverables,
   updateWorkProductAccessPolicy,
@@ -66,6 +67,29 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
     queryKey: ["wp-weekly", workspaceId],
     queryFn: () => getWorkDeliverableWeeklyReport({ data: { workspaceId, days: 7 } }),
   });
+  const [exporting, setExporting] = useState(false);
+  async function exportXlsx() {
+    setExporting(true);
+    try {
+      const res = await exportWorkDeliverableWeeklyReportXlsx({ data: { workspaceId, days: 7, format } });
+      const bin = atob(res.base64);
+      const buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(
+        new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("wp.weekly.exportDone"));
+    } catch {
+      toast.error(t("wp.weekly.exportError"));
+    } finally {
+      setExporting(false);
+    }
+  }
   const allRows = data?.rows ?? [];
   const rows = format ? allRows.filter((r) => (r.formats?.[format] ?? 0) > 0) : allRows;
   const fmtCell = (formats: Record<string, number> | undefined) =>
@@ -90,7 +114,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
           <h2 className="text-sm font-semibold">{t("wp.weekly.title")}</h2>
           <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <Button variant={format === null ? "secondary" : "ghost"} size="sm" className="h-7 px-2 text-xs" onClick={() => setFormat(null)}>
             {t("wp.weekly.allFormats")}
           </Button>
@@ -99,6 +123,10 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
               {f}
             </Button>
           ))}
+          <Button variant="outline" size="sm" className="ml-1 h-7 gap-1 px-2 text-xs" disabled={exporting} onClick={exportXlsx}>
+            {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            {t("wp.weekly.exportXlsx")}
+          </Button>
         </div>
       </div>
       {rows.length === 0 ? (
