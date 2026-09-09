@@ -163,12 +163,16 @@ function cellText(cell: Record<string, unknown>): string {
 
 /** Bóc nội dung bảng thành lưới chữ để AI đọc được (không đổi tài liệu gốc). */
 function tableGrid(b: Record<string, unknown>): string[][] {
-  const model = b["table"] as
-    | { rows?: Array<{ cells?: Array<Record<string, unknown>> }> }
-    | undefined;
+  const model = b["table"] as { rows?: unknown[] } | undefined;
   const rows = model?.rows;
   if (!Array.isArray(rows)) return [];
-  return rows.map((r) => (Array.isArray(r.cells) ? r.cells.map((c) => cellText(c)) : []));
+  // GenOffice có hai dạng: mảng ô trực tiếp, hoặc { cells: [...] }.
+  return rows.map((r) => {
+    const cells = Array.isArray(r)
+      ? r
+      : ((r as { cells?: unknown[] } | null)?.cells ?? []);
+    return (cells as Array<Record<string, unknown>>).map((c) => cellText(c ?? {}));
+  });
 }
 
 function tableSummaryOf(grid: string[][]): TableSummary {
