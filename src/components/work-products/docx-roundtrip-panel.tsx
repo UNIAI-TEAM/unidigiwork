@@ -148,7 +148,13 @@ export function DocxRoundTripPanel({
     Array<{ title: string; priority: string; checked: boolean }>
   >([]);
   const [followUps, setFollowUps] = useState<
-    Array<{ kind: "TASK" | "DECISION" | "MEETING"; title: string; detail: string; priority: string; checked: boolean }>
+    Array<{
+      kind: "TASK" | "DECISION" | "MEETING";
+      title: string;
+      detail: string;
+      priority: string;
+      checked: boolean;
+    }>
   >([]);
   const [showWeights, setShowWeights] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
@@ -659,12 +665,14 @@ export function DocxRoundTripPanel({
               />
               <span className="flex-1">
                 <span className="font-medium">{f.title}</span>
-                {f.detail ? (
-                  <span className="block text-muted-foreground">{f.detail}</span>
-                ) : null}
+                {f.detail ? <span className="block text-muted-foreground">{f.detail}</span> : null}
               </span>
               <Badge variant="outline" className="shrink-0 text-[10px]">
-                {f.kind === "TASK" ? "Công việc" : f.kind === "DECISION" ? "Quyết định" : "Cuộc họp"}
+                {f.kind === "TASK"
+                  ? "Công việc"
+                  : f.kind === "DECISION"
+                    ? "Quyết định"
+                    : "Cuộc họp"}
               </Badge>
             </label>
           ))}
@@ -685,7 +693,6 @@ export function DocxRoundTripPanel({
           )}
         </Card>
       )}
-
 
       {/* Nhờ AI sửa */}
       <Card className="space-y-2 p-3">
