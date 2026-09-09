@@ -56,6 +56,8 @@ export function buildWeeklyReportXlsx(report: WeeklyReport, only: string | null)
     "Đang chờ duyệt",
     "Đã duyệt",
     "Phiên bản",
+    "Đang chia sẻ",
+    "Lượt chia sẻ",
     ...formats,
   ];
   const line = (r: WeeklyReportRow): Cell[] => [
@@ -65,6 +67,8 @@ export function buildWeeklyReportXlsx(report: WeeklyReport, only: string | null)
     r.inReview,
     r.approvedNow,
     r.versions,
+    r.shared ?? 0,
+    r.shareTargets ?? 0,
     ...formats.map((f) => r.formats?.[f] ?? 0),
   ];
   const visible = only ? report.rows.filter((r) => (r.formats?.[only] ?? 0) > 0) : report.rows;

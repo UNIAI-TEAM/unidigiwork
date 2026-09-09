@@ -142,6 +142,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.inReview")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approvedNow")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.versions")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.shared")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.formats")}</th>
               </tr>
             </thead>
@@ -154,6 +155,9 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                   <td className="px-4 py-2 text-right tabular-nums">{r.inReview}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.approvedNow}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.versions}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {r.shared > 0 ? `${r.shared} (${r.shareTargets})` : "—"}
+                  </td>
                   <td className="px-4 py-2 text-right">{fmtCell(r.formats)}</td>
                 </tr>
               ))}
@@ -164,6 +168,9 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.inReview ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approvedNow ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  {(data?.totals.shared ?? 0) > 0 ? `${data?.totals.shared} (${data?.totals.shareTargets})` : "—"}
+                </td>
                 <td className="px-4 py-2 text-right">{fmtCell(data?.totals.formats)}</td>
               </tr>
             </tbody>

@@ -6223,6 +6223,54 @@ export type Database = {
           },
         ]
       }
+      work_product_shares: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          permission: string
+          shared_by: string | null
+          updated_at: string
+          work_product_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          permission?: string
+          shared_by?: string | null
+          updated_at?: string
+          work_product_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          permission?: string
+          shared_by?: string | null
+          updated_at?: string
+          work_product_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_shares_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_shares_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_product_versions: {
         Row: {
           ai_generated: boolean
@@ -10517,6 +10565,10 @@ export type Database = {
           _tenant_id: string
           _workspace_id: string
         }
+        Returns: boolean
+      }
+      wp_share_allows: {
+        Args: { _kind: string; _work_product_id: string }
         Returns: boolean
       }
     }

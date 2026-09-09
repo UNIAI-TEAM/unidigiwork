@@ -29,6 +29,7 @@ import {
   Quote,
   Save,
   Search,
+  Share2,
   Sparkles,
   Table as TableIcon,
   Trash2,
@@ -76,6 +77,10 @@ import {
   runWorkDeliverableAi,
   saveWorkDeliverableVersion,
   updateWorkDeliverable,
+  listWorkProductShares,
+  listShareableWorkspaces,
+  shareWorkProduct,
+  unshareWorkProduct,
 } from "@/lib/api/work-deliverables.functions";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
@@ -124,6 +129,40 @@ function WorkProductDetail() {
     queryKey: ["work-deliverable-reviewers", id],
     queryFn: () => listWorkDeliverableReviewers({ data: { id } }),
   });
+  const { data: shareData } = useQuery({
+    queryKey: ["work-deliverable-shares", id],
+    queryFn: () => listWorkProductShares({ data: { id } }),
+  });
+  const { data: shareWorkspaces } = useQuery({
+    queryKey: ["wp-shareable-workspaces"],
+    queryFn: () => listShareableWorkspaces(),
+  });
+  const [shareTarget, setShareTarget] = useState<string>("");
+  const [sharePerm, setSharePerm] = useState<"VIEW" | "EDIT">("VIEW");
+  const [sharing, setSharing] = useState(false);
+  async function addShare() {
+    if (!shareTarget) return;
+    setSharing(true);
+    try {
+      await shareWorkProduct({ data: { id, workspaceId: shareTarget, permission: sharePerm, idempotencyKey: `wp-share-${id}-${shareTarget}-${sharePerm}` } });
+      await qc.invalidateQueries({ queryKey: ["work-deliverable-shares", id] });
+      setShareTarget("");
+      toast.success(t("wp.share.added"));
+    } catch {
+      toast.error(t("wp.share.error"));
+    } finally {
+      setSharing(false);
+    }
+  }
+  async function removeShare(shareId: string) {
+    try {
+      await unshareWorkProduct({ data: { shareId, idempotencyKey: `wp-unshare-${shareId}` } });
+      await qc.invalidateQueries({ queryKey: ["work-deliverable-shares", id] });
+      toast.success(t("wp.share.removed"));
+    } catch {
+      toast.error(t("wp.share.error"));
+    }
+  }
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -527,7 +566,7 @@ function WorkProductDetail() {
                   <Button variant="ghost" size="icon-sm" onClick={() => setRightPanelOpen(false)} aria-label="Đóng trợ lý"><PanelRight /></Button>
                 </div>
               </div>
-              <TabsList className="mx-3 mt-3 grid grid-cols-7">
+              <TabsList className="mx-3 mt-3 grid grid-cols-8">
                 <TabsTrigger value="ai" aria-label={t("wp.tab.ai")}><Sparkles /></TabsTrigger>
                 <TabsTrigger value="context" aria-label={t("wp.tab.context")}><Layers /></TabsTrigger>
                 <TabsTrigger value="versions" aria-label={t("wp.tab.versions")}><History /></TabsTrigger>
@@ -535,6 +574,7 @@ function WorkProductDetail() {
                 <TabsTrigger value="review" aria-label={t("wp.tab.review")}><UserCheck /></TabsTrigger>
                 <TabsTrigger value="links" aria-label={t("wp.tab.links")}><Link2 /></TabsTrigger>
                 <TabsTrigger value="files" aria-label={t("wp.files.tab")}><Download /></TabsTrigger>
+                <TabsTrigger value="share" aria-label={t("wp.share.tab")}><Share2 /></TabsTrigger>
               </TabsList>
 
               <ScrollArea className="min-h-0 flex-1 px-4 pb-5">
@@ -872,6 +912,51 @@ function WorkProductDetail() {
                       >
                         {t("wp.links.open")}
                       </a>
+                    </div>
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="share" className="mt-0 space-y-3">
+                  <p className="text-xs text-muted-foreground">{t("wp.share.hint")}</p>
+                  {shareData?.canManage && (
+                    <div className="space-y-2 rounded-lg border bg-background p-3">
+                      <Select value={shareTarget} onValueChange={setShareTarget}>
+                        <SelectTrigger><SelectValue placeholder={t("wp.share.pickWorkspace")} /></SelectTrigger>
+                        <SelectContent>
+                          {(shareWorkspaces ?? [])
+                            .filter((w) => !(shareData?.shares ?? []).some((s) => s.workspaceId === w.id))
+                            .map((w) => (
+                              <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={sharePerm} onValueChange={(v) => setSharePerm(v as "VIEW" | "EDIT")}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="VIEW">{t("wp.share.view")}</SelectItem>
+                          <SelectItem value="EDIT">{t("wp.share.edit")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" className="w-full gap-2" disabled={!shareTarget || sharing} onClick={addShare}>
+                        {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+                        {t("wp.share.add")}
+                      </Button>
+                    </div>
+                  )}
+                  {(shareData?.shares ?? []).length === 0 && (
+                    <p className="text-sm text-muted-foreground">{t("wp.share.empty")}</p>
+                  )}
+                  {(shareData?.shares ?? []).map((s) => (
+                    <div key={s.id} className="flex items-center gap-2 rounded-lg border bg-background p-3">
+                      <span className="min-w-0 flex-1 truncate text-sm">{s.workspaceName}</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {s.permission === "EDIT" ? t("wp.share.edit") : t("wp.share.view")}
+                      </Badge>
+                      {shareData?.canManage && (
+                        <Button variant="ghost" size="icon-sm" aria-label={t("wp.share.remove")} onClick={() => removeShare(s.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </TabsContent>
