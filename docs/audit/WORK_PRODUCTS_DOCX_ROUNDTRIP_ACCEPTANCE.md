@@ -89,3 +89,15 @@ Chỉ `word/document.xml` thay đổi; 0 phần thêm, 0 phần mất — đúng
 **PASS_WITH_LIMITATIONS**
 
 Luồng lõi — nhập DOCX, giữ bản gốc, AI đề xuất, người duyệt, GenOffice vá phẫu thuật, kiểm chứng OOXML, phiên bản + provenance — đã chạy thật và có bằng chứng. Chưa đạt PASS đầy đủ vì còn thiếu "Create work from this", bộ fixture mở rộng, test cách ly tenant chạy thật cho endpoint mới và rà soát `can_view_work_entity()`.
+
+## 18. Tạo công việc từ tài liệu Word đã nhập — HOÀN THÀNH
+
+- `proposeTasksFromWorkProduct`: AI đọc các block đã neo, đề xuất tối đa 10 công việc (title + priority). Không tạo dữ liệu.
+- `createTasksFromWorkProduct`: chỉ chạy sau khi người dùng chọn; gọi RPC `create_task` dưới RLS của người dùng, rồi `link_work_entities(WORK_PRODUCT → TASK, GENERATES)`. Idempotency key theo từng dòng.
+- UI: thẻ "Tạo công việc từ tài liệu" trong `DocxRoundTripPanel` với danh sách gợi ý có checkbox.
+- Cách ly tổ chức (kiểm tra chính sách DB):
+  - `work_products_select` → `wp_scope_allows(...)` bắt buộc `is_tenant_member(tenant_id)`.
+  - `work_product_blocks` / `work_product_change_ops` → `can_view_work_product` / `can_edit_work_product`, cùng gốc kiểm tra tenant.
+  - `work_edges_select/delete` → `is_tenant_member(tenant_id)` + tồn tại node hai đầu.
+  - `create_task` chạy dưới RLS người dùng → workspace khác tổ chức bị từ chối tại DB, không phụ thuộc kiểm tra ở tầng ứng dụng.
+- Quan hệ `WORK_PRODUCT GENERATES TASK` đã tồn tại trong `work_relationship_types`.

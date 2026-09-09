@@ -925,6 +925,7 @@ export const createTasksFromWorkProduct = createServerFn({ method: "POST" })
       });
       created.push({ id: taskId, title: t.title, linked: !link.error });
     }
-    if (!created.length) throw new ApiError({ code: "INTERNAL_ERROR", message: "TASKS_NOT_CREATED" });
+    if (!created.length)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "TASKS_NOT_CREATED" });
     return { created };
   });
