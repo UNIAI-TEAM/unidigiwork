@@ -60,6 +60,7 @@ const SEARCH_TO_GRAPH: Record<string, AiContextEntityType> = {
   CHAT_CHANNEL: "CHAT_CHANNEL",
   MEETING_ARTIFACT: "MEETING_ARTIFACT",
   PERSON: "PERSON",
+  WORK_PRODUCT: "WORK_PRODUCT",
 };
 const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
   WORKSPACE: "PROJECT",
@@ -71,6 +72,7 @@ const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
   MEETING_ARTIFACT: "MEETING_ARTIFACT",
   PERSON: "PERSON",
   TENANT: "PROJECT",
+  WORK_PRODUCT: "WORK_PRODUCT",
 };
 
 /** Làm sạch HTML/markdown và cắt cứng độ dài mỗi source (§145, §146). */
@@ -106,6 +108,7 @@ const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
   MEETING_ARTIFACT: 0.72,
   PERSON: 0.3,
   TENANT: 0,
+  WORK_PRODUCT: 0.6,
 };
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
