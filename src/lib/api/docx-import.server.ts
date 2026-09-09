@@ -30,6 +30,47 @@ export interface TableSummary {
   headers: string[];
   /** Xem trước tối đa vài dòng đầu để AI hiểu dữ liệu. */
   preview: string[][];
+  /** Độ tin cậy dòng đầu là dòng tiêu đề (0..1). */
+  headerConfidence?: number;
+  /** Chỉ số các cột chủ yếu là số liệu. */
+  numericCols?: number[];
+  /** Có ô gộp / cấu trúc bất thường không. */
+  ragged?: boolean;
+}
+
+/** Trọng số nhận diện từng loại — người dùng có thể hiệu chỉnh. */
+export interface DetectionWeights {
+  title: number;
+  heading: number;
+  listItem: number;
+  quote: number;
+  caption: number;
+  table: number;
+}
+
+export const DEFAULT_DETECTION_WEIGHTS: DetectionWeights = {
+  title: 1,
+  heading: 1,
+  listItem: 1,
+  quote: 1,
+  caption: 1,
+  table: 1,
+};
+
+/** Điểm tối thiểu để chấp nhận một vai trò suy đoán. */
+export const DETECTION_THRESHOLD = 1;
+
+export function normalizeWeights(w?: Partial<DetectionWeights> | null): DetectionWeights {
+  const clamp = (v: unknown, d: number) =>
+    typeof v === "number" && Number.isFinite(v) ? Math.min(Math.max(v, 0), 3) : d;
+  return {
+    title: clamp(w?.title, 1),
+    heading: clamp(w?.heading, 1),
+    listItem: clamp(w?.listItem, 1),
+    quote: clamp(w?.quote, 1),
+    caption: clamp(w?.caption, 1),
+    table: clamp(w?.table, 1),
+  };
 }
 
 export interface ImportedBlock {
@@ -51,6 +92,10 @@ export interface ImportedBlock {
     table?: TableSummary | null;
     /** Vì sao khối được nhận là tiêu đề/trích dẫn (heuristic hay style Word). */
     detectedBy?: "style" | "outline" | "heuristic" | null;
+    /** Điểm tin cậy của vai trò đã chọn (sau khi nhân trọng số). */
+    score?: number;
+    /** Các tín hiệu dẫn tới kết luận, để người dùng hiểu và hiệu chỉnh. */
+    signals?: string[];
   };
 }
 
