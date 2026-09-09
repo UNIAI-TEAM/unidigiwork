@@ -95,7 +95,7 @@ export function EngineBenchmarkPanel({ workProductId, version }: { workProductId
       toast.success(`${t("wp.bench.title")}: ${r.status}`);
       void qc.invalidateQueries({ queryKey: ["work-products", workProductId, "benchmarks"] });
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : t("common.error")),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : t("wp.bench.failed")),
   });
 
   const download = async (artifactId: string | null) => {
