@@ -488,6 +488,27 @@ export const decideWorkDeliverableReview = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    // Duyệt phải gắn đúng phiên bản hiện hành; có phiên bản mới hơn thì từ chối.
+    const { data: existing, error: rErr } = await context.supabase
+      .from("work_product_reviews")
+      .select("id, work_product_id, version")
+      .eq("id", data.reviewId)
+      .maybeSingle();
+    if (rErr) mapPgError(rErr);
+    if (!existing) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "REVIEW_NOT_FOUND" });
+
+    if (data.decision === "APPROVED") {
+      const { data: product } = await context.supabase
+        .from("work_products")
+        .select("current_version")
+        .eq("id", existing.work_product_id)
+        .maybeSingle();
+      const current = (product?.current_version as number | undefined) ?? 0;
+      if ((existing.version as number) !== current) {
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "REVIEW_STALE" });
+      }
+    }
+
     const { data: review, error } = await context.supabase
       .from("work_product_reviews")
       .update({
@@ -509,6 +530,7 @@ export const decideWorkDeliverableReview = createServerFn({ method: "POST" })
     }
     return { decision: data.decision };
   });
+
 
 /* ------------------------------------------------------------- work graph */
 
@@ -586,10 +608,8 @@ export const runWorkDeliverableAi = createServerFn({ method: "POST" })
         selection: z.string().max(20000).optional(),
         instruction: z.string().max(2000).optional(),
         locale: z.string().max(8).default("vi"),
-        sources: z
-          .array(z.object({ type: z.string().max(40), id: z.string().max(80), title: z.string().max(300), snippet: z.string().max(1200), stamp: z.string().max(80).nullable().optional() }))
-          .max(20)
-          .default([]),
+        // Chỉ nhận định danh; nội dung nguồn do máy chủ tự nạp và xác thực quyền.
+        sources: z.array(z.object({ type: z.string().max(40), id: z.string().max(80) })).max(20).default([]),
       })
       .parse(i),
   )
@@ -599,17 +619,24 @@ export const runWorkDeliverableAi = createServerFn({ method: "POST" })
 
     const { data: product } = await context.supabase
       .from("work_products")
-      .select("id, title, business_type, content")
+      .select("id, title, business_type, content, tenant_id, workspace_id")
       .eq("id", data.id)
       .is("deleted_at", null)
       .maybeSingle();
     if (!product) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
 
+    // Nguồn ngữ cảnh: máy chủ tự nạp nội dung chuẩn theo quyền của người dùng,
+    // không tin tiêu đề/trích đoạn/mốc thời gian do trình duyệt gửi lên.
+    const { collectContextSources } = await import("./work-deliverables.server");
+    const allowed = await collectContextSources(context.supabase as never, product as never);
+    const wanted = new Set(data.sources.map((s) => `${s.type}:${s.id}`));
+    const resolved = allowed.filter((s) => wanted.has(`${s.type}:${s.id}`));
+
     const { streamText } = await import("ai");
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
 
-    const contextBlock = data.sources.length
-      ? data.sources.map((s) => `- [${s.type}] ${s.title}${s.stamp ? ` (cập nhật ${s.stamp})` : ""}: ${s.snippet}`).join("\n")
+    const contextBlock = resolved.length
+      ? resolved.map((s) => `- [${s.type}] ${s.title}${s.stamp ? ` (cập nhật ${s.stamp})` : ""}: ${s.snippet}`).join("\n")
       : "(người dùng không bật nguồn ngữ cảnh nào)";
 
     const actionText: Record<string, string> = {
@@ -647,7 +674,7 @@ export const runWorkDeliverableAi = createServerFn({ method: "POST" })
     const output = (await result.text).trim();
     return {
       output,
-      usedSources: data.sources.map((s) => ({ type: s.type, id: s.id, title: s.title, stamp: s.stamp ?? null })),
+      usedSources: resolved.map((s) => ({ type: s.type, id: s.id, title: s.title, stamp: s.stamp ?? null })),
     };
   });
 

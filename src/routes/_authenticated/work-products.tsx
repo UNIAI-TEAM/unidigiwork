@@ -2,7 +2,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck, Download } from "lucide-react";
+import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { FilterPageHeader } from "@/components/filter-page-header";
@@ -27,6 +27,7 @@ import {
   updateWorkProductAccessPolicy,
   WP_SCOPES,
 } from "@/lib/api/work-deliverables.functions";
+import { importWorkDeliverableDocx } from "@/lib/api/work-products-docx.functions";
 
 export const Route = createFileRoute("/_authenticated/work-products")({
   head: () => ({
@@ -356,10 +357,13 @@ function WorkProductsPage() {
               title={t("wp.title")}
               description={t("wp.subtitle")}
             />
-            <Button onClick={() => setCreateOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {t("wp.new")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <ImportDocxButton />
+              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t("wp.new")}
+              </Button>
+            </div>
           </div>
 
           {/* Bộ lọc */}
@@ -661,5 +665,55 @@ function CreateDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Nhập một tệp Word có sẵn: bản gốc được giữ nguyên, không bao giờ bị ghi đè. */
+function ImportDocxButton() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  const onFile = async (file: File) => {
+    setBusy(true);
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 8192) {
+        bin += String.fromCharCode(...buf.subarray(i, i + 8192));
+      }
+      const res = await importWorkDeliverableDocx({
+        data: { fileName: file.name, mimeType: file.type, base64: btoa(bin) },
+      });
+      qc.invalidateQueries({ queryKey: ["work-deliverables"] });
+      toast.success(`Đã nhập tài liệu — ${res.editableBlocks}/${res.totalBlocks} đoạn có thể sửa`);
+      navigate({ to: "/work-products/$id", params: { id: res.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nhập tài liệu thất bại");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <label>
+      <input
+        type="file"
+        accept=".docx"
+        className="sr-only"
+        disabled={busy}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void onFile(f);
+        }}
+      />
+      <Button asChild variant="outline" className="gap-2" disabled={busy}>
+        <span>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          Nhập file Word
+        </span>
+      </Button>
+    </label>
   );
 }

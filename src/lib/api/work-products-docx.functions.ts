@@ -1,0 +1,787 @@
+// Kết quả công việc — nhập file Word, thay đổi chờ duyệt và vá tài liệu bằng GenOffice.
+// Bản gốc là điểm neo trung thực: không bao giờ bị ghi đè hay dựng lại từ văn bản thường.
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { commandMetadataSchema } from "@/contracts/common/base";
+import { ApiError } from "@/contracts/errors";
+import { mapPgError } from "./business.server";
+
+const WP_BUCKET = "work-products";
+const MAX_BASE64 = 34 * 1024 * 1024;
+
+function decodeBase64(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function safeName(name: string): string {
+  return name.replace(/[^\w.\-\s]+/g, "").slice(0, 120) || "document.docx";
+}
+
+/* ------------------------------------------------------------ nhập DOCX */
+
+export const importWorkDeliverableDocx = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        fileName: z.string().min(1).max(300),
+        mimeType: z.string().max(200),
+        base64: z.string().min(1).max(MAX_BASE64),
+        title: z.string().min(1).max(300).optional(),
+        businessType: z
+          .enum([
+            "PROPOSAL",
+            "REPORT",
+            "ANALYSIS",
+            "CONTRACT",
+            "PLAN",
+            "PRESENTATION",
+            "MEMO",
+            "DOCUMENT",
+            "OTHER",
+          ])
+          .default("DOCUMENT"),
+        workspaceId: z.string().uuid().nullable().optional(),
+        primaryContextType: z
+          .enum(["WORKSPACE", "MEETING", "TASK", "DOCUMENT", "EMAIL"])
+          .nullable()
+          .optional(),
+        primaryContextId: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { DOCX_MIME, DOCX_MAX_BYTES, sha256Hex, parseDocxToBlocks, GENOFFICE_ENGINE_VERSION } =
+      await import("./docx-import.server");
+
+    if (!/\.docx$/i.test(data.fileName)) {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "DOCX_ONLY" });
+    }
+    if (
+      data.mimeType &&
+      data.mimeType !== DOCX_MIME &&
+      data.mimeType !== "application/octet-stream"
+    ) {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "DOCX_MIME_INVALID" });
+    }
+
+    let bytes: Uint8Array;
+    try {
+      bytes = decodeBase64(data.base64);
+    } catch {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "FILE_DECODE_FAILED" });
+    }
+    if (!bytes.byteLength) throw new ApiError({ code: "VALIDATION_FAILED", message: "FILE_EMPTY" });
+    if (bytes.byteLength > DOCX_MAX_BYTES)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "FILE_TOO_LARGE" });
+    // Chữ ký gói OOXML (ZIP).
+    if (!(bytes[0] === 0x50 && bytes[1] === 0x4b)) {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "DOCX_SIGNATURE_INVALID" });
+    }
+
+    const { resolveTenantId } = await import("./work-deliverables.server");
+    const { readActiveTenantCookie } = await import("./active-tenant.server");
+    const tenantId = await resolveTenantId(
+      context.supabase as never,
+      context.userId,
+      data.workspaceId ?? null,
+      readActiveTenantCookie(),
+    );
+
+    // Đọc tài liệu bằng bộ máy GenOffice thật trước khi tạo bản ghi.
+    let parsed;
+    try {
+      parsed = await parseDocxToBlocks(bytes);
+    } catch (e) {
+      throw new ApiError({
+        code: "VALIDATION_FAILED",
+        message: `DOCX_PARSE_FAILED: ${e instanceof Error ? e.message : "unknown"}`,
+      });
+    }
+
+    const sha256 = await sha256Hex(bytes);
+    const fileName = safeName(data.fileName);
+    const title = data.title ?? fileName.replace(/\.docx$/i, "");
+    const importedAt = new Date().toISOString();
+
+    const { data: product, error: pErr } = await context.supabase
+      .from("work_products")
+      .insert({
+        tenant_id: tenantId,
+        workspace_id: data.workspaceId ?? null,
+        title,
+        business_type: data.businessType,
+        content: parsed.content,
+        owner_id: context.userId,
+        created_by: context.userId,
+        origin: "IMPORTED_DOCX",
+        source_sha256: sha256,
+        source_filename: fileName,
+        source_mime_type: DOCX_MIME,
+        source_engine: GENOFFICE_ENGINE_VERSION,
+        source_imported_at: importedAt,
+        primary_context_type: data.primaryContextType ?? null,
+        primary_context_id: data.primaryContextId ?? null,
+      })
+      .select("id")
+      .single();
+    if (pErr) mapPgError(pErr);
+    const productId = product.id as string;
+
+    const objectKey = `${tenantId}/${productId}/source/${Date.now()}-${fileName}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(WP_BUCKET)
+      .upload(objectKey, bytes, { contentType: DOCX_MIME, upsert: false });
+    if (upErr) {
+      await context.supabase
+        .from("work_products")
+        .update({ deleted_at: importedAt })
+        .eq("id", productId);
+      throw new ApiError({
+        code: "INTERNAL_ERROR",
+        message: `SOURCE_UPLOAD_FAILED: ${upErr.message}`,
+      });
+    }
+
+    const { data: artifact, error: aErr } = await context.supabase
+      .from("work_product_artifacts")
+      .insert({
+        tenant_id: tenantId,
+        work_product_id: productId,
+        format: "DOCX",
+        role: "SOURCE_ORIGINAL",
+        storage_ref: objectKey,
+        mime_type: DOCX_MIME,
+        size_bytes: bytes.byteLength,
+        version: 1,
+        generated_by: "USER",
+        created_by: context.userId,
+        engine: "ORIGINAL",
+        sha256,
+        immutable: true,
+      })
+      .select("id")
+      .single();
+    if (aErr) {
+      await supabaseAdmin.storage.from(WP_BUCKET).remove([objectKey]);
+      await context.supabase
+        .from("work_products")
+        .update({ deleted_at: importedAt })
+        .eq("id", productId);
+      mapPgError(aErr);
+    }
+    const sourceArtifactId = artifact.id as string;
+
+    await context.supabase
+      .from("work_products")
+      .update({ source_artifact_id: sourceArtifactId })
+      .eq("id", productId);
+
+    const rows = parsed.blocks.map((b) => ({
+      tenant_id: tenantId,
+      work_product_id: productId,
+      source_artifact_id: sourceArtifactId,
+      source_version: 1,
+      block_key: b.blockKey,
+      ordinal: b.ordinal,
+      block_type: b.blockType,
+      text: b.text,
+      source_anchor: b.sourceAnchor,
+      editability: b.editability,
+    }));
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error: bErr } = await context.supabase
+        .from("work_product_blocks")
+        .insert(rows.slice(i, i + 500));
+      if (bErr) mapPgError(bErr);
+    }
+
+    // Phiên bản 1 = ảnh chụp nội dung lúc nhập, kèm nguồn gốc nhập.
+    await context.supabase.from("work_product_versions").insert({
+      tenant_id: tenantId,
+      work_product_id: productId,
+      version: 1,
+      title,
+      content: parsed.content,
+      summary: `Nhập từ tệp Word ${fileName}`,
+      author_id: context.userId,
+      ai_generated: false,
+      provenance: [
+        {
+          type: "IMPORT_DOCX",
+          id: sourceArtifactId,
+          title: fileName,
+          stamp: `sha256:${sha256.slice(0, 16)}`,
+          capturedAt: importedAt,
+        },
+      ],
+    });
+
+    if (
+      data.primaryContextType &&
+      data.primaryContextId &&
+      data.primaryContextType !== "WORKSPACE"
+    ) {
+      await context.supabase.rpc("link_work_entities", {
+        _source_type: "WORK_PRODUCT",
+        _source_id: productId,
+        _target_type: data.primaryContextType,
+        _target_id: data.primaryContextId,
+        _relationship: "REFERENCES",
+      });
+    }
+
+    return {
+      id: productId,
+      sourceArtifactId,
+      sha256,
+      totalBlocks: parsed.totalBlocks,
+      editableBlocks: parsed.editableBlocks,
+    };
+  });
+
+/* ------------------------------------------------------------ đọc khối */
+
+export const listWorkProductBlocks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("work_product_blocks")
+      .select(
+        "id, block_key, ordinal, block_type, text, source_anchor, editability, source_version",
+      )
+      .eq("work_product_id", data.id)
+      .order("ordinal", { ascending: true })
+      .limit(2000);
+    if (error) mapPgError(error);
+    return rows ?? [];
+  });
+
+/* -------------------------------------------------- thay đổi chờ duyệt */
+
+const changeInputSchema = z.object({
+  blockId: z.string().uuid(),
+  after: z.string().max(20000),
+});
+
+export const proposeWorkProductChanges = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        changes: z.array(changeInputSchema).min(1).max(50),
+        origin: z.enum(["HUMAN", "AI"]).default("HUMAN"),
+        proposalId: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: product, error: pErr } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, current_version, origin")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const ids = data.changes.map((c) => c.blockId);
+    const { data: blocks, error: bErr } = await context.supabase
+      .from("work_product_blocks")
+      .select("id, block_key, text, source_anchor, editability")
+      .eq("work_product_id", data.id)
+      .in("id", ids);
+    if (bErr) mapPgError(bErr);
+    const map = new Map((blocks ?? []).map((b: any) => [b.id as string, b]));
+
+    const rows = data.changes.map((c) => {
+      const b = map.get(c.blockId);
+      if (!b) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "BLOCK_NOT_FOUND" });
+      if (b.editability !== "EDITABLE")
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "PATCH_UNSAFE" });
+      return {
+        tenant_id: product.tenant_id,
+        work_product_id: data.id,
+        proposal_id: data.proposalId ?? null,
+        block_id: b.id,
+        block_key: b.block_key,
+        source_anchor: b.source_anchor,
+        before_text: b.text ?? "",
+        after_text: c.after,
+        origin: data.origin,
+        status: "PENDING",
+        base_version: product.current_version ?? 1,
+        author_id: context.userId,
+      };
+    });
+
+    const { data: inserted, error: iErr } = await context.supabase
+      .from("work_product_change_ops")
+      .insert(rows)
+      .select("id, block_key, before_text, after_text, origin, status");
+    if (iErr) mapPgError(iErr);
+    return inserted ?? [];
+  });
+
+export const listWorkProductChangeOps = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "APPLIED"]).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("work_product_change_ops")
+      .select(
+        "id, block_id, block_key, before_text, after_text, origin, status, base_version, applied_version, proposal_id, author_id, created_at",
+      )
+      .eq("work_product_id", data.id)
+      .order("created_at", { ascending: true })
+      .limit(500);
+    if (data.status) q = q.eq("status", data.status);
+    const { data: rows, error } = await q;
+    if (error) mapPgError(error);
+    return rows ?? [];
+  });
+
+export const decideWorkProductChangeOps = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        changeIds: z.array(z.string().uuid()).max(200).optional(),
+        decision: z.enum(["ACCEPTED", "REJECTED"]),
+        all: z.boolean().default(false),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("work_product_change_ops")
+      .update({
+        status: data.decision,
+        decided_by: context.userId,
+        decided_at: new Date().toISOString(),
+      })
+      .eq("work_product_id", data.id)
+      .eq("status", "PENDING");
+    if (!data.all) {
+      if (!data.changeIds?.length)
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_CHANGES_SELECTED" });
+      q = q.in("id", data.changeIds);
+    }
+    const { data: rows, error } = await q.select("id");
+    if (error) mapPgError(error);
+    return { decided: (rows ?? []).length, decision: data.decision };
+  });
+
+/* ------------------------------------------- vá tài liệu bằng GenOffice */
+
+/**
+ * Áp các thay đổi đã được chấp nhận lên chính tệp Word gốc bằng GenOffice.
+ * Không đi qua bộ máy nội bộ, không dựng lại tài liệu từ văn bản thường.
+ * Không vá an toàn được → dừng, giữ nguyên bản gốc.
+ */
+export const applyWorkProductAcceptedChanges = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        note: z.string().max(500).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: product, error: pErr } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, title, current_version, origin, source_artifact_id, source_filename")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+    if (product.origin !== "IMPORTED_DOCX" || !product.source_artifact_id) {
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NOT_IMPORTED_DOCX" });
+    }
+
+    const { data: ops, error: oErr } = await context.supabase
+      .from("work_product_change_ops")
+      .select(
+        "id, block_key, source_anchor, before_text, after_text, origin, proposal_id, author_id",
+      )
+      .eq("work_product_id", data.id)
+      .eq("status", "ACCEPTED")
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (oErr) mapPgError(oErr);
+    if (!ops?.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_ACCEPTED_CHANGES" });
+
+    // Tệp nguồn hiện hành: phiên bản mới nhất, nếu chưa có thì bản gốc.
+    const { data: artifacts } = await context.supabase
+      .from("work_product_artifacts")
+      .select("id, storage_ref, role, version, engine")
+      .eq("work_product_id", data.id)
+      .in("role", ["SOURCE_ORIGINAL", "SOURCE_VERSION"])
+      .order("version", { ascending: false })
+      .limit(1);
+    const base = artifacts?.[0];
+    if (!base?.storage_ref)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "SOURCE_ARTIFACT_NOT_FOUND" });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: blob, error: dErr } = await supabaseAdmin.storage
+      .from(WP_BUCKET)
+      .download(base.storage_ref as string);
+    if (dErr || !blob)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
+    const original = new Uint8Array(await blob.arrayBuffer());
+
+    const {
+      patchDocxAnchored,
+      PatchUnsafeError,
+      DOCX_MIME,
+      sha256Hex,
+      GENOFFICE_ENGINE_VERSION,
+      GENOFFICE_COMMIT,
+    } = await import("./docx-import.server");
+
+    const edits = ops.map((o: any) => {
+      const idx = (o.source_anchor ?? {}).docxIndex;
+      if (typeof idx !== "number")
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "PATCH_UNSAFE" });
+      return {
+        blockKey: o.block_key as string,
+        docxIndex: idx,
+        before: o.before_text ?? "",
+        after: o.after_text ?? "",
+      };
+    });
+
+    let patched;
+    try {
+      patched = await patchDocxAnchored(original, edits);
+    } catch (e) {
+      if (e instanceof PatchUnsafeError) {
+        throw new ApiError({ code: "VALIDATION_FAILED", message: `PATCH_UNSAFE: ${e.detail}` });
+      }
+      throw new ApiError({
+        code: "INTERNAL_ERROR",
+        message: `GENOFFICE_UNAVAILABLE: ${e instanceof Error ? e.message : "unknown"}`,
+      });
+    }
+
+    // Kiểm chứng giữ nguyên gói tài liệu.
+    const { comparePartPreservation, inspectDocx } = await import("./office-compare.server");
+    const preservation = await comparePartPreservation(original, patched.bytes);
+    const inspection = await inspectDocx(patched.bytes);
+    if (!inspection.opensSuccessfully || inspection.missingRequiredParts.length > 0) {
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "PATCH_VERIFICATION_FAILED" });
+    }
+
+    const nextVersion = (product.current_version ?? 1) + 1;
+    const sha256 = await sha256Hex(patched.bytes);
+    const fileName = safeName(
+      (product.source_filename as string | null)?.replace(/\.docx$/i, "") ||
+        (product.title as string) ||
+        "document",
+    );
+    const objectKey = `${product.tenant_id}/${data.id}/v${nextVersion}/${Date.now()}-${fileName}-v${nextVersion}.docx`;
+
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(WP_BUCKET)
+      .upload(objectKey, patched.bytes, { contentType: DOCX_MIME, upsert: false });
+    if (upErr)
+      throw new ApiError({
+        code: "INTERNAL_ERROR",
+        message: `ARTIFACT_UPLOAD_FAILED: ${upErr.message}`,
+      });
+
+    const { data: artifact, error: aErr } = await context.supabase
+      .from("work_product_artifacts")
+      .insert({
+        tenant_id: product.tenant_id,
+        work_product_id: data.id,
+        format: "DOCX",
+        role: "SOURCE_VERSION",
+        storage_ref: objectKey,
+        mime_type: DOCX_MIME,
+        size_bytes: patched.bytes.byteLength,
+        version: nextVersion,
+        generated_by: ops.some((o: any) => o.origin === "AI") ? "AI" : "USER",
+        created_by: context.userId,
+        engine: "GENOFFICE",
+        sha256,
+        immutable: true,
+      })
+      .select("id")
+      .single();
+    if (aErr) {
+      await supabaseAdmin.storage.from(WP_BUCKET).remove([objectKey]);
+      mapPgError(aErr);
+    }
+
+    // Nội dung native theo khối mới (chỉ để hiển thị/tìm kiếm).
+    const afterByKey = new Map(
+      ops.map((o: any) => [o.block_key as string, o.after_text as string]),
+    );
+    const { data: blocks } = await context.supabase
+      .from("work_product_blocks")
+      .select("id, block_key, text, ordinal")
+      .eq("work_product_id", data.id)
+      .order("ordinal", { ascending: true })
+      .limit(2000);
+    const content = (blocks ?? [])
+      .map((b: any) => afterByKey.get(b.block_key) ?? b.text ?? "")
+      .filter(Boolean)
+      .join("\n\n");
+
+    const now = new Date().toISOString();
+    const aiOps = ops.filter((o: any) => o.origin === "AI");
+    const proposalIds = [
+      ...new Set(aiOps.map((o: any) => o.proposal_id).filter(Boolean)),
+    ] as string[];
+    let contextSources: unknown[] = [];
+    if (proposalIds.length) {
+      const { data: props } = await context.supabase
+        .from("work_product_ai_proposals")
+        .select("id, instruction, model, agent_id, context_sources")
+        .in("id", proposalIds);
+      for (const p of props ?? []) {
+        const src = Array.isArray((p as any).context_sources) ? (p as any).context_sources : [];
+        contextSources = contextSources.concat(src);
+      }
+      await context.supabase
+        .from("work_product_ai_proposals")
+        .update({ status: "APPLIED" })
+        .in("id", proposalIds);
+    }
+
+    const provenance = [
+      ...(contextSources as Array<Record<string, unknown>>).slice(0, 30),
+      {
+        type: "DOCX_PATCH",
+        id: artifact.id as string,
+        title: `GenOffice ${GENOFFICE_ENGINE_VERSION}`,
+        stamp: GENOFFICE_COMMIT.slice(0, 12),
+        capturedAt: now,
+      },
+    ];
+
+    const { error: vErr } = await context.supabase.from("work_product_versions").insert({
+      tenant_id: product.tenant_id,
+      work_product_id: data.id,
+      version: nextVersion,
+      title: product.title,
+      content,
+      summary:
+        data.note ??
+        `Vá ${patched.editedBlocks} khối trên tệp Word gốc (${aiOps.length ? "có AI hỗ trợ" : "người dùng sửa"})`,
+      author_id: context.userId,
+      ai_generated: aiOps.length > 0,
+      provenance: provenance as unknown as never,
+    });
+    if (vErr) mapPgError(vErr);
+
+    await context.supabase
+      .from("work_products")
+      .update({ current_version: nextVersion, content })
+      .eq("id", data.id);
+
+    // Cập nhật khối theo nội dung mới để lần sửa sau vẫn khớp neo.
+    for (const o of ops as any[]) {
+      await context.supabase
+        .from("work_product_blocks")
+        .update({ text: o.after_text })
+        .eq("work_product_id", data.id)
+        .eq("block_key", o.block_key);
+    }
+    await context.supabase
+      .from("work_product_change_ops")
+      .update({ status: "APPLIED", applied_version: nextVersion })
+      .eq("work_product_id", data.id)
+      .eq("status", "ACCEPTED");
+
+    return {
+      version: nextVersion,
+      artifactId: artifact.id as string,
+      editedBlocks: patched.editedBlocks,
+      totalBlocks: patched.totalBlocks,
+      preservation,
+      engine: "GENOFFICE",
+      engineVersion: GENOFFICE_ENGINE_VERSION,
+      engineCommit: GENOFFICE_COMMIT,
+    };
+  });
+
+/* ---------------------------------------------- AI đề xuất sửa theo khối */
+
+/**
+ * AI đề xuất chỉnh sửa cho các khối được chọn. AI không bao giờ tự ghi vào tài
+ * liệu: kết quả chỉ là thay đổi chờ người duyệt. Ngữ cảnh do máy chủ tự nạp.
+ */
+export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        blockKeys: z.array(z.string().max(80)).min(1).max(20),
+        instruction: z.string().min(1).max(2000),
+        locale: z.string().max(8).default("vi"),
+        sources: z
+          .array(z.object({ type: z.string().max(40), id: z.string().max(80) }))
+          .max(20)
+          .default([]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_UNAVAILABLE" });
+
+    const { data: product } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, workspace_id, title, business_type, current_version")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const { data: blocks } = await context.supabase
+      .from("work_product_blocks")
+      .select("id, block_key, text, editability, source_anchor, ordinal")
+      .eq("work_product_id", data.id)
+      .in("block_key", data.blockKeys)
+      .order("ordinal", { ascending: true });
+    const targets = (blocks ?? []).filter((b: any) => b.editability === "EDITABLE");
+    if (!targets.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_EDITABLE_BLOCKS" });
+
+    // Ngữ cảnh chuẩn do máy chủ nạp theo quyền người dùng.
+    const { collectContextSources } = await import("./work-deliverables.server");
+    const allowed = await collectContextSources(context.supabase as never, product as never);
+    const wanted = new Set(data.sources.map((s) => `${s.type}:${s.id}`));
+    const resolved = allowed.filter((s) => wanted.has(`${s.type}:${s.id}`));
+    const contextBlock = resolved.length
+      ? resolved
+          .map((s) => `- [${s.type}] ${s.title}${s.stamp ? ` (${s.stamp})` : ""}: ${s.snippet}`)
+          .join("\n")
+      : "(không bật nguồn ngữ cảnh nào)";
+
+    const model = "openai/gpt-5.6-sol";
+    const { streamText } = await import("ai");
+    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+
+    const numbered = targets.map((b: any, i: number) => `[${i + 1}] ${b.text}`).join("\n");
+    const result = streamText({
+      model: createLovableResponsesProvider(apiKey).responses(model),
+      system:
+        "Bạn là trợ lý biên tập tài liệu nghiệp vụ trong UNIWORK. " +
+        "Chỉ dùng dữ kiện trong nội dung và nguồn ngữ cảnh được cung cấp; không bịa số liệu hay cam kết. " +
+        `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Tài liệu: ${product.title} (${product.business_type})\n\nNGUỒN NGỮ CẢNH:\n${contextBlock}\n\n` +
+            `CÁC ĐOẠN CẦN SỬA:\n${numbered}\n\nYÊU CẦU: ${data.instruction}\n\n` +
+            "Trả về đúng số dòng bằng số đoạn, mỗi dòng theo mẫu `[số] nội dung đã sửa`. Không thêm giải thích.",
+        },
+      ],
+      providerOptions: { lovable: { max_completion_tokens: 2000 } },
+    });
+    const text = (await result.text).trim();
+
+    const proposed = new Map<number, string>();
+    for (const line of text.split(/\r?\n/)) {
+      const m = /^\s*\[(\d+)\]\s*(.+)$/.exec(line);
+      if (m) proposed.set(Number(m[1]), m[2].trim());
+    }
+    if (!proposed.size)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_EMPTY_PROPOSAL" });
+
+    const baseVersion = (product.current_version as number | null) ?? 1;
+    const { data: proposal, error: prErr } = await context.supabase
+      .from("work_product_ai_proposals")
+      .insert({
+        tenant_id: product.tenant_id,
+        work_product_id: data.id,
+        base_version: baseVersion,
+        instruction: data.instruction,
+        model,
+        context_sources: resolved.map((s) => ({
+          type: s.type,
+          id: s.id,
+          title: s.title,
+          stamp: s.stamp ?? null,
+        })) as unknown as never,
+        created_by: context.userId,
+        status: "PENDING",
+      })
+      .select("id")
+      .single();
+    if (prErr) mapPgError(prErr);
+
+    const rows = targets
+      .map((b: any, i: number) => {
+        const after = proposed.get(i + 1);
+        if (!after || after === b.text) return null;
+        return {
+          tenant_id: product.tenant_id,
+          work_product_id: data.id,
+          block_id: b.id,
+          block_key: b.block_key,
+          source_anchor: b.source_anchor,
+          before_text: b.text ?? "",
+          after_text: after,
+          origin: "AI",
+          proposal_id: proposal.id,
+          author_id: context.userId,
+          base_version: baseVersion,
+          status: "PENDING",
+        };
+      })
+      .filter(Boolean);
+    if (!rows.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_CHANGES_PROPOSED" });
+
+    const { data: created, error: cErr } = await context.supabase
+      .from("work_product_change_ops")
+      .insert(rows as never)
+      .select("id, block_key, before_text, after_text");
+    if (cErr) mapPgError(cErr);
+
+    return {
+      proposalId: proposal.id as string,
+      model,
+      changes: created ?? [],
+      usedSources: resolved.map((s) => ({
+        type: s.type,
+        id: s.id,
+        title: s.title,
+        stamp: s.stamp ?? null,
+      })),
+    };
+  });
