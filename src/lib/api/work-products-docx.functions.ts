@@ -1037,6 +1037,12 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
     const model = "openai/gpt-5.6-sol";
     const { streamText } = await import("ai");
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    // Hồ sơ nhận diện riêng của tổ chức: cùng một tệp có thể cho đề xuất khác nhau.
+    const { loadTenantDocxProfile, tenantGuidanceBlock } = await import("./docx-profile.server");
+    const tenantProfile = await loadTenantDocxProfile(
+      context.supabase as never,
+      product.tenant_id as string,
+    );
     const result = streamText({
       model: createLovableResponsesProvider(apiKey).responses(model),
       system:
@@ -1044,7 +1050,9 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
         "và đề xuất hành động tiếp theo. Chỉ dựa trên thay đổi, không bịa số liệu, deadline hay người phụ trách. " +
         "Phân loại đúng bản chất: việc phải làm = TASK; điều cần chốt/phê duyệt = DECISION; " +
         "việc cần nhiều bên bàn bạc = MEETING. Bỏ qua thay đổi chỉ sửa chính tả hoặc định dạng. " +
+        tenantGuidanceBlock(tenantProfile.aiGuidance) +
         `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+
       messages: [
         {
           role: "user",
