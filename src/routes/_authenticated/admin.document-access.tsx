@@ -242,6 +242,30 @@ function DocumentAccessPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <Select
+                    value={m.status}
+                    onValueChange={(v) =>
+                      changeStatus.mutate({
+                        userId: m.userId,
+                        status: v as "active" | "suspended" | "removed",
+                      })
+                    }
+                    disabled={!canManage || m.isSelf}
+                  >
+                    <SelectTrigger className="w-36" aria-label={t("acc.memberStatus")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["active", "suspended", "removed"] as const).map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {t(`acc.memberStatus.${s}` as never)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" onClick={() => setDetailUser(m.userId)}>
+                    {t("acc.view")}
+                  </Button>
                   {canManage && (
                     <Button
                       variant="ghost"
