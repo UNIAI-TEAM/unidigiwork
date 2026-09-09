@@ -101,8 +101,8 @@ export async function renderOfficeArtifact(
   if (engine === "BUILTIN") return builtinOfficeEngine.render(withTemplate);
   if (engine === "GENOFFICE") return renderWithGenOffice(withTemplate);
 
-  const canGenOffice = Boolean(process.env["GENOFFICE_URL"]) || withTemplate.format === "DOCX";
-  if (canGenOffice) {
+  // AUTO giữ nguyên hành vi an toàn cũ: chỉ dùng dịch vụ ngoài khi đã cấu hình.
+  if (process.env["GENOFFICE_URL"]) {
     try {
       return await renderWithGenOffice(withTemplate);
     } catch (e) {
