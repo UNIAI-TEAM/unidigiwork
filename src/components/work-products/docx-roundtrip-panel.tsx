@@ -167,7 +167,6 @@ export function DocxRoundTripPanel({
     }
   };
 
-
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["wp-blocks", productId],
     queryFn: () => listWorkProductBlocks({ data: { id: productId } }) as Promise<Block[]>,
@@ -216,7 +215,6 @@ export function DocxRoundTripPanel({
           : "Không phân tích lại được tài liệu.",
       ),
   });
-
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wp-change-ops", productId] });
@@ -397,7 +395,6 @@ export function DocxRoundTripPanel({
           </div>
         </Card>
       )}
-
 
       {/* So sánh bản gốc và bản đã sửa */}
       <Card className="space-y-3 p-3">

@@ -1186,7 +1186,9 @@ export const reanalyzeWorkProductDocx = createServerFn({ method: "POST" })
       .eq("work_product_id", data.id)
       .limit(2000);
     if (bErr) mapPgError(bErr);
-    const byKey = new Map((existing ?? []).map((b: any) => [b.block_key as string, b.id as string]));
+    const byKey = new Map(
+      (existing ?? []).map((b: any) => [b.block_key as string, b.id as string]),
+    );
 
     const counts: Record<string, number> = {};
     let updated = 0;

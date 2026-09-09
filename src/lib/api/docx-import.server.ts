@@ -289,7 +289,11 @@ function scoreRoles(args: {
 
   // ---- Tiêu đề mục
   if (numDepth) add("HEADING", 0.8, "đánh số mục");
-  if (/^(điều|dieu|chương|chuong|phần|phan|mục|muc|article|chapter|section|phụ lục|phu luc)\b/i.test(text))
+  if (
+    /^(điều|dieu|chương|chuong|phần|phan|mục|muc|article|chapter|section|phụ lục|phu luc)\b/i.test(
+      text,
+    )
+  )
     add("HEADING", 0.5, "từ khoá mục");
   if (bold) add("HEADING", 0.45, "chữ đậm");
   if (upper) add("HEADING", 0.5, "chữ in hoa");
@@ -310,7 +314,8 @@ function scoreRoles(args: {
   }
 
   // ---- Gạch đầu dòng
-  if (/^([-–—•●▪*+]|\p{L}\)|\(\p{L}\)|\d+[.)])\s+\S/u.test(text)) add("LIST_ITEM", 0.9, "ký hiệu đầu dòng");
+  if (/^([-–—•●▪*+]|\p{L}\)|\(\p{L}\)|\d+[.)])\s+\S/u.test(text))
+    add("LIST_ITEM", 0.9, "ký hiệu đầu dòng");
   if (indent >= 360 && !italic) add("LIST_ITEM", 0.2, "thụt lề");
 
   // ---- Trích dẫn
@@ -336,7 +341,12 @@ function scoreRoles(args: {
   weighted.sort((a, b) => b[1] - a[1]);
   const [best, score] = weighted[0];
   if (score < DETECTION_THRESHOLD)
-    return { role: "PARAGRAPH", score: Math.round(score * 100) / 100, signals: [], headingLevel: null };
+    return {
+      role: "PARAGRAPH",
+      score: Math.round(score * 100) / 100,
+      signals: [],
+      headingLevel: null,
+    };
 
   return {
     role: best,
