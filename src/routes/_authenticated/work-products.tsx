@@ -56,25 +56,56 @@ const STATUS_TONE: Record<string, string> = {
   ARCHIVED: "bg-muted text-muted-foreground",
 };
 
-/** Báo cáo 7 ngày: tài liệu mới, đã duyệt, số phiên bản theo loại. */
+const WEEKLY_FORMATS = ["DOCX", "XLSX", "PPTX", "PDF"] as const;
+
+/** Báo cáo 7 ngày: tài liệu mới, đã duyệt, số phiên bản và tệp xuất theo định dạng. */
 function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
   const { t } = useI18n();
+  const [format, setFormat] = useState<string | null>(null);
   const { data } = useQuery({
     queryKey: ["wp-weekly", workspaceId],
     queryFn: () => getWorkDeliverableWeeklyReport({ data: { workspaceId, days: 7 } }),
   });
-  const rows = data?.rows ?? [];
+  const allRows = data?.rows ?? [];
+  const rows = format ? allRows.filter((r) => (r.formats?.[format] ?? 0) > 0) : allRows;
+  const fmtCell = (formats: Record<string, number> | undefined) =>
+    format ? (
+      <span className="tabular-nums">{formats?.[format] ?? 0}</span>
+    ) : (
+      <span className="flex flex-wrap justify-end gap-1">
+        {WEEKLY_FORMATS.map((f) =>
+          (formats?.[f] ?? 0) > 0 ? (
+            <Badge key={f} variant="outline" className="tabular-nums">
+              {f} {formats![f]}
+            </Badge>
+          ) : null,
+        )}
+        {!WEEKLY_FORMATS.some((f) => (formats?.[f] ?? 0) > 0) && <span className="text-muted-foreground">—</span>}
+      </span>
+    );
   return (
     <Card className="mb-4 overflow-hidden">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">{t("wp.weekly.title")}</h2>
-        <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h2 className="text-sm font-semibold">{t("wp.weekly.title")}</h2>
+          <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant={format === null ? "secondary" : "ghost"} size="sm" className="h-7 px-2 text-xs" onClick={() => setFormat(null)}>
+            {t("wp.weekly.allFormats")}
+          </Button>
+          {WEEKLY_FORMATS.map((f) => (
+            <Button key={f} variant={format === f ? "secondary" : "ghost"} size="sm" className="h-7 px-2 text-xs" onClick={() => setFormat(f)}>
+              {f}
+            </Button>
+          ))}
+        </div>
       </div>
       {rows.length === 0 ? (
-        <p className="px-4 py-6 text-sm text-muted-foreground">{t("wp.weekly.empty")}</p>
+        <p className="px-4 py-6 text-sm text-muted-foreground">{format ? t("wp.weekly.emptyFormat") : t("wp.weekly.empty")}</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-2 font-medium">{t("wp.weekly.type")}</th>
@@ -83,6 +114,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.inReview")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approvedNow")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.versions")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.formats")}</th>
               </tr>
             </thead>
             <tbody>
@@ -94,6 +126,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                   <td className="px-4 py-2 text-right tabular-nums">{r.inReview}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.approvedNow}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.versions}</td>
+                  <td className="px-4 py-2 text-right">{fmtCell(r.formats)}</td>
                 </tr>
               ))}
               <tr className="border-t bg-muted/40 font-medium">
@@ -103,6 +136,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.inReview ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approvedNow ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
+                <td className="px-4 py-2 text-right">{fmtCell(data?.totals.formats)}</td>
               </tr>
             </tbody>
           </table>

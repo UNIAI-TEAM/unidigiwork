@@ -690,6 +690,8 @@ export type WeeklyReportRow = {
   inReview: number;
   /** Đang ở trạng thái đã duyệt tại thời điểm xem (không giới hạn 7 ngày). */
   approvedNow: number;
+  /** Số tệp bàn giao (DOCX/XLSX/PPTX/PDF) đã xuất trong kỳ, theo định dạng. */
+  formats: Record<string, number>;
 };
 
 export type WeeklyReport = {
@@ -728,11 +730,20 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
     for (const p of (products ?? []) as any[]) typeById.set(p.id as string, (p.business_type as string) ?? "OTHER");
     const ids = [...typeById.keys()];
 
-    const [versionsRes, reviewsRes] = await Promise.all([
+    const [versionsRes, reviewsRes, artifactsRes] = await Promise.all([
       ids.length
         ? context.supabase
             .from("work_product_versions")
             .select("work_product_id, created_at")
+            .in("work_product_id", ids)
+            .gte("created_at", fromISO)
+            .lte("created_at", toISO)
+            .limit(5000)
+        : Promise.resolve({ data: [] as any[] }),
+      ids.length
+        ? context.supabase
+            .from("work_product_artifacts")
+            .select("work_product_id, format, created_at")
             .in("work_product_id", ids)
             .gte("created_at", fromISO)
             .lte("created_at", toISO)
@@ -752,7 +763,7 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
 
     const acc = new Map<string, WeeklyReportRow>();
     const bump = (type: string, key: "created" | "approved" | "versions" | "inReview" | "approvedNow") => {
-      const row = acc.get(type) ?? { businessType: type, created: 0, approved: 0, versions: 0, inReview: 0, approvedNow: 0 };
+      const row = acc.get(type) ?? { businessType: type, created: 0, approved: 0, versions: 0, inReview: 0, approvedNow: 0, formats: {} };
       row[key] += 1;
       acc.set(type, row);
     };
@@ -769,19 +780,31 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
     for (const r of ((reviewsRes as any).data ?? []) as any[]) {
       bump(typeById.get(r.work_product_id) ?? "OTHER", "approved");
     }
+    for (const a of ((artifactsRes as any).data ?? []) as any[]) {
+      const type = typeById.get(a.work_product_id) ?? "OTHER";
+      const row = acc.get(type) ?? { businessType: type, created: 0, approved: 0, versions: 0, inReview: 0, approvedNow: 0, formats: {} };
+      const fmt = (a.format as string) ?? "OTHER";
+      row.formats[fmt] = (row.formats[fmt] ?? 0) + 1;
+      acc.set(type, row);
+    }
 
     const order = BUSINESS_TYPES as readonly string[];
     const rows = [...acc.values()].sort((a, b) => order.indexOf(a.businessType) - order.indexOf(b.businessType));
     const totals = rows.reduce<WeeklyReportRow>(
-      (t, r) => ({
-        businessType: "TOTAL",
-        created: t.created + r.created,
-        approved: t.approved + r.approved,
-        versions: t.versions + r.versions,
-        inReview: t.inReview + r.inReview,
-        approvedNow: t.approvedNow + r.approvedNow,
-      }),
-      { businessType: "TOTAL", created: 0, approved: 0, versions: 0, inReview: 0, approvedNow: 0 },
+      (t, r) => {
+        const formats = { ...t.formats };
+        for (const [fmt, n] of Object.entries(r.formats)) formats[fmt] = (formats[fmt] ?? 0) + n;
+        return {
+          businessType: "TOTAL",
+          created: t.created + r.created,
+          approved: t.approved + r.approved,
+          versions: t.versions + r.versions,
+          inReview: t.inReview + r.inReview,
+          approvedNow: t.approvedNow + r.approvedNow,
+          formats,
+        };
+      },
+      { businessType: "TOTAL", created: 0, approved: 0, versions: 0, inReview: 0, approvedNow: 0, formats: {} },
     );
 
     return { from: fromISO, to: toISO, rows, totals };
