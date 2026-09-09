@@ -122,6 +122,9 @@ function WorkProductDetail() {
   const [aiAction, setAiAction] = useState<(typeof AI_ACTIONS)[number]>("IMPROVE");
   const [instruction, setInstruction] = useState("");
   const [aiOut, setAiOut] = useState("");
+  // Ghi nhận việc nội dung hiện tại có dùng AI + nguồn ngữ cảnh lúc áp dụng, để snapshot lưu đúng provenance.
+  const [aiApplied, setAiApplied] = useState(false);
+  const [aiProvenance, setAiProvenance] = useState<Array<{ type: string; id: string; title: string; stamp?: string }>>([]);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [comment, setComment] = useState("");
   const [reviewerId, setReviewerId] = useState("");
@@ -206,13 +209,15 @@ function WorkProductDetail() {
         data: {
           idempotencyKey: crypto.randomUUID(),
           id,
-          aiGenerated: aiOut !== "",
-          provenance: activeSources.map((s) => ({ type: s.type, id: s.id, title: s.title, stamp: s.stamp })),
+          aiGenerated: aiApplied || aiOut !== "",
+          provenance: (aiApplied ? aiProvenance : activeSources.map((s) => ({ type: s.type, id: s.id, title: s.title, stamp: s.stamp }))) as any,
         },
       });
     },
     onSuccess: (res) => {
       setDirty(false);
+      setAiApplied(false);
+      setAiProvenance([]);
       toast.success(t("wp.snapshotDone").replace("{v}", String(res.version)));
       invalidate();
     },
@@ -276,6 +281,8 @@ function WorkProductDetail() {
         : `${content}\n\n${aiOut}`;
     setContent(next);
     setDirty(true);
+    setAiApplied(true);
+    setAiProvenance(activeSources.map((s) => ({ type: s.type, id: s.id, title: s.title, stamp: s.stamp })));
     setAiOut("");
   };
 
