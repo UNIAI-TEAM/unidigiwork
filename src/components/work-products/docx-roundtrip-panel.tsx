@@ -38,6 +38,35 @@ import {
   getAiProposalAccuracyReport,
 } from "@/lib/api/work-products-docx.functions";
 
+type FollowUpEvidence = {
+  index: number;
+  blockKey: string;
+  role: string;
+  heading: string | null;
+  section: string | null;
+  origin: string;
+  before: string;
+  after: string;
+};
+
+type FollowUpSuggestion = {
+  kind: "TASK" | "DECISION" | "MEETING";
+  title: string;
+  detail: string;
+  reason?: string;
+  priority: string;
+  confidence?: number;
+  evidenceIndexes?: number[];
+};
+
+/** Ghi kèm lý do đề xuất vào mô tả để người nhận việc hiểu vì sao có mục này. */
+function withReason(f: { detail: string; reason?: string }) {
+  const detail = f.detail?.trim() ?? "";
+  const reason = f.reason?.trim();
+  if (!reason) return detail.slice(0, 500);
+  return `${detail ? `${detail}\n\n` : ""}Lý do đề xuất: ${reason}`.slice(0, 500);
+}
+
 type AccuracyReport = {
   total: number;
   accepted: number;
@@ -179,10 +208,15 @@ export function DocxRoundTripPanel({
       kind: "TASK" | "DECISION" | "MEETING";
       title: string;
       detail: string;
+      reason?: string;
       priority: string;
+      confidence?: number;
+      evidenceIndexes?: number[];
       checked: boolean;
     }>
   >([]);
+  const [followUpEvidence, setFollowUpEvidence] = useState<FollowUpEvidence[]>([]);
+  const [followUpDetail, setFollowUpDetail] = useState<number | null>(null);
   const [showWeights, setShowWeights] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
 
@@ -333,14 +367,14 @@ export function DocxRoundTripPanel({
 
   // Sau khi chấp nhận, tự động tạo công việc thực từ nội dung vừa thay đổi.
   const autoCreateTasks = useMutation({
-    mutationFn: (items: Array<{ title: string; detail: string; priority: string }>) =>
+    mutationFn: (items: FollowUpSuggestion[]) =>
       createFollowUpsFromWorkProduct({
         data: {
           id: productId,
           items: items.map((f) => ({
             kind: "TASK" as const,
             title: f.title,
-            detail: f.detail,
+            detail: withReason(f),
             priority: f.priority as "low",
           })),
         },
@@ -363,13 +397,11 @@ export function DocxRoundTripPanel({
       }).then((r) => ({ ...r, auto: v?.auto ?? false })),
     onSuccess: (r: {
       auto: boolean;
-      suggestions: Array<{
-        kind: "TASK" | "DECISION" | "MEETING";
-        title: string;
-        detail: string;
-        priority: string;
-      }>;
+      evidence?: FollowUpEvidence[];
+      suggestions: FollowUpSuggestion[];
     }) => {
+      setFollowUpEvidence(r.evidence ?? []);
+      setFollowUpDetail(null);
       if (r.auto) {
         const tasks = r.suggestions.filter((s) => s.kind === "TASK");
         // Công việc được tạo ngay; quyết định và cuộc họp vẫn chờ người dùng chọn.
@@ -399,7 +431,7 @@ export function DocxRoundTripPanel({
             .map((f) => ({
               kind: f.kind,
               title: f.title,
-              detail: f.detail,
+              detail: withReason(f),
               priority: f.priority as "low",
             })),
         },
@@ -717,32 +749,87 @@ export function DocxRoundTripPanel({
             <p className="text-xs text-muted-foreground">AI đang đọc phần nội dung vừa đổi…</p>
           )}
           {followUps.map((f, i) => (
-            <label
-              key={`${f.kind}-${f.title}-${i}`}
-              className="flex items-start gap-2 rounded-md border p-2 text-xs"
-            >
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={f.checked}
-                onChange={(e) =>
-                  setFollowUps((prev) =>
-                    prev.map((x, xi) => (xi === i ? { ...x, checked: e.target.checked } : x)),
-                  )
-                }
-              />
-              <span className="flex-1">
-                <span className="font-medium">{f.title}</span>
-                {f.detail ? <span className="block text-muted-foreground">{f.detail}</span> : null}
-              </span>
-              <Badge variant="outline" className="shrink-0 text-[10px]">
-                {f.kind === "TASK"
-                  ? "Công việc"
-                  : f.kind === "DECISION"
-                    ? "Quyết định"
-                    : "Cuộc họp"}
-              </Badge>
-            </label>
+            <div key={`${f.kind}-${f.title}-${i}`} className="rounded-md border p-2 text-xs">
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={f.checked}
+                  onChange={(e) =>
+                    setFollowUps((prev) =>
+                      prev.map((x, xi) => (xi === i ? { ...x, checked: e.target.checked } : x)),
+                    )
+                  }
+                />
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium">{f.title}</p>
+                  {f.detail ? <p className="text-muted-foreground">{f.detail}</p> : null}
+                  {f.reason ? (
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Lý do:</span> {f.reason}
+                    </p>
+                  ) : null}
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    {typeof f.confidence === "number" && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Tin cậy {f.confidence}%
+                      </Badge>
+                    )}
+                    {f.evidenceIndexes?.length ? (
+                      <span className="text-[10px] text-muted-foreground">
+                        Căn cứ: {f.evidenceIndexes.map((n) => `#${n}`).join(", ")}
+                      </span>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => setFollowUpDetail(followUpDetail === i ? null : i)}
+                    >
+                      {followUpDetail === i ? "Ẩn chi tiết" : "Xem chi tiết"}
+                    </Button>
+                  </div>
+                </div>
+                <Badge variant="outline" className="shrink-0 text-[10px]">
+                  {f.kind === "TASK"
+                    ? "Công việc"
+                    : f.kind === "DECISION"
+                      ? "Quyết định"
+                      : "Cuộc họp"}
+                </Badge>
+              </div>
+
+              {followUpDetail === i && (
+                <div className="mt-2 space-y-2 border-t pt-2">
+                  {(f.evidenceIndexes ?? [])
+                    .map((n) => followUpEvidence.find((e) => e.index === n))
+                    .filter(Boolean)
+                    .map((e) => (
+                      <div key={e!.index} className="space-y-1 rounded-md bg-muted/40 p-2">
+                        <p className="text-[10px] font-medium text-muted-foreground">
+                          #{e!.index} · {e!.role}
+                          {e!.heading ? ` · ${e!.heading}` : ""} ·{" "}
+                          {e!.origin === "AI" ? "AI sửa" : "Người dùng sửa"}
+                        </p>
+                        <p className="whitespace-pre-wrap text-[11px] text-destructive line-through">
+                          {e!.before || "(trống)"}
+                        </p>
+                        <p className="whitespace-pre-wrap text-[11px] text-emerald-600 dark:text-emerald-400">
+                          {e!.after || "(trống)"}
+                        </p>
+                      </div>
+                    ))}
+                  {!(f.evidenceIndexes ?? []).some((n) =>
+                    followUpEvidence.some((e) => e.index === n),
+                  ) && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Không tìm thấy đoạn thay đổi tương ứng.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           ))}
           {followUps.length > 0 && (
             <Button

@@ -995,15 +995,44 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
     if (!ops?.length)
       throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_APPLIED_CHANGES" });
 
-    const diff = (ops as any[])
+    // Ngữ cảnh cấu trúc: vai trò đoạn (tiêu đề, bảng, trích dẫn...) giúp đề xuất sát nội dung hơn.
+    const keys = Array.from(
+      new Set((ops as any[]).map((o) => o.block_key).filter(Boolean)),
+    ) as string[];
+    const { data: blockRows } = keys.length
+      ? await context.supabase
+          .from("work_product_blocks")
+          .select("block_key, block_type, ordinal, source_anchor")
+          .eq("work_product_id", data.id)
+          .in("block_key", keys)
+      : { data: [] as any[] };
+    const blockMap = new Map<string, any>();
+    for (const b of (blockRows ?? []) as any[]) blockMap.set(b.block_key, b);
+
+    const evidence = (ops as any[]).map((o, idx) => {
+      const b = blockMap.get(o.block_key);
+      const anchor = (b?.source_anchor ?? {}) as any;
+      return {
+        index: idx + 1,
+        blockKey: o.block_key as string,
+        role: (anchor.role as string) ?? (b?.block_type as string) ?? "PARAGRAPH",
+        heading: (anchor.heading as string) ?? null,
+        section: (anchor.section as string) ?? null,
+        origin: o.origin === "AI" ? "AI" : "HUMAN",
+        before: (o.before_text ?? "").slice(0, 1200),
+        after: (o.after_text ?? "").slice(0, 1200),
+      };
+    });
+
+    const diff = evidence
       .map(
-        (o, idx) =>
-          `#${idx + 1} (${o.origin === "AI" ? "AI" : "người dùng"})\n` +
-          `TRƯỚC: ${(o.before_text ?? "").slice(0, 800)}\n` +
-          `SAU: ${(o.after_text ?? "").slice(0, 800)}`,
+        (e) =>
+          `#${e.index} [${e.role}${e.heading ? ` · ${e.heading}` : ""}] (${e.origin === "AI" ? "AI" : "người dùng"})\n` +
+          `TRƯỚC: ${e.before.slice(0, 800)}\n` +
+          `SAU: ${e.after.slice(0, 800)}`,
       )
       .join("\n\n")
-      .slice(0, 12000);
+      .slice(0, 14000);
 
     const model = "openai/gpt-5.6-sol";
     const { streamText } = await import("ai");
@@ -1013,19 +1042,23 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
       system:
         "Bạn phân tích phần NỘI DUNG VỪA THAY ĐỔI của một tài liệu nghiệp vụ trong UNIWORK " +
         "và đề xuất hành động tiếp theo. Chỉ dựa trên thay đổi, không bịa số liệu, deadline hay người phụ trách. " +
+        "Phân loại đúng bản chất: việc phải làm = TASK; điều cần chốt/phê duyệt = DECISION; " +
+        "việc cần nhiều bên bàn bạc = MEETING. Bỏ qua thay đổi chỉ sửa chính tả hoặc định dạng. " +
         `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
       messages: [
         {
           role: "user",
           content:
             `Tài liệu: ${product.title} (${product.business_type}) — phiên bản ${version}\n\n` +
-            `THAY ĐỔI ĐÃ ÁP DỤNG:\n${diff}\n\n` +
+            `THAY ĐỔI ĐÃ ÁP DỤNG (có vai trò đoạn):\n${diff}\n\n` +
             "Đề xuất tối đa 6 công việc, 4 quyết định cần chốt và 3 cuộc họp cần tổ chức. " +
-            "Mỗi dòng theo đúng mẫu `- [TASK|DECISION|MEETING] tiêu đề :: mô tả ngắn`. " +
-            "Với TASK, thêm mức độ ở cuối mô tả dạng (low|normal|high|urgent). Không thêm giải thích.",
+            "Mỗi dòng theo đúng mẫu:\n" +
+            "- [TASK|DECISION|MEETING] tiêu đề :: mô tả ngắn :: LÝ DO: vì sao thay đổi này dẫn tới đề xuất :: CĂN CỨ: #1,#3 :: (low|normal|high|urgent) :: 0-100\n" +
+            "Số cuối là mức độ tin cậy. CĂN CỨ chỉ dùng số hiệu thay đổi có trong danh sách trên. " +
+            "Không thêm giải thích ngoài các dòng đó.",
         },
       ],
-      providerOptions: { lovable: { max_completion_tokens: 900 } },
+      providerOptions: { lovable: { max_completion_tokens: 1400 } },
     });
     const text = (await result.text).trim();
 
@@ -1034,22 +1067,63 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
       kind: FollowUpKind;
       title: string;
       detail: string;
+      reason: string;
       priority: string;
+      confidence: number;
+      evidenceIndexes: number[];
     }> = [];
     for (const line of text.split(/\r?\n/)) {
       const m = /^\s*[-*]?\s*\[(TASK|DECISION|MEETING)\]\s*(.+)$/i.exec(line);
       if (!m) continue;
       const kind = m[1].toUpperCase() as FollowUpKind;
-      const [rawTitle, ...rest] = m[2].split("::");
-      const title = rawTitle.trim().slice(0, 300);
-      const detail = rest.join("::").trim().slice(0, 500);
+      const parts = m[2].split("::").map((p) => p.trim());
+      const title = (parts.shift() ?? "").slice(0, 300);
       if (!title) continue;
-      const p = /\((low|normal|high|urgent)\)\s*$/i.exec(detail);
+
+      let detail = "";
+      let reason = "";
+      let priority = "normal";
+      let confidence = 60;
+      const evidenceIndexes: number[] = [];
+      for (const raw of parts) {
+        const part = raw.trim();
+        if (!part) continue;
+        const rm = /^(LÝ DO|LY DO|REASON)\s*:\s*(.+)$/i.exec(part);
+        if (rm) {
+          reason = rm[2].slice(0, 500);
+          continue;
+        }
+        const em = /^(CĂN CỨ|CAN CU|EVIDENCE)\s*:\s*(.+)$/i.exec(part);
+        if (em) {
+          for (const n of em[2].match(/\d+/g) ?? []) {
+            const idx = Number(n);
+            if (idx >= 1 && idx <= evidence.length && !evidenceIndexes.includes(idx))
+              evidenceIndexes.push(idx);
+          }
+          continue;
+        }
+        const pm = /^\((low|normal|high|urgent)\)$/i.exec(part);
+        if (pm) {
+          const value = pm[1].toLowerCase();
+          if (priorities.has(value)) priority = value;
+          continue;
+        }
+        const cm = /^(\d{1,3})%?$/.exec(part);
+        if (cm) {
+          confidence = Math.max(0, Math.min(100, Number(cm[1])));
+          continue;
+        }
+        if (!detail) detail = part.slice(0, 500);
+      }
+
       suggestions.push({
         kind,
         title,
-        detail: p ? detail.replace(p[0], "").trim() : detail,
-        priority: p && priorities.has(p[1].toLowerCase()) ? p[1].toLowerCase() : "normal",
+        detail,
+        reason,
+        priority,
+        confidence,
+        evidenceIndexes: evidenceIndexes.length ? evidenceIndexes : [1],
       });
       if (suggestions.length >= 13) break;
     }
@@ -1061,6 +1135,7 @@ export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" }
       version,
       changedBlocks: ops.length,
       workspaceId: product.workspace_id as string | null,
+      evidence,
       suggestions,
     };
   });
