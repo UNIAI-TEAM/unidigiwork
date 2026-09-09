@@ -191,6 +191,10 @@ function WorkProductsPage() {
             </div>
           </div>
 
+          <WeeklyReportCard workspaceId={workspaceId === "ALL" ? null : workspaceId} />
+
+
+
           {isLoading && (
             <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> {t("wp.loading")}
