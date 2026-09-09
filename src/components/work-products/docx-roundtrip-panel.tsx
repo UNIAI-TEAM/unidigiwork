@@ -598,6 +598,75 @@ export function DocxRoundTripPanel({
               </Badge>
             ))}
           </div>
+
+          {/* Báo cáo nhận diện toàn tổ chức */}
+          {recognition && recognition.roles.length > 0 && (
+            <div className="space-y-2 border-t pt-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-medium">Báo cáo nhận diện của tổ chức</p>
+                <span className="text-[11px] text-muted-foreground">
+                  {recognition.totalDocuments} tài liệu · {recognition.totalBlocks} đoạn
+                  {recognition.overallAccuracy !== null
+                    ? ` · đúng ${recognition.overallAccuracy}%`
+                    : ""}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-[11px]">
+                  <thead className="text-muted-foreground">
+                    <tr className="text-left">
+                      <th className="py-1 pr-2 font-medium">Loại</th>
+                      <th className="py-1 pr-2 font-medium">Trọng số</th>
+                      <th className="py-1 pr-2 font-medium">Số đoạn</th>
+                      <th className="py-1 pr-2 font-medium">Điểm nhận diện</th>
+                      <th className="py-1 pr-2 font-medium">Đúng / Sai</th>
+                      <th className="py-1 pr-2 font-medium">Chính xác</th>
+                      <th className="py-1 font-medium">Gợi ý</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recognition.roles.map((r) => (
+                      <tr key={r.role} className="border-t">
+                        <td className="py-1 pr-2">{ROLE_LABELS[r.role] ?? r.role}</td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.weight === null ? "—" : `${r.weight.toFixed(1)}×`}
+                        </td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.blocks}
+                          {r.lowConfidence > 0 ? (
+                            <span className="text-muted-foreground"> ({r.lowConfidence} yếu)</span>
+                          ) : null}
+                        </td>
+                        <td className="py-1 pr-2 tabular-nums">{r.avgScore ?? "—"}</td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.accepted} / {r.rejected}
+                        </td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.accuracy === null ? "chưa có" : `${r.accuracy}%`}
+                        </td>
+                        <td className="py-1">
+                          {r.advice === "INCREASE" ? (
+                            <Badge variant="secondary" className="text-[10px]">
+                              Nên tăng
+                            </Badge>
+                          ) : r.advice === "DECREASE" ? (
+                            <Badge variant="outline" className="text-[10px]">
+                              Có thể giảm
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">Giữ nguyên</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Sau khi chỉnh trọng số, bấm “Nhận diện lại tài liệu” để áp dụng.
+              </p>
+            </div>
+          )}
         </Card>
       )}
 
