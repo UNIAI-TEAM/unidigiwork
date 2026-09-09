@@ -205,7 +205,9 @@ function DocumentAccessPage() {
           {isLoading ? (
             <p className="py-8 text-center text-sm text-muted-foreground">{t("acc.loading")}</p>
           ) : members.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">{t("acc.emptyMembers")}</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("acc.emptyMembers")}
+            </p>
           ) : (
             <ul className="space-y-2">
               {members.map((m) => (
@@ -404,7 +406,10 @@ function DocumentAccessPage() {
                     {g.expiresAt ? new Date(g.expiresAt).toLocaleString() : t("acc.noExpiry")}
                   </p>
                 </div>
-                <Badge variant={g.status === "ACTIVE" ? "secondary" : "outline"} className="text-[10px]">
+                <Badge
+                  variant={g.status === "ACTIVE" ? "secondary" : "outline"}
+                  className="text-[10px]"
+                >
                   {t(`acc.status.${g.status === "ACTIVE" ? "ACTIVE" : "REVOKED"}` as never)}
                 </Badge>
                 <Select
