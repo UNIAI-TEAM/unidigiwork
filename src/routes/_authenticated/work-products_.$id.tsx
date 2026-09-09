@@ -450,7 +450,7 @@ function WorkProductDetail() {
                       <PromptInputSubmit status={runAi.isPending ? "submitted" : undefined} disabled={runAi.isPending} />
                     </PromptInputFooter>
                   </PromptInput>
-                  {runAi.isPending && <Shimmer className="text-sm">{t("wp.ai.run")}...</Shimmer>}
+                  {runAi.isPending && <Shimmer className="text-sm">{`${t("wp.ai.run")}...`}</Shimmer>}
                   {aiOut && (
                     <div className="border-t pt-4">
                       <p className="mb-2 text-xs font-medium text-muted-foreground">{t("wp.ai.result")}</p>
