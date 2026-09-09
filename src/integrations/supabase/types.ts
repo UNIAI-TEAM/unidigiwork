@@ -7892,6 +7892,10 @@ export type Database = {
         Args: { _delta: number; _meter_key: string; _tenant_id: string }
         Returns: undefined
       }
+      _rebuild_tenant_work_graph_core: {
+        Args: { _tenant_id: string }
+        Returns: undefined
+      }
       _resolve_workspace_tenant: {
         Args: { _workspace_id: string }
         Returns: string
