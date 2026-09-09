@@ -929,3 +929,171 @@ export const createTasksFromWorkProduct = createServerFn({ method: "POST" })
       throw new ApiError({ code: "INTERNAL_ERROR", message: "TASKS_NOT_CREATED" });
     return { created };
   });
+
+/* ------------------------------------------- so sánh bản gốc và bản đã sửa */
+
+/** Liệt kê các bản Word (gốc + từng phiên bản) để chọn so sánh. */
+export const listWorkProductDocxVersions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("work_product_artifacts")
+      .select("id, role, version, engine, created_at, byte_size")
+      .eq("work_product_id", data.id)
+      .in("role", ["SOURCE_ORIGINAL", "SOURCE_VERSION"])
+      .order("version", { ascending: true })
+      .limit(50);
+    if (error) mapPgError(error);
+    return rows ?? [];
+  });
+
+/** So sánh nội dung hai bản Word theo từng đoạn: thêm, xoá, sửa. */
+export const compareWorkProductDocxVersions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        baseArtifactId: z.string().uuid().optional(),
+        targetArtifactId: z.string().uuid().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    // RLS: chỉ đọc được artifact của tài liệu mà người dùng có quyền xem.
+    const { data: rows, error } = await context.supabase
+      .from("work_product_artifacts")
+      .select("id, storage_ref, role, version, engine, created_at")
+      .eq("work_product_id", data.id)
+      .in("role", ["SOURCE_ORIGINAL", "SOURCE_VERSION"])
+      .order("version", { ascending: true })
+      .limit(50);
+    if (error) mapPgError(error);
+    const list = rows ?? [];
+    if (list.length < 2)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NOT_ENOUGH_VERSIONS" });
+
+    const base = data.baseArtifactId
+      ? list.find((r: any) => r.id === data.baseArtifactId)
+      : list.find((r: any) => r.role === "SOURCE_ORIGINAL") || list[0];
+    const target = data.targetArtifactId
+      ? list.find((r: any) => r.id === data.targetArtifactId)
+      : list[list.length - 1];
+    if (!base?.storage_ref || !target?.storage_ref || base.id === target.id)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "INVALID_COMPARE_SELECTION" });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const read = async (ref: string) => {
+      const { data: blob, error: dErr } = await supabaseAdmin.storage
+        .from(WP_BUCKET)
+        .download(ref);
+      if (dErr || !blob)
+        throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
+      return new Uint8Array(await blob.arrayBuffer());
+    };
+
+    const { parseDocxToBlocks } = await import("./docx-import.server");
+    const [aBytes, bBytes] = await Promise.all([
+      read(base.storage_ref as string),
+      read(target.storage_ref as string),
+    ]);
+    const [aDoc, bDoc] = await Promise.all([parseDocxToBlocks(aBytes), parseDocxToBlocks(bBytes)]);
+
+    const key = (b: any) => String(b.sourceAnchor?.docxIndex ?? b.blockKey);
+    const aMap = new Map(aDoc.blocks.map((b: any) => [key(b), b]));
+    const bMap = new Map(bDoc.blocks.map((b: any) => [key(b), b]));
+    const keys = Array.from(new Set([...aMap.keys(), ...bMap.keys()]));
+
+    const diffs = keys
+      .map((k) => {
+        const a = aMap.get(k);
+        const b = bMap.get(k);
+        const beforeText = (a?.text ?? "").trim();
+        const afterText = (b?.text ?? "").trim();
+        if (beforeText === afterText) return null;
+        const change = !a || !beforeText ? "ADDED" : !b || !afterText ? "REMOVED" : "MODIFIED";
+        return {
+          key: k,
+          ordinal: (b?.ordinal ?? a?.ordinal ?? 0) as number,
+          blockType: (b?.blockType ?? a?.blockType ?? "paragraph") as string,
+          change,
+          before: beforeText,
+          after: afterText,
+          words: wordDiff(beforeText, afterText),
+        };
+      })
+      .filter(Boolean)
+      .sort((x: any, y: any) => x.ordinal - y.ordinal);
+
+    return {
+      base: { id: base.id, role: base.role, version: base.version, createdAt: base.created_at },
+      target: {
+        id: target.id,
+        role: target.role,
+        version: target.version,
+        createdAt: target.created_at,
+      },
+      totals: {
+        blocksBase: aDoc.totalBlocks,
+        blocksTarget: bDoc.totalBlocks,
+        changed: diffs.length,
+        added: diffs.filter((d: any) => d.change === "ADDED").length,
+        removed: diffs.filter((d: any) => d.change === "REMOVED").length,
+        modified: diffs.filter((d: any) => d.change === "MODIFIED").length,
+      },
+      diffs,
+    };
+  });
+
+/** Đối chiếu theo từ để hiển thị rõ chữ nào bị thay đổi (LCS đơn giản). */
+function wordDiff(
+  before: string,
+  after: string,
+): Array<{ op: "same" | "del" | "ins"; text: string }> {
+  const a = before.split(/(\s+)/).filter((s) => s !== "");
+  const b = after.split(/(\s+)/).filter((s) => s !== "");
+  const MAX = 400;
+  if (a.length > MAX || b.length > MAX) {
+    return [
+      ...(before ? [{ op: "del" as const, text: before }] : []),
+      ...(after ? [{ op: "ins" as const, text: after }] : []),
+    ];
+  }
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i -= 1) {
+    for (let j = b.length - 1; j >= 0; j -= 1) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const out: Array<{ op: "same" | "del" | "ins"; text: string }> = [];
+  const push = (op: "same" | "del" | "ins", text: string) => {
+    const last = out[out.length - 1];
+    if (last && last.op === op) last.text += text;
+    else out.push({ op, text });
+  };
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      push("same", a[i]);
+      i += 1;
+      j += 1;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      push("del", a[i]);
+      i += 1;
+    } else {
+      push("ins", b[j]);
+      j += 1;
+    }
+  }
+  while (i < a.length) {
+    push("del", a[i]);
+    i += 1;
+  }
+  while (j < b.length) {
+    push("ins", b[j]);
+    j += 1;
+  }
+  return out;
+}
