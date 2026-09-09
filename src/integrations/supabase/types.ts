@@ -6226,35 +6226,51 @@ export type Database = {
       work_product_shares: {
         Row: {
           created_at: string
+          expires_at: string | null
           id: string
           note: string | null
           permission: string
           shared_by: string | null
+          shared_with_user_id: string | null
+          status: string
           updated_at: string
           work_product_id: string
-          workspace_id: string
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           note?: string | null
           permission?: string
           shared_by?: string | null
+          shared_with_user_id?: string | null
+          status?: string
           updated_at?: string
           work_product_id: string
-          workspace_id: string
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           note?: string | null
           permission?: string
           shared_by?: string | null
+          shared_with_user_id?: string | null
+          status?: string
           updated_at?: string
           work_product_id?: string
-          workspace_id?: string
+          workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "work_product_shares_shared_with_user_id_fkey"
+            columns: ["shared_with_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_product_shares_work_product_id_fkey"
             columns: ["work_product_id"]
