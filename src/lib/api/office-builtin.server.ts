@@ -5,38 +5,90 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import {
   OFFICE_FORMAT_META,
+  blockText,
   parseContentBlocks,
+  parseInlineRuns,
+  plainText,
   type DocBlock,
   type OfficeEngineAdapter,
   type OfficeFormat,
   type OfficeRenderRequest,
   type OfficeRenderResult,
+  type OfficeTemplate,
 } from "@/domain/work-products/office-engine";
+import { officeTemplateFor } from "@/domain/work-products/office-templates";
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+const tpl = (req: OfficeRenderRequest): OfficeTemplate => req.template ?? officeTemplateFor(req.businessType);
+
 /* ----------------------------------------------------------------- DOCX */
 
-function docxParagraph(b: DocBlock): string {
-  const style =
-    b.kind === "heading" ? `<w:pStyle w:val="Heading${b.level}"/>` : b.kind === "bullet" ? `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>` : "";
-  const bold = b.kind === "heading" ? "<w:rPr><w:b/></w:rPr>" : "";
-  return `<w:p><w:pPr>${style}</w:pPr><w:r>${bold}<w:t xml:space="preserve">${esc(b.text)}</w:t></w:r></w:p>`;
+/** Các đoạn chữ có định dạng nội tuyến → run OOXML. */
+function docxRuns(text: string, extra = ""): string {
+  return parseInlineRuns(text)
+    .map((run) => {
+      const props = [extra, run.bold ? "<w:b/>" : "", run.italic ? "<w:i/>" : "", run.underline ? '<w:u w:val="single"/>' : ""].join("");
+      return `<w:r>${props ? `<w:rPr>${props}</w:rPr>` : ""}<w:t xml:space="preserve">${esc(run.text)}</w:t></w:r>`;
+    })
+    .join("");
+}
+
+function docxTable(rows: string[][], accent: string): string {
+  const body = rows
+    .map((cells, r) => {
+      const shade = r === 0 ? `<w:shd w:val="clear" w:fill="${accent}"/>` : "";
+      const color = r === 0 ? '<w:color w:val="FFFFFF"/><w:b/>' : "";
+      return `<w:tr>${cells
+        .map(
+          (cell) =>
+            `<w:tc><w:tcPr>${shade}</w:tcPr><w:p><w:pPr/>${docxRuns(cell, color)}</w:p></w:tc>`,
+        )
+        .join("")}</w:tr>`;
+    })
+    .join("");
+  return `<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="D5D9E4"/><w:left w:val="single" w:sz="4" w:color="D5D9E4"/><w:bottom w:val="single" w:sz="4" w:color="D5D9E4"/><w:right w:val="single" w:sz="4" w:color="D5D9E4"/><w:insideH w:val="single" w:sz="4" w:color="D5D9E4"/><w:insideV w:val="single" w:sz="4" w:color="D5D9E4"/></w:tblBorders></w:tblPr>${body}</w:tbl><w:p/>`;
+}
+
+function docxParagraph(b: DocBlock, accent: string): string {
+  if (b.kind === "table") return docxTable(b.rows, accent);
+  if (b.kind === "pagebreak") return `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+  if (b.kind === "heading") {
+    const size = b.level === 1 ? 32 : b.level === 2 ? 26 : 24;
+    return `<w:p><w:pPr><w:pStyle w:val="Heading${b.level}"/><w:spacing w:before="240" w:after="120"/></w:pPr>${docxRuns(b.text, `<w:b/><w:sz w:val="${size}"/><w:color w:val="${accent}"/>`)}</w:p>`;
+  }
+  if (b.kind === "bullet")
+    return `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>${docxRuns(b.text)}</w:p>`;
+  if (b.kind === "numbered")
+    return `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>${docxRuns(b.text)}</w:p>`;
+  if (b.kind === "quote")
+    return `<w:p><w:pPr><w:ind w:left="480"/><w:pBdr><w:left w:val="single" w:sz="18" w:color="${accent}"/></w:pBdr></w:pPr>${docxRuns(b.text, '<w:i/><w:color w:val="555A66"/>')}</w:p>`;
+  return `<w:p><w:pPr><w:spacing w:after="120" w:line="288" w:lineRule="auto"/></w:pPr>${docxRuns(b.text)}</w:p>`;
 }
 
 function buildDocx(req: OfficeRenderRequest): Uint8Array {
+  const t = tpl(req);
   const blocks = parseContentBlocks(req.content);
-  const body = [
-    `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="36"/></w:rPr><w:t xml:space="preserve">${esc(req.title)}</w:t></w:r></w:p>`,
-    `<w:p><w:r><w:rPr><w:i/><w:color w:val="666666"/></w:rPr><w:t xml:space="preserve">${esc(`${req.businessType} · v${req.version}`)}</w:t></w:r></w:p>`,
-    ...blocks.map(docxParagraph),
-  ].join("");
+  const cover = t.cover
+    ? [
+        `<w:p><w:pPr><w:spacing w:before="2400" w:after="240"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="${t.accent}"/></w:rPr><w:t xml:space="preserve">${esc(t.header)}</w:t></w:r></w:p>`,
+        `<w:p><w:r><w:rPr><w:b/><w:sz w:val="60"/></w:rPr><w:t xml:space="preserve">${esc(req.title)}</w:t></w:r></w:p>`,
+        `<w:p><w:pPr><w:spacing w:before="240"/></w:pPr><w:r><w:rPr><w:color w:val="666666"/></w:rPr><w:t xml:space="preserve">${esc(`${t.label} · v${req.version}`)}</w:t></w:r></w:p>`,
+        `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`,
+      ]
+    : [
+        `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="40"/><w:color w:val="${t.accent}"/></w:rPr><w:t xml:space="preserve">${esc(req.title)}</w:t></w:r></w:p>`,
+        `<w:p><w:r><w:rPr><w:i/><w:color w:val="666666"/></w:rPr><w:t xml:space="preserve">${esc(`${t.label} · v${req.version}`)}</w:t></w:r></w:p>`,
+      ];
+  const body = [...cover, ...blocks.map((b) => docxParagraph(b, t.accent))].join("");
 
   const numbering = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>
-<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
+<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>
+<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
+<w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num></w:numbering>`;
 
   const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
@@ -63,7 +115,25 @@ function buildXlsx(req: OfficeRenderRequest): Uint8Array {
     ["Phiên bản", `v${req.version}`],
     ["", ""],
     ["Mục", "Nội dung"],
-    ...blocks.map((b) => [b.kind === "heading" ? "Tiêu đề mục" : b.kind === "bullet" ? "Gạch đầu dòng" : "Đoạn", b.text] as [string, string]),
+    ...blocks
+      .filter((b) => b.kind !== "pagebreak")
+      .map(
+        (b) =>
+          [
+            b.kind === "heading"
+              ? "Tiêu đề mục"
+              : b.kind === "bullet"
+                ? "Gạch đầu dòng"
+                : b.kind === "numbered"
+                  ? "Mục đánh số"
+                  : b.kind === "quote"
+                    ? "Trích dẫn"
+                    : b.kind === "table"
+                      ? "Bảng"
+                      : "Đoạn",
+            plainText(blockText(b)),
+          ] as [string, string],
+      ),
   ];
   if (req.provenance.length) {
     rows.push(["", ""], ["Nguồn ngữ cảnh", "Tên"]);
@@ -116,17 +186,22 @@ function slideXml(title: string, bullets: string[]): string {
 }
 
 function buildPptx(req: OfficeRenderRequest): Uint8Array {
+  const t = tpl(req);
   const blocks = parseContentBlocks(req.content);
   const slides: Array<{ title: string; bullets: string[] }> = [
-    { title: req.title, bullets: [`${req.businessType} · v${req.version}`] },
+    { title: req.title, bullets: [`${t.label} · v${req.version}`, t.header] },
   ];
   for (const b of blocks) {
-    if (b.kind === "heading") slides.push({ title: b.text, bullets: [] });
-    else {
-      const last = slides[slides.length - 1];
-      if (last.bullets.length >= 8) slides.push({ title: `${last.title} (tiếp)`, bullets: [b.text] });
-      else last.bullets.push(b.text);
+    if (b.kind === "pagebreak") continue;
+    if (b.kind === "heading") {
+      slides.push({ title: plainText(b.text), bullets: [] });
+      continue;
     }
+    const text = plainText(blockText(b));
+    if (!text) continue;
+    const last = slides[slides.length - 1];
+    if (last.bullets.length >= 8) slides.push({ title: `${last.title} (tiếp)`, bullets: [text] });
+    else last.bullets.push(text);
   }
 
   const files: Record<string, Uint8Array> = {};
@@ -185,7 +260,14 @@ async function loadFonts() {
   return fontCache;
 }
 
+function hexRgb(hex: string) {
+  const n = parseInt(hex, 16);
+  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+}
+
 async function buildPdf(req: OfficeRenderRequest): Promise<Uint8Array> {
+  const t = tpl(req);
+  const accent = hexRgb(t.accent);
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   const fonts = await loadFonts();
@@ -196,6 +278,11 @@ async function buildPdf(req: OfficeRenderRequest): Promise<Uint8Array> {
   const margin = 56;
   let page = pdf.addPage([W, H]);
   let y = H - margin;
+
+  const newPage = () => {
+    page = pdf.addPage([W, H]);
+    y = H - margin;
+  };
 
   const wrap = (text: string, size: number, font: typeof regular, maxWidth: number) => {
     const words = text.split(/\s+/);
@@ -214,35 +301,70 @@ async function buildPdf(req: OfficeRenderRequest): Promise<Uint8Array> {
 
   const draw = (text: string, size: number, font: typeof regular, indent = 0, color = rgb(0.07, 0.07, 0.16)) => {
     for (const line of wrap(text, size, font, W - margin * 2 - indent)) {
-      if (y < margin + size) {
-        page = pdf.addPage([W, H]);
-        y = H - margin;
-      }
+      if (y < margin + size + 24) newPage();
       page.drawText(line, { x: margin + indent, y: y - size, size, font, color });
       y -= size * 1.5;
     }
   };
 
-  draw(req.title, 22, bold);
-  draw(`${req.businessType} · v${req.version}`, 10, regular, 0, rgb(0.45, 0.47, 0.55));
-  y -= 8;
+  // Bìa hoặc tiêu đề đầu trang theo mẫu.
+  if (t.cover) {
+    page.drawRectangle({ x: 0, y: H - 200, width: W, height: 200, color: accent });
+    page.drawText(t.header, { x: margin, y: H - 90, size: 12, font: bold, color: rgb(1, 1, 1) });
+    let ty = H - 130;
+    for (const line of wrap(req.title, 28, bold, W - margin * 2)) {
+      page.drawText(line, { x: margin, y: ty, size: 28, font: bold, color: rgb(1, 1, 1) });
+      ty -= 34;
+    }
+    y = H - 240;
+    draw(`${t.label} · v${req.version}`, 11, regular, 0, rgb(0.45, 0.47, 0.55));
+    newPage();
+  } else {
+    page.drawRectangle({ x: margin, y: H - margin - 4, width: 48, height: 4, color: accent });
+    y -= 16;
+    draw(req.title, 22, bold);
+    draw(`${t.label} · v${req.version}`, 10, regular, 0, rgb(0.45, 0.47, 0.55));
+    y -= 8;
+  }
 
   for (const b of parseContentBlocks(req.content)) {
-    if (b.kind === "heading") {
+    if (b.kind === "pagebreak") {
+      newPage();
+    } else if (b.kind === "heading") {
       y -= 6;
-      draw(b.text, b.level === 1 ? 16 : b.level === 2 ? 14 : 12, bold);
+      draw(plainText(b.text), b.level === 1 ? 16 : b.level === 2 ? 14 : 12, bold, 0, accent);
     } else if (b.kind === "bullet") {
-      draw(`•  ${b.text}`, 11, regular, 14);
+      draw(`•  ${plainText(b.text)}`, 11, regular, 14);
+    } else if (b.kind === "numbered") {
+      draw(`${b.index}.  ${plainText(b.text)}`, 11, regular, 14);
+    } else if (b.kind === "quote") {
+      draw(plainText(b.text), 11, regular, 20, rgb(0.35, 0.37, 0.45));
+    } else if (b.kind === "table") {
+      for (const [i, row] of b.rows.entries())
+        draw(row.map((c) => plainText(c)).join("   |   "), 10, i === 0 ? bold : regular, 6, i === 0 ? accent : undefined);
+      y -= 6;
     } else {
-      draw(b.text, 11, regular);
+      draw(plainText(b.text), 11, regular);
     }
   }
 
   if (req.provenance.length) {
     y -= 10;
-    draw("Nguồn ngữ cảnh", 12, bold);
+    draw("Nguồn ngữ cảnh", 12, bold, 0, accent);
     for (const p of req.provenance) draw(`•  [${p.type}] ${p.title}`, 10, regular, 14, rgb(0.35, 0.37, 0.45));
   }
+
+  // Chân trang trên mọi trang.
+  const pages = pdf.getPages();
+  pages.forEach((p, i) => {
+    p.drawText(`${t.footer}  ·  ${i + 1}/${pages.length}`, {
+      x: margin,
+      y: 28,
+      size: 8,
+      font: regular,
+      color: rgb(0.55, 0.57, 0.63),
+    });
+  });
 
   return pdf.save();
 }
