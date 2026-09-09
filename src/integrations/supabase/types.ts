@@ -6036,6 +6036,66 @@ export type Database = {
           },
         ]
       }
+      work_product_ai_proposals: {
+        Row: {
+          agent_id: string | null
+          base_version: number
+          context_sources: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          instruction: string
+          model: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          work_product_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          base_version: number
+          context_sources?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instruction: string
+          model?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          work_product_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          base_version?: number
+          context_sources?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instruction?: string
+          model?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_ai_proposals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_ai_proposals_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_product_artifacts: {
         Row: {
           created_at: string
@@ -6044,8 +6104,10 @@ export type Database = {
           format: string
           generated_by: string
           id: string
+          immutable: boolean
           mime_type: string | null
           role: string
+          sha256: string | null
           size_bytes: number | null
           storage_ref: string | null
           tenant_id: string
@@ -6060,8 +6122,10 @@ export type Database = {
           format: string
           generated_by?: string
           id?: string
+          immutable?: boolean
           mime_type?: string | null
           role?: string
+          sha256?: string | null
           size_bytes?: number | null
           storage_ref?: string | null
           tenant_id: string
@@ -6076,8 +6140,10 @@ export type Database = {
           format?: string
           generated_by?: string
           id?: string
+          immutable?: boolean
           mime_type?: string | null
           role?: string
+          sha256?: string | null
           size_bytes?: number | null
           storage_ref?: string | null
           tenant_id?: string
@@ -6095,6 +6161,168 @@ export type Database = {
           },
           {
             foreignKeyName: "work_product_artifacts_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_product_blocks: {
+        Row: {
+          block_key: string
+          block_type: string
+          created_at: string
+          editability: string
+          id: string
+          ordinal: number
+          source_anchor: Json
+          source_artifact_id: string | null
+          source_version: number
+          tenant_id: string
+          text: string
+          updated_at: string
+          work_product_id: string
+        }
+        Insert: {
+          block_key: string
+          block_type: string
+          created_at?: string
+          editability?: string
+          id?: string
+          ordinal: number
+          source_anchor?: Json
+          source_artifact_id?: string | null
+          source_version?: number
+          tenant_id: string
+          text?: string
+          updated_at?: string
+          work_product_id: string
+        }
+        Update: {
+          block_key?: string
+          block_type?: string
+          created_at?: string
+          editability?: string
+          id?: string
+          ordinal?: number
+          source_anchor?: Json
+          source_artifact_id?: string | null
+          source_version?: number
+          tenant_id?: string
+          text?: string
+          updated_at?: string
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_blocks_source_artifact_id_fkey"
+            columns: ["source_artifact_id"]
+            isOneToOne: false
+            referencedRelation: "work_product_artifacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_blocks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_blocks_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_product_change_ops: {
+        Row: {
+          after_text: string
+          applied_version: number | null
+          author_id: string | null
+          base_version: number
+          before_text: string
+          block_id: string | null
+          block_key: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          origin: string
+          proposal_id: string | null
+          source_anchor: Json
+          status: string
+          tenant_id: string
+          updated_at: string
+          work_product_id: string
+        }
+        Insert: {
+          after_text?: string
+          applied_version?: number | null
+          author_id?: string | null
+          base_version: number
+          before_text?: string
+          block_id?: string | null
+          block_key: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          origin?: string
+          proposal_id?: string | null
+          source_anchor?: Json
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          work_product_id: string
+        }
+        Update: {
+          after_text?: string
+          applied_version?: number | null
+          author_id?: string | null
+          base_version?: number
+          before_text?: string
+          block_id?: string | null
+          block_key?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          origin?: string
+          proposal_id?: string | null
+          source_anchor?: Json
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_change_ops_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "work_product_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_change_ops_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "work_product_ai_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_change_ops_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_product_change_ops_work_product_id_fkey"
             columns: ["work_product_id"]
             isOneToOne: false
             referencedRelation: "work_products"
@@ -6457,9 +6685,16 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string
+          origin: string
           owner_id: string | null
           primary_context_id: string | null
           primary_context_type: string | null
+          source_artifact_id: string | null
+          source_engine: string | null
+          source_filename: string | null
+          source_imported_at: string | null
+          source_mime_type: string | null
+          source_sha256: string | null
           status: string
           tags: string[]
           tenant_id: string
@@ -6478,9 +6713,16 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          origin?: string
           owner_id?: string | null
           primary_context_id?: string | null
           primary_context_type?: string | null
+          source_artifact_id?: string | null
+          source_engine?: string | null
+          source_filename?: string | null
+          source_imported_at?: string | null
+          source_mime_type?: string | null
+          source_sha256?: string | null
           status?: string
           tags?: string[]
           tenant_id: string
@@ -6499,9 +6741,16 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          origin?: string
           owner_id?: string | null
           primary_context_id?: string | null
           primary_context_type?: string | null
+          source_artifact_id?: string | null
+          source_engine?: string | null
+          source_filename?: string | null
+          source_imported_at?: string | null
+          source_mime_type?: string | null
+          source_sha256?: string | null
           status?: string
           tags?: string[]
           tenant_id?: string
@@ -6510,6 +6759,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "work_products_source_artifact_id_fkey"
+            columns: ["source_artifact_id"]
+            isOneToOne: false
+            referencedRelation: "work_product_artifacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_products_tenant_id_fkey"
             columns: ["tenant_id"]

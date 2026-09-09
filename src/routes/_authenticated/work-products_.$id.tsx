@@ -45,6 +45,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DocxRoundTripPanel } from "@/components/work-products/docx-roundtrip-panel";
+import { FileType2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
@@ -359,13 +361,8 @@ function WorkProductDetail() {
           locale: lang,
           instruction: (prompt ?? instruction).trim() || undefined,
           selection: content.slice(selection.start, selection.end) || undefined,
-          sources: activeSources.map((s) => ({
-            type: s.type,
-            id: s.id,
-            title: s.title,
-            snippet: s.snippet,
-            stamp: s.stamp,
-          })),
+          // Chỉ gửi định danh; máy chủ tự nạp nội dung nguồn theo quyền.
+          sources: activeSources.map((s) => ({ type: s.type, id: s.id })),
         },
       }),
     onSuccess: (res) => setAiOut(res.output),
@@ -404,6 +401,7 @@ function WorkProductDetail() {
   }
 
   const product = data.product;
+  const isImportedDocx = (product as { origin?: string }).origin === "IMPORTED_DOCX";
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -596,7 +594,7 @@ function WorkProductDetail() {
                   <Button variant="ghost" size="icon-sm" onClick={() => setRightPanelOpen(false)} aria-label="Đóng trợ lý"><PanelRight /></Button>
                 </div>
               </div>
-              <TabsList className="mx-3 mt-3 grid grid-cols-8">
+              <TabsList className={cn("mx-3 mt-3 grid", isImportedDocx ? "grid-cols-9" : "grid-cols-8")}>
                 <TabsTrigger value="ai" aria-label={t("wp.tab.ai")}><Sparkles /></TabsTrigger>
                 <TabsTrigger value="context" aria-label={t("wp.tab.context")}><Layers /></TabsTrigger>
                 <TabsTrigger value="versions" aria-label={t("wp.tab.versions")}><History /></TabsTrigger>
@@ -605,6 +603,9 @@ function WorkProductDetail() {
                 <TabsTrigger value="links" aria-label={t("wp.tab.links")}><Link2 /></TabsTrigger>
                 <TabsTrigger value="files" aria-label={t("wp.files.tab")}><Download /></TabsTrigger>
                 <TabsTrigger value="share" aria-label={t("wp.share.tab")}><Share2 /></TabsTrigger>
+                {isImportedDocx && (
+                  <TabsTrigger value="docx" aria-label="Tài liệu Word"><FileType2 /></TabsTrigger>
+                )}
               </TabsList>
 
               <ScrollArea className="min-h-0 flex-1 px-4 pb-5">
@@ -1071,6 +1072,15 @@ function WorkProductDetail() {
                     </div>
                   ))}
                 </TabsContent>
+
+                {isImportedDocx && (
+                  <TabsContent value="docx" className="mt-0">
+                    <DocxRoundTripPanel
+                      productId={id}
+                      activeSources={activeSources.map((s) => ({ type: s.type, id: s.id }))}
+                    />
+                  </TabsContent>
+                )}
               </ScrollArea>
             </Tabs>
           </aside>}
