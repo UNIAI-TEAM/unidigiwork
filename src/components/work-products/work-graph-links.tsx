@@ -25,6 +25,7 @@ import {
   rebuildWorkGraph,
   unlinkWorkEntities,
 } from "@/lib/api/work-graph.functions";
+import { WorkGraphSharePanel } from "./work-graph-share";
 
 type TargetType = "TASK" | "MEETING" | "MEETING_ARTIFACT" | "DOCUMENT";
 
@@ -102,6 +103,9 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
         <span className="text-xs text-muted-foreground">
           Bản đồ tổ chức: {overview?.nodes ?? 0} điểm · {overview?.edges ?? 0} liên kết
         </span>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <WorkGraphSharePanel />
+        </div>
         {overview?.canRebuild && (
           <Button
             size="sm"
