@@ -35,8 +35,7 @@ function table(rows: string[][], widths: number[]) {
     width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
     columnWidths: widths,
     rows: rows.map(
-      (r, i) =>
-        new TableRow({ children: r.map((c, ci) => cell(c, widths[ci], i === 0)) }),
+      (r, i) => new TableRow({ children: r.map((c, ci) => cell(c, widths[ci], i === 0)) }),
     ),
   });
 }
@@ -99,8 +98,10 @@ function baseDoc(children: any[]) {
 const bullet = (t: string) =>
   new Paragraph({ numbering: { reference: "bullets", level: 0 }, children: [new TextRun(t)] });
 const p = (t: string) => new Paragraph({ children: [new TextRun(t)] });
-const h1 = (t: string) => new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(t)] });
-const h2 = (t: string) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(t)] });
+const h1 = (t: string) =>
+  new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(t)] });
+const h2 = (t: string) =>
+  new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(t)] });
 
 const fixtures: Record<string, any> = {
   "hop-dong-dich-vu.docx": baseDoc([
@@ -121,7 +122,9 @@ const fixtures: Record<string, any> = {
       [6360, 3000],
     ),
     h2("Điều 3. Bảo mật"),
-    p("Hai bên cam kết bảo mật thông tin trong suốt thời hạn hợp đồng và 24 tháng sau khi kết thúc."),
+    p(
+      "Hai bên cam kết bảo mật thông tin trong suốt thời hạn hợp đồng và 24 tháng sau khi kết thúc.",
+    ),
   ]),
   "bao-cao-thang.docx": baseDoc([
     h1("BÁO CÁO VẬN HÀNH THÁNG 08/2026"),

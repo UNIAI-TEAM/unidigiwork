@@ -36,7 +36,10 @@ async function aiRewrite(text: string, instruction: string): Promise<string | nu
       messages: [{ role: "user", content: `ĐOẠN: ${text}\nYÊU CẦU: ${instruction}` }],
       providerOptions: { lovable: { max_completion_tokens: 300 } },
     });
-    const out = (await res.text).trim().split(/\r?\n/)[0].replace(/^\[?\d*\]?\s*/, "");
+    const out = (await res.text)
+      .trim()
+      .split(/\r?\n/)[0]
+      .replace(/^\[?\d*\]?\s*/, "");
     return out && out !== text ? out : null;
   } catch (e) {
     console.log("  AI lỗi:", (e as Error).message);
@@ -96,8 +99,7 @@ for (const c of cases) {
     noMissingParts: insp.missingRequiredParts.length === 0,
     newTextPresent: insp.text.includes(aiAfter.slice(0, 40)),
     oldTextGone: !insp.text.includes(target.text),
-    onlyDocumentXmlChanged:
-      pres.changed.length === 1 && pres.changed[0] === "word/document.xml",
+    onlyDocumentXmlChanged: pres.changed.length === 1 && pres.changed[0] === "word/document.xml",
     noPartsAddedRemoved: pres.added.length === 0 && pres.removed.length === 0,
     tablesKept: insp.tables === (await inspectDocx(original)).tables,
     blockCountStable: reparsed.totalBlocks === parsed.totalBlocks,
