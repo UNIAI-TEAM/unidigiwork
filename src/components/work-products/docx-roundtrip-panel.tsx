@@ -240,6 +240,12 @@ export function DocxRoundTripPanel({
       ),
   });
 
+  const { data: accuracy } = useQuery({
+    queryKey: ["wp-ai-accuracy", productId],
+    queryFn: () =>
+      getAiProposalAccuracyReport({ data: { id: productId } }) as Promise<AccuracyReport>,
+  });
+
   const reanalyze = useMutation({
     mutationFn: () => reanalyzeWorkProductDocx({ data: { id: productId, weights } }),
     onSuccess: (r: { updated: number; counts: Record<string, number> }) => {
@@ -898,6 +904,74 @@ export function DocxRoundTripPanel({
             )}
             Tạo phiên bản Word mới
           </Button>
+        </Card>
+      )}
+      {/* Nhật ký đề xuất AI và độ chính xác */}
+      {accuracy && accuracy.total > 0 && (
+        <Card className="space-y-3 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold">Đề xuất AI so với bản gốc</h3>
+            <p className="text-xs text-muted-foreground">
+              {accuracy.total} đề xuất · {accuracy.accepted} chấp nhận · {accuracy.rejected} từ chối
+              · {accuracy.pending} chờ duyệt
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Độ chính xác trung bình</p>
+              <p className="text-2xl font-semibold">
+                {accuracy.accuracy === null ? "—" : `${accuracy.accuracy}%`}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Mức giữ nguyên nội dung gốc</p>
+              <p className="text-2xl font-semibold">{accuracy.avgSimilarity}%</p>
+            </div>
+          </div>
+
+          {accuracy.weakest.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Hay sai nhất:{" "}
+              {accuracy.weakest
+                .map(
+                  (w) =>
+                    `${ROLE_LABELS[w.role] ?? w.role} (${w.accuracy}% đúng, ${w.rejected} bị từ chối)`,
+                )
+                .join(" · ")}
+            </p>
+          )}
+
+          <div className="space-y-1">
+            {accuracy.roles.map((r) => (
+              <div
+                key={r.role}
+                className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-xs"
+              >
+                <span className="font-medium">{ROLE_LABELS[r.role] ?? r.role}</span>
+                <span className="text-muted-foreground">
+                  {r.total} đề xuất · giữ gốc {r.avgSimilarity}% ·{" "}
+                  {r.accuracy === null ? "chưa duyệt" : `đúng ${r.accuracy}%`}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground">
+              Nhật ký đề xuất gần đây
+            </summary>
+            <div className="mt-2 space-y-2">
+              {accuracy.recent.map((r) => (
+                <div key={r.id} className="rounded-md border p-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    {ROLE_LABELS[r.role] ?? r.role} · {r.status} · giống gốc {r.similarity}%
+                  </p>
+                  <p className="mt-1 line-through opacity-70">{r.before || "(trống)"}</p>
+                  <p className="text-emerald-600 dark:text-emerald-400">{r.after || "(xóa)"}</p>
+                </div>
+              ))}
+            </div>
+          </details>
         </Card>
       )}
     </div>
