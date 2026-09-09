@@ -128,6 +128,33 @@ function DocumentAccessPage() {
     onError: () => toast.error(t("acc.error")),
   });
 
+  const changeStatus = useMutation({
+    mutationFn: (v: { userId: string; status: "active" | "suspended" | "removed" }) =>
+      setAccessMemberStatus({
+        data: { ...v, idempotencyKey: `status-${v.userId}-${v.status}-${Date.now()}` },
+      }),
+    onSuccess: async () => {
+      await refresh();
+      toast.success(t("acc.statusUpdated"));
+    },
+    onError: () => toast.error(t("acc.error")),
+  });
+
+  const editGrant = useMutation({
+    mutationFn: (v: {
+      shareId: string;
+      action: "SET_VIEW" | "SET_EDIT" | "REVOKE" | "RESTORE" | "DELETE";
+    }) =>
+      updateMemberGrant({
+        data: { ...v, idempotencyKey: `grant-${v.shareId}-${v.action}-${Date.now()}` },
+      }),
+    onSuccess: async () => {
+      await refresh();
+      toast.success(t("acc.grantUpdated"));
+    },
+    onError: () => toast.error(t("acc.error")),
+  });
+
   function toggleUser(id: string) {
     setSelectedUsers((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   }
