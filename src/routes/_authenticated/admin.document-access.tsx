@@ -84,8 +84,9 @@ function DocumentAccessPage() {
     );
   }, [memberData, memberQuery]);
 
-  function refresh() {
-    return qc.invalidateQueries({ queryKey: ["access-members"] });
+  async function refresh() {
+    await qc.invalidateQueries({ queryKey: ["access-members"] });
+    await qc.invalidateQueries({ queryKey: ["member-grants"] });
   }
 
   const grant = useMutation({
