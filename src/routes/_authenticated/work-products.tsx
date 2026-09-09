@@ -53,8 +53,8 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 function WorkProductsPage() {
-  const { t, locale } = useI18n();
-  const { open, setOpen } = useSidebarState();
+  const { t, lang } = useI18n();
+  const [open, setOpen] = useSidebarState();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
