@@ -985,9 +985,7 @@ export const compareWorkProductDocxVersions = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const read = async (ref: string) => {
-      const { data: blob, error: dErr } = await supabaseAdmin.storage
-        .from(WP_BUCKET)
-        .download(ref);
+      const { data: blob, error: dErr } = await supabaseAdmin.storage.from(WP_BUCKET).download(ref);
       if (dErr || !blob)
         throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
       return new Uint8Array(await blob.arrayBuffer());
@@ -1060,7 +1058,9 @@ function wordDiff(
       ...(after ? [{ op: "ins" as const, text: after }] : []),
     ];
   }
-  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
+    new Array(b.length + 1).fill(0),
+  );
   for (let i = a.length - 1; i >= 0; i -= 1) {
     for (let j = b.length - 1; j >= 0; j -= 1) {
       dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);

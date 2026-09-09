@@ -335,7 +335,6 @@ export function DocxRoundTripPanel({
         )}
       </Card>
 
-
       {/* Tạo công việc từ tài liệu */}
       <Card className="space-y-2 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
