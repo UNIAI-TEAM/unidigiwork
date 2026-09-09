@@ -1634,6 +1634,77 @@ export const getAiProposalAccuracyReport = createServerFn({ method: "GET" })
       }
     }
 
+    // Thống kê theo từng tài liệu để so sánh chất lượng đề xuất giữa nhiều tài liệu Word.
+    type DocBucket = {
+      workProductId: string;
+      total: number;
+      accepted: number;
+      rejected: number;
+      pending: number;
+      similaritySum: number;
+      worstRole: Map<string, { rejected: number; decided: number }>;
+    };
+    const byDoc = new Map<string, DocBucket>();
+    for (const o of ops) {
+      const role = (o.source_anchor?.role as string) || "PARAGRAPH";
+      const d = byDoc.get(o.work_product_id) ?? {
+        workProductId: o.work_product_id,
+        total: 0,
+        accepted: 0,
+        rejected: 0,
+        pending: 0,
+        similaritySum: 0,
+        worstRole: new Map(),
+      };
+      d.total += 1;
+      d.similaritySum += wordSimilarity(o.before_text ?? "", o.after_text ?? "");
+      const r = d.worstRole.get(role) ?? { rejected: 0, decided: 0 };
+      if (accepted(o.status)) {
+        d.accepted += 1;
+        r.decided += 1;
+      } else if (o.status === "REJECTED") {
+        d.rejected += 1;
+        r.decided += 1;
+        r.rejected += 1;
+      } else d.pending += 1;
+      d.worstRole.set(role, r);
+      byDoc.set(o.work_product_id, d);
+    }
+
+    const docIds = [...byDoc.keys()];
+    const titles = new Map<string, { title: string; businessType: string | null }>();
+    if (docIds.length) {
+      const { data: prods } = await context.supabase
+        .from("work_products")
+        .select("id, title, business_type")
+        .in("id", docIds);
+      for (const p of (prods ?? []) as any[])
+        titles.set(p.id, { title: p.title, businessType: p.business_type ?? null });
+    }
+
+    const documents = [...byDoc.values()]
+      .map((d) => {
+        const decidedDoc = d.accepted + d.rejected;
+        let worst: { role: string; rejected: number } | null = null;
+        for (const [role, r] of d.worstRole)
+          if (r.rejected > 0 && (!worst || r.rejected > worst.rejected))
+            worst = { role, rejected: r.rejected };
+        const meta = titles.get(d.workProductId);
+        return {
+          workProductId: d.workProductId,
+          title: meta?.title ?? "(không đọc được tiêu đề)",
+          businessType: meta?.businessType ?? null,
+          total: d.total,
+          accepted: d.accepted,
+          rejected: d.rejected,
+          pending: d.pending,
+          accuracy: decidedDoc ? Math.round((d.accepted / decidedDoc) * 100) : null,
+          avgSimilarity: d.total ? Math.round((d.similaritySum / d.total) * 100) : 0,
+          worstRole: worst,
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+
     const total = ops.length;
     const acceptedTotal = ops.filter((o) => accepted(o.status)).length;
     const rejectedTotal = ops.filter((o) => o.status === "REJECTED").length;
@@ -1670,6 +1741,7 @@ export const getAiProposalAccuracyReport = createServerFn({ method: "GET" })
         ? Math.round(([...byRole.values()].reduce((s, b) => s + b.similaritySum, 0) / total) * 100)
         : 0,
       roles,
+      documents,
       weakest,
       recent,
     };

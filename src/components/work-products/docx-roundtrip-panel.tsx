@@ -83,6 +83,18 @@ type AccuracyReport = {
     avgSimilarity: number;
   }>;
   weakest: Array<{ role: string; accuracy: number | null; rejected: number }>;
+  documents: Array<{
+    workProductId: string;
+    title: string;
+    businessType: string | null;
+    total: number;
+    accepted: number;
+    rejected: number;
+    pending: number;
+    accuracy: number | null;
+    avgSimilarity: number;
+    worstRole: { role: string; rejected: number } | null;
+  }>;
   recent: Array<{
     id: string;
     role: string;
@@ -274,10 +286,14 @@ export function DocxRoundTripPanel({
       ),
   });
 
+  // Xem theo tài liệu hiện tại hoặc tổng hợp nhiều tài liệu Word của tổ chức.
+  const [accuracyScope, setAccuracyScope] = useState<"THIS" | "ALL">("THIS");
   const { data: accuracy } = useQuery({
-    queryKey: ["wp-ai-accuracy", productId],
+    queryKey: ["wp-ai-accuracy", productId, accuracyScope],
     queryFn: () =>
-      getAiProposalAccuracyReport({ data: { id: productId } }) as Promise<AccuracyReport>,
+      getAiProposalAccuracyReport({
+        data: accuracyScope === "THIS" ? { id: productId } : {},
+      }) as Promise<AccuracyReport>,
   });
 
   const reanalyze = useMutation({
@@ -1029,15 +1045,42 @@ export function DocxRoundTripPanel({
         </Card>
       )}
       {/* Nhật ký đề xuất AI và độ chính xác */}
-      {accuracy && accuracy.total > 0 && (
+      {accuracy && (
         <Card className="space-y-3 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">Đề xuất AI so với bản gốc</h3>
-            <p className="text-xs text-muted-foreground">
-              {accuracy.total} đề xuất · {accuracy.accepted} chấp nhận · {accuracy.rejected} từ chối
-              · {accuracy.pending} chờ duyệt
-            </p>
+            <div className="flex items-center gap-1 rounded-md border p-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={accuracyScope === "THIS" ? "secondary" : "ghost"}
+                className="h-6 px-2 text-[11px]"
+                onClick={() => setAccuracyScope("THIS")}
+              >
+                Tài liệu này
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={accuracyScope === "ALL" ? "secondary" : "ghost"}
+                className="h-6 px-2 text-[11px]"
+                onClick={() => setAccuracyScope("ALL")}
+              >
+                Tất cả tài liệu Word
+              </Button>
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {accuracy.total} đề xuất · {accuracy.accepted} chấp nhận · {accuracy.rejected} từ chối ·{" "}
+            {accuracy.pending} chờ duyệt
+            {accuracyScope === "ALL" ? ` · ${accuracy.documents.length} tài liệu` : ""}
+          </p>
+          {accuracy.total === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Chưa có đề xuất AI nào để đối chiếu. Hãy nhờ AI sửa một vài tài liệu Word rồi duyệt
+              hoặc từ chối để có số liệu.
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-md border p-3">
               <p className="text-xs text-muted-foreground">Độ chính xác trung bình</p>
@@ -1077,6 +1120,29 @@ export function DocxRoundTripPanel({
               </div>
             ))}
           </div>
+
+          {accuracyScope === "ALL" && accuracy.documents.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium">So sánh giữa các tài liệu Word</p>
+              {accuracy.documents.map((d) => (
+                <div
+                  key={d.workProductId}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0 flex-1 truncate font-medium" title={d.title}>
+                    {d.title}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {d.total} đề xuất · {d.accuracy === null ? "chưa duyệt" : `đúng ${d.accuracy}%`}{" "}
+                    · giữ gốc {d.avgSimilarity}%
+                    {d.worstRole
+                      ? ` · hay sai: ${ROLE_LABELS[d.worstRole.role] ?? d.worstRole.role}`
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground">
