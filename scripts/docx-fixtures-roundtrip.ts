@@ -97,8 +97,8 @@ for (const c of cases) {
     newTextPresent: insp.text.includes(aiAfter.slice(0, 40)),
     oldTextGone: !insp.text.includes(target.text),
     onlyDocumentXmlChanged:
-      pres.changedParts.length === 1 && pres.changedParts[0] === "word/document.xml",
-    noPartsAddedRemoved: pres.addedParts.length === 0 && pres.removedParts.length === 0,
+      pres.changed.length === 1 && pres.changed[0] === "word/document.xml",
+    noPartsAddedRemoved: pres.added.length === 0 && pres.removed.length === 0,
     tablesKept: insp.tables === (await inspectDocx(original)).tables,
     blockCountStable: reparsed.totalBlocks === parsed.totalBlocks,
     originalUntouched: (await sha256Hex(original)) === srcSha,
