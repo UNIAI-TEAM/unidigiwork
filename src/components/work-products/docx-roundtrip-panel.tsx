@@ -145,6 +145,9 @@ export function DocxRoundTripPanel({
   const [taskSuggestions, setTaskSuggestions] = useState<
     Array<{ title: string; priority: string; checked: boolean }>
   >([]);
+  const [followUps, setFollowUps] = useState<
+    Array<{ kind: "TASK" | "DECISION" | "MEETING"; title: string; detail: string; priority: string; checked: boolean }>
+  >([]);
   const [showWeights, setShowWeights] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
 
