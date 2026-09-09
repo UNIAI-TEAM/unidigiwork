@@ -91,7 +91,96 @@ export interface ParsedDocxImport {
   editableBlocks: number;
 }
 
-/** Đọc một DOCX có sẵn thành các khối có neo về tài liệu gốc. */
+const norm = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Nhận diện theo tên style Word (đa ngôn ngữ: Heading/Tiêu đề/Title/Quote/Caption...). */
+function roleFromStyle(styleId: string | null): {
+  role: BlockSemanticRole | null;
+  level: number | null;
+} {
+  if (!styleId) return { role: null, level: null };
+  const s = norm(styleId).replace(/[\s_-]/g, "");
+  const heading = /^(heading|tieude|đềmục|titre|ueberschrift|berschrift|h)(\d)/.exec(s);
+  if (heading) return { role: "HEADING", level: Number(heading[2]) };
+  if (/^(title|tieudechinh|documenttitle)$/.test(s)) return { role: "TITLE", level: 0 };
+  if (/^(subtitle|phude)$/.test(s)) return { role: "HEADING", level: 2 };
+  if (/(quote|citation|trichdan|blockquote)/.test(s)) return { role: "QUOTE", level: null };
+  if (/(caption|chuthich|ghichuanh)/.test(s)) return { role: "CAPTION", level: null };
+  if (/(footnote|endnote|cuoitrang)/.test(s)) return { role: "FOOTNOTE", level: null };
+  if (/(listparagraph|danhsach)/.test(s)) return { role: "LIST_ITEM", level: null };
+  return { role: null, level: null };
+}
+
+/** Số thứ tự mục kiểu "1.", "1.2.3", "Điều 5", "Chương II", "Phần A", "Article 3". */
+function headingNumberDepth(text: string): number | null {
+  const t = text.trim();
+  const dotted = /^(\d+(?:\.\d+){0,4})[.)]?\s+\S/.exec(t);
+  if (dotted) return Math.min(dotted[1].split(".").length, 5);
+  if (/^(điều|dieu|article|chương|chuong|chapter|phần|phan|part|mục|muc|section)\s+([0-9IVXLCM]+|[A-ZĐ])\b/i.test(t))
+    return 1;
+  return null;
+}
+
+function allRunsBold(b: Record<string, unknown>): boolean {
+  const runs = b["runs"];
+  if (!Array.isArray(runs) || !runs.length) return false;
+  const withText = (runs as Array<{ text?: string; bold?: boolean }>).filter((r) => (r.text ?? "").trim());
+  return withText.length > 0 && withText.every((r) => r.bold === true);
+}
+
+function allRunsItalic(b: Record<string, unknown>): boolean {
+  const runs = b["runs"];
+  if (!Array.isArray(runs) || !runs.length) return false;
+  const withText = (runs as Array<{ text?: string; italic?: boolean }>).filter((r) => (r.text ?? "").trim());
+  return withText.length > 0 && withText.every((r) => r.italic === true);
+}
+
+function cellText(cell: Record<string, unknown>): string {
+  const rich = cell["richParas"];
+  if (Array.isArray(rich) && rich.length) {
+    return (rich as Array<Record<string, unknown>>)
+      .map((p) => runsText(p))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  const paras = cell["paras"];
+  if (Array.isArray(paras)) return (paras as string[]).join(" ").replace(/\s+/g, " ").trim();
+  return "";
+}
+
+/** Bóc nội dung bảng thành lưới chữ để AI đọc được (không đổi tài liệu gốc). */
+function tableGrid(b: Record<string, unknown>): string[][] {
+  const model = b["table"] as { rows?: Array<{ cells?: Array<Record<string, unknown>> }> } | undefined;
+  const rows = model?.rows;
+  if (!Array.isArray(rows)) return [];
+  return rows.map((r) => (Array.isArray(r.cells) ? r.cells.map((c) => cellText(c)) : []));
+}
+
+function tableSummaryOf(grid: string[][]): TableSummary {
+  const cols = grid.reduce((m, r) => Math.max(m, r.length), 0);
+  const first = grid[0] ?? [];
+  const headerLike = first.some((c) => c.trim().length > 0);
+  return {
+    rows: grid.length,
+    cols,
+    headers: headerLike ? first : [],
+    preview: grid.slice(0, 6),
+  };
+}
+
+function markdownTable(grid: string[][]): string {
+  if (!grid.length) return "[bảng — giữ nguyên bản gốc]";
+  const cols = grid.reduce((m, r) => Math.max(m, r.length), 0);
+  const pad = (r: string[]) =>
+    Array.from({ length: cols }, (_, i) => (r[i] ?? "").replace(/\|/g, "\\|") || " ");
+  const out = [`| ${pad(grid[0]).join(" | ")} |`, `| ${Array(cols).fill("---").join(" | ")} |`];
+  for (const r of grid.slice(1, 30)) out.push(`| ${pad(r).join(" | ")} |`);
+  if (grid.length > 30) out.push(`| … còn ${grid.length - 30} dòng | ${Array(cols - 1).fill(" ").join(" | ")} |`);
+  return out.join("\n");
+}
+
+/** Đọc một DOCX có sẵn thành các khối có neo về tài liệu gốc, kèm nhận diện ngữ nghĩa. */
 export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxImport> {
   const parsed = await parseDocx(bytes);
   const visible = (parsed.blocks as unknown as Array<Record<string, unknown>>).filter((b) => !b["hidden"]);
@@ -99,12 +188,79 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
   const blocks: ImportedBlock[] = [];
   const lines: string[] = [];
   let ordinal = 0;
+  let currentSection: string | null = null;
+  let seenBodyText = false;
 
   for (const b of visible) {
     const type = String(b["type"] ?? "paragraph");
     const text = runsText(b);
+    const trimmed = text.trim();
     const editability = editabilityOf(b, text);
     const docxIndex = (b["docxIndex"] as number | null | undefined) ?? null;
+    const styleId = (b["styleId"] as string | undefined) ?? null;
+    const rawLevel = (b["level"] as number | undefined) ?? null;
+    const listInfo = b["list"] as { kind?: "bullet" | "ordered" } | undefined;
+    const format = (b["format"] as Record<string, unknown> | undefined) ?? {};
+    const styled = roleFromStyle(styleId);
+
+    let role: BlockSemanticRole = "PARAGRAPH";
+    let headingLevel: number | null = null;
+    let detectedBy: "style" | "outline" | "heuristic" | null = null;
+    let grid: string[][] = [];
+    let table: TableSummary | null = null;
+
+    if (type === "table") {
+      role = "TABLE";
+      grid = tableGrid(b);
+      table = tableSummaryOf(grid);
+    } else if (type === "image" || type === "passthrough") {
+      role = "OTHER";
+    } else if (type === "heading") {
+      role = "HEADING";
+      headingLevel = Math.min(Math.max(Number(rawLevel ?? styled.level ?? 1), 1), 9);
+      detectedBy = b["outlineOnly"] ? "outline" : "style";
+    } else if (type === "listItem" || listInfo?.kind) {
+      role = "LIST_ITEM";
+      detectedBy = "style";
+    } else if (styled.role) {
+      role = styled.role;
+      headingLevel = styled.role === "HEADING" ? (styled.level ?? rawLevel ?? 1) : null;
+      if (styled.role === "TITLE") headingLevel = 0;
+      detectedBy = "style";
+    } else if (typeof rawLevel === "number") {
+      role = "HEADING";
+      headingLevel = Math.min(Math.max(rawLevel, 1), 9);
+      detectedBy = "outline";
+    } else if (trimmed) {
+      // Heuristic: tài liệu Việt Nam thường không dùng style Heading chuẩn.
+      const numDepth = headingNumberDepth(trimmed);
+      const short = trimmed.length <= 120 && !/[.;:!?]$/.test(trimmed);
+      const bold = allRunsBold(b);
+      const upper = trimmed.length <= 120 && trimmed === trimmed.toLocaleUpperCase("vi") && /\p{L}/u.test(trimmed);
+      const centered = format["align"] === "center";
+      if (numDepth && (bold || short)) {
+        role = "HEADING";
+        headingLevel = numDepth;
+        detectedBy = "heuristic";
+      } else if ((bold && short) || upper) {
+        role = !seenBodyText && (centered || upper) ? "TITLE" : "HEADING";
+        headingLevel = role === "TITLE" ? 0 : 2;
+        detectedBy = "heuristic";
+      } else if (
+        allRunsItalic(b) &&
+        (Number(format["indentLeft"] ?? 0) >= 360 || /^[“"'«].*[”"'»]$/.test(trimmed))
+      ) {
+        role = "QUOTE";
+        detectedBy = "heuristic";
+      } else if (/^(hình|bảng|biểu|figure|table)\s*\d+([.:]|\s)/i.test(trimmed) && trimmed.length <= 160) {
+        role = "CAPTION";
+        detectedBy = "heuristic";
+      }
+    }
+
+    if (role === "PARAGRAPH" && trimmed) seenBodyText = true;
+    if (role === "HEADING" || role === "TITLE") currentSection = trimmed || currentSection;
+
     ordinal += 1;
     blocks.push({
       blockKey: `wp-block-${docxIndex ?? `x${ordinal}`}`,
@@ -114,19 +270,30 @@ export async function parseDocxToBlocks(bytes: Uint8Array): Promise<ParsedDocxIm
       editability,
       sourceAnchor: {
         docxIndex,
-        styleId: (b["styleId"] as string | undefined) ?? null,
-        level: (b["level"] as number | undefined) ?? null,
+        styleId,
+        level: rawLevel,
+        role,
+        headingLevel,
+        section: role === "HEADING" || role === "TITLE" ? null : currentSection,
+        listKind: listInfo?.kind ?? null,
+        table,
+        detectedBy,
       },
     });
 
-    if (type === "heading") {
-      const lvl = Math.min(Math.max(Number(b["level"] ?? 1), 1), 3);
+    if (role === "TITLE") {
+      lines.push(`# ${text}`);
+    } else if (role === "HEADING") {
+      const lvl = Math.min(Math.max(headingLevel ?? 1, 1), 6);
       lines.push(`${"#".repeat(lvl)} ${text}`);
-    } else if (type === "listItem") {
-      const kind = (b["list"] as { kind?: string } | undefined)?.kind;
-      lines.push(kind === "ordered" ? `1. ${text}` : `- ${text}`);
+    } else if (role === "LIST_ITEM") {
+      lines.push(listInfo?.kind === "ordered" ? `1. ${text}` : `- ${text}`);
+    } else if (role === "QUOTE") {
+      lines.push(`> ${text}`);
+    } else if (role === "CAPTION") {
+      lines.push(`*${text}*`);
     } else if (type === "table") {
-      lines.push("[bảng — giữ nguyên bản gốc]");
+      lines.push(markdownTable(grid));
     } else if (text) {
       lines.push(text);
     } else {
