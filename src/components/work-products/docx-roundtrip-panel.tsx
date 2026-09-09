@@ -314,6 +314,11 @@ export function DocxRoundTripPanel({
   }
 
   const editable = (blocks ?? []).filter((b) => b.editability === "EDITABLE");
+  const roleCounts = (blocks ?? []).reduce<Record<string, number>>((acc, b) => {
+    const role = b.source_anchor?.role || "PARAGRAPH";
+    acc[role] = (acc[role] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-4">
@@ -322,7 +327,77 @@ export function DocxRoundTripPanel({
         <span className="text-xs text-muted-foreground">
           {editable.length}/{(blocks ?? []).length} đoạn có thể sửa
         </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto h-7 gap-1 px-2 text-xs"
+          onClick={() => setShowWeights((v) => !v)}
+        >
+          <SlidersHorizontal className="h-3 w-3" />
+          Cấu hình nhận diện
+        </Button>
       </div>
+
+      {/* Trọng số nhận diện từng loại nội dung */}
+      {showWeights && (
+        <Card className="space-y-3 p-3">
+          <p className="text-xs text-muted-foreground">
+            Tăng trọng số nếu tài liệu của bạn hay bị bỏ sót loại đó; giảm nếu bị nhận nhầm. Chỉ ảnh
+            hưởng cách đọc hiểu, không sửa tệp gốc.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {WEIGHT_KEYS.map((k) => (
+              <div key={k} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span>{WEIGHT_LABELS[k]}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {weights[k].toFixed(1)}×
+                  </span>
+                </div>
+                <Slider
+                  value={[weights[k]]}
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  onValueChange={(v) => saveWeights({ ...weights, [k]: v[0] ?? 1 })}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={reanalyze.isPending}
+              onClick={() => reanalyze.mutate()}
+            >
+              {reanalyze.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Wand2 className="h-3 w-3" />
+              )}
+              Nhận diện lại tài liệu
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={() => saveWeights(DEFAULT_WEIGHTS)}
+            >
+              <RotateCcw className="h-3 w-3" />
+              Mặc định
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(roleCounts).map(([role, n]) => (
+              <Badge key={role} variant="outline" className="text-[10px]">
+                {ROLE_LABELS[role] ?? role}: {n}
+              </Badge>
+            ))}
+          </div>
+        </Card>
+      )}
+
 
       {/* So sánh bản gốc và bản đã sửa */}
       <Card className="space-y-3 p-3">
