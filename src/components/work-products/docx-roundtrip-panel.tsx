@@ -252,16 +252,42 @@ export function DocxRoundTripPanel({
   const [followUpDetail, setFollowUpDetail] = useState<number | null>(null);
   const [showWeights, setShowWeights] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
+  const [guidance, setGuidance] = useState("");
 
-  // Trọng số lưu theo trình duyệt của người dùng, đọc sau khi gắn để tránh lệch hiển thị.
+  // Hồ sơ nhận diện theo tổ chức: cùng một tệp có thể cho đề xuất khác nhau ở mỗi tổ chức.
+  const { data: profile } = useQuery({
+    queryKey: ["docx-tenant-profile"],
+    queryFn: () =>
+      getTenantDocxProfile({ data: {} }) as Promise<{
+        tenantId: string;
+        canEdit: boolean;
+        weights: Weights;
+        aiGuidance: string;
+      }>,
+  });
+
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(WEIGHTS_STORAGE_KEY);
-      if (raw) setWeights({ ...DEFAULT_WEIGHTS, ...(JSON.parse(raw) as Partial<Weights>) });
-    } catch {
-      /* bỏ qua dữ liệu hỏng */
-    }
-  }, []);
+    if (!profile) return;
+    setWeights({ ...DEFAULT_WEIGHTS, ...profile.weights });
+    setGuidance(profile.aiGuidance ?? "");
+  }, [profile]);
+
+  const saveProfile = useMutation({
+    mutationFn: (input: { weights?: Weights; aiGuidance?: string }) =>
+      saveTenantDocxProfile({ data: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["docx-tenant-profile"] });
+      toast.success("Đã lưu cấu hình nhận diện của tổ chức");
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("DOCX_PROFILE_FORBIDDEN")
+          ? "Chỉ chủ sở hữu hoặc quản trị viên tổ chức được đổi cấu hình."
+          : "Không lưu được cấu hình nhận diện.",
+      ),
+  });
+
+  const canEditProfile = profile?.canEdit ?? false;
 
   const saveWeights = (next: Weights) => {
     setWeights(next);
@@ -271,6 +297,7 @@ export function DocxRoundTripPanel({
       /* bỏ qua khi trình duyệt chặn lưu */
     }
   };
+
 
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["wp-blocks", productId],
