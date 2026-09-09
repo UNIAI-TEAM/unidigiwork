@@ -712,6 +712,11 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
         return `[${i + 1}] (${kind}${lvl}${sec})\n${b.text}`;
       })
       .join("\n\n");
+    const { loadTenantDocxProfile, tenantGuidanceBlock } = await import("./docx-profile.server");
+    const tenantProfile = await loadTenantDocxProfile(
+      context.supabase as never,
+      product.tenant_id as string,
+    );
     const result = streamText({
       model: createLovableResponsesProvider(apiKey).responses(model),
       system:
@@ -719,7 +724,9 @@ export const proposeAiWorkProductBlockEdits = createServerFn({ method: "POST" })
         "Chỉ dùng dữ kiện trong nội dung và nguồn ngữ cảnh được cung cấp; không bịa số liệu hay cam kết. " +
         "Mỗi đoạn có ghi rõ loại (tiêu đề, gạch đầu dòng, trích dẫn, chú thích, bảng) và mục chứa nó: " +
         "giữ đúng loại đó khi viết lại — tiêu đề vẫn ngắn gọn, gạch đầu dòng vẫn một ý, trích dẫn giữ nguyên ý người nói. " +
+        tenantGuidanceBlock(tenantProfile.aiGuidance) +
         `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+
       messages: [
         {
           role: "user",
