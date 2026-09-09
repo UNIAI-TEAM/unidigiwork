@@ -949,6 +949,254 @@ export const createTasksFromWorkProduct = createServerFn({ method: "POST" })
     return { created };
   });
 
+/* ------------------ đề xuất tiếp theo từ nội dung vừa thay đổi (sau khi chấp nhận) */
+
+type FollowUpKind = "TASK" | "DECISION" | "MEETING";
+
+/**
+ * Sau khi vá bản Word, đọc đúng các thay đổi đã áp dụng của phiên bản đó và
+ * đề xuất công việc / quyết định / cuộc họp. Chỉ gợi ý, không tạo gì.
+ */
+export const proposeFollowUpsFromDocxChanges = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        version: z.number().int().positive().optional(),
+        locale: z.string().max(8).default("vi"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_UNAVAILABLE" });
+
+    const { data: product } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, workspace_id, title, business_type, current_version")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const version = data.version ?? (product.current_version as number | null) ?? 1;
+    const { data: ops, error: oErr } = await context.supabase
+      .from("work_product_change_ops")
+      .select("block_key, before_text, after_text, origin, applied_version")
+      .eq("work_product_id", data.id)
+      .eq("status", "APPLIED")
+      .eq("applied_version", version)
+      .order("created_at", { ascending: true })
+      .limit(100);
+    if (oErr) mapPgError(oErr);
+    if (!ops?.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_APPLIED_CHANGES" });
+
+    const diff = (ops as any[])
+      .map(
+        (o, idx) =>
+          `#${idx + 1} (${o.origin === "AI" ? "AI" : "người dùng"})\n` +
+          `TRƯỚC: ${(o.before_text ?? "").slice(0, 800)}\n` +
+          `SAU: ${(o.after_text ?? "").slice(0, 800)}`,
+      )
+      .join("\n\n")
+      .slice(0, 12000);
+
+    const model = "openai/gpt-5.6-sol";
+    const { streamText } = await import("ai");
+    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    const result = streamText({
+      model: createLovableResponsesProvider(apiKey).responses(model),
+      system:
+        "Bạn phân tích phần NỘI DUNG VỪA THAY ĐỔI của một tài liệu nghiệp vụ trong UNIWORK " +
+        "và đề xuất hành động tiếp theo. Chỉ dựa trên thay đổi, không bịa số liệu, deadline hay người phụ trách. " +
+        `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Tài liệu: ${product.title} (${product.business_type}) — phiên bản ${version}\n\n` +
+            `THAY ĐỔI ĐÃ ÁP DỤNG:\n${diff}\n\n` +
+            "Đề xuất tối đa 6 công việc, 4 quyết định cần chốt và 3 cuộc họp cần tổ chức. " +
+            "Mỗi dòng theo đúng mẫu `- [TASK|DECISION|MEETING] tiêu đề :: mô tả ngắn`. " +
+            "Với TASK, thêm mức độ ở cuối mô tả dạng (low|normal|high|urgent). Không thêm giải thích.",
+        },
+      ],
+      providerOptions: { lovable: { max_completion_tokens: 900 } },
+    });
+    const text = (await result.text).trim();
+
+    const priorities = new Set(["low", "normal", "high", "urgent"]);
+    const suggestions: Array<{
+      kind: FollowUpKind;
+      title: string;
+      detail: string;
+      priority: string;
+    }> = [];
+    for (const line of text.split(/\r?\n/)) {
+      const m = /^\s*[-*]?\s*\[(TASK|DECISION|MEETING)\]\s*(.+)$/i.exec(line);
+      if (!m) continue;
+      const kind = m[1].toUpperCase() as FollowUpKind;
+      const [rawTitle, ...rest] = m[2].split("::");
+      const title = rawTitle.trim().slice(0, 300);
+      const detail = rest.join("::").trim().slice(0, 500);
+      if (!title) continue;
+      const p = /\((low|normal|high|urgent)\)\s*$/i.exec(detail);
+      suggestions.push({
+        kind,
+        title,
+        detail: p ? detail.replace(p[0], "").trim() : detail,
+        priority: p && priorities.has(p[1].toLowerCase()) ? p[1].toLowerCase() : "normal",
+      });
+      if (suggestions.length >= 13) break;
+    }
+    if (!suggestions.length)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_EMPTY_PROPOSAL" });
+
+    return {
+      model,
+      version,
+      changedBlocks: ops.length,
+      workspaceId: product.workspace_id as string | null,
+      suggestions,
+    };
+  });
+
+/** Tạo thật các mục đã chọn: công việc, cuộc họp và ghi nhận quyết định. */
+export const createFollowUpsFromWorkProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        workspaceId: z.string().uuid().optional(),
+        items: z
+          .array(
+            z.object({
+              kind: z.enum(["TASK", "DECISION", "MEETING"]),
+              title: z.string().trim().min(1).max(300),
+              detail: z.string().trim().max(500).default(""),
+              priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+            }),
+          )
+          .min(1)
+          .max(13),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: product } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, title, workspace_id, current_version")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const workspaceId = (data.workspaceId ?? product.workspace_id) as string | null;
+    const source = `Tạo từ thay đổi tài liệu: ${product.title} (v${product.current_version ?? 1})`;
+    const created: Array<{ kind: FollowUpKind; id: string; title: string; linked: boolean }> = [];
+
+    const link = async (targetType: "TASK" | "MEETING", targetId: string) => {
+      const res = await context.supabase.rpc("link_work_entities", {
+        _source_type: "WORK_PRODUCT",
+        _source_id: data.id,
+        _target_type: targetType,
+        _target_id: targetId,
+        _relationship: "GENERATES",
+      });
+      return !res.error;
+    };
+
+    for (let idx = 0; idx < data.items.length; idx += 1) {
+      const item = data.items[idx];
+
+      if (item.kind === "TASK") {
+        if (!workspaceId)
+          throw new ApiError({ code: "VALIDATION_FAILED", message: "WORKSPACE_REQUIRED" });
+        const res = await context.supabase.rpc("create_task", {
+          _workspace_id: workspaceId,
+          _title: item.title,
+          _description: item.detail ? `${item.detail}\n\n${source}` : source,
+          _priority: item.priority,
+          _idempotency_key: `${data.idempotencyKey}:${idx}`,
+          _correlation_id: data.correlationId ?? undefined,
+        });
+        if (res.error) mapPgError(res.error);
+        const row: any = Array.isArray(res.data) ? (res.data as any[])[0] : res.data;
+        if (!row?.id) continue;
+        created.push({
+          kind: "TASK",
+          id: row.id as string,
+          title: item.title,
+          linked: await link("TASK", row.id as string),
+        });
+        continue;
+      }
+
+      if (item.kind === "MEETING") {
+        if (!workspaceId)
+          throw new ApiError({ code: "VALIDATION_FAILED", message: "WORKSPACE_REQUIRED" });
+        const start = new Date(Date.now() + (idx + 2) * 24 * 60 * 60 * 1000);
+        start.setUTCHours(2, 0, 0, 0); // 09:00 giờ Việt Nam
+        const end = new Date(start.getTime() + 30 * 60 * 1000);
+        const { data: meeting, error: mErr } = await context.supabase
+          .from("meetings")
+          .insert({
+            tenant_id: product.tenant_id,
+            workspace_id: workspaceId,
+            title: item.title,
+            agenda: item.detail ? `${item.detail}\n\n${source}` : source,
+            start_at: start.toISOString(),
+            end_at: end.toISOString(),
+            created_by: context.userId,
+          })
+          .select("id")
+          .single();
+        if (mErr) mapPgError(mErr);
+        created.push({
+          kind: "MEETING",
+          id: meeting.id as string,
+          title: item.title,
+          linked: await link("MEETING", meeting.id as string),
+        });
+        continue;
+      }
+
+      // DECISION: chưa có bảng quyết định độc lập → ghi nhận vào nhật ký tài liệu.
+      const { data: comment, error: cErr } = await context.supabase
+        .from("work_product_comments")
+        .insert({
+          tenant_id: product.tenant_id,
+          work_product_id: data.id,
+          author_id: context.userId,
+          body: `**Quyết định cần chốt:** ${item.title}${item.detail ? `\n\n${item.detail}` : ""}\n\n_${source}_`,
+          anchor: {
+            kind: "DECISION",
+            version: product.current_version ?? 1,
+          } as unknown as never,
+        })
+        .select("id")
+        .single();
+      if (cErr) mapPgError(cErr);
+      created.push({
+        kind: "DECISION",
+        id: comment.id as string,
+        title: item.title,
+        linked: false,
+      });
+    }
+
+    if (!created.length)
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "FOLLOW_UPS_NOT_CREATED" });
+    return { created };
+  });
+
 /* ------------------------------------------- so sánh bản gốc và bản đã sửa */
 
 /** Liệt kê các bản Word (gốc + từng phiên bản) để chọn so sánh. */

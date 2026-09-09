@@ -30,6 +30,8 @@ import {
   proposeWorkProductChanges,
   proposeTasksFromWorkProduct,
   createTasksFromWorkProduct,
+  proposeFollowUpsFromDocxChanges,
+  createFollowUpsFromWorkProduct,
   listWorkProductDocxVersions,
   compareWorkProductDocxVersions,
   reanalyzeWorkProductDocx,
@@ -144,6 +146,15 @@ export function DocxRoundTripPanel({
   const [instruction, setInstruction] = useState("");
   const [taskSuggestions, setTaskSuggestions] = useState<
     Array<{ title: string; priority: string; checked: boolean }>
+  >([]);
+  const [followUps, setFollowUps] = useState<
+    Array<{
+      kind: "TASK" | "DECISION" | "MEETING";
+      title: string;
+      detail: string;
+      priority: string;
+      checked: boolean;
+    }>
   >([]);
   const [showWeights, setShowWeights] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
@@ -287,6 +298,55 @@ export function DocxRoundTripPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const suggestFollowUps = useMutation({
+    mutationFn: (version?: number) =>
+      proposeFollowUpsFromDocxChanges({
+        data: { id: productId, ...(version ? { version } : {}) },
+      }),
+    onSuccess: (r: {
+      suggestions: Array<{
+        kind: "TASK" | "DECISION" | "MEETING";
+        title: string;
+        detail: string;
+        priority: string;
+      }>;
+    }) => {
+      setFollowUps(r.suggestions.map((s) => ({ ...s, checked: true })));
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NO_APPLIED_CHANGES")
+          ? "Chưa có thay đổi nào được áp dụng để phân tích."
+          : "Chưa gợi ý được hành động tiếp theo.",
+      ),
+  });
+
+  const createFollowUps = useMutation({
+    mutationFn: () =>
+      createFollowUpsFromWorkProduct({
+        data: {
+          id: productId,
+          items: followUps
+            .filter((f) => f.checked)
+            .map((f) => ({
+              kind: f.kind,
+              title: f.title,
+              detail: f.detail,
+              priority: f.priority as "low",
+            })),
+        },
+      }),
+    onSuccess: (r: { created: Array<{ kind: string }> }) => {
+      setFollowUps([]);
+      qc.invalidateQueries({ queryKey: ["work-deliverable-links", productId] });
+      qc.invalidateQueries({ queryKey: ["work-deliverable-comments", productId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success(`Đã tạo ${r.created.length} mục tiếp theo`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const apply = useMutation({
     mutationFn: () => applyWorkProductAcceptedChanges({ data: { id: productId } }),
     onSuccess: (r: { version: number; preservation: { preservedRatio: number } }) => {
@@ -294,6 +354,8 @@ export function DocxRoundTripPanel({
       toast.success(
         `Đã tạo phiên bản v${r.version} — giữ nguyên ${r.preservation.preservedRatio}% cấu trúc gốc`,
       );
+      // Sau khi chấp nhận, tự động phân tích nội dung vừa đổi để gợi ý bước tiếp theo.
+      suggestFollowUps.mutate(r.version);
     },
     onError: (e: Error) =>
       toast.error(
@@ -562,6 +624,75 @@ export function DocxRoundTripPanel({
           </div>
         )}
       </Card>
+
+      {/* Đề xuất tiếp theo từ nội dung vừa thay đổi */}
+      {(suggestFollowUps.isPending || followUps.length > 0) && (
+        <Card className="space-y-2 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium">Đề xuất tiếp theo từ thay đổi vừa duyệt</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={suggestFollowUps.isPending}
+              onClick={() => suggestFollowUps.mutate(undefined)}
+            >
+              {suggestFollowUps.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <ListChecks className="h-3 w-3" />
+              )}
+              Phân tích lại
+            </Button>
+          </div>
+          {suggestFollowUps.isPending && (
+            <p className="text-xs text-muted-foreground">AI đang đọc phần nội dung vừa đổi…</p>
+          )}
+          {followUps.map((f, i) => (
+            <label
+              key={`${f.kind}-${f.title}-${i}`}
+              className="flex items-start gap-2 rounded-md border p-2 text-xs"
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={f.checked}
+                onChange={(e) =>
+                  setFollowUps((prev) =>
+                    prev.map((x, xi) => (xi === i ? { ...x, checked: e.target.checked } : x)),
+                  )
+                }
+              />
+              <span className="flex-1">
+                <span className="font-medium">{f.title}</span>
+                {f.detail ? <span className="block text-muted-foreground">{f.detail}</span> : null}
+              </span>
+              <Badge variant="outline" className="shrink-0 text-[10px]">
+                {f.kind === "TASK"
+                  ? "Công việc"
+                  : f.kind === "DECISION"
+                    ? "Quyết định"
+                    : "Cuộc họp"}
+              </Badge>
+            </label>
+          ))}
+          {followUps.length > 0 && (
+            <Button
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={createFollowUps.isPending || !followUps.some((f) => f.checked)}
+              onClick={() => createFollowUps.mutate()}
+            >
+              {createFollowUps.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              Tạo mục đã chọn
+            </Button>
+          )}
+        </Card>
+      )}
 
       {/* Nhờ AI sửa */}
       <Card className="space-y-2 p-3">
