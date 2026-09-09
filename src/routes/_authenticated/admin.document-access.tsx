@@ -370,6 +370,88 @@ function DocumentAccessPage() {
           </Button>
         </section>
       </div>
+
+      <section className="rounded-2xl border border-border bg-surface p-4">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-medium">{t("acc.detail")}</h3>
+          {detailMember && (
+            <Badge variant="outline" className="text-[10px]">
+              {detailMember.name}
+            </Badge>
+          )}
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">{t("acc.detailHint")}</p>
+
+        {!detailUser ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("acc.selectMember")}</p>
+        ) : grantsLoading ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("acc.loading")}</p>
+        ) : (grants ?? []).length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("acc.noGrants")}</p>
+        ) : (
+          <ul className="space-y-2">
+            {(grants ?? []).map((g) => (
+              <li
+                key={g.id}
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-background p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{g.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t("acc.expiresAt")}:{" "}
+                    {g.expiresAt ? new Date(g.expiresAt).toLocaleString() : t("acc.noExpiry")}
+                  </p>
+                </div>
+                <Badge variant={g.status === "ACTIVE" ? "secondary" : "outline"} className="text-[10px]">
+                  {t(`acc.status.${g.status === "ACTIVE" ? "ACTIVE" : "REVOKED"}` as never)}
+                </Badge>
+                <Select
+                  value={g.permission}
+                  onValueChange={(v) =>
+                    editGrant.mutate({
+                      shareId: g.id,
+                      action: v === "EDIT" ? "SET_EDIT" : "SET_VIEW",
+                    })
+                  }
+                  disabled={!canManage}
+                >
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VIEW">{t("acc.perm.view")}</SelectItem>
+                    <SelectItem value="EDIT">{t("acc.perm.edit")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {canManage && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        editGrant.mutate({
+                          shareId: g.id,
+                          action: g.status === "ACTIVE" ? "REVOKE" : "RESTORE",
+                        })
+                      }
+                    >
+                      {g.status === "ACTIVE" ? t("acc.revokeOne") : t("acc.restoreOne")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("acc.deleteOne")}
+                      onClick={() => editGrant.mutate({ shareId: g.id, action: "DELETE" })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
