@@ -119,6 +119,8 @@ export const STABLE_ERROR_CODES = [
   "AI_EXECUTION_STATUS_NOT_ALLOWED",
   "AI_REVIEW_FORBIDDEN",
   "AI_FEEDBACK_REQUIRED",
+  // Hồ sơ nhận diện tài liệu Word theo tổ chức
+  "DOCX_PROFILE_FORBIDDEN",
 ] as const;
 
 export type StableErrorCode = (typeof STABLE_ERROR_CODES)[number];
