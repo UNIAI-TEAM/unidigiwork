@@ -25,6 +25,7 @@ import {
   rebuildWorkGraph,
   unlinkWorkEntities,
 } from "@/lib/api/work-graph.functions";
+import { WorkGraphSharePanel } from "./work-graph-share";
 
 type TargetType = "TASK" | "MEETING" | "MEETING_ARTIFACT" | "DOCUMENT";
 
