@@ -389,13 +389,11 @@ export function DocxRoundTripPanel({
       }).then((r) => ({ ...r, auto: v?.auto ?? false })),
     onSuccess: (r: {
       auto: boolean;
-      suggestions: Array<{
-        kind: "TASK" | "DECISION" | "MEETING";
-        title: string;
-        detail: string;
-        priority: string;
-      }>;
+      evidence?: FollowUpEvidence[];
+      suggestions: FollowUpSuggestion[];
     }) => {
+      setFollowUpEvidence(r.evidence ?? []);
+      setFollowUpDetail(null);
       if (r.auto) {
         const tasks = r.suggestions.filter((s) => s.kind === "TASK");
         // Công việc được tạo ngay; quyết định và cuộc họp vẫn chờ người dùng chọn.
