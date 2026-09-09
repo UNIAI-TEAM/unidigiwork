@@ -775,3 +775,134 @@ export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
 
     return { from: fromISO, to: toISO, rows, totals };
   });
+
+/* ---------------------------------------- bản thể hiện Office (Phase 2) */
+
+const WP_BUCKET = "work-products";
+
+/**
+ * Kết xuất Kết quả công việc thành DOCX/XLSX/PPTX/PDF.
+ * Nội dung luôn lấy từ phiên bản đã lưu trong database (không nhận nội dung từ giao diện),
+ * nên bản thể hiện luôn khớp phiên bản và audit truy vết được.
+ */
+export const exportWorkDeliverableArtifact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        format: z.enum(["DOCX", "XLSX", "PPTX", "PDF"]),
+        version: z.number().int().positive().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: product, error: pErr } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, title, content, business_type, current_version, workspace_id")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!product) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    // Nếu chỉ định phiên bản cũ, lấy đúng nội dung bất biến của phiên bản đó.
+    let title = (product.title as string) ?? "";
+    let content = (product.content as string) ?? "";
+    let version = (product.current_version as number) ?? 1;
+    let provenance: Array<{ type: string; id: string; title: string; stamp?: string | null }> = [];
+
+    const wanted = data.version ?? version;
+    const { data: snap } = await context.supabase
+      .from("work_product_versions")
+      .select("version, title, content, provenance")
+      .eq("work_product_id", data.id)
+      .eq("version", wanted)
+      .maybeSingle();
+    if (snap) {
+      version = snap.version as number;
+      title = (snap.title as string) ?? title;
+      content = (snap.content as string) ?? content;
+      provenance = Array.isArray(snap.provenance) ? (snap.provenance as any[]) : [];
+    } else if (data.version && data.version !== product.current_version) {
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_VERSION_NOT_FOUND" });
+    }
+
+    const { renderOfficeArtifact } = await import("./office-engine.server");
+    const { officeFileName } = await import("@/domain/work-products/office-engine");
+
+    let rendered;
+    try {
+      rendered = await renderOfficeArtifact({
+        format: data.format,
+        title: title || "Kết quả công việc",
+        content,
+        businessType: (product.business_type as string) ?? "DOCUMENT",
+        version,
+        workProductId: data.id,
+        provenance,
+      });
+    } catch (e) {
+      throw new ApiError({
+        code: "INTERNAL_ERROR",
+        message: `OFFICE_RENDER_FAILED: ${e instanceof Error ? e.message : "unknown"}`,
+      });
+    }
+
+    const fileName = officeFileName(title || "work-product", version, data.format);
+    const objectKey = `${product.tenant_id}/${data.id}/v${version}/${Date.now()}-${fileName}`;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(WP_BUCKET)
+      .upload(objectKey, rendered.bytes, { contentType: rendered.mimeType, upsert: false });
+    if (upErr) throw new ApiError({ code: "INTERNAL_ERROR", message: `ARTIFACT_UPLOAD_FAILED: ${upErr.message}` });
+
+    // Ghi qua client của người dùng để RLS xác nhận quyền chỉnh sửa.
+    const { data: artifact, error: insErr } = await context.supabase
+      .from("work_product_artifacts")
+      .insert({
+        tenant_id: product.tenant_id,
+        work_product_id: data.id,
+        format: data.format,
+        role: "EXPORT",
+        storage_ref: objectKey,
+        mime_type: rendered.mimeType,
+        size_bytes: rendered.bytes.byteLength,
+        version,
+        generated_by: "SYSTEM",
+        created_by: context.userId,
+      })
+      .select("id, format, role, storage_ref, mime_type, size_bytes, version, generated_by, created_at")
+      .single();
+    if (insErr) {
+      await supabaseAdmin.storage.from(WP_BUCKET).remove([objectKey]);
+      mapPgError(insErr);
+    }
+
+    return { artifact, engine: rendered.engine, fallbackReason: rendered.fallbackReason ?? null };
+  });
+
+/** Link tải tạm thời cho một bản thể hiện (kiểm tra quyền xem qua RLS trước). */
+export const getWorkDeliverableArtifactUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ artifactId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: artifact, error } = await context.supabase
+      .from("work_product_artifacts")
+      .select("id, storage_ref, mime_type")
+      .eq("id", data.artifactId)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    if (!artifact?.storage_ref) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "ARTIFACT_NOT_FOUND" });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
+      .from(WP_BUCKET)
+      .createSignedUrl(artifact.storage_ref as string, 300);
+    if (sErr || !signed?.signedUrl) {
+      throw new ApiError({ code: "INTERNAL_ERROR", message: "ARTIFACT_URL_FAILED" });
+    }
+    return { url: signed.signedUrl };
+  });

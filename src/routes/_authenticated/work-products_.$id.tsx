@@ -7,6 +7,7 @@ import {
   Bold,
   Check,
   ChevronRight,
+  Download,
   FileText,
   History,
   Italic,
@@ -52,6 +53,8 @@ import {
   commentWorkDeliverable,
   decideWorkDeliverableReview,
   deleteWorkDeliverable,
+  exportWorkDeliverableArtifact,
+  getWorkDeliverableArtifactUrl,
   getWorkDeliverable,
   listWorkDeliverables,
   listWorkDeliverableContext,
@@ -157,6 +160,8 @@ function WorkProductDetail() {
     setRightPanelOpen(desktop);
   }, []);
 
+  const [exportingFormat, setExportingFormat] = useState<string | null>(null);
+
   const fmt = useMemo(
     () => new Intl.DateTimeFormat(localeTag(lang), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
     [lang],
@@ -213,6 +218,33 @@ function WorkProductDetail() {
     },
     onError: () => toast.error(t("wp.saveFailed")),
   });
+
+  const exportArtifact = useMutation({
+    mutationFn: async (format: "DOCX" | "XLSX" | "PPTX" | "PDF") => {
+      setExportingFormat(format);
+      if (dirty) await updateWorkDeliverable({ data: { id, title: title.trim() || undefined, content } });
+      return exportWorkDeliverableArtifact({ data: { idempotencyKey: crypto.randomUUID(), id, format } });
+    },
+    onSuccess: (res: any) => {
+      setDirty(false);
+      setExportingFormat(null);
+      toast.success(t("wp.files.exported").replace("{f}", String(res?.artifact?.format ?? "")));
+      invalidate();
+    },
+    onError: () => {
+      setExportingFormat(null);
+      toast.error(t("wp.files.exportFailed"));
+    },
+  });
+
+  const downloadArtifact = async (artifactId: string) => {
+    try {
+      const { url } = await getWorkDeliverableArtifactUrl({ data: { artifactId } });
+      window.open(url, "_blank", "noopener");
+    } catch {
+      toast.error(t("wp.files.downloadFailed"));
+    }
+  };
 
   const runAi = useMutation({
     mutationFn: (prompt?: string) =>
@@ -422,13 +454,14 @@ function WorkProductDetail() {
                   <Button variant="ghost" size="icon-sm" onClick={() => setRightPanelOpen(false)} aria-label="Đóng trợ lý"><PanelRight /></Button>
                 </div>
               </div>
-              <TabsList className="mx-3 mt-3 grid grid-cols-6">
+              <TabsList className="mx-3 mt-3 grid grid-cols-7">
                 <TabsTrigger value="ai" aria-label={t("wp.tab.ai")}><Sparkles /></TabsTrigger>
                 <TabsTrigger value="context" aria-label={t("wp.tab.context")}><Layers /></TabsTrigger>
                 <TabsTrigger value="versions" aria-label={t("wp.tab.versions")}><History /></TabsTrigger>
                 <TabsTrigger value="comments" aria-label={t("wp.tab.comments")}><MessageSquare /></TabsTrigger>
                 <TabsTrigger value="review" aria-label={t("wp.tab.review")}><UserCheck /></TabsTrigger>
                 <TabsTrigger value="links" aria-label={t("wp.tab.links")}><Link2 /></TabsTrigger>
+                <TabsTrigger value="files" aria-label={t("wp.files.tab")}><Download /></TabsTrigger>
               </TabsList>
 
               <ScrollArea className="min-h-0 flex-1 px-4 pb-5">
@@ -706,6 +739,52 @@ function WorkProductDetail() {
                 </TabsContent>
 
                 {/* Liên kết Work Graph */}
+                <TabsContent value="files" className="mt-0 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">{t("wp.files.export")}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{t("wp.files.hint")}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {(["DOCX", "XLSX", "PPTX", "PDF"] as const).map((f) => (
+                        <Button
+                          key={f}
+                          size="sm"
+                          variant="outline"
+                          disabled={!canEdit || exportArtifact.isPending}
+                          onClick={() => exportArtifact.mutate(f)}
+                          className="gap-2"
+                        >
+                          {exportArtifact.isPending && exportingFormat === f ? <Loader2 className="animate-spin" /> : <FileText />}
+                          {f}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {(data.artifacts ?? []).length === 0 && (
+                      <p className="text-sm text-muted-foreground">{t("wp.files.empty")}</p>
+                    )}
+                    {(data.artifacts ?? []).map((a: any) => (
+                      <div key={a.id} className="flex items-center gap-2 rounded-lg border bg-background p-3">
+                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">
+                            {a.format} · v{a.version}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">{fmt.format(new Date(a.created_at))}</p>
+                        </div>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          aria-label={t("wp.files.download")}
+                          onClick={() => downloadArtifact(a.id)}
+                        >
+                          <Download />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="links" className="mt-0 space-y-2">
                   {(links ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("wp.links.empty")}</p>}
                   {(links ?? []).map((l) => (
