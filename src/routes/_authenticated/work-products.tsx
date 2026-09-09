@@ -2,7 +2,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck } from "lucide-react";
+import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck, Download } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { FilterPageHeader } from "@/components/filter-page-header";
@@ -21,6 +21,7 @@ import {
   WP_STATUSES,
   createWorkDeliverable,
   getWorkDeliverableWeeklyReport,
+  exportWorkDeliverableWeeklyReportXlsx,
   getWorkProductAccessPolicy,
   listWorkDeliverables,
   updateWorkProductAccessPolicy,
@@ -66,6 +67,29 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
     queryKey: ["wp-weekly", workspaceId],
     queryFn: () => getWorkDeliverableWeeklyReport({ data: { workspaceId, days: 7 } }),
   });
+  const [exporting, setExporting] = useState(false);
+  async function exportXlsx() {
+    setExporting(true);
+    try {
+      const res = await exportWorkDeliverableWeeklyReportXlsx({ data: { workspaceId, days: 7, format } });
+      const bin = atob(res.base64);
+      const buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(
+        new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("wp.weekly.exportDone"));
+    } catch {
+      toast.error(t("wp.weekly.exportError"));
+    } finally {
+      setExporting(false);
+    }
+  }
   const allRows = data?.rows ?? [];
   const rows = format ? allRows.filter((r) => (r.formats?.[format] ?? 0) > 0) : allRows;
   const fmtCell = (formats: Record<string, number> | undefined) =>
