@@ -9655,6 +9655,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      rebuild_tenant_work_graph: { Args: { _tenant_id: string }; Returns: Json }
       recompute_ai_agent_performance: {
         Args: { _agent_id: string; _tenant_id: string }
         Returns: undefined
@@ -10572,6 +10573,7 @@ export type Database = {
       swp2_assert_admin_read: { Args: never; Returns: undefined }
       swp2_assert_admin_write: { Args: never; Returns: undefined }
       sync_meeting_artifacts: { Args: { _meeting_id: string }; Returns: number }
+      tenant_work_graph_stats: { Args: { _tenant_id: string }; Returns: Json }
       transfer_meeting_host: {
         Args: {
           _correlation_id?: string
