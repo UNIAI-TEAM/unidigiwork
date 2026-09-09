@@ -1520,7 +1520,16 @@ export const reanalyzeWorkProductDocx = createServerFn({ method: "POST" })
       throw new ApiError({ code: "INTERNAL_ERROR", message: "SOURCE_DOWNLOAD_FAILED" });
 
     const { parseDocxToBlocks } = await import("./docx-import.server");
-    const parsed = await parseDocxToBlocks(new Uint8Array(await blob.arrayBuffer()), data.weights);
+    // Không truyền trọng số thì dùng hồ sơ nhận diện của tổ chức sở hữu tài liệu.
+    const { loadTenantDocxProfile } = await import("./docx-profile.server");
+    const effectiveWeights =
+      data.weights ??
+      (await loadTenantDocxProfile(context.supabase as never, product.tenant_id as string)).weights;
+    const parsed = await parseDocxToBlocks(
+      new Uint8Array(await blob.arrayBuffer()),
+      effectiveWeights,
+    );
+
 
     const { data: existing, error: bErr } = await context.supabase
       .from("work_product_blocks")
