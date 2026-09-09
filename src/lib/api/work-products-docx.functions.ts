@@ -1971,7 +1971,7 @@ export const saveTenantDocxProfile = createServerFn({ method: "POST" })
       .eq("status", "active")
       .maybeSingle();
     if (!["tenant_owner", "tenant_admin"].includes(String(member?.role ?? "")))
-      throw new ApiError({ code: "FORBIDDEN", message: "DOCX_PROFILE_FORBIDDEN" });
+      throw new ApiError({ code: "DOCX_PROFILE_FORBIDDEN", message: "DOCX_PROFILE_FORBIDDEN" });
 
     const { loadTenantDocxProfile, normalizeProfileWeights } =
       await import("./docx-profile.server");
