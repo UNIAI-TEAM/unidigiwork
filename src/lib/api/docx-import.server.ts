@@ -12,14 +12,46 @@ export const DOCX_MAX_BYTES = 25 * 1024 * 1024;
 
 export type BlockEditability = "EDITABLE" | "READ_ONLY_PRESERVED";
 
+/** Vai trò ngữ nghĩa nhận diện được từ tài liệu Word. */
+export type BlockSemanticRole =
+  | "TITLE"
+  | "HEADING"
+  | "PARAGRAPH"
+  | "LIST_ITEM"
+  | "TABLE"
+  | "QUOTE"
+  | "CAPTION"
+  | "FOOTNOTE"
+  | "OTHER";
+
+export interface TableSummary {
+  rows: number;
+  cols: number;
+  headers: string[];
+  /** Xem trước tối đa vài dòng đầu để AI hiểu dữ liệu. */
+  preview: string[][];
+}
+
 export interface ImportedBlock {
   blockKey: string;
   ordinal: number;
   blockType: string;
   text: string;
   editability: BlockEditability;
-  /** Neo về đúng phần tử trong tài liệu gốc. */
-  sourceAnchor: { docxIndex: number | null; styleId?: string | null; level?: number | null };
+  /** Neo về đúng phần tử trong tài liệu gốc + thông tin nhận diện ngữ nghĩa. */
+  sourceAnchor: {
+    docxIndex: number | null;
+    styleId?: string | null;
+    level?: number | null;
+    role?: BlockSemanticRole;
+    headingLevel?: number | null;
+    /** Tiêu đề mục gần nhất phía trên (giúp AI hiểu ngữ cảnh). */
+    section?: string | null;
+    listKind?: "bullet" | "ordered" | null;
+    table?: TableSummary | null;
+    /** Vì sao khối được nhận là tiêu đề/trích dẫn (heuristic hay style Word). */
+    detectedBy?: "style" | "outline" | "heuristic" | null;
+  };
 }
 
 /** Các loại khối GenOffice có thể sửa chữ an toàn mà vẫn giữ định dạng gốc. */
