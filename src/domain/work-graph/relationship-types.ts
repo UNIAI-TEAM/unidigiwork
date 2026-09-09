@@ -11,6 +11,7 @@ export const WORK_ENTITY_TYPES = [
   "DOCUMENT",
   "EMAIL",
   "MEETING_ARTIFACT",
+  "WORK_PRODUCT",
 ] as const;
 export type WorkEntityType = (typeof WORK_ENTITY_TYPES)[number];
 
