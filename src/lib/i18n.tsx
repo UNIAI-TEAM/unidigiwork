@@ -4023,7 +4023,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
         aria-haspopup="menu"
         aria-expanded={open}
         title={current.label}
-        className="flex items-center gap-1 rounded-lg p-2 text-xs font-medium uppercase text-muted-foreground hover:bg-surface-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
+        className="flex min-h-11 items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium uppercase text-muted-foreground hover:bg-surface-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
       >
         <Globe className="h-4 w-4" />
         {current.short}

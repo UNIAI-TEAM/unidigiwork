@@ -238,7 +238,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={toggle}
       aria-label="Toggle theme"
       title={theme === "dark" ? "Light mode" : "Dark mode"}
-      className={`rounded-lg p-2 hover:bg-surface-2 ${className}`}
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 ${className}`}
     >
       {theme === "dark" ? (
         <Sun className="h-5 w-5 text-muted-foreground" />
@@ -264,7 +264,7 @@ export function ToneToggle({ className = "" }: { className?: string }) {
         <button
           aria-label="Chọn tone màu giao diện"
           title={`Tone màu: ${active.label}`}
-          className={`relative rounded-lg p-2 hover:bg-surface-2 ${className}`}
+          className={`relative inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 ${className}`}
         >
           <Palette className="h-5 w-5 text-muted-foreground" />
           <span
