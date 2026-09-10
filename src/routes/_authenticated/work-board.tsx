@@ -68,6 +68,20 @@ function WorkBoardPage() {
     onError: () => toast.error("Không gắn được tài liệu vào công việc"),
   });
 
+  // Xếp hạng theo nội dung thật + trọng số nhận diện của tổ chức.
+  const ranking = useQuery({
+    enabled: Boolean(picked?.id),
+    queryKey: ["work-board-rank", picked?.id, taskQuery],
+    queryFn: () =>
+      rankTasksForWorkProduct({
+        data: { id: picked!.id, q: taskQuery || undefined, limit: 50 },
+      }) as Promise<Array<{ taskId: string; score: number; reason: string }>>,
+  });
+  const rankMap = new Map((ranking.data ?? []).map((r) => [r.taskId, r]));
+  const visibleTasks = [...((tasks.data ?? []) as any[])].sort(
+    (a, b) => (rankMap.get(b.id)?.score ?? -1) - (rankMap.get(a.id)?.score ?? -1),
+  );
+
   const drop = (taskId: string, docId?: string | null) => {
     const id = docId ?? picked?.id;
     if (!id) {
