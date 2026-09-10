@@ -285,3 +285,163 @@ export const setTaskProject = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true };
   });
+
+export type ProjectActivityItem = {
+  id: string;
+  at: string;
+  actorName: string;
+  kind: "TASK_CREATED" | "TASK_UPDATED" | "TASK_COMMENT" | "PROJECT_CREATED" | "PROJECT_UPDATED";
+  title: string;
+  detail: string | null;
+};
+
+/** Dòng thời gian hoạt động của dự án: tạo/cập nhật công việc, bình luận, ghi chú dự án. */
+export const getProjectActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).default(60),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<ProjectActivityItem[]> => {
+    const { data: project, error: pErr } = await context.supabase
+      .from("projects")
+      .select("id, name, created_at, updated_at, created_by, updated_by")
+      .eq("id", data.projectId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!project) throw new Error("PROJECT_NOT_FOUND");
+
+    const { data: tasks, error: tErr } = await context.supabase
+      .from("tasks")
+      .select("id, title, status, created_at, updated_at, created_by, updated_by")
+      .eq("project_id", data.projectId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(100);
+    if (tErr) mapPgError(tErr);
+
+    type TaskRow = {
+      id: string;
+      title: string;
+      status: string;
+      created_at: string;
+      updated_at: string;
+      created_by: string | null;
+      updated_by: string | null;
+    };
+    const taskRows = (tasks ?? []) as unknown as TaskRow[];
+    const taskIds = taskRows.map((t) => t.id);
+
+    const commentsRes = taskIds.length
+      ? await context.supabase
+          .from("task_comments")
+          .select("id, task_id, author_id, body, created_at")
+          .in("task_id", taskIds)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(100)
+      : { data: [], error: null };
+    if (commentsRes.error) mapPgError(commentsRes.error);
+    type CommentRow = {
+      id: string;
+      task_id: string;
+      author_id: string;
+      body: string;
+      created_at: string;
+    };
+    const comments = (commentsRes.data ?? []) as unknown as CommentRow[];
+
+    const projectRow = project as unknown as {
+      id: string;
+      name: string;
+      created_at: string;
+      updated_at: string;
+      created_by: string | null;
+      updated_by: string | null;
+    };
+
+    const userIds = Array.from(
+      new Set(
+        [
+          projectRow.created_by,
+          projectRow.updated_by,
+          ...taskRows.flatMap((t) => [t.created_by, t.updated_by]),
+          ...comments.map((c) => c.author_id),
+        ].filter((v): v is string => !!v),
+      ),
+    );
+    const usersRes = userIds.length
+      ? await context.supabase
+          .from("users")
+          .select("id, display_name, primary_email")
+          .in("id", userIds)
+      : { data: [], error: null };
+    const nameOf = new Map<string, string>();
+    for (const u of (usersRes.data ?? []) as Array<{
+      id: string;
+      display_name: string | null;
+      primary_email: string | null;
+    }>) {
+      nameOf.set(u.id, u.display_name ?? u.primary_email ?? "Thành viên");
+    }
+    const actor = (uid: string | null) => (uid ? (nameOf.get(uid) ?? "Thành viên") : "Hệ thống");
+
+    const items: ProjectActivityItem[] = [];
+    items.push({
+      id: `project-created-${projectRow.id}`,
+      at: projectRow.created_at,
+      actorName: actor(projectRow.created_by),
+      kind: "PROJECT_CREATED",
+      title: "Tạo dự án",
+      detail: projectRow.name,
+    });
+    if (projectRow.updated_at !== projectRow.created_at) {
+      items.push({
+        id: `project-updated-${projectRow.id}`,
+        at: projectRow.updated_at,
+        actorName: actor(projectRow.updated_by),
+        kind: "PROJECT_UPDATED",
+        title: "Cập nhật dự án / ghi chú",
+        detail: projectRow.name,
+      });
+    }
+    for (const t of taskRows) {
+      items.push({
+        id: `task-created-${t.id}`,
+        at: t.created_at,
+        actorName: actor(t.created_by),
+        kind: "TASK_CREATED",
+        title: "Tạo công việc",
+        detail: t.title,
+      });
+      if (t.updated_at !== t.created_at) {
+        items.push({
+          id: `task-updated-${t.id}`,
+          at: t.updated_at,
+          actorName: actor(t.updated_by),
+          kind: "TASK_UPDATED",
+          title: `Cập nhật công việc · ${t.status}`,
+          detail: t.title,
+        });
+      }
+    }
+    const taskTitle = new Map(taskRows.map((t) => [t.id, t.title]));
+    for (const c of comments) {
+      items.push({
+        id: `comment-${c.id}`,
+        at: c.created_at,
+        actorName: actor(c.author_id),
+        kind: "TASK_COMMENT",
+        title: `Bình luận · ${taskTitle.get(c.task_id) ?? "Công việc"}`,
+        detail: c.body.slice(0, 200),
+      });
+    }
+
+    items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+    return items.slice(0, data.limit);
+  });
