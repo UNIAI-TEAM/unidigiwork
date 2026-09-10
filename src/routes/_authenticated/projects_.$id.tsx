@@ -425,6 +425,11 @@ function ProjectDetailPage() {
                       Kéo công việc sang nhóm khác để đổi trạng thái. Trên điện thoại, chọn trạng
                       thái trong danh sách thả xuống.
                     </p>
+                    {hasFilter && filteredTasks.length === 0 && (
+                      <p className="rounded-md border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
+                        Không có công việc nào khớp bộ lọc hiện tại.
+                      </p>
+                    )}
                     {grouped.map((g) => (
                       <div
                         key={g.key}
