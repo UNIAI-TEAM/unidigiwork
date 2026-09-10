@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { listNotifications, markNotificationsRead } from "@/lib/api/notifications.functions";
 import { listWorkDeliverables } from "@/lib/api/work-deliverables.functions";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { SwipeRow } from "@/components/mobile/swipe-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ function MobileBoxPage() {
   const qc = useQueryClient();
   const { workspaceId } = useActiveWorkspace();
   const [tab, setTab] = useState<TabId>("action");
+  const [hidden, setHidden] = useState<string[]>([]);
 
   const tasks = useQuery({
     queryKey: ["m-box-tasks", workspaceId],
@@ -150,6 +152,11 @@ function MobileBoxPage() {
       }));
   }, [tab, tasks.data, products.data, notifications.data, navigate, readMut]);
 
+  const visibleItems = useMemo(
+    () => items.filter((it) => !hidden.includes(it.key)),
+    [items, hidden],
+  );
+
   const counts = {
     action: ((tasks.data as any[]) ?? []).length,
     review: ((products.data as any[]) ?? []).length,
@@ -201,7 +208,7 @@ function MobileBoxPage() {
         ))}
       </div>
 
-      {items.length === 0 ? (
+      {visibleItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <Inbox className="mx-auto h-6 w-6 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">Hộp này đang trống. Rất tốt!</p>
