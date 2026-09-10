@@ -10,8 +10,9 @@ import { SwipeRow } from "@/components/mobile/swipe-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Bell, CheckSquare, FileText, Inbox } from "lucide-react";
+import { Bell, CheckSquare, ExternalLink, FileText, Inbox, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import coverImage from "@/assets/work-product-cover.jpg";
 
 const TABS = [
   { id: "action", label: "Cần làm" },
