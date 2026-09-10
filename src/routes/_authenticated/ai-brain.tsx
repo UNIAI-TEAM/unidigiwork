@@ -13,6 +13,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useI18n } from "@/lib/i18n";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
+import { createAiSkillFromProposal } from "@/lib/api/ai-skills.functions";
 import {
   cancelAiAction,
   confirmAiAction,
