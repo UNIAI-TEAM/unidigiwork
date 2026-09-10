@@ -26,7 +26,9 @@ import {
   unlinkWorkEntities,
 } from "@/lib/api/work-graph.functions";
 import {
+  autoLinkWorkGraphMatches,
   proposeWorkGraphMatches,
+
   type WorkGraphMatchSuggestion,
 } from "@/lib/api/work-products-docx.functions";
 import { WorkGraphSharePanel } from "./work-graph-share";
