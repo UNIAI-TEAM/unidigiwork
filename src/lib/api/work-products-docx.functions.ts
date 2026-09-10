@@ -2057,7 +2057,9 @@ export const getWorkProductDocxChangeHistory = createServerFn({ method: "GET" })
     const toEntry = (o: any) => {
       const meta = blockMeta.get(o.block_key as string);
       const role =
-        (o.source_anchor as any)?.semanticRole ?? (meta?.source_anchor as any)?.semanticRole ?? null;
+        (o.source_anchor as any)?.semanticRole ??
+        (meta?.source_anchor as any)?.semanticRole ??
+        null;
       return {
         id: o.id as string,
         blockKey: o.block_key as string,

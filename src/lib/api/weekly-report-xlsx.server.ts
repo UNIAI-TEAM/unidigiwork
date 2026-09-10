@@ -80,6 +80,16 @@ export function buildWeeklyReportXlsx(report: WeeklyReport, only: string | null)
     header,
     ...visible.map(line),
     line(report.totals),
+    [],
+    ["Lịch sử thay đổi tài liệu Word trong kỳ"],
+    ["Người thay đổi", "Tổng thay đổi", "Người sửa", "AI đề xuất"],
+    ...(report.editors ?? []).map((e): Cell[] => [e.name, e.total, e.human, e.ai]),
+    [
+      "Tổng cộng",
+      report.changeTotals?.total ?? 0,
+      report.changeTotals?.human ?? 0,
+      report.changeTotals?.ai ?? 0,
+    ],
   ];
 
   const files: Record<string, Uint8Array> = {
