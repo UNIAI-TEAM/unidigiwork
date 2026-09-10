@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useHomePrefs } from "@/components/home/use-home-prefs";
 import { HomeCustomizePanel } from "@/components/home/home-customize";
-import type { HomeLayout, HomeSectionKey } from "@/lib/home-prefs";
+import type { HomeLayout, HomeSectionKey, HomeSize } from "@/lib/home-prefs";
 
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
@@ -548,7 +548,10 @@ function HomePage() {
             ) : (
               <div className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
                 {visible.map((key) => (
-                  <div key={key} className={cn("min-w-0", spanClass(key, prefs.layout))}>
+                  <div
+                    key={key}
+                    className={cn("min-w-0", spanClass(prefs.sizes[key], prefs.layout))}
+                  >
                     {blocks[key]}
                   </div>
                 ))}
@@ -584,15 +587,14 @@ function gridClass(layout: HomeLayout) {
   return "xl:grid-cols-12";
 }
 
-function spanClass(key: HomeSectionKey, layout: HomeLayout) {
+const SPAN_CLASS: Record<HomeSize, string> = {
+  sm: "xl:col-span-4",
+  md: "xl:col-span-6",
+  lg: "xl:col-span-8",
+  full: "xl:col-span-12",
+};
+
+function spanClass(size: HomeSize, layout: HomeLayout) {
   if (layout === "compact") return "col-span-1";
-  if (key === "stats") return "xl:col-span-12";
-  if (key === "mywork") return "xl:col-span-8";
-  if (key === "inbox") return "xl:col-span-4 xl:row-span-2";
-  if (key === "upcoming") return "xl:col-span-4";
-  if (key === "aibrief") return "xl:col-span-8";
-  if (layout === "balanced") {
-    return "xl:col-span-6";
-  }
-  return "xl:col-span-4";
+  return SPAN_CLASS[size] ?? SPAN_CLASS.md;
 }
