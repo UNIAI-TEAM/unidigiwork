@@ -26,8 +26,8 @@ export const HOME_SECTION_META: Record<
 export const DEFAULT_HOME_ORDER: HomeSectionKey[] = [
   "stats",
   "mywork",
-  "upcoming",
   "inbox",
+  "upcoming",
   "aibrief",
 ];
 

@@ -109,8 +109,8 @@ type CmdSpec = {
 
 // Nhãn nhóm khớp Information Architecture V2 (xem src/config/navigation.ts).
 const NAV_ITEMS: CmdSpec[] = [
-  { id: "tasks", group: "nav", labelKey: "nav.mywork", hintKey: "nav.group.home", icon: ListChecks, keywords: "task cong viec my work to do" },
-  { id: "notifications", group: "nav", labelKey: "nav.inbox", hintKey: "nav.group.home", icon: Bell, keywords: "inbox notification thong bao" },
+  { id: "tasks", group: "nav", labelKey: "nav.mywork", hintKey: "nav.myspace", icon: ListChecks, keywords: "task cong viec my work to do" },
+  { id: "notifications", group: "nav", labelKey: "nav.inbox", hintKey: "nav.myspace", icon: Bell, keywords: "inbox notification thong bao" },
   { id: "workspace", group: "nav", labelKey: "nav.projects", hintKey: "nav.group.work", icon: LayoutGrid, keywords: "workspace project du an" },
   { id: "calendar", group: "nav", labelKey: "nav.calendar", hintKey: "nav.group.work", icon: Calendar, keywords: "lich calendar deadline" },
   { id: "people", group: "nav", labelKey: "nav.people", hintKey: "nav.group.work", icon: Users, keywords: "people nhan su team" },

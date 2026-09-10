@@ -35,12 +35,12 @@ type BoxItem = {
 export const Route = createFileRoute("/_authenticated/m/box")({
   head: () => ({
     meta: [
-      { title: "My Box · UNIWORK" },
-      { name: "description", content: "Hộp việc hợp nhất: cần làm, chờ duyệt và để biết." },
-      { property: "og:title", content: "My Box · UNIWORK" },
+      { title: "Không gian của tôi · UNIWORK" },
+      { name: "description", content: "Không gian hợp nhất: việc cần làm, chờ duyệt và để biết." },
+      { property: "og:title", content: "Không gian của tôi · UNIWORK" },
       {
         property: "og:description",
-        content: "Hộp việc hợp nhất: cần làm, chờ duyệt và để biết.",
+        content: "Không gian hợp nhất: việc cần làm, chờ duyệt và để biết.",
       },
     ],
   }),
@@ -206,9 +206,9 @@ function MobileBoxPage() {
   return (
     <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
       <header>
-        <p className="module-label text-primary">Hộp công việc</p>
-        <h1 className="mt-1 font-heading text-2xl font-bold">My Box</h1>
-        <p className="text-sm text-muted-foreground">Mọi thứ đang chờ bạn, gom về một hộp.</p>
+        <p className="module-label text-brand-blue">Bảng điều hành thống nhất</p>
+        <h1 className="mt-1 font-heading text-2xl font-bold">Không gian của tôi</h1>
+        <p className="text-sm text-muted-foreground">Công việc và hộp việc của bạn ở cùng một nơi.</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Mẹo: vuốt phải để duyệt, vuốt trái để hoãn.
         </p>

@@ -41,7 +41,7 @@ export const NAV_ICON_STROKE = 1.75;
 export const NAV_ICON_STROKE_ACTIVE = 2.25;
 
 export type NavGroupId =
-  | "home"
+  | "my-space"
   | "work"
   | "communication"
   | "knowledge"
@@ -79,7 +79,7 @@ export type NavGroup = {
 };
 
 export const NAV_GROUPS: NavGroup[] = [
-  { id: "home", labelKey: "nav.group.home", order: 1, collapsible: false },
+  { id: "my-space", labelKey: "nav.myspace", order: 1, collapsible: false },
   { id: "work", labelKey: "nav.group.work", order: 2, collapsible: true },
   { id: "communication", labelKey: "nav.group.communication", order: 3, collapsible: true },
   { id: "knowledge", labelKey: "nav.group.knowledge", order: 4, collapsible: true },
@@ -89,40 +89,38 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export const NAV_ITEMS: NavItem[] = [
-  // HOME V2 — trang điều hành công việc cá nhân.
+  // Không gian của tôi — một điểm vào hợp nhất cho việc cá nhân và hộp việc.
   {
     id: "home",
-    labelKey: "nav.home",
+    labelKey: "nav.myspace",
     icon: Home,
     href: "/home",
-    group: "home",
+    group: "my-space",
     match: ["/home"],
     visibility: "everyone",
     order: 0,
   },
-  // HOME — điểm bắt đầu là việc của tôi, không phải KPI dashboard.
+  // Các route chi tiết vẫn giữ nguyên nhưng không lặp lại trong menu chính.
   {
     id: "my-work",
     labelKey: "nav.mywork",
     icon: ListChecks,
     href: "/tasks",
-    group: "home",
+    group: "my-space",
     match: ["/tasks"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "more", href: "/m/tasks", order: 1 },
   },
   {
     id: "inbox",
     labelKey: "nav.inbox",
     icon: Inbox,
     href: "/notifications",
-    group: "home",
+    group: "my-space",
     match: ["/notifications"],
     visibility: "everyone",
     badge: "notifications",
     order: 2,
-    mobile: { placement: "more", href: "/notifications", order: 5 },
   },
 
   // WORK
@@ -360,7 +358,12 @@ export function visibleNavigation(perms: NavPermissions) {
     .sort((a, b) => a.order - b.order)
     .map((group) => ({
       group,
-      items: NAV_ITEMS.filter((i) => i.group === group.id && isNavItemVisible(i, perms)).sort(
+      items: NAV_ITEMS.filter(
+        (i) =>
+          i.group === group.id &&
+          isNavItemVisible(i, perms) &&
+          !(group.id === "my-space" && (i.id === "my-work" || i.id === "inbox")),
+      ).sort(
         (a, b) => a.order - b.order,
       ),
     }))
