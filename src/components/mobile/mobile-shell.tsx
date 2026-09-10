@@ -27,7 +27,6 @@ const TABS = [
   { id: "more", label: "More", icon: MoreHorizontal, to: "/m/more" },
 ];
 
-
 const SWIPE_THRESHOLD = 72;
 
 export function MobileShell() {

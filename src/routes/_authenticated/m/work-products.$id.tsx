@@ -20,7 +20,10 @@ export const Route = createFileRoute("/_authenticated/m/work-products/$id")({
   head: () => ({
     meta: [
       { title: "Chi tiết kết quả công việc · UNIWORK" },
-      { name: "description", content: "Xem nội dung, trạng thái và phiên bản của kết quả công việc." },
+      {
+        name: "description",
+        content: "Xem nội dung, trạng thái và phiên bản của kết quả công việc.",
+      },
       { property: "og:title", content: "Chi tiết kết quả công việc · UNIWORK" },
       {
         property: "og:description",
@@ -61,7 +64,11 @@ function MobileWorkProductDetail() {
     return (
       <div className="p-4">
         <p className="text-sm text-muted-foreground">Không mở được tài liệu này.</p>
-        <Button className="mt-3 min-h-11" variant="outline" onClick={() => navigate({ to: "/m/work-products" })}>
+        <Button
+          className="mt-3 min-h-11"
+          variant="outline"
+          onClick={() => navigate({ to: "/m/work-products" })}
+        >
           Quay lại danh sách
         </Button>
       </div>

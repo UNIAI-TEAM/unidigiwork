@@ -23,7 +23,11 @@ type TabId = (typeof TABS)[number]["id"];
 
 const QUICK_PROMPTS: Record<TabId, string[]> = {
   ask: ["Tóm tắt ngày hôm nay", "Việc nào đang trễ hạn?", "Ai đang chờ tôi duyệt?"],
-  do: ["Lập kế hoạch tuần này", "Soạn email cập nhật dự án", "Tạo danh sách việc từ cuộc họp gần nhất"],
+  do: [
+    "Lập kế hoạch tuần này",
+    "Soạn email cập nhật dự án",
+    "Tạo danh sách việc từ cuộc họp gần nhất",
+  ],
   brief: ["Điểm tin công việc hôm nay", "Tình hình dự án đang chạy", "Rủi ro cần lưu ý tuần này"],
   team: [],
 };
@@ -32,7 +36,10 @@ export const Route = createFileRoute("/_authenticated/m/ai")({
   head: () => ({
     meta: [
       { title: "My AI · UNIWORK" },
-      { name: "description", content: "Hỏi, giao việc và theo dõi đội ngũ AI của bạn trên UNIWORK." },
+      {
+        name: "description",
+        content: "Hỏi, giao việc và theo dõi đội ngũ AI của bạn trên UNIWORK.",
+      },
       { property: "og:title", content: "My AI · UNIWORK" },
       {
         property: "og:description",
