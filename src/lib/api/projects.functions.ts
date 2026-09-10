@@ -17,6 +17,7 @@ export type ProjectRow = {
   name: string;
   code: string | null;
   description: string | null;
+  notes: string | null;
   status: ProjectStatus;
   color: string | null;
   tags: string[];
