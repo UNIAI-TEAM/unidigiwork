@@ -119,7 +119,7 @@ export const getProject = createServerFn({ method: "GET" })
 
     const { data: tasks, error: taskErr } = await context.supabase
       .from("tasks")
-      .select("id, title, status, priority, due_at, updated_at")
+      .select("id, title, status, priority, due_at, updated_at, progress_pct, start_at, end_at")
       .eq("project_id", data.projectId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
