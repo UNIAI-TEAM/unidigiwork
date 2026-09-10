@@ -182,53 +182,53 @@ function WorkBoardPage() {
               {visibleTasks.map((t) => {
                 const rank = rankMap.get(t.id);
                 return (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "link";
-                      setOverId(t.id);
-                    }}
-                    onDragLeave={() => setOverId((v) => (v === t.id ? null : v))}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setOverId(null);
-                      drop(t.id, e.dataTransfer.getData("text/uniwork-work-product") || null);
-                    }}
-                    onClick={() => drop(t.id)}
-                    disabled={link.isPending}
-                    className={`flex w-full min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
-                      overId === t.id
-                        ? "border-primary bg-primary/10"
-                        : "bg-surface hover:bg-muted/60"
-                    }`}
-                  >
-                    <CheckSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{t.title}</span>
-                      {rank && rank.score > 0 && (
-                        <span className="block truncate text-[11px] text-muted-foreground">
-                          {rank.reason}
-                        </span>
+                  <li key={t.id}>
+                    <button
+                      type="button"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "link";
+                        setOverId(t.id);
+                      }}
+                      onDragLeave={() => setOverId((v) => (v === t.id ? null : v))}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setOverId(null);
+                        drop(t.id, e.dataTransfer.getData("text/uniwork-work-product") || null);
+                      }}
+                      onClick={() => drop(t.id)}
+                      disabled={link.isPending}
+                      className={`flex w-full min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                        overId === t.id
+                          ? "border-primary bg-primary/10"
+                          : "bg-surface hover:bg-muted/60"
+                      }`}
+                    >
+                      <CheckSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{t.title}</span>
+                        {rank && rank.score > 0 && (
+                          <span className="block truncate text-[11px] text-muted-foreground">
+                            {rank.reason}
+                          </span>
+                        )}
+                      </span>
+                      {link.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      {rank && (
+                        <Badge
+                          variant={rank.score >= 40 ? "default" : "outline"}
+                          className="shrink-0 text-[10px]"
+                        >
+                          {rank.score}%
+                        </Badge>
                       )}
-                    </span>
-                    {link.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    {rank && (
-                      <Badge
-                        variant={rank.score >= 40 ? "default" : "outline"}
-                        className="shrink-0 text-[10px]"
-                      >
-                        {rank.score}%
-                      </Badge>
-                    )}
-                    {t.subtitle && (
-                      <Badge variant="secondary" className="shrink-0 text-[10px]">
-                        {t.subtitle}
-                      </Badge>
-                    )}
-                  </button>
-                </li>
+                      {t.subtitle && (
+                        <Badge variant="secondary" className="shrink-0 text-[10px]">
+                          {t.subtitle}
+                        </Badge>
+                      )}
+                    </button>
+                  </li>
                 );
               })}
             </ul>

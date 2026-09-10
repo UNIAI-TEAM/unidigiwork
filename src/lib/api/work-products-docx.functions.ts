@@ -2657,8 +2657,36 @@ export type TaskMatchRanking = {
 };
 
 const RANK_STOPWORDS = new Set([
-  "và","của","cho","các","một","trong","với","về","theo","được","là","có","đã","tại","từ","này","đó",
-  "the","and","for","with","from","that","this","task","công","việc","tài","liệu","bản",
+  "và",
+  "của",
+  "cho",
+  "các",
+  "một",
+  "trong",
+  "với",
+  "về",
+  "theo",
+  "được",
+  "là",
+  "có",
+  "đã",
+  "tại",
+  "từ",
+  "này",
+  "đó",
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "that",
+  "this",
+  "task",
+  "công",
+  "việc",
+  "tài",
+  "liệu",
+  "bản",
 ]);
 
 function rankTokenize(s: string): string[] {
@@ -2774,7 +2802,8 @@ export const rankTasksForWorkProduct = createServerFn({ method: "POST" })
           hits.push(word);
         }
       }
-      const pct = maxPossible > 0 ? Math.round(Math.min(100, (score / (maxPossible * 2)) * 100)) : 0;
+      const pct =
+        maxPossible > 0 ? Math.round(Math.min(100, (score / (maxPossible * 2)) * 100)) : 0;
       return {
         taskId: t.id as string,
         title: (t.title as string) ?? "(Không tiêu đề)",
