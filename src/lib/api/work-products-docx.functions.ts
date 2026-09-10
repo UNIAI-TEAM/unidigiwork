@@ -2333,23 +2333,35 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       })
       .parse(i),
   )
-  .handler(async ({ data, context }): Promise<WorkGraphMatchSuggestion[]> => {
+  .handler(
+    async ({ data, context }): Promise<WorkGraphMatchSuggestion[]> =>
+      computeWorkGraphMatches(context.supabase as any, data.id, data.locale),
+  );
+
+/** Lõi đối chiếu nội dung tài liệu với công việc, cuộc họp, biên bản đang có của tổ chức. */
+async function computeWorkGraphMatches(
+  supabase: any,
+  productId: string,
+  locale: string,
+): Promise<WorkGraphMatchSuggestion[]> {
+  {
     const apiKey = process.env["LOVABLE_API_KEY"];
+
     if (!apiKey) throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_UNAVAILABLE" });
 
-    const { data: product } = await context.supabase
+    const { data: product } = await supabase
       .from("work_products")
       .select("id, tenant_id, title, business_type, content")
-      .eq("id", data.id)
+      .eq("id", productId)
       .is("deleted_at", null)
       .maybeSingle();
     if (!product)
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
 
-    const { data: blocks } = await context.supabase
+    const { data: blocks } = await supabase
       .from("work_product_blocks")
       .select("text, ordinal, source_anchor")
-      .eq("work_product_id", data.id)
+      .eq("work_product_id", productId)
       .order("ordinal", { ascending: true })
       .limit(400);
     const blockContent = ((blocks ?? []) as any[])
@@ -2366,28 +2378,28 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
 
     const tenantId = product.tenant_id as string;
     const [tasksRes, meetingsRes, artifactsRes, linksRes] = await Promise.all([
-      context.supabase
+      supabase
         .from("tasks")
         .select("id, title, status, description, updated_at")
         .eq("tenant_id", tenantId)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
         .limit(60),
-      context.supabase
+      supabase
         .from("meetings")
         .select("id, title, status, start_at")
         .eq("tenant_id", tenantId)
         .order("start_at", { ascending: false })
         .limit(40),
-      context.supabase
+      supabase
         .from("meeting_artifacts")
         .select("id, title, kind, created_at")
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .limit(40),
-      context.supabase.rpc("get_work_context", {
+      supabase.rpc("get_work_context", {
         _entity_type: "WORK_PRODUCT",
-        _entity_id: data.id,
+        _entity_id: productId,
         _limit: 200,
       }),
     ]);
@@ -2450,7 +2462,7 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       "đang có trong tổ chức, rồi xếp hạng những mục liên quan nhất để liên kết. " +
       "Không bịa mục mới, chỉ dùng số hiệu trong danh sách. " +
       "Luôn trả về từ 3 đến 8 dòng, kể cả khi mức tin cậy thấp; dùng điểm tin cậy để thể hiện mức chắc chắn. " +
-      `Trả lời bằng ngôn ngữ locale ${data.locale}.`;
+      `Trả lời bằng ngôn ngữ locale ${locale}.`;
     const userPrompt =
       `TÀI LIỆU: ${product.title} (${product.business_type})\n` +
       `NỘI DUNG:\n${content}\n\n` +
@@ -2583,4 +2595,53 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       confidence: Math.min(75, 30 + score * 8),
       alreadyLinked: false,
     }));
+  }
+}
+
+/**
+ * Gắn thật tài liệu vào công việc / cuộc họp / biên bản đã có trong bản đồ công việc,
+ * dựa trên đối chiếu nội dung thật. Chỉ gắn khi mức tin cậy đạt ngưỡng.
+ */
+export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        locale: z.string().max(8).default("vi"),
+        minConfidence: z.number().int().min(0).max(100).default(40),
+        maxLinks: z.number().int().min(1).max(8).default(5),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const matches = await computeWorkGraphMatches(context.supabase as any, data.id, data.locale);
+    const open = matches.filter((m) => !m.alreadyLinked);
+    let chosen = open.filter((m) => m.confidence >= data.minConfidence).slice(0, data.maxLinks);
+    // Nếu không mục nào đạt ngưỡng, vẫn gắn mục khớp nội dung nhất để tài liệu không bị treo ngoài bản đồ.
+    if (!chosen.length && open.length) chosen = open.slice(0, 1);
+
+    const linked: WorkGraphMatchSuggestion[] = [];
+    const failed: Array<{ title: string; message: string }> = [];
+    for (const m of chosen) {
+      // link_work_entities là idempotent theo cặp nguồn/đích và chạy dưới quyền người gọi (RLS).
+      const res = await context.supabase.rpc("link_work_entities", {
+        _source_type: "WORK_PRODUCT",
+        _source_id: data.id,
+        _target_type: m.targetType,
+        _target_id: m.targetId,
+        _relationship: "REFERENCES",
+      });
+      if (res.error) failed.push({ title: m.title, message: res.error.message });
+      else linked.push(m);
+    }
+
+    return {
+      linked,
+      skipped: matches.filter((m) => !chosen.includes(m)),
+      failed,
+      minConfidence: data.minConfidence,
+      evaluated: matches.length,
+    };
   });
