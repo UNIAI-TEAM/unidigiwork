@@ -2,12 +2,32 @@
 // Mỗi hồ sơ khai báo: kỹ năng AI · trigger mặc định · hành động mặc định · persona đưa vào prompt.
 // Allowlist hành động/nguồn của agent được suy ra từ kỹ năng của hồ sơ.
 import type { AiActionType } from "@/domain/ai-actions/contracts";
-import { deriveAllowedFromSkills, ensureDefaultSkill, normalizeSkills } from "@/domain/workflow-agents/skills";
+import {
+  deriveAllowedFromSkills,
+  ensureDefaultSkill,
+  normalizeSkills,
+} from "@/domain/workflow-agents/skills";
 import type { AgentTrigger } from "@/domain/workflow-agents/contracts";
+import ariaAvatar from "@/assets/ai-workers/aria.png.asset.json";
+import miraAvatar from "@/assets/ai-workers/mira.png.asset.json";
+import novaAvatar from "@/assets/ai-workers/nova.png.asset.json";
+import atlasAvatar from "@/assets/ai-workers/atlas.png.asset.json";
+import dexAvatar from "@/assets/ai-workers/dex.png.asset.json";
+import echoAvatar from "@/assets/ai-workers/echo.png.asset.json";
+import sageAvatar from "@/assets/ai-workers/sage.png.asset.json";
+import nexusAvatar from "@/assets/ai-workers/nexus.png.asset.json";
+import guardAvatar from "@/assets/ai-workers/guard.png.asset.json";
 
 export interface AiWorkerProfile {
   id: string;
+  /** Tên nhân vật hiển thị (theo bộ nhận diện AI Workforce). */
   name: string;
+  /** Chức danh AI hiển thị dưới tên. */
+  title: string;
+  /** Câu định vị ngắn hiển thị trên thẻ. */
+  tagline: string;
+  /** Ảnh đại diện nhân vật (CDN). */
+  avatarUrl: string;
   domain: string;
   mission: string;
   skills: readonly string[];
@@ -21,44 +41,92 @@ export interface AiWorkerProfile {
 
 export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
   {
+    id: "executive",
+    name: "NOVA",
+    title: "AI Executive Assistant",
+    tagline: "Lập kế hoạch. Điều phối. Hoàn thành.",
+    avatarUrl: novaAvatar.url,
+    domain: "Trợ lý điều hành",
+    mission:
+      "Điều phối ưu tiên trong tuần, chuẩn bị cuộc họp và theo dõi cam kết của ban lãnh đạo.",
+    skills: ["SUMMARIZE_WORK", "MEETING_RECALL", "PROPOSE_TASK", "PROPOSE_MEETING"],
+    responsibilities: [
+      "Tổng hợp ưu tiên trong tuần",
+      "Chuẩn bị nội dung trước cuộc họp",
+      "Theo dõi cam kết sau họp",
+    ],
+    availability: "24/7 · cần người xác nhận",
+    persona: "Bạn là trợ lý điều hành: ngắn gọn, nêu ưu tiên và bước tiếp theo rõ ràng.",
+    defaultTrigger: "MEETING_ENDED",
+    defaultActionType: "CREATE_TASK",
+  },
+  {
     id: "project",
-    name: "AI Project Assistant",
+    name: "ATLAS",
+    title: "AI Project Manager",
+    tagline: "Giữ nhịp tiến độ dự án.",
+    avatarUrl: atlasAvatar.url,
     domain: "Quản lý dự án",
     mission: "Theo dõi tiến độ, phát hiện rủi ro trễ hạn và đề xuất việc cần làm sau mỗi cuộc họp.",
     skills: ["SUMMARIZE_WORK", "RISK_ANALYSIS", "PROPOSE_TASK", "PROPOSE_TASK_UPDATE"],
-    responsibilities: ["Tóm tắt tình hình dự án hằng ngày", "Cảnh báo hạng mục nguy cơ trễ", "Đề xuất task theo dõi sau họp"],
+    responsibilities: [
+      "Tóm tắt tình hình dự án hằng ngày",
+      "Cảnh báo hạng mục nguy cơ trễ",
+      "Đề xuất task theo dõi sau họp",
+    ],
     availability: "24/7 · theo không gian làm việc đã cấp quyền",
-    persona: "Bạn là trợ lý quản trị dự án: ưu tiên tiến độ, rủi ro trễ hạn và trách nhiệm rõ ràng.",
+    persona:
+      "Bạn là trợ lý quản trị dự án: ưu tiên tiến độ, rủi ro trễ hạn và trách nhiệm rõ ràng.",
     defaultTrigger: "TASK_OVERDUE",
     defaultActionType: "UPDATE_TASK_FIELDS",
   },
   {
     id: "research",
-    name: "AI Research Analyst",
+    name: "SAGE",
+    title: "AI Knowledge Agent",
+    tagline: "Tìm hiểu. Thấu hiểu. Áp dụng.",
+    avatarUrl: sageAvatar.url,
     domain: "Nghiên cứu & Phân tích",
-    mission: "Tổng hợp tài liệu, biên bản họp và tri thức nội bộ thành kết luận có trích dẫn nguồn.",
+    mission:
+      "Tổng hợp tài liệu, biên bản họp và tri thức nội bộ thành kết luận có trích dẫn nguồn.",
     skills: ["SUMMARIZE_WORK", "MEETING_RECALL", "RISK_ANALYSIS", "PROPOSE_TASK"],
-    responsibilities: ["Tra cứu tri thức nội bộ", "Tổng hợp bối cảnh trước quyết định", "Trả lời kèm nguồn"],
+    responsibilities: [
+      "Tra cứu tri thức nội bộ",
+      "Tổng hợp bối cảnh trước quyết định",
+      "Trả lời kèm nguồn",
+    ],
     availability: "24/7 · chỉ đọc",
-    persona: "Bạn là chuyên viên phân tích: chỉ kết luận dựa trên nguồn đã trích dẫn, không suy đoán.",
+    persona:
+      "Bạn là chuyên viên phân tích: chỉ kết luận dựa trên nguồn đã trích dẫn, không suy đoán.",
     defaultTrigger: "MEETING_ENDED",
     defaultActionType: "CREATE_TASK",
   },
   {
     id: "sales",
-    name: "AI Sales Assistant",
+    name: "ARIA",
+    title: "AI Sales Agent",
+    tagline: "Biến cơ hội thành tăng trưởng.",
+    avatarUrl: ariaAvatar.url,
     domain: "Kinh doanh & CRM",
     mission: "Soạn thư theo dõi khách hàng và nhắc các cơ hội đang chững lại.",
     skills: ["SUMMARIZE_WORK", "DRAFT_EMAIL", "PROPOSE_TASK"],
-    responsibilities: ["Soạn thư nháp cho khách hàng", "Nhắc cơ hội chưa phản hồi", "Đề xuất việc chăm sóc"],
+    responsibilities: [
+      "Soạn thư nháp cho khách hàng",
+      "Nhắc cơ hội chưa phản hồi",
+      "Đề xuất việc chăm sóc",
+    ],
     availability: "Giờ làm việc · cần duyệt trước khi gửi",
-    persona: "Bạn là trợ lý kinh doanh: văn phong lịch sự, ngắn gọn, luôn có bước tiếp theo rõ ràng.",
+    persona:
+      "Bạn là trợ lý kinh doanh: văn phong lịch sự, ngắn gọn, luôn có bước tiếp theo rõ ràng.",
     defaultTrigger: "TASK_HIGH_PRIORITY",
     defaultActionType: "CREATE_EMAIL_DRAFT",
   },
   {
     id: "data",
-    name: "AI Data Analyst",
+    name: "DEX",
+    title: "AI Data Analyst",
+    tagline: "Biến dữ liệu thành quyết định.",
+    avatarUrl: dexAvatar.url,
     domain: "Dữ liệu & BI",
     mission: "Phân tích khối lượng công việc và xếp ưu tiên dựa trên dữ liệu vận hành.",
     skills: ["RISK_ANALYSIS", "WORKLOAD_TRIAGE"],
@@ -70,7 +138,10 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
   },
   {
     id: "hr",
-    name: "AI HR Assistant",
+    name: "MIRA",
+    title: "AI HR Agent",
+    tagline: "Con người. Tiềm năng. Luôn đồng hành.",
+    avatarUrl: miraAvatar.url,
     domain: "Nhân sự",
     mission: "Hỗ trợ quy trình nội bộ, nhắc việc onboarding và soạn thông báo.",
     skills: ["SUMMARIZE_WORK", "DRAFT_EMAIL", "PROPOSE_TASK"],
@@ -82,11 +153,18 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
   },
   {
     id: "support",
-    name: "AI Customer Support",
+    name: "ECHO",
+    title: "AI Meeting Agent",
+    tagline: "Lắng nghe. Ghi nhận. Biến thành hành động.",
+    avatarUrl: echoAvatar.url,
     domain: "Hỗ trợ khách hàng",
     mission: "Phân loại yêu cầu, soạn phản hồi nháp và chuyển tiếp đúng người phụ trách.",
     skills: ["WORKLOAD_TRIAGE", "DRAFT_EMAIL", "PROPOSE_TASK_UPDATE"],
-    responsibilities: ["Phân loại yêu cầu đến", "Soạn phản hồi nháp", "Đề xuất đổi người phụ trách"],
+    responsibilities: [
+      "Phân loại yêu cầu đến",
+      "Soạn phản hồi nháp",
+      "Đề xuất đổi người phụ trách",
+    ],
     availability: "24/7 · cần duyệt trước khi gửi",
     persona: "Bạn là nhân viên hỗ trợ: phản hồi nhanh, rõ ràng, nêu thời hạn xử lý.",
     defaultTrigger: "TASK_UNASSIGNED",
@@ -94,11 +172,18 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
   },
   {
     id: "legal",
-    name: "AI Legal Assistant",
+    name: "GUARD",
+    title: "AI Compliance & Risk",
+    tagline: "Tương lai an toàn cho doanh nghiệp.",
+    avatarUrl: guardAvatar.url,
     domain: "Pháp lý & Tuân thủ",
     mission: "Rà soát tài liệu, ghi nhận cam kết và nhắc mốc tuân thủ.",
     skills: ["SUMMARIZE_WORK", "MEETING_RECALL", "PROPOSE_MEETING"],
-    responsibilities: ["Rà soát điều khoản trong tài liệu", "Ghi nhận cam kết từ cuộc họp", "Đề xuất họp rà soát"],
+    responsibilities: [
+      "Rà soát điều khoản trong tài liệu",
+      "Ghi nhận cam kết từ cuộc họp",
+      "Đề xuất họp rà soát",
+    ],
     availability: "Giờ làm việc · chỉ đọc & đề xuất",
     persona: "Bạn là trợ lý pháp lý: thận trọng, nêu rõ rủi ro và điều khoản liên quan.",
     defaultTrigger: "MEETING_ENDED",
@@ -106,11 +191,18 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
   },
   {
     id: "content",
-    name: "AI Content Specialist",
+    name: "NEXUS",
+    title: "AI Operations Agent",
+    tagline: "Giữ mọi thứ vận hành trơn tru.",
+    avatarUrl: nexusAvatar.url,
     domain: "Nội dung & Marketing",
     mission: "Chuyển kết luận công việc thành nội dung truyền thông và bản tin nội bộ.",
     skills: ["DRAFT_FOLLOW_UP", "DRAFT_EMAIL", "SUMMARIZE_WORK"],
-    responsibilities: ["Soạn bản tin sau họp", "Viết nội dung nháp theo ngữ cảnh", "Chuẩn hoá thông điệp"],
+    responsibilities: [
+      "Soạn bản tin sau họp",
+      "Viết nội dung nháp theo ngữ cảnh",
+      "Chuẩn hoá thông điệp",
+    ],
     availability: "Giờ làm việc · nội dung nháp",
     persona: "Bạn là chuyên viên nội dung: viết mạch lạc, đúng thông điệp, luôn ở dạng nháp.",
     defaultTrigger: "MEETING_ENDED",
@@ -141,7 +233,7 @@ export function agentDefaultsFromWorkerProfile(profileId: string) {
   const allowed = deriveAllowedFromSkills(skills);
   const actionType = allowed.actionTypes.includes(profile.defaultActionType)
     ? profile.defaultActionType
-    : allowed.actionTypes[0] ?? "CREATE_TASK";
+    : (allowed.actionTypes[0] ?? "CREATE_TASK");
   return {
     profile,
     name: profile.name,
@@ -150,7 +242,9 @@ export function agentDefaultsFromWorkerProfile(profileId: string) {
     actionType,
     skills,
     allowedActionTypes: allowed.actionTypes.length ? allowed.actionTypes : [actionType],
-    allowedSources: allowed.sources.length ? allowed.sources : (["WORKFLOW_AGENT"] as const).slice(),
+    allowedSources: allowed.sources.length
+      ? allowed.sources
+      : (["WORKFLOW_AGENT"] as const).slice(),
     instruction: profile.mission,
   };
 }
