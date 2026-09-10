@@ -2160,7 +2160,7 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
 
     const { data: product } = await context.supabase
       .from("work_products")
-      .select("id, tenant_id, title, business_type, summary")
+      .select("id, tenant_id, title, business_type")
       .eq("id", data.id)
       .is("deleted_at", null)
       .maybeSingle();
@@ -2284,7 +2284,6 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
           role: "user",
           content:
             `TÀI LIỆU: ${product.title} (${product.business_type})\n` +
-            `${product.summary ? `Tóm tắt: ${product.summary}\n` : ""}` +
             `NỘI DUNG:\n${content}\n\n` +
             `DANH SÁCH MỤC CÓ THỂ LIÊN KẾT:\n${list}\n\n` +
             "Chọn tối đa 8 mục liên quan nhất. Mỗi dòng theo đúng mẫu:\n" +
