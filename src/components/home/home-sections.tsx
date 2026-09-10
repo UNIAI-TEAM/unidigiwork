@@ -81,7 +81,7 @@ export function EmptyState({
             <Link
               key={a.to + a.label}
               to={a.to}
-              className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border border-border px-2.5 text-xs font-medium hover:bg-surface-2"
+              className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2"
             >
               {a.label} <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -110,7 +110,7 @@ export function PartialNotice({
         type="button"
         onClick={onRetry}
         disabled={retrying}
-        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-medium hover:bg-surface-2 disabled:opacity-50"
+        className="inline-flex min-h-11 items-center gap-1 rounded-md border border-border px-3 font-medium hover:bg-surface-2 disabled:opacity-50"
       >
         <RefreshCw className={cn("h-3 w-3", retrying && "animate-spin")} strokeWidth={1.75} /> Thử
         lại
@@ -236,7 +236,7 @@ export function MyWorkRow({
     <div
       data-mywork-row={selected ? "selected" : undefined}
       className={cn(
-        "flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 transition-opacity hover:bg-surface-2",
+        "flex min-w-0 items-center gap-2 border-b border-border px-4 py-2 last:border-0 transition-opacity hover:bg-surface-2 sm:gap-3",
         (done || completing) && "opacity-60",
         selected && "bg-surface-2 ring-1 ring-inset ring-ring",
       )}
@@ -250,7 +250,7 @@ export function MyWorkRow({
           disabled={done}
           onChange={(e) => onCheckedChange(task, e.target.checked)}
           aria-label={`Chọn: ${task.title}`}
-          className="h-4 w-4 shrink-0 cursor-pointer accent-primary disabled:opacity-40"
+          className="h-5 w-5 shrink-0 cursor-pointer accent-primary disabled:opacity-40"
         />
       ) : null}
       <button
@@ -269,7 +269,11 @@ export function MyWorkRow({
           <CheckCircle2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
         )}
       </button>
-      <Link to="/tasks/$id" params={{ id: task.id }} className="min-w-0 flex-1">
+      <Link
+        to="/tasks/$id"
+        params={{ id: task.id }}
+        className="flex min-h-11 min-w-0 flex-1 flex-col justify-center overflow-hidden"
+      >
         <span
           className={cn(
             "block truncate text-sm font-medium",
@@ -278,7 +282,7 @@ export function MyWorkRow({
         >
           {task.title}
         </span>
-        <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+        <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 overflow-hidden text-xs text-muted-foreground">
           {task.workspace_name && <span className="truncate">{task.workspace_name}</span>}
           <span className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-1.5 py-0.5">
             <KindIcon className="h-3 w-3" strokeWidth={1.75} /> {meta.label}
@@ -298,7 +302,7 @@ export function MyWorkRow({
           onClick={() => onComplete(task)}
           disabled={completing || done}
           aria-label={`Hoàn thành: ${task.title}`}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-success/40 hover:bg-success/10 hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-success/40 hover:bg-success/10 hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
         >
           {completing ? (
             <Loader2 className="h-[14px] w-[14px] animate-spin" strokeWidth={1.75} />
@@ -310,7 +314,7 @@ export function MyWorkRow({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Thao tác nhanh: ${task.title}`}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
           >
             <ExternalLink className="h-[14px] w-[14px]" strokeWidth={1.75} />
             <span className="hidden sm:inline">Mở</span>
@@ -348,7 +352,7 @@ export function MyWorkRow({
 export function UpcomingRow({ item }: { item: HomeUpcoming }) {
   const Icon = item.kind === "meeting" ? Video : CalendarClock;
   return (
-    <div className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-0">
+    <div className="flex min-w-0 items-center gap-3 border-b border-border px-4 py-2 last:border-0">
       <Icon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
       <div className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{item.title}</span>
@@ -362,7 +366,7 @@ export function UpcomingRow({ item }: { item: HomeUpcoming }) {
       <a
         href={item.href}
         className={cn(
-          "inline-flex min-h-[36px] shrink-0 items-center rounded-lg px-3 text-xs font-medium",
+          "inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 text-xs font-medium",
           item.kind === "meeting" && item.joinable
             ? "bg-primary text-primary-foreground hover:bg-primary/90"
             : "border border-border text-muted-foreground hover:bg-surface-2 hover:text-foreground",
@@ -395,7 +399,7 @@ export function InboxRow({
 }) {
   const Icon = INBOX_ICON[item.type];
   return (
-    <div className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-surface-2">
+    <div className="flex min-w-0 items-center gap-3 border-b border-border px-4 py-2 last:border-0 hover:bg-surface-2">
       <Icon
         className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground"
         strokeWidth={1.75}
@@ -407,7 +411,7 @@ export function InboxRow({
           e.preventDefault();
           onOpen(item);
         }}
-        className="min-w-0 flex-1 text-left"
+        className="flex min-h-11 min-w-0 flex-1 flex-col justify-center overflow-hidden text-left"
       >
         <span className="flex items-center gap-2">
           {!item.read && (
@@ -433,7 +437,7 @@ export function InboxRow({
         <button
           type="button"
           onClick={() => onMarkRead(item)}
-          className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
           Đã đọc
         </button>
@@ -477,7 +481,7 @@ export function AiBrief({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
         >
           <RefreshCw
             className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
@@ -520,7 +524,7 @@ export function ViewAll({ to, label = "Xem tất cả" }: { to: string; label?: 
   return (
     <a
       href={to}
-      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+      className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
     >
       {label} <ArrowRight className="h-3.5 w-3.5" />
     </a>
