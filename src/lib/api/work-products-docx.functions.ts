@@ -2610,7 +2610,7 @@ export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
         ...commandMetadataSchema.shape,
         id: z.string().uuid(),
         locale: z.string().max(8).default("vi"),
-        minConfidence: z.number().int().min(0).max(100).default(55),
+        minConfidence: z.number().int().min(0).max(100).default(40),
         maxLinks: z.number().int().min(1).max(8).default(5),
       })
       .parse(i),
