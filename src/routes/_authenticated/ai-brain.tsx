@@ -119,8 +119,8 @@ function AiBrainPage() {
 
   const approve = useMutation({
     mutationFn: (actionId: string) => confirmFn({ data: { actionId } }),
-    onSuccess: () => {
-      toast.success("Đã duyệt và thực hiện đề xuất.");
+    onSuccess: (res: { message?: string } | undefined) => {
+      toast.success(res?.message ?? "Đã duyệt và thực hiện đề xuất.");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message || "Không thể duyệt đề xuất."),
