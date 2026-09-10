@@ -178,8 +178,33 @@ function ProjectDetailPage() {
     return TASK_GROUPS.map((g) => ({
       ...g,
       items: tasks.filter((t) => t.status === g.key),
-    })).filter((g) => g.items.length > 0);
+    }));
   }, [tasks]);
+
+  // Kéo thả đổi trạng thái — vẫn đi qua command transitionTask, không ghi thẳng DB.
+  const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [dropGroup, setDropGroup] = useState<string | null>(null);
+  const transition = useMutation({
+    mutationFn: (p: { taskId: string; toStatus: string }) =>
+      transitionTask({
+        data: {
+          taskId: p.taskId,
+          toStatus: p.toStatus as never,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: (_d, p) => {
+      toast.success(`Đã chuyển sang “${TASK_STATUS_LABEL[p.toStatus] ?? p.toStatus}”`);
+      qc.invalidateQueries({ queryKey: ["project", id] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không đổi được trạng thái"),
+  });
+
+  function moveTask(taskId: string, toStatus: string) {
+    const current = tasks.find((t) => t.id === taskId);
+    if (!current || current.status === toStatus) return;
+    transition.mutate({ taskId, toStatus });
+  }
 
   const suggestedSkills = useMemo(() => {
     const skills = ((skillsQuery.data ?? []) as unknown as SkillRow[]).filter((s) => s.enabled);
