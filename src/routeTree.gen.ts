@@ -79,6 +79,7 @@ import { Route as AuthenticatedMMeetRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
 import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
 import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
+import { Route as AuthenticatedMBoxRouteImport } from './routes/_authenticated/m/box'
 import { Route as AuthenticatedMAiRouteImport } from './routes/_authenticated/m/ai'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email_.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
@@ -486,6 +487,11 @@ const AuthenticatedMChatRoute = AuthenticatedMChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMBoxRoute = AuthenticatedMBoxRouteImport.update({
+  id: '/box',
+  path: '/box',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMAiRoute = AuthenticatedMAiRouteImport.update({
   id: '/ai',
   path: '/ai',
@@ -791,6 +797,7 @@ export interface FileRoutesByFullPath {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/m/ai': typeof AuthenticatedMAiRoute
+  '/m/box': typeof AuthenticatedMBoxRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
   '/m/home': typeof AuthenticatedMHomeRoute
@@ -901,6 +908,7 @@ export interface FileRoutesByTo {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/m/ai': typeof AuthenticatedMAiRoute
+  '/m/box': typeof AuthenticatedMBoxRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
   '/m/home': typeof AuthenticatedMHomeRoute
@@ -1015,6 +1023,7 @@ export interface FileRoutesById {
   '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email_/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/m/ai': typeof AuthenticatedMAiRoute
+  '/_authenticated/m/box': typeof AuthenticatedMBoxRoute
   '/_authenticated/m/chat': typeof AuthenticatedMChatRoute
   '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
   '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
@@ -1129,6 +1138,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/m/ai'
+    | '/m/box'
     | '/m/chat'
     | '/m/compose'
     | '/m/home'
@@ -1239,6 +1249,7 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/m/ai'
+    | '/m/box'
     | '/m/chat'
     | '/m/compose'
     | '/m/home'
@@ -1352,6 +1363,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email_/$id'
     | '/_authenticated/email_/compose'
     | '/_authenticated/m/ai'
+    | '/_authenticated/m/box'
     | '/_authenticated/m/chat'
     | '/_authenticated/m/compose'
     | '/_authenticated/m/home'
@@ -1921,6 +1933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMChatRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/box': {
+      id: '/_authenticated/m/box'
+      path: '/box'
+      fullPath: '/m/box'
+      preLoaderRoute: typeof AuthenticatedMBoxRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/ai': {
       id: '/_authenticated/m/ai'
       path: '/ai'
@@ -2290,6 +2309,7 @@ const AuthenticatedDocumentsRouteWithChildren =
 
 interface AuthenticatedMRouteChildren {
   AuthenticatedMAiRoute: typeof AuthenticatedMAiRoute
+  AuthenticatedMBoxRoute: typeof AuthenticatedMBoxRoute
   AuthenticatedMChatRoute: typeof AuthenticatedMChatRoute
   AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
   AuthenticatedMHomeRoute: typeof AuthenticatedMHomeRoute
@@ -2309,6 +2329,7 @@ interface AuthenticatedMRouteChildren {
 
 const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMAiRoute: AuthenticatedMAiRoute,
+  AuthenticatedMBoxRoute: AuthenticatedMBoxRoute,
   AuthenticatedMChatRoute: AuthenticatedMChatRoute,
   AuthenticatedMComposeRoute: AuthenticatedMComposeRoute,
   AuthenticatedMHomeRoute: AuthenticatedMHomeRoute,
