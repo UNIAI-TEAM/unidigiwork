@@ -81,6 +81,24 @@ export const proposeAiAction = createServerFn({ method: "POST" })
     const tenantId = getCookie(ACTIVE_TENANT_COOKIE) ?? null;
     const scope = await resolveActorWorkspace(context as never, tenantId, data.workspaceId ?? null);
 
+    // Hồ sơ kỹ năng AI quyết định AI được đề xuất gì. Nếu tổ chức có khai báo kỹ năng
+    // cho loại hành động này mà tất cả đều đang tắt → không cho đề xuất.
+    {
+      const { data: skillRows } = await context.supabase
+        .from("ai_skills")
+        .select("name, enabled, action_types")
+        .is("deleted_at", null)
+        .contains("action_types", [actionType]);
+      const rows = skillRows ?? [];
+      if (rows.length > 0 && !rows.some((r) => r.enabled === true)) {
+        throw fail(
+          "ACTION_TYPE_NOT_ALLOWED",
+          `Kỹ năng "${rows[0]?.name ?? actionType}" đang tắt trong Hồ sơ kỹ năng AI nên AI không được đề xuất hành động này.`,
+        );
+      }
+    }
+
+
     // Ngữ cảnh grounding (best-effort, chỉ đọc).
     let contextBlock = "";
     let sourceRefs = data.sourceRefs ?? [];
