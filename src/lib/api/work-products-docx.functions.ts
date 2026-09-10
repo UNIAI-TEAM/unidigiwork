@@ -2354,6 +2354,38 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       });
       if (out.length >= 8) break;
     }
-    return out.sort((a, b) => b.confidence - a.confidence);
+    if (out.length) return out.sort((a, b) => b.confidence - a.confidence);
+
+    // Dự phòng: khi AI không đưa ra dòng nào, xếp hạng theo trùng từ khoá để người dùng vẫn chọn được.
+    const stop = new Set([
+      "và","của","cho","các","một","trong","với","về","theo","được","là","có","đã","tại","từ","này","đó",
+      "the","and","for","with","from","that","this","task","công","việc",
+    ]);
+    const tokenize = (s: string) =>
+      s
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !stop.has(w));
+    const docTokens = new Set(tokenize(content));
+    const scored = open
+      .map((c) => {
+        const words = tokenize(`${c.title} ${c.extra}`);
+        const hits = Array.from(new Set(words.filter((w) => docTokens.has(w))));
+        return { c, hits, score: hits.length };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+    return scored.map(({ c, hits, score }) => ({
+      targetType: c.targetType,
+      targetId: c.targetId,
+      title: c.title,
+      subtitle: c.subtitle,
+      reason: `Trùng từ khoá với tài liệu: ${hits.slice(0, 6).join(", ")}`,
+      confidence: Math.min(75, 30 + score * 8),
+      alreadyLinked: false,
+    }));
   });
+
 
