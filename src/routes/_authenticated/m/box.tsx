@@ -204,7 +204,7 @@ function MobileBoxPage() {
     );
 
   return (
-    <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
+    <div className="flex min-h-full w-full min-w-0 max-w-full flex-col gap-5 overflow-x-hidden p-4 pb-24">
       <header>
         <p className="module-label text-brand-blue">Bảng điều hành thống nhất</p>
         <h1 className="mt-1 font-heading text-2xl font-bold">Không gian của tôi</h1>
@@ -252,10 +252,11 @@ function MobileBoxPage() {
           <p className="mt-2 text-sm text-muted-foreground">Hộp này đang trống. Rất tốt!</p>
         </div>
       ) : (
-        <ul className="grid gap-2">
+        <ul className="grid w-full min-w-0 max-w-full gap-2 overflow-hidden">
           {visibleItems.map((it) => (
-            <li key={it.key}>
+            <li key={it.key} className="w-full min-w-0 max-w-full overflow-hidden">
               <SwipeRow
+                className="w-full min-w-0 max-w-full"
                 rightLabel={it.kind === "notification" ? "Đã đọc" : "Duyệt"}
                 leftLabel="Hoãn"
                 onSwipeRight={() => {
@@ -268,20 +269,20 @@ function MobileBoxPage() {
                   else hide(it.key);
                 }}
               >
-                <div className="flex w-full min-w-0 items-stretch gap-2 bg-background">
+                <div className="grid w-full min-w-0 max-w-full grid-cols-[minmax(0,1fr)_44px] items-stretch gap-2 overflow-hidden bg-background">
                   <MobileListItem
                     title={it.title}
                     subtitle={it.subtitle}
                     icon={icon(it.kind)}
                     priorityBar={it.priority ?? null}
                     onClick={it.onOpen}
-                    className="min-h-16 min-w-0 flex-1 rounded-2xl"
+                    className="min-h-16 min-w-0 max-w-full rounded-2xl"
                   />
-                  <div className="grid w-11 shrink-0 grid-rows-2 gap-1">
+                  <div className="grid w-11 shrink-0 grid-rows-[44px_44px] gap-1">
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-full w-11 rounded-xl"
+                      className="h-11 w-11 rounded-xl"
                       aria-label="Mở"
                       onClick={it.onOpen}
                     >
@@ -290,7 +291,7 @@ function MobileBoxPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-full w-11 rounded-xl"
+                      className="h-11 w-11 rounded-xl"
                       aria-label="Chia sẻ"
                       onClick={() => void share(it)}
                     >
