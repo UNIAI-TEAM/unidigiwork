@@ -43,7 +43,8 @@ export function HomeCustomizePanel({
         <div>
           <h2 className="text-sm font-semibold">Tuỳ chỉnh trang chủ</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Bật/tắt khối, đổi thứ tự, chỉnh kích thước từng khối và chọn mật độ bố cục. Thay đổi được lưu theo tài khoản.
+            Bật/tắt khối, đổi thứ tự, chỉnh kích thước từng khối và chọn mật độ bố cục. Thay đổi
+            được lưu theo tài khoản.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -77,48 +78,48 @@ export function HomeCustomizePanel({
               return (
                 <li key={key} className="px-3 py-2.5">
                   <div className="flex items-center gap-3">
-                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                      checked={prefs.enabled[key]}
-                      onChange={() => toggle(key)}
-                      aria-label={`Hiển thị khối ${meta.label}`}
-                    />
-                    <span className="min-w-0">
-                      <span
-                        className={cn(
-                          "block truncate text-sm",
-                          !prefs.enabled[key] && "text-muted-foreground",
-                        )}
+                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                        checked={prefs.enabled[key]}
+                        onChange={() => toggle(key)}
+                        aria-label={`Hiển thị khối ${meta.label}`}
+                      />
+                      <span className="min-w-0">
+                        <span
+                          className={cn(
+                            "block truncate text-sm",
+                            !prefs.enabled[key] && "text-muted-foreground",
+                          )}
+                        >
+                          {meta.label}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {meta.description}
+                        </span>
+                      </span>
+                    </label>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => move(key, -1)}
+                        disabled={idx === 0}
+                        aria-label={`Đưa ${meta.label} lên trên`}
+                        className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
                       >
-                        {meta.label}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {meta.description}
-                      </span>
-                    </span>
-                  </label>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => move(key, -1)}
-                      disabled={idx === 0}
-                      aria-label={`Đưa ${meta.label} lên trên`}
-                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
-                    >
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => move(key, 1)}
-                      disabled={idx === prefs.order.length - 1}
-                      aria-label={`Đưa ${meta.label} xuống dưới`}
-                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
-                    >
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => move(key, 1)}
+                        disabled={idx === prefs.order.length - 1}
+                        aria-label={`Đưa ${meta.label} xuống dưới`}
+                        className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                   {prefs.enabled[key] ? (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-7">

@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useHomePrefs } from "@/components/home/use-home-prefs";
 import { HomeCustomizePanel } from "@/components/home/home-customize";
-import type { HomeLayout, HomeSize } from "@/lib/home-prefs";
+import type { HomeLayout, HomeSectionKey, HomeSize } from "@/lib/home-prefs";
 
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
