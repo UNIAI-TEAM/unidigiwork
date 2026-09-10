@@ -168,11 +168,11 @@ function PricingPage() {
   return (
     <PublicShell active="pricing">
       <section className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-5xl px-4 py-14 text-center sm:px-6 lg:py-20">
+        <div className="mx-auto max-w-5xl px-4 py-10 text-center sm:px-6 sm:py-14 lg:py-20">
           <span className="module-label inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-pale-purple px-3 py-1.5 text-primary">
             <Sparkles className="h-3.5 w-3.5" /> Bảng giá minh bạch
           </span>
-          <h1 className="mt-5 font-heading text-4xl font-bold sm:text-5xl">
+          <h1 className="mt-5 font-heading text-3xl font-bold sm:text-5xl">
             Giá hợp lý cho mọi quy mô đội ngũ
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
@@ -193,7 +193,7 @@ function PricingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-20">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:py-20">
         {plansQuery.isLoading ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Đang tải bảng giá…
@@ -216,7 +216,7 @@ function PricingPage() {
               return (
                 <div
                   key={p.id}
-                  className={`relative flex flex-col rounded-xl border bg-card p-6 shadow-card ${highlight ? "border-primary ring-1 ring-primary/20" : "border-border"}`}
+                   className={`relative flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-card sm:p-6 ${highlight ? "border-primary ring-1 ring-primary/20" : "border-border"}`}
                 >
                   {(isCurrent || p.isFeatured) && (
                     <span className="module-label absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1.5 text-action-foreground">
@@ -227,8 +227,8 @@ function PricingPage() {
                     <Icon className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold">{p.name}</h3>
                   </div>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <span className="font-heading text-4xl font-bold">{price.value}</span>
+                   <div className="mt-4 flex min-w-0 flex-wrap items-baseline gap-1">
+                     <span className="break-words font-heading text-3xl font-bold sm:text-4xl">{price.value}</span>
                     {price.unit && (
                       <span className="text-sm text-muted-foreground">{price.unit}</span>
                     )}
@@ -258,7 +258,7 @@ function PricingPage() {
                     <button
                       type="button"
                       onClick={() => setCheckoutPlan(p)}
-                      className={`mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold ${highlight ? "bg-action text-action-foreground hover:opacity-90" : "border border-border-strong bg-card hover:bg-surface-2"}`}
+                       className={`mt-7 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-center text-sm font-semibold ${highlight ? "bg-action text-action-foreground hover:opacity-90" : "border border-border-strong bg-card hover:bg-surface-2"}`}
                     >
                       {direction(p) === "upgrade" ? (
                         <>
@@ -277,7 +277,7 @@ function PricingPage() {
                   ) : (
                     <Link
                       to={p.priceAmount === null ? "/contact" : "/auth"}
-                      className={`mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold ${highlight ? "bg-action text-action-foreground hover:opacity-90" : "border border-border-strong bg-card hover:bg-surface-2"}`}
+                       className={`mt-7 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-center text-sm font-semibold ${highlight ? "bg-action text-action-foreground hover:opacity-90" : "border border-border-strong bg-card hover:bg-surface-2"}`}
                     >
                       {p.priceAmount === null
                         ? (p.ctaLabel ?? "Liên hệ tư vấn")
@@ -328,7 +328,7 @@ function PricingPage() {
         </DialogContent>
       </Dialog>
 
-      <section className="border-t border-border bg-surface py-16">
+       <section className="border-t border-border bg-surface py-12 sm:py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <h2 className="text-center text-3xl font-bold sm:text-4xl">Câu hỏi thường gặp</h2>
           <div className="mt-10 divide-y divide-border rounded-xl border border-border bg-card shadow-card">
@@ -350,8 +350,8 @@ function PricingPage() {
                 a: "Có. UNIWORK phát hành hoá đơn điện tử theo Thông tư 78 ngay sau khi thanh toán.",
               },
             ].map((f) => (
-              <details key={f.q} className="group p-5">
-                <summary className="flex cursor-pointer items-center justify-between text-sm font-medium">
+               <details key={f.q} className="group px-4 py-1 sm:px-5">
+                 <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
                   {f.q}
                   <span className="text-muted-foreground transition-transform group-open:rotate-45">
                     +

@@ -27,12 +27,12 @@ function PublicHeader({ active }: { active?: PublicNav }) {
   ];
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <BrandMark className="h-9 w-9" />
-          <div className="leading-tight">
+      <div className="mx-auto grid min-h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 sm:px-6">
+        <Link to="/" className="flex min-w-0 items-center gap-2">
+          <BrandMark className="h-9 w-9 shrink-0" />
+          <div className="min-w-0 leading-tight">
             <div className="text-base font-bold tracking-wide">UNIWORK</div>
-            <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
+            <div className="hidden truncate text-[10px] text-muted-foreground min-[390px]:block">Digital Workplace Platform</div>
           </div>
         </Link>
         <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
@@ -46,9 +46,9 @@ function PublicHeader({ active }: { active?: PublicNav }) {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <LanguageToggle />
-          <ToneToggle />
+          <span className="hidden sm:inline-flex"><ToneToggle /></span>
           <ThemeToggle />
           <Link
             to="/auth"
@@ -58,7 +58,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
           </Link>
           <a
             href="/#login"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <LogIn className="h-4 w-4" /> {t("land.nav.login")}
           </a>

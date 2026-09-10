@@ -327,14 +327,14 @@ function TasksPage() {
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
             {/* Project header row */}
-            <div className="mb-5 flex flex-wrap items-center gap-3">
+            <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
+                  <button className="flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
                     <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
                       {(activeWsName || "S").slice(0, 1).toUpperCase()}
                     </span>
-                    {activeWsName || "Chưa chọn workspace"}
+                    <span className="truncate">{activeWsName || "Chưa chọn workspace"}</span>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
@@ -360,14 +360,14 @@ function TasksPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <nav className="flex items-center gap-5 text-sm">
+              <nav className="order-3 col-span-2 flex min-w-0 items-center gap-5 overflow-x-auto text-sm sm:order-none sm:col-auto">
                 {(
                   ["overview", "board", "list", "timeline", "calendar", "reports", "files"] as const
                 ).map((id) => (
                   <button
                     key={id}
                     onClick={() => setTab(id)}
-                    className={`-mb-px border-b-2 py-1.5 transition-colors ${tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                    className={`min-h-11 shrink-0 border-b-2 py-2 transition-colors ${tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                   >
                     {t(`tasks.tab.${id}` as Key)}
                   </button>
@@ -375,7 +375,7 @@ function TasksPage() {
               </nav>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="ml-auto rounded-lg p-2 hover:bg-surface-2">
+                  <button className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2">
                     <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
@@ -456,10 +456,10 @@ function TasksPage() {
                   : []),
               ]}
             />
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h1 className="truncate text-xl font-bold sm:text-2xl">
                     {workspaces.data?.find((w) => w.id === activeWs)?.name ?? "Chưa chọn workspace"}
                   </h1>
                   <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
@@ -470,13 +470,13 @@ function TasksPage() {
                     : "Chưa có công việc nào trong workspace này."}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3">
                 <select
                   value={activeWs ?? ""}
                   onChange={(e) => setWsId(e.target.value)}
                   disabled={workspaces.isLoading}
                   aria-label="Workspace"
-                  className="rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 focus:outline-none"
+                  className="min-h-11 min-w-0 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 focus:outline-none"
                 >
                   {workspaces.data?.length ? (
                     workspaces.data.map((w) => (
@@ -492,7 +492,7 @@ function TasksPage() {
                   <DropdownMenuTrigger asChild>
                     <button
                       disabled={!activeWs}
-                      className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 disabled:opacity-50"
+                      className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 disabled:opacity-50"
                     >
                       <Settings2 className="h-4 w-4" /> {t("tasks.settings")}{" "}
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -620,7 +620,7 @@ function TasksPage() {
                   const name = window.prompt("Tên bộ lọc:")?.trim();
                   if (name) saveViewM.mutate(name);
                 }}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-surface-2 disabled:opacity-50"
+                className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium transition-colors hover:bg-surface-2 disabled:opacity-50"
               >
                 <BookmarkPlus className="h-3.5 w-3.5" /> Lưu bộ lọc hiện tại
               </button>
@@ -635,7 +635,7 @@ function TasksPage() {
                   setActiveViewId("");
                   setPriorityFilter(e.target.value as Priority | "");
                 }}
-                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+                className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring sm:flex-none"
               >
                 <option value="">Mọi mức ưu tiên</option>
                 <option value="low">Thấp</option>
@@ -648,7 +648,7 @@ function TasksPage() {
                 aria-label="Sắp xếp công việc"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+                className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring sm:flex-none"
               >
                 <option value="default">Mặc định</option>
                 <option value="priority-desc">Ưu tiên: cao → thấp</option>
@@ -881,7 +881,7 @@ function BoardColumn({
         <button
           onClick={() => setAdding(true)}
           disabled={disabled}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2"
         >
           <Plus className="h-3.5 w-3.5" /> {t("tasks.add")}
         </button>
@@ -924,13 +924,13 @@ function QuickAddForm({
           if (e.key === "Escape") onCancel();
         }}
         placeholder={t("tasks.quick.title")}
-        className="w-full rounded-md bg-surface-2 px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+        className="min-h-11 w-full rounded-md bg-surface-2 px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
       />
       <div className="flex items-center gap-2">
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value as Priority)}
-          className="flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+          className="min-h-11 flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
           aria-label={t("tasks.quick.tag")}
         >
           {priorityOptions.map((p) => (
@@ -943,14 +943,14 @@ function QuickAddForm({
       <div className="flex items-center justify-end gap-2">
         <button
           onClick={onCancel}
-          className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
+          className="min-h-11 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2"
         >
           {t("tasks.quick.cancel")}
         </button>
         <button
           onClick={submit}
           disabled={!title.trim()}
-          className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="min-h-11 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {t("tasks.quick.save")}
         </button>
@@ -1008,7 +1008,7 @@ function TaskCard({
         value={task.status}
         onChange={(e) => onMove(task.id, e.target.value as Status)}
         aria-label="Chuyển trạng thái"
-        className="mt-2 w-full rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-3 focus:outline-none"
+        className="mt-2 min-h-11 w-full rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-3 focus:outline-none"
       >
         {columns.map((c) => (
           <option key={c.status} value={c.status}>
