@@ -834,11 +834,22 @@ export type WeeklyReportRow = {
   shareTargets: number;
 };
 
+/** Ai đã thay đổi tài liệu Word trong kỳ và bao nhiêu thay đổi (người / AI). */
+export type WeeklyReportEditor = {
+  name: string;
+  total: number;
+  human: number;
+  ai: number;
+};
+
 export type WeeklyReport = {
   from: string;
   to: string;
   rows: WeeklyReportRow[];
   totals: WeeklyReportRow;
+  /** Lịch sử thay đổi tài liệu Word trong kỳ, theo người thực hiện. */
+  editors: WeeklyReportEditor[];
+  changeTotals: { total: number; human: number; ai: number };
 };
 
 export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
