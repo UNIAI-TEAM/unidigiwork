@@ -167,13 +167,21 @@ function WorkBoardPage() {
               </Button>
             </div>
           )}
+          {picked && ranking.isFetching && (
+            <p className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Đang chấm mức phù hợp theo nội dung tài
+              liệu…
+            </p>
+          )}
           {tasks.isLoading ? (
             <p className="text-sm text-muted-foreground">Đang tải…</p>
           ) : !tasks.data?.length ? (
             <p className="text-sm text-muted-foreground">Chưa có công việc nào.</p>
           ) : (
             <ul className="grid max-h-[28rem] gap-2 overflow-y-auto pr-1">
-              {tasks.data.map((t) => (
+              {visibleTasks.map((t) => {
+                const rank = rankMap.get(t.id);
+                return (
                 <li key={t.id}>
                   <button
                     type="button"
