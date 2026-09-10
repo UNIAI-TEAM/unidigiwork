@@ -587,6 +587,15 @@ function ProjectDetailPage() {
                   </section>
 
                   <section className="rounded-xl border border-border bg-card p-4">
+                    <h2 className="flex items-center gap-2 font-semibold">
+                      <MessageSquare className="h-4 w-4 text-primary" /> Thảo luận ghi chú
+                    </h2>
+                    <div className="mt-3">
+                      <CommentThread kind="project" projectId={id} />
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h2 className="flex items-center gap-2 font-semibold">
                         <HistoryIcon className="h-4 w-4 text-primary" /> Dòng thời gian hoạt động
