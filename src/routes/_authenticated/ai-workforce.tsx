@@ -91,7 +91,7 @@ function AiWorkforcePage() {
             </Link>
           </div>
 
-          <nav className="mt-5 flex gap-1 border-b border-border text-sm">
+          <nav className="mt-5 -mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 text-sm sm:mx-0 sm:px-0 [scrollbar-width:none]">
             {TABS.map((item) => (
               <button
                 key={item.id}
