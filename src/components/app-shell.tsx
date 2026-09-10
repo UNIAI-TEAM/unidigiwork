@@ -395,9 +395,7 @@ export function AppSidebar({
           ) : (
             <BrandWordmark className="h-9 max-w-[150px]" />
           )}
-          {!collapsed && (
-            <div className="flex-1" />
-          )}
+          {!collapsed && <div className="flex-1" />}
           <button
             aria-label="Close sidebar"
             className="rounded p-1 text-muted-foreground hover:bg-surface-2 lg:hidden"

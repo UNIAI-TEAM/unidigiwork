@@ -131,7 +131,7 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                   collapsed
                     ? "w-full justify-center px-2 py-2.5"
                     : "min-h-11 w-full gap-3 px-3 py-2.5 text-sm",
-                    active
+                  active
                     ? "bg-command-accent/10 font-semibold text-command-accent shadow-sm"
                     : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                 );

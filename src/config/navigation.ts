@@ -357,10 +357,7 @@ export function visibleNavigation(perms: NavPermissions) {
     .map((group) => ({
       group,
       items: NAV_ITEMS.filter(
-        (i) =>
-          i.group === group.id &&
-          isNavItemVisible(i, perms) &&
-          true,
+        (i) => i.group === group.id && isNavItemVisible(i, perms) && true,
       ).sort((a, b) => a.order - b.order),
     }))
     .filter((g) => g.items.length > 0);
