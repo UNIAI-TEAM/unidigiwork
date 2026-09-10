@@ -435,7 +435,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         .limit(40),
       context.supabase
         .from("meetings")
-        .select("title, agenda, start_at")
+        .select("title, agenda, start_at, end_at, location, status, project_id")
         .eq("tenant_id", tenantId)
         .is("deleted_at", null)
         .order("start_at", { ascending: false })
@@ -473,7 +473,25 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       title: string;
       agenda: string | null;
       start_at: string;
+      end_at: string | null;
+      location: string | null;
+      status: string | null;
+      project_id: string | null;
     }[];
+    // Tên dự án của các cuộc họp, để đề xuất bám lịch họp thật.
+    const meetingProjectIds = Array.from(
+      new Set(meetings.map((m) => m.project_id).filter((v): v is string => Boolean(v))),
+    );
+    const meetingProjectName = new Map<string, string>();
+    if (meetingProjectIds.length) {
+      const projRes = await context.supabase
+        .from("projects")
+        .select("id, name")
+        .in("id", meetingProjectIds);
+      for (const p of (projRes.data ?? []) as { id: string; name: string }[]) {
+        meetingProjectName.set(p.id, p.name);
+      }
+    }
     const notifs = (notifsRes.data ?? []) as { type: string; title: string }[];
     const proposals = (proposalsRes.data ?? []) as { title: string; action_type: string }[];
     const existing = (skillRes.data ?? []) as { code: string; name: string }[];
@@ -671,7 +689,15 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
           }]${(t.tags ?? []).length ? " #" + (t.tags ?? []).join(" #") : ""}`,
       ),
       "CUỘC HỌP:",
-      ...meetings.map((m) => `- ${m.title}${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`),
+      ...meetings.map((m) => {
+        const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
+        const when = m.start_at ? m.start_at.slice(0, 16).replace("T", " ") : "";
+        return `- ${m.title}${proj ? " [dự án: " + proj + "]" : ""}${
+          when ? " @" + when : ""
+        }${m.location ? " tại " + m.location : ""}${m.status ? " (" + m.status + ")" : ""}${
+          m.agenda ? ": " + m.agenda.slice(0, 160) : ""
+        }`;
+      }),
       "THÔNG BÁO:",
       ...notifs.map((n) => `- [${n.type}] ${n.title}`),
       "ĐỀ XUẤT ĐÃ DUYỆT:",

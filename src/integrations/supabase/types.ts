@@ -3395,6 +3395,7 @@ export type Database = {
           end_at: string
           id: string
           location: string | null
+          project_id: string | null
           row_version: number
           rrule: string | null
           start_at: string
@@ -3416,6 +3417,7 @@ export type Database = {
           end_at: string
           id?: string
           location?: string | null
+          project_id?: string | null
           row_version?: number
           rrule?: string | null
           start_at: string
@@ -3437,6 +3439,7 @@ export type Database = {
           end_at?: string
           id?: string
           location?: string | null
+          project_id?: string | null
           row_version?: number
           rrule?: string | null
           start_at?: string
@@ -3449,6 +3452,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "meetings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meetings_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -8157,6 +8167,7 @@ export type Database = {
           end_at: string
           id: string
           location: string | null
+          project_id: string | null
           row_version: number
           rrule: string | null
           start_at: string
@@ -8632,6 +8643,7 @@ export type Database = {
           end_at: string
           id: string
           location: string | null
+          project_id: string | null
           row_version: number
           rrule: string | null
           start_at: string
@@ -9307,6 +9319,7 @@ export type Database = {
           end_at: string
           id: string
           location: string | null
+          project_id: string | null
           row_version: number
           rrule: string | null
           start_at: string
@@ -10440,6 +10453,7 @@ export type Database = {
               end_at: string
               id: string
               location: string | null
+              project_id: string | null
               row_version: number
               rrule: string | null
               start_at: string
@@ -10482,6 +10496,7 @@ export type Database = {
               end_at: string
               id: string
               location: string | null
+              project_id: string | null
               row_version: number
               rrule: string | null
               start_at: string
@@ -10756,6 +10771,7 @@ export type Database = {
           end_at: string
           id: string
           location: string | null
+          project_id: string | null
           row_version: number
           rrule: string | null
           start_at: string
@@ -10988,6 +11004,7 @@ export type Database = {
           end_at: string
           id: string
           location: string | null
+          project_id: string | null
           row_version: number
           rrule: string | null
           start_at: string
