@@ -449,13 +449,13 @@ function SkillHubPage() {
                         <h2 className="truncate text-xl font-semibold tracking-tight">
                           {selected.name}
                         </h2>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                           <Badge variant="secondary">{AI_SKILL_KIND_LABELS[selected.kind]}</Badge>
                           {requiresApproval(selected) && (
                             <Badge variant="outline">{t("aiBrain.skills.approvalRequired")}</Badge>
                           )}
                           {selected.is_system && <Badge variant="outline">UNIWORK</Badge>}
-                        </p>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
