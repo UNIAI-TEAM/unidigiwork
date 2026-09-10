@@ -159,12 +159,21 @@ function AiBrainPage() {
               <h1 className="text-2xl font-semibold tracking-tight">{t("nav.aiBrain")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("aiBrain.subtitle")}</p>
             </div>
-            <Link
-              to="/ai-brain/skills"
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              <Sparkles className="h-4 w-4" /> {t("aiBrain.manageSkills")}
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/workflows/agents"
+                search={{ profile: undefined }}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                <Bot className="h-4 w-4" /> {t("aiBrain.openAgents")}
+              </Link>
+              <Link
+                to="/ai-brain/skills"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                <Sparkles className="h-4 w-4" /> {t("aiBrain.manageSkills")}
+              </Link>
+            </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">

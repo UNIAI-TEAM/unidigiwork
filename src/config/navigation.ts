@@ -26,6 +26,7 @@ import {
   CreditCard,
   ScrollText,
   Store,
+  Sparkles,
   ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -263,6 +264,28 @@ export const NAV_ITEMS: NavItem[] = [
     visibility: "everyone",
     order: 1.5,
     mobile: { placement: "more", href: "/ai-brain", order: 7.2 },
+  },
+  {
+    id: "ai-agents",
+    labelKey: "nav.aiAgents",
+    icon: Workflow,
+    href: "/workflows/agents",
+    group: "automation",
+    match: ["/workflows/agents"],
+    visibility: "everyone",
+    order: 1.6,
+    mobile: { placement: "more", href: "/workflows/agents", order: 7.3 },
+  },
+  {
+    id: "ai-skills",
+    labelKey: "nav.aiSkills",
+    icon: Sparkles,
+    href: "/ai-brain/skills",
+    group: "automation",
+    match: ["/ai-brain/skills"],
+    visibility: "everyone",
+    order: 1.7,
+    mobile: { placement: "more", href: "/ai-brain/skills", order: 7.4 },
   },
   {
     id: "ai-workforce",

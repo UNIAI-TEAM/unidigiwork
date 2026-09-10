@@ -109,6 +109,13 @@ function AiBrainSkillsPage() {
           >
             <ArrowLeft className="h-4 w-4" /> {t("nav.aiBrain")}
           </Link>
+          <Link
+            to="/workflows/agents"
+            search={{ profile: undefined }}
+            className="ml-4 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            {t("aiBrain.openAgents")}
+          </Link>
 
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">
             {t("aiBrain.skills.title")}
