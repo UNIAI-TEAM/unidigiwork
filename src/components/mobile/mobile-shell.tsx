@@ -4,13 +4,14 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import {
   Home,
   MessageSquare,
-  CheckSquare,
-  Video,
+  Sparkles,
+  Inbox,
   LayoutGrid,
   Search,
   Bell,
   MoreHorizontal,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
@@ -20,9 +21,9 @@ import { useEffect, useRef, useState } from "react";
 const TABS = [
   { id: "home", label: "Home", icon: Home, to: "/m/home" },
   { id: "chat", label: "Chat", icon: MessageSquare, to: "/m/chat" },
-  // Work = tab trung tâm nổi bật (công việc của tôi).
-  { id: "tasks", label: "Work", icon: CheckSquare, to: "/m/tasks" },
-  { id: "meet", label: "Meet", icon: Video, to: "/m/meet" },
+  // Nút W ở giữa: mở My AI (đội ngũ AI của bạn).
+  { id: "ai", label: "My AI", icon: Sparkles, to: "/m/ai" },
+  { id: "box", label: "My Box", icon: Inbox, to: "/m/box" },
   { id: "more", label: "More", icon: MoreHorizontal, to: "/m/more" },
 ];
 
@@ -221,7 +222,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
         <ul className="flex h-20 items-center px-2">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
-            if (tab.id === "tasks") {
+            if (tab.id === "ai") {
               return (
                 <li key={tab.id} className="relative flex flex-1 justify-center -top-4">
                   <Link
@@ -231,7 +232,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                   >
                     <div className="dock-task-glow absolute -bottom-4 h-20 w-20 rounded-full blur-3xl opacity-70" />
                     <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-gradient-to-tr from-primary via-primary to-primary-foreground/25 text-primary-foreground shadow-xl shadow-primary/40 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/50 active:scale-90">
-                      <tab.icon className="h-7 w-7" />
+                      <BrandMark className="h-8 w-8" />
                     </span>
                     <span className="absolute -bottom-7 text-[10px] font-bold uppercase tracking-wider text-primary drop-shadow-sm">
                       {tab.label}

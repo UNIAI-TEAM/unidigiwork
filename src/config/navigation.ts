@@ -110,7 +110,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/tasks"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "primary", href: "/m/tasks", order: 3 },
+    mobile: { placement: "more", href: "/m/tasks", order: 1 },
   },
   {
     id: "inbox",
@@ -182,7 +182,7 @@ export const NAV_ITEMS: NavItem[] = [
     visibility: "everyone",
     badge: "live",
     order: 2,
-    mobile: { placement: "primary", href: "/m/meet", order: 4 },
+    mobile: { placement: "more", href: "/m/meet", order: 2 },
   },
   {
     id: "email",
@@ -218,7 +218,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/work-products"],
     visibility: "everyone",
     order: 2,
-    mobile: { placement: "more", href: "/work-products", order: 3 },
+    mobile: { placement: "more", href: "/m/work-products", order: 3 },
   },
   {
     id: "knowledge",
