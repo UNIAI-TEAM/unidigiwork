@@ -428,7 +428,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const [tasksRes, meetingsRes, notifsRes, proposalsRes, skillRes] = await Promise.all([
       context.supabase
         .from("tasks")
-        .select("title, status, priority, due_at, tags, updated_at, created_at")
+        .select(
+          "title, status, priority, due_at, tags, updated_at, created_at, progress_pct, start_at, end_at",
+        )
         .eq("tenant_id", tenantId)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
