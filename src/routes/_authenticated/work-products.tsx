@@ -474,14 +474,14 @@ function WorkProductsPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
 
-        <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <FilterPageHeader
               crumbs={[{ label: t("nav.group.knowledge") }, { label: t("wp.title") }]}
               title={t("wp.title")}
               description={t("wp.subtitle")}
             />
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <ImportDocxButton />
               <Button onClick={() => setCreateOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -491,8 +491,8 @@ function WorkProductsPage() {
           </div>
 
           {/* Bộ lọc */}
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[200px] flex-1">
+          <div className="mb-5 grid gap-2 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-2 xl:grid-cols-[minmax(200px,1fr)_150px_135px_135px_auto]">
+            <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
@@ -503,7 +503,7 @@ function WorkProductsPage() {
               />
             </div>
             <Select value={workspaceId} onValueChange={setWorkspaceId}>
-              <SelectTrigger className="w-[170px]">
+              <SelectTrigger>
                 <SelectValue placeholder={t("wp.allWorkspaces")} />
               </SelectTrigger>
               <SelectContent>
@@ -516,7 +516,7 @@ function WorkProductsPage() {
               </SelectContent>
             </Select>
             <Select value={businessType} onValueChange={setBusinessType}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -529,7 +529,7 @@ function WorkProductsPage() {
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -541,10 +541,14 @@ function WorkProductsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant={mine ? "default" : "outline"} onClick={() => setMine((v) => !v)}>
+            <Button
+              variant={mine ? "default" : "outline"}
+              className="xl:px-3"
+              onClick={() => setMine((v) => !v)}
+            >
               {t("wp.mine")}
             </Button>
-            <div className="ml-auto flex items-center gap-1">
+            <div className="flex items-center justify-end gap-1 sm:col-span-2 xl:col-span-5">
               <Button variant="outline" className="gap-2" onClick={() => setAccessOpen(true)}>
                 <ShieldCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">{t("wp.access.button")}</span>
@@ -606,15 +610,15 @@ function WorkProductsPage() {
                 key={it.id}
                 to="/work-products/$id"
                 params={{ id: it.id }}
-                className="rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-accent/40"
+                className="rounded-2xl border border-border bg-card p-4 shadow-card transition-colors hover:border-primary/40 hover:bg-surface"
               >
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 rounded-lg bg-primary/10 p-2 text-primary">
+                  <span className="mt-0.5 rounded-xl bg-secondary p-2 text-primary">
                     <FileText className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-medium">{it.title}</p>
+                      <p className="truncate font-heading font-semibold">{it.title}</p>
                       <Badge variant="outline">{t(`wp.type.${it.business_type}` as never)}</Badge>
                       <span
                         className={cn(

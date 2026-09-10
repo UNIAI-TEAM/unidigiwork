@@ -204,9 +204,10 @@ function MobileBoxPage() {
     );
 
   return (
-    <div className="flex min-h-full flex-col gap-4 p-4 pb-28">
+    <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">My Box</h1>
+        <p className="module-label text-primary">Hộp công việc</p>
+        <h1 className="mt-1 font-heading text-2xl font-bold">My Box</h1>
         <p className="text-sm text-muted-foreground">Mọi thứ đang chờ bạn, gom về một hộp.</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Mẹo: vuốt phải để duyệt, vuốt trái để hoãn.
@@ -220,15 +221,15 @@ function MobileBoxPage() {
         </Button>
       </header>
 
-      <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1">
+      <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-background p-1 shadow-card">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              "min-h-11 rounded-xl px-2 text-xs font-medium transition-colors",
+              "min-h-11 rounded-lg px-2 text-xs font-semibold transition-colors",
               tab === t.id
-                ? "bg-primary text-primary-foreground"
+                ? "bg-action text-action-foreground"
                 : "text-muted-foreground hover:bg-surface-2",
             )}
           >

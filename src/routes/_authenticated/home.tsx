@@ -126,9 +126,7 @@ function HomePage() {
       if (previous) {
         qc.setQueryData<HomeSummary>(homeKey, {
           ...previous,
-          myWork: previous.myWork.map((x) =>
-            x.id === t.id ? { ...x, status: "done" } : x,
-          ),
+          myWork: previous.myWork.map((x) => (x.id === t.id ? { ...x, status: "done" } : x)),
           counts: {
             ...previous.counts,
             attention: Math.max(0, (previous.counts.attention ?? 0) - 1),
@@ -201,13 +199,12 @@ function HomePage() {
   // Chọn nhiều dòng để hoàn thành hàng loạt qua command transitionTask.
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const [bulkRunning, setBulkRunning] = useState(false);
-  const openTasks = useMemo(
-    () => (data?.myWork ?? []).filter((t) => t.status !== "done"),
-    [data],
-  );
+  const openTasks = useMemo(() => (data?.myWork ?? []).filter((t) => t.status !== "done"), [data]);
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
   const toggleChecked = (t: HomeTask, next: boolean) =>
-    setCheckedIds((prev) => (next ? [...new Set([...prev, t.id])] : prev.filter((x) => x !== t.id)));
+    setCheckedIds((prev) =>
+      next ? [...new Set([...prev, t.id])] : prev.filter((x) => x !== t.id),
+    );
   const allChecked = openTasks.length > 0 && checkedIds.length === openTasks.length;
 
   const bulkComplete = async () => {
@@ -289,9 +286,7 @@ function HomePage() {
   }, [complete, router]);
 
   useEffect(() => {
-    document
-      .querySelector("[data-mywork-row='selected']")
-      ?.scrollIntoView({ block: "nearest" });
+    document.querySelector("[data-mywork-row='selected']")?.scrollIntoView({ block: "nearest" });
   }, [selectedIdx]);
 
   const { prefs, saving, update, reset } = useHomePrefs();
@@ -299,7 +294,7 @@ function HomePage() {
 
   const blocks: Record<HomeSectionKey, ReactNode> = {
     stats: failed ? (
-      <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
         Không tải được dữ liệu trang chủ.{" "}
         <button
           type="button"
@@ -332,9 +327,7 @@ function HomePage() {
                 type="checkbox"
                 className="h-4 w-4 cursor-pointer accent-primary"
                 checked={allChecked}
-                onChange={(e) =>
-                  setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])
-                }
+                onChange={(e) => setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])}
                 aria-label="Chọn tất cả công việc"
               />
               Chọn tất cả
@@ -480,18 +473,19 @@ function HomePage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
         <div className="w-full flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-          <header className="flex flex-wrap items-end justify-between gap-3">
+          <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">{greeting()}</h1>
+              <p className="module-label text-primary">Command center</p>
+              <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">{greeting()}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="col-span-2 flex flex-wrap gap-2 lg:col-span-1 lg:justify-end">
               <button
                 type="button"
                 onClick={() => setCustomizing((v) => !v)}
                 aria-expanded={customizing}
                 className={cn(
-                  "inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-2",
+                  "inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
                   customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
                 )}
               >
@@ -501,26 +495,26 @@ function HomePage() {
                 type="button"
                 onClick={refreshAll}
                 disabled={isRefreshing}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-muted-foreground shadow-card transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
                 aria-label="Làm mới trang chủ"
               >
                 <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
               </button>
               <Link
                 to="/tasks"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-action px-3 text-sm font-bold text-action-foreground shadow-card hover:bg-action/90"
               >
                 <Plus className="h-4 w-4" /> Công việc
               </Link>
               <Link
                 to="/meeting"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-surface-2"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
               >
                 <Plus className="h-4 w-4" /> Cuộc họp
               </Link>
               <Link
                 to="/chat"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-surface-2"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
               >
                 <Plus className="h-4 w-4" /> Tin nhắn
               </Link>
@@ -538,7 +532,7 @@ function HomePage() {
           ) : null}
 
           {visible.length === 0 ? (
-            <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
               Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
               <button
                 type="button"
@@ -596,4 +590,3 @@ function spanClass(key: HomeSectionKey, layout: HomeLayout) {
   }
   return "xl:col-span-1";
 }
-
