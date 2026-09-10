@@ -29,6 +29,8 @@ export type AiBrainOverview = {
     acceptanceRate: number;
     tokensThisWeek: number;
   };
+  /** Kỹ năng đang tắt nhưng có khai báo hành động — AI sẽ không đề xuất các hành động này. */
+  disabledSkills: { id: string; name: string; actionTypes: string[] }[];
   log: AiBrainLogEntry[];
 };
 
