@@ -106,17 +106,24 @@ function AuthPage() {
           </div>
         ) : (
           <div className="mb-4 flex rounded-lg bg-surface-2 p-0.5">
-            {(["signin", "signup"] as const).map((m) => (
+            {(["signin", "code", "signup"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
-                onClick={() => setMode(m)}
-                className={`flex-1 rounded-md py-1.5 text-sm font-medium ${mode === m ? "bg-background text-foreground shadow" : "text-muted-foreground"}`}
+                onClick={() => {
+                  setMode(m);
+                  setCodeSent(false);
+                  setCode("");
+                }}
+                className={`flex-1 rounded-md px-1 py-1.5 text-xs font-medium sm:text-sm ${mode === m ? "bg-background text-foreground shadow" : "text-muted-foreground"}`}
               >
-                {m === "signin" ? t("ac.1") : t("ac.2")}
+                {m === "signin" ? t("ac.1") : m === "code" ? t("otp.1") : t("ac.2")}
               </button>
             ))}
           </div>
+        )}
+        {!reset && mode === "code" && (
+          <p className="mb-3 text-xs text-muted-foreground">{t("otp.2")}</p>
         )}
         <form onSubmit={submit} noValidate={false} className="space-y-3">
           {!reset && mode === "signup" && (
