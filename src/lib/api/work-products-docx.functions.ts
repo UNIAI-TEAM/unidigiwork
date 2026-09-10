@@ -2595,7 +2595,9 @@ async function computeWorkGraphMatches(
       confidence: Math.min(75, 30 + score * 8),
       alreadyLinked: false,
     }));
+  }
 }
+
 
 /**
  * Gắn thật tài liệu vào công việc / cuộc họp / biên bản đã có trong bản đồ công việc,
