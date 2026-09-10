@@ -42,6 +42,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedWorkProductsRouteImport } from './routes/_authenticated/work-products'
 import { Route as AuthenticatedWorkCatalogRouteImport } from './routes/_authenticated/work-catalog'
+import { Route as AuthenticatedWorkBoardRouteImport } from './routes/_authenticated/work-board'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
@@ -289,6 +290,11 @@ const AuthenticatedWorkCatalogRoute =
     path: '/work-catalog',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkBoardRoute = AuthenticatedWorkBoardRouteImport.update({
+  id: '/work-board',
+  path: '/work-board',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -764,6 +770,7 @@ export interface FileRoutesByFullPath {
   '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/work-board': typeof AuthenticatedWorkBoardRoute
   '/work-catalog': typeof AuthenticatedWorkCatalogRoute
   '/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -876,6 +883,7 @@ export interface FileRoutesByTo {
   '/people': typeof AuthenticatedPeopleRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/work-board': typeof AuthenticatedWorkBoardRoute
   '/work-catalog': typeof AuthenticatedWorkCatalogRoute
   '/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -992,6 +1000,7 @@ export interface FileRoutesById {
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/work-board': typeof AuthenticatedWorkBoardRoute
   '/_authenticated/work-catalog': typeof AuthenticatedWorkCatalogRoute
   '/_authenticated/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -1108,6 +1117,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/search'
     | '/settings'
+    | '/work-board'
     | '/work-catalog'
     | '/work-products'
     | '/blog/$slug'
@@ -1220,6 +1230,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/search'
     | '/settings'
+    | '/work-board'
     | '/work-catalog'
     | '/work-products'
     | '/blog/$slug'
@@ -1335,6 +1346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people'
     | '/_authenticated/search'
     | '/_authenticated/settings'
+    | '/_authenticated/work-board'
     | '/_authenticated/work-catalog'
     | '/_authenticated/work-products'
     | '/blog/$slug'
@@ -1685,6 +1697,13 @@ declare module '@tanstack/react-router' {
       path: '/work-catalog'
       fullPath: '/work-catalog'
       preLoaderRoute: typeof AuthenticatedWorkCatalogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/work-board': {
+      id: '/_authenticated/work-board'
+      path: '/work-board'
+      fullPath: '/work-board'
+      preLoaderRoute: typeof AuthenticatedWorkBoardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -2401,6 +2420,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedWorkBoardRoute: typeof AuthenticatedWorkBoardRoute
   AuthenticatedWorkCatalogRoute: typeof AuthenticatedWorkCatalogRoute
   AuthenticatedWorkProductsRoute: typeof AuthenticatedWorkProductsRoute
   AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
@@ -2438,6 +2458,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedWorkBoardRoute: AuthenticatedWorkBoardRoute,
   AuthenticatedWorkCatalogRoute: AuthenticatedWorkCatalogRoute,
   AuthenticatedWorkProductsRoute: AuthenticatedWorkProductsRoute,
   AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,

@@ -408,14 +408,22 @@ export function DocxRoundTripPanel({
   };
   const [autoResult, setAutoResult] = useState<WeightSuggestion | null>(null);
   const autoWeights = useMutation({
-    mutationFn: (scope: "THIS" | "ALL") =>
-      suggestDocxWeightsFromContent({
+    mutationFn: async (input: { scope: "THIS" | "ALL"; apply?: boolean }) => {
+      const r = (await suggestDocxWeightsFromContent({
         data: {
-          ...(scope === "THIS" ? { id: productId } : {}),
+          ...(input.scope === "THIS" ? { id: productId } : {}),
           weights,
           idempotencyKey: crypto.randomUUID(),
         },
-      }) as Promise<WeightSuggestion>,
+      })) as WeightSuggestion;
+      // Áp dụng ngay cho cả tổ chức: lưu hồ sơ nhận diện, không cần bấm thêm.
+      if (input.apply && r.changes.length) {
+        await saveTenantDocxProfile({
+          data: { weights: { ...weights, ...r.weights }, aiGuidance: guidance },
+        });
+      }
+      return { ...r, applied: Boolean(input.apply && r.changes.length) };
+    },
     onSuccess: (r) => {
       setAutoResult(r);
       if (!r.changes.length) {
@@ -423,6 +431,12 @@ export function DocxRoundTripPanel({
         return;
       }
       saveWeights({ ...weights, ...r.weights });
+      if (r.applied) {
+        void qc.invalidateQueries({ queryKey: ["tenant-docx-profile"] });
+        void qc.invalidateQueries({ queryKey: ["wp-docx-recognition"] });
+        toast.success(`Đã áp dụng ${r.changes.length} trọng số mới cho cả tổ chức`);
+        return;
+      }
       toast.success(`Đã cập nhật ${r.changes.length} loại nhận diện theo nội dung tài liệu`);
     },
     onError: (e: Error) =>
@@ -688,7 +702,7 @@ export function DocxRoundTripPanel({
               variant="secondary"
               className="h-7 gap-1 px-2 text-xs"
               disabled={!canEditProfile || autoWeights.isPending}
-              onClick={() => autoWeights.mutate("THIS")}
+              onClick={() => autoWeights.mutate({ scope: "THIS" })}
             >
               {autoWeights.isPending ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -702,10 +716,20 @@ export function DocxRoundTripPanel({
               variant="ghost"
               className="h-7 gap-1 px-2 text-xs"
               disabled={!canEditProfile || autoWeights.isPending}
-              onClick={() => autoWeights.mutate("ALL")}
+              onClick={() => autoWeights.mutate({ scope: "ALL" })}
             >
               <Wand2 className="h-3 w-3" />
               Từ toàn bộ tài liệu tổ chức
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate({ scope: "ALL", apply: true })}
+            >
+              <Wand2 className="h-3 w-3" />
+              Tự điều chỉnh và áp dụng cho tổ chức
             </Button>
             <Button
               size="sm"
