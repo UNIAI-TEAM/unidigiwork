@@ -223,7 +223,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
         <ul className="flex h-20 items-center px-2">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
-            if (tab.id === "tasks") {
+            if (tab.id === "ai") {
               return (
                 <li key={tab.id} className="relative flex flex-1 justify-center -top-4">
                   <Link
