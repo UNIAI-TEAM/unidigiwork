@@ -38,7 +38,8 @@ function WorkBoardPage() {
 
   const docs = useQuery({
     queryKey: ["work-board-docs", docQuery],
-    queryFn: () => listWorkDeliverables({ data: { search: docQuery, limit: 40 } }) as Promise<any[]>,
+    queryFn: () =>
+      listWorkDeliverables({ data: { search: docQuery, limit: 40 } }) as Promise<any[]>,
   });
   const tasks = useQuery({
     queryKey: ["work-board-tasks", taskQuery],
