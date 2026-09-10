@@ -217,33 +217,38 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
 
   const badgeFor = (id: string) => (id === "chat" ? chatUnread : id === "email" ? emailUnread : 0);
   return (
-    <nav className="sticky bottom-0 z-50 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_3px_color-mix(in_oklab,var(--color-foreground)_6%,transparent)]">
+    <nav className="sticky bottom-0 z-50 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_3px_color-mix(in_oklab,var(--color-foreground)_6%,transparent)] backdrop-blur-xl">
       <div>
-        <ul className="flex h-16 items-center px-2">
+        <ul className="grid h-[4.5rem] grid-cols-5 items-end px-1 pb-1">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             if (tab.id === "ai") {
               return (
-                <li key={tab.id} className="relative flex flex-1 justify-center">
+                <li key={tab.id} className="relative flex min-w-0 justify-center">
                   <Link
                     to={tab.to}
-                    className="relative flex min-h-14 min-w-14 flex-col items-center justify-center gap-1"
+                    className="relative flex min-h-[68px] min-w-14 -translate-y-3 flex-col items-center justify-center gap-1"
                     aria-label={tab.label}
                   >
-                    <span className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-panel transition-transform duration-150 active:scale-95">
-                      <BrandMark className="h-6 w-6" />
+                    <span
+                      className={cn(
+                        "relative flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-background bg-primary text-primary-foreground shadow-panel transition-transform duration-150 active:scale-95",
+                        active && "ring-2 ring-primary/25 ring-offset-2 ring-offset-background",
+                      )}
+                    >
+                      <BrandMark className="h-8 w-8" />
                     </span>
-                    <span className="text-[10px] font-semibold text-primary">{tab.label}</span>
+                    <span className="text-[10px] font-bold text-primary">{tab.label}</span>
                   </Link>
                 </li>
               );
             }
             return (
-              <li key={tab.id} className="flex-1">
+              <li key={tab.id} className="min-w-0">
                 <Link
                   to={tab.to}
                   className={cn(
-                    "relative flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 transition-colors duration-150 active:scale-95",
+                    "relative flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-colors duration-150 active:scale-95",
                     active
                       ? "text-primary"
                       : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",

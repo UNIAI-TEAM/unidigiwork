@@ -75,13 +75,16 @@ function MobileHomePage() {
   const { meetings = [], tasks = [], notifications = [] } = summary ?? {};
 
   return (
-    <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
-      <section>
+    <div className="flex min-h-full min-w-0 max-w-full flex-col gap-5 overflow-x-hidden px-4 pb-28 pt-4">
+      <section className="min-w-0 max-w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Hôm nay
           </h2>
-          <button onClick={() => navigate({ to: "/calendar" })} className="text-xs text-primary">
+          <button
+            onClick={() => navigate({ to: "/calendar" })}
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-primary active:bg-primary/10"
+          >
             Lịch
           </button>
         </div>
@@ -90,7 +93,7 @@ function MobileHomePage() {
             Không có cuộc họp nào sắp tới.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden">
             {meetings.map((m) => (
               <MobileListItem
                 key={m.id}
@@ -115,14 +118,14 @@ function MobileHomePage() {
         )}
       </section>
 
-      <section>
+      <section className="min-w-0 max-w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Việc cần làm
           </h2>
           <button
             onClick={() => navigate({ to: "/m/tasks" as any })}
-            className="text-xs text-primary"
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-primary active:bg-primary/10"
           >
             Tất cả
           </button>
@@ -132,7 +135,7 @@ function MobileHomePage() {
             Không có việc nào đang chờ.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden">
             {tasks.map((t) => (
               <MobileListItem
                 key={t.id}
@@ -146,14 +149,14 @@ function MobileHomePage() {
         )}
       </section>
 
-      <section>
+      <section className="min-w-0 max-w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Thông báo mới
           </h2>
           <button
             onClick={() => navigate({ to: "/notifications" })}
-            className="text-xs text-primary"
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-primary active:bg-primary/10"
           >
             Xem tất cả
           </button>
@@ -163,7 +166,7 @@ function MobileHomePage() {
             Không có thông báo mới.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden">
             {notifications.map((n) => (
               <MobileListItem
                 key={n.id}
