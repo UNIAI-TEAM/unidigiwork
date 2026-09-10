@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   CalendarDays,
   Save,
+  GripVertical,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ import {
   type ProjectStatus,
 } from "@/lib/api/projects.functions";
 import { listAiSkills } from "@/lib/api/ai-skills.functions";
+import { transitionTask } from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/projects_/$id")({
   component: ProjectDetailPage,
@@ -178,8 +180,33 @@ function ProjectDetailPage() {
     return TASK_GROUPS.map((g) => ({
       ...g,
       items: tasks.filter((t) => t.status === g.key),
-    })).filter((g) => g.items.length > 0);
+    }));
   }, [tasks]);
+
+  // Kéo thả đổi trạng thái — vẫn đi qua command transitionTask, không ghi thẳng DB.
+  const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [dropGroup, setDropGroup] = useState<string | null>(null);
+  const transition = useMutation({
+    mutationFn: (p: { taskId: string; toStatus: string }) =>
+      transitionTask({
+        data: {
+          taskId: p.taskId,
+          toStatus: p.toStatus as never,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: (_d, p) => {
+      toast.success(`Đã chuyển sang “${TASK_STATUS_LABEL[p.toStatus] ?? p.toStatus}”`);
+      qc.invalidateQueries({ queryKey: ["project", id] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không đổi được trạng thái"),
+  });
+
+  function moveTask(taskId: string, toStatus: string) {
+    const current = tasks.find((t) => t.id === taskId);
+    if (!current || current.status === toStatus) return;
+    transition.mutate({ taskId, toStatus });
+  }
 
   const suggestedSkills = useMemo(() => {
     const skills = ((skillsQuery.data ?? []) as unknown as SkillRow[]).filter((s) => s.enabled);
@@ -275,12 +302,38 @@ function ProjectDetailPage() {
                     </p>
                   )}
                   <div className="mt-3 space-y-4">
+                    <p className="text-xs text-muted-foreground">
+                      Kéo công việc sang nhóm khác để đổi trạng thái. Trên điện thoại, chọn trạng
+                      thái trong danh sách thả xuống.
+                    </p>
                     {grouped.map((g) => (
-                      <div key={g.key}>
+                      <div
+                        key={g.key}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (dropGroup !== g.key) setDropGroup(g.key);
+                        }}
+                        onDragLeave={() => setDropGroup((c) => (c === g.key ? null : c))}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const taskId = dragTaskId || e.dataTransfer.getData("text/plain");
+                          setDropGroup(null);
+                          setDragTaskId(null);
+                          if (taskId) moveTask(taskId, g.key);
+                        }}
+                        className={`rounded-lg border border-dashed p-2 transition-colors ${
+                          dropGroup === g.key ? "border-primary bg-primary/5" : "border-transparent"
+                        }`}
+                      >
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           <span className={`h-2 w-2 rounded-full ${g.dot}`} />
                           {g.label} · {g.items.length}
                         </p>
+                        {g.items.length === 0 && (
+                          <p className="mt-2 rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+                            Thả công việc vào đây
+                          </p>
+                        )}
                         <ul className="mt-2 space-y-2">
                           {g.items.map((t) => {
                             const overdue =
@@ -290,20 +343,32 @@ function ProjectDetailPage() {
                             return (
                               <li
                                 key={t.id}
-                                className="rounded-lg border border-border p-3 transition-colors hover:bg-accent/40"
+                                draggable
+                                onDragStart={(e) => {
+                                  setDragTaskId(t.id);
+                                  e.dataTransfer.effectAllowed = "move";
+                                  e.dataTransfer.setData("text/plain", t.id);
+                                }}
+                                onDragEnd={() => {
+                                  setDragTaskId(null);
+                                  setDropGroup(null);
+                                }}
+                                className={`rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/40 sm:cursor-grab sm:active:cursor-grabbing ${
+                                  dragTaskId === t.id ? "opacity-50" : ""
+                                }`}
                               >
-                                <Link
-                                  to="/tasks/$id"
-                                  params={{ id: t.id }}
-                                  className="flex min-h-11 min-w-0 flex-wrap items-center justify-between gap-2"
-                                >
-                                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                                    {t.title}
-                                  </span>
+                                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                                  <Link
+                                    to="/tasks/$id"
+                                    params={{ id: t.id }}
+                                    className="flex min-h-11 min-w-0 flex-1 items-center gap-2"
+                                  >
+                                    <GripVertical className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
+                                    <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                                      {t.title}
+                                    </span>
+                                  </Link>
                                   <span className="flex shrink-0 items-center gap-1.5">
-                                    <Badge variant="outline">
-                                      {TASK_STATUS_LABEL[t.status] ?? t.status}
-                                    </Badge>
                                     {t.due_at && (
                                       <span
                                         className={`text-xs ${overdue ? "text-destructive" : "text-muted-foreground"}`}
@@ -315,8 +380,21 @@ function ProjectDetailPage() {
                                         {new Date(t.due_at).toLocaleDateString("vi-VN")}
                                       </span>
                                     )}
+                                    <select
+                                      aria-label={`Trạng thái: ${t.title}`}
+                                      value={t.status}
+                                      disabled={transition.isPending}
+                                      onChange={(e) => moveTask(t.id, e.target.value)}
+                                      className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                                    >
+                                      {TASK_GROUPS.map((s) => (
+                                        <option key={s.key} value={s.key}>
+                                          {TASK_STATUS_LABEL[s.key]}
+                                        </option>
+                                      ))}
+                                    </select>
                                   </span>
-                                </Link>
+                                </div>
                               </li>
                             );
                           })}
