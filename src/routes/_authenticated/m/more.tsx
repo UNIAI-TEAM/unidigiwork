@@ -36,7 +36,9 @@ function MorePage() {
 
   const groups = NAV_GROUPS.map((group) => ({
     group,
-    items: MOBILE_MORE_ITEMS.filter((i) => i.group === group.id && isNavItemVisible(i, { isAdmin })),
+    items: MOBILE_MORE_ITEMS.filter(
+      (i) => i.group === group.id && isNavItemVisible(i, { isAdmin }),
+    ),
   })).filter((g) => g.items.length > 0);
 
   return (

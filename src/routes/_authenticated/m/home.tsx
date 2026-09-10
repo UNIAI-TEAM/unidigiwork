@@ -21,7 +21,10 @@ export const Route = createFileRoute("/_authenticated/m/home")({
       { title: "Trang chủ · UNIWORK" },
       { name: "description", content: "Tổng quan công việc và hoạt động trên UNIWORK mobile." },
       { property: "og:title", content: "Trang chủ · UNIWORK" },
-      { property: "og:description", content: "Tổng quan công việc và hoạt động trên UNIWORK mobile." },
+      {
+        property: "og:description",
+        content: "Tổng quan công việc và hoạt động trên UNIWORK mobile.",
+      },
     ],
   }),
   component: MobileHomePage,
@@ -78,10 +81,7 @@ function MobileHomePage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Hôm nay
           </h2>
-          <button
-            onClick={() => navigate({ to: "/calendar" })}
-            className="text-xs text-primary"
-          >
+          <button onClick={() => navigate({ to: "/calendar" })} className="text-xs text-primary">
             Lịch
           </button>
         </div>

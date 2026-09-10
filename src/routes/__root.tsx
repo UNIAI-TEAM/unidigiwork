@@ -16,7 +16,6 @@ import { ThemeProvider } from "@/lib/theme";
 import { LanguageProvider } from "@/lib/i18n";
 import { setupOfflineSupport } from "@/lib/pwa";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -166,8 +165,6 @@ function RootComponent() {
   useEffect(() => {
     setupOfflineSupport();
   }, []);
-
-
 
   return (
     <QueryClientProvider client={queryClient}>

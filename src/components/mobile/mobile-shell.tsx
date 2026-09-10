@@ -154,7 +154,7 @@ function SwipeableMain({
 
 function MobileTopbar() {
   const navigate = useNavigate();
-  const { workspaceName, workspaceId, isLoading } = useActiveWorkspace();
+  const { workspaceName, isLoading } = useActiveWorkspace();
   const { unreadCount } = useUnreadNotifications();
 
   return (
