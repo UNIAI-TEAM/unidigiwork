@@ -493,6 +493,15 @@ function ProjectDetailPage() {
                                     </span>
                                   </Link>
                                   <span className="flex shrink-0 items-center gap-1.5">
+                                    {(t.assignees ?? []).length > 0 && (
+                                      <span
+                                        className="hidden max-w-36 truncate items-center gap-1 text-xs text-muted-foreground sm:inline-flex"
+                                        title={(t.assignees ?? []).map((a) => a.name).join(", ")}
+                                      >
+                                        <User className="h-3 w-3" />
+                                        {(t.assignees ?? []).map((a) => a.name).join(", ")}
+                                      </span>
+                                    )}
                                     {t.due_at && (
                                       <span
                                         className={`text-xs ${overdue ? "text-destructive" : "text-muted-foreground"}`}
