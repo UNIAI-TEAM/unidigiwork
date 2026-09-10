@@ -482,6 +482,18 @@ function AgentBuilderPage() {
                               </Badge>
                             ))}
                           </div>
+                          {suggestHubSkills(a).length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              <span className="text-xs text-muted-foreground">
+                                Skill Hub gợi ý:
+                              </span>
+                              {suggestHubSkills(a).map((s) => (
+                                <Badge key={s.id} variant="outline" className="gap-1 text-[11px]">
+                                  <Sparkles className="h-3 w-3 text-primary" /> {s.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                           {conds.length > 0 && (
                             <p className="mt-2 text-xs text-muted-foreground">
                               Điều kiện:{" "}
