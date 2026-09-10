@@ -4741,6 +4741,38 @@ export type Database = {
           },
         ]
       }
+      task_followers: {
+        Row: {
+          created_at: string
+          id: string
+          task_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          task_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          task_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_followers_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_saved_views: {
         Row: {
           created_at: string

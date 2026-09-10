@@ -126,7 +126,7 @@ function MobileTasksPage() {
                   <Badge variant="destructive">Bị chặn</Badge>
                 ) : null
               }
-              onClick={() => navigate({ to: "/tasks" as any })}
+              onClick={() => navigate({ to: "/m/tasks/$id", params: { id: t.id } })}
             />
           ))}
         </div>
