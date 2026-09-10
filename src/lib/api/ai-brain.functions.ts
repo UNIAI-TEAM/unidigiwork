@@ -7,7 +7,7 @@ import { ApiError } from "@/contracts/errors";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
-const Input = z.object({ workspaceId: z.string().uuid() });
+const Input = z.object({ workspaceId: z.string().uuid().nullable().optional() });
 
 export type AiBrainLogEntry = {
   id: string;
