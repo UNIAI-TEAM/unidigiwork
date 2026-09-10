@@ -579,3 +579,93 @@ export const addTaskComment = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true };
   });
+
+// ---------- Lịch họp của dự án ----------
+
+export type ProjectMeeting = {
+  id: string;
+  title: string;
+  agenda: string | null;
+  startAt: string;
+  endAt: string;
+  location: string | null;
+  status: string;
+};
+
+export const listProjectMeetings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ projectId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<ProjectMeeting[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("meetings")
+      .select("id, title, agenda, start_at, end_at, location, status")
+      .eq("project_id", data.projectId)
+      .is("deleted_at", null)
+      .order("start_at", { ascending: true })
+      .limit(100);
+    if (error) mapPgError(error);
+    return ((rows ?? []) as unknown as Array<Record<string, string | null>>).map((r) => ({
+      id: String(r["id"]),
+      title: String(r["title"]),
+      agenda: (r["agenda"] as string | null) ?? null,
+      startAt: String(r["start_at"]),
+      endAt: String(r["end_at"]),
+      location: (r["location"] as string | null) ?? null,
+      status: String(r["status"] ?? "scheduled"),
+    }));
+  });
+
+export const scheduleProjectMeeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        title: z.string().trim().min(1).max(500),
+        startAt: z.string().min(1),
+        endAt: z.string().min(1),
+        agenda: z.string().max(4000).optional().nullable(),
+        location: z.string().max(500).optional().nullable(),
+        timezone: z.string().max(64).default("Asia/Ho_Chi_Minh"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const start = new Date(data.startAt);
+    const end = new Date(data.endAt);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()))
+      throw new Error("INVALID_MEETING_TIME");
+    if (end <= start) throw new Error("MEETING_END_BEFORE_START");
+
+    const { data: project, error: pErr } = await context.supabase
+      .from("projects")
+      .select("id, workspace_id, name")
+      .eq("id", data.projectId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!project) throw new Error("PROJECT_NOT_FOUND");
+    const workspaceId = (project as unknown as { workspace_id: string }).workspace_id;
+
+    const res = await context.supabase.rpc("schedule_meeting", {
+      _workspace_id: workspaceId,
+      _title: data.title,
+      _start_at: start.toISOString(),
+      _end_at: end.toISOString(),
+      _agenda: data.agenda ?? undefined,
+      _timezone: data.timezone,
+      _location: data.location ?? undefined,
+      _idempotency_key: crypto.randomUUID(),
+    } as never);
+    if (res.error) mapPgError(res.error);
+    const meeting = res.data as unknown as { id: string } | null;
+    if (!meeting?.id) throw new Error("MEETING_NOT_CREATED");
+
+    const { error: linkErr } = await context.supabase
+      .from("meetings")
+      .update({ project_id: data.projectId } as never)
+      .eq("id", meeting.id);
+    if (linkErr) mapPgError(linkErr);
+
+    return { ok: true, meetingId: meeting.id };
+  });
