@@ -716,10 +716,20 @@ export function DocxRoundTripPanel({
               variant="ghost"
               className="h-7 gap-1 px-2 text-xs"
               disabled={!canEditProfile || autoWeights.isPending}
-              onClick={() => autoWeights.mutate("ALL")}
+              onClick={() => autoWeights.mutate({ scope: "ALL" })}
             >
               <Wand2 className="h-3 w-3" />
               Từ toàn bộ tài liệu tổ chức
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate({ scope: "ALL", apply: true })}
+            >
+              <Wand2 className="h-3 w-3" />
+              Tự điều chỉnh và áp dụng cho tổ chức
             </Button>
             <Button
               size="sm"
