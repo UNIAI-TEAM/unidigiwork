@@ -478,6 +478,42 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const proposals = (proposalsRes.data ?? []) as { title: string; action_type: string }[];
     const existing = (skillRes.data ?? []) as { code: string; name: string }[];
 
+    // Vai trò thực tế: công việc đang được giao cho từng nhân sự AI.
+    const [workersRes, aiTasksRes] = await Promise.all([
+      context.supabase.from("ai_workers").select("id, name, role").eq("tenant_id", tenantId),
+      context.supabase
+        .from("tasks")
+        .select("title, status, due_at, ai_worker_id, ai_execution_status")
+        .eq("tenant_id", tenantId)
+        .not("ai_worker_id", "is", null)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(60),
+    ]);
+    const aiWorkers = (workersRes.data ?? []) as { id: string; name: string; role: string }[];
+    const aiTasks = (aiTasksRes.data ?? []) as {
+      title: string;
+      status: string;
+      due_at: string | null;
+      ai_worker_id: string | null;
+      ai_execution_status: string | null;
+    }[];
+    const roleLines = aiWorkers
+      .map((w) => {
+        const own = aiTasks.filter((t) => t.ai_worker_id === w.id);
+        if (!own.length) return "";
+        return [
+          `- ${w.name} (${w.role}) đang phụ trách ${own.length} việc:`,
+          ...own
+            .slice(0, 8)
+            .map(
+              (t) =>
+                `  · ${t.title} [${t.status}${t.ai_execution_status ? "/" + t.ai_execution_status : ""}${t.due_at ? "/hạn " + t.due_at.slice(0, 10) : ""}]`,
+            ),
+        ].join("\n");
+      })
+      .filter(Boolean);
+
     const sampled = tasks.length + meetings.length + notifs.length + proposals.length;
     if (sampled === 0) {
       throw fail(
@@ -536,6 +572,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const corpus = [
       `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
       ...progressLines,
+      ...(roleLines.length ? ["VAI TRÒ NHÂN SỰ AI (việc đang được giao):", ...roleLines] : []),
       "CÔNG VIỆC:",
       ...tasks.map(
         (t) =>
