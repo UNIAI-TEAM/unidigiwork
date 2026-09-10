@@ -45,6 +45,7 @@ import { Route as AuthenticatedWorkCatalogRouteImport } from './routes/_authenti
 import { Route as AuthenticatedWorkBoardRouteImport } from './routes/_authenticated/work-board'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMRouteImport } from './routes/_authenticated/m'
@@ -73,6 +74,7 @@ import { Route as AuthenticatedWorkspaceAuditRouteImport } from './routes/_authe
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace.$id'
 import { Route as AuthenticatedWorkProductsIdRouteImport } from './routes/_authenticated/work-products_.$id'
 import { Route as AuthenticatedWorkCatalogCodeRouteImport } from './routes/_authenticated/work-catalog_.$code'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects_.$id'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
@@ -308,6 +310,11 @@ const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
   id: '/people',
   path: '/people',
@@ -461,6 +468,11 @@ const AuthenticatedWorkCatalogCodeRoute =
     path: '/work-catalog/$code',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/projects_/$id',
+  path: '/projects/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
   id: '/people_/$id',
   path: '/people/$id',
@@ -788,6 +800,7 @@ export interface FileRoutesByFullPath {
   '/m': typeof AuthenticatedMRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
+  '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
@@ -842,6 +855,7 @@ export interface FileRoutesByFullPath {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/work-catalog/$code': typeof AuthenticatedWorkCatalogCodeRoute
   '/work-products/$id': typeof AuthenticatedWorkProductsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
@@ -904,6 +918,7 @@ export interface FileRoutesByTo {
   '/m': typeof AuthenticatedMRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
+  '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
@@ -958,6 +973,7 @@ export interface FileRoutesByTo {
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/work-catalog/$code': typeof AuthenticatedWorkCatalogCodeRoute
   '/work-products/$id': typeof AuthenticatedWorkProductsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
@@ -1024,6 +1040,7 @@ export interface FileRoutesById {
   '/_authenticated/m': typeof AuthenticatedMRouteWithChildren
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work-board': typeof AuthenticatedWorkBoardRoute
@@ -1078,6 +1095,7 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
+  '/_authenticated/projects_/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/work-catalog_/$code': typeof AuthenticatedWorkCatalogCodeRoute
   '/_authenticated/work-products_/$id': typeof AuthenticatedWorkProductsIdRoute
   '/_authenticated/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
@@ -1144,6 +1162,7 @@ export interface FileRouteTypes {
     | '/m'
     | '/notifications'
     | '/people'
+    | '/projects'
     | '/search'
     | '/settings'
     | '/work-board'
@@ -1198,6 +1217,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
+    | '/projects/$id'
     | '/work-catalog/$code'
     | '/work-products/$id'
     | '/workspace/$id'
@@ -1260,6 +1280,7 @@ export interface FileRouteTypes {
     | '/m'
     | '/notifications'
     | '/people'
+    | '/projects'
     | '/search'
     | '/settings'
     | '/work-board'
@@ -1314,6 +1335,7 @@ export interface FileRouteTypes {
     | '/m/tasks'
     | '/notifications/$id'
     | '/people/$id'
+    | '/projects/$id'
     | '/work-catalog/$code'
     | '/work-products/$id'
     | '/workspace/$id'
@@ -1379,6 +1401,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m'
     | '/_authenticated/notifications'
     | '/_authenticated/people'
+    | '/_authenticated/projects'
     | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/_authenticated/work-board'
@@ -1433,6 +1456,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/tasks'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
+    | '/_authenticated/projects_/$id'
     | '/_authenticated/work-catalog_/$code'
     | '/_authenticated/work-products_/$id'
     | '/_authenticated/workspace/$id'
@@ -1757,6 +1781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/people': {
       id: '/_authenticated/people'
       path: '/people'
@@ -1951,6 +1982,13 @@ declare module '@tanstack/react-router' {
       path: '/work-catalog/$code'
       fullPath: '/work-catalog/$code'
       preLoaderRoute: typeof AuthenticatedWorkCatalogCodeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects_/$id': {
+      id: '/_authenticated/projects_/$id'
+      path: '/projects/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/people_/$id': {
@@ -2479,6 +2517,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMRoute: typeof AuthenticatedMRouteWithChildren
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkBoardRoute: typeof AuthenticatedWorkBoardRoute
@@ -2491,6 +2530,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
   AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedWorkCatalogCodeRoute: typeof AuthenticatedWorkCatalogCodeRoute
   AuthenticatedWorkProductsIdRoute: typeof AuthenticatedWorkProductsIdRoute
   AuthenticatedWorkspaceIdRoute: typeof AuthenticatedWorkspaceIdRoute
@@ -2519,6 +2559,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMRoute: AuthenticatedMRouteWithChildren,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkBoardRoute: AuthenticatedWorkBoardRoute,
@@ -2531,6 +2572,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
   AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedWorkCatalogCodeRoute: AuthenticatedWorkCatalogCodeRoute,
   AuthenticatedWorkProductsIdRoute: AuthenticatedWorkProductsIdRoute,
   AuthenticatedWorkspaceIdRoute: AuthenticatedWorkspaceIdRoute,
