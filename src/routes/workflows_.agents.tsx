@@ -252,15 +252,20 @@ function AgentBuilderPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AppSidebar active="workflows" open={open} onClose={() => setOpen(false)} />
+      <AppSidebar active="ai-brain" open={open} onClose={() => setOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
         <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <Link to="/workflows" className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" /> Workflows
-              </Link>
+              <div className="mb-1 flex flex-wrap items-center gap-3">
+                <Link to="/ai-brain" className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-4 w-4" /> Bộ não AI
+                </Link>
+                <Link to="/ai-brain/skills" className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                  Hồ sơ kỹ năng AI
+                </Link>
+              </div>
               <h1 className="flex items-center gap-2 text-2xl font-bold">
                 <Bot className="h-6 w-6 text-primary" /> Agent Builder
               </h1>
