@@ -5,8 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
+const authDescription = "Đăng nhập hoặc tạo tài khoản UNIWORK bằng email.";
+
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Đăng nhập — UNIWORK" }] }),
+  head: () => ({
+    meta: [
+      { title: "Đăng nhập · UNIWORK" },
+      { name: "description", content: authDescription },
+      { property: "og:title", content: "Đăng nhập · UNIWORK" },
+      { property: "og:description", content: authDescription },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: AuthPage,
 });
 

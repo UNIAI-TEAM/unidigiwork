@@ -16,7 +16,6 @@ import { ThemeProvider } from "@/lib/theme";
 import { LanguageProvider } from "@/lib/i18n";
 import { setupOfflineSupport } from "@/lib/pwa";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -143,7 +142,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -166,8 +165,6 @@ function RootComponent() {
   useEffect(() => {
     setupOfflineSupport();
   }, []);
-
-
 
   return (
     <QueryClientProvider client={queryClient}>

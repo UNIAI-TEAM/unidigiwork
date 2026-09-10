@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowsRouteImport } from './routes/workflows'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -125,6 +126,11 @@ import { Route as AuthenticatedAdminSellWorkPilotsPilotIdRouteImport } from './r
 const WorkflowsRoute = WorkflowsRouteImport.update({
   id: '/workflows',
   path: '/workflows',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -741,6 +747,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/ai-workforce': typeof AuthenticatedAiWorkforceRoute
@@ -853,6 +860,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/ai-workforce': typeof AuthenticatedAiWorkforceRoute
   '/billing': typeof AuthenticatedBillingRoute
@@ -967,6 +975,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRouteWithChildren
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/ai-workforce': typeof AuthenticatedAiWorkforceRoute
@@ -1082,6 +1091,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/terms'
+    | '/welcome'
     | '/workflows'
     | '/admin'
     | '/ai-workforce'
@@ -1194,6 +1204,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/tasks'
     | '/terms'
+    | '/welcome'
     | '/workflows'
     | '/ai-workforce'
     | '/billing'
@@ -1307,6 +1318,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/terms'
+    | '/welcome'
     | '/workflows'
     | '/_authenticated/admin'
     | '/_authenticated/ai-workforce'
@@ -1422,6 +1434,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRouteWithChildren
   TasksRoute: typeof TasksRoute
   TermsRoute: typeof TermsRoute
+  WelcomeRoute: typeof WelcomeRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
@@ -1448,6 +1461,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows'
       fullPath: '/workflows'
       preLoaderRoute: typeof WorkflowsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -2510,6 +2530,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRouteWithChildren,
   TasksRoute: TasksRoute,
   TermsRoute: TermsRoute,
+  WelcomeRoute: WelcomeRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
