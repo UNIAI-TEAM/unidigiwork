@@ -52,6 +52,16 @@ import {
   type AgentEvaluation,
 } from "@/lib/api/workflow-agents.functions";
 import { proposeAiAction } from "@/lib/api/ai-actions.functions";
+import { listAiSkills } from "@/lib/api/ai-skills.functions";
+
+type HubSkillRow = {
+  id: string;
+  name: string;
+  kind: string;
+  description: string | null;
+  enabled: boolean;
+  action_types: string[] | null;
+};
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import type { ProposedAiAction } from "@/domain/ai-actions/contracts";
 import {
