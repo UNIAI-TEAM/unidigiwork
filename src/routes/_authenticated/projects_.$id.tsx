@@ -27,6 +27,7 @@ import {
   type ProjectStatus,
 } from "@/lib/api/projects.functions";
 import { listAiSkills } from "@/lib/api/ai-skills.functions";
+import { transitionTask } from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/projects_/$id")({
   component: ProjectDetailPage,
