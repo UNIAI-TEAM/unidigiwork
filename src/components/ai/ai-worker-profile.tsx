@@ -12,11 +12,14 @@ export type AiWorkerProfile = (typeof AI_WORKER_PROFILES)[number];
 export function AiWorkerProfileHeader({ profile }: { profile: AiWorkerProfile }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-        <Bot className="h-7 w-7" />
-      </span>
+      <img
+        src={profile.avatarUrl}
+        alt={`Ảnh đại diện ${profile.name}`}
+        className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-primary/15"
+      />
       <div className="min-w-0">
         <p className="truncate text-base font-semibold">{profile.name}</p>
+        <p className="truncate text-sm font-medium text-primary">{profile.title}</p>
         <p className="text-sm text-muted-foreground">{profile.domain}</p>
       </div>
     </div>
@@ -50,7 +53,9 @@ export function AiWorkerProfileBody({ profile }: { profile: AiWorkerProfile }) {
   return (
     <div className="space-y-5 text-sm">
       <section>
-        <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Nhiệm vụ</h3>
+        <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Nhiệm vụ
+        </h3>
         <p className="text-muted-foreground">{profile.mission}</p>
       </section>
 
@@ -65,7 +70,9 @@ export function AiWorkerProfileBody({ profile }: { profile: AiWorkerProfile }) {
             <li key={s!.id} className="rounded-lg border border-border p-3">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="font-medium">{s!.name}</span>
-                <Badge variant="outline" className="text-[11px]">{AI_SKILL_KIND_LABELS[s!.kind]}</Badge>
+                <Badge variant="outline" className="text-[11px]">
+                  {AI_SKILL_KIND_LABELS[s!.kind]}
+                </Badge>
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground">{s!.description}</p>
               <p className="mt-0.5 text-xs italic text-muted-foreground">Ví dụ: {s!.example}</p>
@@ -95,7 +102,9 @@ export function AiWorkerProfileBody({ profile }: { profile: AiWorkerProfile }) {
       </section>
 
       <section>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Phạm vi công việc</h3>
+        <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Phạm vi công việc
+        </h3>
         <ul className="space-y-1 text-muted-foreground">
           {profile.responsibilities.map((r) => (
             <li key={r} className="flex gap-2">
