@@ -285,6 +285,24 @@ function MobileBoxPage() {
                       <Bell className="h-4 w-4" />
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-auto w-12 shrink-0 rounded-2xl"
+                    aria-label="Mở"
+                    onClick={it.onOpen}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-auto w-12 shrink-0 rounded-2xl"
+                    aria-label="Chia sẻ"
+                    onClick={() => void share(it)}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </SwipeRow>
             </li>
