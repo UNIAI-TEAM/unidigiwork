@@ -573,6 +573,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const corpus = [
       `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
       ...progressLines,
+      ...(roleLines.length ? ["VAI TRÒ NHÂN SỰ AI (việc đang được giao):", ...roleLines] : []),
       "CÔNG VIỆC:",
       ...tasks.map(
         (t) =>
