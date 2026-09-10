@@ -1516,7 +1516,7 @@ export function AppTopbar({
     <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/95 px-3 py-2.5 sm:gap-3 sm:px-5 lg:flex lg:gap-4">
       <button
         aria-label="Open sidebar"
-        className="rounded-lg p-2 hover:bg-surface-2 lg:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 lg:hidden"
         onClick={onOpenSidebar}
       >
         <Menu className="h-5 w-5" />
@@ -1572,7 +1572,7 @@ export function AppTopbar({
               }}
               aria-haspopup="dialog"
               aria-expanded={onNew ? undefined : newOpen}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-3"
+              className="flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-3"
             >
               <Plus className="h-4 w-4" />{" "}
               <span className="hidden sm:inline">{t("topbar.new")}</span>
@@ -1585,7 +1585,7 @@ export function AppTopbar({
               aria-haspopup="dialog"
               aria-expanded={aiOpen}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-2 text-sm hover:bg-surface-2/70 sm:px-3",
+                "flex min-h-11 items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-2 text-sm hover:bg-surface-2/70 sm:px-3",
                 aiOpen && "ring-1 ring-primary/40",
               )}
             >
@@ -1632,7 +1632,10 @@ export function AppTopbar({
       <div className="relative" ref={notifRef}>
         <button
           onClick={() => setNotifOpen((v) => !v)}
-          className={cn("relative rounded-lg p-2 hover:bg-surface-2", notifOpen && "bg-surface-2")}
+          className={cn(
+            "relative flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2",
+            notifOpen && "bg-surface-2",
+          )}
           aria-label={t("sh.notif.aria")}
           aria-haspopup="dialog"
           aria-expanded={notifOpen}
@@ -1652,7 +1655,10 @@ export function AppTopbar({
           aria-label={t("sh.cal.aria")}
           aria-haspopup="dialog"
           aria-expanded={calOpen}
-          className={cn("rounded-lg p-2 hover:bg-surface-2", calOpen && "bg-surface-2")}
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2",
+            calOpen && "bg-surface-2",
+          )}
         >
           <Calendar className="h-5 w-5 text-muted-foreground" />
         </button>
@@ -1664,7 +1670,7 @@ export function AppTopbar({
           aria-haspopup="menu"
           aria-expanded={userOpen}
           className={cn(
-            "flex items-center gap-2.5 rounded-xl border bg-surface-2/80 px-2 py-1.5 transition-colors hover:bg-surface-2",
+            "flex min-h-11 items-center gap-2.5 rounded-xl border bg-surface-2/80 px-2 py-1.5 transition-colors hover:bg-surface-2",
             userOpen ? "border-primary/60" : "border-border/60 hover:border-primary/40",
           )}
         >
@@ -1677,11 +1683,9 @@ export function AppTopbar({
             </span>
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-2 bg-emerald-400" />
           </span>
-          <div className="hidden text-left leading-tight sm:block">
-            <div className="whitespace-nowrap text-sm font-semibold">{identity.displayName}</div>
-            <div className="whitespace-nowrap text-[11px] text-muted-foreground">
-              {identity.roleLabel}
-            </div>
+          <div className="hidden min-w-0 max-w-28 text-left leading-tight sm:block">
+            <div className="truncate text-sm font-semibold">{identity.displayName}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{identity.roleLabel}</div>
           </div>
           <ChevronDown
             className={cn(

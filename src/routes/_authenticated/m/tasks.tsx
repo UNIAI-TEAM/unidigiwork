@@ -75,12 +75,12 @@ function MobileTasksPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm công việc..."
-          className="pl-9 pr-9"
+          className="h-11 pl-9 pr-11"
         />
         {search && (
           <button
             onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground"
             aria-label="Xóa"
           >
             <X className="h-4 w-4" />
@@ -88,12 +88,12 @@ function MobileTasksPage() {
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
         {["all", "todo", "in_progress", "blocked", "done"].map((s) => (
           <button
             key={s}
             onClick={() => setStatus(s)}
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+            className={`min-h-11 shrink-0 rounded-full px-4 py-2.5 text-sm font-medium ${
               status === s
                 ? "bg-primary text-primary-foreground"
                 : "border border-border bg-surface text-muted-foreground"
@@ -115,7 +115,9 @@ function MobileTasksPage() {
               key={t.id}
               title={t.title}
               subtitle={`${statusLabel[t.status]} · ${priorityLabel[t.priority]}`}
-              meta={t.due_at ? `Hạn: ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : "Không hạn"}
+              meta={
+                t.due_at ? `Hạn: ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : "Không hạn"
+              }
               priorityBar={t.priority}
               badge={
                 t.status === "done" ? (

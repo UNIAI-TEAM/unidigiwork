@@ -161,7 +161,7 @@ function MobileTopbar() {
     <header className="sticky top-0 z-40 grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background px-[max(1rem,env(safe-area-inset-left))] pb-3 pt-[max(.75rem,env(safe-area-inset-top))]">
       <button
         onClick={() => navigate({ to: "/m/more" })}
-        className="flex items-center gap-2"
+        className="flex h-11 w-11 shrink-0 items-center justify-center gap-2"
         aria-label="Menu"
       >
         <BrandMark className="h-8 w-8" />
@@ -178,7 +178,7 @@ function MobileTopbar() {
       </button>
 
       <div className="flex items-center gap-1">
-        <ThemeToggle className="grid h-9 w-9 place-items-center p-0" />
+        <ThemeToggle className="grid h-11 w-11 place-items-center p-0" />
         <Link
           to="/m/search"
           className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-surface-2"

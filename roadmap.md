@@ -8,3 +8,6 @@
 - [x] Features, Pricing and Help Center presentation
 - [x] Remaining primary screens presentation
 - [x] Responsive and runtime verification for this batch
+
+- [x] Optimize mobile Features, Pricing, Help Center, and Tasks
+- [x] Verify 360–440px overflow and 44px CTA targets

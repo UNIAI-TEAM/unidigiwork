@@ -87,7 +87,7 @@ function Landing() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-landing-canvas font-sans text-landing-ink">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-landing-line bg-landing-canvas/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto grid h-18 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 sm:px-6">
           <Brand />
           <nav
             className="hidden items-center gap-7 text-sm font-medium text-landing-muted lg:flex"
@@ -109,7 +109,7 @@ function Landing() {
               {t("land.nav.contact")}
             </Link>
           </nav>
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <LanguageToggle />
             <Button asChild variant="ghost" className="hidden text-landing-ink sm:inline-flex">
               <a href="#login">{t("land.nav.login")}</a>
@@ -124,7 +124,7 @@ function Landing() {
               type="button"
               variant="ghost"
               size="icon"
-              className="text-landing-ink lg:hidden"
+              className="h-11 w-11 text-landing-ink lg:hidden"
               aria-label={menuOpen ? t("land.nav.close") : t("land.nav.open")}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((value) => !value)}
@@ -140,22 +140,34 @@ function Landing() {
           >
             <div className="mx-auto grid max-w-7xl gap-1 text-sm font-medium">
               <a
-                className="rounded-lg px-3 py-3 hover:bg-landing-tint"
+                className="flex min-h-11 items-center rounded-lg px-3 py-3 hover:bg-landing-tint"
                 href="#platform"
                 onClick={() => setMenuOpen(false)}
               >
                 {t("land.nav.features")}
               </a>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/pricing">
+              <Link
+                className="flex min-h-11 items-center rounded-lg px-3 py-3 hover:bg-landing-tint"
+                to="/pricing"
+              >
                 {t("land.nav.pricing")}
               </Link>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/about">
+              <Link
+                className="flex min-h-11 items-center rounded-lg px-3 py-3 hover:bg-landing-tint"
+                to="/about"
+              >
                 {t("land.nav.about")}
               </Link>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/blog">
+              <Link
+                className="flex min-h-11 items-center rounded-lg px-3 py-3 hover:bg-landing-tint"
+                to="/blog"
+              >
                 Blog
               </Link>
-              <Link className="rounded-lg px-3 py-3 hover:bg-landing-tint" to="/contact">
+              <Link
+                className="flex min-h-11 items-center rounded-lg px-3 py-3 hover:bg-landing-tint"
+                to="/contact"
+              >
                 {t("land.nav.contact")}
               </Link>
             </div>
@@ -182,7 +194,7 @@ function Landing() {
               </span>
               <h1
                 id="landing-title"
-                className="mt-5 font-heading text-5xl font-bold leading-[1.05] sm:mt-6 sm:text-6xl lg:text-7xl"
+                className="mt-5 font-heading text-4xl font-bold leading-[1.08] sm:mt-6 sm:text-6xl lg:text-7xl"
               >
                 {t("land.hero.titleA")} <span className="text-landing-blue">+</span>
                 <br />
@@ -223,7 +235,7 @@ function Landing() {
               </div>
             </div>
           </div>
-          <figure className="relative h-[410px] overflow-hidden border-t border-landing-line sm:hidden">
+          <figure className="relative h-[min(410px,92vw)] min-h-72 overflow-hidden border-t border-landing-line sm:hidden">
             <img
               src={assetUrl(peopleAi)}
               alt=""
@@ -236,23 +248,23 @@ function Landing() {
 
         <section
           id="platform"
-          className="border-y border-landing-line bg-landing-soft py-20 sm:py-28"
+          className="border-y border-landing-line bg-landing-soft py-14 sm:py-28"
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold text-landing-blue">
                 {t("land.platform.eyebrow")}
               </p>
-              <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">
+              <h2 className="mt-3 font-heading text-3xl font-bold sm:text-5xl">
                 {t("land.feat.title")}
               </h2>
               <p className="mt-4 text-lg text-landing-muted">{t("land.feat.sub")}</p>
             </div>
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid gap-4 sm:mt-12 sm:grid-cols-2 lg:grid-cols-3">
               {capabilities.map((item) => (
                 <div
                   key={item.key}
-                  className="group rounded-xl border border-landing-line bg-landing-canvas p-6 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-landing-magenta/40 hover:shadow-lg sm:p-8"
+                  className="group min-w-0 rounded-xl border border-landing-line bg-landing-canvas p-5 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-landing-magenta/40 hover:shadow-lg sm:p-8"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-landing-tint text-landing-magenta">
                     <item.icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
@@ -444,12 +456,12 @@ function ProductBand({
     <section
       className={
         dark
-          ? "bg-landing-dark py-20 text-landing-on-dark sm:py-28"
-          : "bg-landing-canvas py-20 sm:py-28"
+          ? "bg-landing-dark py-14 text-landing-on-dark sm:py-28"
+          : "bg-landing-canvas py-14 sm:py-28"
       }
     >
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
-        <div className={reverse ? "lg:order-2" : ""}>
+      <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 sm:gap-12 sm:px-6 lg:grid-cols-2 lg:gap-20">
+        <div className={`min-w-0 ${reverse ? "lg:order-2" : ""}`}>
           <p
             className={
               dark
@@ -459,7 +471,7 @@ function ProductBand({
           >
             {eyebrow}
           </p>
-          <h2 className="mt-3 font-heading text-4xl font-bold sm:text-5xl">{title}</h2>
+          <h2 className="mt-3 font-heading text-3xl font-bold sm:text-5xl">{title}</h2>
           <p
             className={
               dark
@@ -485,7 +497,7 @@ function ProductBand({
             <Button
               asChild
               variant="ghost"
-              className="mt-7 px-0 text-landing-blue hover:bg-transparent hover:text-landing-blue/80"
+              className="mt-7 min-h-11 px-0 text-landing-blue hover:bg-transparent hover:text-landing-blue/80"
             >
               <Link to={action.to}>
                 {action.label}
@@ -565,7 +577,7 @@ function LoginPanel() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-lg border border-landing-line bg-landing-canvas p-6 shadow-xl shadow-landing-dark/5 sm:p-8"
+      className="min-w-0 rounded-lg border border-landing-line bg-landing-canvas p-5 shadow-xl shadow-landing-dark/5 sm:p-8"
     >
       <h3 className="font-heading text-2xl font-bold">
         {signupMode ? t("ac.8") : t("land.login.title")}
@@ -578,7 +590,7 @@ function LoginPanel() {
             <input
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
-              className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
+              className="mt-2 min-h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
             />
           </label>
         )}
@@ -590,7 +602,7 @@ function LoginPanel() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@company.com"
-            className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
+            className="mt-2 min-h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
           />
         </label>
         <label className="block text-sm font-medium">
@@ -601,7 +613,7 @@ function LoginPanel() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="••••••••"
-            className="mt-2 h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
+            className="mt-2 min-h-11 w-full rounded-lg border border-landing-line bg-landing-canvas px-3 outline-none focus:ring-2 focus:ring-landing-blue/30"
           />
         </label>
       </div>

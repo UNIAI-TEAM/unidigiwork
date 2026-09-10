@@ -46,16 +46,16 @@ export function FilterPageHeader({
           {chips.map((c) => (
             <span
               key={c.label}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs text-primary"
+              className="inline-flex min-h-11 items-center gap-1 rounded-full bg-primary/15 py-1 pl-3 pr-1 text-xs text-primary"
             >
               {c.label}
               {c.onClear && (
                 <button
                   onClick={c.onClear}
                   aria-label={`Bỏ lọc ${c.label}`}
-                  className="hover:opacity-70"
+                  className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-primary/10"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </span>
