@@ -146,10 +146,10 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                       />
                     )}
                     <Icon
-                        className={cn(
-                          NAV_ICON_CLASS,
-                          active ? "text-command-accent" : "text-current",
-                        )}
+                      className={cn(
+                        NAV_ICON_CLASS,
+                        active ? "text-command-accent" : "text-current",
+                      )}
                       strokeWidth={active ? NAV_ICON_STROKE_ACTIVE : NAV_ICON_STROKE}
                     />
                     {!collapsed && (

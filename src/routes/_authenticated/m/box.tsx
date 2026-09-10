@@ -208,7 +208,9 @@ function MobileBoxPage() {
       <header>
         <p className="module-label text-brand-blue">Bảng điều hành thống nhất</p>
         <h1 className="mt-1 font-heading text-2xl font-bold">Không gian của tôi</h1>
-        <p className="text-sm text-muted-foreground">Công việc và hộp việc của bạn ở cùng một nơi.</p>
+        <p className="text-sm text-muted-foreground">
+          Công việc và hộp việc của bạn ở cùng một nơi.
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">
           Mẹo: vuốt phải để duyệt, vuốt trái để hoãn.
         </p>

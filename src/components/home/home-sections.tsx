@@ -183,9 +183,7 @@ export function TodaySummary({ counts }: { counts: HomeSummary["counts"] | undef
           <it.icon
             className={cn(
               "h-[18px] w-[18px] shrink-0",
-              "warn" in it && it.warn && it.value > 0
-                ? "text-destructive"
-                : "text-command-accent",
+              "warn" in it && it.warn && it.value > 0 ? "text-destructive" : "text-command-accent",
             )}
             strokeWidth={1.75}
           />

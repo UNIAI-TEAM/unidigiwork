@@ -363,9 +363,7 @@ export function visibleNavigation(perms: NavPermissions) {
           i.group === group.id &&
           isNavItemVisible(i, perms) &&
           !(group.id === "my-space" && (i.id === "my-work" || i.id === "inbox")),
-      ).sort(
-        (a, b) => a.order - b.order,
-      ),
+      ).sort((a, b) => a.order - b.order),
     }))
     .filter((g) => g.items.length > 0);
 }
@@ -391,9 +389,9 @@ export function findActiveNavItem(pathname: string, perms: NavPermissions) {
 }
 
 /** Mobile: tối đa 5 tab chính (4 từ config + tab "Thêm"). */
-export const MOBILE_PRIMARY_ITEMS = NAV_ITEMS.filter(
-  (i) => i.mobile?.placement === "primary",
-).sort((a, b) => (a.mobile?.order ?? 0) - (b.mobile?.order ?? 0));
+export const MOBILE_PRIMARY_ITEMS = NAV_ITEMS.filter((i) => i.mobile?.placement === "primary").sort(
+  (a, b) => (a.mobile?.order ?? 0) - (b.mobile?.order ?? 0),
+);
 
 export const MOBILE_MORE_ITEMS = NAV_ITEMS.filter((i) => i.mobile?.placement === "more").sort(
   (a, b) => (a.mobile?.order ?? 0) - (b.mobile?.order ?? 0),
