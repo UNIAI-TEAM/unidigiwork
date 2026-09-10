@@ -37,6 +37,8 @@ import {
   reanalyzeWorkProductDocx,
   getAiProposalAccuracyReport,
   getDocxRecognitionReport,
+  suggestDocxWeightsFromContent,
+
   getWorkProductDocxChangeHistory,
   getTenantDocxProfile,
   saveTenantDocxProfile,
