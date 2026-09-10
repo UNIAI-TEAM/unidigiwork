@@ -165,6 +165,11 @@ function ProjectDetailPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không lưu được ghi chú"),
   });
 
+  const activityQuery = useQuery({
+    queryKey: ["project", id, "activity"],
+    queryFn: () => getProjectActivity({ data: { projectId: id, limit: 60 } }),
+  });
+
   const skillsQuery = useQuery({
     queryKey: ["ai-skills", project?.workspace_id ?? null],
     queryFn: () => listAiSkills({ data: { workspaceId: project?.workspace_id ?? null } }),
