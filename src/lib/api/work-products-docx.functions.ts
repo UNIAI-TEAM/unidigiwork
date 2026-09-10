@@ -2125,3 +2125,200 @@ export const getWorkProductDocxChangeHistory = createServerFn({ method: "GET" })
       },
     };
   });
+
+/* ---------- Gợi ý ghép tài liệu Word vào công việc/cuộc họp đã có trong bản đồ ---------- */
+
+export type WorkGraphMatchSuggestion = {
+  targetType: "TASK" | "MEETING" | "MEETING_ARTIFACT";
+  targetId: string;
+  title: string;
+  subtitle: string | null;
+  reason: string;
+  confidence: number;
+  alreadyLinked: boolean;
+};
+
+/**
+ * Đọc nội dung tài liệu (ưu tiên phần đã thay đổi) và đối chiếu với công việc,
+ * cuộc họp, biên bản/quyết định đang có của tổ chức để đề xuất liên kết.
+ * Không tự tạo liên kết — người dùng duyệt rồi mới gắn.
+ */
+export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        locale: z.string().max(8).default("vi"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<WorkGraphMatchSuggestion[]> => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_UNAVAILABLE" });
+
+    const { data: product } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id, title, business_type, summary")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const { data: blocks } = await context.supabase
+      .from("work_product_blocks")
+      .select("text, ordinal, source_anchor")
+      .eq("work_product_id", data.id)
+      .order("ordinal", { ascending: true })
+      .limit(400);
+    const content = ((blocks ?? []) as any[])
+      .map((b) => String(b.text ?? "").trim())
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, 12000);
+    if (!content.trim())
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "WORK_PRODUCT_EMPTY" });
+
+    const tenantId = product.tenant_id as string;
+    const [tasksRes, meetingsRes, artifactsRes, linksRes] = await Promise.all([
+      context.supabase
+        .from("tasks")
+        .select("id, title, status, description, updated_at")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(60),
+      context.supabase
+        .from("meetings")
+        .select("id, title, status, start_at")
+        .eq("tenant_id", tenantId)
+        .order("start_at", { ascending: false })
+        .limit(40),
+      context.supabase
+        .from("meeting_artifacts")
+        .select("id, title, kind, created_at")
+        .eq("tenant_id", tenantId)
+        .order("created_at", { ascending: false })
+        .limit(40),
+      context.supabase.rpc("get_work_context", {
+        _entity_type: "WORK_PRODUCT",
+        _entity_id: data.id,
+        _limit: 200,
+      }),
+    ]);
+
+    const linked = new Set<string>();
+    const rels = ((linksRes?.data as any)?.relationships ?? []) as any[];
+    for (const r of rels) linked.add(`${r.entityType}:${r.entityId}`);
+
+    type Cand = WorkGraphMatchSuggestion & { extra: string };
+    const candidates: Cand[] = [];
+    for (const t of ((tasksRes.data ?? []) as any[]).filter(Boolean))
+      candidates.push({
+        targetType: "TASK",
+        targetId: t.id,
+        title: t.title ?? "(Không tiêu đề)",
+        subtitle: t.status ?? null,
+        reason: "",
+        confidence: 0,
+        alreadyLinked: linked.has(`TASK:${t.id}`),
+        extra: String(t.description ?? "").slice(0, 300),
+      });
+    for (const m of ((meetingsRes.data ?? []) as any[]).filter(Boolean))
+      candidates.push({
+        targetType: "MEETING",
+        targetId: m.id,
+        title: m.title ?? "(Không tiêu đề)",
+        subtitle: m.start_at ? new Date(m.start_at).toLocaleString("vi-VN") : (m.status ?? null),
+        reason: "",
+        confidence: 0,
+        alreadyLinked: linked.has(`MEETING:${m.id}`),
+        extra: "",
+      });
+    for (const a of ((artifactsRes.data ?? []) as any[]).filter(Boolean))
+      candidates.push({
+        targetType: "MEETING_ARTIFACT",
+        targetId: a.id,
+        title: a.title ?? a.kind ?? "(Không tiêu đề)",
+        subtitle: a.kind ?? null,
+        reason: "",
+        confidence: 0,
+        alreadyLinked: linked.has(`MEETING_ARTIFACT:${a.id}`),
+        extra: "",
+      });
+    const open = candidates.filter((c) => !c.alreadyLinked);
+    if (!open.length) return [];
+
+    const list = open
+      .map(
+        (c, idx) =>
+          `#${idx + 1} [${c.targetType}] ${c.title}${c.subtitle ? ` (${c.subtitle})` : ""}` +
+          (c.extra ? `\n   mô tả: ${c.extra}` : ""),
+      )
+      .join("\n")
+      .slice(0, 12000);
+
+    const { streamText } = await import("ai");
+    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    const result = streamText({
+      model: createLovableResponsesProvider(apiKey).responses("openai/gpt-6-astra"),
+      providerOptions: {
+        openai: {
+          forceReasoning: true,
+          reasoningEffort: "low",
+          reasoningSummary: "auto",
+          store: false,
+          include: ["reasoning.encrypted_content"],
+        },
+      },
+      system:
+        "Bạn đối chiếu nội dung một tài liệu nghiệp vụ với danh sách công việc, cuộc họp và biên bản " +
+        "đang có trong tổ chức, rồi chỉ ra những mục thực sự liên quan để liên kết. " +
+        "Chỉ chọn mục có căn cứ rõ trong nội dung tài liệu; nếu không chắc thì bỏ qua. " +
+        "Không bịa mục mới, chỉ dùng số hiệu trong danh sách. " +
+        `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
+      messages: [
+        {
+          role: "user",
+          content:
+            `TÀI LIỆU: ${product.title} (${product.business_type})\n` +
+            `${product.summary ? `Tóm tắt: ${product.summary}\n` : ""}` +
+            `NỘI DUNG:\n${content}\n\n` +
+            `DANH SÁCH MỤC CÓ THỂ LIÊN KẾT:\n${list}\n\n` +
+            "Chọn tối đa 8 mục liên quan nhất. Mỗi dòng theo đúng mẫu:\n" +
+            "- #số :: LÝ DO: căn cứ trong tài liệu :: 0-100\n" +
+            "Số cuối là mức độ tin cậy. Không thêm giải thích ngoài các dòng đó.",
+        },
+      ],
+    });
+    const text = (await result.text).trim();
+
+    const out: WorkGraphMatchSuggestion[] = [];
+    const seen = new Set<string>();
+    for (const raw of text.split("\n")) {
+      const line = raw.replace(/^[-*\d.\s]+/, "").trim();
+      const m = /^#?(\d+)\s*::\s*(?:LÝ DO:|LY DO:|REASON:)?\s*(.+?)\s*::\s*(\d{1,3})\s*$/i.exec(
+        line,
+      );
+      if (!m) continue;
+      const idx = Number(m[1]) - 1;
+      const cand = open[idx];
+      if (!cand) continue;
+      const key = `${cand.targetType}:${cand.targetId}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        targetType: cand.targetType,
+        targetId: cand.targetId,
+        title: cand.title,
+        subtitle: cand.subtitle,
+        reason: m[2].slice(0, 400),
+        confidence: Math.max(0, Math.min(100, Number(m[3]))),
+        alreadyLinked: false,
+      });
+      if (out.length >= 8) break;
+    }
+    return out.sort((a, b) => b.confidence - a.confidence);
+  });
