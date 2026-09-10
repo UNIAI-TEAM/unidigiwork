@@ -50,6 +50,7 @@ export const Route = createFileRoute("/_authenticated/ai-workforce")({
 
 const TABS = [
   { id: "workers", label: "Nhân sự AI", icon: Bot },
+  { id: "assign", label: "Giao việc", icon: ClipboardList },
   { id: "contracts", label: "Hợp đồng AI", icon: BriefcaseBusiness },
   { id: "evaluation", label: "Đánh giá hiệu quả", icon: Gauge },
   { id: "skills", label: "Kỹ năng AI", icon: Sparkles },
