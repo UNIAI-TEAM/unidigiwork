@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette } from "@/components/command-palette";
@@ -28,8 +29,23 @@ function AuthenticatedLayout() {
   const active = useActiveTenant();
   const location = useLocation();
   const navigate = useNavigate();
+  const [offline, setOffline] = useState(
+    typeof navigator !== "undefined" && navigator.onLine === false,
+  );
 
-  if (active.isLoading) {
+  useEffect(() => {
+    const on = () => setOffline(false);
+    const off = () => setOffline(true);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+
+  // Ngoại tuyến: không chờ dữ liệu mạng, vẫn mở giao diện đã lưu đệm.
+  if (active.isLoading && !offline) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -38,7 +54,6 @@ function AuthenticatedLayout() {
   }
 
   // No tenant → onboarding (unless already there, hoặc đang ngoại tuyến).
-  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
   if (!active.data && !offline && !location.pathname.startsWith("/onboarding")) {
     navigate({ to: "/onboarding" });
     return null;
