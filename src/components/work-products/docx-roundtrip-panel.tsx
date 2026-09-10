@@ -37,9 +37,34 @@ import {
   reanalyzeWorkProductDocx,
   getAiProposalAccuracyReport,
   getDocxRecognitionReport,
+  getWorkProductDocxChangeHistory,
   getTenantDocxProfile,
   saveTenantDocxProfile,
 } from "@/lib/api/work-products-docx.functions";
+
+type ChangeHistoryEntry = {
+  id: string;
+  origin: string;
+  semanticRole: string | null;
+  before: string;
+  after: string;
+  editor: string;
+  decidedBy: string;
+};
+
+type ChangeHistory = {
+  items: Array<{
+    version: number;
+    summary: string;
+    createdAt: string;
+    aiGenerated: boolean;
+    author: string;
+    counts: { total: number; human: number; ai: number };
+    changes: ChangeHistoryEntry[];
+  }>;
+  pending: ChangeHistoryEntry[];
+  totals: { versions: number; changes: number; human: number; ai: number };
+};
 
 type RecognitionReport = {
   totalBlocks: number;
@@ -317,6 +342,13 @@ export function DocxRoundTripPanel({
     queryFn: () =>
       listWorkProductDocxVersions({ data: { id: productId } }) as Promise<DocxVersion[]>,
   });
+  const [openVersion, setOpenVersion] = useState<number | null>(null);
+  const { data: history } = useQuery({
+    queryKey: ["wp-docx-history", productId],
+    queryFn: () =>
+      getWorkProductDocxChangeHistory({ data: { id: productId } }) as Promise<ChangeHistory>,
+  });
+
   const compare = useMutation({
     mutationFn: () =>
       compareWorkProductDocxVersions({
@@ -1219,9 +1251,7 @@ export function DocxRoundTripPanel({
                 <button
                   type="button"
                   className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent/40"
-                  onClick={() =>
-                    setOpenVersion((cur) => (cur === v.version ? null : v.version))
-                  }
+                  onClick={() => setOpenVersion((cur) => (cur === v.version ? null : v.version))}
                 >
                   <Badge variant="outline">v{v.version}</Badge>
                   <span className="font-medium">{v.author}</span>
