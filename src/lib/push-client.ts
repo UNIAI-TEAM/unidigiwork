@@ -74,7 +74,7 @@ export async function subscribeToPush(vapidPublicKey: string): Promise<Serialize
   const permission = await Notification.requestPermission();
   if (permission !== "granted")
     throw new Error("Bạn cần cho phép quyền thông báo trong trình duyệt");
-  const reg = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
+  const reg = (await resolveRegistration(true))!;
   if (!reg.active) {
     await new Promise<void>((resolve) => {
       const sw = reg.installing ?? reg.waiting;
