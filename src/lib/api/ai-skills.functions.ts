@@ -435,7 +435,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         .limit(40),
       context.supabase
         .from("meetings")
-        .select("title, agenda, start_at")
+        .select("title, agenda, start_at, end_at, location, status, project_id")
         .eq("tenant_id", tenantId)
         .is("deleted_at", null)
         .order("start_at", { ascending: false })
