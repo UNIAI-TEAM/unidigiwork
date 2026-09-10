@@ -139,34 +139,9 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
             targetId: r.targetId,
             relationship: "REFERENCES",
           } as any,
-  });
-
-  // Gắn thật: AI đối chiếu nội dung rồi tạo liên kết ngay, không chỉ đề xuất.
-  type AutoLinkResult = {
-    linked: WorkGraphMatchSuggestion[];
-    skipped: WorkGraphMatchSuggestion[];
-    failed: Array<{ title: string; message: string }>;
-    minConfidence: number;
-    evaluated: number;
-  };
-  const [autoLinkResult, setAutoLinkResult] = useState<AutoLinkResult | null>(null);
-  const autoLinkMut = useMutation({
-    mutationFn: () =>
-      autoLinkWorkGraphMatches({
-        data: { id: workProductId, locale: "vi", idempotencyKey: crypto.randomUUID() } as any,
-      }) as Promise<AutoLinkResult>,
-    onSuccess: (r) => {
-      setAutoLinkResult(r);
-      setMatches(r.skipped.length ? r.skipped : null);
-      setPicked({});
-      if (r.linked.length) toast.success(`Đã gắn ${r.linked.length} mục vào bản đồ công việc`);
-      else toast.info("Chưa có mục nào đủ căn cứ để gắn tự động");
-      invalidate();
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Không gắn được theo nội dung"),
-  });
-
+        });
       }
+
       return rows.length;
     },
     onSuccess: (n) => {
