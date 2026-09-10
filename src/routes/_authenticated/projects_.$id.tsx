@@ -134,8 +134,8 @@ function ProjectDetailPage() {
                   {tasks.map((t) => (
                     <li key={t.id} className="rounded-lg border border-border p-3">
                       <Link
-                        to="/tasks/$taskId"
-                        params={{ taskId: t.id }}
+                        to="/tasks/$id"
+                        params={{ id: t.id }}
                         className="flex min-w-0 flex-wrap items-center justify-between gap-2 hover:underline"
                       >
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">
