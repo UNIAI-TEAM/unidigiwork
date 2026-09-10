@@ -399,6 +399,43 @@ export function DocxRoundTripPanel({
       ),
   });
 
+  // Tự học trọng số từ nội dung tài liệu Word thật, thay vì kéo tay từng thanh trượt.
+  type WeightSuggestion = {
+    weights: Weights;
+    changes: Array<{ key: string; role: string; from: number; to: number; reason: string }>;
+    analyzedBlocks: number;
+    analyzedDocuments: number;
+    scope: "THIS" | "ALL";
+  };
+  const [autoResult, setAutoResult] = useState<WeightSuggestion | null>(null);
+  const autoWeights = useMutation({
+    mutationFn: (scope: "THIS" | "ALL") =>
+      suggestDocxWeightsFromContent({
+        data: {
+          ...(scope === "THIS" ? { id: productId } : {}),
+          weights,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }) as Promise<WeightSuggestion>,
+    onSuccess: (r) => {
+      setAutoResult(r);
+      if (!r.changes.length) {
+        toast.success("Nội dung hiện tại đã khớp với trọng số đang dùng");
+        return;
+      }
+      saveWeights({ ...weights, ...r.weights });
+      toast.success(`Đã cập nhật ${r.changes.length} loại nhận diện theo nội dung tài liệu`);
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NO_DOCX_CONTENT")
+          ? "Chưa có nội dung tài liệu Word để phân tích."
+          : "Không tự cập nhật được trọng số.",
+      ),
+  });
+
+
+
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wp-change-ops", productId] });
     qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
