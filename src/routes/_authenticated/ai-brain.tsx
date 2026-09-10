@@ -1,11 +1,11 @@
 // AI BRAIN — trung tâm điều hành AI: đề xuất chờ duyệt, đội ngũ AI, nhật ký.
 // Chỉ đọc + dùng lại lớp hành động AI hiện có; AI không bao giờ tự thực thi.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bot, Check, Loader2, Shield, Sparkles, X } from "lucide-react";
+import { Bot, Check, ChevronDown, Loader2, Shield, Sparkles, X } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
