@@ -308,11 +308,7 @@ function WorkspaceManagePage() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="ws-edit-name">Tên workspace</Label>
-              <Input
-                id="ws-edit-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <Input id="ws-edit-name" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <TimezoneSelect value={timezone} onChange={setTimezone} />
             <div className="flex justify-end gap-2">
@@ -358,11 +354,7 @@ function WorkspaceManagePage() {
       </Dialog>
 
       {/* Phân quyền thành viên */}
-      <MembersDialog
-        workspace={membersOf}
-        onClose={() => setMembersOf(null)}
-        onChanged={refresh}
-      />
+      <MembersDialog workspace={membersOf} onClose={() => setMembersOf(null)} onChanged={refresh} />
     </div>
   );
 }
@@ -420,8 +412,7 @@ function MembersDialog({
   });
 
   const removeMut = useMutation({
-    mutationFn: (userId: string) =>
-      removeWorkspaceMember({ data: { workspaceId: wsId!, userId } }),
+    mutationFn: (userId: string) => removeWorkspaceMember({ data: { workspaceId: wsId!, userId } }),
     onSuccess: () => {
       toast.success("Đã gỡ thành viên");
       invalidate();
