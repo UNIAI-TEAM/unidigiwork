@@ -38,7 +38,8 @@ export function HomeCustomizePanel({
 }) {
   const { tone, setTone } = useTheme();
   const [dragKey, setDragKey] = useState<HomeSectionKey | null>(null);
-  const listRef = useRef<HTMLUListElement | null>(null);
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
 
   const setLayout = (layout: HomeLayout) => onChange({ ...prefs, layout });
   const toggle = (key: HomeSectionKey) =>
@@ -54,7 +55,7 @@ export function HomeCustomizePanel({
     setDragKey(key);
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
-    let current = key;
+    const current = key;
 
     const handleMove = (ev: PointerEvent) => {
       const el = document
@@ -62,13 +63,11 @@ export function HomeCustomizePanel({
         ?.closest<HTMLElement>("[data-home-key]");
       const overKey = el?.dataset["homeKey"] as HomeSectionKey | undefined;
       if (!overKey || overKey === current) return;
-      const from = prefs.order.indexOf(current);
-      const to = prefs.order.indexOf(overKey);
-      const next = reorder(prefs.order, from, to);
-      if (next !== prefs.order) {
-        current = overKey === current ? current : current;
-        onChange({ ...prefs, order: next });
-      }
+      const latest = prefsRef.current;
+      const from = latest.order.indexOf(current);
+      const to = latest.order.indexOf(overKey);
+      const next = reorder(latest.order, from, to);
+      if (next !== latest.order) onChange({ ...latest, order: next });
     };
     const handleUp = () => {
       setDragKey(null);
@@ -95,7 +94,9 @@ export function HomeCustomizePanel({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {saving ? <span className="hidden text-xs text-muted-foreground sm:inline">Đang lưu…</span> : null}
+          {saving ? (
+            <span className="hidden text-xs text-muted-foreground sm:inline">Đang lưu…</span>
+          ) : null}
           <button
             type="button"
             onClick={onReset}
@@ -121,10 +122,7 @@ export function HomeCustomizePanel({
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Khối hiển thị
           </div>
-          <ul
-            ref={listRef}
-            className="mt-2 divide-y divide-border overflow-hidden rounded-lg border border-border"
-          >
+          <ul className="mt-2 divide-y divide-border overflow-hidden rounded-lg border border-border">
             {prefs.order.map((key, idx) => {
               const meta = HOME_SECTION_META[key];
               return (
