@@ -168,14 +168,30 @@ function MobileBoxPage() {
     fyi: ((notifications.data as any[]) ?? []).filter((n) => !n.is_read).length,
   };
 
+  const share = async (item: BoxItem) => {
+    const url =
+      typeof window !== "undefined" ? `${window.location.origin}${item.href}` : item.href;
+    try {
+      if (typeof navigator !== "undefined" && "share" in navigator) {
+        await (navigator as any).share({ title: item.title, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép liên kết.");
+    } catch {
+      /* người dùng huỷ chia sẻ */
+    }
+  };
+
   const icon = (kind: BoxItem["kind"]) =>
     kind === "task" ? (
       <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
         <CheckSquare className="h-4 w-4" />
       </span>
     ) : kind === "product" ? (
-      <span className="grid h-9 w-9 place-items-center rounded-lg bg-warning/10 text-warning">
-        <FileText className="h-4 w-4" />
+      <span className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-lg bg-warning/10 text-warning">
+        <img src={coverImage} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <FileText className="relative h-4 w-4 text-primary-foreground drop-shadow" />
       </span>
     ) : (
       <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-muted-foreground">
