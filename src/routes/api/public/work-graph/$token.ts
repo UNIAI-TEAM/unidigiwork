@@ -47,6 +47,18 @@ export const Route = createFileRoute("/api/public/work-graph/$token")({
           return Response.json({ ok: false, error: "LINK_EXPIRED" }, { status: 404 });
         }
 
+        const { data: membership } = await (supabaseAdmin as any)
+          .from("tenant_members")
+          .select("user_id")
+          .eq("tenant_id", share.tenant_id)
+          .eq("user_id", viewerId)
+          .eq("status", "active")
+          .maybeSingle();
+        if (!membership) {
+          return Response.json({ ok: false, error: "NOT_A_MEMBER" }, { status: 403 });
+        }
+
+
         const [{ data: tenant }, graph] = await Promise.all([
           (supabaseAdmin as any)
             .from("tenants")
