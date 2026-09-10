@@ -217,7 +217,7 @@ export const seedDefaultAiSkills = createServerFn({ method: "POST" })
       updated_by: context.userId,
     }));
     if (rows.length === 0) return { inserted: 0 };
-    const { error } = await context.supabase.from("ai_skills").insert(rows as unknown as SkillRow);
+    const { error } = await context.supabase.from("ai_skills").insert(rows as never);
     if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     return { inserted: rows.length };
   });
@@ -585,9 +585,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     }
 
     if (rows.length > 0) {
-      const { error } = await context.supabase
-        .from("ai_skills")
-        .insert(rows as unknown as SkillRow);
+      const { error } = await context.supabase.from("ai_skills").insert(rows as never);
       if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     }
 
