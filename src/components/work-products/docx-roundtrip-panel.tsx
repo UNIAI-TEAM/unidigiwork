@@ -408,14 +408,22 @@ export function DocxRoundTripPanel({
   };
   const [autoResult, setAutoResult] = useState<WeightSuggestion | null>(null);
   const autoWeights = useMutation({
-    mutationFn: (scope: "THIS" | "ALL") =>
-      suggestDocxWeightsFromContent({
+    mutationFn: async (input: { scope: "THIS" | "ALL"; apply?: boolean }) => {
+      const r = (await suggestDocxWeightsFromContent({
         data: {
-          ...(scope === "THIS" ? { id: productId } : {}),
+          ...(input.scope === "THIS" ? { id: productId } : {}),
           weights,
           idempotencyKey: crypto.randomUUID(),
         },
-      }) as Promise<WeightSuggestion>,
+      })) as WeightSuggestion;
+      // Áp dụng ngay cho cả tổ chức: lưu hồ sơ nhận diện, không cần bấm thêm.
+      if (input.apply && r.changes.length) {
+        await saveTenantDocxProfile({
+          data: { weights: { ...weights, ...r.weights }, aiGuidance: guidance },
+        });
+      }
+      return { ...r, applied: Boolean(input.apply && r.changes.length) };
+    },
     onSuccess: (r) => {
       setAutoResult(r);
       if (!r.changes.length) {
@@ -423,6 +431,12 @@ export function DocxRoundTripPanel({
         return;
       }
       saveWeights({ ...weights, ...r.weights });
+      if (r.applied) {
+        void qc.invalidateQueries({ queryKey: ["tenant-docx-profile"] });
+        void qc.invalidateQueries({ queryKey: ["wp-docx-recognition"] });
+        toast.success(`Đã áp dụng ${r.changes.length} trọng số mới cho cả tổ chức`);
+        return;
+      }
       toast.success(`Đã cập nhật ${r.changes.length} loại nhận diện theo nội dung tài liệu`);
     },
     onError: (e: Error) =>
