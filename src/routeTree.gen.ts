@@ -79,6 +79,7 @@ import { Route as AuthenticatedMMeetRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
 import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
 import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
+import { Route as AuthenticatedMAiRouteImport } from './routes/_authenticated/m/ai'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email_.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
@@ -483,6 +484,11 @@ const AuthenticatedMChatRoute = AuthenticatedMChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMAiRoute = AuthenticatedMAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedEmailComposeRoute =
   AuthenticatedEmailComposeRouteImport.update({
     id: '/email_/compose',
@@ -770,6 +776,7 @@ export interface FileRoutesByFullPath {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/ai': typeof AuthenticatedMAiRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
   '/m/home': typeof AuthenticatedMHomeRoute
@@ -877,6 +884,7 @@ export interface FileRoutesByTo {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/ai': typeof AuthenticatedMAiRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
   '/m/home': typeof AuthenticatedMHomeRoute
@@ -988,6 +996,7 @@ export interface FileRoutesById {
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email_/compose': typeof AuthenticatedEmailComposeRoute
+  '/_authenticated/m/ai': typeof AuthenticatedMAiRoute
   '/_authenticated/m/chat': typeof AuthenticatedMChatRoute
   '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
   '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
@@ -1099,6 +1108,7 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/ai'
     | '/m/chat'
     | '/m/compose'
     | '/m/home'
@@ -1206,6 +1216,7 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/ai'
     | '/m/chat'
     | '/m/compose'
     | '/m/home'
@@ -1316,6 +1327,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/$id'
     | '/_authenticated/email_/$id'
     | '/_authenticated/email_/compose'
+    | '/_authenticated/m/ai'
     | '/_authenticated/m/chat'
     | '/_authenticated/m/compose'
     | '/_authenticated/m/home'
@@ -1883,6 +1895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMChatRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/ai': {
+      id: '/_authenticated/m/ai'
+      path: '/ai'
+      fullPath: '/m/ai'
+      preLoaderRoute: typeof AuthenticatedMAiRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/email_/compose': {
       id: '/_authenticated/email_/compose'
       path: '/email/compose'
@@ -2230,6 +2249,7 @@ const AuthenticatedDocumentsRouteWithChildren =
   )
 
 interface AuthenticatedMRouteChildren {
+  AuthenticatedMAiRoute: typeof AuthenticatedMAiRoute
   AuthenticatedMChatRoute: typeof AuthenticatedMChatRoute
   AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
   AuthenticatedMHomeRoute: typeof AuthenticatedMHomeRoute
@@ -2246,6 +2266,7 @@ interface AuthenticatedMRouteChildren {
 }
 
 const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
+  AuthenticatedMAiRoute: AuthenticatedMAiRoute,
   AuthenticatedMChatRoute: AuthenticatedMChatRoute,
   AuthenticatedMComposeRoute: AuthenticatedMComposeRoute,
   AuthenticatedMHomeRoute: AuthenticatedMHomeRoute,
