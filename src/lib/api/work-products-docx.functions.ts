@@ -2333,8 +2333,20 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       })
       .parse(i),
   )
-  .handler(async ({ data, context }): Promise<WorkGraphMatchSuggestion[]> => {
+  .handler(
+    async ({ data, context }): Promise<WorkGraphMatchSuggestion[]> =>
+      computeWorkGraphMatches(context.supabase as any, data.id, data.locale),
+  );
+
+/** Lõi đối chiếu nội dung tài liệu với công việc, cuộc họp, biên bản đang có của tổ chức. */
+async function computeWorkGraphMatches(
+  supabase: any,
+  productId: string,
+  locale: string,
+): Promise<WorkGraphMatchSuggestion[]> {
+  {
     const apiKey = process.env["LOVABLE_API_KEY"];
+
     if (!apiKey) throw new ApiError({ code: "INTERNAL_ERROR", message: "AI_UNAVAILABLE" });
 
     const { data: product } = await supabase
