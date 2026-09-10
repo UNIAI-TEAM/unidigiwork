@@ -185,19 +185,50 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
           <h4 className="text-sm font-semibold">Gắn theo nội dung tài liệu</h4>
           <Button
             size="sm"
-            variant="outline"
             className="ml-auto"
-            disabled={suggestMut.isPending}
+            disabled={autoLinkMut.isPending || suggestMut.isPending}
+            onClick={() => autoLinkMut.mutate()}
+          >
+            {autoLinkMut.isPending ? <Loader2 className="animate-spin" /> : <Link2 />}
+            Gắn tự động theo nội dung
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={suggestMut.isPending || autoLinkMut.isPending}
             onClick={() => suggestMut.mutate()}
           >
             {suggestMut.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
-            Phân tích và đề xuất
+            Chỉ đề xuất để duyệt
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          AI đọc nội dung tài liệu, đối chiếu với công việc, cuộc họp và biên bản đang có rồi đề
-          xuất mục nên gắn, kèm lý do. Bạn duyệt trước khi gắn.
+          "Gắn tự động" đọc nội dung thật của tài liệu và gắn ngay vào công việc, cuộc họp, biên bản
+          khớp nhất (từ mức tin cậy 55% trở lên). Bạn có thể gỡ lại bất cứ lúc nào ở danh sách liên
+          kết bên dưới.
         </p>
+        {autoLinkResult && (
+          <div className="space-y-1 rounded-md border bg-muted/40 p-2 text-xs">
+            <p>
+              Đã đối chiếu {autoLinkResult.evaluated} mục, gắn {autoLinkResult.linked.length} mục.
+            </p>
+            {autoLinkResult.linked.map((m) => (
+              <p key={`${m.targetType}:${m.targetId}`}>
+                <span className="font-medium">
+                  {TYPE_LABEL[m.targetType as TargetType] ?? m.targetType}: {m.title} (
+                  {m.confidence}%)
+                </span>{" "}
+                <span className="text-muted-foreground">— {m.reason}</span>
+              </p>
+            ))}
+            {autoLinkResult.failed.map((f, i) => (
+              <p key={`f${i}`} className="text-destructive">
+                Không gắn được {f.title}: {f.message}
+              </p>
+            ))}
+          </div>
+        )}
+
         {matches !== null && matches.length === 0 && !suggestMut.isPending && (
           <p className="text-xs text-muted-foreground">
             Không có mục nào đủ căn cứ. Bạn vẫn có thể chọn thủ công bên dưới.
