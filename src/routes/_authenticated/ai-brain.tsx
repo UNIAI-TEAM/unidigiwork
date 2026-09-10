@@ -135,6 +135,18 @@ function AiBrainPage() {
     onError: (e: Error) => toast.error(e.message || "Không thể bỏ qua đề xuất."),
   });
 
+  // Học kỹ năng mới từ một đề xuất đã duyệt; kỹ năng được lưu thẳng vào Skill Hub.
+  const learnSkill = useMutation({
+    mutationFn: (proposalId: string) =>
+      learnSkillFn({ data: { proposalId, workspaceId: workspaceId ?? null } }),
+    onSuccess: (skill: { name?: string } | null | undefined) => {
+      toast.success(`Đã thêm kỹ năng "${skill?.name ?? "mới"}" vào Skill Hub.`);
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ["ai-skills"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không tạo được kỹ năng từ đề xuất này."),
+  });
+
   // Mobile: thẻ đề xuất thu gọn mặc định, chạm để mở chi tiết.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) =>
