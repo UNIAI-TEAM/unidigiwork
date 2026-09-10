@@ -2622,7 +2622,6 @@ export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
     // Nếu không mục nào đạt ngưỡng, vẫn gắn mục khớp nội dung nhất để tài liệu không bị treo ngoài bản đồ.
     if (!chosen.length && open.length) chosen = open.slice(0, 1);
 
-
     const linked: WorkGraphMatchSuggestion[] = [];
     const failed: Array<{ title: string; message: string }> = [];
     for (const m of chosen) {
