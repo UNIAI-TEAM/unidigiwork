@@ -7,7 +7,6 @@
  */
 import {
   Home,
-  Inbox,
   ListChecks,
   Calendar,
   LayoutGrid,
@@ -20,7 +19,6 @@ import {
   Workflow,
   Bot,
   BotMessageSquare,
-  LayoutDashboard,
   BarChart3,
   Users,
   ShieldCheck,
