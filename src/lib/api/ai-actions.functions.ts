@@ -98,7 +98,6 @@ export const proposeAiAction = createServerFn({ method: "POST" })
       }
     }
 
-
     // Ngữ cảnh grounding (best-effort, chỉ đọc).
     let contextBlock = "";
     let sourceRefs = data.sourceRefs ?? [];
