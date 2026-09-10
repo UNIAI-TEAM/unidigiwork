@@ -180,12 +180,62 @@ function ProjectDetailPage() {
     return { done, overdue, pct, total: tasks.length };
   }, [tasks]);
 
+  // Bộ lọc + tìm kiếm trong danh sách công việc.
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [dueFilter, setDueFilter] = useState("all");
+
+  const assigneeOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of tasks)
+      for (const a of t.assignees ?? []) map.set(a.id, a.name);
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [tasks]);
+
+  const hasFilter =
+    searchText.trim() !== "" ||
+    statusFilter !== "all" ||
+    assigneeFilter !== "all" ||
+    dueFilter !== "all";
+
+  function clearFilters() {
+    setSearchText("");
+    setStatusFilter("all");
+    setAssigneeFilter("all");
+    setDueFilter("all");
+  }
+
+  const filteredTasks = useMemo(() => {
+    const now = Date.now();
+    const weekAhead = now + 7 * 24 * 3600 * 1000;
+    const q = searchText.trim().toLowerCase();
+    return tasks.filter((t) => {
+      if (q && !`${t.title}`.toLowerCase().includes(q)) return false;
+      if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (
+        assigneeFilter !== "all" &&
+        !(t.assignees ?? []).some((a) => a.id === assigneeFilter)
+      )
+        return false;
+      if (dueFilter !== "all") {
+        const due = t.due_at ? new Date(t.due_at).getTime() : null;
+        if (dueFilter === "overdue" && !(due && due < now && t.status !== "done"))
+          return false;
+        if (dueFilter === "this_week" && !(due && due >= now && due <= weekAhead))
+          return false;
+        if (dueFilter === "no_due" && due !== null) return false;
+      }
+      return true;
+    });
+  }, [tasks, searchText, statusFilter, assigneeFilter, dueFilter]);
+
   const grouped = useMemo(() => {
     return TASK_GROUPS.map((g) => ({
       ...g,
-      items: tasks.filter((t) => t.status === g.key),
+      items: filteredTasks.filter((t) => t.status === g.key),
     }));
-  }, [tasks]);
+  }, [filteredTasks]);
 
   // Kéo thả đổi trạng thái — vẫn đi qua command transitionTask, không ghi thẳng DB.
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
