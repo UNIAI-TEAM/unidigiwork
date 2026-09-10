@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Bot, BriefcaseBusiness, Gauge, Plus, Sparkles, Users } from "lucide-react";
+import { Bot, BriefcaseBusiness, ClipboardList, Gauge, Plus, Sparkles, Users } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listAiEmployments } from "@/lib/api/ai-market.functions";
