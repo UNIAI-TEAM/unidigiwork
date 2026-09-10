@@ -211,6 +211,13 @@ function MobileBoxPage() {
         <p className="mt-1 text-xs text-muted-foreground">
           Mẹo: vuốt phải để duyệt, vuốt trái để hoãn.
         </p>
+        <Button
+          variant="outline"
+          className="mt-3 min-h-11 w-full"
+          onClick={() => navigate({ to: "/work-board" })}
+        >
+          <FileText className="mr-2 h-4 w-4" /> Gắn tài liệu vào công việc
+        </Button>
       </header>
 
       <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1">
