@@ -217,7 +217,7 @@ export const seedDefaultAiSkills = createServerFn({ method: "POST" })
       updated_by: context.userId,
     }));
     if (rows.length === 0) return { inserted: 0 };
-    const { error } = await context.supabase.from("ai_skills").insert(rows);
+    const { error } = await context.supabase.from("ai_skills").insert(rows as never);
     if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     return { inserted: rows.length };
   });
@@ -409,4 +409,194 @@ export const createAiSkillFromProposal = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     return inserted;
+  });
+
+/**
+ * SKILL HUB — "đào tạo lại" danh mục kỹ năng từ DỮ LIỆU THẬT của tổ chức:
+ * công việc, cuộc họp, thông báo gần đây và các đề xuất đã duyệt.
+ * AI đề xuất tối đa 5 kỹ năng mới; kỹ năng trùng mã/tên sẽ bị bỏ qua.
+ */
+export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
+    await assertCanEditSkills(context, tenantId);
+
+    const [tasksRes, meetingsRes, notifsRes, proposalsRes, skillRes] = await Promise.all([
+      context.supabase
+        .from("tasks")
+        .select("title, status, priority, due_at, tags")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(40),
+      context.supabase
+        .from("meetings")
+        .select("title, agenda, start_at")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .order("start_at", { ascending: false })
+        .limit(15),
+      context.supabase
+        .from("notifications")
+        .select("type, title")
+        .eq("tenant_id", tenantId)
+        .order("created_at", { ascending: false })
+        .limit(30),
+      context.supabase
+        .from("ai_action_proposals")
+        .select("title, action_type, status")
+        .eq("tenant_id", tenantId)
+        .eq("status", "SUCCEEDED")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      context.supabase
+        .from("ai_skills")
+        .select("code, name")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null),
+    ]);
+
+    const tasks = (tasksRes.data ?? []) as {
+      title: string;
+      status: string;
+      priority: string | null;
+      due_at: string | null;
+      tags: string[] | null;
+    }[];
+    const meetings = (meetingsRes.data ?? []) as {
+      title: string;
+      agenda: string | null;
+      start_at: string;
+    }[];
+    const notifs = (notifsRes.data ?? []) as { type: string; title: string }[];
+    const proposals = (proposalsRes.data ?? []) as { title: string; action_type: string }[];
+    const existing = (skillRes.data ?? []) as { code: string; name: string }[];
+
+    const sampled = tasks.length + meetings.length + notifs.length + proposals.length;
+    if (sampled === 0) {
+      throw fail(
+        "NO_DATA",
+        "Chưa có công việc, cuộc họp hay thông báo nào để AI học. Hãy thêm dữ liệu rồi thử lại.",
+      );
+    }
+
+    const now = Date.now();
+    const overdue = tasks.filter(
+      (t) => t.due_at && new Date(t.due_at).getTime() < now && t.status !== "done",
+    ).length;
+
+    const corpus = [
+      `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
+      "CÔNG VIỆC:",
+      ...tasks.map(
+        (t) =>
+          `- ${t.title} [${t.status}${t.priority ? "/" + t.priority : ""}${
+            t.due_at ? "/hạn " + t.due_at.slice(0, 10) : ""
+          }]${(t.tags ?? []).length ? " #" + (t.tags ?? []).join(" #") : ""}`,
+      ),
+      "CUỘC HỌP:",
+      ...meetings.map((m) => `- ${m.title}${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`),
+      "THÔNG BÁO:",
+      ...notifs.map((n) => `- [${n.type}] ${n.title}`),
+      "ĐỀ XUẤT ĐÃ DUYỆT:",
+      ...proposals.map((p) => `- [${p.action_type}] ${p.title}`),
+      "KỸ NĂNG ĐÃ CÓ (không lặp lại):",
+      ...existing.map((s) => `- ${s.code}: ${s.name}`),
+    ]
+      .join("\n")
+      .slice(0, 12000);
+
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw fail("AI_PROVIDER_UNAVAILABLE", "Trợ lý AI hiện chưa sẵn sàng.");
+    const { streamText } = await import("ai");
+    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    const provider = createLovableResponsesProvider(apiKey);
+
+    const result = streamText({
+      model: provider.responses("openai/gpt-6-astra"),
+      providerOptions: {
+        openai: { forceReasoning: true, reasoningEffort: "low", store: false },
+      },
+      system:
+        "Bạn thiết kế kỹ năng AI cho nền tảng công việc UNIWORK dựa trên dữ liệu thật của một tổ chức. " +
+        "Tìm các tình huống LẶP LẠI trong dữ liệu và đề xuất tối đa 5 kỹ năng thực sự hữu ích, bằng tiếng Việt. " +
+        'CHỈ trả về JSON thuần dạng {"skills":[{"name":string,"code":string,"kind":string,"description":string,"example":string,"actionTypes":string[]}]}. ' +
+        `code: CHỮ HOA A-Z 0-9 _ (2-40 ký tự), không trùng kỹ năng đã có. kind ∈ ${AI_SKILL_KINDS.join("|")}. ` +
+        `actionTypes: chỉ trong ${AI_ACTION_TYPES.join(",")}; rỗng nếu chỉ tra cứu/phân tích/soạn thảo. ` +
+        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu.",
+      prompt: corpus,
+    });
+
+    const text = (await result.text) ?? "";
+    const raw = text.replace(/```json|```/g, "").trim();
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start < 0 || end <= start) throw fail("AI_ERROR", "AI chưa học được kỹ năng, hãy thử lại.");
+    let parsed: { skills?: unknown };
+    try {
+      parsed = JSON.parse(raw.slice(start, end + 1)) as { skills?: unknown };
+    } catch {
+      throw fail("AI_ERROR", "AI chưa học được kỹ năng, hãy thử lại.");
+    }
+
+    const kinds = AI_SKILL_KINDS as readonly string[];
+    const actions = AI_ACTION_TYPES as readonly string[];
+    const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+    const takenCodes = new Set(existing.map((s) => s.code));
+    const takenNames = new Set(existing.map((s) => s.name.toLowerCase()));
+
+    const rows: Record<string, unknown>[] = [];
+    for (const item of (Array.isArray(parsed.skills) ? parsed.skills : []).slice(0, 5)) {
+      const s = item as Record<string, unknown>;
+      const name = str(s["name"], 200);
+      if (!name || takenNames.has(name.toLowerCase())) continue;
+      let code =
+        str(s["code"], 40)
+          .toUpperCase()
+          .replace(/[^A-Z0-9_]/g, "_")
+          .replace(/^_+|_+$/g, "") || "SKILL_HOC";
+      let n = 2;
+      const base = code.slice(0, 52);
+      while (takenCodes.has(code)) code = `${base}_${n++}`;
+      takenCodes.add(code);
+      takenNames.add(name.toLowerCase());
+      rows.push({
+        tenant_id: tenantId,
+        workspace_id: null,
+        code,
+        name,
+        kind: kinds.includes(String(s["kind"])) ? String(s["kind"]) : "ANALYSIS",
+        description: str(s["description"], 2000),
+        example: str(s["example"], 500),
+        action_types: Array.isArray(s["actionTypes"])
+          ? (s["actionTypes"] as unknown[]).map(String).filter((a) => actions.includes(a))
+          : [],
+        sources: ["WORKFLOW_AGENT"],
+        enabled: true,
+        is_system: false,
+        created_by: context.userId,
+        updated_by: context.userId,
+      });
+    }
+
+    if (rows.length > 0) {
+      const { error } = await context.supabase.from("ai_skills").insert(rows as never);
+      if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
+    }
+
+    return {
+      created: rows.length,
+      names: rows.map((r) => r["name"] as string),
+      sampled: {
+        tasks: tasks.length,
+        overdueTasks: overdue,
+        meetings: meetings.length,
+        notifications: notifs.length,
+        approvedProposals: proposals.length,
+      },
+    };
   });

@@ -13,7 +13,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useI18n } from "@/lib/i18n";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
-import { createAiSkillFromProposal } from "@/lib/api/ai-skills.functions";
+import { createAiSkillFromProposal, retrainAiSkillsFromWork } from "@/lib/api/ai-skills.functions";
 import {
   cancelAiAction,
   confirmAiAction,
@@ -99,6 +99,7 @@ function AiBrainPage() {
   const confirmFn = useServerFn(confirmAiAction);
   const cancelFn = useServerFn(cancelAiAction);
   const learnSkillFn = useServerFn(createAiSkillFromProposal);
+  const retrainFn = useServerFn(retrainAiSkillsFromWork);
 
   const overview = useQuery({
     queryKey: ["ai-brain", "overview", workspaceId],
@@ -149,6 +150,29 @@ function AiBrainPage() {
     onError: (e: Error) => toast.error(e.message || "Không tạo được kỹ năng từ đề xuất này."),
   });
 
+  // Đào tạo lại từ dữ liệu thật: công việc, cuộc họp, thông báo, đề xuất đã duyệt.
+  const retrain = useMutation({
+    mutationFn: () => retrainFn({ data: { workspaceId: workspaceId ?? null } }),
+    onSuccess: (r: {
+      created: number;
+      names: string[];
+      sampled: {
+        tasks: number;
+        overdueTasks: number;
+        meetings: number;
+        notifications: number;
+        approvedProposals: number;
+      };
+    }) => {
+      const src = `${r.sampled.tasks} công việc · ${r.sampled.meetings} cuộc họp · ${r.sampled.notifications} thông báo`;
+      if (r.created === 0) toast.info(`Đã học lại từ ${src}. Chưa có kỹ năng mới cần thêm.`);
+      else toast.success(`Đã học ${r.created} kỹ năng mới từ ${src}: ${r.names.join(", ")}`);
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ["ai-skills"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không đào tạo lại được."),
+  });
+
   // Mobile: thẻ đề xuất thu gọn mặc định, chạm để mở chi tiết.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) =>
@@ -174,6 +198,19 @@ function AiBrainPage() {
               <p className="mt-1 text-sm text-muted-foreground">{t("aiBrain.subtitle")}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="default"
+                className="min-h-11"
+                disabled={retrain.isPending}
+                onClick={() => retrain.mutate()}
+              >
+                {retrain.isPending ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 h-4 w-4" />
+                )}
+                Đào tạo lại từ dữ liệu thật
+              </Button>
               <Link
                 to="/workflows/agents"
                 search={{ profile: undefined }}
