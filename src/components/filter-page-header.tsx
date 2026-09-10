@@ -18,8 +18,8 @@ export function FilterPageHeader({
   chips?: { label: string; onClear?: () => void }[];
 }) {
   return (
-    <div className="mb-4">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+    <div className="mb-6">
+      <nav aria-label="Breadcrumb" className="module-label flex flex-wrap items-center gap-1 text-muted-foreground">
         {crumbs.map((c, i) => (
           <span key={`${c.label}-${i}`} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="h-3 w-3 opacity-60" />}
@@ -35,8 +35,8 @@ export function FilterPageHeader({
           </span>
         ))}
       </nav>
-      <h1 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
-      {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+      <h1 className="mt-2 font-heading text-2xl font-bold sm:text-3xl">{title}</h1>
+      {description && <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{description}</p>}
       {chips && chips.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-muted-foreground" />

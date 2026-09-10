@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 const authDescription = "Đăng nhập hoặc tạo tài khoản UNIWORK bằng email.";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Đăng nhập · UNIWORK" },
@@ -101,13 +102,13 @@ function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-panel sm:p-8">
         <div className="mb-4 flex items-center gap-2">
           <BrandMark className="h-9 w-9" />
           <div>
-            <div className="text-base font-bold tracking-wide">UNIWORK</div>
-            <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
+            <div className="font-heading text-base font-bold">UNIWORK</div>
+            <div className="module-label text-muted-foreground">Digital Workplace Platform</div>
           </div>
         </div>
         {reset ? (
@@ -116,7 +117,7 @@ function AuthPage() {
             <p className="mt-1 text-xs text-muted-foreground">{t("ac.13")}</p>
           </div>
         ) : (
-          <div className="mb-4 flex rounded-lg bg-surface-2 p-0.5">
+          <div className="mb-5 flex rounded-xl bg-surface-2 p-1">
             {(["signin", "code", "signup"] as const).map((m) => (
               <button
                 key={m}
@@ -126,7 +127,7 @@ function AuthPage() {
                   setCodeSent(false);
                   setCode("");
                 }}
-                className={`flex-1 rounded-md px-1 py-1.5 text-xs font-medium sm:text-sm ${mode === m ? "bg-background text-foreground shadow" : "text-muted-foreground"}`}
+                className={`min-h-10 flex-1 rounded-lg px-1 py-1.5 text-xs font-semibold sm:text-sm ${mode === m ? "bg-background text-foreground shadow-card" : "text-muted-foreground"}`}
               >
                 {m === "signin" ? t("ac.1") : m === "code" ? t("otp.1") : t("ac.2")}
               </button>
