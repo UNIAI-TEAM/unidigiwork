@@ -1,8 +1,9 @@
-// Trang xem bản đồ công việc bằng liên kết công khai — chỉ đọc, không cần đăng nhập.
-import { createFileRoute } from "@tanstack/react-router";
+// Trang xem bản đồ công việc bằng liên kết chia sẻ — chỉ đọc, yêu cầu đăng nhập bằng email.
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 type PublicGraph = {
   ok: boolean;
