@@ -34,15 +34,15 @@ export const askUniCopilot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => CopilotSchema.parse(i))
   .handler(async ({ data, context }): Promise<UniCopilotResponse> => {
-    const {
-      checkCopilotRateLimit,
-      parseCopilotModelOutput,
-      buildCopilotUserPrompt,
-    } = await import("./ai-copilot.server");
+    const { checkCopilotRateLimit, parseCopilotModelOutput, buildCopilotUserPrompt } =
+      await import("./ai-copilot.server");
     const { buildAiContextPack, renderContextForModel } = await import("./ai-context.server");
 
     if (!checkCopilotRateLimit(context.userId)) {
-      throw new ApiError({ code: "RATE_LIMITED", message: "Bạn đang hỏi quá nhanh. Thử lại sau ít giây." });
+      throw new ApiError({
+        code: "RATE_LIMITED",
+        message: "Bạn đang hỏi quá nhanh. Thử lại sau ít giây.",
+      });
     }
 
     const totalStart = Date.now();
@@ -68,10 +68,44 @@ export const askUniCopilot = createServerFn({ method: "POST" })
       });
     }
     const contextMs = Date.now() - ctxStart;
+
+    // Kỹ năng đang bật của tổ chức (Skill Hub) — cho Super Agent biết nó được đề xuất những gì.
+    let skillBlock = "";
+    if (pack.tenantId) {
+      const { data: skills } = await context.supabase
+        .from("ai_skills")
+        .select("name, kind, description, action_types")
+        .eq("tenant_id", pack.tenantId)
+        .eq("enabled", true)
+        .is("deleted_at", null)
+        .limit(40);
+      const list = (skills ?? []) as {
+        name: string;
+        kind: string;
+        description: string | null;
+        action_types: string[] | null;
+      }[];
+      if (list.length > 0) {
+        skillBlock =
+          "\n\nKỸ NĂNG ĐANG BẬT CỦA TỔ CHỨC (Skill Hub) — chỉ đề xuất trong phạm vi này:\n" +
+          list
+            .map(
+              (sk) =>
+                `- ${sk.name} [${sk.kind}${
+                  (sk.action_types ?? []).length ? "/" + (sk.action_types ?? []).join(",") : ""
+                }]${sk.description ? ": " + sk.description.slice(0, 200) : ""}`,
+            )
+            .join("\n");
+      }
+    }
     const safeSources = usableSources(pack.sources);
 
     const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "UNI hiện chưa thể trả lời. Vui lòng thử lại." });
+    if (!apiKey)
+      throw new ApiError({
+        code: "AI_GATEWAY_UNAVAILABLE",
+        message: "UNI hiện chưa thể trả lời. Vui lòng thử lại.",
+      });
 
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
     const provider = createLovableResponsesProvider(apiKey);
@@ -86,20 +120,32 @@ export const askUniCopilot = createServerFn({ method: "POST" })
         prompt: buildCopilotUserPrompt({
           query: data.query,
           intent,
-          contextBlock: renderContextForModel(pack),
+          contextBlock: renderContextForModel(pack) + skillBlock,
           conversation: data.history ?? [],
         }),
         maxOutputTokens: 1100,
         temperature: 0.2,
         providerOptions: {
-          openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false },
+          openai: {
+            forceReasoning: true,
+            reasoningEffort: "low",
+            reasoningSummary: "auto",
+            store: false,
+          },
         },
       });
       raw = await result.text;
       const u = await result.usage;
-      usage = { inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0, model: MODEL };
+      usage = {
+        inputTokens: u?.inputTokens ?? 0,
+        outputTokens: u?.outputTokens ?? 0,
+        model: MODEL,
+      };
     } catch {
-      throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "UNI hiện chưa thể trả lời. Vui lòng thử lại." });
+      throw new ApiError({
+        code: "AI_GATEWAY_UNAVAILABLE",
+        message: "UNI hiện chưa thể trả lời. Vui lòng thử lại.",
+      });
     }
     const providerMs = Date.now() - provStart;
 
@@ -124,14 +170,21 @@ export const askUniCopilot = createServerFn({ method: "POST" })
         ? { type: packRoot.entityType, id: packRoot.entityId, title: packRoot.title }
         : null;
 
-    const citedSources = (validated.citedSources.length ? validated.citedSources : safeSources.slice(0, 3)).map((s) => ({
+    const citedSources = (
+      validated.citedSources.length ? validated.citedSources : safeSources.slice(0, 3)
+    ).map((s) => ({
       entityType: s.entityType,
       title: s.title,
     }));
-    const askedQuestions = [...(data.history ?? []).filter((t) => t.role === "user").map((t) => t.content), data.query];
+    const askedQuestions = [
+      ...(data.history ?? []).filter((t) => t.role === "user").map((t) => t.content),
+      data.query,
+    ];
     const suggestions = buildFollowUpSuggestions({
       intent,
-      root: resolvedRoot ? { type: resolvedRoot.type, id: resolvedRoot.id, title: resolvedRoot.title } : null,
+      root: resolvedRoot
+        ? { type: resolvedRoot.type, id: resolvedRoot.id, title: resolvedRoot.title }
+        : null,
       citedSources,
       askedQuestions,
       modelSuggestions: parsed.suggestions,
@@ -166,7 +219,9 @@ export const askUniCopilot = createServerFn({ method: "POST" })
       suggestions,
       partial: pack.partial,
       ambiguity: pack.ambiguity ?? null,
-      rootContextKey: rootContextKey(resolvedRoot ? { type: resolvedRoot.type, id: resolvedRoot.id } : null),
+      rootContextKey: rootContextKey(
+        resolvedRoot ? { type: resolvedRoot.type, id: resolvedRoot.id } : null,
+      ),
       resolvedRoot,
       usage,
       timings: { contextMs, providerMs, totalMs: Date.now() - totalStart },
