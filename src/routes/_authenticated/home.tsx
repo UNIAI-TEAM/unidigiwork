@@ -310,6 +310,8 @@ function HomePage() {
     mywork: (
       <SectionCard
         title="Công việc của tôi"
+        collapsible
+        count={openTasks.length}
         action={
           <div className="flex items-center gap-3">
             <span className="hidden text-xs text-muted-foreground md:inline">
@@ -391,7 +393,12 @@ function HomePage() {
     ),
 
     upcoming: (
-      <SectionCard title="Sắp tới" action={<ViewAll to="/calendar" />}>
+      <SectionCard
+        title="Sắp tới"
+        collapsible
+        count={data?.upcoming.length ?? 0}
+        action={<ViewAll to="/calendar" />}
+      >
         {partialSet.has("upcoming") ? (
           <PartialNotice
             label="Không tải được lịch họp/deadline."
@@ -418,7 +425,12 @@ function HomePage() {
     ),
 
     inbox: (
-      <SectionCard title="Hộp việc" action={<ViewAll to="/notifications" />}>
+      <SectionCard
+        title="Hộp việc"
+        collapsible
+        count={data?.inbox.length ?? 0}
+        action={<ViewAll to="/notifications" />}
+      >
         {partialSet.has("unread") ? (
           <PartialNotice
             label="Không lấy được số liệu chưa đọc (nhắc đến, email). Danh sách có thể chưa đầy đủ."
