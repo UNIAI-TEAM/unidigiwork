@@ -58,7 +58,6 @@ export const Route = createFileRoute("/api/public/work-graph/$token")({
           return Response.json({ ok: false, error: "NOT_A_MEMBER" }, { status: 403 });
         }
 
-
         const [{ data: tenant }, graph] = await Promise.all([
           (supabaseAdmin as any)
             .from("tenants")
