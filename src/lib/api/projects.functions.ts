@@ -17,6 +17,7 @@ export type ProjectRow = {
   name: string;
   code: string | null;
   description: string | null;
+  notes: string | null;
   status: ProjectStatus;
   color: string | null;
   tags: string[];
@@ -142,6 +143,7 @@ const upsertShape = {
   name: z.string().min(1).max(200),
   code: z.string().max(40).optional().nullable(),
   description: z.string().max(4000).optional().nullable(),
+  notes: z.string().max(8000).optional().nullable(),
   status: statusSchema.default("planning"),
   color: z.string().max(30).optional().nullable(),
   tags: z.array(z.string().max(50)).max(30).default([]),
@@ -163,6 +165,7 @@ export const createProject = createServerFn({ method: "POST" })
         name: data.name,
         code: data.code || null,
         description: data.description || null,
+        notes: data.notes || null,
         status: data.status,
         color: data.color || null,
         tags: data.tags,
@@ -196,6 +199,7 @@ export const updateProject = createServerFn({ method: "POST" })
     if (data.name !== undefined) patch.name = data.name;
     if (data.code !== undefined) patch.code = data.code || null;
     if (data.description !== undefined) patch.description = data.description || null;
+    if (data.notes !== undefined) patch.notes = data.notes ?? null;
     if (data.status !== undefined) patch.status = data.status;
     if (data.color !== undefined) patch.color = data.color || null;
     if (data.tags !== undefined) patch.tags = data.tags;

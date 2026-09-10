@@ -3862,6 +3862,7 @@ export type Database = {
           due_date: string | null
           id: string
           name: string
+          notes: string | null
           owner_id: string | null
           start_date: string | null
           status: string
@@ -3881,6 +3882,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           name: string
+          notes?: string | null
           owner_id?: string | null
           start_date?: string | null
           status?: string
@@ -3900,6 +3902,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           name?: string
+          notes?: string | null
           owner_id?: string | null
           start_date?: string | null
           status?: string

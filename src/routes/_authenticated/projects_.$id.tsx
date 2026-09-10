@@ -1,12 +1,32 @@
-// Chi tiết dự án — thông tin, tiến độ và công việc thuộc dự án.
-import { useMemo } from "react";
+// Chi tiết dự án — bảng công việc, tiến độ, ghi chú và gợi ý kỹ năng AI từ Skill Hub.
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Folder, Loader2, ListChecks } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  Folder,
+  Loader2,
+  ListChecks,
+  StickyNote,
+  Sparkles,
+  AlertTriangle,
+  CalendarDays,
+  Save,
+} from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { getProject, type ProjectRow, type ProjectStatus } from "@/lib/api/projects.functions";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  getProject,
+  updateProject,
+  type ProjectRow,
+  type ProjectStatus,
+} from "@/lib/api/projects.functions";
+import { listAiSkills } from "@/lib/api/ai-skills.functions";
 
 export const Route = createFileRoute("/_authenticated/projects_/$id")({
   component: ProjectDetailPage,
@@ -15,12 +35,12 @@ export const Route = createFileRoute("/_authenticated/projects_/$id")({
       { title: "Chi tiết dự án · UNIWORK" },
       {
         name: "description",
-        content: "Xem tiến độ, thời hạn và danh sách công việc thuộc dự án trong UNIWORK.",
+        content: "Xem tiến độ, thời hạn, ghi chú và danh sách công việc thuộc dự án trong UNIWORK.",
       },
       { property: "og:title", content: "Chi tiết dự án · UNIWORK" },
       {
         property: "og:description",
-        content: "Tiến độ dự án và công việc liên quan trong UNIWORK.",
+        content: "Tiến độ dự án, công việc liên quan và gợi ý kỹ năng AI trong UNIWORK.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -36,6 +56,14 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   canceled: "Đã hủy",
 };
 
+const TASK_GROUPS: { key: string; label: string; dot: string }[] = [
+  { key: "in_progress", label: "Đang làm", dot: "bg-primary" },
+  { key: "todo", label: "Cần làm", dot: "bg-muted-foreground" },
+  { key: "blocked", label: "Bị chặn", dot: "bg-destructive" },
+  { key: "done", label: "Hoàn thành", dot: "bg-emerald-500" },
+  { key: "canceled", label: "Đã hủy", dot: "bg-muted" },
+];
+
 const TASK_STATUS_LABEL: Record<string, string> = {
   todo: "Cần làm",
   in_progress: "Đang làm",
@@ -44,9 +72,66 @@ const TASK_STATUS_LABEL: Record<string, string> = {
   canceled: "Đã hủy",
 };
 
+type SkillRow = {
+  id: string;
+  name: string;
+  description: string;
+  kind: string;
+  enabled: boolean;
+  action_types: string[];
+};
+
+const STOPWORDS = new Set([
+  "và",
+  "của",
+  "cho",
+  "các",
+  "một",
+  "dự",
+  "án",
+  "công",
+  "việc",
+  "the",
+  "for",
+  "with",
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "danger";
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p
+        className={`mt-1 text-xl font-semibold ${tone === "danger" ? "text-destructive" : ""}`}
+        suppressHydrationWarning
+      >
+        {value}
+      </p>
+      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
 function ProjectDetailPage() {
   const [open, setOpen] = useSidebarState();
   const { id } = Route.useParams();
+  const qc = useQueryClient();
 
   const query = useQuery({
     queryKey: ["project", id],
@@ -56,10 +141,65 @@ function ProjectDetailPage() {
   const project = query.data?.project as ProjectRow | undefined;
   const tasks = query.data?.tasks ?? [];
 
-  const pct = useMemo(() => {
-    if (tasks.length === 0) return 0;
-    return Math.round((tasks.filter((t) => t.status === "done").length / tasks.length) * 100);
+  const [notes, setNotes] = useState("");
+  const [notesDirty, setNotesDirty] = useState(false);
+  useEffect(() => {
+    if (project && !notesDirty) setNotes(project.notes ?? "");
+  }, [project, notesDirty]);
+
+  const update = useServerFn(updateProject);
+  const saveNotes = useMutation({
+    mutationFn: async () => update({ data: { projectId: id, notes } }),
+    onSuccess: () => {
+      setNotesDirty(false);
+      toast.success("Đã lưu ghi chú");
+      qc.invalidateQueries({ queryKey: ["project", id] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không lưu được ghi chú"),
+  });
+
+  const skillsQuery = useQuery({
+    queryKey: ["ai-skills", project?.workspace_id ?? null],
+    queryFn: () => listAiSkills({ data: { workspaceId: project?.workspace_id ?? null } }),
+    enabled: !!project,
+  });
+
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const done = tasks.filter((t) => t.status === "done").length;
+    const overdue = tasks.filter(
+      (t) => t.status !== "done" && t.due_at && new Date(t.due_at).getTime() < now,
+    ).length;
+    const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+    return { done, overdue, pct, total: tasks.length };
   }, [tasks]);
+
+  const grouped = useMemo(() => {
+    return TASK_GROUPS.map((g) => ({
+      ...g,
+      items: tasks.filter((t) => t.status === g.key),
+    })).filter((g) => g.items.length > 0);
+  }, [tasks]);
+
+  const suggestedSkills = useMemo(() => {
+    const skills = ((skillsQuery.data ?? []) as unknown as SkillRow[]).filter((s) => s.enabled);
+    if (!project || skills.length === 0) return [];
+    const corpus = new Set(
+      tokenize(
+        [project.name, project.description ?? "", ...tasks.slice(0, 40).map((t) => t.title)].join(
+          " ",
+        ),
+      ),
+    );
+    return skills
+      .map((s) => {
+        const words = tokenize(`${s.name} ${s.description}`);
+        const hits = Array.from(new Set(words.filter((w) => corpus.has(w))));
+        return { skill: s, score: hits.length, hits };
+      })
+      .sort((a, b) => b.score - a.score || a.skill.name.localeCompare(b.skill.name))
+      .slice(0, 5);
+  }, [skillsQuery.data, project, tasks]);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -92,9 +232,13 @@ function ProjectDetailPage() {
                     <Folder className="h-6 w-6 text-primary" />
                     <span className="min-w-0 break-words">{project.name}</span>
                   </h1>
-                  {project.code && (
-                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">{project.code}</p>
-                  )}
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {project.code && <span className="font-mono">{project.code}</span>}
+                    <span className="inline-flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {project.start_date ?? "—"} → {project.due_date ?? "—"}
+                    </span>
+                  </p>
                 </div>
                 <Badge>{STATUS_LABEL[project.status]}</Badge>
               </div>
@@ -105,55 +249,154 @@ function ProjectDetailPage() {
                 </p>
               )}
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground">Tiến độ</p>
-                  <p className="mt-1 text-xl font-semibold">{pct}%</p>
-                  <Progress value={pct} className="mt-2 h-2" />
+                  <p className="mt-1 text-xl font-semibold">{stats.pct}%</p>
+                  <Progress value={stats.pct} className="mt-2 h-2" />
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-xs text-muted-foreground">Ngày bắt đầu</p>
-                  <p className="mt-1 text-xl font-semibold">{project.start_date ?? "—"}</p>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-xs text-muted-foreground">Hạn hoàn thành</p>
-                  <p className="mt-1 text-xl font-semibold">{project.due_date ?? "—"}</p>
-                </div>
+                <StatCard label="Tổng công việc" value={String(stats.total)} />
+                <StatCard label="Hoàn thành" value={String(stats.done)} />
+                <StatCard
+                  label="Quá hạn"
+                  value={String(stats.overdue)}
+                  tone={stats.overdue > 0 ? "danger" : undefined}
+                />
               </div>
 
-              <section className="mt-6 rounded-xl border border-border bg-card p-4">
-                <h2 className="flex items-center gap-2 font-semibold">
-                  <ListChecks className="h-4 w-4 text-primary" /> Công việc ({tasks.length})
-                </h2>
-                {tasks.length === 0 && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Chưa có công việc nào gắn với dự án này.
-                  </p>
-                )}
-                <ul className="mt-3 space-y-2">
-                  {tasks.map((t) => (
-                    <li key={t.id} className="rounded-lg border border-border p-3">
-                      <Link
-                        to="/tasks/$id"
-                        params={{ id: t.id }}
-                        className="flex min-w-0 flex-wrap items-center justify-between gap-2 hover:underline"
-                      >
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                          {t.title}
-                        </span>
-                        <span className="flex shrink-0 items-center gap-1.5">
-                          <Badge variant="outline">{TASK_STATUS_LABEL[t.status] ?? t.status}</Badge>
-                          {t.due_at && (
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(t.due_at).toLocaleDateString("vi-VN")}
-                            </span>
-                          )}
-                        </span>
+              <div className="mt-5 grid gap-4 xl:grid-cols-3">
+                <section className="rounded-xl border border-border bg-card p-4 xl:col-span-2">
+                  <h2 className="flex items-center gap-2 font-semibold">
+                    <ListChecks className="h-4 w-4 text-primary" /> Công việc ({tasks.length})
+                  </h2>
+                  {tasks.length === 0 && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Chưa có công việc nào gắn với dự án này.
+                    </p>
+                  )}
+                  <div className="mt-3 space-y-4">
+                    {grouped.map((g) => (
+                      <div key={g.key}>
+                        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <span className={`h-2 w-2 rounded-full ${g.dot}`} />
+                          {g.label} · {g.items.length}
+                        </p>
+                        <ul className="mt-2 space-y-2">
+                          {g.items.map((t) => {
+                            const overdue =
+                              t.status !== "done" &&
+                              !!t.due_at &&
+                              new Date(t.due_at).getTime() < Date.now();
+                            return (
+                              <li
+                                key={t.id}
+                                className="rounded-lg border border-border p-3 transition-colors hover:bg-accent/40"
+                              >
+                                <Link
+                                  to="/tasks/$id"
+                                  params={{ id: t.id }}
+                                  className="flex min-h-11 min-w-0 flex-wrap items-center justify-between gap-2"
+                                >
+                                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                                    {t.title}
+                                  </span>
+                                  <span className="flex shrink-0 items-center gap-1.5">
+                                    <Badge variant="outline">
+                                      {TASK_STATUS_LABEL[t.status] ?? t.status}
+                                    </Badge>
+                                    {t.due_at && (
+                                      <span
+                                        className={`text-xs ${overdue ? "text-destructive" : "text-muted-foreground"}`}
+                                        suppressHydrationWarning
+                                      >
+                                        {overdue && (
+                                          <AlertTriangle className="mr-1 inline h-3 w-3" />
+                                        )}
+                                        {new Date(t.due_at).toLocaleDateString("vi-VN")}
+                                      </span>
+                                    )}
+                                  </span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="space-y-4">
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <h2 className="flex items-center gap-2 font-semibold">
+                      <StickyNote className="h-4 w-4 text-primary" /> Ghi chú
+                    </h2>
+                    <Textarea
+                      rows={6}
+                      className="mt-3"
+                      value={notes}
+                      onChange={(e) => {
+                        setNotes(e.target.value);
+                        setNotesDirty(true);
+                      }}
+                      placeholder="Ghi chú nội bộ: rủi ro, quyết định, việc cần theo dõi…"
+                    />
+                    <Button
+                      className="mt-3 min-h-11 w-full"
+                      disabled={!notesDirty || saveNotes.isPending}
+                      onClick={() => saveNotes.mutate()}
+                    >
+                      {saveNotes.isPending ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-1.5 h-4 w-4" />
+                      )}
+                      Lưu ghi chú
+                    </Button>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="flex items-center gap-2 font-semibold">
+                        <Sparkles className="h-4 w-4 text-primary" /> Kỹ năng AI gợi ý
+                      </h2>
+                      <Link to="/ai-brain/skills" className="text-xs text-primary hover:underline">
+                        Skill Hub
                       </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                    </div>
+                    {skillsQuery.isLoading && (
+                      <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Đang tìm kỹ năng…
+                      </p>
+                    )}
+                    {!skillsQuery.isLoading && suggestedSkills.length === 0 && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Chưa có kỹ năng nào đang bật để gợi ý cho dự án này.
+                      </p>
+                    )}
+                    <ul className="mt-3 space-y-2">
+                      {suggestedSkills.map(({ skill, score, hits }) => (
+                        <li key={skill.id} className="rounded-lg border border-border p-3">
+                          <div className="flex min-w-0 items-start justify-between gap-2">
+                            <p className="min-w-0 flex-1 text-sm font-medium">{skill.name}</p>
+                            <Badge variant={score > 0 ? "default" : "outline"} className="shrink-0">
+                              {score > 0 ? "Phù hợp" : "Có thể dùng"}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {skill.description}
+                          </p>
+                          {hits.length > 0 && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Liên quan: {hits.slice(0, 4).join(", ")}
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+              </div>
             </>
           )}
         </main>
