@@ -45,6 +45,7 @@ import { Route as AuthenticatedWorkCatalogRouteImport } from './routes/_authenti
 import { Route as AuthenticatedWorkBoardRouteImport } from './routes/_authenticated/work-board'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMRouteImport } from './routes/_authenticated/m'
@@ -306,6 +307,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
@@ -788,6 +794,7 @@ export interface FileRoutesByFullPath {
   '/m': typeof AuthenticatedMRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
+  '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
@@ -904,6 +911,7 @@ export interface FileRoutesByTo {
   '/m': typeof AuthenticatedMRouteWithChildren
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
+  '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
@@ -1024,6 +1032,7 @@ export interface FileRoutesById {
   '/_authenticated/m': typeof AuthenticatedMRouteWithChildren
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work-board': typeof AuthenticatedWorkBoardRoute
@@ -1144,6 +1153,7 @@ export interface FileRouteTypes {
     | '/m'
     | '/notifications'
     | '/people'
+    | '/projects'
     | '/search'
     | '/settings'
     | '/work-board'
@@ -1260,6 +1270,7 @@ export interface FileRouteTypes {
     | '/m'
     | '/notifications'
     | '/people'
+    | '/projects'
     | '/search'
     | '/settings'
     | '/work-board'
@@ -1379,6 +1390,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m'
     | '/_authenticated/notifications'
     | '/_authenticated/people'
+    | '/_authenticated/projects'
     | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/_authenticated/work-board'
@@ -1755,6 +1767,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/people': {
@@ -2479,6 +2498,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMRoute: typeof AuthenticatedMRouteWithChildren
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkBoardRoute: typeof AuthenticatedWorkBoardRoute
@@ -2519,6 +2539,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMRoute: AuthenticatedMRouteWithChildren,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkBoardRoute: AuthenticatedWorkBoardRoute,
