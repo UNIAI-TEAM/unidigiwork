@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   CalendarDays,
   Save,
+  GripVertical,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
