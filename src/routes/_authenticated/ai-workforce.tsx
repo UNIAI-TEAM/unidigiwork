@@ -26,6 +26,7 @@ import {
 import { AiWorkerKpiSection } from "@/components/ai/ai-worker-kpi";
 import { AiSkillsManager } from "@/components/ai/ai-skills-manager";
 import { AiWorkforceEvaluation } from "@/components/ai/ai-workforce-evaluation";
+import { AiWorkforceAssignments } from "@/components/ai/ai-workforce-assignments";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 
 export const Route = createFileRoute("/_authenticated/ai-workforce")({
