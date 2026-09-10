@@ -32,7 +32,9 @@ function PublicHeader({ active }: { active?: PublicNav }) {
           <BrandMark className="h-9 w-9 shrink-0" />
           <div className="min-w-0 leading-tight">
             <div className="text-base font-bold tracking-wide">UNIWORK</div>
-            <div className="hidden truncate text-[10px] text-muted-foreground min-[390px]:block">Digital Workplace Platform</div>
+            <div className="hidden truncate text-[10px] text-muted-foreground min-[390px]:block">
+              Digital Workplace Platform
+            </div>
           </div>
         </Link>
         <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
@@ -48,7 +50,9 @@ function PublicHeader({ active }: { active?: PublicNav }) {
         </nav>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <LanguageToggle />
-          <span className="hidden sm:inline-flex"><ToneToggle /></span>
+          <span className="hidden sm:inline-flex">
+            <ToneToggle />
+          </span>
           <ThemeToggle />
           <Link
             to="/auth"
