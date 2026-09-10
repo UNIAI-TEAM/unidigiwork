@@ -5,3 +5,6 @@
 - [x] Mobile shell and shared mobile controls
 - [x] Home, My Box, Work Products and Auth presentation
 - [x] Cross-route responsive and runtime verification
+- [x] Features, Pricing and Help Center presentation
+- [x] Remaining primary screens presentation
+- [x] Responsive and runtime verification for this batch

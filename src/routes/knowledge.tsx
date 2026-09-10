@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Search, Plus, Eye, Tag, Clock, X } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import { FilterPageHeader } from "@/components/filter-page-header";
+import { Button } from "@/components/ui/button";
 import { listKnowledgeArticles, type KnowledgeArticleDTO } from "@/lib/api/knowledge.functions";
 
 export const Route = createFileRoute("/knowledge")({
@@ -11,12 +13,14 @@ export const Route = createFileRoute("/knowledge")({
       { title: "Kho tri thức · UNIWORK" },
       {
         name: "description",
-        content: "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
+        content:
+          "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
       },
       { property: "og:title", content: "Kho tri thức · UNIWORK" },
       {
         property: "og:description",
-        content: "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
+        content:
+          "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -74,23 +78,18 @@ function KnowledgePage() {
 
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-none px-4 py-8 sm:px-6">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <BookOpen className="h-3.5 w-3.5 text-primary" /> Kho tri thức
-                </div>
-                <h1 className="mt-1 text-2xl font-semibold tracking-tight">Trung tâm tri thức nội bộ</h1>
-                <p className="text-sm text-muted-foreground">
-                  SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.
-                </p>
-              </div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <FilterPageHeader
+                crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: "Kho tri thức" }]}
+                title="Trung tâm tri thức nội bộ"
+                description="SOP, playbook, wiki kỹ thuật và chính sách của tổ chức."
+              />
               {canManage && (
-                <Link
-                  to="/admin/knowledge"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  <Plus className="h-4 w-4" /> Quản trị nội dung
-                </Link>
+                <Button asChild className="bg-action text-action-foreground hover:opacity-90">
+                  <Link to="/admin/knowledge">
+                    <Plus className="h-4 w-4" /> Quản trị nội dung
+                  </Link>
+                </Button>
               )}
             </div>
 
@@ -114,9 +113,18 @@ function KnowledgePage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1 text-xs">
-                <CatBtn active={category === "all"} onClick={() => setCategory("all")} label="Tất cả" />
+                <CatBtn
+                  active={category === "all"}
+                  onClick={() => setCategory("all")}
+                  label="Tất cả"
+                />
                 {categories.map((c) => (
-                  <CatBtn key={c} active={category === c} onClick={() => setCategory(c)} label={c} />
+                  <CatBtn
+                    key={c}
+                    active={category === c}
+                    onClick={() => setCategory(c)}
+                    label={c}
+                  />
                 ))}
               </div>
             </div>
@@ -141,12 +149,22 @@ function KnowledgePage() {
   );
 }
 
-function CatBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+function CatBtn({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
   return (
     <button
       onClick={onClick}
       className={`rounded-md px-2.5 py-1.5 transition-colors ${
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
       }`}
     >
       {label}
@@ -159,10 +177,12 @@ function ArticleCard({ article }: { article: KnowledgeArticleDTO }) {
     <Link
       to="/knowledge/$slug"
       params={{ slug: article.slug }}
-      className="flex flex-col rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/40"
+      className="flex flex-col rounded-xl border border-border bg-card p-4 shadow-card transition-[transform,border-color] hover:-translate-y-0.5 hover:border-primary/40"
     >
       <div className="flex items-center gap-2 text-xs">
-        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-primary">{article.category}</span>
+        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-primary">
+          {article.category}
+        </span>
         {article.status !== "published" && (
           <span className="rounded-full bg-surface-2 px-2 py-0.5 text-muted-foreground">
             {STATUS_LABEL[article.status] ?? article.status}
@@ -190,7 +210,7 @@ function ArticleCard({ article }: { article: KnowledgeArticleDTO }) {
 
 function Empty({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-12 text-center text-sm text-muted-foreground">
+    <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center text-sm text-muted-foreground">
       {text}
     </div>
   );
@@ -198,7 +218,11 @@ function Empty({ text }: { text: string }) {
 
 function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return new Date(iso).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   } catch {
     return iso;
   }

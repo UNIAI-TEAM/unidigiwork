@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
+import { FilterPageHeader } from "@/components/filter-page-header";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import {
   listPlans,
@@ -38,9 +39,15 @@ export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({
     meta: [
       { title: "Gói dịch vụ & thanh toán — UNIWORK" },
-      { name: "description", content: "Xem gói hiện tại, nâng cấp, hạ cấp hoặc hủy đăng ký UNIWORK." },
+      {
+        name: "description",
+        content: "Xem gói hiện tại, nâng cấp, hạ cấp hoặc hủy đăng ký UNIWORK.",
+      },
       { property: "og:title", content: "Gói dịch vụ & thanh toán — UNIWORK" },
-      { property: "og:description", content: "Tự quản lý gói đăng ký, hạn mức và quyền tính năng." },
+      {
+        property: "og:description",
+        content: "Tự quản lý gói đăng ký, hạn mức và quyền tính năng.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -55,7 +62,11 @@ function newKey(prefix: string) {
 
 function fmtDate(v: string | null) {
   if (!v) return "—";
-  return new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(v).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -77,7 +88,11 @@ const INVOICE_STATUS: Record<string, { label: string; cls: string }> = {
 
 function fmtMoney(amount: number, currency: string) {
   try {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
   } catch {
     return `${amount.toLocaleString("vi-VN")} ${currency}`;
   }
@@ -98,7 +113,11 @@ function BillingPage() {
   const resumeFn = useServerFn(resumeSubscription);
   const invoicesFn = useServerFn(listInvoices);
 
-  const plansQ = useQuery({ queryKey: ["billing", "plans"], queryFn: () => plansFn(), staleTime: 300_000 });
+  const plansQ = useQuery({
+    queryKey: ["billing", "plans"],
+    queryFn: () => plansFn(),
+    staleTime: 300_000,
+  });
   const subQ = useQuery({
     queryKey: ["billing", "subscription", tenantId],
     queryFn: () => subFn({ data: { tenantId: tenantId! } }),
@@ -124,7 +143,11 @@ function BillingPage() {
       const raw = paid.paymentMethod;
       const m = raw.match(/(\d{4})\s*$/);
       return {
-        brand: raw.split(/[\s•*]/)[0]?.slice(0, 5).toUpperCase() || "CARD",
+        brand:
+          raw
+            .split(/[\s•*]/)[0]
+            ?.slice(0, 5)
+            .toUpperCase() || "CARD",
         label: raw.replace(/\s*\d{4}\s*$/, "").trim() || "Thẻ thanh toán",
         last4: m?.[1] ?? null,
         hint: `Đã dùng cho hóa đơn ${paid.invoiceNumber}`,
@@ -251,23 +274,18 @@ function BillingPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
         <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
-          <div className="mb-6 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <CreditCard className="h-3.5 w-3.5 text-primary" />
-              <span>Gói dịch vụ</span>
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Gói dịch vụ & thanh toán</h1>
-            <p className="text-sm text-muted-foreground">
-              Xem gói hiện tại, hạn mức sử dụng và tự nâng cấp, hạ cấp hoặc hủy đăng ký.
-            </p>
-          </div>
+          <FilterPageHeader
+            crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: "Gói dịch vụ" }]}
+            title="Gói dịch vụ & thanh toán"
+            description="Xem gói hiện tại, hạn mức sử dụng và tự nâng cấp, hạ cấp hoặc hủy đăng ký."
+          />
 
           {!tenantId ? (
             <EmptyPanel />
           ) : (
             <div className="space-y-6">
               {/* Current subscription */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 {subQ.isLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" /> Đang tải gói hiện tại…
@@ -278,17 +296,21 @@ function BillingPage() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold">{sub.planName || sub.planCode}</span>
+                        <span className="text-lg font-semibold">
+                          {sub.planName || sub.planCode}
+                        </span>
                         <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs text-muted-foreground">
                           {STATUS_LABEL[sub.status] ?? sub.status}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Kỳ hiện tại: {fmtDate(sub.periodStart)} → {sub.periodEnd ? fmtDate(sub.periodEnd) : "không giới hạn"}
+                        Kỳ hiện tại: {fmtDate(sub.periodStart)} →{" "}
+                        {sub.periodEnd ? fmtDate(sub.periodEnd) : "không giới hạn"}
                       </p>
                       {sub.cancelAt && (
                         <p className="text-sm text-destructive">
-                          Đã hẹn hủy vào {fmtDate(sub.cancelAt)}. Bạn vẫn dùng đầy đủ tính năng đến ngày này.
+                          Đã hẹn hủy vào {fmtDate(sub.cancelAt)}. Bạn vẫn dùng đầy đủ tính năng đến
+                          ngày này.
                         </p>
                       )}
                     </div>
@@ -299,7 +321,11 @@ function BillingPage() {
                           disabled={!isOwner || resumeM.isPending}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-50"
                         >
-                          {resumeM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                          {resumeM.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-4 w-4" />
+                          )}
                           Khôi phục gói
                         </button>
                       ) : (
@@ -318,14 +344,15 @@ function BillingPage() {
                 )}
                 {!isOwner && (
                   <p className="mt-4 flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
-                    <ShieldAlert className="h-3.5 w-3.5" /> Chỉ chủ sở hữu tổ chức mới có thể thay đổi gói dịch vụ.
+                    <ShieldAlert className="h-3.5 w-3.5" /> Chỉ chủ sở hữu tổ chức mới có thể thay
+                    đổi gói dịch vụ.
                   </p>
                 )}
               </section>
 
               {/* Plans */}
               {sub && (
-                <section className="rounded-2xl border border-border bg-surface p-5">
+                <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                   <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
                     <CalendarClock className="h-4 w-4 text-primary" /> Chu kỳ thanh toán
                   </h2>
@@ -359,7 +386,10 @@ function BillingPage() {
                         <span>Còn {cycle.daysLeft} ngày</span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${cycle.pct}%` }} />
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${cycle.pct}%` }}
+                        />
                       </div>
                     </div>
                   )}
@@ -402,7 +432,7 @@ function BillingPage() {
               )}
 
               {/* Payment method */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="flex items-center gap-2 text-sm font-semibold">
                     <Wallet className="h-4 w-4 text-primary" /> Phương thức thanh toán
@@ -436,18 +466,21 @@ function BillingPage() {
 
                 <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground">
                   <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  Thông tin thẻ được xử lý trên Stripe Customer Portal, hệ thống UNIWORK không lưu số thẻ.
+                  Thông tin thẻ được xử lý trên Stripe Customer Portal, hệ thống UNIWORK không lưu
+                  số thẻ.
                 </p>
               </section>
 
               {/* Invoices */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="flex items-center gap-2 text-sm font-semibold">
                     <Receipt className="h-4 w-4 text-primary" /> Hóa đơn & trạng thái thanh toán
                   </h2>
                   {invoicesQ.data && invoicesQ.data.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{invoicesQ.data.length} hóa đơn</span>
+                    <span className="text-xs text-muted-foreground">
+                      {invoicesQ.data.length} hóa đơn
+                    </span>
                   )}
                 </div>
 
@@ -456,7 +489,9 @@ function BillingPage() {
                     <Loader2 className="h-4 w-4 animate-spin" /> Đang tải hóa đơn…
                   </div>
                 ) : !invoicesQ.data || invoicesQ.data.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-muted-foreground">Chưa có hóa đơn nào cho tổ chức này.</p>
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    Chưa có hóa đơn nào cho tổ chức này.
+                  </p>
                 ) : (
                   <>
                     {/* Desktop table */}
@@ -480,17 +515,25 @@ function BillingPage() {
                             return (
                               <tr key={inv.id} className="border-b border-border/60 last:border-0">
                                 <td className="py-2.5 pr-4 font-medium">{inv.invoiceNumber}</td>
-                                <td className="py-2.5 pr-4 text-muted-foreground">{inv.planName ?? "—"}</td>
+                                <td className="py-2.5 pr-4 text-muted-foreground">
+                                  {inv.planName ?? "—"}
+                                </td>
                                 <td className="py-2.5 pr-4 text-muted-foreground">
                                   {fmtDate(inv.periodStart)} → {fmtDate(inv.periodEnd)}
                                 </td>
-                                <td className="py-2.5 pr-4 text-muted-foreground">{fmtDate(inv.issuedAt)}</td>
-                                <td className="py-2.5 pr-4 text-muted-foreground">{fmtDate(inv.dueAt)}</td>
+                                <td className="py-2.5 pr-4 text-muted-foreground">
+                                  {fmtDate(inv.issuedAt)}
+                                </td>
+                                <td className="py-2.5 pr-4 text-muted-foreground">
+                                  {fmtDate(inv.dueAt)}
+                                </td>
                                 <td className="py-2.5 pr-4 text-right font-medium">
                                   {fmtMoney(inv.amount, inv.currency)}
                                 </td>
                                 <td className="py-2.5 pr-4 text-right">
-                                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${st.cls}`}>
+                                  <span
+                                    className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${st.cls}`}
+                                  >
                                     {st.label}
                                   </span>
                                 </td>
@@ -519,13 +562,20 @@ function BillingPage() {
                       {invoicesQ.data.map((inv) => {
                         const st = INVOICE_STATUS[inv.status] ?? INVOICE_STATUS["draft"]!;
                         return (
-                          <li key={inv.id} className="rounded-xl border border-border bg-surface-2 p-3">
+                          <li
+                            key={inv.id}
+                            className="rounded-xl border border-border bg-surface-2 p-3"
+                          >
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-medium">{inv.invoiceNumber}</p>
-                                <p className="text-xs text-muted-foreground">{inv.planName ?? "—"}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {inv.planName ?? "—"}
+                                </p>
                               </div>
-                              <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${st.cls}`}>
+                              <span
+                                className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${st.cls}`}
+                              >
                                 {st.label}
                               </span>
                             </div>
@@ -557,7 +607,9 @@ function BillingPage() {
               </section>
 
               <section>
-                <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Các gói khả dụng</h2>
+                <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+                  Các gói khả dụng
+                </h2>
                 {plansQ.isLoading ? (
                   <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
                     Đang tải danh sách gói…
@@ -570,8 +622,10 @@ function BillingPage() {
                       return (
                         <div
                           key={p.id}
-                          className={`flex flex-col rounded-2xl border p-5 transition-colors ${
-                            isCurrent ? "border-primary bg-primary/5" : "border-border bg-surface hover:border-primary/40"
+                          className={`flex flex-col rounded-xl border bg-card p-5 shadow-card transition-colors ${
+                            isCurrent
+                              ? "border-primary bg-primary/5"
+                              : "border-border bg-surface hover:border-primary/40"
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -582,17 +636,24 @@ function BillingPage() {
                               </span>
                             )}
                           </div>
-                          {p.description && <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>}
+                          {p.description && (
+                            <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
+                          )}
                           <ul className="mt-4 flex-1 space-y-1.5 text-sm">
                             {p.features
                               .filter((f) => f.enabled)
                               .slice(0, 6)
                               .map((f) => (
-                                <li key={f.featureKey} className="flex items-start gap-2 text-muted-foreground">
+                                <li
+                                  key={f.featureKey}
+                                  className="flex items-start gap-2 text-muted-foreground"
+                                >
                                   <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                                   <span>
                                     {f.featureKey}
-                                    {f.quotaLimit != null ? ` · ${f.quotaLimit.toLocaleString("vi-VN")}` : ""}
+                                    {f.quotaLimit != null
+                                      ? ` · ${f.quotaLimit.toLocaleString("vi-VN")}`
+                                      : ""}
                                   </span>
                                 </li>
                               ))}
@@ -623,25 +684,30 @@ function BillingPage() {
               </section>
 
               {/* Usage */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
                   <Gauge className="h-4 w-4 text-primary" /> Hạn mức sử dụng kỳ này
                 </h2>
                 {entQ.isLoading ? (
                   <p className="text-sm text-muted-foreground">Đang tải hạn mức…</p>
                 ) : quotaRows.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Chưa có hạn mức nào được cấu hình cho gói này.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Chưa có hạn mức nào được cấu hình cho gói này.
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {quotaRows.map((e) => {
-                      const pct = e.quotaLimit ? Math.min(100, Math.round((e.currentUsage / e.quotaLimit) * 100)) : 0;
+                      const pct = e.quotaLimit
+                        ? Math.min(100, Math.round((e.currentUsage / e.quotaLimit) * 100))
+                        : 0;
                       return (
                         <div key={e.featureKey}>
                           <div className="mb-1 flex items-center justify-between text-sm">
                             <span>{e.featureName}</span>
                             <span className="text-muted-foreground">
                               {e.currentUsage.toLocaleString("vi-VN")} /{" "}
-                              {e.quotaLimit != null ? e.quotaLimit.toLocaleString("vi-VN") : "∞"} {e.unit ?? ""}
+                              {e.quotaLimit != null ? e.quotaLimit.toLocaleString("vi-VN") : "∞"}{" "}
+                              {e.unit ?? ""}
                             </span>
                           </div>
                           <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
@@ -666,8 +732,8 @@ function BillingPage() {
                 <Wallet className="h-4 w-4 text-primary" /> Cập nhật phương thức thanh toán
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Bạn sẽ được chuyển tới Stripe Customer Portal để thêm, đổi hoặc gỡ thẻ, đồng thời xem
-                lịch sử thanh toán của tổ chức.
+                Bạn sẽ được chuyển tới Stripe Customer Portal để thêm, đổi hoặc gỡ thẻ, đồng thời
+                xem lịch sử thanh toán của tổ chức.
               </p>
               <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
                 Cổng thanh toán chưa được kích hoạt cho dự án này, nên luồng hiện đang ở chế độ mô
@@ -716,8 +782,8 @@ function BillingPage() {
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6">
             <h3 className="text-base font-semibold">Xác nhận hủy gói</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Chọn cách hủy gói <strong>{sub?.planName}</strong>. Sau khi hủy, tổ chức sẽ chuyển về gói Free và các hạn
-              mức sẽ được áp dụng lại.
+              Chọn cách hủy gói <strong>{sub?.planName}</strong>. Sau khi hủy, tổ chức sẽ chuyển về
+              gói Free và các hạn mức sẽ được áp dụng lại.
             </p>
             <div className="mt-5 flex flex-col gap-2">
               <button
@@ -750,7 +816,8 @@ function BillingPage() {
 
 function errText(msg: string) {
   if (msg.includes("PERMISSION_DENIED")) return "Bạn không có quyền thay đổi gói dịch vụ.";
-  if (msg.includes("VERSION_CONFLICT")) return "Gói vừa được cập nhật ở nơi khác, hãy tải lại trang.";
+  if (msg.includes("VERSION_CONFLICT"))
+    return "Gói vừa được cập nhật ở nơi khác, hãy tải lại trang.";
   if (msg.includes("PLAN_NOT_FOUND")) return "Không tìm thấy gói dịch vụ.";
   if (msg.includes("SUBSCRIPTION_NOT_FOUND")) return "Tổ chức chưa có gói đăng ký.";
   return "Thao tác không thành công. Vui lòng thử lại.";

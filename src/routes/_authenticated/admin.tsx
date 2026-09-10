@@ -1,9 +1,27 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useI18n, type Key } from "@/lib/i18n";
 import { useState } from "react";
-import { LayoutGrid, ShieldCheck, Users, UserCog, ListFilter, ArrowLeft, Activity, Webhook, Inbox, BookOpen, CreditCard, Gauge, Bot, Database, Coins, BadgeDollarSign } from "lucide-react";
+import {
+  LayoutGrid,
+  ShieldCheck,
+  Users,
+  UserCog,
+  ListFilter,
+  ArrowLeft,
+  Activity,
+  Webhook,
+  Inbox,
+  BookOpen,
+  CreditCard,
+  Gauge,
+  Bot,
+  Database,
+  Coins,
+  BadgeDollarSign,
+} from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { useAdminAccess } from "@/features/admin/access";
+import { FilterPageHeader } from "@/components/filter-page-header";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -33,8 +51,6 @@ const TABS = [
   { to: "/admin/sell-work/pilots" as const, label: "Pilot thương mại", icon: BadgeDollarSign },
   { to: "/admin/proof" as const, label: "Bằng chứng", icon: ShieldCheck },
   { to: "/admin/backup" as const, label: "adm.tab.backup", icon: Database },
-
-
 ];
 
 function AdminLayout() {
@@ -50,16 +66,11 @@ function AdminLayout() {
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
         <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
-          <div className="mb-6 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-              <span>{t("adm.1")}</span>
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">{t("adm.2")}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t("adm.3")}
-            </p>
-          </div>
+          <FilterPageHeader
+            crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: t("adm.1") }]}
+            title={t("adm.2")}
+            description={t("adm.3")}
+          />
 
           {isLoading ? (
             <div className="rounded-2xl border border-border bg-surface p-10 text-center text-sm text-muted-foreground">
@@ -69,7 +80,7 @@ function AdminLayout() {
             <ForbiddenPanel />
           ) : (
             <>
-              <nav className="mb-5 flex gap-1 rounded-xl border border-border bg-surface p-1 text-sm">
+              <nav className="mb-5 flex gap-1 overflow-x-auto rounded-lg border border-border bg-card p-1 text-sm shadow-card">
                 {TABS.map((tab) => {
                   const active = tab.exact ? path === tab.to : path.startsWith(tab.to);
                   return (
@@ -78,7 +89,7 @@ function AdminLayout() {
                       to={tab.to}
                       className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-colors ${
                         active
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-action text-action-foreground"
                           : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                       }`}
                     >
@@ -116,9 +127,7 @@ function ForbiddenPanel() {
         <ShieldCheck className="h-6 w-6" />
       </div>
       <div className="text-base font-semibold">{t("adm.9")}</div>
-      <p className="max-w-sm text-sm text-muted-foreground">
-        {t("adm.10")}
-      </p>
+      <p className="max-w-sm text-sm text-muted-foreground">{t("adm.10")}</p>
       <Link
         to="/dashboard"
         className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"

@@ -51,12 +51,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,6 +71,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import { FilterPageHeader } from "@/components/filter-page-header";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({
@@ -166,7 +162,9 @@ function PeoplePage() {
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"all" | "teams" | "departments" | "positions" | "skills" | "org">("all");
+  const [tab, setTab] = useState<"all" | "teams" | "departments" | "positions" | "skills" | "org">(
+    "all",
+  );
   const [page, setPage] = useState(1);
   const [pageSize] = useState(12);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -184,10 +182,7 @@ function PeoplePage() {
     staleTime: 30_000,
   });
 
-  const peopleList = useMemo<Person[]>(
-    () => (data?.people ?? []).map(dtoToPerson),
-    [data],
-  );
+  const peopleList = useMemo<Person[]>(() => (data?.people ?? []).map(dtoToPerson), [data]);
   const canManage = data?.canManage ?? false;
   const departments = useMemo(() => ["All", ...(data?.departments ?? [])], [data]);
   const roles = useMemo(() => ["All", ...(data?.roles ?? [])], [data]);
@@ -235,7 +230,22 @@ function PeoplePage() {
 
   const exportPeopleCsv = () => {
     const rows = [
-      ["ID", "Name", "Email", "Role", "Department", "Team", "Title", "Location", "Phone", "Emp ID", "Join Date", "Reports To", "Skills", "Teams"],
+      [
+        "ID",
+        "Name",
+        "Email",
+        "Role",
+        "Department",
+        "Team",
+        "Title",
+        "Location",
+        "Phone",
+        "Emp ID",
+        "Join Date",
+        "Reports To",
+        "Skills",
+        "Teams",
+      ],
       ...peopleList.map((p) => [
         p.id,
         p.name,
@@ -253,7 +263,9 @@ function PeoplePage() {
         p.teams.join("; "),
       ]),
     ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -288,8 +300,14 @@ function PeoplePage() {
         empId: get(cols, "emp id") || get(cols, "empid") || get(cols, "emp_id"),
         joinDate: get(cols, "join date") || get(cols, "joindate") || get(cols, "join_date"),
         reportsTo: get(cols, "reports to") || get(cols, "reportsto") || get(cols, "reports_to"),
-        skills: (get(cols, "skills") || "").split(";").map((s) => s.trim()).filter(Boolean),
-        teams: (get(cols, "teams") || "").split(";").map((s) => s.trim()).filter(Boolean),
+        skills: (get(cols, "skills") || "")
+          .split(";")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        teams: (get(cols, "teams") || "")
+          .split(";")
+          .map((s) => s.trim())
+          .filter(Boolean),
       };
     });
   };
@@ -317,7 +335,7 @@ function PeoplePage() {
             userId: row.id ?? crypto.randomUUID(),
             displayName: row.name,
             email: row.email,
-            title: row.title === "—" ? "" : (row.title || ""),
+            title: row.title === "—" ? "" : row.title || "",
             department: row.department || "",
             team: row.team || "",
             location: row.location || "",
@@ -360,7 +378,10 @@ function PeoplePage() {
     });
   }, [query, department, role, location, peopleList]);
 
-  const pageCount = useMemo(() => Math.max(1, Math.ceil(filtered.length / pageSize)), [filtered, pageSize]);
+  const pageCount = useMemo(
+    () => Math.max(1, Math.ceil(filtered.length / pageSize)),
+    [filtered, pageSize],
+  );
   const paginated = useMemo(
     () => filtered.slice((page - 1) * pageSize, page * pageSize),
     [filtered, page, pageSize],
@@ -398,11 +419,12 @@ function PeoplePage() {
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
             {/* Header */}
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="text-2xl font-bold tracking-tight">{t("people.title")}</h1>
-                <p className="mt-1 text-sm text-muted-foreground">{t("people.sub")}</p>
-              </div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <FilterPageHeader
+                crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: t("people.title") }]}
+                title={t("people.title")}
+                description={t("people.sub")}
+              />
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   ref={importInputRef}
@@ -429,7 +451,7 @@ function PeoplePage() {
                 </button>
                 <Link
                   to="/workspace/invite"
-                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg bg-action px-3 py-2 text-sm font-semibold text-action-foreground hover:opacity-90"
                 >
                   <Plus className="h-4 w-4" /> {t("people.add")}
                 </Link>
@@ -488,7 +510,11 @@ function PeoplePage() {
                     onClick={() => setView(view === "grid" ? "list" : "grid")}
                     className="cursor-pointer focus:bg-surface-2"
                   >
-                    {view === "grid" ? <List className="h-4 w-4 mr-2" /> : <Grid3x3 className="h-4 w-4 mr-2" />}
+                    {view === "grid" ? (
+                      <List className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Grid3x3 className="h-4 w-4 mr-2" />
+                    )}
                     {view === "grid" ? "Xem dạng danh sách" : "Xem dạng lưới"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -511,12 +537,40 @@ function PeoplePage() {
 
             {/* Tabs */}
             <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border">
-              <Tab label={t("people.tab.all")} count={peopleList.length} active={tab === "all"} onClick={() => setTab("all")} />
-              <Tab label={t("people.tab.teams")} count={new Set(peopleList.flatMap((p) => p.teams)).size} active={tab === "teams"} onClick={() => setTab("teams")} />
-              <Tab label={t("people.tab.departments")} count={(data?.departments ?? []).length} active={tab === "departments"} onClick={() => setTab("departments")} />
-              <Tab label={t("people.tab.positions")} count={new Set(peopleList.map((p) => p.title).filter((x) => x && x !== "—")).size} active={tab === "positions"} onClick={() => setTab("positions")} />
-              <Tab label={t("people.tab.skills")} active={tab === "skills"} onClick={() => setTab("skills")} />
-              <Tab label={t("people.tab.org")} active={tab === "org"} onClick={() => setTab("org")} />
+              <Tab
+                label={t("people.tab.all")}
+                count={peopleList.length}
+                active={tab === "all"}
+                onClick={() => setTab("all")}
+              />
+              <Tab
+                label={t("people.tab.teams")}
+                count={new Set(peopleList.flatMap((p) => p.teams)).size}
+                active={tab === "teams"}
+                onClick={() => setTab("teams")}
+              />
+              <Tab
+                label={t("people.tab.departments")}
+                count={(data?.departments ?? []).length}
+                active={tab === "departments"}
+                onClick={() => setTab("departments")}
+              />
+              <Tab
+                label={t("people.tab.positions")}
+                count={new Set(peopleList.map((p) => p.title).filter((x) => x && x !== "—")).size}
+                active={tab === "positions"}
+                onClick={() => setTab("positions")}
+              />
+              <Tab
+                label={t("people.tab.skills")}
+                active={tab === "skills"}
+                onClick={() => setTab("skills")}
+              />
+              <Tab
+                label={t("people.tab.org")}
+                active={tab === "org"}
+                onClick={() => setTab("org")}
+              />
             </div>
 
             {/* Cards / List */}
@@ -584,7 +638,8 @@ function PeoplePage() {
             {tab === "all" && pageCount > 1 && (
               <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
                 <div>
-                  {t("people.showing")} {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} {t("people.of")} {filtered.length}{" "}
+                  {t("people.showing")} {(page - 1) * pageSize + 1} -{" "}
+                  {Math.min(page * pageSize, filtered.length)} {t("people.of")} {filtered.length}{" "}
                   {t("people.people")}
                 </div>
                 <div className="flex items-center gap-1">
@@ -744,14 +799,18 @@ function PersonCard({
 }) {
   return (
     <div
-      className={`group flex flex-col gap-3 rounded-xl border bg-surface text-left transition-colors hover:border-primary/50 ${
+      className={`group flex flex-col gap-3 rounded-xl border bg-card text-left shadow-card transition-[transform,border-color] hover:-translate-y-0.5 hover:border-primary/50 ${
         active ? "border-primary/70 ring-1 ring-primary/40" : "border-border"
       }`}
     >
       <button onClick={onClick} className="flex flex-col gap-3 p-4 text-left">
         <div className="flex items-start gap-3">
           <div className="relative shrink-0">
-            <img src={avatar(p.seed)} alt={p.name} className="h-14 w-14 rounded-full object-cover" />
+            <img
+              src={avatar(p.seed)}
+              alt={p.name}
+              className="h-14 w-14 rounded-full object-cover"
+            />
             <span
               className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface ${statusDot[p.status]}`}
             />
@@ -779,7 +838,10 @@ function PersonCard({
         <IconBtn onClick={() => window.open(`/chat`, "_self")} title="Nhắn tin">
           <MessageCircle className="h-3.5 w-3.5" />
         </IconBtn>
-        <IconBtn onClick={() => window.open(`/email/compose?to=${encodeURIComponent(p.email)}`, "_self")} title="Gửi email">
+        <IconBtn
+          onClick={() => window.open(`/email/compose?to=${encodeURIComponent(p.email)}`, "_self")}
+          title="Gửi email"
+        >
           <Mail className="h-3.5 w-3.5" />
         </IconBtn>
         <IconBtn onClick={() => window.open(`tel:${p.phone.replace(/\s/g, "")}`)} title="Gọi điện">
@@ -792,13 +854,19 @@ function PersonCard({
             </IconBtn>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-surface border-border">
-            <DropdownMenuItem onClick={() => window.open(`/calendar`, "_self")} className="cursor-pointer focus:bg-surface-2">
+            <DropdownMenuItem
+              onClick={() => window.open(`/calendar`, "_self")}
+              className="cursor-pointer focus:bg-surface-2"
+            >
               <Calendar className="h-4 w-4 mr-2" /> Lên lịch họp
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onEdit} className="cursor-pointer focus:bg-surface-2">
               <Edit3 className="h-4 w-4 mr-2" /> Sửa
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400"
+            >
               <Trash2 className="h-4 w-4 mr-2" /> Xóa
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -829,10 +897,7 @@ function PersonRow({
         active ? "bg-surface-2" : ""
       } ${divider ? "border-t border-border" : ""}`}
     >
-      <button
-        onClick={onClick}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
-      >
+      <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         <div className="relative shrink-0">
           <img src={avatar(p.seed)} alt={p.name} className="h-9 w-9 rounded-full object-cover" />
           <span
@@ -866,7 +931,10 @@ function PersonRow({
           <DropdownMenuItem onClick={onEdit} className="cursor-pointer focus:bg-surface-2">
             <Edit3 className="h-4 w-4 mr-2" /> Sửa
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
+          <DropdownMenuItem
+            onClick={onDelete}
+            className="cursor-pointer text-rose-400 focus:bg-rose-500/10 focus:text-rose-400"
+          >
             <Trash2 className="h-4 w-4 mr-2" /> Xóa
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -947,7 +1015,10 @@ function PersonPanel({
           <div className="mt-0.5 text-sm text-muted-foreground">{person.title}</div>
           <div className="text-xs text-muted-foreground">{person.team}</div>
         </div>
-        <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-surface-2">
+        <button
+          onClick={onClose}
+          className="rounded-md p-1 text-muted-foreground hover:bg-surface-2"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -982,10 +1053,18 @@ function PersonPanel({
         <IconBtn onClick={() => window.open(`/chat`, "_self")} title="Nhắn tin">
           <MessageCircle className="h-4 w-4" />
         </IconBtn>
-        <IconBtn onClick={() => window.open(`/email/compose?to=${encodeURIComponent(person.email)}`, "_self")} title="Gửi email">
+        <IconBtn
+          onClick={() =>
+            window.open(`/email/compose?to=${encodeURIComponent(person.email)}`, "_self")
+          }
+          title="Gửi email"
+        >
           <Mail className="h-4 w-4" />
         </IconBtn>
-        <IconBtn onClick={() => window.open(`tel:${person.phone.replace(/\s/g, "")}`)} title="Gọi điện">
+        <IconBtn
+          onClick={() => window.open(`tel:${person.phone.replace(/\s/g, "")}`)}
+          title="Gọi điện"
+        >
           <Phone className="h-4 w-4" />
         </IconBtn>
         <IconBtn onClick={() => window.open(`/calendar`, "_self")} title="Lên lịch">
@@ -998,10 +1077,16 @@ function PersonPanel({
             </IconBtn>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-surface border-border">
-            <DropdownMenuItem onClick={() => window.open(`/tasks`, "_self")} className="cursor-pointer focus:bg-surface-2">
+            <DropdownMenuItem
+              onClick={() => window.open(`/tasks`, "_self")}
+              className="cursor-pointer focus:bg-surface-2"
+            >
               <BriefcaseIcon className="h-4 w-4 mr-2" /> Giao việc
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => window.open(`/meeting`, "_self")} className="cursor-pointer focus:bg-surface-2">
+            <DropdownMenuItem
+              onClick={() => window.open(`/meeting`, "_self")}
+              className="cursor-pointer focus:bg-surface-2"
+            >
               <Video className="h-4 w-4 mr-2" /> Mời họp
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -1200,7 +1285,10 @@ function ProfileTab({ person }: { person: Person }) {
           ))}
         </div>
       </section>
-      <button onClick={() => notifyComingSoon()} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs hover:bg-surface-3">
+      <button
+        onClick={() => notifyComingSoon()}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs hover:bg-surface-3"
+      >
         <Edit3 className="h-3.5 w-3.5" /> Chỉnh sửa hồ sơ
       </button>
     </>
@@ -1277,7 +1365,10 @@ function ActivityTab() {
             </li>
           ))}
         </ol>
-        <button onClick={() => notifyComingSoon()} className="mt-4 w-full rounded-lg border border-border bg-surface-2 py-2 text-xs text-muted-foreground hover:text-foreground">
+        <button
+          onClick={() => notifyComingSoon()}
+          className="mt-4 w-full rounded-lg border border-border bg-surface-2 py-2 text-xs text-muted-foreground hover:text-foreground"
+        >
           Xem thêm hoạt động
         </button>
       </section>
@@ -1342,7 +1433,12 @@ function FilesTab() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <SectionTitle>Tệp đã chia sẻ ({files.length})</SectionTitle>
-          <button onClick={() => notifyComingSoon()} className="text-[11px] text-primary hover:underline">Xem tất cả</button>
+          <button
+            onClick={() => notifyComingSoon()}
+            className="text-[11px] text-primary hover:underline"
+          >
+            Xem tất cả
+          </button>
         </div>
         <ul className="space-y-1.5">
           {files.map((f) => (
@@ -1359,7 +1455,10 @@ function FilesTab() {
                   {f.size} · {f.time} · {f.shared}
                 </div>
               </div>
-              <button onClick={() => notifyComingSoon()} className="rounded p-1 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100">
+              <button
+                onClick={() => notifyComingSoon()}
+                className="rounded p-1 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100"
+              >
                 <Download className="h-3.5 w-3.5" />
               </button>
             </li>
@@ -1475,7 +1574,10 @@ function TasksTab() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <SectionTitle>Công việc được giao</SectionTitle>
-          <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+          <button
+            onClick={() => notifyComingSoon()}
+            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+          >
             <ExternalLink className="h-3 w-3" /> Mở Tasks
           </button>
         </div>
@@ -1704,21 +1806,18 @@ function EditPersonDialog({
 // ========== Grouped tab views ==========
 
 function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
-  return items.reduce((acc, item) => {
-    const key = keyFn(item) || "Chưa phân loại";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {} as Record<string, T[]>);
+  return items.reduce(
+    (acc, item) => {
+      const key = keyFn(item) || "Chưa phân loại";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    },
+    {} as Record<string, T[]>,
+  );
 }
 
-function GroupByTeam({
-  people,
-  onClick,
-}: {
-  people: Person[];
-  onClick: (id: string) => void;
-}) {
+function GroupByTeam({ people, onClick }: { people: Person[]; onClick: (id: string) => void }) {
   const groups = groupBy(people, (p) => p.team);
   const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   return (
@@ -1798,13 +1897,7 @@ function GroupByDepartment({
   );
 }
 
-function GroupByPosition({
-  people,
-  onClick,
-}: {
-  people: Person[];
-  onClick: (id: string) => void;
-}) {
+function GroupByPosition({ people, onClick }: { people: Person[]; onClick: (id: string) => void }) {
   const groups = groupBy(people, (p) => p.title);
   const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   return (
@@ -1913,7 +2006,9 @@ function OrgView({ people }: { people: Person[] }) {
             {p.title} · {p.team}
           </div>
         </div>
-        <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">{p.department}</span>
+        <span className="rounded-md bg-surface-2 px-2 py-1 text-xs text-muted-foreground">
+          {p.department}
+        </span>
       </div>
       {tree.children.get(p.name)?.map((c) => renderNode(c, depth + 1))}
     </div>
