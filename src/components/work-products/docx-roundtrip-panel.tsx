@@ -702,7 +702,7 @@ export function DocxRoundTripPanel({
               variant="secondary"
               className="h-7 gap-1 px-2 text-xs"
               disabled={!canEditProfile || autoWeights.isPending}
-              onClick={() => autoWeights.mutate("THIS")}
+              onClick={() => autoWeights.mutate({ scope: "THIS" })}
             >
               {autoWeights.isPending ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
