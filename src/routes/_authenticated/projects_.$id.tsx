@@ -527,8 +527,24 @@ function ProjectDetailPage() {
                                         </option>
                                       ))}
                                     </select>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="min-h-11"
+                                      aria-label={`Thảo luận: ${t.title}`}
+                                      onClick={() =>
+                                        setOpenComments((c) => (c === t.id ? null : t.id))
+                                      }
+                                    >
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
                                   </span>
                                 </div>
+                                {openComments === t.id && (
+                                  <div className="mt-3 border-t border-border pt-3">
+                                    <CommentThread kind="task" taskId={t.id} compact />
+                                  </div>
+                                )}
                               </li>
                             );
                           })}
