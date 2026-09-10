@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { BrandMark } from "@/components/brand-logo";
+import { BrandMark, BrandWordmark } from "@/components/brand-logo";
 import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -390,12 +390,13 @@ export function AppSidebar({
             collapsed ? "px-2 lg:justify-center" : "px-5",
           )}
         >
-          <BrandMark className="h-9 w-9" />
+          {collapsed ? (
+            <BrandMark className="h-9 w-9" />
+          ) : (
+            <BrandWordmark className="h-9 max-w-[150px]" />
+          )}
           {!collapsed && (
-            <div className="flex-1 leading-tight">
-              <div className="font-heading text-base font-bold">UNIWORK</div>
-              <div className="module-label text-muted-foreground">Work operating system</div>
-            </div>
+            <div className="flex-1" />
           )}
           <button
             aria-label="Close sidebar"
