@@ -205,8 +205,23 @@ function WorkBoardPage() {
                     }`}
                   >
                     <CheckSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 flex-1 truncate">{t.title}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{t.title}</span>
+                      {rank && rank.score > 0 && (
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {rank.reason}
+                        </span>
+                      )}
+                    </span>
                     {link.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {rank && (
+                      <Badge
+                        variant={rank.score >= 40 ? "default" : "outline"}
+                        className="shrink-0 text-[10px]"
+                      >
+                        {rank.score}%
+                      </Badge>
+                    )}
                     {t.subtitle && (
                       <Badge variant="secondary" className="shrink-0 text-[10px]">
                         {t.subtitle}
@@ -214,7 +229,8 @@ function WorkBoardPage() {
                     )}
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </section>
