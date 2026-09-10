@@ -81,21 +81,22 @@ function MobileMyAiPage() {
   const products = (recent.data as any[] | undefined) ?? [];
 
   return (
-    <div className="flex min-h-full flex-col gap-4 p-4 pb-28">
+    <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">My AI</h1>
+        <p className="module-label text-ai-pink">AI workspace</p>
+        <h1 className="mt-1 font-heading text-2xl font-bold">My AI</h1>
         <p className="text-sm text-muted-foreground">Đồng đội AI của bạn và cả đội ngũ AI.</p>
       </header>
 
-      <div className="grid grid-cols-4 gap-1 rounded-2xl bg-surface p-1">
+      <div className="grid grid-cols-4 gap-1 rounded-xl border border-border bg-background p-1 shadow-card">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              "min-h-11 rounded-xl px-2 text-xs font-medium transition-colors",
+              "min-h-11 rounded-lg px-2 text-xs font-semibold transition-colors",
               tab === t.id
-                ? "bg-primary text-primary-foreground"
+                ? "bg-action text-action-foreground"
                 : "text-muted-foreground hover:bg-surface-2",
             )}
           >
@@ -106,7 +107,7 @@ function MobileMyAiPage() {
 
       {tab !== "team" && (
         <section className="space-y-3">
-          <div className="rounded-2xl border border-border bg-surface p-3">
+          <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
             <Textarea
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -116,7 +117,8 @@ function MobileMyAiPage() {
             <div className="mt-2 flex items-center justify-end">
               <Button
                 size="icon"
-                className="h-11 w-11 rounded-full"
+                variant="ai"
+                className="h-11 w-11 rounded-xl"
                 aria-label="Gửi câu hỏi"
                 disabled={ask.isPending || !query.trim()}
                 onClick={() => send(query)}
@@ -135,7 +137,7 @@ function MobileMyAiPage() {
               <button
                 key={p}
                 onClick={() => send(p)}
-                className="min-h-9 rounded-full border border-border bg-surface px-3 text-xs text-muted-foreground transition-colors active:bg-surface-2"
+                className="min-h-10 rounded-xl border border-border bg-background px-3 text-xs font-semibold text-muted-foreground shadow-card transition-colors active:bg-surface-2"
               >
                 {p}
               </button>
@@ -168,7 +170,7 @@ function MobileMyAiPage() {
               <Link
                 to="/m/ai-workforce/$id"
                 params={{ id: w.id }}
-                className="flex h-full min-h-28 flex-col gap-1 rounded-2xl border border-border bg-surface p-3 active:bg-surface-2"
+                className="flex h-full min-h-28 flex-col gap-1 rounded-xl border border-border bg-card p-3 shadow-card active:bg-surface"
               >
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary">
                   <Bot className="h-4 w-4" />

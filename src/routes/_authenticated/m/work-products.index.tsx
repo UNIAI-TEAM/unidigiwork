@@ -75,9 +75,10 @@ function MobileWorkProductsPage() {
   }, [data, scope, search, newestFirst]);
 
   return (
-    <div className="flex min-h-full flex-col gap-4 p-4 pb-28">
+    <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Kết quả công việc</h1>
+        <p className="module-label text-primary">Work products</p>
+        <h1 className="mt-1 font-heading text-2xl font-bold">Kết quả công việc</h1>
         <p className="text-sm text-muted-foreground">Mọi thành quả của bạn ở một nơi.</p>
       </header>
 
@@ -87,7 +88,7 @@ function MobileWorkProductsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm theo tên hoặc thẻ…"
-          className="h-11 rounded-full pl-9"
+          className="pl-9"
         />
       </div>
 
@@ -97,10 +98,10 @@ function MobileWorkProductsPage() {
             key={s.id}
             onClick={() => setScope(s.id)}
             className={cn(
-              "min-h-9 shrink-0 rounded-full px-4 text-xs font-medium transition-colors",
+              "min-h-10 shrink-0 rounded-xl px-4 text-xs font-semibold transition-colors",
               scope === s.id
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-surface text-muted-foreground",
+                ? "bg-action text-action-foreground"
+                : "border border-border bg-background text-muted-foreground shadow-card",
             )}
           >
             {s.label}
@@ -108,7 +109,7 @@ function MobileWorkProductsPage() {
         ))}
         <button
           onClick={() => setNewestFirst((v) => !v)}
-          className="min-h-9 shrink-0 rounded-full border border-border bg-surface px-4 text-xs text-muted-foreground"
+          className="min-h-10 shrink-0 rounded-xl border border-border bg-background px-4 text-xs font-semibold text-muted-foreground shadow-card"
         >
           {newestFirst ? "Mới nhất" : "Cũ nhất"}
         </button>
@@ -128,7 +129,7 @@ function MobileWorkProductsPage() {
               <Link
                 to="/m/work-products/$id"
                 params={{ id: p.id }}
-                className="flex min-h-20 items-center gap-3 rounded-2xl border border-border bg-surface p-3 active:bg-surface-2"
+                className="flex min-h-20 items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card active:bg-surface"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   <FileText className="h-5 w-5" />
