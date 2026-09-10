@@ -148,6 +148,7 @@ function AiBrainSkillsPage() {
 
   const [form, setForm] = useState(emptyForm);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const save = useMutation({
     mutationFn: () =>
