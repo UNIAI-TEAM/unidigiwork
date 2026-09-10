@@ -497,7 +497,10 @@ export const listProjectComments = createServerFn({ method: "GET" })
       author_id: string;
       created_at: string;
     }>;
-    const names = await resolveNames(context.supabase, list.map((r) => r.author_id));
+    const names = await resolveNames(
+      context.supabase,
+      list.map((r) => r.author_id),
+    );
     return list.map((r) => ({
       id: r.id,
       body: r.body,
@@ -510,9 +513,7 @@ export const listProjectComments = createServerFn({ method: "GET" })
 export const addProjectComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z
-      .object({ projectId: z.string().uuid(), body: z.string().trim().min(1).max(4000) })
-      .parse(i),
+    z.object({ projectId: z.string().uuid(), body: z.string().trim().min(1).max(4000) }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: project, error: pErr } = await context.supabase
@@ -551,7 +552,10 @@ export const listTaskComments = createServerFn({ method: "GET" })
       author_id: string;
       created_at: string;
     }>;
-    const names = await resolveNames(context.supabase, list.map((r) => r.author_id));
+    const names = await resolveNames(
+      context.supabase,
+      list.map((r) => r.author_id),
+    );
     return list.map((r) => ({
       id: r.id,
       body: r.body,
