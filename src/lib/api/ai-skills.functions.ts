@@ -238,60 +238,176 @@ export const draftAiSkillWithAi = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await resolveTenantFlexible(context, data.workspaceId ?? null);
+    return draftSkillFromPrompt(data.prompt);
+  });
 
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw fail("AI_PROVIDER_UNAVAILABLE", "Trợ lý AI hiện chưa sẵn sàng.");
+type SkillDraft = {
+  name: string;
+  code: string;
+  kind: string;
+  description: string;
+  example: string;
+  actionTypes: string[];
+};
 
-    const { streamText } = await import("ai");
-    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-    const provider = createLovableResponsesProvider(apiKey);
+/** Gọi AI Gateway để soạn bản nháp kỹ năng; luôn stream vì đây là mô hình suy luận. */
+async function draftSkillFromPrompt(prompt: string): Promise<SkillDraft> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) throw fail("AI_PROVIDER_UNAVAILABLE", "Trợ lý AI hiện chưa sẵn sàng.");
 
-    const result = streamText({
-      model: provider.responses("openai/gpt-5.6-sol"),
-      system:
-        "Bạn là trợ lý thiết kế kỹ năng AI cho nền tảng công việc UNIWORK. " +
-        "Người dùng mô tả một việc lặp đi lặp lại; bạn soạn định nghĩa kỹ năng ngắn gọn bằng tiếng Việt. " +
-        "CHỈ trả về JSON thuần, không rào ```: " +
-        '{"name":string,"code":string,"kind":string,"description":string,"example":string,"actionTypes":string[]}. ' +
-        `code: CHỮ HOA A-Z 0-9 _ (2-40 ký tự). kind ∈ ${AI_SKILL_KINDS.join("|")}. ` +
-        "description: 1-3 câu nêu khi nào chạy, làm gì, trả về gì. example: 1 câu ví dụ người dùng yêu cầu. " +
-        `actionTypes: chỉ chọn trong ${AI_ACTION_TYPES.join(",")}; để mảng rỗng nếu kỹ năng chỉ tra cứu/phân tích/soạn thảo.`,
-      prompt: `Mô tả của người dùng:\n${data.prompt}`,
-    });
+  const { streamText } = await import("ai");
+  const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+  const provider = createLovableResponsesProvider(apiKey);
 
-    const text = (await result.text) ?? "";
-    const raw = text.replace(/```json|```/g, "").trim();
-    const start = raw.indexOf("{");
-    const end = raw.lastIndexOf("}");
-    if (start < 0 || end <= start)
-      throw fail("AI_ERROR", "AI chưa soạn được kỹ năng, hãy thử lại.");
+  const result = streamText({
+    model: provider.responses("openai/gpt-5.6-sol"),
+    system:
+      "Bạn là trợ lý thiết kế kỹ năng AI cho nền tảng công việc UNIWORK. " +
+      "Người dùng mô tả một việc lặp đi lặp lại; bạn soạn định nghĩa kỹ năng ngắn gọn bằng tiếng Việt. " +
+      "CHỈ trả về JSON thuần, không rào ```: " +
+      '{"name":string,"code":string,"kind":string,"description":string,"example":string,"actionTypes":string[]}. ' +
+      `code: CHỮ HOA A-Z 0-9 _ (2-40 ký tự). kind ∈ ${AI_SKILL_KINDS.join("|")}. ` +
+      "description: 1-3 câu nêu khi nào chạy, làm gì, trả về gì. example: 1 câu ví dụ người dùng yêu cầu. " +
+      `actionTypes: chỉ chọn trong ${AI_ACTION_TYPES.join(",")}; để mảng rỗng nếu kỹ năng chỉ tra cứu/phân tích/soạn thảo.`,
+    prompt,
+  });
 
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
-    } catch {
-      throw fail("AI_ERROR", "AI chưa soạn được kỹ năng, hãy thử lại.");
+  const text = (await result.text) ?? "";
+  const raw = text.replace(/```json|```/g, "").trim();
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start < 0 || end <= start) throw fail("AI_ERROR", "AI chưa soạn được kỹ năng, hãy thử lại.");
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+  } catch {
+    throw fail("AI_ERROR", "AI chưa soạn được kỹ năng, hãy thử lại.");
+  }
+
+  const kinds = AI_SKILL_KINDS as readonly string[];
+  const actions = AI_ACTION_TYPES as readonly string[];
+  const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const code =
+    str(parsed["code"], 40)
+      .toUpperCase()
+      .replace(/[^A-Z0-9_]/g, "_")
+      .replace(/^_+|_+$/g, "") || "SKILL_MOI";
+  const kind = kinds.includes(String(parsed["kind"])) ? String(parsed["kind"]) : "ANALYSIS";
+  const actionTypes = Array.isArray(parsed["actionTypes"])
+    ? (parsed["actionTypes"] as unknown[]).map(String).filter((a) => actions.includes(a))
+    : [];
+
+  return {
+    name: str(parsed["name"], 200) || "Kỹ năng mới",
+    code: code.length >= 2 ? code : "SKILL_MOI",
+    kind,
+    description: str(parsed["description"], 2000),
+    example: str(parsed["example"], 500),
+    actionTypes,
+  };
+}
+
+/** Người dùng có quyền quản trị danh mục kỹ năng của tổ chức không. */
+async function assertCanEditSkills(context: any, tenantId: string) {
+  const { data: platform } = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (platform) return;
+  const { data: member } = await context.supabase
+    .from("tenant_members")
+    .select("role")
+    .eq("tenant_id", tenantId)
+    .eq("user_id", context.userId)
+    .eq("status", "active")
+    .maybeSingle();
+  const role = (member?.role as string) ?? "member";
+  if (role !== "tenant_owner" && role !== "tenant_admin") {
+    throw fail("FORBIDDEN", "Chỉ quản trị tổ chức mới thêm được kỹ năng.");
+  }
+}
+
+/**
+ * SKILL HUB — học kỹ năng mới từ một đề xuất AI ĐÃ DUYỆT trong Bộ não AI.
+ * Đề xuất phải thuộc tổ chức hiện tại và đã ở trạng thái thực thi thành công.
+ * Kỹ năng được lưu thẳng vào danh mục (không phải kỹ năng hệ thống), mã trùng thì tự thêm hậu tố.
+ */
+export const createAiSkillFromProposal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        proposalId: z.string().uuid(),
+        workspaceId: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
+    await assertCanEditSkills(context, tenantId);
+
+    const { data: proposal } = await context.supabase
+      .from("ai_action_proposals")
+      .select("id, tenant_id, title, description, action_type, status, risk, source")
+      .eq("id", data.proposalId)
+      .maybeSingle();
+    if (!proposal || proposal.tenant_id !== tenantId) {
+      throw fail("NOT_FOUND", "Không tìm thấy đề xuất trong tổ chức này.");
+    }
+    if (proposal.status !== "SUCCEEDED") {
+      throw fail("INVALID_STATE", "Chỉ học được kỹ năng từ đề xuất đã duyệt và thực hiện xong.");
     }
 
-    const kinds = AI_SKILL_KINDS as readonly string[];
-    const actions = AI_ACTION_TYPES as readonly string[];
-    const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
-    const code =
-      str(parsed["code"], 40)
-        .toUpperCase()
-        .replace(/[^A-Z0-9_]/g, "_")
-        .replace(/^_+|_+$/g, "") || "SKILL_MOI";
-    const kind = kinds.includes(String(parsed["kind"])) ? String(parsed["kind"]) : "ANALYSIS";
-    const actionTypes = Array.isArray(parsed["actionTypes"])
-      ? (parsed["actionTypes"] as unknown[]).map(String).filter((a) => actions.includes(a))
-      : [];
+    const draft = await draftSkillFromPrompt(
+      [
+        "Một đề xuất AI đã được người dùng duyệt và thực hiện thành công.",
+        `Tiêu đề: ${proposal.title ?? ""}`,
+        `Mô tả: ${proposal.description ?? ""}`,
+        `Loại hành động: ${proposal.action_type ?? ""}`,
+        `Mức rủi ro: ${proposal.risk ?? ""}`,
+        "Hãy soạn một kỹ năng tái sử dụng để lần sau AI tự nhận ra tình huống tương tự và đề xuất lại.",
+      ].join("\n"),
+    );
 
-    return {
-      name: str(parsed["name"], 200) || "Kỹ năng mới",
-      code: code.length >= 2 ? code : "SKILL_MOI",
-      kind,
-      description: str(parsed["description"], 2000),
-      example: str(parsed["example"], 500),
-      actionTypes,
-    };
+    // Ưu tiên giữ đúng loại hành động của đề xuất gốc.
+    const actions = AI_ACTION_TYPES as readonly string[];
+    const originAction = String(proposal.action_type ?? "");
+    const actionTypes = Array.from(
+      new Set([...draft.actionTypes, ...(actions.includes(originAction) ? [originAction] : [])]),
+    );
+
+    const { data: existing } = await context.supabase
+      .from("ai_skills")
+      .select("code")
+      .eq("tenant_id", tenantId);
+    const taken = new Set(((existing ?? []) as { code: string }[]).map((r) => r.code));
+    let code = draft.code.slice(0, 55);
+    let n = 2;
+    while (taken.has(code)) code = `${draft.code.slice(0, 52)}_${n++}`;
+
+    const { data: inserted, error } = await context.supabase
+      .from("ai_skills")
+      .insert({
+        tenant_id: tenantId,
+        workspace_id: null,
+        code,
+        name: draft.name,
+        kind: draft.kind,
+        description: draft.description,
+        example: draft.example,
+        action_types: actionTypes,
+        sources: ["WORKFLOW_AGENT"],
+        enabled: true,
+        is_system: false,
+        created_by: context.userId,
+        updated_by: context.userId,
+      })
+      .select("id, code, name")
+      .maybeSingle();
+    if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
+    return inserted;
   });
+
