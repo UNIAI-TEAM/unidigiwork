@@ -760,6 +760,10 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
           m.agenda ? ": " + m.agenda.slice(0, 160) : ""
         }`;
       }),
+      ...(projectNoteLines.length ? ["GHI CHÚ DỰ ÁN:", ...projectNoteLines] : []),
+      ...(projectCommentLines.length
+        ? ["THẢO LUẬN TRONG DỰ ÁN (bình luận thật):", ...projectCommentLines]
+        : []),
       "THÔNG BÁO:",
       ...notifs.map((n) => `- [${n.type}] ${n.title}`),
       "ĐỀ XUẤT ĐÃ DUYỆT:",
