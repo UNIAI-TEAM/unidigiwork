@@ -4,13 +4,14 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import {
   Home,
   MessageSquare,
-  CheckSquare,
-  Video,
+  Sparkles,
+  Inbox,
   LayoutGrid,
   Search,
   Bell,
   MoreHorizontal,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
