@@ -32,6 +32,7 @@ import {
   getProject,
   getProjectActivity,
   updateProject,
+  updateTaskProgress,
   listProjectMeetings,
   scheduleProjectMeeting,
   type ProjectRow,
