@@ -334,6 +334,22 @@ function AiBrainPage() {
                       <span className="text-xs text-muted-foreground">
                         {new Date(e.createdAt).toLocaleString("vi-VN")}
                       </span>
+                      {e.status === "SUCCEEDED" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="min-h-11 w-full sm:w-auto"
+                          disabled={learnSkill.isPending}
+                          onClick={() => learnSkill.mutate(e.id)}
+                        >
+                          {learnSkill.isPending && learnSkill.variables === e.id ? (
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-1.5 h-4 w-4" />
+                          )}
+                          Học thành kỹ năng
+                        </Button>
+                      )}
                     </li>
                   ))}
                 </ul>
