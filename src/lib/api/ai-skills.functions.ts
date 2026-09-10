@@ -11,7 +11,7 @@ const fail = (code: string, message: string) => new ApiError({ code: code as nev
 
 const SkillInput = z.object({
   id: z.string().uuid().nullish(),
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string().uuid().nullable().optional(),
   /** null = dùng chung toàn tenant, uuid = gán riêng workspace. */
   scopeWorkspaceId: z.string().uuid().nullable().default(null),
   code: z.string().regex(/^[A-Z0-9_]{2,60}$/, "Mã kỹ năng chỉ gồm A-Z, 0-9 và _"),
@@ -34,17 +34,36 @@ async function resolveTenant(context: any, workspaceId: string) {
   return data.tenant_id as string;
 }
 
+async function resolveTenantFlexible(context: any, workspaceId: string | null) {
+  if (workspaceId) return resolveTenant(context, workspaceId);
+  const { data } = await context.supabase
+    .from("tenant_members")
+    .select("tenant_id")
+    .eq("user_id", context.userId)
+    .eq("status", "active")
+    .limit(2);
+  const rows = (data ?? []) as { tenant_id: string }[];
+  if (rows.length !== 1) throw fail("WORKSPACE_NOT_FOUND", "Hãy chọn một không gian làm việc.");
+  return rows[0]!.tenant_id;
+}
+
 export const listAiSkills = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .inputValidator((i: unknown) =>
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(i),
+  )
   .handler(async ({ data, context }) => {
-    const tenantId = await resolveTenant(context, data.workspaceId);
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
     const { data: rows, error } = await context.supabase
       .from("ai_skills")
       .select("*")
       .eq("tenant_id", tenantId)
       .is("deleted_at", null)
-      .or(`workspace_id.is.null,workspace_id.eq.${data.workspaceId}`)
+      .or(
+        data.workspaceId
+          ? `workspace_id.is.null,workspace_id.eq.${data.workspaceId}`
+          : "workspace_id.is.null,workspace_id.not.is.null",
+      )
       .order("is_system", { ascending: false })
       .order("kind", { ascending: true })
       .order("name", { ascending: true });
@@ -56,7 +75,7 @@ export const saveAiSkill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => SkillInput.parse(i))
   .handler(async ({ data, context }) => {
-    const tenantId = await resolveTenant(context, data.workspaceId);
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
     if (data.scopeWorkspaceId && data.scopeWorkspaceId !== data.workspaceId) {
       await resolveTenant(context, data.scopeWorkspaceId);
     }
@@ -111,7 +130,9 @@ export const saveAiSkill = createServerFn({ method: "POST" })
 
 export const setAiSkillEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ skillId: z.string().uuid(), enabled: z.boolean() }).parse(i))
+  .inputValidator((i: unknown) =>
+    z.object({ skillId: z.string().uuid(), enabled: z.boolean() }).parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("ai_skills")
@@ -138,4 +159,65 @@ export const deleteAiSkill = createServerFn({ method: "POST" })
       .eq("id", data.skillId);
     if (error) throw fail("AI_SKILL_DELETE_FAILED", error.message);
     return { ok: true };
+  });
+
+/** Người dùng có được sửa hồ sơ kỹ năng không: quản trị nền tảng hoặc chủ/quản trị tổ chức. */
+export const getAiSkillsPermission = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ canEdit: boolean }> => {
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
+    const { data: platform } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (platform) return { canEdit: true };
+    const { data: member } = await context.supabase
+      .from("tenant_members")
+      .select("role")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", context.userId)
+      .eq("status", "active")
+      .maybeSingle();
+    const role = (member?.role as string) ?? "member";
+    return { canEdit: role === "tenant_owner" || role === "tenant_admin" };
+  });
+
+/** Nạp danh mục kỹ năng mặc định cho tổ chức (bỏ qua kỹ năng đã tồn tại). */
+export const seedDefaultAiSkills = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ inserted: number }> => {
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
+    const { AI_SKILLS } = await import("@/domain/workflow-agents/skills");
+    const { data: existing } = await context.supabase
+      .from("ai_skills")
+      .select("code")
+      .eq("tenant_id", tenantId);
+    const have = new Set(((existing ?? []) as { code: string }[]).map((r) => r.code));
+    const rows = AI_SKILLS.filter((s) => !have.has(s.id)).map((s) => ({
+      tenant_id: tenantId,
+      workspace_id: null,
+      code: s.id,
+      name: s.name,
+      kind: s.kind,
+      description: s.description,
+      example: s.example,
+      action_types: [...s.actionTypes],
+      sources: Array.from(new Set([...s.sources, "WORKFLOW_AGENT"])),
+      enabled: true,
+      is_system: true,
+      created_by: context.userId,
+      updated_by: context.userId,
+    }));
+    if (rows.length === 0) return { inserted: 0 };
+    const { error } = await context.supabase.from("ai_skills").insert(rows);
+    if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
+    return { inserted: rows.length };
   });
