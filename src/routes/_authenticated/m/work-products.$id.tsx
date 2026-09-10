@@ -103,7 +103,13 @@ function MobileWorkProductDetail() {
   const linked = (links.data as any[]) ?? [];
   const tasks = linked.filter((l) => l.entityType === "TASK");
   const documents = linked.filter((l) => l.entityType === "DOCUMENT");
-  const meetings = linked.filter((l) => l.entityType === "MEETING");
+  const meetings = linked
+    .filter((l) => l.entityType === "MEETING")
+    .sort(
+      (a, b) =>
+        new Date(a.startsAt ?? 0).getTime() - new Date(b.startsAt ?? 0).getTime() ||
+        String(a.title).localeCompare(String(b.title)),
+    );
   const following = Boolean((follow.data as any)?.following);
 
   const url = typeof window !== "undefined" ? `${window.location.origin}/work-products/${id}` : "";
