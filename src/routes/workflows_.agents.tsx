@@ -207,6 +207,24 @@ function AgentBuilderPage() {
     enabled: !!activeWs,
   });
 
+  // Kỹ năng Skill Hub của tổ chức (chỉ hiển thị + gợi ý, không đổi quyền của agent).
+  const hubQuery = useQuery({
+    queryKey: ["ai-skills", activeWs],
+    queryFn: () => listAiSkills({ data: { workspaceId: activeWs } }),
+    enabled: !!activeWs,
+  });
+  const hubSkills = (hubQuery.data ?? []) as unknown as HubSkillRow[];
+  const enabledHubSkills = useMemo(() => hubSkills.filter((s) => s.enabled), [hubSkills]);
+  const suggestHubSkills = (agent: AgentRow) => {
+    const allowed = new Set<string>([
+      agent.action_type,
+      ...normalizeAllowedActionTypes(agent.allowed_action_types),
+    ]);
+    return enabledHubSkills
+      .filter((s) => (s.action_types ?? []).some((t) => allowed.has(t)))
+      .slice(0, 4);
+  };
+
   const save = useServerFn(saveWorkflowAgent);
   const toggle = useServerFn(setWorkflowAgentEnabled);
   const remove = useServerFn(deleteWorkflowAgent);
