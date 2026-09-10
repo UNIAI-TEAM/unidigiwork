@@ -2645,3 +2645,175 @@ export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
       evaluated: matches.length,
     };
   });
+
+/* ---- Xếp hạng công việc phù hợp khi kéo tài liệu từ hộp việc vào bản đồ ---- */
+
+export type TaskMatchRanking = {
+  taskId: string;
+  title: string;
+  status: string | null;
+  score: number;
+  reason: string;
+};
+
+const RANK_STOPWORDS = new Set([
+  "và",
+  "của",
+  "cho",
+  "các",
+  "một",
+  "trong",
+  "với",
+  "về",
+  "theo",
+  "được",
+  "là",
+  "có",
+  "đã",
+  "tại",
+  "từ",
+  "này",
+  "đó",
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "that",
+  "this",
+  "task",
+  "công",
+  "việc",
+  "tài",
+  "liệu",
+  "bản",
+]);
+
+function rankTokenize(s: string): string[] {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !RANK_STOPWORDS.has(w));
+}
+
+const BLOCK_WEIGHT_KEY: Record<string, keyof DocxRecognitionWeightsRef> = {
+  TITLE: "title",
+  HEADING: "heading",
+  LIST_ITEM: "listItem",
+  QUOTE: "quote",
+  CAPTION: "caption",
+  TABLE: "table",
+};
+type DocxRecognitionWeightsRef = {
+  title: number;
+  heading: number;
+  listItem: number;
+  quote: number;
+  caption: number;
+  table: number;
+};
+
+/**
+ * Đối chiếu nội dung thật của tài liệu với công việc của tổ chức, dùng trọng số
+ * nhận diện riêng của tổ chức: tiêu đề/đề mục có sức nặng lớn hơn nội dung thường.
+ * Không gọi AI để bấm kéo–thả phản hồi tức thì.
+ */
+export const rankTasksForWorkProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        q: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(50).default(30),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<TaskMatchRanking[]> => {
+    const supabase = context.supabase as any;
+    const { data: product } = await supabase
+      .from("work_products")
+      .select("id, tenant_id, title, business_type, content")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    const tenantId = product.tenant_id as string;
+    const { loadTenantDocxProfile } = await import("./docx-profile.server");
+    const profile = await loadTenantDocxProfile(supabase, tenantId);
+
+    const { data: blocks } = await supabase
+      .from("work_product_blocks")
+      .select("text, block_type")
+      .eq("work_product_id", data.id)
+      .order("ordinal", { ascending: true })
+      .limit(400);
+
+    // Từ khoá tài liệu kèm trọng số theo loại nhận diện của tổ chức.
+    const docWeights = new Map<string, number>();
+    const bump = (text: string, weight: number) => {
+      for (const w of rankTokenize(text)) {
+        docWeights.set(w, Math.max(docWeights.get(w) ?? 0, weight));
+      }
+    };
+    bump(String(product.title ?? ""), (profile.weights.title ?? 1) * 1.5);
+    const rows = (blocks ?? []) as Array<{ text: string; block_type: string }>;
+    if (rows.length) {
+      for (const b of rows) {
+        const key = BLOCK_WEIGHT_KEY[String(b.block_type ?? "").toUpperCase()];
+        const weight = key ? (profile.weights as DocxRecognitionWeightsRef)[key] : 0.5;
+        bump(String(b.text ?? ""), weight);
+      }
+    } else {
+      bump(String(product.content ?? "").slice(0, 12000), 0.5);
+    }
+    if (!docWeights.size) return [];
+
+    let query = supabase
+      .from("tasks")
+      .select("id, title, status, description, updated_at")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(120);
+    if (data.q?.trim()) query = query.ilike("title", `%${data.q.trim()}%`);
+    const { data: tasks, error } = await query;
+    if (error) mapPgError(error);
+
+    const maxPossible = Array.from(docWeights.values())
+      .sort((a, b) => b - a)
+      .slice(0, 8)
+      .reduce((s, v) => s + v, 0);
+
+    const ranked = ((tasks ?? []) as any[]).map((t) => {
+      const titleTokens = new Set(rankTokenize(String(t.title ?? "")));
+      const descTokens = new Set(rankTokenize(String(t.description ?? "").slice(0, 600)));
+      let score = 0;
+      const hits: string[] = [];
+      for (const [word, weight] of docWeights) {
+        if (titleTokens.has(word)) {
+          score += weight * 2;
+          hits.push(word);
+        } else if (descTokens.has(word)) {
+          score += weight;
+          hits.push(word);
+        }
+      }
+      const pct =
+        maxPossible > 0 ? Math.round(Math.min(100, (score / (maxPossible * 2)) * 100)) : 0;
+      return {
+        taskId: t.id as string,
+        title: (t.title as string) ?? "(Không tiêu đề)",
+        status: (t.status as string) ?? null,
+        score: pct,
+        reason: hits.length
+          ? `Trùng từ khoá trọng số cao: ${Array.from(new Set(hits)).slice(0, 6).join(", ")}`
+          : "Chưa thấy từ khoá trùng với tài liệu.",
+      } satisfies TaskMatchRanking;
+    });
+
+    return ranked.sort((a, b) => b.score - a.score).slice(0, data.limit);
+  });

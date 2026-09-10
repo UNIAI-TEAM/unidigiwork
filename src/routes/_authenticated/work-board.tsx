@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listWorkDeliverables, linkWorkDeliverable } from "@/lib/api/work-deliverables.functions";
 import { listWorkGraphTargets } from "@/lib/api/work-graph.functions";
+import { rankTasksForWorkProduct } from "@/lib/api/work-products-docx.functions";
 
 export const Route = createFileRoute("/_authenticated/work-board")({
   head: () => ({
@@ -66,6 +67,20 @@ function WorkBoardPage() {
     },
     onError: () => toast.error("Không gắn được tài liệu vào công việc"),
   });
+
+  // Xếp hạng theo nội dung thật + trọng số nhận diện của tổ chức.
+  const ranking = useQuery({
+    enabled: Boolean(picked?.id),
+    queryKey: ["work-board-rank", picked?.id, taskQuery],
+    queryFn: () =>
+      rankTasksForWorkProduct({
+        data: { id: picked!.id, q: taskQuery || undefined, limit: 50 },
+      }) as Promise<Array<{ taskId: string; score: number; reason: string }>>,
+  });
+  const rankMap = new Map((ranking.data ?? []).map((r) => [r.taskId, r]));
+  const visibleTasks = [...((tasks.data ?? []) as any[])].sort(
+    (a, b) => (rankMap.get(b.id)?.score ?? -1) - (rankMap.get(a.id)?.score ?? -1),
+  );
 
   const drop = (taskId: string, docId?: string | null) => {
     const id = docId ?? picked?.id;
@@ -152,46 +167,70 @@ function WorkBoardPage() {
               </Button>
             </div>
           )}
+          {picked && ranking.isFetching && (
+            <p className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Đang chấm mức phù hợp theo nội dung tài
+              liệu…
+            </p>
+          )}
           {tasks.isLoading ? (
             <p className="text-sm text-muted-foreground">Đang tải…</p>
           ) : !tasks.data?.length ? (
             <p className="text-sm text-muted-foreground">Chưa có công việc nào.</p>
           ) : (
             <ul className="grid max-h-[28rem] gap-2 overflow-y-auto pr-1">
-              {tasks.data.map((t) => (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "link";
-                      setOverId(t.id);
-                    }}
-                    onDragLeave={() => setOverId((v) => (v === t.id ? null : v))}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setOverId(null);
-                      drop(t.id, e.dataTransfer.getData("text/uniwork-work-product") || null);
-                    }}
-                    onClick={() => drop(t.id)}
-                    disabled={link.isPending}
-                    className={`flex w-full min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
-                      overId === t.id
-                        ? "border-primary bg-primary/10"
-                        : "bg-surface hover:bg-muted/60"
-                    }`}
-                  >
-                    <CheckSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    {link.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    {t.subtitle && (
-                      <Badge variant="secondary" className="shrink-0 text-[10px]">
-                        {t.subtitle}
-                      </Badge>
-                    )}
-                  </button>
-                </li>
-              ))}
+              {visibleTasks.map((t) => {
+                const rank = rankMap.get(t.id);
+                return (
+                  <li key={t.id}>
+                    <button
+                      type="button"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "link";
+                        setOverId(t.id);
+                      }}
+                      onDragLeave={() => setOverId((v) => (v === t.id ? null : v))}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setOverId(null);
+                        drop(t.id, e.dataTransfer.getData("text/uniwork-work-product") || null);
+                      }}
+                      onClick={() => drop(t.id)}
+                      disabled={link.isPending}
+                      className={`flex w-full min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                        overId === t.id
+                          ? "border-primary bg-primary/10"
+                          : "bg-surface hover:bg-muted/60"
+                      }`}
+                    >
+                      <CheckSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{t.title}</span>
+                        {rank && rank.score > 0 && (
+                          <span className="block truncate text-[11px] text-muted-foreground">
+                            {rank.reason}
+                          </span>
+                        )}
+                      </span>
+                      {link.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      {rank && (
+                        <Badge
+                          variant={rank.score >= 40 ? "default" : "outline"}
+                          className="shrink-0 text-[10px]"
+                        >
+                          {rank.score}%
+                        </Badge>
+                      )}
+                      {t.subtitle && (
+                        <Badge variant="secondary" className="shrink-0 text-[10px]">
+                          {t.subtitle}
+                        </Badge>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
