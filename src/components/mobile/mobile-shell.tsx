@@ -20,11 +20,12 @@ import { useEffect, useRef, useState } from "react";
 const TABS = [
   { id: "home", label: "Home", icon: Home, to: "/m/home" },
   { id: "chat", label: "Chat", icon: MessageSquare, to: "/m/chat" },
-  // Work = tab trung tâm nổi bật (công việc của tôi).
-  { id: "tasks", label: "Work", icon: CheckSquare, to: "/m/tasks" },
-  { id: "meet", label: "Meet", icon: Video, to: "/m/meet" },
+  // Nút W ở giữa: mở My AI (đội ngũ AI của bạn).
+  { id: "ai", label: "My AI", icon: Sparkles, to: "/m/ai" },
+  { id: "box", label: "My Box", icon: Inbox, to: "/m/box" },
   { id: "more", label: "More", icon: MoreHorizontal, to: "/m/more" },
 ];
+
 
 const SWIPE_THRESHOLD = 72;
 
