@@ -6577,6 +6577,38 @@ export type Database = {
           },
         ]
       }
+      work_product_followers: {
+        Row: {
+          created_at: string
+          id: string
+          tenant_id: string
+          user_id: string
+          work_product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tenant_id: string
+          user_id: string
+          work_product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tenant_id?: string
+          user_id?: string
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_followers_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_product_reviews: {
         Row: {
           created_at: string
