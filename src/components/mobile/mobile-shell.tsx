@@ -15,7 +15,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
-import { MobileUniCopilotButton } from "@/components/ai/uni-copilot-mobile";
 import { ThemeToggle } from "@/lib/theme";
 import { useEffect, useRef, useState } from "react";
 
@@ -199,9 +198,6 @@ function MobileTopbar() {
             </span>
           )}
         </Link>
-        <div className="hidden">
-          <MobileUniCopilotButton workspaceId={workspaceId ?? null} />
-        </div>
       </div>
     </header>
   );
