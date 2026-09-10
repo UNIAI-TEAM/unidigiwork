@@ -28,7 +28,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto grid min-h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 sm:px-6">
-        <Link to="/" className="flex min-w-0 items-center gap-2">
+        <Link to="/" className="flex min-h-11 min-w-0 items-center gap-2">
           <BrandMark className="h-9 w-9 shrink-0" />
           <div className="min-w-0 leading-tight">
             <div className="text-base font-bold tracking-wide">UNIWORK</div>
@@ -53,7 +53,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
           <span className="hidden sm:inline-flex">
             <ToneToggle />
           </span>
-          <ThemeToggle />
+          <ThemeToggle className="h-11 w-11" />
           <Link
             to="/auth"
             className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground sm:inline"
@@ -77,7 +77,7 @@ function PublicFooter() {
     <footer className="border-t border-border/60 bg-surface/30 py-12">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex min-h-11 items-center gap-2">
             <BrandMark className="h-8 w-8" />
             <span className="font-semibold">UNIWORK</span>
           </Link>
@@ -113,13 +113,13 @@ function PublicFooter() {
       <div className="mx-auto mt-10 flex max-w-7xl flex-col items-center justify-between gap-3 border-t border-border/60 px-4 pt-6 text-xs text-muted-foreground sm:flex-row sm:px-6">
         <div>© 2026 Unicom JSC. All rights reserved.</div>
         <div className="flex items-center gap-4">
-          <Link to="/privacy" className="hover:text-foreground">
+          <Link to="/privacy" className="inline-flex min-h-11 items-center hover:text-foreground">
             Bảo mật
           </Link>
-          <Link to="/terms" className="hover:text-foreground">
+          <Link to="/terms" className="inline-flex min-h-11 items-center hover:text-foreground">
             Điều khoản
           </Link>
-          <a href="mailto:hello@uniwork.vn" className="hover:text-foreground">
+          <a href="mailto:hello@uniwork.vn" className="inline-flex min-h-11 items-center hover:text-foreground">
             hello@uniwork.vn
           </a>
         </div>
@@ -137,7 +137,7 @@ function FooterCol({ title, items }: { title: string; items: { label: string; to
       <ul className="space-y-2 text-sm">
         {items.map((it) => (
           <li key={it.to}>
-            <Link to={it.to} className="text-muted-foreground hover:text-foreground">
+            <Link to={it.to} className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground">
               {it.label}
             </Link>
           </li>
