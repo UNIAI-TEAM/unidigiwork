@@ -59,9 +59,18 @@ function serialize(sub: PushSubscription): SerializedSubscription {
 export async function subscribeToPush(vapidPublicKey: string): Promise<SerializedSubscription> {
   if (!isPushSupported()) throw new Error("Trình duyệt này không hỗ trợ thông báo đẩy");
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") throw new Error("Bạn cần cho phép quyền thông báo trong trình duyệt");
+  if (permission !== "granted")
+    throw new Error("Bạn cần cho phép quyền thông báo trong trình duyệt");
   const reg = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
-  await navigator.serviceWorker.ready;
+  if (!reg.active) {
+    await new Promise<void>((resolve) => {
+      const sw = reg.installing ?? reg.waiting;
+      if (!sw) return resolve();
+      sw.addEventListener("statechange", () => {
+        if (sw.state === "activated") resolve();
+      });
+    });
+  }
   const existing = await reg.pushManager.getSubscription();
   if (existing) return serialize(existing);
   const sub = await reg.pushManager.subscribe({

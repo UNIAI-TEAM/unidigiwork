@@ -1694,9 +1694,7 @@ export const getWorkDeliverableFollowState = createServerFn({ method: "GET" })
 /** Bật/tắt theo dõi cập nhật của một kết quả công việc. */
 export const toggleWorkDeliverableFollow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ id: z.string().uuid(), follow: z.boolean() }).parse(i),
-  )
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), follow: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: product } = await context.supabase
       .from("work_products")

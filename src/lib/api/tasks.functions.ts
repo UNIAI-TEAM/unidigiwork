@@ -13,19 +13,24 @@ const taskStatusSchema = z.enum(["todo", "in_progress", "blocked", "done", "canc
 export const listTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      workspaceId: z.string().uuid(),
-      status: taskStatusSchema.optional(),
-      priority: taskPrioritySchema.optional(),
-      tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
-      limit: z.number().int().min(1).max(200).default(50),
-    }).parse(i),
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        status: taskStatusSchema.optional(),
+        priority: taskPrioritySchema.optional(),
+        tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
+        limit: z.number().int().min(1).max(200).default(50),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     let q = context.supabase
-      .from("tasks").select("*")
-      .eq("workspace_id", data.workspaceId).is("deleted_at", null)
-      .order("updated_at", { ascending: false }).limit(data.limit);
+      .from("tasks")
+      .select("*")
+      .eq("workspace_id", data.workspaceId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(data.limit);
     if (data.status) q = q.eq("status", data.status);
     if (data.priority) q = q.eq("priority", data.priority);
     if (data.tags?.length) q = q.overlaps("tags", data.tags);
@@ -37,16 +42,18 @@ export const listTasks = createServerFn({ method: "GET" })
 export const createTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      workspaceId: z.string().uuid(),
-      title: z.string().min(1).max(500),
-      description: z.string().max(10000).optional(),
-      priority: taskPrioritySchema.default("normal"),
-      dueAt: z.string().datetime().optional(),
-      assigneeId: z.string().uuid().optional(),
-      tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        workspaceId: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        description: z.string().max(10000).optional(),
+        priority: taskPrioritySchema.default("normal"),
+        dueAt: z.string().datetime().optional(),
+        assigneeId: z.string().uuid().optional(),
+        tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("create_task", {
@@ -83,10 +90,12 @@ export const createTask = createServerFn({ method: "POST" })
 export const setTaskTags = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      taskId: z.string().uuid(),
-      tags: z.array(z.string().trim().min(1).max(40)).max(10),
-    }).parse(i),
+    z
+      .object({
+        taskId: z.string().uuid(),
+        tags: z.array(z.string().trim().min(1).max(40)).max(10),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const tags = Array.from(new Set(data.tags.map((t) => t.trim()).filter(Boolean)));
@@ -101,14 +110,16 @@ export const setTaskTags = createServerFn({ method: "POST" })
 export const updateTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      taskId: z.string().uuid(),
-      title: z.string().min(1).max(500).optional(),
-      description: z.string().max(10000).optional(),
-      priority: taskPrioritySchema.optional(),
-      dueAt: z.string().datetime().nullable().optional(),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        taskId: z.string().uuid(),
+        title: z.string().min(1).max(500).optional(),
+        description: z.string().max(10000).optional(),
+        priority: taskPrioritySchema.optional(),
+        dueAt: z.string().datetime().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("update_task", {
@@ -127,11 +138,13 @@ export const updateTask = createServerFn({ method: "POST" })
 export const transitionTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      taskId: z.string().uuid(),
-      toStatus: taskStatusSchema,
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        taskId: z.string().uuid(),
+        toStatus: taskStatusSchema,
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("transition_task", {
@@ -147,12 +160,14 @@ export const transitionTask = createServerFn({ method: "POST" })
 export const assignTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      taskId: z.string().uuid(),
-      assigneeId: z.string().uuid(),
-      role: z.string().max(50).default("assignee"),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        taskId: z.string().uuid(),
+        assigneeId: z.string().uuid(),
+        role: z.string().max(50).default("assignee"),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("assign_task", {
@@ -168,11 +183,13 @@ export const assignTask = createServerFn({ method: "POST" })
 export const commentTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      taskId: z.string().uuid(),
-      body: z.string().min(1).max(10000),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        taskId: z.string().uuid(),
+        body: z.string().min(1).max(10000),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("comment_task", {
@@ -191,26 +208,46 @@ export const getTaskDetail = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { withAuthorNames } = await import("./documents.server");
     const { data: task, error } = await context.supabase
-      .from("tasks").select("*").eq("id", data.taskId).is("deleted_at", null).maybeSingle();
+      .from("tasks")
+      .select("*")
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .maybeSingle();
     if (error) mapPgError(error);
     if (!task) throw new Error("TASK_NOT_FOUND");
 
     const [comments, subtasks, attachments, assignees, parent] = await Promise.all([
-      context.supabase.from("task_comments").select("*")
-        .eq("task_id", data.taskId).is("deleted_at", null)
+      context.supabase
+        .from("task_comments")
+        .select("*")
+        .eq("task_id", data.taskId)
+        .is("deleted_at", null)
         .order("created_at", { ascending: true }),
-      context.supabase.from("tasks").select("*")
-        .eq("parent_task_id", data.taskId).is("deleted_at", null)
+      context.supabase
+        .from("tasks")
+        .select("*")
+        .eq("parent_task_id", data.taskId)
+        .is("deleted_at", null)
         .order("created_at", { ascending: true }),
-      context.supabase.from("task_attachments").select("*")
-        .eq("task_id", data.taskId).order("created_at", { ascending: false }),
+      context.supabase
+        .from("task_attachments")
+        .select("*")
+        .eq("task_id", data.taskId)
+        .order("created_at", { ascending: false }),
       context.supabase.from("task_assignees").select("*").eq("task_id", data.taskId),
       task.parent_task_id
-        ? context.supabase.from("tasks").select("id, title").eq("id", task.parent_task_id).maybeSingle()
+        ? context.supabase
+            .from("tasks")
+            .select("id, title")
+            .eq("id", task.parent_task_id)
+            .maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
 
-    const commentRows = await withAuthorNames(context.supabase, (comments.data ?? []) as Array<{ author_id: string | null }>);
+    const commentRows = await withAuthorNames(
+      context.supabase,
+      (comments.data ?? []) as Array<{ author_id: string | null }>,
+    );
 
     return {
       task,
@@ -225,13 +262,15 @@ export const getTaskDetail = createServerFn({ method: "GET" })
 export const createSubtask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      parentTaskId: z.string().uuid(),
-      title: z.string().min(1).max(500),
-      priority: taskPrioritySchema.default("normal"),
-      dueAt: z.string().datetime().optional(),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        parentTaskId: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        priority: taskPrioritySchema.default("normal"),
+        dueAt: z.string().datetime().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("create_subtask", {
@@ -248,17 +287,22 @@ export const createSubtask = createServerFn({ method: "POST" })
 export const addTaskAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      taskId: z.string().uuid(),
-      fileName: z.string().min(1).max(300),
-      storagePath: z.string().min(1).max(1000),
-      mimeType: z.string().max(200).optional(),
-      sizeBytes: z.number().int().nonnegative().optional(),
-    }).parse(i),
+    z
+      .object({
+        taskId: z.string().uuid(),
+        fileName: z.string().min(1).max(300),
+        storagePath: z.string().min(1).max(1000),
+        mimeType: z.string().max(200).optional(),
+        sizeBytes: z.number().int().nonnegative().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: task, error: taskErr } = await context.supabase
-      .from("tasks").select("id, tenant_id").eq("id", data.taskId).maybeSingle();
+      .from("tasks")
+      .select("id, tenant_id")
+      .eq("id", data.taskId)
+      .maybeSingle();
     if (taskErr) mapPgError(taskErr);
     if (!task) throw new Error("TASK_NOT_FOUND");
     const { data: row, error } = await context.supabase
@@ -272,7 +316,8 @@ export const addTaskAttachment = createServerFn({ method: "POST" })
         size_bytes: data.sizeBytes ?? null,
         uploaded_by: context.userId,
       })
-      .select("*").single();
+      .select("*")
+      .single();
     if (error) mapPgError(error);
     return row;
   });
@@ -282,7 +327,9 @@ export const deleteTaskAttachment = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ attachmentId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
-      .from("task_attachments").delete().eq("id", data.attachmentId);
+      .from("task_attachments")
+      .delete()
+      .eq("id", data.attachmentId);
     if (error) mapPgError(error);
     return { ok: true };
   });

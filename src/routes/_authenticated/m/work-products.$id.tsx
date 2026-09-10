@@ -80,7 +80,8 @@ function MobileWorkProductDetail() {
   });
 
   const followMut = useMutation({
-    mutationFn: (next: boolean) => toggleWorkDeliverableFollow({ data: { id, follow: next } } as any),
+    mutationFn: (next: boolean) =>
+      toggleWorkDeliverableFollow({ data: { id, follow: next } } as any),
     onSuccess: (res: any) => {
       toast.success(res?.following ? "Đang theo dõi cập nhật." : "Đã tắt theo dõi.");
       void qc.invalidateQueries({ queryKey: ["m-work-product-follow", id] });
