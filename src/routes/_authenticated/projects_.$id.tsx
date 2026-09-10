@@ -625,6 +625,104 @@ function ProjectDetailPage() {
                   </section>
 
                   <section className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="flex items-center gap-2 font-semibold">
+                        <CalendarDays className="h-4 w-4 text-primary" /> Lịch họp dự án
+                      </h2>
+                      <span className="text-xs text-muted-foreground">
+                        {meetingsQuery.data?.length ?? 0} cuộc họp
+                      </span>
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <Input
+                        value={mTitle}
+                        onChange={(e) => setMTitle(e.target.value)}
+                        placeholder="Tiêu đề cuộc họp"
+                        className="min-h-11"
+                      />
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <label className="text-xs text-muted-foreground">
+                          Bắt đầu
+                          <Input
+                            type="datetime-local"
+                            value={mStart}
+                            onChange={(e) => setMStart(e.target.value)}
+                            className="mt-1 min-h-11"
+                          />
+                        </label>
+                        <label className="text-xs text-muted-foreground">
+                          Kết thúc
+                          <Input
+                            type="datetime-local"
+                            value={mEnd}
+                            onChange={(e) => setMEnd(e.target.value)}
+                            className="mt-1 min-h-11"
+                          />
+                        </label>
+                      </div>
+                      <Input
+                        value={mLocation}
+                        onChange={(e) => setMLocation(e.target.value)}
+                        placeholder="Địa điểm / link họp (tuỳ chọn)"
+                        className="min-h-11"
+                      />
+                      <Textarea
+                        value={mAgenda}
+                        onChange={(e) => setMAgenda(e.target.value)}
+                        placeholder="Nội dung / chương trình họp (tuỳ chọn)"
+                        rows={3}
+                      />
+                      <Button
+                        className="min-h-11 w-full sm:w-auto"
+                        disabled={
+                          createMeeting.isPending || !mTitle.trim() || !mStart || !mEnd
+                        }
+                        onClick={() => createMeeting.mutate()}
+                      >
+                        {createMeeting.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CalendarDays className="mr-2 h-4 w-4" />
+                        )}
+                        Thêm lịch họp
+                      </Button>
+                    </div>
+
+                    {meetingsQuery.isLoading && (
+                      <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch họp…
+                      </p>
+                    )}
+                    {!meetingsQuery.isLoading && (meetingsQuery.data?.length ?? 0) === 0 && (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Chưa có cuộc họp nào cho dự án này.
+                      </p>
+                    )}
+                    <ul className="mt-3 space-y-2">
+                      {(meetingsQuery.data ?? []).map((m) => (
+                        <li key={m.id} className="rounded-lg border border-border p-3">
+                          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
+                            <p className="min-w-0 text-sm font-medium">{m.title}</p>
+                            <Badge variant="secondary">{m.status}</Badge>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {new Date(m.startAt).toLocaleString("vi-VN")} –{" "}
+                            {new Date(m.endAt).toLocaleTimeString("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                            {m.location ? ` · ${m.location}` : ""}
+                          </p>
+                          {m.agenda && (
+                            <p className="mt-1 text-xs text-muted-foreground">{m.agenda}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
                     <h2 className="flex items-center gap-2 font-semibold">
                       <MessageSquare className="h-4 w-4 text-primary" /> Thảo luận ghi chú
                     </h2>
