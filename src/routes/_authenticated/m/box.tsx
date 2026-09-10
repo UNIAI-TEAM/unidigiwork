@@ -176,7 +176,7 @@ function MobileBoxPage() {
         await (navigator as any).share({ title: item.title, url });
         return;
       }
-      await navigator.clipboard.writeText(url);
+      await (navigator as Navigator).clipboard.writeText(url);
       toast.success("Đã sao chép liên kết.");
     } catch {
       /* người dùng huỷ chia sẻ */
