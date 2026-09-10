@@ -126,9 +126,7 @@ function HomePage() {
       if (previous) {
         qc.setQueryData<HomeSummary>(homeKey, {
           ...previous,
-          myWork: previous.myWork.map((x) =>
-            x.id === t.id ? { ...x, status: "done" } : x,
-          ),
+          myWork: previous.myWork.map((x) => (x.id === t.id ? { ...x, status: "done" } : x)),
           counts: {
             ...previous.counts,
             attention: Math.max(0, (previous.counts.attention ?? 0) - 1),
@@ -201,13 +199,12 @@ function HomePage() {
   // Chọn nhiều dòng để hoàn thành hàng loạt qua command transitionTask.
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const [bulkRunning, setBulkRunning] = useState(false);
-  const openTasks = useMemo(
-    () => (data?.myWork ?? []).filter((t) => t.status !== "done"),
-    [data],
-  );
+  const openTasks = useMemo(() => (data?.myWork ?? []).filter((t) => t.status !== "done"), [data]);
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
   const toggleChecked = (t: HomeTask, next: boolean) =>
-    setCheckedIds((prev) => (next ? [...new Set([...prev, t.id])] : prev.filter((x) => x !== t.id)));
+    setCheckedIds((prev) =>
+      next ? [...new Set([...prev, t.id])] : prev.filter((x) => x !== t.id),
+    );
   const allChecked = openTasks.length > 0 && checkedIds.length === openTasks.length;
 
   const bulkComplete = async () => {
@@ -289,9 +286,7 @@ function HomePage() {
   }, [complete, router]);
 
   useEffect(() => {
-    document
-      .querySelector("[data-mywork-row='selected']")
-      ?.scrollIntoView({ block: "nearest" });
+    document.querySelector("[data-mywork-row='selected']")?.scrollIntoView({ block: "nearest" });
   }, [selectedIdx]);
 
   const { prefs, saving, update, reset } = useHomePrefs();
@@ -332,9 +327,7 @@ function HomePage() {
                 type="checkbox"
                 className="h-4 w-4 cursor-pointer accent-primary"
                 checked={allChecked}
-                onChange={(e) =>
-                  setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])
-                }
+                onChange={(e) => setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])}
                 aria-label="Chọn tất cả công việc"
               />
               Chọn tất cả
@@ -492,7 +485,7 @@ function HomePage() {
                 onClick={() => setCustomizing((v) => !v)}
                 aria-expanded={customizing}
                 className={cn(
-                   "inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
+                  "inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
                   customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
                 )}
               >
@@ -597,4 +590,3 @@ function spanClass(key: HomeSectionKey, layout: HomeLayout) {
   }
   return "xl:col-span-1";
 }
-

@@ -19,7 +19,10 @@ export function FilterPageHeader({
 }) {
   return (
     <div className="mb-6">
-      <nav aria-label="Breadcrumb" className="module-label flex flex-wrap items-center gap-1 text-muted-foreground">
+      <nav
+        aria-label="Breadcrumb"
+        className="module-label flex flex-wrap items-center gap-1 text-muted-foreground"
+      >
         {crumbs.map((c, i) => (
           <span key={`${c.label}-${i}`} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="h-3 w-3 opacity-60" />}
@@ -47,7 +50,11 @@ export function FilterPageHeader({
             >
               {c.label}
               {c.onClear && (
-                <button onClick={c.onClear} aria-label={`Bỏ lọc ${c.label}`} className="hover:opacity-70">
+                <button
+                  onClick={c.onClear}
+                  aria-label={`Bỏ lọc ${c.label}`}
+                  className="hover:opacity-70"
+                >
                   <X className="h-3 w-3" />
                 </button>
               )}

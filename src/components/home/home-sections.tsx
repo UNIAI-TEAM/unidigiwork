@@ -112,7 +112,8 @@ export function PartialNotice({
         disabled={retrying}
         className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-medium hover:bg-surface-2 disabled:opacity-50"
       >
-        <RefreshCw className={cn("h-3 w-3", retrying && "animate-spin")} strokeWidth={1.75} /> Thử lại
+        <RefreshCw className={cn("h-3 w-3", retrying && "animate-spin")} strokeWidth={1.75} /> Thử
+        lại
       </button>
     </div>
   );
@@ -128,13 +129,15 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   );
 }
 
-export function TodaySummary({
-  counts,
-}: {
-  counts: HomeSummary["counts"] | undefined;
-}) {
+export function TodaySummary({ counts }: { counts: HomeSummary["counts"] | undefined }) {
   const items = [
-    { key: "today", label: "Hôm nay", value: counts?.dueToday ?? 0, icon: ListChecks, to: "/tasks" },
+    {
+      key: "today",
+      label: "Hôm nay",
+      value: counts?.dueToday ?? 0,
+      icon: ListChecks,
+      to: "/tasks",
+    },
     {
       key: "overdue",
       label: "Quá hạn",
@@ -143,9 +146,27 @@ export function TodaySummary({
       to: "/tasks",
       warn: true,
     },
-    { key: "mention", label: "Nhắc đến bạn", value: counts?.mentions ?? 0, icon: AtSign, to: "/notifications" },
-    { key: "approval", label: "Chờ duyệt", value: counts?.approvals ?? 0, icon: ShieldCheck, to: "/notifications" },
-    { key: "meeting", label: "Cuộc họp", value: counts?.meetings ?? 0, icon: Video, to: "/meeting" },
+    {
+      key: "mention",
+      label: "Nhắc đến bạn",
+      value: counts?.mentions ?? 0,
+      icon: AtSign,
+      to: "/notifications",
+    },
+    {
+      key: "approval",
+      label: "Chờ duyệt",
+      value: counts?.approvals ?? 0,
+      icon: ShieldCheck,
+      to: "/notifications",
+    },
+    {
+      key: "meeting",
+      label: "Cuộc họp",
+      value: counts?.meetings ?? 0,
+      icon: Video,
+      to: "/meeting",
+    },
   ] as const;
 
   return (
@@ -162,7 +183,9 @@ export function TodaySummary({
           <it.icon
             className={cn(
               "h-[18px] w-[18px] shrink-0",
-              "warn" in it && it.warn && it.value > 0 ? "text-destructive" : "text-muted-foreground",
+              "warn" in it && it.warn && it.value > 0
+                ? "text-destructive"
+                : "text-muted-foreground",
             )}
             strokeWidth={1.75}
           />
@@ -202,7 +225,15 @@ export function MyWorkRow({
   const meta = TASK_KIND_META[kind];
   const done = task.status === "done";
   const KindIcon =
-    kind === "email" ? Mail : kind === "meeting" ? Video : kind === "chat" ? MessageSquare : kind === "document" ? FileText : ListChecks;
+    kind === "email"
+      ? Mail
+      : kind === "meeting"
+        ? Video
+        : kind === "chat"
+          ? MessageSquare
+          : kind === "document"
+            ? FileText
+            : ListChecks;
   return (
     <div
       data-mywork-row={selected ? "selected" : undefined}
@@ -367,7 +398,10 @@ export function InboxRow({
   const Icon = INBOX_ICON[item.type];
   return (
     <div className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-surface-2">
-      <Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
+      <Icon
+        className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground"
+        strokeWidth={1.75}
+      />
       <a
         href={item.href}
         onClick={(e) => {
@@ -378,11 +412,15 @@ export function InboxRow({
         className="min-w-0 flex-1 text-left"
       >
         <span className="flex items-center gap-2">
-          {!item.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />}
+          {!item.read && (
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+          )}
           <span className="block truncate text-sm font-medium">{item.title}</span>
         </span>
         {item.summary && (
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">{item.summary}</span>
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            {item.summary}
+          </span>
         )}
         <span className="mt-0.5 block text-xs text-muted-foreground">
           {new Date(item.timestamp).toLocaleString("vi-VN", {
@@ -443,7 +481,10 @@ export function AiBrief({
           disabled={loading}
           className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} strokeWidth={1.75} />
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+            strokeWidth={1.75}
+          />
           Làm mới
         </button>
       </div>

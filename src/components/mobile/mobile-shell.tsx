@@ -233,9 +233,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                     <span className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-panel transition-transform duration-150 active:scale-95">
                       <BrandMark className="h-6 w-6" />
                     </span>
-                    <span className="text-[10px] font-semibold text-primary">
-                      {tab.label}
-                    </span>
+                    <span className="text-[10px] font-semibold text-primary">{tab.label}</span>
                   </Link>
                 </li>
               );
