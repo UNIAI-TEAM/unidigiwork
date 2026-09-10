@@ -2185,7 +2185,6 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
     if (!content.trim())
       throw new ApiError({ code: "VALIDATION_FAILED", message: "WORK_PRODUCT_EMPTY" });
 
-
     const tenantId = product.tenant_id as string;
     const [tasksRes, meetingsRes, artifactsRes, linksRes] = await Promise.all([
       context.supabase
@@ -2281,7 +2280,6 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       "- #số :: LÝ DO: căn cứ trong tài liệu :: 0-100\n" +
       "Số cuối là mức độ tin cậy. Không thêm giải thích ngoài các dòng đó.";
 
-
     const runModel = async (effort: "medium" | "high") => {
       const result = streamText({
         model: createLovableResponsesProvider(apiKey).responses("openai/gpt-6-astra"),
@@ -2300,13 +2298,9 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       return (await result.text).trim();
     };
 
-
     // Mô hình suy luận có thể trả về nội dung rỗng; thử lại một lần với mức suy luận cao hơn.
     let text = await runModel("medium");
     if (!text) text = await runModel("high");
-
-
-
 
     const out: WorkGraphMatchSuggestion[] = [];
     const seen = new Set<string>();
@@ -2314,9 +2308,8 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       const line = raw.replace(/^[-*\s]+/, "").trim();
       if (!line) continue;
       // Ưu tiên đúng mẫu "#n :: lý do :: 0-100", nếu khác thì đọc mềm.
-      const strict = /^#?(\d+)\s*::\s*(?:LÝ DO:|LY DO:|REASON:)?\s*(.+?)\s*::\s*(\d{1,3})\s*$/i.exec(
-        line,
-      );
+      const strict =
+        /^#?(\d+)\s*::\s*(?:LÝ DO:|LY DO:|REASON:)?\s*(.+?)\s*::\s*(\d{1,3})\s*$/i.exec(line);
       let idxRaw: number | null = null;
       let reason = "";
       let conf = 60;
@@ -2358,8 +2351,33 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
 
     // Dự phòng: khi AI không đưa ra dòng nào, xếp hạng theo trùng từ khoá để người dùng vẫn chọn được.
     const stop = new Set([
-      "và","của","cho","các","một","trong","với","về","theo","được","là","có","đã","tại","từ","này","đó",
-      "the","and","for","with","from","that","this","task","công","việc",
+      "và",
+      "của",
+      "cho",
+      "các",
+      "một",
+      "trong",
+      "với",
+      "về",
+      "theo",
+      "được",
+      "là",
+      "có",
+      "đã",
+      "tại",
+      "từ",
+      "này",
+      "đó",
+      "the",
+      "and",
+      "for",
+      "with",
+      "from",
+      "that",
+      "this",
+      "task",
+      "công",
+      "việc",
     ]);
     const tokenize = (s: string) =>
       s
@@ -2387,5 +2405,3 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       alreadyLinked: false,
     }));
   });
-
-
