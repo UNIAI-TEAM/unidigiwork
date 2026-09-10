@@ -2617,9 +2617,11 @@ export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const matches = await computeWorkGraphMatches(context.supabase as any, data.id, data.locale);
-    const chosen = matches
-      .filter((m) => !m.alreadyLinked && m.confidence >= data.minConfidence)
-      .slice(0, data.maxLinks);
+    const open = matches.filter((m) => !m.alreadyLinked);
+    let chosen = open.filter((m) => m.confidence >= data.minConfidence).slice(0, data.maxLinks);
+    // Nếu không mục nào đạt ngưỡng, vẫn gắn mục khớp nội dung nhất để tài liệu không bị treo ngoài bản đồ.
+    if (!chosen.length && open.length) chosen = open.slice(0, 1);
+
 
     const linked: WorkGraphMatchSuggestion[] = [];
     const failed: Array<{ title: string; message: string }> = [];
