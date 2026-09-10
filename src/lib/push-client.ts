@@ -1,6 +1,8 @@
 /** Browser helpers for web-push subscription (messaging service worker only). */
 
 const SW_URL = "/sw-push.js";
+/** Phạm vi riêng để không tranh chấp với service worker ngoại tuyến ở "/". */
+const SW_SCOPE = "/push/";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -27,12 +29,12 @@ export function pushPermission(): NotificationPermission | "unsupported" {
 
 export async function getPushRegistration(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported()) return null;
-  return navigator.serviceWorker.register(SW_URL, { scope: "/" });
+  return navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
 }
 
 export async function getExistingSubscription(): Promise<PushSubscription | null> {
   if (!isPushSupported()) return null;
-  const reg = await navigator.serviceWorker.getRegistration(SW_URL);
+  const reg = await navigator.serviceWorker.getRegistration(SW_SCOPE);
   if (!reg) return null;
   return reg.pushManager.getSubscription();
 }
@@ -58,7 +60,7 @@ export async function subscribeToPush(vapidPublicKey: string): Promise<Serialize
   if (!isPushSupported()) throw new Error("Trình duyệt này không hỗ trợ thông báo đẩy");
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Bạn cần cho phép quyền thông báo trong trình duyệt");
-  const reg = await navigator.serviceWorker.register(SW_URL, { scope: "/" });
+  const reg = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
   await navigator.serviceWorker.ready;
   const existing = await reg.pushManager.getSubscription();
   if (existing) return serialize(existing);
