@@ -49,15 +49,50 @@ export const Route = createFileRoute("/share/work-graph/$token")({
 function SharedWorkGraph() {
   const { token } = Route.useParams();
   const { data, isLoading } = useQuery({
-    queryKey: ["public-work-graph", token],
+    queryKey: ["shared-work-graph", token],
     queryFn: async (): Promise<PublicGraph> => {
-      const res = await fetch(`/api/public/work-graph/${token}`);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return { ok: false, error: "AUTH_REQUIRED" };
+      const res = await fetch(`/api/public/work-graph/${token}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       return (await res.json()) as PublicGraph;
     },
   });
 
   if (isLoading) {
     return <p className="p-8 text-sm text-muted-foreground">Đang tải bản đồ công việc…</p>;
+  }
+
+  if (data?.error === "AUTH_REQUIRED") {
+    return (
+      <main className="mx-auto max-w-xl p-8">
+        <h1 className="text-xl font-semibold">Cần đăng nhập bằng email</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Liên kết này chỉ dành cho thành viên của tổ chức. Hãy đăng nhập bằng email của bạn rồi mở
+          lại liên kết.
+        </p>
+        <Link
+          to="/auth"
+          className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Đăng nhập bằng email
+        </Link>
+      </main>
+    );
+  }
+
+  if (data?.error === "NOT_A_MEMBER") {
+    return (
+      <main className="mx-auto max-w-xl p-8">
+        <h1 className="text-xl font-semibold">Bạn không có quyền xem</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Email đang đăng nhập không thuộc tổ chức đã chia sẻ bản đồ này. Hãy đăng nhập bằng email
+          được mời.
+        </p>
+      </main>
+    );
   }
 
   if (!data?.ok) {
