@@ -2,7 +2,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Search, LayoutGrid, List as ListIcon, X, Sparkles, Loader2, ShieldCheck, Download, Upload } from "lucide-react";
+import {
+  FileText,
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+  X,
+  Sparkles,
+  Loader2,
+  ShieldCheck,
+  Download,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { FilterPageHeader } from "@/components/filter-page-header";
@@ -11,8 +23,20 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n, localeTag } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -35,12 +59,14 @@ export const Route = createFileRoute("/_authenticated/work-products")({
       { title: "Kết quả công việc — UNIWORK" },
       {
         name: "description",
-        content: "Từ ngữ cảnh công việc đến sản phẩm hoàn chỉnh: đề xuất, báo cáo, phân tích được soạn cùng nhân sự AI.",
+        content:
+          "Từ ngữ cảnh công việc đến sản phẩm hoàn chỉnh: đề xuất, báo cáo, phân tích được soạn cùng nhân sự AI.",
       },
       { property: "og:title", content: "Kết quả công việc — UNIWORK" },
       {
         property: "og:description",
-        content: "Từ ngữ cảnh công việc đến sản phẩm hoàn chỉnh, có phiên bản, nguồn gốc AI và quy trình duyệt.",
+        content:
+          "Từ ngữ cảnh công việc đến sản phẩm hoàn chỉnh, có phiên bản, nguồn gốc AI và quy trình duyệt.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -72,12 +98,16 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
   async function exportXlsx() {
     setExporting(true);
     try {
-      const res = await exportWorkDeliverableWeeklyReportXlsx({ data: { workspaceId, days: 7, format } });
+      const res = await exportWorkDeliverableWeeklyReportXlsx({
+        data: { workspaceId, days: 7, format },
+      });
       const bin = atob(res.base64);
       const buf = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
       const url = URL.createObjectURL(
-        new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+        new Blob([buf], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
       );
       const a = document.createElement("a");
       a.href = url;
@@ -105,7 +135,9 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
             </Badge>
           ) : null,
         )}
-        {!WEEKLY_FORMATS.some((f) => (formats?.[f] ?? 0) > 0) && <span className="text-muted-foreground">—</span>}
+        {!WEEKLY_FORMATS.some((f) => (formats?.[f] ?? 0) > 0) && (
+          <span className="text-muted-foreground">—</span>
+        )}
       </span>
     );
   return (
@@ -116,22 +148,45 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
           <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          <Button variant={format === null ? "secondary" : "ghost"} size="sm" className="h-7 px-2 text-xs" onClick={() => setFormat(null)}>
+          <Button
+            variant={format === null ? "secondary" : "ghost"}
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setFormat(null)}
+          >
             {t("wp.weekly.allFormats")}
           </Button>
           {WEEKLY_FORMATS.map((f) => (
-            <Button key={f} variant={format === f ? "secondary" : "ghost"} size="sm" className="h-7 px-2 text-xs" onClick={() => setFormat(f)}>
+            <Button
+              key={f}
+              variant={format === f ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setFormat(f)}
+            >
               {f}
             </Button>
           ))}
-          <Button variant="outline" size="sm" className="ml-1 h-7 gap-1 px-2 text-xs" disabled={exporting} onClick={exportXlsx}>
-            {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-1 h-7 gap-1 px-2 text-xs"
+            disabled={exporting}
+            onClick={exportXlsx}
+          >
+            {exporting ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3" />
+            )}
             {t("wp.weekly.exportXlsx")}
           </Button>
         </div>
       </div>
       {rows.length === 0 ? (
-        <p className="px-4 py-6 text-sm text-muted-foreground">{format ? t("wp.weekly.emptyFormat") : t("wp.weekly.empty")}</p>
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          {format ? t("wp.weekly.emptyFormat") : t("wp.weekly.empty")}
+        </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
@@ -167,13 +222,48 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.created ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approved ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.inReview ?? 0}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approvedNow ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  {data?.totals.approvedNow ?? 0}
+                </td>
                 <td className="px-4 py-2 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
                 <td className="px-4 py-2 text-right tabular-nums">
-                  {(data?.totals.shared ?? 0) > 0 ? `${data?.totals.shared} (${data?.totals.shareTargets})` : "—"}
+                  {(data?.totals.shared ?? 0) > 0
+                    ? `${data?.totals.shared} (${data?.totals.shareTargets})`
+                    : "—"}
                 </td>
                 <td className="px-4 py-2 text-right">{fmtCell(data?.totals.formats)}</td>
               </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+      {(data?.editors ?? []).length > 0 && (
+        <div className="border-t px-4 py-3">
+          <div className="mb-2 flex flex-wrap items-baseline gap-2">
+            <h3 className="text-sm font-semibold">{t("wp.weekly.changeLog")}</h3>
+            <span className="text-xs text-muted-foreground">
+              {data?.changeTotals.total ?? 0} · {t("wp.weekly.byHuman")}{" "}
+              {data?.changeTotals.human ?? 0} · {t("wp.weekly.byAi")} {data?.changeTotals.ai ?? 0}
+            </span>
+          </div>
+          <table className="w-full min-w-[420px] text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="py-1 font-medium">{t("wp.weekly.editor")}</th>
+                <th className="py-1 text-right font-medium">{t("wp.weekly.changes")}</th>
+                <th className="py-1 text-right font-medium">{t("wp.weekly.byHuman")}</th>
+                <th className="py-1 text-right font-medium">{t("wp.weekly.byAi")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.editors ?? []).map((e) => (
+                <tr key={e.name} className="border-t">
+                  <td className="py-1">{e.name}</td>
+                  <td className="py-1 text-right tabular-nums">{e.total}</td>
+                  <td className="py-1 text-right tabular-nums">{e.human}</td>
+                  <td className="py-1 text-right tabular-nums">{e.ai}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -183,7 +273,13 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
 }
 
 /** Cài đặt quyền xem/sửa Kết quả công việc cho tổ chức hiện tại. */
-function AccessPolicyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function AccessPolicyDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
@@ -245,7 +341,9 @@ function AccessPolicyDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">{t(`wp.access.viewHint.${view}` as never)}</p>
+              <p className="text-xs text-muted-foreground">
+                {t(`wp.access.viewHint.${view}` as never)}
+              </p>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("wp.access.editScope")}</label>
@@ -261,7 +359,9 @@ function AccessPolicyDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">{t(`wp.access.editHint.${edit}` as never)}</p>
+              <p className="text-xs text-muted-foreground">
+                {t(`wp.access.editHint.${edit}` as never)}
+              </p>
             </div>
             <label className="flex items-start gap-2 rounded-md border p-3">
               <input
@@ -273,11 +373,17 @@ function AccessPolicyDialog({ open, onOpenChange }: { open: boolean; onOpenChang
               />
               <span>
                 <span className="block text-sm font-medium">{t("wp.access.adminOverride")}</span>
-                <span className="block text-xs text-muted-foreground">{t("wp.access.adminOverrideHint")}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {t("wp.access.adminOverrideHint")}
+                </span>
               </span>
             </label>
             <p className="text-xs text-muted-foreground">{t("wp.access.tenantNote")}</p>
-            {!canManage && <p className="text-xs text-amber-600 dark:text-amber-400">{t("wp.access.readOnly")}</p>}
+            {!canManage && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {t("wp.access.readOnly")}
+              </p>
+            )}
           </div>
         )}
         <DialogFooter>
@@ -312,7 +418,11 @@ function WorkProductsPage() {
   const { data: workspaces } = useQuery({
     queryKey: ["wp-workspaces"],
     queryFn: async () => {
-      const { data } = await supabase.from("workspaces").select("id, name").is("deleted_at", null).order("name");
+      const { data } = await supabase
+        .from("workspaces")
+        .select("id, name")
+        .is("deleted_at", null)
+        .order("name");
       return (data ?? []) as Array<{ id: string; name: string }>;
     },
   });
@@ -325,12 +435,21 @@ function WorkProductsPage() {
     mine,
   };
 
-  const { data: items, isLoading, isError } = useQuery({
+  const {
+    data: items,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["work-deliverables", filters],
     queryFn: () => listWorkDeliverables({ data: filters }),
   });
 
-  const hasFilters = search.trim() !== "" || status !== "ALL" || businessType !== "ALL" || workspaceId !== "ALL" || mine;
+  const hasFilters =
+    search.trim() !== "" ||
+    status !== "ALL" ||
+    businessType !== "ALL" ||
+    workspaceId !== "ALL" ||
+    mine;
   const clearFilters = () => {
     setSearch("");
     setStatus("ALL");
@@ -340,7 +459,12 @@ function WorkProductsPage() {
   };
 
   const fmt = useMemo(
-    () => new Intl.DateTimeFormat(localeTag(lang), { day: "2-digit", month: "2-digit", year: "numeric" }),
+    () =>
+      new Intl.DateTimeFormat(localeTag(lang), {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
     [lang],
   );
 
@@ -426,7 +550,12 @@ function WorkProductsPage() {
                 <span className="hidden sm:inline">{t("wp.access.button")}</span>
               </Button>
               {hasFilters && (
-                <Button variant="ghost" size="icon" onClick={clearFilters} aria-label={t("wp.clearFilters")}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearFilters}
+                  aria-label={t("wp.clearFilters")}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -436,7 +565,11 @@ function WorkProductsPage() {
                 onClick={() => setView(view === "list" ? "grid" : "list")}
                 aria-label={t("wp.toggleView")}
               >
-                {view === "list" ? <LayoutGrid className="h-4 w-4" /> : <ListIcon className="h-4 w-4" />}
+                {view === "list" ? (
+                  <LayoutGrid className="h-4 w-4" />
+                ) : (
+                  <ListIcon className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -444,8 +577,6 @@ function WorkProductsPage() {
           <AccessPolicyDialog open={accessOpen} onOpenChange={setAccessOpen} />
 
           <WeeklyReportCard workspaceId={workspaceId === "ALL" ? null : workspaceId} />
-
-
 
           {isLoading && (
             <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
@@ -465,7 +596,11 @@ function WorkProductsPage() {
             </Card>
           )}
 
-          <div className={cn(view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-2")}>
+          <div
+            className={cn(
+              view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-2",
+            )}
+          >
             {(items ?? []).map((it: any) => (
               <Link
                 key={it.id}
@@ -481,7 +616,12 @@ function WorkProductsPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-medium">{it.title}</p>
                       <Badge variant="outline">{t(`wp.type.${it.business_type}` as never)}</Badge>
-                      <span className={cn("rounded-full px-2 py-0.5 text-xs", STATUS_TONE[it.status] ?? "")}>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs",
+                          STATUS_TONE[it.status] ?? "",
+                        )}
+                      >
                         {t(`wp.status.${it.status}` as never)}
                       </span>
                       {it.ai_generated && (
@@ -490,7 +630,9 @@ function WorkProductsPage() {
                         </Badge>
                       )}
                     </div>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{it.description || "—"}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {it.description || "—"}
+                    </p>
                     <p className="mt-2 text-xs text-muted-foreground">
                       {[
                         it.workspaceName,
@@ -602,7 +744,9 @@ function CreateDialog({
                     onClick={() => setBusinessType(b)}
                     className={cn(
                       "rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-                      businessType === b ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent",
+                      businessType === b
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "hover:bg-accent",
                     )}
                   >
                     {t(`wp.type.${b}` as never)}
@@ -611,7 +755,11 @@ function CreateDialog({
               </div>
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={useTemplate} onChange={(e) => setUseTemplate(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={useTemplate}
+                onChange={(e) => setUseTemplate(e.target.checked)}
+              />
               {t("wp.create.template")}
             </label>
           </div>
@@ -621,13 +769,23 @@ function CreateDialog({
               <label className="text-sm font-medium" htmlFor="wp-title">
                 {t("wp.create.name")}
               </label>
-              <Input id="wp-title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+              <Input
+                id="wp-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="wp-desc">
                 {t("wp.create.description")}
               </label>
-              <Textarea id="wp-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea
+                id="wp-desc"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t("wp.create.context")}</label>
