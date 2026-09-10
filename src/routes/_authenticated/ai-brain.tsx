@@ -190,39 +190,63 @@ function AiBrainPage() {
                 )}
 
                 {!proposals.isLoading &&
-                  pending.map((p) => (
-                    <article key={p.id} className="rounded-xl border border-border bg-card p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{p.action_type as string}</Badge>
-                        <Badge variant="outline">
-                          {STATUS_LABEL[p.status as string] ?? (p.status as string)}
-                        </Badge>
-                      </div>
-                      <h3 className="mt-2 text-sm font-medium">{p.title as string}</h3>
-                      {p.description ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {p.description as string}
-                        </p>
-                      ) : null}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Button
-                          className="min-h-11"
-                          onClick={() => approve.mutate(p.id as string)}
-                          disabled={approve.isPending || dismiss.isPending}
+                  pending.map((p) => {
+                    const id = p.id as string;
+                    const isOpen = expanded.has(id);
+                    return (
+                      <article key={id} className="rounded-xl border border-border bg-card p-4">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(id)}
+                          aria-expanded={isOpen}
+                          className="flex min-h-11 w-full items-center gap-2 text-left"
                         >
-                          <Check className="mr-1.5 h-4 w-4" /> {t("aiBrain.approve")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="min-h-11"
-                          onClick={() => dismiss.mutate(p.id as string)}
-                          disabled={approve.isPending || dismiss.isPending}
-                        >
-                          <X className="mr-1.5 h-4 w-4" /> {t("aiBrain.dismiss")}
-                        </Button>
-                      </div>
-                    </article>
-                  ))}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="secondary">{p.action_type as string}</Badge>
+                              <Badge variant="outline">
+                                {STATUS_LABEL[p.status as string] ?? (p.status as string)}
+                              </Badge>
+                            </div>
+                            <h3 className="mt-1.5 truncate text-sm font-medium">
+                              {p.title as string}
+                            </h3>
+                          </div>
+                          <ChevronDown
+                            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                              isOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                        {isOpen && (
+                          <div className="pt-1">
+                            {p.description ? (
+                              <p className="text-sm text-muted-foreground">
+                                {p.description as string}
+                              </p>
+                            ) : null}
+                            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                              <Button
+                                className="min-h-11 w-full sm:w-auto"
+                                onClick={() => approve.mutate(id)}
+                                disabled={approve.isPending || dismiss.isPending}
+                              >
+                                <Check className="mr-1.5 h-4 w-4" /> {t("aiBrain.approve")}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="min-h-11 w-full sm:w-auto"
+                                onClick={() => dismiss.mutate(id)}
+                                disabled={approve.isPending || dismiss.isPending}
+                              >
+                                <X className="mr-1.5 h-4 w-4" /> {t("aiBrain.dismiss")}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
 
                 {!proposals.isLoading && pending.length === 0 && (
                   <div className="rounded-xl border border-dashed border-border bg-card p-4">
