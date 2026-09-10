@@ -689,7 +689,15 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
           }]${(t.tags ?? []).length ? " #" + (t.tags ?? []).join(" #") : ""}`,
       ),
       "CUỘC HỌP:",
-      ...meetings.map((m) => `- ${m.title}${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`),
+      ...meetings.map((m) => {
+        const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
+        const when = m.start_at ? m.start_at.slice(0, 16).replace("T", " ") : "";
+        return `- ${m.title}${proj ? " [dự án: " + proj + "]" : ""}${
+          when ? " @" + when : ""
+        }${m.location ? " tại " + m.location : ""}${m.status ? " (" + m.status + ")" : ""}${
+          m.agenda ? ": " + m.agenda.slice(0, 160) : ""
+        }`;
+      }),
       "THÔNG BÁO:",
       ...notifs.map((n) => `- [${n.type}] ${n.title}`),
       "ĐỀ XUẤT ĐÃ DUYỆT:",
