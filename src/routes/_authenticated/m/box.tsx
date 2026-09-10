@@ -267,32 +267,10 @@ function MobileBoxPage() {
                     onClick={it.onOpen}
                     className="min-h-16 flex-1 rounded-2xl"
                   />
-                  {it.kind === "task" && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-auto w-12 shrink-0 rounded-2xl"
-                      aria-label="Đánh dấu hoàn tất"
-                      onClick={() => doneMut.mutate(it.key)}
-                    >
-                      <CheckSquare className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {it.kind === "notification" && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-auto w-12 shrink-0 rounded-2xl"
-                      aria-label="Đánh dấu đã đọc"
-                      onClick={() => readMut.mutate([it.key])}
-                    >
-                      <Bell className="h-4 w-4" />
-                    </Button>
-                  )}
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-auto w-12 shrink-0 rounded-2xl"
+                    className="h-auto w-11 shrink-0 rounded-2xl"
                     aria-label="Mở"
                     onClick={it.onOpen}
                   >
@@ -301,7 +279,7 @@ function MobileBoxPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-auto w-12 shrink-0 rounded-2xl"
+                    className="h-auto w-11 shrink-0 rounded-2xl"
                     aria-label="Chia sẻ"
                     onClick={() => void share(it)}
                   >
