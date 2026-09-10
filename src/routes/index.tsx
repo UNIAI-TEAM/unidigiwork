@@ -250,7 +250,10 @@ function Landing() {
             </div>
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {capabilities.map((item) => (
-                <div key={item.key} className="group rounded-xl border border-landing-line bg-landing-canvas p-6 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-landing-magenta/40 hover:shadow-lg sm:p-8">
+                <div
+                  key={item.key}
+                  className="group rounded-xl border border-landing-line bg-landing-canvas p-6 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-landing-magenta/40 hover:shadow-lg sm:p-8"
+                >
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-landing-tint text-landing-magenta">
                     <item.icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
                   </span>
@@ -409,7 +412,6 @@ function Landing() {
       </footer>
       <AiSalesChat />
     </div>
-
   );
 }
 

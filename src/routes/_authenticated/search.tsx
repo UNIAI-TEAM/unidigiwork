@@ -26,10 +26,7 @@ import { Button } from "@/components/ui/button";
 import { getSearchFacets } from "@/lib/api/search.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
-import type {
-  SearchKind,
-  UniversalSearchItem,
-} from "@/lib/api/search-universal.server";
+import type { SearchKind, UniversalSearchItem } from "@/lib/api/search-universal.server";
 
 type SearchParams = {
   q?: string;
@@ -51,8 +48,7 @@ const KINDS: SearchKind[] = [
 
 export const Route = createFileRoute("/_authenticated/search")({
   validateSearch: (s: Record<string, unknown>): SearchParams => {
-    const str = (v: unknown) =>
-      typeof v === "string" && v.trim() ? v : undefined;
+    const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
     const t = s.type;
     return {
       q: str(s.q),
@@ -220,25 +216,24 @@ function SearchPage() {
   });
 
   const runSearch = useServerFn(universalSearch);
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteQuery({
-      queryKey: ["universal-search", q, type, project],
-      initialPageParam: 0,
-      queryFn: ({ pageParam }) =>
-        runSearch({
-          data: {
-            q: q.trim(),
-            kinds: type === "all" ? undefined : [type],
-            workspaceId: project,
-            limit: PAGE_SIZE,
-            offset: pageParam as number,
-            expandGraph: (pageParam as number) === 0,
-          },
-        }),
-      getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
-      enabled: q.trim().length >= 2,
-      staleTime: 30_000,
-    });
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
+    queryKey: ["universal-search", q, type, project],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      runSearch({
+        data: {
+          q: q.trim(),
+          kinds: type === "all" ? undefined : [type],
+          workspaceId: project,
+          limit: PAGE_SIZE,
+          offset: pageParam as number,
+          expandGraph: (pageParam as number) === 0,
+        },
+      }),
+    getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
+    enabled: q.trim().length >= 2,
+    staleTime: 30_000,
+  });
 
   const items = useMemo<UniversalSearchItem[]>(
     () => (data?.pages ?? []).flatMap((p) => p.items),
@@ -269,9 +264,7 @@ function SearchPage() {
     return () => io.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const totalCount = counts
-    ? KINDS.reduce((sum, k) => sum + (counts[k] ?? 0), 0)
-    : 0;
+  const totalCount = counts ? KINDS.reduce((sum, k) => sum + (counts[k] ?? 0), 0) : 0;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -302,7 +295,10 @@ function SearchPage() {
               placeholder="Nhập từ khoá (không dấu vẫn tìm được)…"
               className="h-12 w-full rounded-xl border border-border-strong bg-card pl-12 pr-28 text-base shadow-card placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
-            <Button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-action text-action-foreground hover:opacity-90">
+            <Button
+              type="submit"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-action text-action-foreground hover:opacity-90"
+            >
               Tìm
             </Button>
           </form>
@@ -464,8 +460,7 @@ function SearchPage() {
                               </span>
                             )}
                             <span className="flex items-center gap-1.5">
-                              <CalendarIcon className="h-3.5 w-3.5" />{" "}
-                              {fmtDate(r.occurredAt)}
+                              <CalendarIcon className="h-3.5 w-3.5" /> {fmtDate(r.occurredAt)}
                             </span>
                           </div>
                         </div>

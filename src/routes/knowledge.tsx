@@ -13,12 +13,14 @@ export const Route = createFileRoute("/knowledge")({
       { title: "Kho tri thức · UNIWORK" },
       {
         name: "description",
-        content: "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
+        content:
+          "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
       },
       { property: "og:title", content: "Kho tri thức · UNIWORK" },
       {
         property: "og:description",
-        content: "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
+        content:
+          "Trung tâm tri thức nội bộ: SOP, playbook, wiki kỹ thuật và chính sách của tổ chức.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -84,7 +86,9 @@ function KnowledgePage() {
               />
               {canManage && (
                 <Button asChild className="bg-action text-action-foreground hover:opacity-90">
-                  <Link to="/admin/knowledge"><Plus className="h-4 w-4" /> Quản trị nội dung</Link>
+                  <Link to="/admin/knowledge">
+                    <Plus className="h-4 w-4" /> Quản trị nội dung
+                  </Link>
                 </Button>
               )}
             </div>
@@ -109,9 +113,18 @@ function KnowledgePage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1 text-xs">
-                <CatBtn active={category === "all"} onClick={() => setCategory("all")} label="Tất cả" />
+                <CatBtn
+                  active={category === "all"}
+                  onClick={() => setCategory("all")}
+                  label="Tất cả"
+                />
                 {categories.map((c) => (
-                  <CatBtn key={c} active={category === c} onClick={() => setCategory(c)} label={c} />
+                  <CatBtn
+                    key={c}
+                    active={category === c}
+                    onClick={() => setCategory(c)}
+                    label={c}
+                  />
                 ))}
               </div>
             </div>
@@ -136,12 +149,22 @@ function KnowledgePage() {
   );
 }
 
-function CatBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+function CatBtn({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
   return (
     <button
       onClick={onClick}
       className={`rounded-md px-2.5 py-1.5 transition-colors ${
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
       }`}
     >
       {label}
@@ -154,10 +177,12 @@ function ArticleCard({ article }: { article: KnowledgeArticleDTO }) {
     <Link
       to="/knowledge/$slug"
       params={{ slug: article.slug }}
-                className="flex flex-col rounded-xl border border-border bg-card p-4 shadow-card transition-[transform,border-color] hover:-translate-y-0.5 hover:border-primary/40"
+      className="flex flex-col rounded-xl border border-border bg-card p-4 shadow-card transition-[transform,border-color] hover:-translate-y-0.5 hover:border-primary/40"
     >
       <div className="flex items-center gap-2 text-xs">
-        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-primary">{article.category}</span>
+        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-primary">
+          {article.category}
+        </span>
         {article.status !== "published" && (
           <span className="rounded-full bg-surface-2 px-2 py-0.5 text-muted-foreground">
             {STATUS_LABEL[article.status] ?? article.status}
@@ -193,7 +218,11 @@ function Empty({ text }: { text: string }) {
 
 function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return new Date(iso).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   } catch {
     return iso;
   }

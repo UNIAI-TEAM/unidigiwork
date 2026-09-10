@@ -33,9 +33,16 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Bảng giá — UNIWORK" },
-      { name: "description", content: "Bảng giá UNIWORK: Starter, Business và Enterprise. Tính theo số nhân sự, có dùng thử miễn phí 14 ngày." },
+      {
+        name: "description",
+        content:
+          "Bảng giá UNIWORK: Starter, Business và Enterprise. Tính theo số nhân sự, có dùng thử miễn phí 14 ngày.",
+      },
       { property: "og:title", content: "Bảng giá — UNIWORK" },
-      { property: "og:description", content: "Ba gói linh hoạt cho mọi quy mô. Dùng thử miễn phí 14 ngày." },
+      {
+        property: "og:description",
+        content: "Ba gói linh hoạt cho mọi quy mô. Dùng thử miễn phí 14 ngày.",
+      },
       { property: "og:url", content: "https://unidigiwork.lovable.app/pricing" },
     ],
     links: [{ rel: "canonical", href: "https://unidigiwork.lovable.app/pricing" }],
@@ -138,8 +145,8 @@ function PricingPage() {
     onSuccess: async (_res, plan) => {
       // PERF-005: chỉ làm mới dữ liệu billing/entitlement thay vì toàn bộ cache.
       await Promise.all(
-        [["plans"], ["billing"], ["subscription"], ["entitlements"], ["tenant-context"]].map((key) =>
-          qc.invalidateQueries({ queryKey: key }),
+        [["plans"], ["billing"], ["subscription"], ["entitlements"], ["tenant-context"]].map(
+          (key) => qc.invalidateQueries({ queryKey: key }),
         ),
       );
       setCheckoutPlan(null);
@@ -169,14 +176,18 @@ function PricingPage() {
             Giá hợp lý cho mọi quy mô đội ngũ
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Bắt đầu miễn phí, nâng cấp khi đội ngũ phát triển. Hợp đồng linh hoạt
-            theo tháng hoặc năm, có hoá đơn VAT đầy đủ.
+            Bắt đầu miễn phí, nâng cấp khi đội ngũ phát triển. Hợp đồng linh hoạt theo tháng hoặc
+            năm, có hoá đơn VAT đầy đủ.
           </p>
           {tenantQuery.data && currentPlanCode && (
             <p className="mt-4 text-sm text-muted-foreground">
-              Tổ chức <span className="font-medium text-foreground">{tenantQuery.data.tenantName}</span>{" "}
+              Tổ chức{" "}
+              <span className="font-medium text-foreground">{tenantQuery.data.tenantName}</span>{" "}
               đang dùng gói{" "}
-              <span className="font-medium text-primary">{subQuery.data?.planName ?? currentPlanCode}</span>.
+              <span className="font-medium text-primary">
+                {subQuery.data?.planName ?? currentPlanCode}
+              </span>
+              .
             </p>
           )}
         </div>
@@ -292,11 +303,12 @@ function PricingPage() {
             <DialogDescription>
               {checkoutPlan && (
                 <>
-                  Tổ chức <span className="font-medium">{tenantQuery.data?.tenantName}</span> sẽ chuyển
-                  từ gói <span className="font-medium">{currentPlan?.name ?? "hiện tại"}</span> sang{" "}
+                  Tổ chức <span className="font-medium">{tenantQuery.data?.tenantName}</span> sẽ
+                  chuyển từ gói{" "}
+                  <span className="font-medium">{currentPlan?.name ?? "hiện tại"}</span> sang{" "}
                   <span className="font-medium">{checkoutPlan.name}</span> (
-                  {formatPrice(checkoutPlan).value} {formatPrice(checkoutPlan).unit}). Chi phí được tính
-                  tỷ lệ theo ngày sử dụng còn lại của chu kỳ.
+                  {formatPrice(checkoutPlan).value} {formatPrice(checkoutPlan).unit}). Chi phí được
+                  tính tỷ lệ theo ngày sử dụng còn lại của chu kỳ.
                 </>
               )}
             </DialogDescription>
@@ -341,7 +353,9 @@ function PricingPage() {
               <details key={f.q} className="group p-5">
                 <summary className="flex cursor-pointer items-center justify-between text-sm font-medium">
                   {f.q}
-                  <span className="text-muted-foreground transition-transform group-open:rotate-45">+</span>
+                  <span className="text-muted-foreground transition-transform group-open:rotate-45">
+                    +
+                  </span>
                 </summary>
                 <p className="mt-3 text-sm text-muted-foreground">{f.a}</p>
               </details>

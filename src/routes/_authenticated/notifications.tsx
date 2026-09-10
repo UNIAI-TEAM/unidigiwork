@@ -138,7 +138,9 @@ function NotifRow({
           <span
             className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${n.priority ? PRIORITY_TINT[n.priority] : PRIORITY_TINT["normal"]}`}
           >
-            <span className={`h-1.5 w-1.5 rounded-full ${n.priority ? PRIORITY_DOT[n.priority] : PRIORITY_DOT["normal"]}`} />
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${n.priority ? PRIORITY_DOT[n.priority] : PRIORITY_DOT["normal"]}`}
+            />
             {n.priority ? PRIORITY_LABELS[n.priority] : PRIORITY_LABELS["normal"]}
           </span>
           {n.important && (
@@ -301,8 +303,7 @@ function NotificationsPage() {
     onSuccess: invalidate,
   });
   const archiveMut = useMutation({
-    mutationFn: (v: { ids: string[]; archived: boolean }) =>
-      setNotificationsArchived({ data: v }),
+    mutationFn: (v: { ids: string[]; archived: boolean }) => setNotificationsArchived({ data: v }),
     onSuccess: invalidate,
   });
   const restoreMut = useMutation({
@@ -338,9 +339,7 @@ function NotificationsPage() {
     }
     // Ghim luôn nằm trên đầu, bất kể chế độ sắp xếp
     if (pinnedIds.size === 0) return list;
-    return [...list].sort(
-      (a, b) => Number(pinnedIds.has(b.id)) - Number(pinnedIds.has(a.id)),
-    );
+    return [...list].sort((a, b) => Number(pinnedIds.has(b.id)) - Number(pinnedIds.has(a.id)));
   }, [filtered, priorityFilter, pinnedIds]);
 
   // Reset to page 1 when filters change
@@ -421,7 +420,9 @@ function NotificationsPage() {
       {
         onSuccess: () => {
           toast.success(
-            archived ? `Đã lưu trữ ${ids.length} thông báo` : `Đã bỏ lưu trữ ${ids.length} thông báo`,
+            archived
+              ? `Đã lưu trữ ${ids.length} thông báo`
+              : `Đã bỏ lưu trữ ${ids.length} thông báo`,
             {
               action: {
                 label: "Hoàn tác",
@@ -496,7 +497,7 @@ function NotificationsPage() {
             <nav className="space-y-1 rounded-xl border border-border bg-card p-2 shadow-card">
               {CATS.map((c) => {
                 const count =
-                    c.key === "all" ? items.length : items.filter((n) => n.cat === c.key).length;
+                  c.key === "all" ? items.length : items.filter((n) => n.cat === c.key).length;
                 const active = cat === c.key;
                 return (
                   <button
@@ -561,14 +562,13 @@ function NotificationsPage() {
                   className={`inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs hover:bg-surface-2 ${priorityFilter !== "all" ? "border-primary/50 text-primary" : ""}`}
                 >
                   <Filter className="h-3.5 w-3.5" />
-                  {priorityFilter === "all" ? "Bộ lọc" : `Ưu tiên: ${PRIORITY_LABELS[priorityFilter]}`}
+                  {priorityFilter === "all"
+                    ? "Bộ lọc"
+                    : `Ưu tiên: ${PRIORITY_LABELS[priorityFilter]}`}
                 </button>
                 {filterOpen && (
                   <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setFilterOpen(false)}
-                    />
+                    <div className="fixed inset-0 z-40" onClick={() => setFilterOpen(false)} />
                     <div className="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-border bg-surface p-1 shadow-lg">
                       <div className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                         Mức độ ưu tiên
@@ -700,64 +700,64 @@ function NotificationsPage() {
               )
             ) : (
               <>
-              {groups.map(([g, list]) => (
-                <div key={g}>
-                  <div className="flex items-center gap-2 bg-surface-2/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {g} <span className="text-muted-foreground/70">· {list.length}</span>
+                {groups.map(([g, list]) => (
+                  <div key={g}>
+                    <div className="flex items-center gap-2 bg-surface-2/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {g} <span className="text-muted-foreground/70">· {list.length}</span>
+                    </div>
+                    {list.map((n) => (
+                      <NotifRow
+                        key={n.id}
+                        n={n}
+                        selected={selected.has(n.id)}
+                        onToggle={() => toggle(n.id)}
+                        onMarkRead={() => markRead([n.id])}
+                        pinned={pinnedIds.has(n.id)}
+                        onTogglePin={() => togglePin(n.id)}
+                        onArchive={() => archiveItems([n.id], !n.archived)}
+                        onDelete={() => removeItems([n.id])}
+                      />
+                    ))}
                   </div>
-                  {list.map((n) => (
-                    <NotifRow
-                      key={n.id}
-                      n={n}
-                      selected={selected.has(n.id)}
-                      onToggle={() => toggle(n.id)}
-                      onMarkRead={() => markRead([n.id])}
-                      pinned={pinnedIds.has(n.id)}
-                      onTogglePin={() => togglePin(n.id)}
-                      onArchive={() => archiveItems([n.id], !n.archived)}
-                      onDelete={() => removeItems([n.id])}
-                    />
-                  ))}
+                ))}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+                  <span>
+                    Hiển thị{" "}
+                    <span className="font-medium text-foreground">
+                      {(currentPage - 1) * pageSize + 1}–
+                      {Math.min(currentPage * pageSize, filtered.length)}
+                    </span>{" "}
+                    trong tổng {filtered.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" /> Trước
+                    </button>
+                    {Array.from({ length: totalPages }).map((_, i) => {
+                      const p = i + 1;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`min-w-[28px] rounded-lg px-2 py-1 ${p === currentPage ? "bg-primary text-primary-foreground" : "border border-border bg-surface hover:bg-surface-2"}`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Sau <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-              ))}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-muted-foreground">
-                <span>
-                  Hiển thị{" "}
-                  <span className="font-medium text-foreground">
-                    {(currentPage - 1) * pageSize + 1}–
-                    {Math.min(currentPage * pageSize, filtered.length)}
-                  </span>{" "}
-                  trong tổng {filtered.length}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" /> Trước
-                  </button>
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const p = i + 1;
-                    return (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p)}
-                        className={`min-w-[28px] rounded-lg px-2 py-1 ${p === currentPage ? "bg-primary text-primary-foreground" : "border border-border bg-surface hover:bg-surface-2"}`}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Sau <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
               </>
             )}
           </section>
