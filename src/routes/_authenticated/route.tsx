@@ -59,7 +59,6 @@ function AuthenticatedLayout() {
     return null;
   }
 
-
   const tenant = active.data;
   const banner =
     tenant?.tenantStatus === "suspended"
