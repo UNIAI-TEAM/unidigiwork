@@ -2075,6 +2075,10 @@ export const suggestDocxWeightsFromContent = createServerFn({ method: "POST" })
     };
   });
 
+/* ------------------------------------- hồ sơ nhận diện Word theo tổ chức */
+
+
+
 
 /** Đọc hồ sơ nhận diện của tổ chức đang làm việc, kèm quyền chỉnh sửa. */
 export const getTenantDocxProfile = createServerFn({ method: "POST" })
