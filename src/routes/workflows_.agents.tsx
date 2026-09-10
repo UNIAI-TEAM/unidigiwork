@@ -379,10 +379,29 @@ function AgentBuilderPage() {
                 const fields = conditionFieldsFor(a.trigger_type);
                 const conds = a.conditions ?? [];
                 return (
-                  <article key={a.id} className="rounded-xl border border-border bg-card p-4">
+                  <article key={a.id} className="min-w-0 rounded-xl border border-border bg-card p-4">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(a.id)}
+                      className="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 text-left sm:hidden"
+                      aria-expanded={!!expandedIds[a.id]}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate font-semibold">{a.name}</span>
+                        <Badge variant="secondary" className="shrink-0">
+                          {AGENT_TRIGGER_LABELS[a.trigger_type]}
+                        </Badge>
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expandedIds[a.id] ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    <div
+                      className={`${expandedIds[a.id] ? "block" : "hidden"} sm:block`}
+                    >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h2 className="truncate font-semibold">{a.name}</h2>
+                        <h2 className="hidden truncate font-semibold sm:block">{a.name}</h2>
                         {a.description && (
                           <p className="mt-0.5 text-sm text-muted-foreground">{a.description}</p>
                         )}
