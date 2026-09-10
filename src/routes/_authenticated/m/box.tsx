@@ -99,6 +99,28 @@ function MobileBoxPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được."),
   });
 
+  const snoozeMut = useMutation({
+    mutationFn: async (id: string) => {
+      const next = new Date();
+      next.setDate(next.getDate() + 1);
+      const { error } = await supabase
+        .from("tasks")
+        .update({ due_at: next.toISOString() })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Đã hoãn sang ngày mai.");
+      void qc.invalidateQueries({ queryKey: ["m-box-tasks", workspaceId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không hoãn được."),
+  });
+
+  const hide = (key: string) => {
+    setHidden((prev) => [...prev, key]);
+    toast.success("Đã ẩn khỏi hộp hôm nay.");
+  };
+
   const items: BoxItem[] = useMemo(() => {
     if (tab === "action")
       return ((tasks.data as any[]) ?? []).map((t) => ({
