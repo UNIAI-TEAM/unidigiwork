@@ -188,8 +188,7 @@ function ProjectDetailPage() {
 
   const assigneeOptions = useMemo(() => {
     const map = new Map<string, string>();
-    for (const t of tasks)
-      for (const a of t.assignees ?? []) map.set(a.id, a.name);
+    for (const t of tasks) for (const a of t.assignees ?? []) map.set(a.id, a.name);
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [tasks]);
 
@@ -213,17 +212,12 @@ function ProjectDetailPage() {
     return tasks.filter((t) => {
       if (q && !`${t.title}`.toLowerCase().includes(q)) return false;
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
-      if (
-        assigneeFilter !== "all" &&
-        !(t.assignees ?? []).some((a) => a.id === assigneeFilter)
-      )
+      if (assigneeFilter !== "all" && !(t.assignees ?? []).some((a) => a.id === assigneeFilter))
         return false;
       if (dueFilter !== "all") {
         const due = t.due_at ? new Date(t.due_at).getTime() : null;
-        if (dueFilter === "overdue" && !(due && due < now && t.status !== "done"))
-          return false;
-        if (dueFilter === "this_week" && !(due && due >= now && due <= weekAhead))
-          return false;
+        if (dueFilter === "overdue" && !(due && due < now && t.status !== "done")) return false;
+        if (dueFilter === "this_week" && !(due && due >= now && due <= weekAhead)) return false;
         if (dueFilter === "no_due" && due !== null) return false;
       }
       return true;

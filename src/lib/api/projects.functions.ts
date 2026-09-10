@@ -152,10 +152,10 @@ export const getProject = createServerFn({ method: "GET" })
       userName.set(u.id, u.display_name ?? u.primary_email ?? "Thành viên");
     }
     const assigneeMap = new Map<string, { id: string; name: string }[]>();
-    for (const a of ((assigneeRows.data ?? []) as Array<{
+    for (const a of (assigneeRows.data ?? []) as Array<{
       task_id: string;
       user_id: string;
-    }>)) {
+    }>) {
       const list = assigneeMap.get(a.task_id) ?? [];
       list.push({ id: a.user_id, name: userName.get(a.user_id) ?? "Thành viên" });
       assigneeMap.set(a.task_id, list);
