@@ -42,9 +42,9 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex min-w-0 flex-col rounded-2xl border border-border bg-card shadow-card">
-      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <h2 className="font-heading text-sm font-bold">{title}</h2>
+    <section className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-command-line bg-card shadow-card">
+      <header className="flex min-h-14 items-center justify-between gap-3 border-b border-command-line bg-command-canvas/60 px-4 py-3 sm:px-5">
+        <h2 className="font-heading text-sm font-bold uppercase">{title}</h2>
         {action}
       </header>
       <div className="flex-1">{children}</div>
@@ -176,16 +176,14 @@ export function TodaySummary({ counts }: { counts: HomeSummary["counts"] | undef
           key={it.key}
           to={it.to}
           className={cn(
-            "flex min-h-[72px] items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-card transition-colors hover:border-border-strong hover:bg-surface",
+            "flex min-h-[76px] items-center gap-3 rounded-xl border border-command-line bg-card px-4 py-3 shadow-card transition-colors hover:border-command-accent/40 hover:bg-command-canvas",
             "warn" in it && it.warn && it.value > 0 && "border-destructive/40",
           )}
         >
           <it.icon
             className={cn(
               "h-[18px] w-[18px] shrink-0",
-              "warn" in it && it.warn && it.value > 0
-                ? "text-destructive"
-                : "text-muted-foreground",
+              "warn" in it && it.warn && it.value > 0 ? "text-destructive" : "text-command-accent",
             )}
             strokeWidth={1.75}
           />

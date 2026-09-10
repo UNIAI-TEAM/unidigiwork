@@ -3,19 +3,11 @@
 
 export const HOME_PREFIX = "home.";
 
-export type HomeSectionKey =
-  | "stats"
-  | "mywork"
-  | "upcoming"
-  | "inbox"
-  | "aibrief";
+export type HomeSectionKey = "stats" | "mywork" | "upcoming" | "inbox" | "aibrief";
 
 export type HomeLayout = "compact" | "balanced" | "wide";
 
-export const HOME_SECTION_META: Record<
-  HomeSectionKey,
-  { label: string; description: string }
-> = {
+export const HOME_SECTION_META: Record<HomeSectionKey, { label: string; description: string }> = {
   stats: { label: "Tổng quan hôm nay", description: "Số việc quá hạn, đến hạn, cần chú ý" },
   mywork: { label: "Công việc của tôi", description: "Danh sách việc cần xử lý" },
   upcoming: { label: "Sắp tới", description: "Cuộc họp và deadline gần nhất" },
@@ -26,8 +18,8 @@ export const HOME_SECTION_META: Record<
 export const DEFAULT_HOME_ORDER: HomeSectionKey[] = [
   "stats",
   "mywork",
-  "upcoming",
   "inbox",
+  "upcoming",
   "aibrief",
 ];
 

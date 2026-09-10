@@ -23,7 +23,7 @@ const TABS = [
   { id: "chat", label: "Chat", icon: MessageSquare, to: "/m/chat" },
   // Nút W ở giữa: mở My AI (đội ngũ AI của bạn).
   { id: "ai", label: "My AI", icon: Sparkles, to: "/m/ai" },
-  { id: "box", label: "My Box", icon: Inbox, to: "/m/box" },
+  { id: "box", label: "Của tôi", icon: Inbox, to: "/m/box" },
   { id: "more", label: "More", icon: MoreHorizontal, to: "/m/more" },
 ];
 

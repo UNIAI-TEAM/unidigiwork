@@ -87,6 +87,10 @@
   --color-landing-dark: var(--landing-dark);
   --color-landing-on-accent: var(--landing-on-accent);
   --color-landing-on-dark: var(--landing-on-dark);
+  --color-command-canvas: var(--command-canvas);
+  --color-command-line: var(--command-line);
+  --color-command-ink: var(--command-ink);
+  --color-command-accent: var(--command-accent);
 }
 
 :root {
@@ -149,6 +153,11 @@
   --landing-dark: oklch(0.2 0.08 278);
   --landing-on-accent: oklch(1 0 0);
   --landing-on-dark: oklch(0.98 0.005 270);
+  /* My Space command center — Cloud White selection. */
+  --command-canvas: oklch(0.985 0.004 250);
+  --command-line: oklch(0.925 0.01 250);
+  --command-ink: oklch(0.235 0 0);
+  --command-accent: oklch(0.623 0.188 260);
 }
 
 .dark {
@@ -179,6 +188,10 @@
   --border-strong: oklch(1 0 0 / 24%);
   --input: oklch(1 0 0 / 18%);
   --ring: oklch(0.66 0.16 285 / 55%);
+  --command-canvas: oklch(0.16 0.01 260);
+  --command-line: oklch(1 0 0 / 12%);
+  --command-ink: oklch(0.95 0.003 265);
+  --command-accent: oklch(0.7 0.15 255);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);

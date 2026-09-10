@@ -126,7 +126,7 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                     ? "w-full justify-center px-2 py-2.5"
                     : "min-h-10 w-full gap-3 px-3 py-2 text-sm",
                   active
-                    ? "bg-secondary font-semibold text-primary"
+                    ? "bg-command-accent/10 font-semibold text-command-accent"
                     : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                 );
                 const link = (
@@ -146,7 +146,10 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                       />
                     )}
                     <Icon
-                      className={cn(NAV_ICON_CLASS, active ? "text-primary" : "text-current")}
+                      className={cn(
+                        NAV_ICON_CLASS,
+                        active ? "text-command-accent" : "text-current",
+                      )}
                       strokeWidth={active ? NAV_ICON_STROKE_ACTIVE : NAV_ICON_STROKE}
                     />
                     {!collapsed && (
