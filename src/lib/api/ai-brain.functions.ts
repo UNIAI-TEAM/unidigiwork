@@ -7,7 +7,7 @@ import { ApiError } from "@/contracts/errors";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
-const Input = z.object({ workspaceId: z.string().uuid() });
+const Input = z.object({ workspaceId: z.string().uuid().nullable().optional() });
 
 export type AiBrainLogEntry = {
   id: string;
@@ -39,13 +39,26 @@ export const getAiBrainOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => Input.parse(i))
   .handler(async ({ data, context }): Promise<AiBrainOverview> => {
-    const { data: ws, error: wsErr } = await context.supabase
-      .from("workspaces")
-      .select("id, tenant_id")
-      .eq("id", data.workspaceId)
-      .maybeSingle();
-    if (wsErr || !ws) throw fail("WORKSPACE_NOT_FOUND", "Không tìm thấy không gian làm việc.");
-    const tenantId = ws.tenant_id as string;
+    let tenantId: string | null = null;
+    if (data.workspaceId) {
+      const { data: ws, error: wsErr } = await context.supabase
+        .from("workspaces")
+        .select("id, tenant_id")
+        .eq("id", data.workspaceId)
+        .maybeSingle();
+      if (wsErr || !ws) throw fail("WORKSPACE_NOT_FOUND", "Không tìm thấy không gian làm việc.");
+      tenantId = ws.tenant_id as string;
+    } else {
+      // "Tất cả không gian làm việc": lấy tổ chức đang hoạt động của người dùng (RLS bảo vệ).
+      const { data: rows } = await context.supabase
+        .from("tenant_members")
+        .select("tenant_id")
+        .eq("user_id", context.userId)
+        .eq("status", "active")
+        .limit(2);
+      if ((rows ?? []).length === 1) tenantId = (rows as { tenant_id: string }[])[0].tenant_id;
+    }
+    if (!tenantId) throw fail("WORKSPACE_NOT_FOUND", "Không tìm thấy không gian làm việc.");
 
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 

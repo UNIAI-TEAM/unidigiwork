@@ -100,8 +100,7 @@ function AiBrainPage() {
 
   const overview = useQuery({
     queryKey: ["ai-brain", "overview", workspaceId],
-    queryFn: () => overviewFn({ data: { workspaceId: workspaceId as string } }),
-    enabled: !!workspaceId,
+    queryFn: () => overviewFn({ data: { workspaceId: workspaceId ?? null } }),
   });
 
   const proposals = useQuery({
