@@ -2301,12 +2301,11 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
     };
 
 
-
     // Mô hình suy luận có thể trả về nội dung rỗng; thử lại một lần với mức suy luận cao hơn.
     let text = await runModel("medium");
     if (!text) text = await runModel("high");
 
-    console.log("[wp-match] candidates=", open.length, "aiText=", JSON.stringify(text.slice(0, 800)));
+
 
 
     const out: WorkGraphMatchSuggestion[] = [];
