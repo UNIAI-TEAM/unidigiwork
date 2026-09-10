@@ -360,10 +360,7 @@ function ProjectDetailPage() {
                       <h2 className="flex items-center gap-2 font-semibold">
                         <Sparkles className="h-4 w-4 text-primary" /> Kỹ năng AI gợi ý
                       </h2>
-                      <Link
-                        to="/ai-brain/skills"
-                        className="text-xs text-primary hover:underline"
-                      >
+                      <Link to="/ai-brain/skills" className="text-xs text-primary hover:underline">
                         Skill Hub
                       </Link>
                     </div>
