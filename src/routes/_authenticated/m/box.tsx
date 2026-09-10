@@ -28,6 +28,7 @@ type BoxItem = {
   title: string;
   subtitle?: string;
   priority?: "low" | "normal" | "high" | "urgent" | null;
+  href: string;
   onOpen: () => void;
 };
 
