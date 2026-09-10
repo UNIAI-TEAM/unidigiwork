@@ -133,7 +133,8 @@ function MobileBoxPage() {
         title: t.title,
         subtitle: t.due_at ? `Hạn ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : "Không hạn",
         priority: t.priority ?? "normal",
-        onOpen: () => navigate({ to: "/m/tasks" }),
+        href: "/m/tasks",
+        onOpen: () => void navigate({ to: "/m/tasks" }),
       }));
     if (tab === "review")
       return ((products.data as any[]) ?? []).map((p) => ({
@@ -141,7 +142,8 @@ function MobileBoxPage() {
         kind: "product" as const,
         title: p.title,
         subtitle: `${p.business_type} · v${p.current_version ?? 1}`,
-        onOpen: () => navigate({ to: "/m/work-products/$id", params: { id: p.id } }),
+        href: `/m/work-products/${p.id}`,
+        onOpen: () => void navigate({ to: "/m/work-products/$id", params: { id: p.id } }),
       }));
     return ((notifications.data as any[]) ?? [])
       .filter((n) => !n.is_read)
@@ -150,6 +152,7 @@ function MobileBoxPage() {
         kind: "notification" as const,
         title: n.title ?? "Thông báo",
         subtitle: n.body ?? undefined,
+        href: "/m/box",
         onOpen: () => readMut.mutate([n.id]),
       }));
   }, [tab, tasks.data, products.data, notifications.data, navigate, readMut]);
