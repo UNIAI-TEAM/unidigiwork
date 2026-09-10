@@ -2598,7 +2598,6 @@ async function computeWorkGraphMatches(
   }
 }
 
-
 /**
  * Gắn thật tài liệu vào công việc / cuộc họp / biên bản đã có trong bản đồ công việc,
  * dựa trên đối chiếu nội dung thật. Chỉ gắn khi mức tin cậy đạt ngưỡng.
@@ -2617,11 +2616,7 @@ export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const matches = await computeWorkGraphMatches(
-      context.supabase as any,
-      data.id,
-      data.locale,
-    );
+    const matches = await computeWorkGraphMatches(context.supabase as any, data.id, data.locale);
     const chosen = matches
       .filter((m) => !m.alreadyLinked && m.confidence >= data.minConfidence)
       .slice(0, data.maxLinks);
@@ -2649,4 +2644,3 @@ export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
       evaluated: matches.length,
     };
   });
-

@@ -28,7 +28,6 @@ import {
 import {
   autoLinkWorkGraphMatches,
   proposeWorkGraphMatches,
-
   type WorkGraphMatchSuggestion,
 } from "@/lib/api/work-products-docx.functions";
 import { WorkGraphSharePanel } from "./work-graph-share";
@@ -177,8 +176,6 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
     },
     onError: (e: any) => toast.error(e?.message ?? "Không gắn được theo nội dung"),
   });
-
-
 
   const pickedCount = Object.values(picked).filter(Boolean).length;
 
