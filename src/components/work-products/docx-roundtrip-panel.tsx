@@ -38,7 +38,6 @@ import {
   getAiProposalAccuracyReport,
   getDocxRecognitionReport,
   suggestDocxWeightsFromContent,
-
   getWorkProductDocxChangeHistory,
   getTenantDocxProfile,
   saveTenantDocxProfile,
@@ -434,8 +433,6 @@ export function DocxRoundTripPanel({
       ),
   });
 
-
-
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wp-change-ops", productId] });
     qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
@@ -711,7 +708,6 @@ export function DocxRoundTripPanel({
               Từ toàn bộ tài liệu tổ chức
             </Button>
             <Button
-
               size="sm"
               className="h-7 gap-1 px-2 text-xs"
               disabled={!canEditProfile || saveProfile.isPending}
@@ -770,8 +766,6 @@ export function DocxRoundTripPanel({
               ))}
             </div>
           )}
-
-
 
           <div className="flex flex-wrap gap-1">
             {Object.entries(roleCounts).map(([role, n]) => (

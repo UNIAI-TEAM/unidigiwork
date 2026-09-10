@@ -1936,7 +1936,10 @@ export const suggestDocxWeightsFromContent = createServerFn({ method: "POST" })
     const blocks = ((rows ?? []) as any[]).map((b) => ({
       productId: String(b.work_product_id),
       role: String((b.source_anchor ?? {}).role ?? b.block_type ?? "PARAGRAPH"),
-      score: typeof (b.source_anchor ?? {}).score === "number" ? (b.source_anchor.score as number) : null,
+      score:
+        typeof (b.source_anchor ?? {}).score === "number"
+          ? (b.source_anchor.score as number)
+          : null,
       text: String(b.text ?? ""),
     }));
     if (!blocks.length)
@@ -1968,7 +1971,10 @@ export const suggestDocxWeightsFromContent = createServerFn({ method: "POST" })
       table: (t) => (t.match(/\|/g) ?? []).length >= 2 || /\t.*\t/.test(t),
     };
 
-    const counts = new Map<string, { blocks: number; scored: number; scoreSum: number; low: number }>();
+    const counts = new Map<
+      string,
+      { blocks: number; scored: number; scoreSum: number; low: number }
+    >();
     for (const b of blocks) {
       const c = counts.get(b.role) ?? { blocks: 0, scored: 0, scoreSum: 0, low: 0 };
       c.blocks += 1;
@@ -1994,7 +2000,9 @@ export const suggestDocxWeightsFromContent = createServerFn({ method: "POST" })
       .select("source_anchor, status, work_product_id")
       .eq("origin", "AI")
       .limit(1000);
-    const { data: opRows } = data.id ? await opsQuery.eq("work_product_id", data.id) : await opsQuery;
+    const { data: opRows } = data.id
+      ? await opsQuery.eq("work_product_id", data.id)
+      : await opsQuery;
     const decided = new Map<string, { ok: number; bad: number }>();
     for (const o of (opRows ?? []) as any[]) {
       const role = String((o.source_anchor ?? {}).role ?? "PARAGRAPH");
@@ -2039,7 +2047,9 @@ export const suggestDocxWeightsFromContent = createServerFn({ method: "POST" })
       // AI hay bị từ chối ở loại này → tăng để nhận diện chắc hơn.
       if (accuracy !== null && accuracy < 0.6) {
         delta += 0.1;
-        reasons.push(`đề xuất trên loại này bị từ chối nhiều (${Math.round(accuracy * 100)}% đúng)`);
+        reasons.push(
+          `đề xuất trên loại này bị từ chối nhiều (${Math.round(accuracy * 100)}% đúng)`,
+        );
       }
       // Nhận diện quá tay: rất nhiều đoạn được gán loại này mà điểm rất cao và không bỏ sót → giảm.
       if (
@@ -2076,9 +2086,6 @@ export const suggestDocxWeightsFromContent = createServerFn({ method: "POST" })
   });
 
 /* ------------------------------------- hồ sơ nhận diện Word theo tổ chức */
-
-
-
 
 /** Đọc hồ sơ nhận diện của tổ chức đang làm việc, kèm quyền chỉnh sửa. */
 export const getTenantDocxProfile = createServerFn({ method: "POST" })
