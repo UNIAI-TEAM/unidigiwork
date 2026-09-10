@@ -10,8 +10,9 @@ import { SwipeRow } from "@/components/mobile/swipe-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Bell, CheckSquare, FileText, Inbox } from "lucide-react";
+import { Bell, CheckSquare, ExternalLink, FileText, Inbox, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import coverImage from "@/assets/work-product-cover.jpg";
 
 const TABS = [
   { id: "action", label: "Cần làm" },
@@ -27,6 +28,7 @@ type BoxItem = {
   title: string;
   subtitle?: string;
   priority?: "low" | "normal" | "high" | "urgent" | null;
+  href: string;
   onOpen: () => void;
 };
 
@@ -131,7 +133,8 @@ function MobileBoxPage() {
         title: t.title,
         subtitle: t.due_at ? `Hạn ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : "Không hạn",
         priority: t.priority ?? "normal",
-        onOpen: () => navigate({ to: "/m/tasks" }),
+        href: "/m/tasks",
+        onOpen: () => void navigate({ to: "/m/tasks" }),
       }));
     if (tab === "review")
       return ((products.data as any[]) ?? []).map((p) => ({
@@ -139,7 +142,8 @@ function MobileBoxPage() {
         kind: "product" as const,
         title: p.title,
         subtitle: `${p.business_type} · v${p.current_version ?? 1}`,
-        onOpen: () => navigate({ to: "/m/work-products/$id", params: { id: p.id } }),
+        href: `/m/work-products/${p.id}`,
+        onOpen: () => void navigate({ to: "/m/work-products/$id", params: { id: p.id } }),
       }));
     return ((notifications.data as any[]) ?? [])
       .filter((n) => !n.is_read)
@@ -148,6 +152,7 @@ function MobileBoxPage() {
         kind: "notification" as const,
         title: n.title ?? "Thông báo",
         subtitle: n.body ?? undefined,
+        href: "/m/box",
         onOpen: () => readMut.mutate([n.id]),
       }));
   }, [tab, tasks.data, products.data, notifications.data, navigate, readMut]);
@@ -163,14 +168,34 @@ function MobileBoxPage() {
     fyi: ((notifications.data as any[]) ?? []).filter((n) => !n.is_read).length,
   };
 
+  const share = async (item: BoxItem) => {
+    const url = typeof window !== "undefined" ? `${window.location.origin}${item.href}` : item.href;
+    try {
+      if (typeof navigator !== "undefined" && "share" in navigator) {
+        await (navigator as any).share({ title: item.title, url });
+        return;
+      }
+      await (navigator as Navigator).clipboard.writeText(url);
+      toast.success("Đã sao chép liên kết.");
+    } catch {
+      /* người dùng huỷ chia sẻ */
+    }
+  };
+
   const icon = (kind: BoxItem["kind"]) =>
     kind === "task" ? (
       <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
         <CheckSquare className="h-4 w-4" />
       </span>
     ) : kind === "product" ? (
-      <span className="grid h-9 w-9 place-items-center rounded-lg bg-warning/10 text-warning">
-        <FileText className="h-4 w-4" />
+      <span className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-lg bg-warning/10 text-warning">
+        <img
+          src={coverImage}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+        />
+        <FileText className="relative h-4 w-4 text-primary-foreground drop-shadow" />
       </span>
     ) : (
       <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-muted-foreground">
@@ -233,37 +258,35 @@ function MobileBoxPage() {
                   else hide(it.key);
                 }}
               >
-                <div className="flex items-stretch gap-2 bg-background">
+                <div className="flex w-full min-w-0 items-stretch gap-2 bg-background">
                   <MobileListItem
                     title={it.title}
                     subtitle={it.subtitle}
                     icon={icon(it.kind)}
                     priorityBar={it.priority ?? null}
                     onClick={it.onOpen}
-                    className="min-h-16 flex-1 rounded-2xl"
+                    className="min-h-16 min-w-0 flex-1 rounded-2xl"
                   />
-                  {it.kind === "task" && (
+                  <div className="grid w-11 shrink-0 grid-rows-2 gap-1">
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-auto w-12 shrink-0 rounded-2xl"
-                      aria-label="Đánh dấu hoàn tất"
-                      onClick={() => doneMut.mutate(it.key)}
+                      className="h-full w-11 rounded-xl"
+                      aria-label="Mở"
+                      onClick={it.onOpen}
                     >
-                      <CheckSquare className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
-                  )}
-                  {it.kind === "notification" && (
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-auto w-12 shrink-0 rounded-2xl"
-                      aria-label="Đánh dấu đã đọc"
-                      onClick={() => readMut.mutate([it.key])}
+                      className="h-full w-11 rounded-xl"
+                      aria-label="Chia sẻ"
+                      onClick={() => void share(it)}
                     >
-                      <Bell className="h-4 w-4" />
+                      <Share2 className="h-4 w-4" />
                     </Button>
-                  )}
+                  </div>
                 </div>
               </SwipeRow>
             </li>
