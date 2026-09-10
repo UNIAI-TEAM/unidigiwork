@@ -482,78 +482,78 @@ function HomePage() {
                 <p className="mt-1 text-sm font-medium text-foreground">{greeting()}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
               </div>
-             <div className="flex min-w-0 flex-wrap gap-2 xl:justify-end">
-              <button
-                type="button"
-                onClick={() => setCustomizing((v) => !v)}
-                aria-expanded={customizing}
-                className={cn(
-                   "inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
-                  customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
-                )}
-              >
-                <SlidersHorizontal className="h-4 w-4" /> Tuỳ chỉnh
-              </button>
-              <button
-                type="button"
-                onClick={refreshAll}
-                disabled={isRefreshing}
-                 className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-muted-foreground shadow-card transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
-                aria-label="Làm mới trang chủ"
-              >
-                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
-              </button>
-              <Link
-                to="/tasks"
-                 className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-action px-3 text-sm font-bold text-action-foreground shadow-card hover:bg-action/90"
-              >
-                <Plus className="h-4 w-4" /> Công việc
-              </Link>
-              <Link
-                to="/meeting"
-                 className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
-              >
-                <Plus className="h-4 w-4" /> Cuộc họp
-              </Link>
-              <Link
-                to="/chat"
-                 className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
-              >
-                <Plus className="h-4 w-4" /> Tin nhắn
-              </Link>
-            </div>
-          </header>
+              <div className="flex min-w-0 flex-wrap gap-2 xl:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCustomizing((v) => !v)}
+                  aria-expanded={customizing}
+                  className={cn(
+                    "inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
+                    customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  <SlidersHorizontal className="h-4 w-4" /> Tuỳ chỉnh
+                </button>
+                <button
+                  type="button"
+                  onClick={refreshAll}
+                  disabled={isRefreshing}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-muted-foreground shadow-card transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+                  aria-label="Làm mới trang chủ"
+                >
+                  <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
+                </button>
+                <Link
+                  to="/tasks"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-action px-3 text-sm font-bold text-action-foreground shadow-card hover:bg-action/90"
+                >
+                  <Plus className="h-4 w-4" /> Công việc
+                </Link>
+                <Link
+                  to="/meeting"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> Cuộc họp
+                </Link>
+                <Link
+                  to="/chat"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> Tin nhắn
+                </Link>
+              </div>
+            </header>
 
-          {customizing ? (
-            <HomeCustomizePanel
-              prefs={prefs}
-              saving={saving}
-              onChange={update}
-              onReset={reset}
-              onClose={() => setCustomizing(false)}
-            />
-          ) : null}
+            {customizing ? (
+              <HomeCustomizePanel
+                prefs={prefs}
+                saving={saving}
+                onChange={update}
+                onReset={reset}
+                onClose={() => setCustomizing(false)}
+              />
+            ) : null}
 
-          {visible.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
-              Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
-              <button
-                type="button"
-                className="font-medium text-primary underline-offset-2 hover:underline"
-                onClick={() => setCustomizing(true)}
-              >
-                Mở tuỳ chỉnh
-              </button>
-            </div>
-          ) : (
-            <div className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
-              {visible.map((key) => (
-                <div key={key} className={cn("min-w-0", spanClass(key, prefs.layout))}>
-                  {blocks[key]}
-                </div>
-              ))}
-            </div>
-          )}
+            {visible.length === 0 ? (
+              <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
+                Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                  onClick={() => setCustomizing(true)}
+                >
+                  Mở tuỳ chỉnh
+                </button>
+              </div>
+            ) : (
+              <div className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
+                {visible.map((key) => (
+                  <div key={key} className={cn("min-w-0", spanClass(key, prefs.layout))}>
+                    {blocks[key]}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {data?.partial.length ? (
               <p className="text-xs text-muted-foreground">
