@@ -10,6 +10,7 @@ import { getMyIsAdmin } from "@/lib/api/admin.functions";
 import {
   visibleNavigation,
   isNavItemActive,
+  findActiveNavItem,
   NAV_ICON_CLASS,
   NAV_ICON_STROKE,
   NAV_ICON_STROKE_ACTIVE,
@@ -74,6 +75,8 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
   const activeGroup =
     groups.find((g) => g.items.some((i) => isNavItemActive(i, pathname)))?.group.id ?? null;
   const { isCollapsed, toggle } = useCollapsedGroups(activeGroup);
+  // Chỉ 1 mục sáng: ưu tiên đường dẫn khớp dài nhất (/ai-brain/skills thắng /ai-brain).
+  const activeItemId = findActiveNavItem(pathname, { isAdmin })?.id ?? null;
 
   const badgeFor = (item: NavItem) => {
     if (collapsed) return null;
@@ -123,7 +126,7 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
 
             {!groupCollapsed &&
               items.map((item) => {
-                const active = isNavItemActive(item, pathname);
+                const active = item.id === activeItemId;
                 const Icon = item.icon;
                 const label = t(item.labelKey);
                 const cls = cn(
