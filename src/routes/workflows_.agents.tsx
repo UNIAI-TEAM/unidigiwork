@@ -672,30 +672,32 @@ function AgentBuilderPage() {
               </section>
 
               <section className="rounded-xl border border-border bg-card p-4">
-              <h3 className="flex items-center gap-2 font-semibold">
-                <History className="h-4 w-4" /> Lịch sử agent
-              </h3>
-              <ul className="mt-3 space-y-2 text-sm">
-                {(runsQuery.data ?? []).map((r: any) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0"
-                  >
-                    <span className="text-muted-foreground">
-                      {new Date(r.created_at).toLocaleString("vi-VN")}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Badge variant={r.status === "NO_MATCH" ? "outline" : "secondary"}>
-                        {r.status}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{r.matched_count} khớp</span>
-                    </span>
-                  </li>
-                ))}
-                {(runsQuery.data ?? []).length === 0 && (
-                  <li className="text-muted-foreground">Chưa có lần chạy nào.</li>
-                )}
-              </ul>
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <History className="h-4 w-4" /> Lịch sử agent
+                </h3>
+                <ul className="mt-3 space-y-2 text-sm">
+                  {(runsQuery.data ?? []).map((r: any) => (
+                    <li
+                      key={r.id}
+                      className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0"
+                    >
+                      <span className="text-muted-foreground">
+                        {new Date(r.created_at).toLocaleString("vi-VN")}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <Badge variant={r.status === "NO_MATCH" ? "outline" : "secondary"}>
+                          {r.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {r.matched_count} khớp
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                  {(runsQuery.data ?? []).length === 0 && (
+                    <li className="text-muted-foreground">Chưa có lần chạy nào.</li>
+                  )}
+                </ul>
               </section>
             </aside>
           </div>
