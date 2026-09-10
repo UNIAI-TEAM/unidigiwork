@@ -137,6 +137,8 @@ function AiWorkforcePage() {
                 </li>
               ))}
             </ul>
+          ) : tab === "assign" ? (
+            <AiWorkforceAssignments />
           ) : tab === "contracts" ? (
             <AiContractsTab />
           ) : tab === "evaluation" ? (
