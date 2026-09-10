@@ -240,6 +240,7 @@ function ProjectDetailPage() {
 
   // Kéo thả đổi trạng thái — vẫn đi qua command transitionTask, không ghi thẳng DB.
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [openComments, setOpenComments] = useState<string | null>(null);
   const [dropGroup, setDropGroup] = useState<string | null>(null);
   const transition = useMutation({
     mutationFn: (p: { taskId: string; toStatus: string }) =>
