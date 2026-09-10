@@ -187,6 +187,25 @@ function AiBrainPage() {
             />
           </div>
 
+          {(overview.data?.disabledSkills.length ?? 0) > 0 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+              <span>
+                Đang tắt {overview.data?.disabledSkills.length} kỹ năng có quyền đề xuất — AI sẽ
+                không tạo đề xuất mới cho:{" "}
+                {Array.from(
+                  new Set((overview.data?.disabledSkills ?? []).flatMap((s) => s.actionTypes)),
+                ).join(", ")}
+                .
+              </span>
+              <Link
+                to="/ai-brain/skills"
+                className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-foreground hover:bg-accent"
+              >
+                {t("aiBrain.manageSkills")}
+              </Link>
+            </div>
+          )}
+
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {/* Đề xuất đang chờ duyệt */}
             <section className="lg:col-span-2">
