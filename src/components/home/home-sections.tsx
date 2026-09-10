@@ -1,4 +1,5 @@
 // HOME V2 — các khối nhỏ của Trang chủ (My Work · Upcoming · Work Inbox · Brief).
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -36,18 +37,54 @@ export function SectionCard({
   title,
   action,
   children,
+  collapsible,
+  count,
 }: {
   title: string;
   action?: React.ReactNode;
   children: React.ReactNode;
+  /** Bật co gọn trên mobile: header chạm để mở, desktop luôn mở. */
+  collapsible?: boolean;
+  count?: number;
 }) {
+  const [open, setOpen] = useState(false);
   return (
     <section className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-command-line bg-card shadow-card">
-      <header className="flex min-h-14 items-center justify-between gap-3 border-b border-command-line bg-command-canvas/60 px-4 py-3 sm:px-5">
-        <h2 className="font-heading text-sm font-bold uppercase">{title}</h2>
+      <header
+        className={cn(
+          "flex min-h-14 min-w-0 items-center justify-between gap-3 border-b border-command-line bg-command-canvas/60 px-4 py-3 sm:px-5",
+          collapsible && !open && "max-md:border-b-0",
+        )}
+      >
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left md:pointer-events-none"
+          >
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition-transform md:hidden",
+                open && "rotate-180",
+              )}
+              strokeWidth={1.75}
+            />
+            <h2 className="truncate font-heading text-sm font-bold uppercase">{title}</h2>
+            {!open && typeof count === "number" ? (
+              <span className="shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground md:hidden">
+                {count}
+              </span>
+            ) : null}
+          </button>
+        ) : (
+          <h2 className="truncate font-heading text-sm font-bold uppercase">{title}</h2>
+        )}
         {action}
       </header>
-      <div className="flex-1">{children}</div>
+      <div className={cn("min-w-0 flex-1", collapsible && !open && "max-md:hidden")}>
+        {children}
+      </div>
     </section>
   );
 }
