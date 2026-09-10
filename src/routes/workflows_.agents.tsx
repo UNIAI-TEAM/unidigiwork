@@ -16,6 +16,7 @@ import {
   History,
   Loader2,
   ArrowLeft,
+  ChevronDown,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -163,6 +164,8 @@ function AgentBuilderPage() {
   );
   const [proposals, setProposals] = useState<ProposedAiAction[]>([]);
   const [proposing, setProposing] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const toggleExpanded = (id: string) => setExpandedIds((s) => ({ ...s, [id]: !s[id] }));
   const derivedAllowed = useMemo(
     () => deriveAllowedFromSkills(draft?.skills ?? []),
     [draft?.skills],
