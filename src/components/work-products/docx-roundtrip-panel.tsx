@@ -750,6 +750,29 @@ export function DocxRoundTripPanel({
             </Button>
           </div>
 
+          {autoResult && (
+            <div className="space-y-1 rounded-md border bg-muted/40 p-2">
+              <p className="text-[11px] text-muted-foreground">
+                Đã đọc {autoResult.analyzedBlocks} đoạn của {autoResult.analyzedDocuments} tài liệu
+                {autoResult.scope === "THIS" ? " (tài liệu này)" : " (toàn tổ chức)"}.
+                {autoResult.changes.length
+                  ? " Trọng số đã cập nhật, bấm “Lưu cho tổ chức” để áp dụng cho mọi người."
+                  : " Không cần đổi trọng số."}
+              </p>
+              {autoResult.changes.map((c) => (
+                <p key={c.key} className="text-[11px]">
+                  <span className="font-medium">
+                    {WEIGHT_LABELS[c.key as WeightKey] ?? c.role}: {c.from.toFixed(1)}× →{" "}
+                    {c.to.toFixed(1)}×
+                  </span>{" "}
+                  <span className="text-muted-foreground">— {c.reason}</span>
+                </p>
+              ))}
+            </div>
+          )}
+
+
+
           <div className="flex flex-wrap gap-1">
             {Object.entries(roleCounts).map(([role, n]) => (
               <Badge key={role} variant="outline" className="text-[10px]">
