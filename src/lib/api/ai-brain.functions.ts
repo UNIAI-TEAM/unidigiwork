@@ -98,6 +98,20 @@ export const getAiBrainOverview = createServerFn({ method: "GET" })
         .limit(1000),
     ]);
 
+    const { data: skillRows } = await context.supabase
+      .from("ai_skills")
+      .select("id, name, enabled, action_types")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .eq("enabled", false);
+    const disabledSkills = (skillRows ?? [])
+      .filter((r) => ((r.action_types as string[] | null) ?? []).length > 0)
+      .map((r) => ({
+        id: r.id as string,
+        name: (r.name as string) ?? "",
+        actionTypes: ((r.action_types as string[] | null) ?? []) as string[],
+      }));
+
     const approved = approvedRes.count ?? 0;
     const rejected = rejectedRes.count ?? 0;
     const decided = approved + rejected;
