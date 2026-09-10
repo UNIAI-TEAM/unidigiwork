@@ -340,9 +340,9 @@ function AgentBuilderPage() {
                 Điều kiện → AI đề xuất → bạn phê duyệt. Agent không bao giờ tự thực thi.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               <Select value={activeWs} onValueChange={setWorkspaceId}>
-                <SelectTrigger className="w-56">
+                <SelectTrigger className="w-full min-h-11 sm:w-56">
                   <SelectValue placeholder="Chọn không gian" />
                 </SelectTrigger>
                 <SelectContent>
@@ -353,7 +353,11 @@ function AgentBuilderPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button disabled={!activeWs} onClick={() => setDraft(emptyDraft(activeWs))}>
+              <Button
+                className="min-h-11"
+                disabled={!activeWs}
+                onClick={() => setDraft(emptyDraft(activeWs))}
+              >
                 <Plus className="mr-1.5 h-4 w-4" /> Tạo agent
               </Button>
             </div>
@@ -541,6 +545,7 @@ function AgentBuilderPage() {
                         <Button
                           size="sm"
                           variant="secondary"
+                          className="min-h-11"
                           disabled={proposing === m.id}
                           onClick={() => onPropose(m.id)}
                         >
