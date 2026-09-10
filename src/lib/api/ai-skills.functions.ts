@@ -549,7 +549,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const takenCodes = new Set(existing.map((s) => s.code));
     const takenNames = new Set(existing.map((s) => s.name.toLowerCase()));
 
-    type SkillRow = Parameters<ReturnType<typeof context.supabase.from<"ai_skills">>["insert"]>[0];
+    
     const rows: Record<string, unknown>[] = [];
     for (const item of (Array.isArray(parsed.skills) ? parsed.skills : []).slice(0, 5)) {
       const s = item as Record<string, unknown>;
