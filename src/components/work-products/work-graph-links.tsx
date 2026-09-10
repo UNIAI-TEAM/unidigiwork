@@ -2,7 +2,7 @@
 // quyết định (biên bản) và tài liệu cụ thể trong tổ chức.
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { Link2, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,10 @@ import {
   rebuildWorkGraph,
   unlinkWorkEntities,
 } from "@/lib/api/work-graph.functions";
+import {
+  proposeWorkGraphMatches,
+  type WorkGraphMatchSuggestion,
+} from "@/lib/api/work-products-docx.functions";
 import { WorkGraphSharePanel } from "./work-graph-share";
 
 type TargetType = "TASK" | "MEETING" | "MEETING_ARTIFACT" | "DOCUMENT";
@@ -41,6 +45,8 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
   const [type, setType] = useState<TargetType>("TASK");
   const [q, setQ] = useState("");
   const [relationship, setRelationship] = useState<"REFERENCES" | "RELATED_TO">("REFERENCES");
+  const [matches, setMatches] = useState<WorkGraphMatchSuggestion[] | null>(null);
+  const [picked, setPicked] = useState<Record<string, boolean>>({});
 
   const { data: links } = useQuery({
     queryKey: ["work-deliverable-links", workProductId],
@@ -95,6 +101,49 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
     onError: (e: any) => toast.error(e?.message ?? "Không dựng lại được bản đồ"),
   });
 
+  // Gợi ý AI: đọc nội dung tài liệu rồi ghép vào công việc/cuộc họp đã có.
+  const suggestMut = useMutation({
+    mutationFn: () => proposeWorkGraphMatches({ data: { id: workProductId, locale: "vi" } as any }),
+    onSuccess: (rows) => {
+      setMatches(rows);
+      setPicked(
+        Object.fromEntries(
+          rows
+            .filter((r) => r.confidence >= 60)
+            .map((r) => [`${r.targetType}:${r.targetId}`, true]),
+        ),
+      );
+      if (!rows.length) toast.info("Chưa tìm thấy mục nào đủ căn cứ để gắn");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không phân tích được nội dung"),
+  });
+
+  const linkPickedMut = useMutation({
+    mutationFn: async () => {
+      const rows = (matches ?? []).filter((r) => picked[`${r.targetType}:${r.targetId}`]);
+      for (const r of rows) {
+        await linkWorkDeliverable({
+          data: {
+            id: workProductId,
+            targetType: r.targetType,
+            targetId: r.targetId,
+            relationship: "REFERENCES",
+          } as any,
+        });
+      }
+      return rows.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`Đã gắn ${n} mục vào bản đồ công việc`);
+      setMatches((cur) => (cur ?? []).filter((r) => !picked[`${r.targetType}:${r.targetId}`]));
+      setPicked({});
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không gắn được"),
+  });
+
+  const pickedCount = Object.values(picked).filter(Boolean).length;
+
   const linkedIds = new Set((links ?? []).map((l: any) => `${l.entityType}:${l.entityId}`));
 
   return (
@@ -117,6 +166,72 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
             {rebuildMut.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
             Dựng lại bản đồ
           </Button>
+        )}
+      </div>
+
+      {/* Gắn tự động theo nội dung: AI đối chiếu tài liệu với công việc đã có */}
+      <div className="space-y-2 rounded-lg border bg-background p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h4 className="text-sm font-semibold">Gắn theo nội dung tài liệu</h4>
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-auto"
+            disabled={suggestMut.isPending}
+            onClick={() => suggestMut.mutate()}
+          >
+            {suggestMut.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+            Phân tích và đề xuất
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          AI đọc nội dung tài liệu, đối chiếu với công việc, cuộc họp và biên bản đang có rồi đề
+          xuất mục nên gắn, kèm lý do. Bạn duyệt trước khi gắn.
+        </p>
+        {matches !== null && matches.length === 0 && !suggestMut.isPending && (
+          <p className="text-xs text-muted-foreground">
+            Không có mục nào đủ căn cứ. Bạn vẫn có thể chọn thủ công bên dưới.
+          </p>
+        )}
+        {(matches ?? []).length > 0 && (
+          <div className="space-y-1">
+            {(matches ?? []).map((m) => {
+              const key = `${m.targetType}:${m.targetId}`;
+              return (
+                <label
+                  key={key}
+                  className="flex cursor-pointer items-start gap-2 rounded-md border p-2 text-sm hover:bg-accent/40"
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={!!picked[key]}
+                    onChange={(e) => setPicked((cur) => ({ ...cur, [key]: e.target.checked }))}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{TYPE_LABEL[m.targetType]}</Badge>
+                      <span className="font-medium">{m.title}</span>
+                      {m.subtitle && (
+                        <span className="text-xs text-muted-foreground">{m.subtitle}</span>
+                      )}
+                      <Badge variant="secondary">{m.confidence}%</Badge>
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{m.reason}</span>
+                  </span>
+                </label>
+              );
+            })}
+            <Button
+              size="sm"
+              className="mt-1"
+              disabled={pickedCount === 0 || linkPickedMut.isPending}
+              onClick={() => linkPickedMut.mutate()}
+            >
+              {linkPickedMut.isPending ? <Loader2 className="animate-spin" /> : <Link2 />}
+              Gắn {pickedCount} mục đã chọn
+            </Button>
+          </div>
         )}
       </div>
 
