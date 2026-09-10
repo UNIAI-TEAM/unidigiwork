@@ -10,9 +10,17 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    if (error || !data.user) {
+      // Ngoại tuyến: tin vào phiên đã lưu để ứng dụng vẫn mở được khi mất mạng.
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        const { data: local } = await supabase.auth.getSession();
+        if (local.session?.user) return { user: local.session.user };
+      }
+      throw redirect({ to: "/auth" });
+    }
     return { user: data.user };
   },
+
   component: AuthenticatedLayout,
 });
 
@@ -29,8 +37,9 @@ function AuthenticatedLayout() {
     );
   }
 
-  // No tenant → onboarding (unless already there).
-  if (!active.data && !location.pathname.startsWith("/onboarding")) {
+  // No tenant → onboarding (unless already there, hoặc đang ngoại tuyến).
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (!active.data && !offline && !location.pathname.startsWith("/onboarding")) {
     navigate({ to: "/onboarding" });
     return null;
   }
