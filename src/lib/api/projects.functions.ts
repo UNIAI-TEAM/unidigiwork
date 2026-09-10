@@ -199,6 +199,7 @@ export const updateProject = createServerFn({ method: "POST" })
     if (data.name !== undefined) patch.name = data.name;
     if (data.code !== undefined) patch.code = data.code || null;
     if (data.description !== undefined) patch.description = data.description || null;
+    if (data.notes !== undefined) patch.notes = data.notes ?? null;
     if (data.status !== undefined) patch.status = data.status;
     if (data.color !== undefined) patch.color = data.color || null;
     if (data.tags !== undefined) patch.tags = data.tags;
