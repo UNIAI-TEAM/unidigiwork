@@ -10,13 +10,15 @@ export type DocxRecognitionWeights = {
   table: number;
 };
 
+// Trọng số hiệu chỉnh trên fixture Word thuần Việt có nhãn chuẩn
+// (scripts/docx-weight-calibration.ts): 68.2% → 100.0% độ chính xác nhận diện.
 export const DEFAULT_DOCX_WEIGHTS: DocxRecognitionWeights = {
-  title: 1,
-  heading: 1,
-  listItem: 1,
-  quote: 1,
+  title: 0.8,
+  heading: 0.8,
+  listItem: 1.2,
+  quote: 0.8,
   caption: 1,
-  table: 1,
+  table: 1.2,
 };
 
 export type DocxRecognitionProfile = {

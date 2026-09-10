@@ -48,13 +48,14 @@ export interface DetectionWeights {
   table: number;
 }
 
+// Trọng số hiệu chỉnh thật (scripts/docx-weight-calibration.ts): 68.2% → 100.0%.
 export const DEFAULT_DETECTION_WEIGHTS: DetectionWeights = {
-  title: 1,
-  heading: 1,
-  listItem: 1,
-  quote: 1,
+  title: 0.8,
+  heading: 0.8,
+  listItem: 1.2,
+  quote: 0.8,
   caption: 1,
-  table: 1,
+  table: 1.2,
 };
 
 /** Điểm tối thiểu để chấp nhận một vai trò suy đoán. */
@@ -64,12 +65,12 @@ export function normalizeWeights(w?: Partial<DetectionWeights> | null): Detectio
   const clamp = (v: unknown, d: number) =>
     typeof v === "number" && Number.isFinite(v) ? Math.min(Math.max(v, 0), 3) : d;
   return {
-    title: clamp(w?.title, 1),
-    heading: clamp(w?.heading, 1),
-    listItem: clamp(w?.listItem, 1),
-    quote: clamp(w?.quote, 1),
-    caption: clamp(w?.caption, 1),
-    table: clamp(w?.table, 1),
+    title: clamp(w?.title, DEFAULT_DETECTION_WEIGHTS.title),
+    heading: clamp(w?.heading, DEFAULT_DETECTION_WEIGHTS.heading),
+    listItem: clamp(w?.listItem, DEFAULT_DETECTION_WEIGHTS.listItem),
+    quote: clamp(w?.quote, DEFAULT_DETECTION_WEIGHTS.quote),
+    caption: clamp(w?.caption, DEFAULT_DETECTION_WEIGHTS.caption),
+    table: clamp(w?.table, DEFAULT_DETECTION_WEIGHTS.table),
   };
 }
 
