@@ -5,7 +5,9 @@ import {
   HOME_LAYOUTS,
   HOME_PRESETS,
   HOME_SECTION_META,
+  HOME_SIZES,
   moveSection,
+  type HomeSize,
   type HomeLayout,
   type HomePrefs,
   type HomeSectionKey,
@@ -29,6 +31,8 @@ export function HomeCustomizePanel({
     onChange({ ...prefs, enabled: { ...prefs.enabled, [key]: !prefs.enabled[key] } });
   const move = (key: HomeSectionKey, dir: -1 | 1) =>
     onChange({ ...prefs, order: moveSection(prefs.order, key, dir) });
+  const setSize = (key: HomeSectionKey, size: HomeSize) =>
+    onChange({ ...prefs, sizes: { ...prefs.sizes, [key]: size } });
 
   return (
     <section
@@ -39,7 +43,7 @@ export function HomeCustomizePanel({
         <div>
           <h2 className="text-sm font-semibold">Tuỳ chỉnh trang chủ</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Bật/tắt khối, đổi thứ tự và chọn mật độ bố cục. Thay đổi được lưu theo tài khoản.
+            Bật/tắt khối, đổi thứ tự, chỉnh kích thước từng khối và chọn mật độ bố cục. Thay đổi được lưu theo tài khoản.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -71,7 +75,8 @@ export function HomeCustomizePanel({
             {prefs.order.map((key, idx) => {
               const meta = HOME_SECTION_META[key];
               return (
-                <li key={key} className="flex items-center gap-3 px-3 py-2.5">
+                <li key={key} className="px-3 py-2.5">
+                  <div className="flex items-center gap-3">
                   <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
                     <input
                       type="checkbox"
@@ -114,6 +119,29 @@ export function HomeCustomizePanel({
                       <ArrowDown className="h-3.5 w-3.5" />
                     </button>
                   </div>
+                  </div>
+                  {prefs.enabled[key] ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-7">
+                      <span className="text-xs text-muted-foreground">Kích thước</span>
+                      {HOME_SIZES.map((s) => (
+                        <button
+                          key={s.key}
+                          type="button"
+                          onClick={() => setSize(key, s.key)}
+                          aria-pressed={prefs.sizes[key] === s.key}
+                          title={s.hint}
+                          className={cn(
+                            "min-h-9 rounded-md border px-2.5 text-xs transition-colors",
+                            prefs.sizes[key] === s.key
+                              ? "border-primary bg-primary/5 text-foreground"
+                              : "border-border text-muted-foreground hover:bg-surface-2",
+                          )}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
