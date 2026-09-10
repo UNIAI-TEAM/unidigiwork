@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { listNotifications, markNotificationsRead } from "@/lib/api/notifications.functions";
 import { listWorkDeliverables } from "@/lib/api/work-deliverables.functions";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { SwipeRow } from "@/components/mobile/swipe-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ function MobileBoxPage() {
   const qc = useQueryClient();
   const { workspaceId } = useActiveWorkspace();
   const [tab, setTab] = useState<TabId>("action");
+  const [hidden, setHidden] = useState<string[]>([]);
 
   const tasks = useQuery({
     queryKey: ["m-box-tasks", workspaceId],
@@ -99,6 +101,28 @@ function MobileBoxPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được."),
   });
 
+  const snoozeMut = useMutation({
+    mutationFn: async (id: string) => {
+      const next = new Date();
+      next.setDate(next.getDate() + 1);
+      const { error } = await supabase
+        .from("tasks")
+        .update({ due_at: next.toISOString() })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Đã hoãn sang ngày mai.");
+      void qc.invalidateQueries({ queryKey: ["m-box-tasks", workspaceId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không hoãn được."),
+  });
+
+  const hide = (key: string) => {
+    setHidden((prev) => [...prev, key]);
+    toast.success("Đã ẩn khỏi hộp hôm nay.");
+  };
+
   const items: BoxItem[] = useMemo(() => {
     if (tab === "action")
       return ((tasks.data as any[]) ?? []).map((t) => ({
@@ -128,6 +152,11 @@ function MobileBoxPage() {
       }));
   }, [tab, tasks.data, products.data, notifications.data, navigate, readMut]);
 
+  const visibleItems = useMemo(
+    () => items.filter((it) => !hidden.includes(it.key)),
+    [items, hidden],
+  );
+
   const counts = {
     action: ((tasks.data as any[]) ?? []).length,
     review: ((products.data as any[]) ?? []).length,
@@ -154,6 +183,9 @@ function MobileBoxPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">My Box</h1>
         <p className="text-sm text-muted-foreground">Mọi thứ đang chờ bạn, gom về một hộp.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Mẹo: vuốt phải để duyệt, vuốt trái để hoãn.
+        </p>
       </header>
 
       <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1">
@@ -179,45 +211,61 @@ function MobileBoxPage() {
         ))}
       </div>
 
-      {items.length === 0 ? (
+      {visibleItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <Inbox className="mx-auto h-6 w-6 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">Hộp này đang trống. Rất tốt!</p>
         </div>
       ) : (
         <ul className="grid gap-2">
-          {items.map((it) => (
-            <li key={it.key} className="flex items-stretch gap-2">
-              <MobileListItem
-                title={it.title}
-                subtitle={it.subtitle}
-                icon={icon(it.kind)}
-                priorityBar={it.priority ?? null}
-                onClick={it.onOpen}
-                className="min-h-16 flex-1 rounded-2xl"
-              />
-              {it.kind === "task" && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-auto w-12 shrink-0 rounded-2xl"
-                  aria-label="Đánh dấu hoàn tất"
-                  onClick={() => doneMut.mutate(it.key)}
-                >
-                  <CheckSquare className="h-4 w-4" />
-                </Button>
-              )}
-              {it.kind === "notification" && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-auto w-12 shrink-0 rounded-2xl"
-                  aria-label="Đánh dấu đã đọc"
-                  onClick={() => readMut.mutate([it.key])}
-                >
-                  <Bell className="h-4 w-4" />
-                </Button>
-              )}
+          {visibleItems.map((it) => (
+            <li key={it.key}>
+              <SwipeRow
+                rightLabel={it.kind === "notification" ? "Đã đọc" : "Duyệt"}
+                leftLabel="Hoãn"
+                onSwipeRight={() => {
+                  if (it.kind === "task") doneMut.mutate(it.key);
+                  else if (it.kind === "notification") readMut.mutate([it.key]);
+                  else it.onOpen();
+                }}
+                onSwipeLeft={() => {
+                  if (it.kind === "task") snoozeMut.mutate(it.key);
+                  else hide(it.key);
+                }}
+              >
+                <div className="flex items-stretch gap-2 bg-background">
+                  <MobileListItem
+                    title={it.title}
+                    subtitle={it.subtitle}
+                    icon={icon(it.kind)}
+                    priorityBar={it.priority ?? null}
+                    onClick={it.onOpen}
+                    className="min-h-16 flex-1 rounded-2xl"
+                  />
+                  {it.kind === "task" && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-auto w-12 shrink-0 rounded-2xl"
+                      aria-label="Đánh dấu hoàn tất"
+                      onClick={() => doneMut.mutate(it.key)}
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {it.kind === "notification" && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-auto w-12 shrink-0 rounded-2xl"
+                      aria-label="Đánh dấu đã đọc"
+                      onClick={() => readMut.mutate([it.key])}
+                    >
+                      <Bell className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </SwipeRow>
             </li>
           ))}
         </ul>
