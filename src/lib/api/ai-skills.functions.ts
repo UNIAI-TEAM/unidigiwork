@@ -410,4 +410,3 @@ export const createAiSkillFromProposal = createServerFn({ method: "POST" })
     if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     return inserted;
   });
-
