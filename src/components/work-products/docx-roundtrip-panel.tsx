@@ -688,6 +688,31 @@ export function DocxRoundTripPanel({
           <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
+              variant="secondary"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate("THIS")}
+            >
+              {autoWeights.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Wand2 className="h-3 w-3" />
+              )}
+              Cập nhật tự động từ tài liệu
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate("ALL")}
+            >
+              <Wand2 className="h-3 w-3" />
+              Từ toàn bộ tài liệu tổ chức
+            </Button>
+            <Button
+
+              size="sm"
               className="h-7 gap-1 px-2 text-xs"
               disabled={!canEditProfile || saveProfile.isPending}
               onClick={() => saveProfile.mutate({ weights, aiGuidance: guidance })}
