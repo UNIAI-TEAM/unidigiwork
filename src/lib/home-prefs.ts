@@ -29,16 +29,39 @@ export const HOME_LAYOUTS: { key: HomeLayout; label: string; hint: string }[] = 
   { key: "wide", label: "Rộng", hint: "3 cột trên màn hình lớn" },
 ];
 
+export type HomeSize = "sm" | "md" | "lg" | "full";
+
+export const HOME_SIZES: { key: HomeSize; label: string; hint: string; span: number }[] = [
+  { key: "sm", label: "Nhỏ", hint: "1/3 chiều rộng", span: 4 },
+  { key: "md", label: "Vừa", hint: "1/2 chiều rộng", span: 6 },
+  { key: "lg", label: "Lớn", hint: "2/3 chiều rộng", span: 8 },
+  { key: "full", label: "Toàn màn", hint: "Cả hàng", span: 12 },
+];
+
+export const DEFAULT_HOME_SIZES: Record<HomeSectionKey, HomeSize> = {
+  stats: "full",
+  mywork: "lg",
+  upcoming: "sm",
+  inbox: "sm",
+  aibrief: "lg",
+};
+
+export function isHomeSize(v: string): v is HomeSize {
+  return v === "sm" || v === "md" || v === "lg" || v === "full";
+}
+
 export type HomePrefs = {
   enabled: Record<HomeSectionKey, boolean>;
   order: HomeSectionKey[];
   layout: HomeLayout;
+  sizes: Record<HomeSectionKey, HomeSize>;
 };
 
 export const DEFAULT_HOME_PREFS: HomePrefs = {
   enabled: { stats: true, mywork: true, upcoming: true, inbox: true, aibrief: true },
   order: DEFAULT_HOME_ORDER,
   layout: "balanced",
+  sizes: DEFAULT_HOME_SIZES,
 };
 
 export const HOME_PRESETS: {
@@ -55,6 +78,7 @@ export const HOME_PRESETS: {
       enabled: { stats: true, mywork: true, upcoming: false, inbox: true, aibrief: true },
       order: ["stats", "aibrief", "inbox", "mywork", "upcoming"],
       layout: "balanced",
+      sizes: { stats: "full", aibrief: "lg", inbox: "sm", mywork: "lg", upcoming: "sm" },
     },
   },
   {
@@ -65,6 +89,7 @@ export const HOME_PRESETS: {
       enabled: { stats: true, mywork: true, upcoming: true, inbox: true, aibrief: false },
       order: ["stats", "mywork", "upcoming", "inbox", "aibrief"],
       layout: "balanced",
+      sizes: { stats: "full", mywork: "lg", upcoming: "sm", inbox: "sm", aibrief: "md" },
     },
   },
   {
@@ -75,11 +100,13 @@ export const HOME_PRESETS: {
       enabled: { stats: false, mywork: true, upcoming: false, inbox: false, aibrief: false },
       order: ["mywork", "stats", "upcoming", "inbox", "aibrief"],
       layout: "compact",
+      sizes: { mywork: "full", stats: "full", upcoming: "md", inbox: "md", aibrief: "md" },
     },
   },
 ];
 
 const LAYOUT_KEY = `${HOME_PREFIX}layout:`;
+const SIZE_KEY = `${HOME_PREFIX}size:`;
 
 function isHomeSectionKey(k: string): k is HomeSectionKey {
   return k in HOME_SECTION_META;
@@ -91,9 +118,17 @@ export function readHomePrefs(
   order: string[] | null,
 ): HomePrefs {
   const enabled = { ...DEFAULT_HOME_PREFS.enabled };
+  const sizes = { ...DEFAULT_HOME_SIZES };
   let layout: HomeLayout = DEFAULT_HOME_PREFS.layout;
 
   for (const [k, v] of Object.entries(sections ?? {})) {
+    if (k.startsWith(SIZE_KEY)) {
+      const [section, size] = k.slice(SIZE_KEY.length).split(":");
+      if (v && section && size && isHomeSectionKey(section) && isHomeSize(size)) {
+        sizes[section] = size;
+      }
+      continue;
+    }
     if (k.startsWith(LAYOUT_KEY)) {
       const l = k.slice(LAYOUT_KEY.length);
       if (v && (l === "compact" || l === "balanced" || l === "wide")) layout = l;
@@ -113,7 +148,7 @@ export function readHomePrefs(
     ...DEFAULT_HOME_ORDER.filter((k) => !fromOrder.includes(k)),
   ];
 
-  return { enabled, order: ordered, layout };
+  return { enabled, order: ordered, layout, sizes };
 }
 
 /** Ghi prefs Home vào payload chung, giữ nguyên mọi khoá không thuộc Home. */
@@ -131,6 +166,11 @@ export function writeHomePrefs(
   }
   for (const l of HOME_LAYOUTS) {
     sections[`${LAYOUT_KEY}${l.key}`] = prefs.layout === l.key;
+  }
+  for (const key of DEFAULT_HOME_ORDER) {
+    for (const s of HOME_SIZES) {
+      sections[`${SIZE_KEY}${key}:${s.key}`] = prefs.sizes[key] === s.key;
+    }
   }
 
   const keptOrder = (currentOrder ?? []).filter((k) => !k.startsWith(HOME_PREFIX));
