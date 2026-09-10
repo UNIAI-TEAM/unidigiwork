@@ -675,9 +675,7 @@ function ProjectDetailPage() {
                       />
                       <Button
                         className="min-h-11 w-full sm:w-auto"
-                        disabled={
-                          createMeeting.isPending || !mTitle.trim() || !mStart || !mEnd
-                        }
+                        disabled={createMeeting.isPending || !mTitle.trim() || !mStart || !mEnd}
                         onClick={() => createMeeting.mutate()}
                       >
                         {createMeeting.isPending ? (
