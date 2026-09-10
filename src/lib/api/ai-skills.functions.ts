@@ -492,6 +492,68 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         meetingProjectName.set(p.id, p.name);
       }
     }
+    // Thảo luận thật trong dự án: ghi chú dự án + bình luận dự án.
+    const [projNotesRes, projCommentsRes] = await Promise.all([
+      context.supabase
+        .from("projects")
+        .select("id, name, notes, description, status")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(20),
+      context.supabase
+        .from("project_comments")
+        .select("project_id, body, author_id, created_at")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(40),
+    ]);
+    const projectRows = (projNotesRes.data ?? []) as {
+      id: string;
+      name: string;
+      notes: string | null;
+      description: string | null;
+      status: string | null;
+    }[];
+    const projectName = new Map(projectRows.map((p) => [p.id, p.name]));
+    for (const [pid, pname] of projectName) meetingProjectName.set(pid, pname);
+    const projectComments = (projCommentsRes.data ?? []) as {
+      project_id: string;
+      body: string;
+      author_id: string;
+      created_at: string;
+    }[];
+    const commentAuthorName = new Map<string, string>();
+    const commentAuthorIds = Array.from(new Set(projectComments.map((c) => c.author_id)));
+    if (commentAuthorIds.length) {
+      const uRes = await context.supabase
+        .from("users")
+        .select("id, display_name, primary_email")
+        .in("id", commentAuthorIds);
+      for (const u of (uRes.data ?? []) as {
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }[]) {
+        commentAuthorName.set(u.id, u.display_name ?? u.primary_email ?? "Thành viên");
+      }
+    }
+    const projectNoteLines = projectRows
+      .filter((p) => (p.notes ?? "").trim() || (p.description ?? "").trim())
+      .map(
+        (p) =>
+          `- [${p.name}${p.status ? "/" + p.status : ""}] ${(p.notes || p.description || "")
+            .replace(/\s+/g, " ")
+            .slice(0, 300)}`,
+      );
+    const projectCommentLines = projectComments.map(
+      (c) =>
+        `- [${projectName.get(c.project_id) ?? "Dự án"}] ${
+          commentAuthorName.get(c.author_id) ?? "Thành viên"
+        } (${c.created_at.slice(0, 10)}): ${c.body.replace(/\s+/g, " ").slice(0, 240)}`,
+    );
+
     const notifs = (notifsRes.data ?? []) as { type: string; title: string }[];
     const proposals = (proposalsRes.data ?? []) as { title: string; action_type: string }[];
     const existing = (skillRes.data ?? []) as { code: string; name: string }[];
