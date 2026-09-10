@@ -2160,7 +2160,7 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
 
     const { data: product } = await context.supabase
       .from("work_products")
-      .select("id, tenant_id, title, business_type")
+      .select("id, tenant_id, title, business_type, content")
       .eq("id", data.id)
       .is("deleted_at", null)
       .maybeSingle();
@@ -2173,11 +2173,15 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       .eq("work_product_id", data.id)
       .order("ordinal", { ascending: true })
       .limit(400);
-    const content = ((blocks ?? []) as any[])
+    const blockContent = ((blocks ?? []) as any[])
       .map((b) => String(b.text ?? "").trim())
       .filter(Boolean)
       .join("\n")
       .slice(0, 12000);
+    // Tài liệu soạn trực tiếp (NATIVE) chưa có block: dùng nội dung hiện tại của tài liệu.
+    const content = (
+      blockContent.trim() ? blockContent : String((product as any).content ?? "")
+    ).slice(0, 12000);
     if (!content.trim())
       throw new ApiError({ code: "VALIDATION_FAILED", message: "WORK_PRODUCT_EMPTY" });
 
@@ -2262,47 +2266,71 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
 
     const { streamText } = await import("ai");
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-    const result = streamText({
-      model: createLovableResponsesProvider(apiKey).responses("openai/gpt-6-astra"),
-      providerOptions: {
-        openai: {
-          forceReasoning: true,
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          store: false,
-          include: ["reasoning.encrypted_content"],
+    const systemPrompt =
+      "Bạn đối chiếu nội dung một tài liệu nghiệp vụ với danh sách công việc, cuộc họp và biên bản " +
+      "đang có trong tổ chức, rồi xếp hạng những mục liên quan nhất để liên kết. " +
+      "Không bịa mục mới, chỉ dùng số hiệu trong danh sách. " +
+      "Luôn trả về từ 3 đến 8 dòng, kể cả khi mức tin cậy thấp; dùng điểm tin cậy để thể hiện mức chắc chắn. " +
+      `Trả lời bằng ngôn ngữ locale ${data.locale}.`;
+    const userPrompt =
+      `TÀI LIỆU: ${product.title} (${product.business_type})\n` +
+      `NỘI DUNG:\n${content}\n\n` +
+      `DANH SÁCH MỤC CÓ THỂ LIÊN KẾT:\n${list}\n\n` +
+      "Chọn tối đa 8 mục liên quan nhất (ít nhất 3 mục). Mỗi dòng theo đúng mẫu:\n" +
+      "- #số :: LÝ DO: căn cứ trong tài liệu :: 0-100\n" +
+      "Số cuối là mức độ tin cậy. Không thêm giải thích ngoài các dòng đó.";
+
+    const runModel = async (effort: "medium" | "high") => {
+      const result = streamText({
+        model: createLovableResponsesProvider(apiKey).responses("openai/gpt-6-astra"),
+        providerOptions: {
+          openai: {
+            forceReasoning: true,
+            reasoningEffort: effort,
+            reasoningSummary: "auto",
+            store: false,
+            include: ["reasoning.encrypted_content"],
+          },
         },
-      },
-      system:
-        "Bạn đối chiếu nội dung một tài liệu nghiệp vụ với danh sách công việc, cuộc họp và biên bản " +
-        "đang có trong tổ chức, rồi chỉ ra những mục thực sự liên quan để liên kết. " +
-        "Chỉ chọn mục có căn cứ rõ trong nội dung tài liệu; nếu không chắc thì bỏ qua. " +
-        "Không bịa mục mới, chỉ dùng số hiệu trong danh sách. " +
-        `Trả lời bằng ngôn ngữ locale ${data.locale}.`,
-      messages: [
-        {
-          role: "user",
-          content:
-            `TÀI LIỆU: ${product.title} (${product.business_type})\n` +
-            `NỘI DUNG:\n${content}\n\n` +
-            `DANH SÁCH MỤC CÓ THỂ LIÊN KẾT:\n${list}\n\n` +
-            "Chọn tối đa 8 mục liên quan nhất. Mỗi dòng theo đúng mẫu:\n" +
-            "- #số :: LÝ DO: căn cứ trong tài liệu :: 0-100\n" +
-            "Số cuối là mức độ tin cậy. Không thêm giải thích ngoài các dòng đó.",
-        },
-      ],
-    });
-    const text = (await result.text).trim();
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      return (await result.text).trim();
+    };
+
+    // Mô hình suy luận có thể trả về nội dung rỗng; thử lại một lần với mức suy luận cao hơn.
+    let text = await runModel("medium");
+    if (!text) text = await runModel("high");
 
     const out: WorkGraphMatchSuggestion[] = [];
     const seen = new Set<string>();
     for (const raw of text.split("\n")) {
-      const line = raw.replace(/^[-*\d.\s]+/, "").trim();
-      const m = /^#?(\d+)\s*::\s*(?:LÝ DO:|LY DO:|REASON:)?\s*(.+?)\s*::\s*(\d{1,3})\s*$/i.exec(
-        line,
-      );
-      if (!m) continue;
-      const idx = Number(m[1]) - 1;
+      const line = raw.replace(/^[-*\s]+/, "").trim();
+      if (!line) continue;
+      // Ưu tiên đúng mẫu "#n :: lý do :: 0-100", nếu khác thì đọc mềm.
+      const strict =
+        /^#?(\d+)\s*::\s*(?:LÝ DO:|LY DO:|REASON:)?\s*(.+?)\s*::\s*(\d{1,3})\s*$/i.exec(line);
+      let idxRaw: number | null = null;
+      let reason = "";
+      let conf = 60;
+      if (strict) {
+        idxRaw = Number(strict[1]);
+        reason = strict[2];
+        conf = Number(strict[3]);
+      } else {
+        const hash = /#\s*(\d+)/.exec(line);
+        if (!hash) continue;
+        idxRaw = Number(hash[1]);
+        const nums = line.match(/(\d{1,3})\s*%?\s*$/);
+        if (nums) conf = Number(nums[1]);
+        reason = line
+          .replace(/#\s*\d+/, "")
+          .replace(/(\d{1,3})\s*%?\s*$/, "")
+          .replace(/(LÝ DO:|LY DO:|REASON:)/i, "")
+          .replace(/^[\s:|\-–—.]+|[\s:|\-–—.]+$/g, "")
+          .trim();
+      }
+      const idx = (idxRaw ?? 0) - 1;
       const cand = open[idx];
       if (!cand) continue;
       const key = `${cand.targetType}:${cand.targetId}`;
@@ -2313,11 +2341,67 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
         targetId: cand.targetId,
         title: cand.title,
         subtitle: cand.subtitle,
-        reason: m[2].slice(0, 400),
-        confidence: Math.max(0, Math.min(100, Number(m[3]))),
+        reason: (reason || "AI đánh giá có liên quan tới nội dung tài liệu.").slice(0, 400),
+        confidence: Math.max(0, Math.min(100, conf)),
         alreadyLinked: false,
       });
       if (out.length >= 8) break;
     }
-    return out.sort((a, b) => b.confidence - a.confidence);
+    if (out.length) return out.sort((a, b) => b.confidence - a.confidence);
+
+    // Dự phòng: khi AI không đưa ra dòng nào, xếp hạng theo trùng từ khoá để người dùng vẫn chọn được.
+    const stop = new Set([
+      "và",
+      "của",
+      "cho",
+      "các",
+      "một",
+      "trong",
+      "với",
+      "về",
+      "theo",
+      "được",
+      "là",
+      "có",
+      "đã",
+      "tại",
+      "từ",
+      "này",
+      "đó",
+      "the",
+      "and",
+      "for",
+      "with",
+      "from",
+      "that",
+      "this",
+      "task",
+      "công",
+      "việc",
+    ]);
+    const tokenize = (s: string) =>
+      s
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !stop.has(w));
+    const docTokens = new Set(tokenize(content));
+    const scored = open
+      .map((c) => {
+        const words = tokenize(`${c.title} ${c.extra}`);
+        const hits = Array.from(new Set(words.filter((w) => docTokens.has(w))));
+        return { c, hits, score: hits.length };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+    return scored.map(({ c, hits, score }) => ({
+      targetType: c.targetType,
+      targetId: c.targetId,
+      title: c.title,
+      subtitle: c.subtitle,
+      reason: `Trùng từ khoá với tài liệu: ${hits.slice(0, 6).join(", ")}`,
+      confidence: Math.min(75, 30 + score * 8),
+      alreadyLinked: false,
+    }));
   });

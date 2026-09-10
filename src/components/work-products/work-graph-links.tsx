@@ -103,7 +103,15 @@ export function WorkGraphLinksPanel({ workProductId }: { workProductId: string }
 
   // Gợi ý AI: đọc nội dung tài liệu rồi ghép vào công việc/cuộc họp đã có.
   const suggestMut = useMutation({
-    mutationFn: () => proposeWorkGraphMatches({ data: { id: workProductId, locale: "vi" } as any }),
+    mutationFn: () =>
+      proposeWorkGraphMatches({
+        data: {
+          id: workProductId,
+          locale: "vi",
+          idempotencyKey: crypto.randomUUID(),
+        } as any,
+      }),
+
     onSuccess: (rows) => {
       setMatches(rows);
       setPicked(
