@@ -183,6 +183,9 @@ function MobileBoxPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">My Box</h1>
         <p className="text-sm text-muted-foreground">Mọi thứ đang chờ bạn, gom về một hộp.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Mẹo: vuốt phải để duyệt, vuốt trái để hoãn.
+        </p>
       </header>
 
       <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1">
