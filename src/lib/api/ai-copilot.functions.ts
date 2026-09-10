@@ -18,7 +18,7 @@ import {
 } from "@/domain/ai-copilot/contracts";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
-const MODEL = "openai/gpt-5.6-sol";
+const MODEL = "openai/gpt-6-astra";
 
 const CopilotSchema = z.object({
   query: z.string().min(2).max(500),
@@ -123,8 +123,6 @@ export const askUniCopilot = createServerFn({ method: "POST" })
           contextBlock: renderContextForModel(pack) + skillBlock,
           conversation: data.history ?? [],
         }),
-        maxOutputTokens: 1100,
-        temperature: 0.2,
         providerOptions: {
           openai: {
             forceReasoning: true,

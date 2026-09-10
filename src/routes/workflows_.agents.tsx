@@ -52,6 +52,16 @@ import {
   type AgentEvaluation,
 } from "@/lib/api/workflow-agents.functions";
 import { proposeAiAction } from "@/lib/api/ai-actions.functions";
+import { listAiSkills } from "@/lib/api/ai-skills.functions";
+
+type HubSkillRow = {
+  id: string;
+  name: string;
+  kind: string;
+  description: string | null;
+  enabled: boolean;
+  action_types: string[] | null;
+};
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import type { ProposedAiAction } from "@/domain/ai-actions/contracts";
 import {
@@ -206,6 +216,24 @@ function AgentBuilderPage() {
     queryFn: () => listWorkflowAgentRuns({ data: { workspaceId: activeWs, limit: 20 } }),
     enabled: !!activeWs,
   });
+
+  // Kỹ năng Skill Hub của tổ chức (chỉ hiển thị + gợi ý, không đổi quyền của agent).
+  const hubQuery = useQuery({
+    queryKey: ["ai-skills", activeWs],
+    queryFn: () => listAiSkills({ data: { workspaceId: activeWs } }),
+    enabled: !!activeWs,
+  });
+  const hubSkills = (hubQuery.data ?? []) as unknown as HubSkillRow[];
+  const enabledHubSkills = useMemo(() => hubSkills.filter((s) => s.enabled), [hubSkills]);
+  const suggestHubSkills = (agent: AgentRow) => {
+    const allowed = new Set<string>([
+      agent.action_type,
+      ...normalizeAllowedActionTypes(agent.allowed_action_types),
+    ]);
+    return enabledHubSkills
+      .filter((s) => (s.action_types ?? []).some((t) => allowed.has(t)))
+      .slice(0, 4);
+  };
 
   const save = useServerFn(saveWorkflowAgent);
   const toggle = useServerFn(setWorkflowAgentEnabled);
@@ -454,6 +482,18 @@ function AgentBuilderPage() {
                               </Badge>
                             ))}
                           </div>
+                          {suggestHubSkills(a).length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              <span className="text-xs text-muted-foreground">
+                                Skill Hub gợi ý:
+                              </span>
+                              {suggestHubSkills(a).map((s) => (
+                                <Badge key={s.id} variant="outline" className="gap-1 text-[11px]">
+                                  <Sparkles className="h-3 w-3 text-primary" /> {s.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                           {conds.length > 0 && (
                             <p className="mt-2 text-xs text-muted-foreground">
                               Điều kiện:{" "}
@@ -576,31 +616,89 @@ function AgentBuilderPage() {
               )}
             </section>
 
-            <aside className="rounded-xl border border-border bg-card p-4">
-              <h3 className="flex items-center gap-2 font-semibold">
-                <History className="h-4 w-4" /> Lịch sử agent
-              </h3>
-              <ul className="mt-3 space-y-2 text-sm">
-                {(runsQuery.data ?? []).map((r: any) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0"
+            <aside className="space-y-5">
+              <section className="rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 font-semibold">
+                    <Sparkles className="h-4 w-4 text-primary" /> Kỹ năng Skill Hub
+                  </h3>
+                  <Link
+                    to="/ai-brain/skills"
+                    className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
                   >
-                    <span className="text-muted-foreground">
-                      {new Date(r.created_at).toLocaleString("vi-VN")}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Badge variant={r.status === "NO_MATCH" ? "outline" : "secondary"}>
-                        {r.status}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{r.matched_count} khớp</span>
-                    </span>
-                  </li>
-                ))}
-                {(runsQuery.data ?? []).length === 0 && (
-                  <li className="text-muted-foreground">Chưa có lần chạy nào.</li>
+                    Mở Skill Hub
+                  </Link>
+                </div>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Kỹ năng đang bật của tổ chức. Agent có thể dùng kỹ năng khi loại hành động trùng
+                  khớp.
+                </p>
+                {hubQuery.isLoading && (
+                  <p className="mt-3 text-sm text-muted-foreground">Đang tải…</p>
                 )}
-              </ul>
+                {!hubQuery.isLoading && hubSkills.length === 0 && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Chưa có kỹ năng nào trong Skill Hub.
+                  </p>
+                )}
+                <ul className="mt-3 space-y-2">
+                  {hubSkills.slice(0, 12).map((s) => (
+                    <li key={s.id} className="rounded-lg border border-border p-2.5">
+                      <div className="flex min-w-0 items-start justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium">{s.name}</span>
+                          {s.description && (
+                            <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+                              {s.description}
+                            </span>
+                          )}
+                        </span>
+                        <Badge variant={s.enabled ? "secondary" : "outline"} className="shrink-0">
+                          {s.enabled ? "Đang bật" : "Đang tắt"}
+                        </Badge>
+                      </div>
+                      {(s.action_types ?? []).length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {(s.action_types ?? []).slice(0, 4).map((t) => (
+                            <Badge key={t} variant="outline" className="text-[11px]">
+                              {AI_ACTION_TOOLS[t as AiActionType]?.label ?? t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="rounded-xl border border-border bg-card p-4">
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <History className="h-4 w-4" /> Lịch sử agent
+                </h3>
+                <ul className="mt-3 space-y-2 text-sm">
+                  {(runsQuery.data ?? []).map((r: any) => (
+                    <li
+                      key={r.id}
+                      className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0"
+                    >
+                      <span className="text-muted-foreground">
+                        {new Date(r.created_at).toLocaleString("vi-VN")}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <Badge variant={r.status === "NO_MATCH" ? "outline" : "secondary"}>
+                          {r.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {r.matched_count} khớp
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                  {(runsQuery.data ?? []).length === 0 && (
+                    <li className="text-muted-foreground">Chưa có lần chạy nào.</li>
+                  )}
+                </ul>
+              </section>
             </aside>
           </div>
         </main>
