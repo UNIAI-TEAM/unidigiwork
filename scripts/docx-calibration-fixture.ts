@@ -51,7 +51,10 @@ const specs: Spec[] = [
     italic: true,
     indent: 720,
   },
-  { text: "- Ông Lê Văn C hoàn thiện tài liệu kiến trúc trước ngày 15 tháng 9.", role: "LIST_ITEM" },
+  {
+    text: "- Ông Lê Văn C hoàn thiện tài liệu kiến trúc trước ngày 15 tháng 9.",
+    role: "LIST_ITEM",
+  },
   { text: "- Bà Trần Thị B chuẩn bị kịch bản nghiệm thu.", role: "LIST_ITEM" },
   { text: "Hình 2: Sơ đồ luồng phê duyệt sau điều chỉnh", role: "CAPTION", italic: true },
   {
