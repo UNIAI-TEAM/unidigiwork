@@ -453,17 +453,20 @@ function AgentBuilderPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Switch
-                          checked={a.enabled}
-                          onCheckedChange={async (v) => {
-                            await toggle({ data: { agentId: a.id, enabled: v } });
-                            invalidate();
-                          }}
-                        />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex min-h-11 min-w-11 items-center justify-center">
+                          <Switch
+                            checked={a.enabled}
+                            onCheckedChange={async (v) => {
+                              await toggle({ data: { agentId: a.id, enabled: v } });
+                              invalidate();
+                            }}
+                          />
+                        </span>
                         <Button
                           size="sm"
                           variant="outline"
+                          className="min-h-11"
                           onClick={() => runMutation.mutate(a)}
                           disabled={runMutation.isPending}
                         >
@@ -477,6 +480,8 @@ function AgentBuilderPage() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          className="h-11 w-11"
+                          aria-label="Chỉnh sửa agent"
                           onClick={() =>
                             setDraft({
                               id: a.id,
