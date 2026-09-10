@@ -46,6 +46,29 @@ function AuthPage() {
         setReset(false);
         return;
       }
+      if (mode === "code") {
+        if (!codeSent) {
+          if (!email.trim()) throw new Error(t("ac.17"));
+          const { error } = await supabase.auth.signInWithOtp({
+            email: email.trim(),
+            options: { shouldCreateUser: false },
+          });
+          if (error) throw error;
+          setCodeSent(true);
+          toast.success(t("otp.4"));
+          return;
+        }
+        const digits = code.replace(/\D/g, "");
+        if (digits.length !== 6) throw new Error(t("otp.8"));
+        const { error } = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: digits,
+          type: "email",
+        });
+        if (error) throw error;
+        navigate({ to: "/tasks" });
+        return;
+      }
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
