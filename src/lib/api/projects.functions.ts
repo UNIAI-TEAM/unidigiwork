@@ -126,16 +126,54 @@ export const getProject = createServerFn({ method: "GET" })
       .limit(100);
     if (taskErr) mapPgError(taskErr);
 
+    // Người phụ trách: task_assignees -> users (display_name/primary_email).
+    const taskIds = (tasks ?? []).map((t) => t.id as string);
+    const assigneeRows = taskIds.length
+      ? await context.supabase
+          .from("task_assignees")
+          .select("task_id, user_id")
+          .in("task_id", taskIds)
+      : { data: [], error: null };
+    const assigneeIds = Array.from(
+      new Set(((assigneeRows.data ?? []) as Array<{ user_id: string }>).map((a) => a.user_id)),
+    );
+    const userRows = assigneeIds.length
+      ? await context.supabase
+          .from("users")
+          .select("id, display_name, primary_email")
+          .in("id", assigneeIds)
+      : { data: [], error: null };
+    const userName = new Map<string, string>();
+    for (const u of (userRows.data ?? []) as Array<{
+      id: string;
+      display_name: string | null;
+      primary_email: string | null;
+    }>) {
+      userName.set(u.id, u.display_name ?? u.primary_email ?? "Thành viên");
+    }
+    const assigneeMap = new Map<string, { id: string; name: string }[]>();
+    for (const a of (assigneeRows.data ?? []) as Array<{
+      task_id: string;
+      user_id: string;
+    }>) {
+      const list = assigneeMap.get(a.task_id) ?? [];
+      list.push({ id: a.user_id, name: userName.get(a.user_id) ?? "Thành viên" });
+      assigneeMap.set(a.task_id, list);
+    }
+
     return {
       project: project as unknown as ProjectRow,
-      tasks: (tasks ?? []) as unknown as {
-        id: string;
-        title: string;
-        status: string;
-        priority: string;
-        due_at: string | null;
-        updated_at: string;
-      }[],
+      tasks: (tasks ?? []).map((t) => ({
+        ...(t as unknown as {
+          id: string;
+          title: string;
+          status: string;
+          priority: string;
+          due_at: string | null;
+          updated_at: string;
+        }),
+        assignees: assigneeMap.get((t as unknown as { id: string }).id) ?? [],
+      })),
     };
   });
 

@@ -15,10 +15,14 @@ import {
   CalendarDays,
   Save,
   GripVertical,
+  Search,
+  X,
+  User,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -176,12 +180,56 @@ function ProjectDetailPage() {
     return { done, overdue, pct, total: tasks.length };
   }, [tasks]);
 
+  // Bộ lọc + tìm kiếm trong danh sách công việc.
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [dueFilter, setDueFilter] = useState("all");
+
+  const assigneeOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of tasks) for (const a of t.assignees ?? []) map.set(a.id, a.name);
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [tasks]);
+
+  const hasFilter =
+    searchText.trim() !== "" ||
+    statusFilter !== "all" ||
+    assigneeFilter !== "all" ||
+    dueFilter !== "all";
+
+  function clearFilters() {
+    setSearchText("");
+    setStatusFilter("all");
+    setAssigneeFilter("all");
+    setDueFilter("all");
+  }
+
+  const filteredTasks = useMemo(() => {
+    const now = Date.now();
+    const weekAhead = now + 7 * 24 * 3600 * 1000;
+    const q = searchText.trim().toLowerCase();
+    return tasks.filter((t) => {
+      if (q && !`${t.title}`.toLowerCase().includes(q)) return false;
+      if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (assigneeFilter !== "all" && !(t.assignees ?? []).some((a) => a.id === assigneeFilter))
+        return false;
+      if (dueFilter !== "all") {
+        const due = t.due_at ? new Date(t.due_at).getTime() : null;
+        if (dueFilter === "overdue" && !(due && due < now && t.status !== "done")) return false;
+        if (dueFilter === "this_week" && !(due && due >= now && due <= weekAhead)) return false;
+        if (dueFilter === "no_due" && due !== null) return false;
+      }
+      return true;
+    });
+  }, [tasks, searchText, statusFilter, assigneeFilter, dueFilter]);
+
   const grouped = useMemo(() => {
     return TASK_GROUPS.map((g) => ({
       ...g,
-      items: tasks.filter((t) => t.status === g.key),
+      items: filteredTasks.filter((t) => t.status === g.key),
     }));
-  }, [tasks]);
+  }, [filteredTasks]);
 
   // Kéo thả đổi trạng thái — vẫn đi qua command transitionTask, không ghi thẳng DB.
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
@@ -294,18 +342,88 @@ function ProjectDetailPage() {
               <div className="mt-5 grid gap-4 xl:grid-cols-3">
                 <section className="rounded-xl border border-border bg-card p-4 xl:col-span-2">
                   <h2 className="flex items-center gap-2 font-semibold">
-                    <ListChecks className="h-4 w-4 text-primary" /> Công việc ({tasks.length})
+                    <ListChecks className="h-4 w-4 text-primary" /> Công việc (
+                    {filteredTasks.length}
+                    {hasFilter && `/${tasks.length}`})
                   </h2>
                   {tasks.length === 0 && (
                     <p className="mt-2 text-sm text-muted-foreground">
                       Chưa có công việc nào gắn với dự án này.
                     </p>
                   )}
+                  {tasks.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder="Tìm công việc…"
+                          className="pl-9"
+                          aria-label="Tìm công việc"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <select
+                          aria-label="Lọc theo trạng thái"
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi trạng thái</option>
+                          {TASK_GROUPS.map((s) => (
+                            <option key={s.key} value={s.key}>
+                              {TASK_STATUS_LABEL[s.key]}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Lọc theo người phụ trách"
+                          value={assigneeFilter}
+                          onChange={(e) => setAssigneeFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi người phụ trách</option>
+                          {assigneeOptions.map(([uid, name]) => (
+                            <option key={uid} value={uid}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Lọc theo hạn kết thúc"
+                          value={dueFilter}
+                          onChange={(e) => setDueFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi hạn</option>
+                          <option value="overdue">Quá hạn</option>
+                          <option value="this_week">7 ngày tới</option>
+                          <option value="no_due">Chưa có hạn</option>
+                        </select>
+                        {hasFilter && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="min-h-11 gap-1 px-3 text-xs"
+                            onClick={clearFilters}
+                          >
+                            <X className="h-3.5 w-3.5" /> Xóa bộ lọc
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="mt-3 space-y-4">
                     <p className="text-xs text-muted-foreground">
                       Kéo công việc sang nhóm khác để đổi trạng thái. Trên điện thoại, chọn trạng
                       thái trong danh sách thả xuống.
                     </p>
+                    {hasFilter && filteredTasks.length === 0 && (
+                      <p className="rounded-md border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
+                        Không có công việc nào khớp bộ lọc hiện tại.
+                      </p>
+                    )}
                     {grouped.map((g) => (
                       <div
                         key={g.key}
@@ -369,6 +487,15 @@ function ProjectDetailPage() {
                                     </span>
                                   </Link>
                                   <span className="flex shrink-0 items-center gap-1.5">
+                                    {(t.assignees ?? []).length > 0 && (
+                                      <span
+                                        className="hidden max-w-36 truncate items-center gap-1 text-xs text-muted-foreground sm:inline-flex"
+                                        title={(t.assignees ?? []).map((a) => a.name).join(", ")}
+                                      >
+                                        <User className="h-3 w-3" />
+                                        {(t.assignees ?? []).map((a) => a.name).join(", ")}
+                                      </span>
+                                    )}
                                     {t.due_at && (
                                       <span
                                         className={`text-xs ${overdue ? "text-destructive" : "text-muted-foreground"}`}
