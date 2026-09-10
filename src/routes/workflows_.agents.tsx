@@ -16,6 +16,7 @@ import {
   History,
   Loader2,
   ArrowLeft,
+  ChevronDown,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -163,6 +164,8 @@ function AgentBuilderPage() {
   );
   const [proposals, setProposals] = useState<ProposedAiAction[]>([]);
   const [proposing, setProposing] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const toggleExpanded = (id: string) => setExpandedIds((s) => ({ ...s, [id]: !s[id] }));
   const derivedAllowed = useMemo(
     () => deriveAllowedFromSkills(draft?.skills ?? []),
     [draft?.skills],
@@ -337,9 +340,9 @@ function AgentBuilderPage() {
                 Điều kiện → AI đề xuất → bạn phê duyệt. Agent không bao giờ tự thực thi.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               <Select value={activeWs} onValueChange={setWorkspaceId}>
-                <SelectTrigger className="w-56">
+                <SelectTrigger className="w-full min-h-11 sm:w-56">
                   <SelectValue placeholder="Chọn không gian" />
                 </SelectTrigger>
                 <SelectContent>
@@ -350,7 +353,11 @@ function AgentBuilderPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button disabled={!activeWs} onClick={() => setDraft(emptyDraft(activeWs))}>
+              <Button
+                className="min-h-11"
+                disabled={!activeWs}
+                onClick={() => setDraft(emptyDraft(activeWs))}
+              >
                 <Plus className="mr-1.5 h-4 w-4" /> Tạo agent
               </Button>
             </div>
@@ -376,118 +383,149 @@ function AgentBuilderPage() {
                 const fields = conditionFieldsFor(a.trigger_type);
                 const conds = a.conditions ?? [];
                 return (
-                  <article key={a.id} className="rounded-xl border border-border bg-card p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h2 className="truncate font-semibold">{a.name}</h2>
-                        {a.description && (
-                          <p className="mt-0.5 text-sm text-muted-foreground">{a.description}</p>
-                        )}
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <Badge variant="secondary">{AGENT_TRIGGER_LABELS[a.trigger_type]}</Badge>
-                          {a.worker_profile && AI_WORKER_PROFILE_MAP[a.worker_profile] && (
+                  <article
+                    key={a.id}
+                    className="min-w-0 rounded-xl border border-border bg-card p-4"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(a.id)}
+                      className="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 text-left sm:hidden"
+                      aria-expanded={!!expandedIds[a.id]}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate font-semibold">{a.name}</span>
+                        <Badge variant="secondary" className="shrink-0">
+                          {AGENT_TRIGGER_LABELS[a.trigger_type]}
+                        </Badge>
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expandedIds[a.id] ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    <div className={`${expandedIds[a.id] ? "block" : "hidden"} sm:block`}>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h2 className="hidden truncate font-semibold sm:block">{a.name}</h2>
+                          {a.description && (
+                            <p className="mt-0.5 text-sm text-muted-foreground">{a.description}</p>
+                          )}
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            <Badge variant="secondary">
+                              {AGENT_TRIGGER_LABELS[a.trigger_type]}
+                            </Badge>
+                            {a.worker_profile && AI_WORKER_PROFILE_MAP[a.worker_profile] && (
+                              <Badge variant="outline" className="gap-1">
+                                <Bot className="h-3 w-3" />{" "}
+                                {AI_WORKER_PROFILE_MAP[a.worker_profile]!.name}
+                              </Badge>
+                            )}
+                            <Badge variant="outline">
+                              {AI_ACTION_TOOLS[a.action_type]?.label ?? a.action_type}
+                            </Badge>
                             <Badge variant="outline" className="gap-1">
-                              <Bot className="h-3 w-3" />{" "}
-                              {AI_WORKER_PROFILE_MAP[a.worker_profile]!.name}
+                              <ShieldCheck className="h-3 w-3" /> Cần phê duyệt
                             </Badge>
-                          )}
-                          <Badge variant="outline">
-                            {AI_ACTION_TOOLS[a.action_type]?.label ?? a.action_type}
-                          </Badge>
-                          <Badge variant="outline" className="gap-1">
-                            <ShieldCheck className="h-3 w-3" /> Cần phê duyệt
-                          </Badge>
-                        </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground">Kỹ năng AI:</span>
-                          {normalizeSkills(a.skills).length === 0 ? (
-                            <>
-                              <Badge variant="outline" className="text-[11px]">
-                                Chưa cấu hình
-                              </Badge>
-                              {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
-                                <Badge key={t} variant="secondary" className="text-[11px]">
-                                  {AI_ACTION_TOOLS[t]?.label ?? t}
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">Kỹ năng AI:</span>
+                            {normalizeSkills(a.skills).length === 0 ? (
+                              <>
+                                <Badge variant="outline" className="text-[11px]">
+                                  Chưa cấu hình
                                 </Badge>
-                              ))}
-                            </>
-                          ) : (
-                            normalizeSkills(a.skills).map((id) => (
-                              <Badge key={id} variant="secondary" className="text-[11px]">
-                                {AI_SKILL_KIND_LABELS[AI_SKILL_MAP[id]!.kind]} ·{" "}
-                                {AI_SKILL_MAP[id]!.name}
+                                {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
+                                  <Badge key={t} variant="secondary" className="text-[11px]">
+                                    {AI_ACTION_TOOLS[t]?.label ?? t}
+                                  </Badge>
+                                ))}
+                              </>
+                            ) : (
+                              normalizeSkills(a.skills).map((id) => (
+                                <Badge key={id} variant="secondary" className="text-[11px]">
+                                  {AI_SKILL_KIND_LABELS[AI_SKILL_MAP[id]!.kind]} ·{" "}
+                                  {AI_SKILL_MAP[id]!.name}
+                                </Badge>
+                              ))
+                            )}
+                            {normalizeAllowedSources(a.allowed_sources).map((s) => (
+                              <Badge key={s} variant="outline" className="text-[11px]">
+                                {AI_ACTION_SOURCE_LABELS[s]}
                               </Badge>
-                            ))
+                            ))}
+                          </div>
+                          {conds.length > 0 && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Điều kiện:{" "}
+                              {conds.map((c) => describeCondition(c, fields)).join(" và ")}
+                            </p>
                           )}
-                          {normalizeAllowedSources(a.allowed_sources).map((s) => (
-                            <Badge key={s} variant="outline" className="text-[11px]">
-                              {AI_ACTION_SOURCE_LABELS[s]}
-                            </Badge>
-                          ))}
                         </div>
-                        {conds.length > 0 && (
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            Điều kiện: {conds.map((c) => describeCondition(c, fields)).join(" và ")}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Switch
-                          checked={a.enabled}
-                          onCheckedChange={async (v) => {
-                            await toggle({ data: { agentId: a.id, enabled: v } });
-                            invalidate();
-                          }}
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => runMutation.mutate(a)}
-                          disabled={runMutation.isPending}
-                        >
-                          {runMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Play className="h-4 w-4" />
-                          )}
-                          <span className="ml-1.5 hidden sm:inline">Chạy điều kiện</span>
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            setDraft({
-                              id: a.id,
-                              workspaceId: activeWs,
-                              name: a.name,
-                              description: a.description ?? "",
-                              triggerType: a.trigger_type,
-                              conditions: a.conditions ?? [],
-                              actionType: a.action_type,
-                              skills: normalizeSkills(a.skills),
-                              workerProfile: a.worker_profile ?? null,
-                              allowedActionTypes: normalizeAllowedActionTypes(
-                                a.allowed_action_types,
-                              ),
-                              allowedSources: normalizeAllowedSources(a.allowed_sources),
-                              instruction: a.instruction ?? "",
-                              enabled: a.enabled,
-                            })
-                          }
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={async () => {
-                            await remove({ data: { agentId: a.id } });
-                            toast.success("Đã xoá agent");
-                            invalidate();
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="inline-flex min-h-11 min-w-11 items-center justify-center">
+                            <Switch
+                              checked={a.enabled}
+                              onCheckedChange={async (v) => {
+                                await toggle({ data: { agentId: a.id, enabled: v } });
+                                invalidate();
+                              }}
+                            />
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="min-h-11"
+                            onClick={() => runMutation.mutate(a)}
+                            disabled={runMutation.isPending}
+                          >
+                            {runMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Play className="h-4 w-4" />
+                            )}
+                            <span className="ml-1.5 hidden sm:inline">Chạy điều kiện</span>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-11 w-11"
+                            aria-label="Chỉnh sửa agent"
+                            onClick={() =>
+                              setDraft({
+                                id: a.id,
+                                workspaceId: activeWs,
+                                name: a.name,
+                                description: a.description ?? "",
+                                triggerType: a.trigger_type,
+                                conditions: a.conditions ?? [],
+                                actionType: a.action_type,
+                                skills: normalizeSkills(a.skills),
+                                workerProfile: a.worker_profile ?? null,
+                                allowedActionTypes: normalizeAllowedActionTypes(
+                                  a.allowed_action_types,
+                                ),
+                                allowedSources: normalizeAllowedSources(a.allowed_sources),
+                                instruction: a.instruction ?? "",
+                                enabled: a.enabled,
+                              })
+                            }
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-11 w-11"
+                            aria-label="Xoá agent"
+                            onClick={async () => {
+                              await remove({ data: { agentId: a.id } });
+                              toast.success("Đã xoá agent");
+                              invalidate();
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </article>
@@ -511,6 +549,7 @@ function AgentBuilderPage() {
                         <Button
                           size="sm"
                           variant="secondary"
+                          className="min-h-11"
                           disabled={proposing === m.id}
                           onClick={() => onPropose(m.id)}
                         >
