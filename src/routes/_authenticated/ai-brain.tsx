@@ -97,6 +97,7 @@ function AiBrainPage() {
   const listFn = useServerFn(listAiActionProposals);
   const confirmFn = useServerFn(confirmAiAction);
   const cancelFn = useServerFn(cancelAiAction);
+  const learnSkillFn = useServerFn(createAiSkillFromProposal);
 
   const overview = useQuery({
     queryKey: ["ai-brain", "overview", workspaceId],
