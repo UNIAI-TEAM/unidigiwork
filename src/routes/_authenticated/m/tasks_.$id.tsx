@@ -108,7 +108,9 @@ function MobileTaskDetail() {
 
   const changeStatus = useMutation({
     mutationFn: (p: { taskId: string; to: Status }) =>
-      transitionTask({ data: { taskId: p.taskId, toStatus: p.to, idempotencyKey: crypto.randomUUID() } }),
+      transitionTask({
+        data: { taskId: p.taskId, toStatus: p.to, idempotencyKey: crypto.randomUUID() },
+      }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["m-task-detail", id] });
     },
@@ -168,7 +170,11 @@ function MobileTaskDetail() {
     return (
       <div className="p-4">
         <p className="text-sm text-muted-foreground">Không mở được công việc này.</p>
-        <Button className="mt-3 min-h-11" variant="outline" onClick={() => navigate({ to: "/m/tasks" })}>
+        <Button
+          className="mt-3 min-h-11"
+          variant="outline"
+          onClick={() => navigate({ to: "/m/tasks" })}
+        >
           Quay lại danh sách
         </Button>
       </div>
@@ -242,7 +248,10 @@ function MobileTaskDetail() {
           aria-valuemax={100}
           className="h-2 w-full overflow-hidden rounded-full bg-surface-2"
         >
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </section>
 
@@ -327,7 +336,11 @@ function MobileTaskDetail() {
             placeholder="Thêm việc con…"
             className="h-11 min-w-0"
           />
-          <Button type="submit" className="min-h-11 shrink-0" disabled={!subtaskTitle.trim() || addSubtaskMut.isPending}>
+          <Button
+            type="submit"
+            className="min-h-11 shrink-0"
+            disabled={!subtaskTitle.trim() || addSubtaskMut.isPending}
+          >
             Thêm
           </Button>
         </form>
@@ -369,7 +382,11 @@ function MobileTaskDetail() {
             disabled={!comment.trim() || addCommentMut.isPending}
             aria-label="Gửi bình luận"
           >
-            {addCommentMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {addCommentMut.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </form>
       </section>
@@ -382,7 +399,11 @@ function MobileTaskDetail() {
           <div className="grid gap-3">
             <label className="grid gap-1 text-xs text-muted-foreground">
               Tiêu đề
-              <Input value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)} className="h-11" />
+              <Input
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                className="h-11"
+              />
             </label>
             <label className="grid gap-1 text-xs text-muted-foreground">
               Mô tả
@@ -399,7 +420,9 @@ function MobileTaskDetail() {
                 value={task.priority}
                 className="h-11 rounded-lg border border-border bg-background px-3 text-sm"
                 onChange={(e) =>
-                  saveEdit.mutate({ priority: e.target.value as "low" | "normal" | "high" | "urgent" })
+                  saveEdit.mutate({
+                    priority: e.target.value as "low" | "normal" | "high" | "urgent",
+                  })
                 }
               >
                 <option value="low">Thấp</option>
@@ -414,9 +437,7 @@ function MobileTaskDetail() {
                 value={task.status}
                 className="h-11 rounded-lg border border-border bg-background px-3 text-sm"
                 disabled={changeStatus.isPending}
-                onChange={(e) =>
-                  changeStatus.mutate({ taskId: id, to: e.target.value as Status })
-                }
+                onChange={(e) => changeStatus.mutate({ taskId: id, to: e.target.value as Status })}
               >
                 {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
                   <option key={s} value={s}>
