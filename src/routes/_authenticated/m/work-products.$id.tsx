@@ -33,6 +33,15 @@ import { vi } from "date-fns/locale";
 import { toast } from "sonner";
 import coverImage from "@/assets/work-product-cover.jpg";
 
+const TASK_STATUS_LABEL: Record<string, string> = {
+  TODO: "Cần làm",
+  IN_PROGRESS: "Đang làm",
+  BLOCKED: "Đang vướng",
+  IN_REVIEW: "Chờ duyệt",
+  DONE: "Hoàn thành",
+  CANCELLED: "Đã hủy",
+};
+
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Bản nháp",
   IN_REVIEW: "Đang duyệt",
