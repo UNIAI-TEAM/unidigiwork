@@ -134,7 +134,7 @@ function NavItem({
     "relative flex items-center rounded-lg transition-colors",
     collapsed ? "w-full justify-center px-2 py-2.5" : "w-full gap-3 px-3 py-2 text-sm",
     active
-      ? "bg-primary/15 font-medium text-foreground"
+      ? "bg-secondary font-semibold text-primary"
       : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
   );
   const inner = collapsed ? (
@@ -372,13 +372,13 @@ export function AppSidebar({
       {open && (
         <button
           aria-label="Close sidebar"
-          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-30 bg-foreground/55 lg:hidden"
           onClick={onClose}
         />
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col border-r border-border bg-surface transition-all duration-200 lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col border-r border-border bg-card transition-all duration-200 lg:static lg:translate-x-0",
           desktopWidth,
           open ? "translate-x-0 w-64" : "-translate-x-full w-64",
           collapsed && "lg:items-center lg:px-2 lg:py-4",
@@ -387,15 +387,15 @@ export function AppSidebar({
         {/* Header */}
         <div
           className={cn(
-            "flex items-center gap-2 py-5",
+            "flex items-center gap-2 border-b border-border py-4",
             collapsed ? "px-2 lg:justify-center" : "px-5",
           )}
         >
           <BrandMark className="h-9 w-9" />
           {!collapsed && (
             <div className="flex-1 leading-tight">
-              <div className="text-base font-bold tracking-wide">UNIWORK</div>
-              <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
+              <div className="font-heading text-base font-bold">UNIWORK</div>
+              <div className="module-label text-muted-foreground">Work operating system</div>
             </div>
           )}
           <button
@@ -416,7 +416,7 @@ export function AppSidebar({
 
           {!collapsed && (
             <>
-              <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="module-label flex items-center justify-between px-3 pb-2 pt-6 text-muted-foreground">
                 <span>{t("nav.workspaces")}</span>
                 <button
                   className="rounded p-0.5 hover:bg-surface-2"
@@ -1513,7 +1513,7 @@ export function AppTopbar({
   // standard search field (Enter → /search).
 
   return (
-    <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
+    <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/95 px-3 py-2.5 sm:gap-3 sm:px-5 lg:flex lg:gap-4">
       <button
         aria-label="Open sidebar"
         className="rounded-lg p-2 hover:bg-surface-2 lg:hidden"
@@ -1535,7 +1535,7 @@ export function AppTopbar({
           const q = searchValue.trim();
           navigate({ to: "/search", search: q ? { q } : {} });
         }}
-        className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl"
+        className="relative col-span-3 row-start-2 w-full min-w-0 flex-1 sm:col-span-1 sm:row-auto sm:max-w-2xl"
       >
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -1543,7 +1543,7 @@ export function AppTopbar({
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder={variant === "documents" ? t("topbar.search.docs") : t("topbar.search")}
-          className="w-full rounded-lg bg-surface-2 py-2.5 pl-10 pr-16 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="h-11 w-full rounded-xl border border-input bg-background py-2.5 pl-10 pr-16 text-sm shadow-card placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-surface-1 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
           ⌘K

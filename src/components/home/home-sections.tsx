@@ -42,9 +42,9 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex min-w-0 flex-col rounded-xl border border-border bg-surface">
+    <section className="flex min-w-0 flex-col rounded-2xl border border-border bg-card shadow-card">
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+        <h2 className="font-heading text-sm font-bold">{title}</h2>
         {action}
       </header>
       <div className="flex-1">{children}</div>
@@ -155,7 +155,7 @@ export function TodaySummary({
           key={it.key}
           to={it.to}
           className={cn(
-            "flex min-h-[64px] items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:bg-surface-2",
+            "flex min-h-[72px] items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-card transition-colors hover:border-border-strong hover:bg-surface",
             "warn" in it && it.warn && it.value > 0 && "border-destructive/40",
           )}
         >

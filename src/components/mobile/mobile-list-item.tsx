@@ -36,7 +36,7 @@ export function MobileListItem({
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:bg-surface-2",
+        "flex min-h-16 w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left shadow-card transition-colors hover:border-border-strong hover:bg-surface",
         className,
       )}
     >

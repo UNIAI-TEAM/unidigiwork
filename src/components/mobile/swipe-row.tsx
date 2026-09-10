@@ -77,7 +77,7 @@ export function SwipeRow({
   const active = Math.abs(dx) >= THRESHOLD;
 
   return (
-    <div className={cn("relative overflow-hidden rounded-2xl", className)}>
+    <div className={cn("relative overflow-hidden rounded-xl", className)}>
       {dx !== 0 && (
         <div
           className={cn(
