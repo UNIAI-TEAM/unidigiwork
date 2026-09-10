@@ -217,7 +217,7 @@ export const seedDefaultAiSkills = createServerFn({ method: "POST" })
       updated_by: context.userId,
     }));
     if (rows.length === 0) return { inserted: 0 };
-    const { error } = await context.supabase.from("ai_skills").insert(rows);
+    const { error } = await context.supabase.from("ai_skills").insert(rows as unknown as SkillRow);
     if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     return { inserted: rows.length };
   });
@@ -517,7 +517,10 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const provider = createLovableResponsesProvider(apiKey);
 
     const result = streamText({
-      model: provider.responses("openai/gpt-5.6-sol"),
+      model: provider.responses("openai/gpt-6-astra"),
+      providerOptions: {
+        openai: { forceReasoning: true, reasoningEffort: "low", store: false },
+      },
       system:
         "Bạn thiết kế kỹ năng AI cho nền tảng công việc UNIWORK dựa trên dữ liệu thật của một tổ chức. " +
         "Tìm các tình huống LẶP LẠI trong dữ liệu và đề xuất tối đa 5 kỹ năng thực sự hữu ích, bằng tiếng Việt. " +
@@ -546,6 +549,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const takenCodes = new Set(existing.map((s) => s.code));
     const takenNames = new Set(existing.map((s) => s.name.toLowerCase()));
 
+    type SkillRow = Parameters<ReturnType<typeof context.supabase.from<"ai_skills">>["insert"]>[0];
     const rows: Record<string, unknown>[] = [];
     for (const item of (Array.isArray(parsed.skills) ? parsed.skills : []).slice(0, 5)) {
       const s = item as Record<string, unknown>;
@@ -581,7 +585,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     }
 
     if (rows.length > 0) {
-      const { error } = await context.supabase.from("ai_skills").insert(rows);
+      const { error } = await context.supabase
+        .from("ai_skills")
+        .insert(rows as unknown as SkillRow);
       if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     }
 
