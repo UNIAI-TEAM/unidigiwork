@@ -50,7 +50,7 @@ const PRIORITY_LABEL: Record<string, string> = {
   urgent: "Khẩn cấp",
 };
 
-export const Route = createFileRoute("/_authenticated/m/tasks/$id")({
+export const Route = createFileRoute("/_authenticated/m/tasks_/$id")({
   head: () => ({
     meta: [
       { title: "Chi tiết công việc · UNIWORK" },
