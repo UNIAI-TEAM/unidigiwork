@@ -49,6 +49,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PushDevicesPanel } from "@/components/push-devices-panel";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useI18n, type Key as I18nKey } from "@/lib/i18n";
+import { FilterPageHeader } from "@/components/filter-page-header";
 
 const searchSchema = z.object({
   tab: z
@@ -865,21 +866,20 @@ function SettingsPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
         <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
-          <div className="mb-5">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("ac.80")}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t("ac.81")}
-            </p>
-          </div>
+          <FilterPageHeader
+            crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: t("ac.80") }]}
+            title={t("ac.80")}
+            description={t("ac.81")}
+          />
           <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-            <nav className="space-y-1 rounded-2xl border border-border bg-surface p-2">
+            <nav className="space-y-1 rounded-xl border border-border bg-card p-2 shadow-card">
               {SECTIONS.map((s) => {
                 const active = s.key === section;
                 return (
                   <button
                     key={s.key}
                     onClick={() => navigate({ search: { tab: s.key } })}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
+                    className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-pale-purple text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
                   >
                     <s.icon className="h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
@@ -891,7 +891,7 @@ function SettingsPage() {
                 );
               })}
             </nav>
-            <section className="rounded-2xl border border-border bg-surface p-5">
+            <section className="rounded-xl border border-border bg-card p-5 shadow-card">
               <div className="mb-5 flex items-center justify-between border-b border-border pb-3">
                 <div>
                   <h2 className="text-lg font-semibold">{t(current.labelKey)}</h2>

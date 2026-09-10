@@ -47,6 +47,7 @@ import {
   type WorkflowPerms,
 } from "@/lib/workflow-access";
 import { RequestAccessButton } from "@/components/workflow/request-access-button";
+import { FilterPageHeader } from "@/components/filter-page-header";
 
 export const Route = createFileRoute("/workflows")({
   head: () => ({
@@ -255,11 +256,12 @@ function WorkflowsPage() {
 
         <div className="flex min-h-0 flex-1">
           <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-bold">{t("wf.title")}</h1>
-                <p className="mt-1 text-sm text-muted-foreground">{t("wf.sub")}</p>
-              </div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <FilterPageHeader
+                crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: t("wf.title") }]}
+                title={t("wf.title")}
+                description={t("wf.sub")}
+              />
               <div className="flex items-center gap-2">
                 {workspaces.data && workspaces.data.length > 0 && (
                   <Select
@@ -279,7 +281,7 @@ function WorkflowsPage() {
                   }}
                   disabled={!activeWs || !perms.can_edit}
                   title={perms.can_edit ? undefined : denialReason("edit")}
-                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  className="flex min-h-11 items-center gap-2 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:opacity-90 disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" /> {t("wf.new")}
                 </button>
@@ -374,7 +376,7 @@ function WorkflowsPage() {
               />
             </div>
 
-            <div className="mt-3 overflow-hidden rounded-xl border border-border bg-surface">
+            <div className="mt-3 overflow-hidden rounded-xl border border-border bg-card shadow-card">
               {wfQuery.isLoading ? (
                 <div className="flex items-center justify-center gap-2 p-12 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" /> …
@@ -581,7 +583,7 @@ function KpiCard({
   accent: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-card">
       <div className="flex items-start justify-between">
         <div className="text-xs text-muted-foreground">{label}</div>
         <div className={`flex h-7 w-7 items-center justify-center rounded-lg bg-surface-2 ${accent}`}>

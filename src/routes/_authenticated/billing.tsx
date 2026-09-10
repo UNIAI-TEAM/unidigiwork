@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
+import { FilterPageHeader } from "@/components/filter-page-header";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import {
   listPlans,
@@ -251,23 +252,18 @@ function BillingPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
         <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
-          <div className="mb-6 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <CreditCard className="h-3.5 w-3.5 text-primary" />
-              <span>Gói dịch vụ</span>
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Gói dịch vụ & thanh toán</h1>
-            <p className="text-sm text-muted-foreground">
-              Xem gói hiện tại, hạn mức sử dụng và tự nâng cấp, hạ cấp hoặc hủy đăng ký.
-            </p>
-          </div>
+          <FilterPageHeader
+            crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: "Gói dịch vụ" }]}
+            title="Gói dịch vụ & thanh toán"
+            description="Xem gói hiện tại, hạn mức sử dụng và tự nâng cấp, hạ cấp hoặc hủy đăng ký."
+          />
 
           {!tenantId ? (
             <EmptyPanel />
           ) : (
             <div className="space-y-6">
               {/* Current subscription */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 {subQ.isLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" /> Đang tải gói hiện tại…
@@ -325,7 +321,7 @@ function BillingPage() {
 
               {/* Plans */}
               {sub && (
-                <section className="rounded-2xl border border-border bg-surface p-5">
+                <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                   <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
                     <CalendarClock className="h-4 w-4 text-primary" /> Chu kỳ thanh toán
                   </h2>
@@ -402,7 +398,7 @@ function BillingPage() {
               )}
 
               {/* Payment method */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="flex items-center gap-2 text-sm font-semibold">
                     <Wallet className="h-4 w-4 text-primary" /> Phương thức thanh toán
@@ -441,7 +437,7 @@ function BillingPage() {
               </section>
 
               {/* Invoices */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="flex items-center gap-2 text-sm font-semibold">
                     <Receipt className="h-4 w-4 text-primary" /> Hóa đơn & trạng thái thanh toán
@@ -570,7 +566,7 @@ function BillingPage() {
                       return (
                         <div
                           key={p.id}
-                          className={`flex flex-col rounded-2xl border p-5 transition-colors ${
+                          className={`flex flex-col rounded-xl border bg-card p-5 shadow-card transition-colors ${
                             isCurrent ? "border-primary bg-primary/5" : "border-border bg-surface hover:border-primary/40"
                           }`}
                         >
@@ -623,7 +619,7 @@ function BillingPage() {
               </section>
 
               {/* Usage */}
-              <section className="rounded-2xl border border-border bg-surface p-5">
+              <section className="rounded-xl border border-border bg-card p-5 shadow-card">
                 <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
                   <Gauge className="h-4 w-4 text-primary" /> Hạn mức sử dụng kỳ này
                 </h2>

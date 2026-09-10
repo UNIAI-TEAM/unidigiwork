@@ -487,12 +487,13 @@ function NotificationsPage() {
           {/* Left filter rail */}
           <aside className="space-y-4">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Thông báo</h1>
+              <div className="module-label text-primary">Hộp thư hợp nhất</div>
+              <h1 className="mt-2 font-heading text-2xl font-bold">Thông báo</h1>
               <p className="text-xs text-muted-foreground">
                 {unreadCount} chưa đọc · {items.length} tổng cộng
               </p>
             </div>
-            <nav className="space-y-1 rounded-2xl border border-border bg-surface p-2">
+            <nav className="space-y-1 rounded-xl border border-border bg-card p-2 shadow-card">
               {CATS.map((c) => {
                 const count =
                     c.key === "all" ? items.length : items.filter((n) => n.cat === c.key).length;
@@ -501,7 +502,7 @@ function NotificationsPage() {
                   <button
                     key={c.key}
                     onClick={() => setCat(c.key)}
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
+                    className={`flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${active ? "bg-pale-purple text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
                   >
                     <c.icon className={`h-4 w-4 ${c.tint}`} />
                     <span className="flex-1 text-left">{c.label}</span>
@@ -524,7 +525,7 @@ function NotificationsPage() {
           </aside>
 
           {/* Main list */}
-          <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <section className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
             <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
               <div className="flex rounded-lg border border-border bg-surface-2 p-0.5 text-xs">
                 {(
@@ -539,7 +540,7 @@ function NotificationsPage() {
                   <button
                     key={t.k}
                     onClick={() => setTab(t.k)}
-                    className={`rounded-md px-3 py-1.5 ${tab === t.k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`rounded-md px-3 py-1.5 ${tab === t.k ? "bg-action text-action-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {t.l}
                   </button>

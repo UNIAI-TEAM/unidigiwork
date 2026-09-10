@@ -248,11 +248,13 @@ function Landing() {
               </h2>
               <p className="mt-4 text-lg text-landing-muted">{t("land.feat.sub")}</p>
             </div>
-            <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-landing-line bg-landing-line sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {capabilities.map((item) => (
-                <div key={item.key} className="group bg-landing-canvas p-6 sm:p-8">
-                  <item.icon className="h-6 w-6 text-landing-blue transition-transform duration-200 group-hover:translate-x-1" />
-                  <h3 className="mt-8 font-heading text-xl font-bold">{t(item.key)}</h3>
+                <div key={item.key} className="group rounded-xl border border-landing-line bg-landing-canvas p-6 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-landing-magenta/40 hover:shadow-lg sm:p-8">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-landing-tint text-landing-magenta">
+                    <item.icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+                  </span>
+                  <h3 className="mt-7 font-heading text-xl font-bold">{t(item.key)}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-landing-muted">{t(item.desc)}</p>
                 </div>
               ))}
