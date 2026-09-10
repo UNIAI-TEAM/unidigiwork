@@ -2583,4 +2583,56 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
       confidence: Math.min(75, 30 + score * 8),
       alreadyLinked: false,
     }));
+}
+
+/**
+ * Gắn thật tài liệu vào công việc / cuộc họp / biên bản đã có trong bản đồ công việc,
+ * dựa trên đối chiếu nội dung thật. Chỉ gắn khi mức tin cậy đạt ngưỡng.
+ */
+export const autoLinkWorkGraphMatches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid(),
+        locale: z.string().max(8).default("vi"),
+        minConfidence: z.number().int().min(0).max(100).default(55),
+        maxLinks: z.number().int().min(1).max(8).default(5),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const matches = await computeWorkGraphMatches(
+      context.supabase as any,
+      data.id,
+      data.locale,
+    );
+    const chosen = matches
+      .filter((m) => !m.alreadyLinked && m.confidence >= data.minConfidence)
+      .slice(0, data.maxLinks);
+
+    const linked: WorkGraphMatchSuggestion[] = [];
+    const failed: Array<{ title: string; message: string }> = [];
+    for (const m of chosen) {
+      // link_work_entities là idempotent theo cặp nguồn/đích và chạy dưới quyền người gọi (RLS).
+      const res = await context.supabase.rpc("link_work_entities", {
+        _source_type: "WORK_PRODUCT",
+        _source_id: data.id,
+        _target_type: m.targetType,
+        _target_id: m.targetId,
+        _relationship: "REFERENCES",
+      });
+      if (res.error) failed.push({ title: m.title, message: res.error.message });
+      else linked.push(m);
+    }
+
+    return {
+      linked,
+      skipped: matches.filter((m) => !chosen.includes(m)),
+      failed,
+      minConfidence: data.minConfidence,
+      evaluated: matches.length,
+    };
   });
+
