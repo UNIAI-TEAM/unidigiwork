@@ -33,6 +33,15 @@ import { vi } from "date-fns/locale";
 import { toast } from "sonner";
 import coverImage from "@/assets/work-product-cover.jpg";
 
+const TASK_STATUS_LABEL: Record<string, string> = {
+  TODO: "Cần làm",
+  IN_PROGRESS: "Đang làm",
+  BLOCKED: "Đang vướng",
+  IN_REVIEW: "Chờ duyệt",
+  DONE: "Hoàn thành",
+  CANCELLED: "Đã hủy",
+};
+
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Bản nháp",
   IN_REVIEW: "Đang duyệt",
@@ -94,7 +103,13 @@ function MobileWorkProductDetail() {
   const linked = (links.data as any[]) ?? [];
   const tasks = linked.filter((l) => l.entityType === "TASK");
   const documents = linked.filter((l) => l.entityType === "DOCUMENT");
-  const meetings = linked.filter((l) => l.entityType === "MEETING");
+  const meetings = linked
+    .filter((l) => l.entityType === "MEETING")
+    .sort(
+      (a, b) =>
+        new Date(a.startsAt ?? 0).getTime() - new Date(b.startsAt ?? 0).getTime() ||
+        String(a.title).localeCompare(String(b.title)),
+    );
   const following = Boolean((follow.data as any)?.following);
 
   const url = typeof window !== "undefined" ? `${window.location.origin}/work-products/${id}` : "";
@@ -247,7 +262,7 @@ function MobileWorkProductDetail() {
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
                     {t.status && (
                       <Badge variant="secondary" className="shrink-0 text-[10px]">
-                        {t.status}
+                        {TASK_STATUS_LABEL[t.status] ?? t.status}
                       </Badge>
                     )}
                   </Link>
@@ -272,15 +287,20 @@ function MobileWorkProductDetail() {
           ) : (
             <ul className="grid gap-2">
               {documents.map((d) => (
-                <li
-                  key={d.entityId}
-                  className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
-                >
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate">{d.title}</span>
-                  {d.subtitle && (
-                    <span className="shrink-0 text-[11px] text-muted-foreground">{d.subtitle}</span>
-                  )}
+                <li key={d.entityId}>
+                  <Link
+                    to="/documents/$id"
+                    params={{ id: d.entityId }}
+                    className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
+                  >
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate">{d.title}</span>
+                    {d.subtitle && (
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {d.subtitle}
+                      </span>
+                    )}
+                  </Link>
                 </li>
               ))}
             </ul>
