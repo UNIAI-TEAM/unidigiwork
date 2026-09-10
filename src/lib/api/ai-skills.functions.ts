@@ -428,7 +428,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     const [tasksRes, meetingsRes, notifsRes, proposalsRes, skillRes] = await Promise.all([
       context.supabase
         .from("tasks")
-        .select("title, status, priority, due_at, tags")
+        .select("title, status, priority, due_at, tags, updated_at, created_at")
         .eq("tenant_id", tenantId)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
@@ -466,6 +466,8 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       priority: string | null;
       due_at: string | null;
       tags: string[] | null;
+      updated_at: string | null;
+      created_at: string | null;
     }[];
     const meetings = (meetingsRes.data ?? []) as {
       title: string;
@@ -485,12 +487,55 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     }
 
     const now = Date.now();
+    const DAY = 86_400_000;
     const overdue = tasks.filter(
       (t) => t.due_at && new Date(t.due_at).getTime() < now && t.status !== "done",
     ).length;
+    const byStatus = tasks.reduce<Record<string, number>>((acc, t) => {
+      acc[t.status] = (acc[t.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const done = byStatus["done"] ?? 0;
+    const inProgress = byStatus["in_progress"] ?? 0;
+    const blocked = byStatus["blocked"] ?? 0;
+    const todo = byStatus["todo"] ?? 0;
+    const completionRate = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+    const stale = tasks.filter(
+      (t) =>
+        t.status !== "done" &&
+        t.status !== "canceled" &&
+        t.updated_at &&
+        now - new Date(t.updated_at).getTime() > 7 * DAY,
+    );
+    const dueSoon = tasks.filter(
+      (t) =>
+        t.status !== "done" &&
+        t.status !== "canceled" &&
+        t.due_at &&
+        new Date(t.due_at).getTime() >= now &&
+        new Date(t.due_at).getTime() <= now + 7 * DAY,
+    );
+    const noDue = tasks.filter(
+      (t) => !t.due_at && t.status !== "done" && t.status !== "canceled",
+    ).length;
+    const progressLines = [
+      "TIẾN ĐỘ THỰC TẾ:",
+      `- Phân bố trạng thái: chờ làm ${todo}, đang làm ${inProgress}, bị chặn ${blocked}, hoàn thành ${done}, tỉ lệ hoàn thành ${completionRate}%.`,
+      `- Quá hạn: ${overdue}. Đến hạn trong 7 ngày: ${dueSoon.length}. Chưa đặt hạn: ${noDue}. Không cập nhật quá 7 ngày: ${stale.length}.`,
+      ...stale
+        .slice(0, 10)
+        .map(
+          (t) =>
+            `- Ì ạch: ${t.title} [${t.status}] cập nhật lần cuối ${(t.updated_at ?? "").slice(0, 10)}`,
+        ),
+      ...dueSoon
+        .slice(0, 10)
+        .map((t) => `- Sắp đến hạn: ${t.title} [${t.status}] hạn ${(t.due_at ?? "").slice(0, 10)}`),
+    ];
 
     const corpus = [
       `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
+      ...progressLines,
       "CÔNG VIỆC:",
       ...tasks.map(
         (t) =>
@@ -527,7 +572,8 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         'CHỈ trả về JSON thuần dạng {"skills":[{"name":string,"code":string,"kind":string,"description":string,"example":string,"actionTypes":string[]}]}. ' +
         `code: CHỮ HOA A-Z 0-9 _ (2-40 ký tự), không trùng kỹ năng đã có. kind ∈ ${AI_SKILL_KINDS.join("|")}. ` +
         `actionTypes: chỉ trong ${AI_ACTION_TYPES.join(",")}; rỗng nếu chỉ tra cứu/phân tích/soạn thảo. ` +
-        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu.",
+        "Ưu tiên các kỹ năng bám sát TIẾN ĐỘ THỰC TẾ: việc quá hạn, việc bị chặn, việc ì ạch không cập nhật, việc sắp đến hạn, việc thiếu hạn. " +
+        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ).",
       prompt: corpus,
     });
 
