@@ -123,8 +123,6 @@ export const askUniCopilot = createServerFn({ method: "POST" })
           contextBlock: renderContextForModel(pack) + skillBlock,
           conversation: data.history ?? [],
         }),
-        maxOutputTokens: 1100,
-        temperature: 0.2,
         providerOptions: {
           openai: {
             forceReasoning: true,
