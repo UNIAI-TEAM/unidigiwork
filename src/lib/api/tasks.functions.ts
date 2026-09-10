@@ -67,6 +67,15 @@ export const createTask = createServerFn({ method: "POST" })
       await context.supabase.rpc("set_task_tags", { _task_id: row.id, _tags: tags });
       if (row) row.tags = tags;
     }
+    if (row?.id) {
+      const { notifyAdminsOfNewTask } = await import("./task-notify.server");
+      await notifyAdminsOfNewTask({
+        taskId: row.id,
+        workspaceId: data.workspaceId,
+        title: data.title,
+        actorId: context.userId,
+      });
+    }
     return created;
   });
 

@@ -1564,3 +1564,163 @@ export const unshareWorkProduct = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true };
   });
+
+/* --------------------------------------------- liên kết chi tiết + theo dõi */
+
+export interface LinkedEntitySummary {
+  entityType: "TASK" | "DOCUMENT" | "MEETING" | "OTHER";
+  entityId: string;
+  title: string;
+  subtitle: string | null;
+  startsAt: string | null;
+  status: string | null;
+}
+
+/** Trả về công việc, tài liệu và cuộc họp đã gắn với một kết quả công việc, kèm tên. */
+export const listWorkDeliverableLinkedEntities = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<LinkedEntitySummary[]> => {
+    const { data: node } = await context.supabase
+      .from("work_nodes")
+      .select("id")
+      .eq("entity_type", "WORK_PRODUCT")
+      .eq("entity_id", data.id)
+      .maybeSingle();
+    if (!node) return [];
+
+    const { data: edges } = await context.supabase
+      .from("work_edges")
+      .select("id, source_node_id, target_node_id")
+      .or(`source_node_id.eq.${node.id},target_node_id.eq.${node.id}`)
+      .limit(200);
+    const otherIds = [
+      ...new Set(
+        (edges ?? []).map((e: any) =>
+          e.source_node_id === (node as any).id ? e.target_node_id : e.source_node_id,
+        ),
+      ),
+    ];
+    if (!otherIds.length) return [];
+
+    const { data: nodes } = await context.supabase
+      .from("work_nodes")
+      .select("id, entity_type, entity_id")
+      .in("id", otherIds);
+
+    const byType = (t: string) =>
+      ((nodes ?? []) as any[]).filter((n) => n.entity_type === t).map((n) => n.entity_id as string);
+
+    const taskIds = byType("TASK");
+    const docIds = byType("DOCUMENT");
+    const meetingIds = byType("MEETING");
+
+    const [tasks, docs, meetings] = await Promise.all([
+      taskIds.length
+        ? context.supabase
+            .from("tasks")
+            .select("id, title, status, due_at")
+            .in("id", taskIds)
+            .is("deleted_at", null)
+        : Promise.resolve({ data: [] as any[] }),
+      docIds.length
+        ? context.supabase.from("documents").select("id, title, updated_at").in("id", docIds)
+        : Promise.resolve({ data: [] as any[] }),
+      meetingIds.length
+        ? context.supabase
+            .from("meetings")
+            .select("id, title, status, starts_at")
+            .in("id", meetingIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const out: LinkedEntitySummary[] = [];
+    for (const t of (tasks.data ?? []) as any[]) {
+      out.push({
+        entityType: "TASK",
+        entityId: t.id,
+        title: t.title,
+        subtitle: t.due_at ? `Hạn ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : null,
+        startsAt: null,
+        status: t.status ?? null,
+      });
+    }
+    for (const d of (docs.data ?? []) as any[]) {
+      out.push({
+        entityType: "DOCUMENT",
+        entityId: d.id,
+        title: d.title ?? "Tài liệu",
+        subtitle: d.updated_at ? new Date(d.updated_at).toLocaleDateString("vi-VN") : null,
+        startsAt: null,
+        status: null,
+      });
+    }
+    for (const m of (meetings.data ?? []) as any[]) {
+      out.push({
+        entityType: "MEETING",
+        entityId: m.id,
+        title: m.title ?? "Cuộc họp",
+        subtitle: m.starts_at ? new Date(m.starts_at).toLocaleString("vi-VN") : null,
+        startsAt: m.starts_at ?? null,
+        status: m.status ?? null,
+      });
+    }
+    return out;
+  });
+
+/** Trạng thái theo dõi của người dùng hiện tại với một kết quả công việc. */
+export const getWorkDeliverableFollowState = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const [mine, all] = await Promise.all([
+      context.supabase
+        .from("work_product_followers")
+        .select("id")
+        .eq("work_product_id", data.id)
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+      context.supabase
+        .from("work_product_followers")
+        .select("id", { count: "exact", head: true })
+        .eq("work_product_id", data.id),
+    ]);
+    return {
+      following: Boolean((mine as any)?.data),
+      followerCount: (all as any)?.count ?? 0,
+    };
+  });
+
+/** Bật/tắt theo dõi cập nhật của một kết quả công việc. */
+export const toggleWorkDeliverableFollow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ id: z.string().uuid(), follow: z.boolean() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: product } = await context.supabase
+      .from("work_products")
+      .select("id, tenant_id")
+      .eq("id", data.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!product)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "WORK_PRODUCT_NOT_FOUND" });
+
+    if (data.follow) {
+      const { error } = await context.supabase.from("work_product_followers").insert({
+        work_product_id: data.id,
+        tenant_id: (product as any).tenant_id,
+        user_id: context.userId,
+      } as never);
+      if (error && !/duplicate key/i.test(error.message)) mapPgError(error);
+    } else {
+      const { error } = await context.supabase
+        .from("work_product_followers")
+        .delete()
+        .eq("work_product_id", data.id)
+        .eq("user_id", context.userId);
+      if (error) mapPgError(error);
+    }
+    return { following: data.follow };
+  });
