@@ -29,6 +29,8 @@ export default defineConfig({
         workbox: {
           globDirectory: ".output/public",
           globPatterns: ["assets/**/*.{js,css,woff2}"],
+          // Gộp xử lý thông báo đẩy vào chính service worker của ứng dụng.
+          importScripts: ["/sw-push.js"],
           navigateFallback: null,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
