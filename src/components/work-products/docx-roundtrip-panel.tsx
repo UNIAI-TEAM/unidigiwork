@@ -37,6 +37,7 @@ import {
   reanalyzeWorkProductDocx,
   getAiProposalAccuracyReport,
   getDocxRecognitionReport,
+  suggestDocxWeightsFromContent,
   getWorkProductDocxChangeHistory,
   getTenantDocxProfile,
   saveTenantDocxProfile,
@@ -397,6 +398,41 @@ export function DocxRoundTripPanel({
       ),
   });
 
+  // Tự học trọng số từ nội dung tài liệu Word thật, thay vì kéo tay từng thanh trượt.
+  type WeightSuggestion = {
+    weights: Weights;
+    changes: Array<{ key: string; role: string; from: number; to: number; reason: string }>;
+    analyzedBlocks: number;
+    analyzedDocuments: number;
+    scope: "THIS" | "ALL";
+  };
+  const [autoResult, setAutoResult] = useState<WeightSuggestion | null>(null);
+  const autoWeights = useMutation({
+    mutationFn: (scope: "THIS" | "ALL") =>
+      suggestDocxWeightsFromContent({
+        data: {
+          ...(scope === "THIS" ? { id: productId } : {}),
+          weights,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }) as Promise<WeightSuggestion>,
+    onSuccess: (r) => {
+      setAutoResult(r);
+      if (!r.changes.length) {
+        toast.success("Nội dung hiện tại đã khớp với trọng số đang dùng");
+        return;
+      }
+      saveWeights({ ...weights, ...r.weights });
+      toast.success(`Đã cập nhật ${r.changes.length} loại nhận diện theo nội dung tài liệu`);
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NO_DOCX_CONTENT")
+          ? "Chưa có nội dung tài liệu Word để phân tích."
+          : "Không tự cập nhật được trọng số.",
+      ),
+  });
+
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wp-change-ops", productId] });
     qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
@@ -649,6 +685,30 @@ export function DocxRoundTripPanel({
           <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
+              variant="secondary"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate("THIS")}
+            >
+              {autoWeights.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Wand2 className="h-3 w-3" />
+              )}
+              Cập nhật tự động từ tài liệu
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate("ALL")}
+            >
+              <Wand2 className="h-3 w-3" />
+              Từ toàn bộ tài liệu tổ chức
+            </Button>
+            <Button
+              size="sm"
               className="h-7 gap-1 px-2 text-xs"
               disabled={!canEditProfile || saveProfile.isPending}
               onClick={() => saveProfile.mutate({ weights, aiGuidance: guidance })}
@@ -685,6 +745,27 @@ export function DocxRoundTripPanel({
               Mặc định
             </Button>
           </div>
+
+          {autoResult && (
+            <div className="space-y-1 rounded-md border bg-muted/40 p-2">
+              <p className="text-[11px] text-muted-foreground">
+                Đã đọc {autoResult.analyzedBlocks} đoạn của {autoResult.analyzedDocuments} tài liệu
+                {autoResult.scope === "THIS" ? " (tài liệu này)" : " (toàn tổ chức)"}.
+                {autoResult.changes.length
+                  ? " Trọng số đã cập nhật, bấm “Lưu cho tổ chức” để áp dụng cho mọi người."
+                  : " Không cần đổi trọng số."}
+              </p>
+              {autoResult.changes.map((c) => (
+                <p key={c.key} className="text-[11px]">
+                  <span className="font-medium">
+                    {WEIGHT_LABELS[c.key as WeightKey] ?? c.role}: {c.from.toFixed(1)}× →{" "}
+                    {c.to.toFixed(1)}×
+                  </span>{" "}
+                  <span className="text-muted-foreground">— {c.reason}</span>
+                </p>
+              ))}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-1">
             {Object.entries(roleCounts).map(([role, n]) => (
