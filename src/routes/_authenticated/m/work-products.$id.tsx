@@ -256,7 +256,7 @@ function MobileWorkProductDetail() {
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
                     {t.status && (
                       <Badge variant="secondary" className="shrink-0 text-[10px]">
-                        {t.status}
+                        {TASK_STATUS_LABEL[t.status] ?? t.status}
                       </Badge>
                     )}
                   </Link>
