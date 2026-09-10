@@ -598,8 +598,90 @@ function ProjectDetailPage() {
                                       <MessageSquare className="h-4 w-4" />
                                     </Button>
                                   </span>
-                                </div>
-                                {openComments === t.id && (
+                                 </div>
+                                 <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+                                   <div
+                                     className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-muted"
+                                     role="progressbar"
+                                     aria-valuenow={t.progress_pct ?? 0}
+                                     aria-valuemin={0}
+                                     aria-valuemax={100}
+                                     aria-label={`Tiến độ: ${t.title}`}
+                                   >
+                                     <div
+                                       className="h-full rounded-full bg-primary"
+                                       style={{ width: `${t.progress_pct ?? 0}%` }}
+                                     />
+                                   </div>
+                                   <span className="shrink-0 text-xs text-muted-foreground">
+                                     {t.progress_pct ?? 0}%
+                                   </span>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     className="min-h-11 shrink-0 text-xs"
+                                     aria-label={`Cập nhật tiến độ: ${t.title}`}
+                                     onClick={() =>
+                                       setOpenProgress((c) => (c === t.id ? null : t.id))
+                                     }
+                                   >
+                                     Tiến độ
+                                   </Button>
+                                 </div>
+                                 {openProgress === t.id && (
+                                   <form
+                                     className="mt-2 grid gap-2 border-t border-border pt-2 sm:grid-cols-4"
+                                     onSubmit={(e) => {
+                                       e.preventDefault();
+                                       const fd = new FormData(e.currentTarget);
+                                       progressMutation.mutate({
+                                         taskId: t.id,
+                                         progressPct: Number(fd.get("pct") ?? 0),
+                                         startAt: (fd.get("start") as string) || null,
+                                         endAt: (fd.get("end") as string) || null,
+                                       });
+                                     }}
+                                   >
+                                     <label className="text-xs text-muted-foreground">
+                                       % hoàn thành
+                                       <Input
+                                         name="pct"
+                                         type="number"
+                                         min={0}
+                                         max={100}
+                                         defaultValue={t.progress_pct ?? 0}
+                                         className="mt-1 min-h-11"
+                                       />
+                                     </label>
+                                     <label className="text-xs text-muted-foreground">
+                                       Ngày bắt đầu
+                                       <Input
+                                         name="start"
+                                         type="date"
+                                         defaultValue={(t.start_at ?? "").slice(0, 10)}
+                                         className="mt-1 min-h-11"
+                                       />
+                                     </label>
+                                     <label className="text-xs text-muted-foreground">
+                                       Ngày kết thúc
+                                       <Input
+                                         name="end"
+                                         type="date"
+                                         defaultValue={(t.end_at ?? "").slice(0, 10)}
+                                         className="mt-1 min-h-11"
+                                       />
+                                     </label>
+                                     <Button
+                                       type="submit"
+                                       size="sm"
+                                       className="mt-1 min-h-11 self-end"
+                                       disabled={progressMutation.isPending}
+                                     >
+                                       Lưu tiến độ
+                                     </Button>
+                                   </form>
+                                 )}
+                                 {openComments === t.id && (
                                   <div className="mt-3 border-t border-border pt-3">
                                     <CommentThread kind="task" taskId={t.id} compact />
                                   </div>
