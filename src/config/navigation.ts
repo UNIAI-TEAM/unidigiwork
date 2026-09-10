@@ -19,6 +19,7 @@ import {
   Workflow,
   Bot,
   BotMessageSquare,
+  BrainCircuit,
   BarChart3,
   Users,
   ShieldCheck,
@@ -252,6 +253,17 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/ai", order: 7 },
   },
 
+  {
+    id: "ai-brain",
+    labelKey: "nav.aiBrain",
+    icon: BrainCircuit,
+    href: "/ai-brain",
+    group: "automation",
+    match: ["/ai-brain"],
+    visibility: "everyone",
+    order: 1.5,
+    mobile: { placement: "more", href: "/ai-brain", order: 7.2 },
+  },
   {
     id: "ai-workforce",
     labelKey: "nav.aiWorkforce",

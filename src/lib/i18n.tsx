@@ -293,8 +293,7 @@ const dict = {
     "nav.ai": "Trợ lý AI",
     "nav.aiWorkforce": "AI Workforce",
     "nav.aiBrain": "Bộ não AI",
-    "aiBrain.subtitle":
-      "Nơi duy nhất để xem AI đang đề xuất gì, được phép làm gì và đã làm gì.",
+    "aiBrain.subtitle": "Nơi duy nhất để xem AI đang đề xuất gì, được phép làm gì và đã làm gì.",
     "aiBrain.manageSkills": "Bật tắt kỹ năng",
     "aiBrain.metric.pending": "Chờ duyệt",
     "aiBrain.metric.approved": "Đã duyệt (7 ngày)",
@@ -309,11 +308,9 @@ const dict = {
     "aiBrain.team": "Đội ngũ AI",
     "aiBrain.log": "Nhật ký hoạt động AI",
     "aiBrain.log.empty": "Chưa có hoạt động nào.",
-    "aiBrain.guarantee":
-      "AI không bao giờ tự thực hiện. Mọi thay đổi dữ liệu đều cần người duyệt.",
+    "aiBrain.guarantee": "AI không bao giờ tự thực hiện. Mọi thay đổi dữ liệu đều cần người duyệt.",
     "aiBrain.skills.title": "Kỹ năng AI",
-    "aiBrain.skills.subtitle":
-      "Bật kỹ năng nào thì AI mới được dùng kỹ năng đó để đề xuất.",
+    "aiBrain.skills.subtitle": "Bật kỹ năng nào thì AI mới được dùng kỹ năng đó để đề xuất.",
     "aiBrain.skills.readonly": "Chỉ quản trị tổ chức mới thay đổi được. Bạn đang ở chế độ xem.",
     "aiBrain.skills.empty": "Chưa có kỹ năng nào trong tổ chức này.",
     "aiBrain.skills.approvalRequired": "Bắt buộc người duyệt",

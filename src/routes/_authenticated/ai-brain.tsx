@@ -162,10 +162,7 @@ function AiBrainPage() {
             <Metric label={t("aiBrain.metric.pending")} value={String(m?.pending ?? 0)} />
             <Metric label={t("aiBrain.metric.approved")} value={String(m?.approvedThisWeek ?? 0)} />
             <Metric label={t("aiBrain.metric.rejected")} value={String(m?.rejectedThisWeek ?? 0)} />
-            <Metric
-              label={t("aiBrain.metric.acceptance")}
-              value={`${m?.acceptanceRate ?? 0}%`}
-            />
+            <Metric label={t("aiBrain.metric.acceptance")} value={`${m?.acceptanceRate ?? 0}%`} />
             <Metric
               label={t("aiBrain.metric.tokens")}
               value={(m?.tokensThisWeek ?? 0).toLocaleString("vi-VN")}
@@ -221,9 +218,7 @@ function AiBrainPage() {
                 {!proposals.isLoading && pending.length === 0 && (
                   <div className="rounded-xl border border-dashed border-border bg-card p-4">
                     <p className="text-sm font-medium">{t("aiBrain.empty.title")}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {t("aiBrain.empty.desc")}
-                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">{t("aiBrain.empty.desc")}</p>
                     <ul className="mt-3 space-y-3">
                       {SAMPLE_PROPOSALS.map((s) => (
                         <li key={s.title} className="rounded-lg bg-muted/40 p-3">

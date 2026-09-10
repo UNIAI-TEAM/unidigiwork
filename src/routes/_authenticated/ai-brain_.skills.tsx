@@ -25,12 +25,14 @@ export const Route = createFileRoute("/_authenticated/ai-brain_/skills")({
       { title: "Kỹ năng AI — UNIWORK" },
       {
         name: "description",
-        content: "Bật hoặc tắt từng kỹ năng AI của tổ chức; kỹ năng rủi ro cao luôn cần người duyệt.",
+        content:
+          "Bật hoặc tắt từng kỹ năng AI của tổ chức; kỹ năng rủi ro cao luôn cần người duyệt.",
       },
       { property: "og:title", content: "Kỹ năng AI — UNIWORK" },
       {
         property: "og:description",
-        content: "Bật hoặc tắt từng kỹ năng AI của tổ chức; kỹ năng rủi ro cao luôn cần người duyệt.",
+        content:
+          "Bật hoặc tắt từng kỹ năng AI của tổ chức; kỹ năng rủi ro cao luôn cần người duyệt.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -108,7 +110,9 @@ function AiBrainSkillsPage() {
             <ArrowLeft className="h-4 w-4" /> {t("nav.aiBrain")}
           </Link>
 
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{t("aiBrain.skills.title")}</h1>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+            {t("aiBrain.skills.title")}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("aiBrain.skills.subtitle")}</p>
 
           {!canEdit && (
@@ -143,7 +147,8 @@ function AiBrainSkillsPage() {
                           {s.is_system ? <Badge variant="outline">Hệ thống</Badge> : null}
                           {requiresApproval(s) ? (
                             <Badge variant="destructive" className="gap-1">
-                              <ShieldAlert className="h-3 w-3" /> {t("aiBrain.skills.approvalRequired")}
+                              <ShieldAlert className="h-3 w-3" />{" "}
+                              {t("aiBrain.skills.approvalRequired")}
                             </Badge>
                           ) : null}
                         </div>
