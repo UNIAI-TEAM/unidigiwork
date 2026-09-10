@@ -445,3 +445,137 @@ export const getProjectActivity = createServerFn({ method: "GET" })
     items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
     return items.slice(0, data.limit);
   });
+
+// ---------------------------------------------------------------------------
+// Thảo luận: bình luận cấp dự án (ghi chú) và bình luận theo công việc.
+// ---------------------------------------------------------------------------
+
+export type CommentItem = {
+  id: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+};
+
+async function resolveNames(
+  supabase: { from: (t: string) => any },
+  ids: string[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = Array.from(new Set(ids.filter(Boolean)));
+  if (!unique.length) return map;
+  const { data } = await supabase
+    .from("users")
+    .select("id, display_name, primary_email")
+    .in("id", unique);
+  for (const u of (data ?? []) as Array<{
+    id: string;
+    display_name: string | null;
+    primary_email: string | null;
+  }>) {
+    map.set(u.id, u.display_name ?? u.primary_email ?? "Thành viên");
+  }
+  return map;
+}
+
+export const listProjectComments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ projectId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<CommentItem[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("project_comments")
+      .select("id, body, author_id, created_at")
+      .eq("project_id", data.projectId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (error) mapPgError(error);
+    const list = (rows ?? []) as unknown as Array<{
+      id: string;
+      body: string;
+      author_id: string;
+      created_at: string;
+    }>;
+    const names = await resolveNames(
+      context.supabase,
+      list.map((r) => r.author_id),
+    );
+    return list.map((r) => ({
+      id: r.id,
+      body: r.body,
+      authorId: r.author_id,
+      authorName: names.get(r.author_id) ?? "Thành viên",
+      createdAt: r.created_at,
+    }));
+  });
+
+export const addProjectComment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ projectId: z.string().uuid(), body: z.string().trim().min(1).max(4000) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: project, error: pErr } = await context.supabase
+      .from("projects")
+      .select("id, tenant_id")
+      .eq("id", data.projectId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!project) throw new Error("PROJECT_NOT_FOUND");
+    const { error } = await context.supabase.from("project_comments").insert({
+      tenant_id: (project as unknown as { tenant_id: string }).tenant_id,
+      project_id: data.projectId,
+      author_id: context.userId,
+      body: data.body,
+    } as never);
+    if (error) mapPgError(error);
+    return { ok: true };
+  });
+
+export const listTaskComments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<CommentItem[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("task_comments")
+      .select("id, body, author_id, created_at")
+      .eq("task_id", data.taskId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (error) mapPgError(error);
+    const list = (rows ?? []) as unknown as Array<{
+      id: string;
+      body: string;
+      author_id: string;
+      created_at: string;
+    }>;
+    const names = await resolveNames(
+      context.supabase,
+      list.map((r) => r.author_id),
+    );
+    return list.map((r) => ({
+      id: r.id,
+      body: r.body,
+      authorId: r.author_id,
+      authorName: names.get(r.author_id) ?? "Thành viên",
+      createdAt: r.created_at,
+    }));
+  });
+
+export const addTaskComment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ taskId: z.string().uuid(), body: z.string().trim().min(1).max(4000) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("comment_task", {
+      _task_id: data.taskId,
+      _body: data.body,
+      _idempotency_key: crypto.randomUUID(),
+    } as never);
+    if (error) mapPgError(error);
+    return { ok: true };
+  });

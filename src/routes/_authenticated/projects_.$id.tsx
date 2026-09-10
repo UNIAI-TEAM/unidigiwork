@@ -19,7 +19,9 @@ import {
   X,
   User,
   History as HistoryIcon,
+  MessageSquare,
 } from "lucide-react";
+import { CommentThread } from "@/components/projects/comment-thread";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -240,6 +242,7 @@ function ProjectDetailPage() {
 
   // Kéo thả đổi trạng thái — vẫn đi qua command transitionTask, không ghi thẳng DB.
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [openComments, setOpenComments] = useState<string | null>(null);
   const [dropGroup, setDropGroup] = useState<string | null>(null);
   const transition = useMutation({
     mutationFn: (p: { taskId: string; toStatus: string }) =>
@@ -527,8 +530,24 @@ function ProjectDetailPage() {
                                         </option>
                                       ))}
                                     </select>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="min-h-11"
+                                      aria-label={`Thảo luận: ${t.title}`}
+                                      onClick={() =>
+                                        setOpenComments((c) => (c === t.id ? null : t.id))
+                                      }
+                                    >
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
                                   </span>
                                 </div>
+                                {openComments === t.id && (
+                                  <div className="mt-3 border-t border-border pt-3">
+                                    <CommentThread kind="task" taskId={t.id} compact />
+                                  </div>
+                                )}
                               </li>
                             );
                           })}
@@ -565,6 +584,15 @@ function ProjectDetailPage() {
                       )}
                       Lưu ghi chú
                     </Button>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <h2 className="flex items-center gap-2 font-semibold">
+                      <MessageSquare className="h-4 w-4 text-primary" /> Thảo luận ghi chú
+                    </h2>
+                    <div className="mt-3">
+                      <CommentThread kind="project" projectId={id} />
+                    </div>
                   </section>
 
                   <section className="rounded-xl border border-border bg-card p-4">
