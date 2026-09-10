@@ -224,7 +224,7 @@ function TaskDetailPage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-none px-4 py-6 sm:px-6 lg:px-8">
-            <Link to="/tasks" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <Link to="/tasks" className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Quay lại Bảng công việc
             </Link>
 
@@ -235,7 +235,7 @@ function TaskDetailPage() {
             ) : detail.isError || !task ? (
               <div className="rounded-xl border border-border bg-surface p-8 text-center">
                 <p className="text-sm text-muted-foreground">Không tìm thấy công việc hoặc bạn không có quyền xem.</p>
-                <button onClick={() => navigate({ to: "/tasks" })} className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+                <button onClick={() => navigate({ to: "/tasks" })} className="mt-4 min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
                   Về bảng công việc
                 </button>
               </div>
@@ -254,7 +254,7 @@ function TaskDetailPage() {
                         </>
                       ) : null}
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tight">{task.title}</h1>
+                    <h1 className="break-words text-xl font-bold sm:text-2xl">{task.title}</h1>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <Badge>{STATUS_LABEL[task.status]}</Badge>
                       <Badge>Ưu tiên: {PRIORITY_LABEL[task.priority] ?? task.priority}</Badge>
@@ -274,7 +274,7 @@ function TaskDetailPage() {
                           to="/chat/$channelId"
                           params={{ channelId: src.channelId }}
                           search={{ m: src.messageId }}
-                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-surface-2"
+                          className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-surface-2"
                         >
                           <MessageSquare className="h-3.5 w-3.5" />
                           Quay lại tin nhắn trong chat
@@ -293,7 +293,7 @@ function TaskDetailPage() {
                             type="checkbox"
                             checked={s.status === "done"}
                             onChange={() => toggleSubtask.mutate({ taskId: s.id, toStatus: s.status === "done" ? "todo" : "done" })}
-                            className="h-4 w-4 rounded border-border bg-surface-2"
+                            className="h-6 w-6 shrink-0 rounded border-border bg-surface-2"
                           />
                           <Link
                             to="/tasks/$id" params={{ id: s.id }}
@@ -309,18 +309,18 @@ function TaskDetailPage() {
                     </ul>
                     <form
                       onSubmit={(e) => { e.preventDefault(); if (subtaskTitle.trim()) addSubtask.mutate(subtaskTitle.trim()); }}
-                      className="mt-3 flex gap-2"
+                      className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2"
                     >
                       <input
                         value={subtaskTitle}
                         onChange={(e) => setSubtaskTitle(e.target.value)}
                         placeholder="Thêm công việc con…"
-                        className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                        className="min-h-11 min-w-0 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                       />
                       <button
                         type="submit"
                         disabled={addSubtask.isPending || !subtaskTitle.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                        className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:opacity-50"
                       >
                         {addSubtask.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Thêm
                       </button>
@@ -334,13 +334,13 @@ function TaskDetailPage() {
                           <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
                           <span className="flex-1 truncate">{a.file_name}</span>
                           <span className="text-xs text-muted-foreground">{formatBytes(a.size_bytes)}</span>
-                          <button onClick={() => download(a.storage_path)} aria-label="Tải xuống" className="text-muted-foreground hover:text-foreground">
+                          <button onClick={() => download(a.storage_path)} aria-label="Tải xuống" className="flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground">
                             <Download className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => removeAttachment.mutate({ attachmentId: a.id, storagePath: a.storage_path })}
                             aria-label="Xoá tệp"
-                            className="text-muted-foreground hover:text-destructive"
+                            className="flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -349,7 +349,7 @@ function TaskDetailPage() {
                       <button
                         onClick={() => fileRef.current?.click()}
                         disabled={uploading}
-                        className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
+                        className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-3 text-xs text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
                       >
                         {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
                         {uploading ? "Đang tải…" : "Thêm tệp"}

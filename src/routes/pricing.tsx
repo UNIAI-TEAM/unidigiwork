@@ -316,10 +316,11 @@ function PricingPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCheckoutPlan(null)}>
+            <Button className="min-h-11" variant="outline" onClick={() => setCheckoutPlan(null)}>
               Huỷ
             </Button>
             <Button
+              className="min-h-11"
               onClick={() => checkoutPlan && changeMutation.mutate(checkoutPlan)}
               disabled={changeMutation.isPending}
             >
