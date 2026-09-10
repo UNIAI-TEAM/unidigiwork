@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette } from "@/components/command-palette";
