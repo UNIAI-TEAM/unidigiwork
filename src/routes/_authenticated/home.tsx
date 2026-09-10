@@ -46,13 +46,12 @@ import {
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
-      { title: "Trang chủ · Công việc của tôi — UNIWORK" },
+      { title: "Không gian của tôi — UNIWORK" },
       {
         name: "description",
-        content:
-          "Trang chủ UNIWORK: việc cần xử lý hôm nay, việc quá hạn, cuộc họp sắp tới và hộp việc cần chú ý.",
+        content: "Không gian hợp nhất cho công việc, hộp việc và lịch cần chú ý trên UNIWORK.",
       },
-      { property: "og:title", content: "Trang chủ · Công việc của tôi — UNIWORK" },
+      { property: "og:title", content: "Không gian của tôi — UNIWORK" },
       {
         property: "og:description",
         content: "Bắt đầu ngày làm việc với việc cần chú ý, cuộc họp sắp tới và hộp việc hợp nhất.",
@@ -472,11 +471,14 @@ function HomePage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
-        <div className="w-full flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+         <div className="w-full flex-1 space-y-6 bg-command-canvas px-4 py-6 sm:px-6 lg:px-8">
           <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
             <div>
-              <p className="module-label text-primary">Command center</p>
-              <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">{greeting()}</h1>
+               <p className="module-label text-command-accent">Bảng điều hành thống nhất</p>
+               <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">
+                 Không gian của tôi
+               </h1>
+               <p className="mt-1 text-sm font-medium text-foreground">{greeting()}</p>
               <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             </div>
             <div className="col-span-2 flex flex-wrap gap-2 lg:col-span-1 lg:justify-end">
@@ -577,16 +579,18 @@ function HomePage() {
 
 function gridClass(layout: HomeLayout) {
   if (layout === "compact") return "grid-cols-1";
-  return "xl:grid-cols-3";
+  return "xl:grid-cols-12";
 }
 
 function spanClass(key: HomeSectionKey, layout: HomeLayout) {
   if (layout === "compact") return "col-span-1";
-  if (key === "stats" || key === "aibrief") return "xl:col-span-3";
+  if (key === "stats") return "xl:col-span-12";
+  if (key === "mywork") return "xl:col-span-8";
+  if (key === "inbox") return "xl:col-span-4 xl:row-span-2";
+  if (key === "upcoming") return "xl:col-span-4";
+  if (key === "aibrief") return "xl:col-span-8";
   if (layout === "balanced") {
-    if (key === "mywork") return "xl:col-span-2";
-    if (key === "inbox") return "xl:col-span-3";
-    return "xl:col-span-1";
+     return "xl:col-span-6";
   }
-  return "xl:col-span-1";
+   return "xl:col-span-4";
 }
