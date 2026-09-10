@@ -62,7 +62,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { TenantSwitcher } from "@/components/tenant-switcher";
-import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-create-dialog";
@@ -360,10 +359,6 @@ export function AppSidebar({
 }) {
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
-  const sidebarIdentity = useCurrentIdentity();
-  const [wsOpen, setWsOpen] = useState(false);
-  const { unreadCount } = useUnreadNotifications();
-
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
   return (
@@ -406,33 +401,8 @@ export function AppSidebar({
         </div>
 
         {/* Navigation */}
-        <div className={cn("pb-3", collapsed ? "px-1" : "px-3")}>
-          <WorkspaceSwitcher collapsed={collapsed} />
-        </div>
         <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-1" : "px-3")}>
           <DesktopNavigation collapsed={collapsed} />
-
-          {!collapsed && (
-            <>
-              <div className="module-label flex items-center justify-between px-3 pb-2 pt-6 text-muted-foreground">
-                <span>{t("nav.workspaces")}</span>
-                <button
-                  className="rounded p-0.5 hover:bg-surface-2"
-                  aria-label={t("sh.ws.addAria")}
-                  onClick={() => setWsOpen(true)}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <WorkspaceList />
-            </>
-          )}
-          {collapsed && (
-            <>
-              <div className="my-2 h-px bg-border" />
-              <WorkspaceList collapsed />
-            </>
-          )}
         </nav>
 
         {/* Collapse toggle */}
@@ -479,7 +449,6 @@ export function AppSidebar({
           </Tooltip>
         </div>
       </aside>
-      <CreateWorkspaceDialog open={wsOpen} onOpenChange={setWsOpen} />
     </TooltipProvider>
   );
 }
