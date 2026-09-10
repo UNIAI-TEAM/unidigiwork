@@ -32,6 +32,8 @@ import {
   getProject,
   getProjectActivity,
   updateProject,
+  listProjectMeetings,
+  scheduleProjectMeeting,
   type ProjectRow,
   type ProjectStatus,
 } from "@/lib/api/projects.functions";
