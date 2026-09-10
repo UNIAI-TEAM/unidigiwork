@@ -119,7 +119,10 @@ function PublicFooter() {
           <Link to="/terms" className="inline-flex min-h-11 items-center hover:text-foreground">
             Điều khoản
           </Link>
-          <a href="mailto:hello@uniwork.vn" className="inline-flex min-h-11 items-center hover:text-foreground">
+          <a
+            href="mailto:hello@uniwork.vn"
+            className="inline-flex min-h-11 items-center hover:text-foreground"
+          >
             hello@uniwork.vn
           </a>
         </div>
@@ -137,7 +140,10 @@ function FooterCol({ title, items }: { title: string; items: { label: string; to
       <ul className="space-y-2 text-sm">
         {items.map((it) => (
           <li key={it.to}>
-            <Link to={it.to} className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground">
+            <Link
+              to={it.to}
+              className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground"
+            >
               {it.label}
             </Link>
           </li>
