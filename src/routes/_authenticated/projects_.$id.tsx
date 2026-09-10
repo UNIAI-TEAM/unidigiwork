@@ -18,6 +18,7 @@ import {
   Search,
   X,
   User,
+  History as HistoryIcon,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
