@@ -128,6 +128,7 @@ export const getAiBrainOverview = createServerFn({ method: "GET" })
         acceptanceRate: decided === 0 ? 0 : Math.round((approved / decided) * 100),
         tokensThisWeek,
       },
+      disabledSkills,
       log: (logRes.data ?? []).map((r) => ({
         id: r.id as string,
         title: (r.title as string) ?? "",
