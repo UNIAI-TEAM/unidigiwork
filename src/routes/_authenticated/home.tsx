@@ -320,8 +320,8 @@ function HomePage() {
         }
       >
         {openTasks.length ? (
-          <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-2/60 px-4 py-2">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-border bg-surface-2/60 px-4 py-2">
+            <label className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
                 className="h-4 w-4 cursor-pointer accent-primary"
@@ -334,12 +334,12 @@ function HomePage() {
             <span className="text-xs text-muted-foreground">
               Đã chọn {checkedIds.length}/{openTasks.length}
             </span>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
               {checkedIds.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => setCheckedIds([])}
-                  className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-surface-2"
+                  className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-xs text-muted-foreground transition-colors hover:bg-surface-2"
                 >
                   Bỏ chọn
                 </button>
@@ -348,7 +348,7 @@ function HomePage() {
                 type="button"
                 onClick={bulkComplete}
                 disabled={!checkedIds.length || bulkRunning}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {bulkRunning ? "Đang xử lý…" : `Hoàn thành ${checkedIds.length || ""}`.trim()}
               </button>
@@ -471,106 +471,108 @@ function HomePage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
-        <div className="w-full flex-1 space-y-6 bg-command-canvas px-4 py-6 sm:px-6 lg:px-8">
-          <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
-            <div>
-              <p className="module-label text-command-accent">Bảng điều hành thống nhất</p>
-              <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">
-                Không gian của tôi
-              </h1>
-              <p className="mt-1 text-sm font-medium text-foreground">{greeting()}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-            </div>
-            <div className="col-span-2 flex flex-wrap gap-2 lg:col-span-1 lg:justify-end">
-              <button
-                type="button"
-                onClick={() => setCustomizing((v) => !v)}
-                aria-expanded={customizing}
-                className={cn(
-                  "inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
-                  customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
-                )}
-              >
-                <SlidersHorizontal className="h-4 w-4" /> Tuỳ chỉnh
-              </button>
-              <button
-                type="button"
-                onClick={refreshAll}
-                disabled={isRefreshing}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-muted-foreground shadow-card transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
-                aria-label="Làm mới trang chủ"
-              >
-                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
-              </button>
-              <Link
-                to="/tasks"
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-action px-3 text-sm font-bold text-action-foreground shadow-card hover:bg-action/90"
-              >
-                <Plus className="h-4 w-4" /> Công việc
-              </Link>
-              <Link
-                to="/meeting"
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
-              >
-                <Plus className="h-4 w-4" /> Cuộc họp
-              </Link>
-              <Link
-                to="/chat"
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
-              >
-                <Plus className="h-4 w-4" /> Tin nhắn
-              </Link>
-            </div>
-          </header>
+        <div className="w-full min-w-0 flex-1 bg-command-canvas px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-6 overflow-x-hidden">
+            <header className="grid min-w-0 grid-cols-1 items-end gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
+              <div>
+                <p className="module-label text-command-accent">Bảng điều hành thống nhất</p>
+                <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">
+                  Không gian của tôi
+                </h1>
+                <p className="mt-1 text-sm font-medium text-foreground">{greeting()}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+              </div>
+              <div className="flex min-w-0 flex-wrap gap-2 xl:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCustomizing((v) => !v)}
+                  aria-expanded={customizing}
+                  className={cn(
+                    "inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
+                    customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  <SlidersHorizontal className="h-4 w-4" /> Tuỳ chỉnh
+                </button>
+                <button
+                  type="button"
+                  onClick={refreshAll}
+                  disabled={isRefreshing}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-muted-foreground shadow-card transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+                  aria-label="Làm mới trang chủ"
+                >
+                  <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
+                </button>
+                <Link
+                  to="/tasks"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-action px-3 text-sm font-bold text-action-foreground shadow-card hover:bg-action/90"
+                >
+                  <Plus className="h-4 w-4" /> Công việc
+                </Link>
+                <Link
+                  to="/meeting"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> Cuộc họp
+                </Link>
+                <Link
+                  to="/chat"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> Tin nhắn
+                </Link>
+              </div>
+            </header>
 
-          {customizing ? (
-            <HomeCustomizePanel
-              prefs={prefs}
-              saving={saving}
-              onChange={update}
-              onReset={reset}
-              onClose={() => setCustomizing(false)}
-            />
-          ) : null}
+            {customizing ? (
+              <HomeCustomizePanel
+                prefs={prefs}
+                saving={saving}
+                onChange={update}
+                onReset={reset}
+                onClose={() => setCustomizing(false)}
+              />
+            ) : null}
 
-          {visible.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
-              Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
-              <button
-                type="button"
-                className="font-medium text-primary underline-offset-2 hover:underline"
-                onClick={() => setCustomizing(true)}
-              >
-                Mở tuỳ chỉnh
-              </button>
-            </div>
-          ) : (
-            <div className={cn("grid gap-5", gridClass(prefs.layout))}>
-              {visible.map((key) => (
-                <div key={key} className={spanClass(key, prefs.layout)}>
-                  {blocks[key]}
-                </div>
-              ))}
-            </div>
-          )}
+            {visible.length === 0 ? (
+              <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
+                Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                  onClick={() => setCustomizing(true)}
+                >
+                  Mở tuỳ chỉnh
+                </button>
+              </div>
+            ) : (
+              <div className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
+                {visible.map((key) => (
+                  <div key={key} className={cn("min-w-0", spanClass(key, prefs.layout))}>
+                    {blocks[key]}
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {data?.partial.length ? (
-            <p className="text-xs text-muted-foreground">
-              Một số nguồn tạm thời không khả dụng:{" "}
-              {data.partial
-                .map((p) =>
-                  p === "unread"
-                    ? "số liệu chưa đọc"
-                    : p === "tasks"
-                      ? "công việc"
-                      : p === "upcoming"
-                        ? "lịch sắp tới"
-                        : p,
-                )
-                .join(", ")}
-              . Dữ liệu còn lại vẫn hiển thị bình thường.
-            </p>
-          ) : null}
+            {data?.partial.length ? (
+              <p className="text-xs text-muted-foreground">
+                Một số nguồn tạm thời không khả dụng:{" "}
+                {data.partial
+                  .map((p) =>
+                    p === "unread"
+                      ? "số liệu chưa đọc"
+                      : p === "tasks"
+                        ? "công việc"
+                        : p === "upcoming"
+                          ? "lịch sắp tới"
+                          : p,
+                  )
+                  .join(", ")}
+                . Dữ liệu còn lại vẫn hiển thị bình thường.
+              </p>
+            ) : null}
+          </div>
         </div>
       </main>
     </div>

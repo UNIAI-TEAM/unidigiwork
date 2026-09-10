@@ -1509,7 +1509,7 @@ export function AppTopbar({
       </button>
       <button
         aria-label={collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
-        className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"
+        className="hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 lg:flex"
         onClick={toggleCollapsed}
       >
         {collapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
@@ -1583,7 +1583,7 @@ export function AppTopbar({
           <Link
             to="/help"
             aria-label={t("sh.aria.help")}
-            className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"
+            className="hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 md:flex"
           >
             <HelpCircle className="h-5 w-5 text-muted-foreground" />
           </Link>
@@ -1669,13 +1669,13 @@ export function AppTopbar({
             </span>
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-2 bg-emerald-400" />
           </span>
-          <div className="hidden min-w-0 max-w-28 text-left leading-tight sm:block">
+          <div className="hidden min-w-0 max-w-28 text-left leading-tight 2xl:block">
             <div className="truncate text-sm font-semibold">{identity.displayName}</div>
             <div className="truncate text-[11px] text-muted-foreground">{identity.roleLabel}</div>
           </div>
           <ChevronDown
             className={cn(
-              "hidden h-4 w-4 text-muted-foreground transition-transform sm:block",
+              "hidden h-4 w-4 text-muted-foreground transition-transform 2xl:block",
               userOpen ? "rotate-180 text-primary" : "",
             )}
           />
