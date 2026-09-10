@@ -162,6 +162,7 @@ function AiBrainPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 to="/workflows/agents"
+                search={{ profile: undefined }}
                 className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-accent"
               >
                 <Bot className="h-4 w-4" /> {t("aiBrain.openAgents")}

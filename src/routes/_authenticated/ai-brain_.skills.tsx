@@ -111,6 +111,7 @@ function AiBrainSkillsPage() {
           </Link>
           <Link
             to="/workflows/agents"
+            search={{ profile: undefined }}
             className="ml-4 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             {t("aiBrain.openAgents")}
