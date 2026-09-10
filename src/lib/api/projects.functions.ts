@@ -165,6 +165,7 @@ export const createProject = createServerFn({ method: "POST" })
         name: data.name,
         code: data.code || null,
         description: data.description || null,
+        notes: data.notes || null,
         status: data.status,
         color: data.color || null,
         tags: data.tags,
