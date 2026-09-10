@@ -19,7 +19,9 @@ import {
   X,
   User,
   History as HistoryIcon,
+  MessageSquare,
 } from "lucide-react";
+import { CommentThread } from "@/components/projects/comment-thread";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
