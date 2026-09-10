@@ -98,6 +98,7 @@ type NavKey =
   | "meetings"
   | "calendar"
   | "tasks"
+  | "projects"
   | "documents"
   | "work-products"
   | "knowledge"
