@@ -2269,18 +2269,18 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
     const systemPrompt =
       "Bạn đối chiếu nội dung một tài liệu nghiệp vụ với danh sách công việc, cuộc họp và biên bản " +
-      "đang có trong tổ chức, rồi chỉ ra những mục thực sự liên quan để liên kết. " +
-      "Chỉ chọn mục có căn cứ rõ trong nội dung tài liệu; nếu không chắc thì bỏ qua. " +
+      "đang có trong tổ chức, rồi xếp hạng những mục liên quan nhất để liên kết. " +
       "Không bịa mục mới, chỉ dùng số hiệu trong danh sách. " +
-      "Luôn trả về ít nhất một dòng kết quả nếu có mục liên quan. " +
+      "Luôn trả về từ 3 đến 8 dòng, kể cả khi mức tin cậy thấp; dùng điểm tin cậy để thể hiện mức chắc chắn. " +
       `Trả lời bằng ngôn ngữ locale ${data.locale}.`;
     const userPrompt =
       `TÀI LIỆU: ${product.title} (${product.business_type})\n` +
       `NỘI DUNG:\n${content}\n\n` +
       `DANH SÁCH MỤC CÓ THỂ LIÊN KẾT:\n${list}\n\n` +
-      "Chọn tối đa 8 mục liên quan nhất. Mỗi dòng theo đúng mẫu:\n" +
+      "Chọn tối đa 8 mục liên quan nhất (ít nhất 3 mục). Mỗi dòng theo đúng mẫu:\n" +
       "- #số :: LÝ DO: căn cứ trong tài liệu :: 0-100\n" +
       "Số cuối là mức độ tin cậy. Không thêm giải thích ngoài các dòng đó.";
+
 
     const runModel = async (effort: "medium" | "high") => {
       const result = streamText({
