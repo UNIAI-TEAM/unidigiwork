@@ -28,9 +28,7 @@ async function ensureWorkforceWorkers(context: any, tenantId: string) {
     .select("id, code, name, status")
     .eq("tenant_id", tenantId);
   const rows = (existing ?? []) as { id: string; code: string; name: string; status: string }[];
-  const missing = AI_WORKER_PROFILES.filter(
-    (p) => !rows.some((r) => r.code === workerCode(p.id)),
-  );
+  const missing = AI_WORKER_PROFILES.filter((p) => !rows.some((r) => r.code === workerCode(p.id)));
   if (missing.length) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ins = await supabaseAdmin
@@ -163,13 +161,16 @@ export const assignTasksToWorkerProfile = createServerFn({ method: "POST" })
     let assigned = 0;
     const errors: string[] = [];
     for (const taskId of data.taskIds) {
-      const res = await context.supabase.rpc("assign_task_to_ai" as never, {
-        _task_id: taskId,
-        _ai_worker_id: worker.id,
-        _expected_deliverable: deliverable,
-        _acceptance_criteria: criteria,
-        _idempotency_key: `wf-assign:${taskId}:${worker.id}`,
-      } as never);
+      const res = await context.supabase.rpc(
+        "assign_task_to_ai" as never,
+        {
+          _task_id: taskId,
+          _ai_worker_id: worker.id,
+          _expected_deliverable: deliverable,
+          _acceptance_criteria: criteria,
+          _idempotency_key: `wf-assign:${taskId}:${worker.id}`,
+        } as never,
+      );
       if (res.error) errors.push(res.error.message);
       else assigned += 1;
     }

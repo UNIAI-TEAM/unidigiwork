@@ -514,7 +514,6 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       })
       .filter(Boolean);
 
-
     const sampled = tasks.length + meetings.length + notifs.length + proposals.length;
     if (sampled === 0) {
       throw fail(

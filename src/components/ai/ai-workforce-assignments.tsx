@@ -58,9 +58,7 @@ export function AiWorkforceAssignments() {
   const current = assignments.data?.find((a) => a.profileId === profileId);
 
   if (!wsId) {
-    return (
-      <p className="mt-6 text-sm text-muted-foreground">Hãy chọn một không gian làm việc.</p>
-    );
+    return <p className="mt-6 text-sm text-muted-foreground">Hãy chọn một không gian làm việc.</p>;
   }
 
   return (
@@ -160,7 +158,9 @@ export function AiWorkforceAssignments() {
                     <label
                       className={cn(
                         "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors",
-                        checked ? "border-primary bg-primary/5" : "border-border hover:bg-surface-2",
+                        checked
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-surface-2",
                       )}
                     >
                       <input
