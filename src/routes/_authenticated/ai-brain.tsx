@@ -135,6 +135,16 @@ function AiBrainPage() {
     onError: (e: Error) => toast.error(e.message || "Không thể bỏ qua đề xuất."),
   });
 
+  // Mobile: thẻ đề xuất thu gọn mặc định, chạm để mở chi tiết.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
   const m = overview.data?.metrics;
 
   return (
