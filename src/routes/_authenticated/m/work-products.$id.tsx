@@ -281,15 +281,20 @@ function MobileWorkProductDetail() {
           ) : (
             <ul className="grid gap-2">
               {documents.map((d) => (
-                <li
-                  key={d.entityId}
-                  className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
-                >
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate">{d.title}</span>
-                  {d.subtitle && (
-                    <span className="shrink-0 text-[11px] text-muted-foreground">{d.subtitle}</span>
-                  )}
+                <li key={d.entityId}>
+                  <Link
+                    to="/documents/$id"
+                    params={{ id: d.entityId }}
+                    className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
+                  >
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate">{d.title}</span>
+                    {d.subtitle && (
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {d.subtitle}
+                      </span>
+                    )}
+                  </Link>
                 </li>
               ))}
             </ul>
