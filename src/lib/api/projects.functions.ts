@@ -143,6 +143,7 @@ const upsertShape = {
   name: z.string().min(1).max(200),
   code: z.string().max(40).optional().nullable(),
   description: z.string().max(4000).optional().nullable(),
+  notes: z.string().max(8000).optional().nullable(),
   status: statusSchema.default("planning"),
   color: z.string().max(30).optional().nullable(),
   tags: z.array(z.string().max(50)).max(30).default([]),
