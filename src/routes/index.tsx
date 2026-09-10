@@ -124,7 +124,7 @@ function Landing() {
               type="button"
               variant="ghost"
               size="icon"
-               className="h-11 w-11 text-landing-ink lg:hidden"
+              className="h-11 w-11 text-landing-ink lg:hidden"
               aria-label={menuOpen ? t("land.nav.close") : t("land.nav.open")}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((value) => !value)}

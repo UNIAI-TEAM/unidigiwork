@@ -1632,7 +1632,10 @@ export function AppTopbar({
       <div className="relative" ref={notifRef}>
         <button
           onClick={() => setNotifOpen((v) => !v)}
-          className={cn("relative flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2", notifOpen && "bg-surface-2")}
+          className={cn(
+            "relative flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2",
+            notifOpen && "bg-surface-2",
+          )}
           aria-label={t("sh.notif.aria")}
           aria-haspopup="dialog"
           aria-expanded={notifOpen}
@@ -1652,7 +1655,10 @@ export function AppTopbar({
           aria-label={t("sh.cal.aria")}
           aria-haspopup="dialog"
           aria-expanded={calOpen}
-          className={cn("flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2", calOpen && "bg-surface-2")}
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2",
+            calOpen && "bg-surface-2",
+          )}
         >
           <Calendar className="h-5 w-5 text-muted-foreground" />
         </button>
@@ -1677,11 +1683,9 @@ export function AppTopbar({
             </span>
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-2 bg-emerald-400" />
           </span>
-           <div className="hidden min-w-0 max-w-28 text-left leading-tight sm:block">
-             <div className="truncate text-sm font-semibold">{identity.displayName}</div>
-             <div className="truncate text-[11px] text-muted-foreground">
-              {identity.roleLabel}
-            </div>
+          <div className="hidden min-w-0 max-w-28 text-left leading-tight sm:block">
+            <div className="truncate text-sm font-semibold">{identity.displayName}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{identity.roleLabel}</div>
           </div>
           <ChevronDown
             className={cn(

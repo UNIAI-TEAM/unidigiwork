@@ -115,7 +115,9 @@ function MobileTasksPage() {
               key={t.id}
               title={t.title}
               subtitle={`${statusLabel[t.status]} · ${priorityLabel[t.priority]}`}
-              meta={t.due_at ? `Hạn: ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : "Không hạn"}
+              meta={
+                t.due_at ? `Hạn: ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : "Không hạn"
+              }
               priorityBar={t.priority}
               badge={
                 t.status === "done" ? (
