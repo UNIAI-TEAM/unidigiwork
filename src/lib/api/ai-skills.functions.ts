@@ -514,6 +514,94 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       })
       .filter(Boolean);
 
+    // DÒNG THỜI GIAN HOẠT ĐỘNG: ai làm gì, khi nào, kết quả ra sao.
+    const [auditRes, execRes, commentRes] = await Promise.all([
+      context.supabase
+        .from("audit_events")
+        .select("action, event_type, resource_type, actor_user_id, occurred_at")
+        .eq("tenant_id", tenantId)
+        .order("occurred_at", { ascending: false })
+        .limit(60),
+      context.supabase
+        .from("ai_task_executions")
+        .select(
+          "deliverable_title, status, quality_status, quality_score, completed_at, created_at, created_by",
+        )
+        .eq("tenant_id", tenantId)
+        .order("created_at", { ascending: false })
+        .limit(25),
+      context.supabase
+        .from("task_comments")
+        .select("body, author_id, created_at")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(25),
+    ]);
+    const audits = (auditRes.data ?? []) as {
+      action: string | null;
+      event_type: string | null;
+      resource_type: string | null;
+      actor_user_id: string | null;
+      occurred_at: string;
+    }[];
+    const execs = (execRes.data ?? []) as {
+      deliverable_title: string | null;
+      status: string;
+      quality_status: string | null;
+      quality_score: number | null;
+      completed_at: string | null;
+      created_at: string;
+      created_by: string | null;
+    }[];
+    const comments = (commentRes.data ?? []) as {
+      body: string;
+      author_id: string | null;
+      created_at: string;
+    }[];
+    const actorIds = [
+      ...new Set(
+        [
+          ...audits.map((a) => a.actor_user_id),
+          ...execs.map((e) => e.created_by),
+          ...comments.map((c) => c.author_id),
+        ].filter(Boolean) as string[],
+      ),
+    ].slice(0, 60);
+    const actorName = new Map<string, string>();
+    if (actorIds.length) {
+      const { data: users } = await context.supabase
+        .from("users")
+        .select("id, display_name, primary_email")
+        .in("id", actorIds);
+      for (const u of (users ?? []) as {
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }[]) {
+        actorName.set(u.id, u.display_name ?? u.primary_email ?? "Thành viên");
+      }
+    }
+    const who = (id: string | null) => (id ? (actorName.get(id) ?? "Thành viên") : "Hệ thống");
+    const when = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") : "chưa rõ");
+    const timelineLines = [
+      ...audits
+        .slice(0, 30)
+        .map(
+          (a) =>
+            `- ${when(a.occurred_at)} · ${who(a.actor_user_id)} · ${a.action ?? a.event_type ?? "hành động"}${a.resource_type ? " trên " + a.resource_type : ""}`,
+        ),
+      ...execs.map(
+        (e) =>
+          `- ${when(e.completed_at ?? e.created_at)} · ${who(e.created_by)} · AI thực thi "${e.deliverable_title ?? "kết quả"}" → ${e.status}${e.quality_status ? "/" + e.quality_status : ""}${e.quality_score != null ? "/điểm " + e.quality_score : ""}`,
+      ),
+      ...comments.map(
+        (c) =>
+          `- ${when(c.created_at)} · ${who(c.author_id)} · bình luận: ${c.body.replace(/\s+/g, " ").slice(0, 120)}`,
+      ),
+    ];
+
+
     const sampled = tasks.length + meetings.length + notifs.length + proposals.length;
     if (sampled === 0) {
       throw fail(
