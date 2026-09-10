@@ -258,33 +258,35 @@ function MobileBoxPage() {
                   else hide(it.key);
                 }}
               >
-                <div className="flex items-stretch gap-2 bg-background">
+                <div className="flex w-full min-w-0 items-stretch gap-2 bg-background">
                   <MobileListItem
                     title={it.title}
                     subtitle={it.subtitle}
                     icon={icon(it.kind)}
                     priorityBar={it.priority ?? null}
                     onClick={it.onOpen}
-                    className="min-h-16 flex-1 rounded-2xl"
+                    className="min-h-16 min-w-0 flex-1 rounded-2xl"
                   />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-auto w-11 shrink-0 rounded-2xl"
-                    aria-label="Mở"
-                    onClick={it.onOpen}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-auto w-11 shrink-0 rounded-2xl"
-                    aria-label="Chia sẻ"
-                    onClick={() => void share(it)}
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
+                  <div className="grid w-11 shrink-0 grid-rows-2 gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-full w-11 rounded-xl"
+                      aria-label="Mở"
+                      onClick={it.onOpen}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-full w-11 rounded-xl"
+                      aria-label="Chia sẻ"
+                      onClick={() => void share(it)}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </SwipeRow>
             </li>
