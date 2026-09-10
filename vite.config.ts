@@ -7,7 +7,6 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 
-
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
@@ -49,7 +48,8 @@ export default defineConfig({
               },
             },
             {
-              urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith("/assets/"),
+              urlPattern: ({ url, sameOrigin }) =>
+                sameOrigin && url.pathname.startsWith("/assets/"),
               handler: "CacheFirst",
               options: {
                 cacheName: "uniwork-assets",
@@ -69,5 +69,4 @@ export default defineConfig({
       allowedHosts: ["uniwork.demo.ubos.vn"],
     },
   },
-
 });
