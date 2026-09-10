@@ -221,3 +221,77 @@ export const seedDefaultAiSkills = createServerFn({ method: "POST" })
     if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     return { inserted: rows.length };
   });
+
+/**
+ * SKILL HUB — AI soạn bản nháp kỹ năng từ mô tả bằng lời của người dùng.
+ * Chỉ trả về BẢN NHÁP, không ghi vào danh mục; người dùng phải xem lại và bấm lưu.
+ */
+export const draftAiSkillWithAi = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        prompt: z.string().trim().min(5).max(1000),
+        workspaceId: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await resolveTenantFlexible(context, data.workspaceId ?? null);
+
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw fail("AI_PROVIDER_UNAVAILABLE", "Trợ lý AI hiện chưa sẵn sàng.");
+
+    const { streamText } = await import("ai");
+    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    const provider = createLovableResponsesProvider(apiKey);
+
+    const result = streamText({
+      model: provider.responses("openai/gpt-5.6-sol"),
+      system:
+        "Bạn là trợ lý thiết kế kỹ năng AI cho nền tảng công việc UNIWORK. " +
+        "Người dùng mô tả một việc lặp đi lặp lại; bạn soạn định nghĩa kỹ năng ngắn gọn bằng tiếng Việt. " +
+        "CHỈ trả về JSON thuần, không rào ```: " +
+        '{"name":string,"code":string,"kind":string,"description":string,"example":string,"actionTypes":string[]}. ' +
+        `code: CHỮ HOA A-Z 0-9 _ (2-40 ký tự). kind ∈ ${AI_SKILL_KINDS.join("|")}. ` +
+        "description: 1-3 câu nêu khi nào chạy, làm gì, trả về gì. example: 1 câu ví dụ người dùng yêu cầu. " +
+        `actionTypes: chỉ chọn trong ${AI_ACTION_TYPES.join(",")}; để mảng rỗng nếu kỹ năng chỉ tra cứu/phân tích/soạn thảo.`,
+      prompt: `Mô tả của người dùng:\n${data.prompt}`,
+    });
+
+    const text = (await result.text) ?? "";
+    const raw = text.replace(/```json|```/g, "").trim();
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start < 0 || end <= start)
+      throw fail("AI_ERROR", "AI chưa soạn được kỹ năng, hãy thử lại.");
+
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+    } catch {
+      throw fail("AI_ERROR", "AI chưa soạn được kỹ năng, hãy thử lại.");
+    }
+
+    const kinds = AI_SKILL_KINDS as readonly string[];
+    const actions = AI_ACTION_TYPES as readonly string[];
+    const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+    const code =
+      str(parsed["code"], 40)
+        .toUpperCase()
+        .replace(/[^A-Z0-9_]/g, "_")
+        .replace(/^_+|_+$/g, "") || "SKILL_MOI";
+    const kind = kinds.includes(String(parsed["kind"])) ? String(parsed["kind"]) : "ANALYSIS";
+    const actionTypes = Array.isArray(parsed["actionTypes"])
+      ? (parsed["actionTypes"] as unknown[]).map(String).filter((a) => actions.includes(a))
+      : [];
+
+    return {
+      name: str(parsed["name"], 200) || "Kỹ năng mới",
+      code: code.length >= 2 ? code : "SKILL_MOI",
+      kind,
+      description: str(parsed["description"], 2000),
+      example: str(parsed["example"], 500),
+      actionTypes,
+    };
+  });
