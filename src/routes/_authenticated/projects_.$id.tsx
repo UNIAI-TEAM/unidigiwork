@@ -322,9 +322,7 @@ function ProjectDetailPage() {
                           if (taskId) moveTask(taskId, g.key);
                         }}
                         className={`rounded-lg border border-dashed p-2 transition-colors ${
-                          dropGroup === g.key
-                            ? "border-primary bg-primary/5"
-                            : "border-transparent"
+                          dropGroup === g.key ? "border-primary bg-primary/5" : "border-transparent"
                         }`}
                       >
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
