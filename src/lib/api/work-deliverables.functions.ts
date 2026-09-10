@@ -834,11 +834,22 @@ export type WeeklyReportRow = {
   shareTargets: number;
 };
 
+/** Ai đã thay đổi tài liệu Word trong kỳ và bao nhiêu thay đổi (người / AI). */
+export type WeeklyReportEditor = {
+  name: string;
+  total: number;
+  human: number;
+  ai: number;
+};
+
 export type WeeklyReport = {
   from: string;
   to: string;
   rows: WeeklyReportRow[];
   totals: WeeklyReportRow;
+  /** Lịch sử thay đổi tài liệu Word trong kỳ, theo người thực hiện. */
+  editors: WeeklyReportEditor[];
+  changeTotals: { total: number; human: number; ai: number };
 };
 
 export const getWorkDeliverableWeeklyReport = createServerFn({ method: "GET" })
@@ -1027,7 +1038,49 @@ async function computeWeeklyReport(
       },
     );
 
-    return { from: fromISO, to: toISO, rows, totals };
+    // Lịch sử thay đổi tài liệu Word trong kỳ: ai sửa, người hay AI.
+    const editors: WeeklyReportEditor[] = [];
+    let changeTotals = { total: 0, human: 0, ai: 0 };
+    if (ids.length) {
+      const { data: ops } = await context.supabase
+        .from("work_product_change_ops")
+        .select("author_id, origin, status, applied_version, decided_at, created_at")
+        .in("work_product_id", ids)
+        .eq("status", "APPLIED")
+        .gte("created_at", fromISO)
+        .lte("created_at", toISO)
+        .limit(5000);
+      const list = ((ops ?? []) as any[]).filter(Boolean);
+      changeTotals = {
+        total: list.length,
+        human: list.filter((o) => o.origin !== "AI").length,
+        ai: list.filter((o) => o.origin === "AI").length,
+      };
+      const authorIds = [...new Set(list.map((o) => o.author_id).filter(Boolean))] as string[];
+      const nameById = new Map<string, string>();
+      if (authorIds.length) {
+        const { data: people } = await context.supabase
+          .from("profiles")
+          .select("id, display_name, email")
+          .in("id", authorIds);
+        for (const p of (people ?? []) as any[])
+          nameById.set(p.id as string, (p.display_name as string) || (p.email as string) || "—");
+      }
+      const acc2 = new Map<string, WeeklyReportEditor>();
+      for (const o of list) {
+        const key = (o.author_id as string) ?? "unknown";
+        const row =
+          acc2.get(key) ??
+          ({ name: nameById.get(key) ?? "—", total: 0, human: 0, ai: 0 } as WeeklyReportEditor);
+        row.total += 1;
+        if (o.origin === "AI") row.ai += 1;
+        else row.human += 1;
+        acc2.set(key, row);
+      }
+      editors.push(...[...acc2.values()].sort((a, b) => b.total - a.total).slice(0, 20));
+    }
+
+    return { from: fromISO, to: toISO, rows, totals, editors, changeTotals };
   }
 }
 

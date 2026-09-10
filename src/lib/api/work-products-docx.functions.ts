@@ -1993,3 +1993,135 @@ export const saveTenantDocxProfile = createServerFn({ method: "POST" })
 
     return { tenantId, weights, aiGuidance };
   });
+
+/* -------------------------------------------- lịch sử thay đổi từng bản Word */
+
+/**
+ * Lịch sử thay đổi theo từng phiên bản Word: ai thay đổi, do người hay AI,
+ * và cụ thể những khối nào đã đổi (trước → sau). Chỉ đọc qua RLS.
+ */
+export const getWorkProductDocxChangeHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const [versionsRes, opsRes, blocksRes] = await Promise.all([
+      context.supabase
+        .from("work_product_versions")
+        .select("version, title, summary, author_id, ai_generated, created_at")
+        .eq("work_product_id", data.id)
+        .order("version", { ascending: false })
+        .limit(50),
+      context.supabase
+        .from("work_product_change_ops")
+        .select(
+          "id, block_key, before_text, after_text, origin, status, applied_version, author_id, decided_by, decided_at, created_at, source_anchor",
+        )
+        .eq("work_product_id", data.id)
+        .order("created_at", { ascending: true })
+        .limit(1000),
+      context.supabase
+        .from("work_product_blocks")
+        .select("block_key, ordinal, block_type, source_anchor")
+        .eq("work_product_id", data.id)
+        .limit(1000),
+    ]);
+    if (versionsRes.error) mapPgError(versionsRes.error);
+    if (opsRes.error) mapPgError(opsRes.error);
+
+    const versions = (versionsRes.data ?? []) as any[];
+    const ops = (opsRes.data ?? []) as any[];
+    const blockMeta = new Map<string, any>();
+    for (const b of (blocksRes.data ?? []) as any[]) blockMeta.set(b.block_key as string, b);
+
+    const userIds = [
+      ...new Set(
+        [
+          ...versions.map((v) => v.author_id),
+          ...ops.map((o) => o.author_id),
+          ...ops.map((o) => o.decided_by),
+        ].filter(Boolean),
+      ),
+    ] as string[];
+    const nameById = new Map<string, string>();
+    if (userIds.length) {
+      const { data: people } = await context.supabase
+        .from("profiles")
+        .select("id, display_name, email")
+        .in("id", userIds);
+      for (const p of (people ?? []) as any[])
+        nameById.set(p.id as string, (p.display_name as string) || (p.email as string) || "—");
+    }
+    const who = (id: string | null) => (id ? (nameById.get(id) ?? "—") : "—");
+
+    const excerpt = (s: string | null) => (s ?? "").trim().slice(0, 300);
+    const toEntry = (o: any) => {
+      const meta = blockMeta.get(o.block_key as string);
+      const role =
+        (o.source_anchor as any)?.semanticRole ??
+        (meta?.source_anchor as any)?.semanticRole ??
+        null;
+      return {
+        id: o.id as string,
+        blockKey: o.block_key as string,
+        ordinal: (meta?.ordinal ?? null) as number | null,
+        blockType: (meta?.block_type ?? null) as string | null,
+        semanticRole: role as string | null,
+        origin: (o.origin as string) ?? "HUMAN",
+        status: (o.status as string) ?? "PENDING",
+        before: excerpt(o.before_text),
+        after: excerpt(o.after_text),
+        editorId: (o.author_id as string) ?? null,
+        editor: who(o.author_id as string | null),
+        decidedById: (o.decided_by as string) ?? null,
+        decidedBy: who(o.decided_by as string | null),
+        decidedAt: (o.decided_at as string) ?? null,
+        createdAt: o.created_at as string,
+      };
+    };
+
+    const byVersion = new Map<number, any[]>();
+    const pending: any[] = [];
+    for (const o of ops) {
+      const entry = toEntry(o);
+      if (o.status === "APPLIED" && typeof o.applied_version === "number") {
+        const list = byVersion.get(o.applied_version) ?? [];
+        list.push(entry);
+        byVersion.set(o.applied_version, list);
+      } else if (o.status !== "REJECTED") {
+        pending.push(entry);
+      }
+    }
+
+    const items = versions.map((v) => {
+      const changes = (byVersion.get(v.version as number) ?? []).sort(
+        (a, b) => (a.ordinal ?? 0) - (b.ordinal ?? 0),
+      );
+      const editors = [...new Set(changes.map((c) => c.editor).filter((n) => n !== "—"))];
+      return {
+        version: v.version as number,
+        title: v.title as string,
+        summary: (v.summary as string) ?? "",
+        createdAt: v.created_at as string,
+        aiGenerated: Boolean(v.ai_generated),
+        author: who(v.author_id as string | null),
+        editors,
+        counts: {
+          total: changes.length,
+          ai: changes.filter((c) => c.origin === "AI").length,
+          human: changes.filter((c) => c.origin !== "AI").length,
+        },
+        changes,
+      };
+    });
+
+    return {
+      items,
+      pending,
+      totals: {
+        versions: items.length,
+        changes: ops.filter((o) => o.status === "APPLIED").length,
+        ai: ops.filter((o) => o.status === "APPLIED" && o.origin === "AI").length,
+        human: ops.filter((o) => o.status === "APPLIED" && o.origin !== "AI").length,
+      },
+    };
+  });

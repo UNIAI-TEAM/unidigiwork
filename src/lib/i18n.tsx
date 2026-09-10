@@ -83,6 +83,11 @@ const dict = {
     "wp.weekly.formats": "Định dạng tệp",
     "wp.weekly.allFormats": "Tất cả",
     "wp.weekly.exportXlsx": "Xuất Excel",
+    "wp.weekly.changeLog": "Lịch sử thay đổi tài liệu Word",
+    "wp.weekly.editor": "Người thay đổi",
+    "wp.weekly.changes": "Thay đổi",
+    "wp.weekly.byHuman": "Người sửa",
+    "wp.weekly.byAi": "AI đề xuất",
     "wp.weekly.shared": "Chia sẻ (lượt)",
     "wp.share.tab": "Chia sẻ",
     "wp.share.hint":
@@ -2025,6 +2030,11 @@ const dict = {
     "wp.weekly.formats": "File formats",
     "wp.weekly.allFormats": "All",
     "wp.weekly.exportXlsx": "Export Excel",
+    "wp.weekly.changeLog": "Word change history",
+    "wp.weekly.editor": "Changed by",
+    "wp.weekly.changes": "Changes",
+    "wp.weekly.byHuman": "By people",
+    "wp.weekly.byAi": "By AI",
     "wp.weekly.shared": "Shared (targets)",
     "wp.share.tab": "Sharing",
     "wp.share.hint":
