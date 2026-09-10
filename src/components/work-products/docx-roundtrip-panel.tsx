@@ -1203,6 +1203,78 @@ export function DocxRoundTripPanel({
           </Button>
         </Card>
       )}
+      {/* Lịch sử thay đổi từng bản Word: ai sửa, sửa gì */}
+      {history && history.items.length > 0 && (
+        <Card className="space-y-3 p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold">Lịch sử thay đổi</h3>
+            <p className="text-xs text-muted-foreground">
+              {history.totals.versions} phiên bản · {history.totals.changes} thay đổi ·{" "}
+              {history.totals.human} người sửa · {history.totals.ai} AI đề xuất
+            </p>
+          </div>
+          <div className="space-y-2">
+            {history.items.map((v) => (
+              <div key={v.version} className="rounded-md border">
+                <button
+                  type="button"
+                  className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent/40"
+                  onClick={() =>
+                    setOpenVersion((cur) => (cur === v.version ? null : v.version))
+                  }
+                >
+                  <Badge variant="outline">v{v.version}</Badge>
+                  <span className="font-medium">{v.author}</span>
+                  {v.aiGenerated && <Badge variant="secondary">Có AI hỗ trợ</Badge>}
+                  <span className="text-muted-foreground">
+                    {new Date(v.createdAt).toLocaleString()}
+                  </span>
+                  <span className="ml-auto text-muted-foreground">
+                    {v.counts.total} thay đổi ({v.counts.human} người · {v.counts.ai} AI)
+                  </span>
+                </button>
+                {openVersion === v.version && (
+                  <div className="space-y-2 border-t p-3">
+                    {v.summary && <p className="text-xs text-muted-foreground">{v.summary}</p>}
+                    {v.changes.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Không có thay đổi theo khối được ghi cho bản này.
+                      </p>
+                    )}
+                    {v.changes.map((c) => (
+                      <div key={c.id} className="rounded-md border p-2 text-xs">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <Badge variant={c.origin === "AI" ? "secondary" : "outline"}>
+                            {c.origin === "AI" ? "AI đề xuất" : "Người sửa"}
+                          </Badge>
+                          {c.semanticRole && <Badge variant="outline">{c.semanticRole}</Badge>}
+                          <span className="text-muted-foreground">
+                            {c.editor}
+                            {c.decidedBy !== "—" && c.decidedBy !== c.editor
+                              ? ` · duyệt: ${c.decidedBy}`
+                              : ""}
+                          </span>
+                        </div>
+                        <p className="whitespace-pre-wrap text-destructive line-through">
+                          {c.before || "(trống)"}
+                        </p>
+                        <p className="whitespace-pre-wrap text-emerald-600 dark:text-emerald-400">
+                          {c.after || "(đã xoá)"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {history.pending.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Còn {history.pending.length} thay đổi chờ duyệt, chưa vào phiên bản nào.
+            </p>
+          )}
+        </Card>
+      )}
       {/* Nhật ký đề xuất AI và độ chính xác */}
       {accuracy && (
         <Card className="space-y-3 p-4">
