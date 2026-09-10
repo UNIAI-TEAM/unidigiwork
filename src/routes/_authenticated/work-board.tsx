@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listWorkDeliverables, linkWorkDeliverable } from "@/lib/api/work-deliverables.functions";
 import { listWorkGraphTargets } from "@/lib/api/work-graph.functions";
+import { rankTasksForWorkProduct } from "@/lib/api/work-products-docx.functions";
 
 export const Route = createFileRoute("/_authenticated/work-board")({
   head: () => ({
