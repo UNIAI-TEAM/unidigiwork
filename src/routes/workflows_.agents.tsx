@@ -616,7 +616,62 @@ function AgentBuilderPage() {
               )}
             </section>
 
-            <aside className="rounded-xl border border-border bg-card p-4">
+            <aside className="space-y-5">
+              <section className="rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 font-semibold">
+                    <Sparkles className="h-4 w-4 text-primary" /> Kỹ năng Skill Hub
+                  </h3>
+                  <Link
+                    to="/ai-brain/skills"
+                    className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Mở Skill Hub
+                  </Link>
+                </div>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Kỹ năng đang bật của tổ chức. Agent có thể dùng kỹ năng khi loại hành động trùng
+                  khớp.
+                </p>
+                {hubQuery.isLoading && (
+                  <p className="mt-3 text-sm text-muted-foreground">Đang tải…</p>
+                )}
+                {!hubQuery.isLoading && hubSkills.length === 0 && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Chưa có kỹ năng nào trong Skill Hub.
+                  </p>
+                )}
+                <ul className="mt-3 space-y-2">
+                  {hubSkills.slice(0, 12).map((s) => (
+                    <li key={s.id} className="rounded-lg border border-border p-2.5">
+                      <div className="flex min-w-0 items-start justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium">{s.name}</span>
+                          {s.description && (
+                            <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+                              {s.description}
+                            </span>
+                          )}
+                        </span>
+                        <Badge variant={s.enabled ? "secondary" : "outline"} className="shrink-0">
+                          {s.enabled ? "Đang bật" : "Đang tắt"}
+                        </Badge>
+                      </div>
+                      {(s.action_types ?? []).length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {(s.action_types ?? []).slice(0, 4).map((t) => (
+                            <Badge key={t} variant="outline" className="text-[11px]">
+                              {AI_ACTION_TOOLS[t as AiActionType]?.label ?? t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="rounded-xl border border-border bg-card p-4">
               <h3 className="flex items-center gap-2 font-semibold">
                 <History className="h-4 w-4" /> Lịch sử agent
               </h3>
