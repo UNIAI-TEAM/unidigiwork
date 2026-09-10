@@ -569,6 +569,46 @@ function ProjectDetailPage() {
                   <section className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h2 className="flex items-center gap-2 font-semibold">
+                        <History className="h-4 w-4 text-primary" /> Dòng thời gian hoạt động
+                      </h2>
+                      {activityQuery.data && (
+                        <span className="text-xs text-muted-foreground">
+                          {activityQuery.data.length} hoạt động
+                        </span>
+                      )}
+                    </div>
+                    {activityQuery.isLoading && (
+                      <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch sử…
+                      </p>
+                    )}
+                    {!activityQuery.isLoading && (activityQuery.data?.length ?? 0) === 0 && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Chưa có hoạt động nào được ghi nhận.
+                      </p>
+                    )}
+                    <ol className="mt-3 max-h-96 space-y-3 overflow-y-auto pr-1">
+                      {(activityQuery.data ?? []).map((a) => (
+                        <li key={a.id} className="relative pl-5">
+                          <span className="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-primary" />
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                            <p className="min-w-0 text-sm font-medium">{a.title}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(a.at).toLocaleString("vi-VN")}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {a.actorName}
+                            {a.detail ? ` · ${a.detail}` : ""}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="flex items-center gap-2 font-semibold">
                         <Sparkles className="h-4 w-4 text-primary" /> Kỹ năng AI gợi ý
                       </h2>
                       <Link to="/ai-brain/skills" className="text-xs text-primary hover:underline">
