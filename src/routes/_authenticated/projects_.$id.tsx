@@ -27,6 +27,7 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import {
   getProject,
+  getProjectActivity,
   updateProject,
   type ProjectRow,
   type ProjectStatus,
