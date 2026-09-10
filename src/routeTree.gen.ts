@@ -113,6 +113,7 @@ import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
 import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
+import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
@@ -677,6 +678,12 @@ const ApiAdminTraceCorrelationIdRoute =
     path: '/api/admin/trace/$correlationId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedMWorkProductsIdRoute =
+  AuthenticatedMWorkProductsIdRouteImport.update({
+    id: '/work-products/$id',
+    path: '/work-products/$id',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMEmailIdRoute = AuthenticatedMEmailIdRouteImport.update({
   id: '/email/$id',
   path: '/email/$id',
@@ -811,6 +818,7 @@ export interface FileRoutesByFullPath {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
+  '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -920,6 +928,7 @@ export interface FileRoutesByTo {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
+  '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1033,6 +1042,7 @@ export interface FileRoutesById {
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
+  '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1146,6 +1156,7 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
+    | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1255,6 +1266,7 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/email/$id'
+    | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1367,6 +1379,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/email/$id'
+    | '/_authenticated/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -2146,6 +2159,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminTraceCorrelationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/m/work-products/$id': {
+      id: '/_authenticated/m/work-products/$id'
+      path: '/work-products/$id'
+      fullPath: '/m/work-products/$id'
+      preLoaderRoute: typeof AuthenticatedMWorkProductsIdRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/email/$id': {
       id: '/_authenticated/m/email/$id'
       path: '/email/$id'
@@ -2280,6 +2300,7 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMAiMarketIdRoute: typeof AuthenticatedMAiMarketIdRoute
   AuthenticatedMAiWorkforceIdRoute: typeof AuthenticatedMAiWorkforceIdRoute
   AuthenticatedMEmailIdRoute: typeof AuthenticatedMEmailIdRoute
+  AuthenticatedMWorkProductsIdRoute: typeof AuthenticatedMWorkProductsIdRoute
   AuthenticatedMAiMarketIndexRoute: typeof AuthenticatedMAiMarketIndexRoute
   AuthenticatedMAiWorkforceIndexRoute: typeof AuthenticatedMAiWorkforceIndexRoute
   AuthenticatedMEmailIndexRoute: typeof AuthenticatedMEmailIndexRoute
@@ -2298,6 +2319,7 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMAiMarketIdRoute: AuthenticatedMAiMarketIdRoute,
   AuthenticatedMAiWorkforceIdRoute: AuthenticatedMAiWorkforceIdRoute,
   AuthenticatedMEmailIdRoute: AuthenticatedMEmailIdRoute,
+  AuthenticatedMWorkProductsIdRoute: AuthenticatedMWorkProductsIdRoute,
   AuthenticatedMAiMarketIndexRoute: AuthenticatedMAiMarketIndexRoute,
   AuthenticatedMAiWorkforceIndexRoute: AuthenticatedMAiWorkforceIndexRoute,
   AuthenticatedMEmailIndexRoute: AuthenticatedMEmailIndexRoute,
