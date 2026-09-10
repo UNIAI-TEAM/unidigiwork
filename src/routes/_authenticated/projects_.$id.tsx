@@ -299,6 +299,23 @@ function ProjectDetailPage() {
     onError: (e: Error) => toast.error(e.message || "Không đổi được trạng thái"),
   });
 
+  // Tiến độ từng công việc: % hoàn thành, ngày bắt đầu, ngày kết thúc.
+  const [openProgress, setOpenProgress] = useState<string | null>(null);
+  const progressMutation = useMutation({
+    mutationFn: (p: {
+      taskId: string;
+      progressPct?: number;
+      startAt?: string | null;
+      endAt?: string | null;
+    }) => updateTaskProgress({ data: p }),
+    onSuccess: () => {
+      toast.success("Đã cập nhật tiến độ");
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được tiến độ"),
+  });
+
   function moveTask(taskId: string, toStatus: string) {
     const current = tasks.find((t) => t.id === taskId);
     if (!current || current.status === toStatus) return;
