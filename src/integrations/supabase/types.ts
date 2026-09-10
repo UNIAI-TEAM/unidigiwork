@@ -4953,14 +4953,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
@@ -4979,14 +4982,17 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           due_at?: string | null
+          end_at?: string | null
           execution_mode?: string
           expected_deliverable?: string | null
           human_owner_id?: string | null
           id?: string
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
+          progress_pct?: number
           project_id?: string | null
           row_version?: number
+          start_at?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
           tenant_id: string
@@ -5005,14 +5011,17 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           due_at?: string | null
+          end_at?: string | null
           execution_mode?: string
           expected_deliverable?: string | null
           human_owner_id?: string | null
           id?: string
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
+          progress_pct?: number
           project_id?: string | null
           row_version?: number
+          start_at?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
           tenant_id?: string
@@ -8502,14 +8511,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
@@ -8544,14 +8556,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
@@ -9056,14 +9071,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
@@ -9100,14 +9118,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
@@ -10606,14 +10627,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
@@ -10920,14 +10944,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
@@ -11044,14 +11071,17 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           due_at: string | null
+          end_at: string | null
           execution_mode: string
           expected_deliverable: string | null
           human_owner_id: string | null
           id: string
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
           project_id: string | null
           row_version: number
+          start_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           tenant_id: string
