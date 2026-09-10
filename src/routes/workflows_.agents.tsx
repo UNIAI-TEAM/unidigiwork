@@ -507,6 +507,8 @@ function AgentBuilderPage() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          className="h-11 w-11"
+                          aria-label="Xoá agent"
                           onClick={async () => {
                             await remove({ data: { agentId: a.id } });
                             toast.success("Đã xoá agent");
@@ -516,6 +518,7 @@ function AgentBuilderPage() {
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
+                    </div>
                     </div>
                   </article>
                 );
