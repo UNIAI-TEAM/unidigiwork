@@ -348,12 +348,77 @@ function ProjectDetailPage() {
               <div className="mt-5 grid gap-4 xl:grid-cols-3">
                 <section className="rounded-xl border border-border bg-card p-4 xl:col-span-2">
                   <h2 className="flex items-center gap-2 font-semibold">
-                    <ListChecks className="h-4 w-4 text-primary" /> Công việc ({tasks.length})
+                    <ListChecks className="h-4 w-4 text-primary" /> Công việc (
+                    {filteredTasks.length}
+                    {hasFilter && `/${tasks.length}`})
                   </h2>
                   {tasks.length === 0 && (
                     <p className="mt-2 text-sm text-muted-foreground">
                       Chưa có công việc nào gắn với dự án này.
                     </p>
+                  )}
+                  {tasks.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder="Tìm công việc…"
+                          className="pl-9"
+                          aria-label="Tìm công việc"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <select
+                          aria-label="Lọc theo trạng thái"
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi trạng thái</option>
+                          {TASK_GROUPS.map((s) => (
+                            <option key={s.key} value={s.key}>
+                              {TASK_STATUS_LABEL[s.key]}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Lọc theo người phụ trách"
+                          value={assigneeFilter}
+                          onChange={(e) => setAssigneeFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi người phụ trách</option>
+                          {assigneeOptions.map(([uid, name]) => (
+                            <option key={uid} value={uid}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Lọc theo hạn kết thúc"
+                          value={dueFilter}
+                          onChange={(e) => setDueFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi hạn</option>
+                          <option value="overdue">Quá hạn</option>
+                          <option value="this_week">7 ngày tới</option>
+                          <option value="no_due">Chưa có hạn</option>
+                        </select>
+                        {hasFilter && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="min-h-11 gap-1 px-3 text-xs"
+                            onClick={clearFilters}
+                          >
+                            <X className="h-3.5 w-3.5" /> Xóa bộ lọc
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   )}
                   <div className="mt-3 space-y-4">
                     <p className="text-xs text-muted-foreground">
