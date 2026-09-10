@@ -81,7 +81,7 @@ function WelcomePage() {
           size="lg"
           className="min-h-12 w-full rounded-xl"
           disabled={checking}
-          onClick={() => navigate({ to: "/auth", search: { mode: "signup" } as never })}
+          onClick={() => navigate({ to: "/auth" })}
         >
           {t("land.cta.start")}
           <ArrowRight />
