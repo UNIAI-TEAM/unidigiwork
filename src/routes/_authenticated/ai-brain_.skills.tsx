@@ -311,63 +311,90 @@ function AiBrainSkillsPage() {
                 <h2 className="text-sm font-semibold">{AI_SKILL_KIND_LABELS[g.kind]}</h2>
                 <p className="text-xs text-muted-foreground">{AI_SKILL_KIND_HINTS[g.kind]}</p>
                 <ul className="mt-3 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-                  {g.rows.map((s) => (
-                    <li key={s.id} className="flex flex-wrap items-start gap-3 p-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-medium">{s.name}</p>
-                          {s.is_system ? <Badge variant="outline">Hệ thống</Badge> : null}
-                          {requiresApproval(s) ? (
-                            <Badge variant="destructive" className="gap-1">
-                              <ShieldAlert className="h-3 w-3" />{" "}
-                              {t("aiBrain.skills.approvalRequired")}
-                            </Badge>
-                          ) : null}
+                  {g.rows.map((s) => {
+                    const expanded = expandedId === s.id;
+                    return (
+                      <li key={s.id} className="p-3">
+                        {/* Hàng tóm tắt: luôn hiển thị; trên mobile chạm để mở chi tiết */}
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                          <button
+                            type="button"
+                            className="flex min-h-11 min-w-0 items-center gap-2 text-left"
+                            aria-expanded={expanded}
+                            onClick={() => setExpandedId(expanded ? null : s.id)}
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-2">
+                                <span className="truncate text-sm font-medium">{s.name}</span>
+                                {s.is_system ? <Badge variant="outline">Hệ thống</Badge> : null}
+                                {requiresApproval(s) ? (
+                                  <Badge variant="destructive" className="gap-1">
+                                    <ShieldAlert className="h-3 w-3" />{" "}
+                                    {t("aiBrain.skills.approvalRequired")}
+                                  </Badge>
+                                ) : null}
+                              </span>
+                            </span>
+                            {expanded ? (
+                              <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground sm:hidden" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground sm:hidden" />
+                            )}
+                          </button>
+                          <span className="flex min-h-11 items-center">
+                            <Switch
+                              checked={s.enabled}
+                              disabled={!canEdit || toggle.isPending}
+                              onCheckedChange={(v) => toggle.mutate({ skillId: s.id, enabled: v })}
+                              aria-label={s.name}
+                            />
+                          </span>
                         </div>
-                        {s.description ? (
-                          <p className="mt-1 text-sm text-muted-foreground">{s.description}</p>
-                        ) : null}
-                        {(s.action_types?.length ?? 0) > 0 ? (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Được đề xuất: {(s.action_types ?? []).join(", ")}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {canEdit && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-11 w-11"
-                            aria-label={`Chỉnh sửa ${s.name}`}
-                            onClick={() => openEdit(s)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {canEdit && !s.is_system && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-11 w-11 text-destructive"
-                            aria-label={`Xoá ${s.name}`}
-                            disabled={remove.isPending}
-                            onClick={() => remove.mutate(s.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Switch
-                          checked={s.enabled}
-                          disabled={!canEdit || toggle.isPending}
-                          onCheckedChange={(v) => toggle.mutate({ skillId: s.id, enabled: v })}
-                          aria-label={s.name}
-                        />
-                      </div>
-                    </li>
-                  ))}
+
+                        {/* Chi tiết: mobile cần chạm mở, desktop luôn hiện */}
+                        <div
+                          className={`${expanded ? "block" : "hidden"} sm:block`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {s.description ? (
+                            <p className="mt-1 text-sm text-muted-foreground">{s.description}</p>
+                          ) : null}
+                          {(s.action_types?.length ?? 0) > 0 ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Được đề xuất: {(s.action_types ?? []).join(", ")}
+                            </p>
+                          ) : null}
+                          {canEdit && (
+                            <div className="mt-2 flex items-center gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-11 w-11"
+                                aria-label={`Chỉnh sửa ${s.name}`}
+                                onClick={() => openEdit(s)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {!s.is_system && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-11 w-11 text-destructive"
+                                  aria-label={`Xoá ${s.name}`}
+                                  disabled={remove.isPending}
+                                  onClick={() => remove.mutate(s.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             ))}
