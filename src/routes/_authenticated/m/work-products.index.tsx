@@ -136,8 +136,7 @@ function MobileWorkProductsPage() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{p.title}</span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {p.business_type} · v{p.current_version ?? 1} ·{" "}
-                    {STATUS_LABEL[p.status] ?? p.status}
+                    {p.business_type} · v{p.current_version ?? 1}
                   </span>
                   <span className="block truncate text-[11px] text-muted-foreground">
                     {format(new Date(p.updated_at ?? p.created_at), "d MMM yyyy", { locale: vi })}
