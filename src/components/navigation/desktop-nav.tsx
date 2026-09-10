@@ -20,12 +20,20 @@ import {
 const STORE_KEY = "uniwork:nav-collapsed-groups";
 
 function useCollapsedGroups(activeGroup: NavGroupId | null) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
+    automation: true,
+    organization: true,
+  });
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      if (raw) setCollapsed(JSON.parse(raw) as Record<string, boolean>);
+      if (raw) {
+        setCollapsed((defaults) => ({
+          ...defaults,
+          ...(JSON.parse(raw) as Record<string, boolean>),
+        }));
+      }
     } catch {
       /* preference only */
     }
@@ -85,18 +93,18 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
   };
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {groups.map(({ group, items }) => {
         const groupCollapsed = group.collapsible && isCollapsed(group.id);
         return (
-          <div key={group.id} className={cn(!collapsed && "pb-1")}>
+          <div key={group.id} className={cn(!collapsed && "pb-2")}>
             {!collapsed ? (
               group.collapsible ? (
                 <button
                   type="button"
                   onClick={() => toggle(group.id)}
                   aria-expanded={!groupCollapsed}
-                  className="module-label flex w-full items-center justify-between rounded-lg px-3 pb-1 pt-3 text-muted-foreground hover:text-foreground"
+                  className="module-label flex min-h-9 w-full items-center justify-between rounded-lg px-3 pb-1 pt-4 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                 >
                   <span>{t(group.labelKey)}</span>
                   <ChevronDown
@@ -107,9 +115,7 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                   />
                 </button>
               ) : (
-                <div className="module-label px-3 pb-1 pt-1 text-muted-foreground">
-                  {t(group.labelKey)}
-                </div>
+                <div className="sr-only">{t(group.labelKey)}</div>
               )
             ) : (
               <div className="my-2 h-px bg-border" />
@@ -124,9 +130,9 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                   "relative flex items-center rounded-lg transition-colors",
                   collapsed
                     ? "w-full justify-center px-2 py-2.5"
-                    : "min-h-10 w-full gap-3 px-3 py-2 text-sm",
+                    : "min-h-11 w-full gap-3 px-3 py-2.5 text-sm",
                   active
-                    ? "bg-command-accent/10 font-semibold text-command-accent"
+                    ? "bg-command-accent/10 font-semibold text-command-accent shadow-sm"
                     : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                 );
                 const link = (

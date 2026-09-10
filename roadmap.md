@@ -12,3 +12,4 @@
 - [x] Optimize mobile Features, Pricing, Help Center, and Tasks
 - [x] Verify 360–440px overflow and 44px CTA targets
 - [x] Merge My Work and My Box navigation into My Space command center
+- [x] Match desktop menu hierarchy and collapsible groups to supplied reference

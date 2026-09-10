@@ -7,10 +7,10 @@
  */
 import {
   Home,
-  Inbox,
   ListChecks,
   Calendar,
   LayoutGrid,
+  Folder,
   MessageSquare,
   Video,
   Mail,
@@ -19,7 +19,6 @@ import {
   Workflow,
   Bot,
   BotMessageSquare,
-  LayoutDashboard,
   BarChart3,
   Users,
   ShieldCheck,
@@ -41,13 +40,13 @@ export const NAV_ICON_STROKE = 1.75;
 export const NAV_ICON_STROKE_ACTIVE = 2.25;
 
 export type NavGroupId =
-  | "my-space"
+  | "home"
   | "work"
   | "communication"
+  | "results"
   | "knowledge"
   | "automation"
-  | "insights"
-  | "admin";
+  | "organization";
 
 /** Badge dùng lại các count sẵn có — không tạo query mới cho sidebar. */
 export type NavBadge = "notifications" | "chat" | "email" | "live";
@@ -79,48 +78,48 @@ export type NavGroup = {
 };
 
 export const NAV_GROUPS: NavGroup[] = [
-  { id: "my-space", labelKey: "nav.myspace", order: 1, collapsible: false },
+  { id: "home", labelKey: "nav.group.home", order: 1, collapsible: false },
   { id: "work", labelKey: "nav.group.work", order: 2, collapsible: true },
   { id: "communication", labelKey: "nav.group.communication", order: 3, collapsible: true },
-  { id: "knowledge", labelKey: "nav.group.knowledge", order: 4, collapsible: true },
-  { id: "automation", labelKey: "nav.group.automation", order: 5, collapsible: true },
-  { id: "insights", labelKey: "nav.group.insights", order: 6, collapsible: true },
-  { id: "admin", labelKey: "nav.group.admin", order: 7, collapsible: true },
+  { id: "results", labelKey: "nav.group.results", order: 4, collapsible: true },
+  { id: "knowledge", labelKey: "nav.group.knowledge", order: 5, collapsible: true },
+  { id: "automation", labelKey: "nav.group.automation", order: 6, collapsible: true },
+  { id: "organization", labelKey: "nav.group.organization", order: 7, collapsible: true },
 ];
 
 export const NAV_ITEMS: NavItem[] = [
-  // Không gian của tôi — một điểm vào hợp nhất cho việc cá nhân và hộp việc.
+  // HOME — các điểm vào cá nhân luôn hiển thị, không collapse.
   {
     id: "home",
-    labelKey: "nav.myspace",
+    labelKey: "nav.home",
     icon: Home,
-    href: "/home",
-    group: "my-space",
-    match: ["/home"],
+    href: "/dashboard",
+    group: "home",
+    match: ["/dashboard"],
     visibility: "everyone",
     order: 0,
   },
-  // Các route chi tiết vẫn giữ nguyên nhưng không lặp lại trong menu chính.
   {
-    id: "my-work",
-    labelKey: "nav.mywork",
-    icon: ListChecks,
-    href: "/tasks",
-    group: "my-space",
-    match: ["/tasks"],
+    id: "my-space",
+    labelKey: "nav.myspace",
+    icon: Users,
+    href: "/home",
+    group: "home",
+    match: ["/home", "/notifications"],
     visibility: "everyone",
     order: 1,
+    badge: "notifications",
   },
   {
-    id: "inbox",
-    labelKey: "nav.inbox",
-    icon: Inbox,
-    href: "/notifications",
-    group: "my-space",
-    match: ["/notifications"],
+    id: "calendar",
+    labelKey: "nav.calendar",
+    icon: Calendar,
+    href: "/calendar",
+    group: "home",
+    match: ["/calendar"],
     visibility: "everyone",
-    badge: "notifications",
     order: 2,
+    mobile: { placement: "more", href: "/calendar", order: 1 },
   },
 
   // WORK
@@ -135,26 +134,35 @@ export const NAV_ITEMS: NavItem[] = [
     order: 1,
   },
   {
-    id: "calendar",
-    labelKey: "nav.calendar",
-    icon: Calendar,
-    href: "/calendar",
+    id: "projects",
+    labelKey: "nav.projectList",
+    icon: Folder,
+    href: "/workspace",
     group: "work",
-    match: ["/calendar"],
+    match: [],
     visibility: "everyone",
     order: 2,
-    mobile: { placement: "more", href: "/calendar", order: 1 },
   },
   {
-    id: "people",
-    labelKey: "nav.people",
-    icon: Users,
-    href: "/people",
+    id: "tasks",
+    labelKey: "nav.taskList",
+    icon: ListChecks,
+    href: "/tasks",
     group: "work",
-    match: ["/people"],
+    match: ["/tasks"],
     visibility: "everyone",
     order: 3,
-    mobile: { placement: "more", href: "/people", order: 4 },
+  },
+  {
+    id: "workflows",
+    labelKey: "nav.workflows",
+    icon: Workflow,
+    href: "/workflows",
+    group: "work",
+    match: ["/workflows"],
+    visibility: "everyone",
+    order: 4,
+    mobile: { placement: "more", href: "/workflows", order: 6 },
   },
 
   // COMMUNICATION
@@ -195,29 +203,30 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/m/email", order: 0 },
   },
 
-  // KNOWLEDGE
+  // RESULTS
+  {
+    id: "work-products",
+    labelKey: "nav.workProducts",
+    icon: ClipboardList,
+    href: "/work-products",
+    group: "results",
+    match: ["/work-products"],
+    visibility: "everyone",
+    order: 1,
+    mobile: { placement: "more", href: "/m/work-products", order: 3 },
+  },
   {
     id: "documents",
     labelKey: "nav.documents",
     icon: FileText,
     href: "/documents",
-    group: "knowledge",
+    group: "results",
     match: ["/documents"],
     visibility: "everyone",
     order: 1,
     mobile: { placement: "more", href: "/documents", order: 2 },
   },
-  {
-    id: "work-products",
-    labelKey: "nav.workProducts",
-    icon: FileText,
-    href: "/work-products",
-    group: "knowledge",
-    match: ["/work-products"],
-    visibility: "everyone",
-    order: 2,
-    mobile: { placement: "more", href: "/m/work-products", order: 3 },
-  },
+  // KNOWLEDGE
   {
     id: "knowledge",
     labelKey: "nav.knowledge",
@@ -226,22 +235,11 @@ export const NAV_ITEMS: NavItem[] = [
     group: "knowledge",
     match: ["/knowledge"],
     visibility: "everyone",
-    order: 3,
+    order: 1,
     mobile: { placement: "more", href: "/knowledge", order: 4 },
   },
 
   // AUTOMATION
-  {
-    id: "workflows",
-    labelKey: "nav.workflows",
-    icon: Workflow,
-    href: "/workflows",
-    group: "automation",
-    match: ["/workflows"],
-    visibility: "everyone",
-    order: 1,
-    mobile: { placement: "more", href: "/workflows", order: 6 },
-  },
   {
     id: "ai",
     labelKey: "nav.ai",
@@ -250,7 +248,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "automation",
     match: ["/ai"],
     visibility: "everyone",
-    order: 2,
+    order: 1,
     mobile: { placement: "more", href: "/ai", order: 7 },
   },
 
@@ -262,7 +260,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "automation",
     match: ["/ai-workforce"],
     visibility: "everyone",
-    order: 3,
+    order: 2,
     mobile: { placement: "more", href: "/m/ai-workforce", order: 7.5 },
   },
   {
@@ -273,7 +271,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "automation",
     match: ["/work-catalog"],
     visibility: "everyone",
-    order: 3.5,
+    order: 3,
   },
   {
     id: "ai-market",
@@ -287,24 +285,24 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/m/ai-market", order: 7.6 },
   },
 
-  // INSIGHTS
+  // ORGANIZATION
   {
-    id: "dashboard",
-    labelKey: "nav.dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    group: "insights",
-    match: ["/dashboard"],
+    id: "people",
+    labelKey: "nav.people",
+    icon: Users,
+    href: "/people",
+    group: "organization",
+    match: ["/people"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "more", href: "/dashboard", order: 8 },
+    mobile: { placement: "more", href: "/people", order: 4 },
   },
   {
     id: "reports",
     labelKey: "nav.reports",
     icon: BarChart3,
     href: "/reports",
-    group: "insights",
+    group: "organization",
     match: ["/reports"],
     visibility: "everyone",
     order: 2,
@@ -317,10 +315,10 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "nav.admin",
     icon: ShieldCheck,
     href: "/admin",
-    group: "admin",
+    group: "organization",
     match: ["/admin"],
     visibility: "admin",
-    order: 1,
+    order: 3,
     mobile: { placement: "more", href: "/admin", order: 10 },
   },
   {
@@ -328,20 +326,20 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "nav.security",
     icon: ScrollText,
     href: "/workspace/audit",
-    group: "admin",
+    group: "organization",
     match: ["/workspace/audit"],
     visibility: "admin",
-    order: 2,
+    order: 4,
   },
   {
     id: "billing",
     labelKey: "nav.billing",
     icon: CreditCard,
     href: "/billing",
-    group: "admin",
+    group: "organization",
     match: ["/billing"],
     visibility: "admin",
-    order: 3,
+    order: 5,
     mobile: { placement: "more", href: "/billing", order: 11 },
   },
 ];
@@ -359,10 +357,7 @@ export function visibleNavigation(perms: NavPermissions) {
     .map((group) => ({
       group,
       items: NAV_ITEMS.filter(
-        (i) =>
-          i.group === group.id &&
-          isNavItemVisible(i, perms) &&
-          !(group.id === "my-space" && (i.id === "my-work" || i.id === "inbox")),
+        (i) => i.group === group.id && isNavItemVisible(i, perms) && true,
       ).sort((a, b) => a.order - b.order),
     }))
     .filter((g) => g.items.length > 0);
