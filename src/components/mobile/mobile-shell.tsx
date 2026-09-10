@@ -233,7 +233,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                   >
                     <div className="dock-task-glow absolute -bottom-4 h-20 w-20 rounded-full blur-3xl opacity-70" />
                     <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-gradient-to-tr from-primary via-primary to-primary-foreground/25 text-primary-foreground shadow-xl shadow-primary/40 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/50 active:scale-90">
-                      <tab.icon className="h-7 w-7" />
+                      <BrandMark className="h-8 w-8" />
                     </span>
                     <span className="absolute -bottom-7 text-[10px] font-bold uppercase tracking-wider text-primary drop-shadow-sm">
                       {tab.label}
