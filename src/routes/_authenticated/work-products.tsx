@@ -491,7 +491,7 @@ function WorkProductsPage() {
           </div>
 
           {/* Bộ lọc */}
-          <div className="mb-5 grid gap-2 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_170px_150px_150px_auto_auto]">
+          <div className="mb-5 grid gap-2 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-2 xl:grid-cols-[minmax(200px,1fr)_150px_135px_135px_auto]">
             <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -541,10 +541,14 @@ function WorkProductsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant={mine ? "default" : "outline"} onClick={() => setMine((v) => !v)}>
+            <Button
+              variant={mine ? "default" : "outline"}
+              className="xl:px-3"
+              onClick={() => setMine((v) => !v)}
+            >
               {t("wp.mine")}
             </Button>
-            <div className="flex items-center justify-end gap-1">
+            <div className="flex items-center justify-end gap-1 sm:col-span-2 xl:col-span-5">
               <Button variant="outline" className="gap-2" onClick={() => setAccessOpen(true)}>
                 <ShieldCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">{t("wp.access.button")}</span>

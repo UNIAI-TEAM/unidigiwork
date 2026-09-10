@@ -1,7 +1,7 @@
 # UI/UX refactor roadmap
 
-- [ ] Design tokens, typography and shared primitives
-- [ ] Desktop sidebar and topbar
-- [ ] Mobile shell and shared mobile controls
-- [ ] Home, My Box, Work Products and Auth presentation
-- [ ] Cross-route responsive and runtime verification
+- [x] Design tokens, typography and shared primitives
+- [x] Desktop sidebar and topbar
+- [x] Mobile shell and shared mobile controls
+- [x] Home, My Box, Work Products and Auth presentation
+- [x] Cross-route responsive and runtime verification
