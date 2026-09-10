@@ -13,6 +13,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useI18n } from "@/lib/i18n";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
+import { createAiSkillFromProposal } from "@/lib/api/ai-skills.functions";
 import {
   cancelAiAction,
   confirmAiAction,
@@ -97,6 +98,7 @@ function AiBrainPage() {
   const listFn = useServerFn(listAiActionProposals);
   const confirmFn = useServerFn(confirmAiAction);
   const cancelFn = useServerFn(cancelAiAction);
+  const learnSkillFn = useServerFn(createAiSkillFromProposal);
 
   const overview = useQuery({
     queryKey: ["ai-brain", "overview", workspaceId],
@@ -133,6 +135,18 @@ function AiBrainPage() {
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message || "Không thể bỏ qua đề xuất."),
+  });
+
+  // Học kỹ năng mới từ một đề xuất đã duyệt; kỹ năng được lưu thẳng vào Skill Hub.
+  const learnSkill = useMutation({
+    mutationFn: (proposalId: string) =>
+      learnSkillFn({ data: { proposalId, workspaceId: workspaceId ?? null } }),
+    onSuccess: (skill: { name?: string } | null | undefined) => {
+      toast.success(`Đã thêm kỹ năng "${skill?.name ?? "mới"}" vào Skill Hub.`);
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ["ai-skills"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không tạo được kỹ năng từ đề xuất này."),
   });
 
   // Mobile: thẻ đề xuất thu gọn mặc định, chạm để mở chi tiết.
@@ -334,6 +348,22 @@ function AiBrainPage() {
                       <span className="text-xs text-muted-foreground">
                         {new Date(e.createdAt).toLocaleString("vi-VN")}
                       </span>
+                      {e.status === "SUCCEEDED" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="min-h-11 w-full sm:w-auto"
+                          disabled={learnSkill.isPending}
+                          onClick={() => learnSkill.mutate(e.id)}
+                        >
+                          {learnSkill.isPending && learnSkill.variables === e.id ? (
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-1.5 h-4 w-4" />
+                          )}
+                          Học thành kỹ năng
+                        </Button>
+                      )}
                     </li>
                   ))}
                 </ul>
