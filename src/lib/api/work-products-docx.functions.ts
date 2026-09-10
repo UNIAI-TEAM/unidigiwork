@@ -2297,26 +2297,9 @@ export const proposeWorkGraphMatches = createServerFn({ method: "POST" })
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
       });
-      const t = (await result.text).trim();
-      const parts = (await result.content) as any[];
-      console.log(
-        "[wp-match] effort=",
-        effort,
-        "parts=",
-        JSON.stringify(parts.map((p) => ({ type: p.type, pm: p.providerMetadata?.openai }))).slice(
-          0,
-          600,
-        ),
-        "warnings=",
-        JSON.stringify(await result.warnings).slice(0, 400),
-        "body=",
-        JSON.stringify((await result.request)?.body).slice(0, 400),
-      );
-
-
-
-      return t;
+      return (await result.text).trim();
     };
+
 
 
     // Mô hình suy luận có thể trả về nội dung rỗng; thử lại một lần với mức suy luận cao hơn.
