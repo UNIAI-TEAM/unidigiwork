@@ -204,7 +204,7 @@ function MobileBoxPage() {
     );
 
   return (
-    <div className="flex min-h-full w-full min-w-0 max-w-full flex-col gap-5 overflow-x-hidden p-4 pb-24">
+    <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-5 overflow-x-hidden p-4 pb-24 md:p-8">
       <header>
         <p className="module-label text-brand-blue">Bảng điều hành thống nhất</p>
         <h1 className="mt-1 font-heading text-2xl font-bold">Không gian của tôi</h1>
@@ -269,7 +269,7 @@ function MobileBoxPage() {
                   else hide(it.key);
                 }}
               >
-                <div className="grid w-full min-w-0 max-w-full grid-cols-[minmax(0,1fr)_44px] items-stretch gap-2 overflow-hidden bg-background">
+                <div className="grid w-full min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2 overflow-hidden bg-background">
                   <MobileListItem
                     title={it.title}
                     subtitle={it.subtitle}
@@ -278,24 +278,26 @@ function MobileBoxPage() {
                     onClick={it.onOpen}
                     className="min-h-16 min-w-0 max-w-full rounded-2xl"
                   />
-                  <div className="grid w-11 shrink-0 grid-rows-[44px_44px] gap-1">
+                  <div className="flex shrink-0 flex-col gap-1 md:flex-row md:items-center md:gap-1.5">
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-11 w-11 rounded-xl"
+                      className="h-11 w-11 rounded-xl md:w-auto md:px-3.5"
                       aria-label="Mở"
                       onClick={it.onOpen}
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4 md:mr-1.5" />
+                      <span className="hidden text-sm md:inline">Mở</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-11 w-11 rounded-xl"
+                      className="h-11 w-11 rounded-xl md:w-auto md:px-3.5"
                       aria-label="Chia sẻ"
                       onClick={() => void share(it)}
                     >
-                      <Share2 className="h-4 w-4" />
+                      <Share2 className="h-4 w-4 md:mr-1.5" />
+                      <span className="hidden text-sm md:inline">Chia sẻ</span>
                     </Button>
                   </div>
                 </div>
