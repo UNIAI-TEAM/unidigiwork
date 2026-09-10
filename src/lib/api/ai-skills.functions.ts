@@ -473,7 +473,25 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       title: string;
       agenda: string | null;
       start_at: string;
+      end_at: string | null;
+      location: string | null;
+      status: string | null;
+      project_id: string | null;
     }[];
+    // Tên dự án của các cuộc họp, để đề xuất bám lịch họp thật.
+    const meetingProjectIds = Array.from(
+      new Set(meetings.map((m) => m.project_id).filter((v): v is string => Boolean(v))),
+    );
+    const meetingProjectName = new Map<string, string>();
+    if (meetingProjectIds.length) {
+      const projRes = await context.supabase
+        .from("projects")
+        .select("id, name")
+        .in("id", meetingProjectIds);
+      for (const p of (projRes.data ?? []) as { id: string; name: string }[]) {
+        meetingProjectName.set(p.id, p.name);
+      }
+    }
     const notifs = (notifsRes.data ?? []) as { type: string; title: string }[];
     const proposals = (proposalsRes.data ?? []) as { title: string; action_type: string }[];
     const existing = (skillRes.data ?? []) as { code: string; name: string }[];
