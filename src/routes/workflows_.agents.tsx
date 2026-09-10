@@ -696,6 +696,7 @@ function AgentBuilderPage() {
                   <li className="text-muted-foreground">Chưa có lần chạy nào.</li>
                 )}
               </ul>
+              </section>
             </aside>
           </div>
         </main>
