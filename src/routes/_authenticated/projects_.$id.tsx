@@ -175,6 +175,42 @@ function ProjectDetailPage() {
     queryFn: () => getProjectActivity({ data: { projectId: id, limit: 60 } }),
   });
 
+  // Lịch họp thật của dự án.
+  const meetingsQuery = useQuery({
+    queryKey: ["project", id, "meetings"],
+    queryFn: () => listProjectMeetings({ data: { projectId: id } }),
+  });
+  const scheduleMeetingFn = useServerFn(scheduleProjectMeeting);
+  const [mTitle, setMTitle] = useState("");
+  const [mStart, setMStart] = useState("");
+  const [mEnd, setMEnd] = useState("");
+  const [mLocation, setMLocation] = useState("");
+  const [mAgenda, setMAgenda] = useState("");
+  const createMeeting = useMutation({
+    mutationFn: async () =>
+      scheduleMeetingFn({
+        data: {
+          projectId: id,
+          title: mTitle.trim(),
+          startAt: mStart,
+          endAt: mEnd,
+          location: mLocation.trim() || null,
+          agenda: mAgenda.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Đã thêm lịch họp vào dự án");
+      setMTitle("");
+      setMStart("");
+      setMEnd("");
+      setMLocation("");
+      setMAgenda("");
+      qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không thêm được lịch họp"),
+  });
+
   const skillsQuery = useQuery({
     queryKey: ["ai-skills", project?.workspace_id ?? null],
     queryFn: () => listAiSkills({ data: { workspaceId: project?.workspace_id ?? null } }),
