@@ -473,15 +473,15 @@ function HomePage() {
 
         <div className="w-full min-w-0 flex-1 bg-command-canvas px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-6 overflow-x-hidden">
-           <header className="grid min-w-0 grid-cols-1 items-end gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
-            <div>
-              <p className="module-label text-command-accent">Bảng điều hành thống nhất</p>
-              <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">
-                Không gian của tôi
-              </h1>
-              <p className="mt-1 text-sm font-medium text-foreground">{greeting()}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-            </div>
+            <header className="grid min-w-0 grid-cols-1 items-end gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
+              <div>
+                <p className="module-label text-command-accent">Bảng điều hành thống nhất</p>
+                <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">
+                  Không gian của tôi
+                </h1>
+                <p className="mt-1 text-sm font-medium text-foreground">{greeting()}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+              </div>
              <div className="flex min-w-0 flex-wrap gap-2 xl:justify-end">
               <button
                 type="button"
@@ -546,33 +546,33 @@ function HomePage() {
               </button>
             </div>
           ) : (
-             <div className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
+            <div className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
               {visible.map((key) => (
-                 <div key={key} className={cn("min-w-0", spanClass(key, prefs.layout))}>
+                <div key={key} className={cn("min-w-0", spanClass(key, prefs.layout))}>
                   {blocks[key]}
-          </div>
-        </div>
+                </div>
               ))}
             </div>
           )}
 
-          {data?.partial.length ? (
-            <p className="text-xs text-muted-foreground">
-              Một số nguồn tạm thời không khả dụng:{" "}
-              {data.partial
-                .map((p) =>
-                  p === "unread"
-                    ? "số liệu chưa đọc"
-                    : p === "tasks"
-                      ? "công việc"
-                      : p === "upcoming"
-                        ? "lịch sắp tới"
-                        : p,
-                )
-                .join(", ")}
-              . Dữ liệu còn lại vẫn hiển thị bình thường.
-            </p>
-          ) : null}
+            {data?.partial.length ? (
+              <p className="text-xs text-muted-foreground">
+                Một số nguồn tạm thời không khả dụng:{" "}
+                {data.partial
+                  .map((p) =>
+                    p === "unread"
+                      ? "số liệu chưa đọc"
+                      : p === "tasks"
+                        ? "công việc"
+                        : p === "upcoming"
+                          ? "lịch sắp tới"
+                          : p,
+                  )
+                  .join(", ")}
+                . Dữ liệu còn lại vẫn hiển thị bình thường.
+              </p>
+            ) : null}
+          </div>
         </div>
       </main>
     </div>
