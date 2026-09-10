@@ -570,7 +570,7 @@ function ProjectDetailPage() {
                   <section className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h2 className="flex items-center gap-2 font-semibold">
-                        <History className="h-4 w-4 text-primary" /> Dòng thời gian hoạt động
+                        <HistoryIcon className="h-4 w-4 text-primary" /> Dòng thời gian hoạt động
                       </h2>
                       {activityQuery.data && (
                         <span className="text-xs text-muted-foreground">
