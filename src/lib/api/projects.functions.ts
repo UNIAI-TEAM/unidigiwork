@@ -4,13 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapPgError } from "./business.server";
 
-export const PROJECT_STATUSES = [
-  "planning",
-  "active",
-  "on_hold",
-  "completed",
-  "canceled",
-] as const;
+export const PROJECT_STATUSES = ["planning", "active", "on_hold", "completed", "canceled"] as const;
 
 const statusSchema = z.enum(PROJECT_STATUSES);
 

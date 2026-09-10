@@ -142,9 +142,7 @@ function ProjectDetailPage() {
                           {t.title}
                         </span>
                         <span className="flex shrink-0 items-center gap-1.5">
-                          <Badge variant="outline">
-                            {TASK_STATUS_LABEL[t.status] ?? t.status}
-                          </Badge>
+                          <Badge variant="outline">{TASK_STATUS_LABEL[t.status] ?? t.status}</Badge>
                           {t.due_at && (
                             <span className="text-xs text-muted-foreground">
                               {new Date(t.due_at).toLocaleDateString("vi-VN")}
