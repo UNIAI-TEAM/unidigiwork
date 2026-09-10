@@ -1,5 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Check, CaseSensitive, Contrast, Minus, Moon, Palette, Plus, Sun, Type } from "lucide-react";
+import {
+  Check,
+  CaseSensitive,
+  Contrast,
+  Minus,
+  Moon,
+  Palette,
+  Plus,
+  Sun,
+  Type,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUiPrefs, saveUiPrefs } from "@/lib/api/user-ui-prefs.functions";
 import {
@@ -109,8 +119,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (prefs) {
           setTheme(prefs.theme);
           if (TONES.some((t) => t.id === prefs.tone)) setTone(prefs.tone);
-          if (prefs.contrast === "high" || prefs.contrast === "normal")
-            setContrast(prefs.contrast);
+          if (prefs.contrast === "high" || prefs.contrast === "normal") setContrast(prefs.contrast);
           if (prefs.fontScale && FONT_SCALES.some((f) => f.id === prefs.fontScale))
             setFontScale(prefs.fontScale);
           if (prefs.fontFamily && FONT_FAMILIES.some((f) => f.id === prefs.fontFamily))
@@ -250,8 +259,16 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 }
 
 export function ToneToggle({ className = "" }: { className?: string }) {
-  const { tone, setTone, contrast, setContrast, fontScale, setFontScale, fontFamily, setFontFamily } =
-    useTheme();
+  const {
+    tone,
+    setTone,
+    contrast,
+    setContrast,
+    fontScale,
+    setFontScale,
+    fontFamily,
+    setFontFamily,
+  } = useTheme();
   const active = TONES.find((t) => t.id === tone) ?? TONES[0];
   const scaleIndex = FONT_SCALES.findIndex((f) => f.id === fontScale);
   const step = (delta: number) => {
