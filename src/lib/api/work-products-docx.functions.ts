@@ -1906,7 +1906,175 @@ export const getDocxRecognitionReport = createServerFn({ method: "GET" })
     };
   });
 
-/* ------------------------------------- hồ sơ nhận diện Word theo tổ chức */
+/**
+ * Tự tính trọng số nhận diện từ nội dung tài liệu Word thật của tổ chức.
+ * Đọc các đoạn đã nhận diện, tìm dấu hiệu bị bỏ sót hoặc nhận diện quá tay,
+ * rồi trả về bộ trọng số đề xuất kèm lý do cho từng loại.
+ */
+export const suggestDocxWeightsFromContent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        id: z.string().uuid().optional(),
+        weights: weightsSchema.optional(),
+        limit: z.number().int().min(100).max(5000).default(3000),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    // RLS giới hạn theo tổ chức. Có id thì chỉ học từ tài liệu đó.
+    let q = context.supabase
+      .from("work_product_blocks")
+      .select("work_product_id, block_type, text, source_anchor")
+      .limit(data.limit);
+    if (data.id) q = q.eq("work_product_id", data.id);
+    const { data: rows, error } = await q;
+    if (error) mapPgError(error);
+
+    const blocks = ((rows ?? []) as any[]).map((b) => ({
+      productId: String(b.work_product_id),
+      role: String((b.source_anchor ?? {}).role ?? b.block_type ?? "PARAGRAPH"),
+      score: typeof (b.source_anchor ?? {}).score === "number" ? (b.source_anchor.score as number) : null,
+      text: String(b.text ?? ""),
+    }));
+    if (!blocks.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_DOCX_CONTENT" });
+
+    const current = (await import("./docx-profile.server")).normalizeProfileWeights(data.weights);
+
+    type Key = keyof typeof current;
+    const roleOfKey: Record<Key, string> = {
+      title: "TITLE",
+      heading: "HEADING",
+      listItem: "LIST_ITEM",
+      quote: "QUOTE",
+      caption: "CAPTION",
+      table: "TABLE",
+    };
+
+    // Dấu hiệu nội dung: đoạn nào "trông giống" loại nào nhưng lại bị xếp là đoạn văn.
+    const looksLike: Record<Key, (t: string) => boolean> = {
+      title: (t) => t.length <= 90 && /^[^a-zà-ỹ]{6,}$/u.test(t.replace(/\s+/g, " ").trim()),
+      heading: (t) =>
+        t.length <= 120 &&
+        /^(\d+(\.\d+)*[.)]?\s+|(chương|phần|mục|điều|section|chapter)\s)/iu.test(t.trim()),
+      listItem: (t) => /^\s*([-–—•*+]|\(?\d{1,2}[.)]|[a-zà-ỹ][.)])\s+/iu.test(t),
+      quote: (t) => /^\s*[">“«]/u.test(t) || /^\s*(trích|theo\s+\w+\s+cho\s+biết)/iu.test(t),
+      caption: (t) =>
+        t.length <= 160 &&
+        /^\s*(hình|bảng|biểu|sơ đồ|ảnh|figure|table|chart)\s*\d*\s*[:.\-–]/iu.test(t),
+      table: (t) => (t.match(/\|/g) ?? []).length >= 2 || /\t.*\t/.test(t),
+    };
+
+    const counts = new Map<string, { blocks: number; scored: number; scoreSum: number; low: number }>();
+    for (const b of blocks) {
+      const c = counts.get(b.role) ?? { blocks: 0, scored: 0, scoreSum: 0, low: 0 };
+      c.blocks += 1;
+      if (b.score !== null) {
+        c.scored += 1;
+        c.scoreSum += b.score;
+        if (b.score < 1) c.low += 1;
+      }
+      counts.set(b.role, c);
+    }
+
+    const paragraphs = blocks.filter((b) => b.role === "PARAGRAPH" || b.role === "OTHER");
+    const missed: Record<string, number> = {};
+    for (const p of paragraphs) {
+      for (const key of Object.keys(current) as Key[]) {
+        if (looksLike[key](p.text)) missed[key] = (missed[key] ?? 0) + 1;
+      }
+    }
+
+    // Đề xuất AI đã được duyệt hay bị từ chối theo từng loại: dấu hiệu nhận diện đúng hay sai.
+    const opsQuery = context.supabase
+      .from("work_product_change_ops")
+      .select("source_anchor, status, work_product_id")
+      .eq("origin", "AI")
+      .limit(1000);
+    const { data: opRows } = data.id ? await opsQuery.eq("work_product_id", data.id) : await opsQuery;
+    const decided = new Map<string, { ok: number; bad: number }>();
+    for (const o of (opRows ?? []) as any[]) {
+      const role = String((o.source_anchor ?? {}).role ?? "PARAGRAPH");
+      const d = decided.get(role) ?? { ok: 0, bad: 0 };
+      if (o.status === "ACCEPTED" || o.status === "APPLIED") d.ok += 1;
+      else if (o.status === "REJECTED") d.bad += 1;
+      decided.set(role, d);
+    }
+
+    const round1 = (n: number) => Math.round(Math.min(2, Math.max(0, n)) * 10) / 10;
+    const changes: Array<{
+      key: string;
+      role: string;
+      from: number;
+      to: number;
+      reason: string;
+    }> = [];
+    const next = { ...current };
+
+    for (const key of Object.keys(current) as Key[]) {
+      const role = roleOfKey[key];
+      const stat = counts.get(role) ?? { blocks: 0, scored: 0, scoreSum: 0, low: 0 };
+      const avg = stat.scored ? stat.scoreSum / stat.scored : null;
+      const miss = missed[key] ?? 0;
+      const dec = decided.get(role) ?? { ok: 0, bad: 0 };
+      const total = dec.ok + dec.bad;
+      const accuracy = total >= 2 ? dec.ok / total : null;
+
+      let delta = 0;
+      const reasons: string[] = [];
+
+      // Bỏ sót: nhiều đoạn trông giống loại này nhưng vẫn bị xếp là đoạn văn → tăng trọng số.
+      if (miss >= 3 || (miss >= 1 && stat.blocks === 0)) {
+        delta += miss >= 8 ? 0.4 : 0.2;
+        reasons.push(`${miss} đoạn có dấu hiệu ${role} nhưng đang bị đọc là đoạn văn`);
+      }
+      // Nhận diện yếu (điểm thấp) → tăng nhẹ.
+      if (avg !== null && avg < 1.2 && stat.blocks > 0) {
+        delta += 0.1;
+        reasons.push(`điểm nhận diện trung bình thấp (${Math.round(avg * 100) / 100})`);
+      }
+      // AI hay bị từ chối ở loại này → tăng để nhận diện chắc hơn.
+      if (accuracy !== null && accuracy < 0.6) {
+        delta += 0.1;
+        reasons.push(`đề xuất trên loại này bị từ chối nhiều (${Math.round(accuracy * 100)}% đúng)`);
+      }
+      // Nhận diện quá tay: rất nhiều đoạn được gán loại này mà điểm rất cao và không bỏ sót → giảm.
+      if (
+        miss === 0 &&
+        avg !== null &&
+        avg >= 2 &&
+        stat.blocks > blocks.length * 0.4 &&
+        current[key] > 0.6
+      ) {
+        delta -= 0.2;
+        reasons.push("loại này chiếm phần lớn tài liệu, có thể đang nhận diện quá rộng");
+      }
+
+      const to = round1(current[key] + delta);
+      if (to !== current[key]) {
+        next[key] = to;
+        changes.push({
+          key,
+          role,
+          from: current[key],
+          to,
+          reason: reasons.join("; ") || "điều chỉnh theo nội dung tài liệu",
+        });
+      }
+    }
+
+    return {
+      weights: next,
+      changes,
+      analyzedBlocks: blocks.length,
+      analyzedDocuments: new Set(blocks.map((b) => b.productId)).size,
+      scope: data.id ? ("THIS" as const) : ("ALL" as const),
+    };
+  });
+
 
 /** Đọc hồ sơ nhận diện của tổ chức đang làm việc, kèm quyền chỉnh sửa. */
 export const getTenantDocxProfile = createServerFn({ method: "POST" })
