@@ -5,16 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Loader2,
-  Pencil,
-  Plus,
-  Sparkles,
-  Trash2,
-  Upload,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Plus, Sparkles, Trash2, Upload, Zap } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,8 +59,7 @@ export const Route = createFileRoute("/_authenticated/ai-brain_/skills")({
       { property: "og:title", content: "Skill Hub — UNIWORK" },
       {
         property: "og:description",
-        content:
-          "Thư viện kỹ năng AI của tổ chức: bật, tắt, chỉnh sửa và để AI soạn kỹ năng mới.",
+        content: "Thư viện kỹ năng AI của tổ chức: bật, tắt, chỉnh sửa và để AI soạn kỹ năng mới.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -172,7 +162,11 @@ function SkillHubPage() {
   const groups = useMemo(
     () => [
       { key: "mine", label: "Kỹ năng của tổ chức", rows: rows.filter((r) => !r.is_system) },
-      { key: "system", label: "Kỹ năng do UNIWORK cung cấp", rows: rows.filter((r) => r.is_system) },
+      {
+        key: "system",
+        label: "Kỹ năng do UNIWORK cung cấp",
+        rows: rows.filter((r) => r.is_system),
+      },
     ],
     [rows],
   );
