@@ -701,6 +701,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         `code: CHỮ HOA A-Z 0-9 _ (2-40 ký tự), không trùng kỹ năng đã có. kind ∈ ${AI_SKILL_KINDS.join("|")}. ` +
         `actionTypes: chỉ trong ${AI_ACTION_TYPES.join(",")}; rỗng nếu chỉ tra cứu/phân tích/soạn thảo. ` +
         "Ưu tiên các kỹ năng bám sát TIẾN ĐỘ THỰC TẾ: việc quá hạn, việc bị chặn, việc ì ạch không cập nhật, việc sắp đến hạn, việc thiếu hạn. " +
+        "Đọc kỹ DÒNG THỜI GIAN HOẠT ĐỘNG để hiểu ai thường làm gì, vào lúc nào và kết quả ra sao; ưu tiên kỹ năng lặp lại theo thói quen làm việc thật đó. " +
         "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ).",
       prompt: corpus,
     });
