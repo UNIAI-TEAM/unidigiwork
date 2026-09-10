@@ -29,11 +29,12 @@ import {
 } from "@/components/ui/select";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useI18n } from "@/lib/i18n";
-import { getMyIsAdmin } from "@/lib/api/admin.functions";
 import {
   deleteAiSkill,
+  getAiSkillsPermission,
   listAiSkills,
   saveAiSkill,
+  seedDefaultAiSkills,
   setAiSkillEnabled,
 } from "@/lib/api/ai-skills.functions";
 import { AI_ACTION_TYPES, type AiActionType } from "@/domain/ai-actions/contracts";
@@ -107,18 +108,19 @@ function AiBrainSkillsPage() {
   const toggleFn = useServerFn(setAiSkillEnabled);
   const saveFn = useServerFn(saveAiSkill);
   const deleteFn = useServerFn(deleteAiSkill);
+  const permFn = useServerFn(getAiSkillsPermission);
+  const seedFn = useServerFn(seedDefaultAiSkills);
 
-  const admin = useQuery({
-    queryKey: ["admin", "isAdmin"],
-    queryFn: () => getMyIsAdmin(),
+  const perm = useQuery({
+    queryKey: ["ai-brain", "skills-permission", workspaceId],
+    queryFn: () => permFn({ data: { workspaceId: workspaceId ?? null } }),
     staleTime: 60_000,
   });
-  const canEdit = admin.data?.isAdmin === true;
+  const canEdit = perm.data?.canEdit === true;
 
   const skills = useQuery({
     queryKey: ["ai-brain", "skills", workspaceId],
-    queryFn: () => listFn({ data: { workspaceId: workspaceId as string } }),
-    enabled: !!workspaceId,
+    queryFn: () => listFn({ data: { workspaceId: workspaceId ?? null } }),
   });
 
   const invalidate = () => {
@@ -143,7 +145,7 @@ function AiBrainSkillsPage() {
       saveFn({
         data: {
           id: form.id,
-          workspaceId: workspaceId as string,
+          workspaceId: workspaceId ?? null,
           scopeWorkspaceId: null,
           code: form.code.trim().toUpperCase(),
           name: form.name.trim(),
@@ -161,6 +163,15 @@ function AiBrainSkillsPage() {
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message || "Không lưu được kỹ năng."),
+  });
+
+  const seed = useMutation({
+    mutationFn: () => seedFn({ data: { workspaceId: workspaceId ?? null } }),
+    onSuccess: (r: { inserted: number }) => {
+      toast.success(`Đã nạp ${r.inserted} kỹ năng mặc định.`);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "Không nạp được kỹ năng mặc định."),
   });
 
   const remove = useMutation({
@@ -269,9 +280,19 @@ function AiBrainSkillsPage() {
           )}
 
           {!skills.isLoading && grouped.length === 0 && (
-            <p className="mt-5 rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-              {t("aiBrain.skills.empty")}
-            </p>
+            <div className="mt-5 rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+              <p>{t("aiBrain.skills.empty")}</p>
+              {canEdit && (
+                <Button
+                  className="mt-3 min-h-11 w-full sm:w-auto"
+                  disabled={seed.isPending}
+                  onClick={() => seed.mutate()}
+                >
+                  {seed.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+                  Nạp kỹ năng mặc định
+                </Button>
+              )}
+            </div>
           )}
 
           <div className="mt-5 space-y-6">
