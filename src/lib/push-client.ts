@@ -27,14 +27,27 @@ export function pushPermission(): NotificationPermission | "unsupported" {
   return Notification.permission;
 }
 
+/**
+ * Ưu tiên service worker chính của ứng dụng (đã nhúng xử lý thông báo đẩy).
+ * Chỉ khi không có (bản xem trước/dev) mới dùng worker đẩy riêng ở "/push/".
+ */
+async function resolveRegistration(create: boolean): Promise<ServiceWorkerRegistration | null> {
+  const root = await navigator.serviceWorker.getRegistration("/");
+  if (root) return root;
+  const scoped = await navigator.serviceWorker.getRegistration(SW_SCOPE);
+  if (scoped) return scoped;
+  if (!create) return null;
+  return navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
+}
+
 export async function getPushRegistration(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported()) return null;
-  return navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
+  return resolveRegistration(true);
 }
 
 export async function getExistingSubscription(): Promise<PushSubscription | null> {
   if (!isPushSupported()) return null;
-  const reg = await navigator.serviceWorker.getRegistration(SW_SCOPE);
+  const reg = await resolveRegistration(false);
   if (!reg) return null;
   return reg.pushManager.getSubscription();
 }
@@ -61,7 +74,7 @@ export async function subscribeToPush(vapidPublicKey: string): Promise<Serialize
   const permission = await Notification.requestPermission();
   if (permission !== "granted")
     throw new Error("Bạn cần cho phép quyền thông báo trong trình duyệt");
-  const reg = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
+  const reg = (await resolveRegistration(true))!;
   if (!reg.active) {
     await new Promise<void>((resolve) => {
       const sw = reg.installing ?? reg.waiting;
