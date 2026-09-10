@@ -20,7 +20,10 @@ import {
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
 
 const fail = (code: string, message?: string) =>
-  new ApiError({ code: code as never, message: message ?? ACTION_ERROR_MESSAGE[code] ?? "Không thể thực hiện hành động." });
+  new ApiError({
+    code: code as never,
+    message: message ?? ACTION_ERROR_MESSAGE[code] ?? "Không thể thực hiện hành động.",
+  });
 
 const ProposeSchema = z.object({
   query: z.string().min(2).max(500),
@@ -30,7 +33,15 @@ const ProposeSchema = z.object({
   targetTaskId: z.string().uuid().nullish(),
   rootEntity: z.object({ type: z.string().max(40), id: z.string().uuid() }).nullish(),
   sourceRefs: z
-    .array(z.object({ sourceId: z.string().max(20), entityType: z.string().max(40), entityId: z.string().uuid(), title: z.string().max(300), href: z.string().max(300) }))
+    .array(
+      z.object({
+        sourceId: z.string().max(20),
+        entityType: z.string().max(40),
+        entityId: z.string().uuid(),
+        title: z.string().max(300),
+        href: z.string().max(300),
+      }),
+    )
     .max(10)
     .optional(),
 });
@@ -58,9 +69,13 @@ export const proposeAiAction = createServerFn({ method: "POST" })
       );
     }
     const actionType: AiActionType | null =
-      (data.actionType as AiActionType | null | undefined) ?? (intent.kind === "PROPOSE" ? intent.actionType : null);
+      (data.actionType as AiActionType | null | undefined) ??
+      (intent.kind === "PROPOSE" ? intent.actionType : null);
     if (!actionType || !isAllowedActionType(actionType)) {
-      throw fail("ACTION_TYPE_NOT_ALLOWED", "Hãy nêu rõ hành động: tạo công việc, cập nhật công việc, đặt lịch họp hoặc soạn thư nháp.");
+      throw fail(
+        "ACTION_TYPE_NOT_ALLOWED",
+        "Hãy nêu rõ hành động: tạo công việc, cập nhật công việc, đặt lịch họp hoặc soạn thư nháp.",
+      );
     }
 
     const tenantId = getCookie(ACTIVE_TENANT_COOKIE) ?? null;
@@ -80,7 +95,11 @@ export const proposeAiAction = createServerFn({ method: "POST" })
         contextBlock = renderContextForModel(pack).slice(0, 6000);
         if (sourceRefs.length === 0) {
           sourceRefs = (pack.sources ?? []).slice(0, 5).map((s: any) => ({
-            sourceId: s.sourceId, entityType: s.entityType, entityId: s.entityId, title: s.title, href: s.href,
+            sourceId: s.sourceId,
+            entityType: s.entityType,
+            entityId: s.entityId,
+            title: s.title,
+            href: s.href,
           }));
         }
       } catch {
@@ -90,7 +109,11 @@ export const proposeAiAction = createServerFn({ method: "POST" })
 
     const { fields } = await extractActionFields(actionType, data.query, contextBlock);
     const people = await listWorkspacePeople(context as never, scope.workspaceId);
-    const wsRow = await context.supabase.from("workspaces").select("name").eq("id", scope.workspaceId).maybeSingle();
+    const wsRow = await context.supabase
+      .from("workspaces")
+      .select("name")
+      .eq("id", scope.workspaceId)
+      .maybeSingle();
 
     const ambiguities: ProposedAiAction["ambiguities"] = [];
     let assigneeId: string | null = null;
@@ -101,9 +124,17 @@ export const proposeAiAction = createServerFn({ method: "POST" })
         assigneeId = hits[0]!.id;
         assigneeLabel = hits[0]!.label;
       } else if (hits.length > 1) {
-        ambiguities.push({ field: "assigneeId", message: `Có ${hits.length} người khớp "${fields.assigneeName}". Hãy chọn một người.`, candidates: hits });
+        ambiguities.push({
+          field: "assigneeId",
+          message: `Có ${hits.length} người khớp "${fields.assigneeName}". Hãy chọn một người.`,
+          candidates: hits,
+        });
       } else {
-        ambiguities.push({ field: "assigneeId", message: `Không tìm thấy "${fields.assigneeName}" trong workspace. Hãy chọn người phụ trách.`, candidates: people.slice(0, 20).map((p) => ({ id: p.id, label: p.label })) });
+        ambiguities.push({
+          field: "assigneeId",
+          message: `Không tìm thấy "${fields.assigneeName}" trong workspace. Hãy chọn người phụ trách.`,
+          candidates: people.slice(0, 20).map((p) => ({ id: p.id, label: p.label })),
+        });
       }
     }
 
@@ -125,7 +156,8 @@ export const proposeAiAction = createServerFn({ method: "POST" })
         assigneeId,
       };
     } else if (actionType === "UPDATE_TASK_FIELDS") {
-      const taskId = data.targetTaskId ?? (data.rootEntity?.type === "TASK" ? data.rootEntity.id : null);
+      const taskId =
+        data.targetTaskId ?? (data.rootEntity?.type === "TASK" ? data.rootEntity.id : null);
       if (!taskId) throw fail("ACTION_NOT_FOUND", "Hãy mở công việc cần cập nhật rồi yêu cầu UNI.");
       const { readTaskTarget } = await import("./ai-actions.server");
       const task = await readTaskTarget(context as never, taskId);
@@ -143,10 +175,16 @@ export const proposeAiAction = createServerFn({ method: "POST" })
     } else if (actionType === "CREATE_MEETING") {
       const startAt = dueAt ?? null;
       if (!startAt) {
-        ambiguities.push({ field: "startAt", message: "Chưa rõ thời điểm họp. Hãy chọn ngày giờ bắt đầu.", candidates: [] });
+        ambiguities.push({
+          field: "startAt",
+          message: "Chưa rõ thời điểm họp. Hãy chọn ngày giờ bắt đầu.",
+          candidates: [],
+        });
       }
       const duration = fields.durationMinutes ?? 60;
-      const end = startAt ? new Date(new Date(startAt).getTime() + duration * 60_000).toISOString() : null;
+      const end = startAt
+        ? new Date(new Date(startAt).getTime() + duration * 60_000).toISOString()
+        : null;
       const participantIds: string[] = [];
       for (const name of fields.participantNames ?? []) {
         const hits = matchPeople(people, name);
@@ -154,7 +192,11 @@ export const proposeAiAction = createServerFn({ method: "POST" })
           participantIds.push(hits[0]!.id);
           participantLabels.push(hits[0]!.label);
         } else if (hits.length > 1) {
-          ambiguities.push({ field: "participantIds", message: `Có ${hits.length} người khớp "${name}". Hãy chọn.`, candidates: hits });
+          ambiguities.push({
+            field: "participantIds",
+            message: `Có ${hits.length} người khớp "${name}". Hãy chọn.`,
+            candidates: hits,
+          });
         }
       }
       payload = {
@@ -174,7 +216,13 @@ export const proposeAiAction = createServerFn({ method: "POST" })
         body: fields.body ?? fields.description ?? "",
       };
       if (emails.length === 0) {
-        ambiguities.push({ field: "to", message: "Chưa rõ người nhận. Hãy nhập email trước khi xác nhận.", candidates: people.slice(0, 20).map((p) => ({ id: p.email, label: `${p.label} · ${p.email}` })) });
+        ambiguities.push({
+          field: "to",
+          message: "Chưa rõ người nhận. Hãy nhập email trước khi xác nhận.",
+          candidates: people
+            .slice(0, 20)
+            .map((p) => ({ id: p.email, label: `${p.label} · ${p.email}` })),
+        });
       }
     }
 
@@ -253,13 +301,19 @@ export const confirmAiAction = createServerFn({ method: "POST" })
     const { resolveActorWorkspace, executorFor } = await import("./ai-actions.server");
     const sb = context.supabase;
 
-    const { data: row } = await sb.from("ai_action_proposals").select("*").eq("id", data.actionId).maybeSingle();
+    const { data: row } = await sb
+      .from("ai_action_proposals")
+      .select("*")
+      .eq("id", data.actionId)
+      .maybeSingle();
     if (!row || row.user_id !== context.userId) throw fail("ACTION_NOT_FOUND");
 
     // Replay: cùng actionId đã chạy xong → trả kết quả cũ, không tạo bản ghi mới (§47).
-    if (row.status === "SUCCEEDED" && row.result) return row.result as unknown as AiActionExecutionResult;
+    if (row.status === "SUCCEEDED" && row.result)
+      return row.result as unknown as AiActionExecutionResult;
     if (row.status === "CANCELLED") throw fail("ACTION_NOT_FOUND", "Đề xuất đã bị huỷ.");
-    if (row.status === "EXECUTING") throw fail("ACTION_ALREADY_DONE", "Hành động đang được thực hiện.");
+    if (row.status === "EXECUTING")
+      throw fail("ACTION_ALREADY_DONE", "Hành động đang được thực hiện.");
     if (new Date(row.expires_at).getTime() < Date.now()) {
       await sb.from("ai_action_proposals").update({ status: "EXPIRED" }).eq("id", row.id);
       throw fail("ACTION_EXPIRED");
@@ -281,12 +335,21 @@ export const confirmAiAction = createServerFn({ method: "POST" })
 
     // Người phụ trách/người dự phải là thành viên workspace.
     const memberIds = new Set<string>();
-    const need = [payload["assigneeId"], ...((payload["participantIds"] as string[]) ?? [])].filter(Boolean) as string[];
+    const need = [payload["assigneeId"], ...((payload["participantIds"] as string[]) ?? [])].filter(
+      Boolean,
+    ) as string[];
     if (need.length) {
-      const { data: mem } = await sb.from("workspace_members").select("user_id").eq("workspace_id", scope.workspaceId).in("user_id", need);
+      const { data: mem } = await sb
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", scope.workspaceId)
+        .in("user_id", need);
       (mem ?? []).forEach((m: any) => memberIds.add(m.user_id));
-      if (payload["assigneeId"] && !memberIds.has(payload["assigneeId"] as string)) throw fail("ACTION_FORBIDDEN", "Người phụ trách không thuộc workspace này.");
-      payload["participantIds"] = ((payload["participantIds"] as string[]) ?? []).filter((id) => memberIds.has(id));
+      if (payload["assigneeId"] && !memberIds.has(payload["assigneeId"] as string))
+        throw fail("ACTION_FORBIDDEN", "Người phụ trách không thuộc workspace này.");
+      payload["participantIds"] = ((payload["participantIds"] as string[]) ?? []).filter((id) =>
+        memberIds.has(id),
+      );
     }
 
     // Kiểm tra trạng thái cũ của target (row version) trước khi ghi.
@@ -295,7 +358,10 @@ export const confirmAiAction = createServerFn({ method: "POST" })
       const task = await readTaskTarget(context as never, row.target_id);
       if (!task) throw fail("ACTION_NOT_FOUND", "Công việc không còn tồn tại.");
       if (row.expected_row_version != null && task.rowVersion !== row.expected_row_version) {
-        await sb.from("ai_action_proposals").update({ status: "FAILED", error_code: "ACTION_STALE" }).eq("id", row.id);
+        await sb
+          .from("ai_action_proposals")
+          .update({ status: "FAILED", error_code: "ACTION_STALE" })
+          .eq("id", row.id);
         throw fail("ACTION_STALE");
       }
     }
@@ -303,9 +369,12 @@ export const confirmAiAction = createServerFn({ method: "POST" })
     // WEE-2: đề xuất do nhân sự AI sinh ra phải qua lại cổng governance ở thời
     // điểm xác nhận — quyền/chính sách có thể đã đổi kể từ lúc đề xuất.
     if (row.ai_worker_id) {
-      const { loadWorkerRuntimePolicy, checkAiWorkerAction, logGovernanceDecision, objectTypeForTool } = await import(
-        "./ai-governance.server"
-      );
+      const {
+        loadWorkerRuntimePolicy,
+        checkAiWorkerAction,
+        logGovernanceDecision,
+        objectTypeForTool,
+      } = await import("./ai-governance.server");
       const worker = await loadWorkerRuntimePolicy(sb, row.ai_worker_id as string);
       const verdict = await checkAiWorkerAction({
         supabase: sb,
@@ -344,7 +413,11 @@ export const confirmAiAction = createServerFn({ method: "POST" })
       if (verdict.decision === "DENY") {
         await sb
           .from("ai_action_proposals")
-          .update({ status: "FAILED", error_code: "ACTION_FORBIDDEN", governance: verdict as never })
+          .update({
+            status: "FAILED",
+            error_code: "ACTION_FORBIDDEN",
+            governance: verdict as never,
+          })
           .eq("id", row.id);
         throw fail("ACTION_FORBIDDEN", verdict.safeReason);
       }
@@ -353,14 +426,23 @@ export const confirmAiAction = createServerFn({ method: "POST" })
     // Khoá trạng thái: chỉ một lượt xác nhận thắng (chống double-click §46).
     const { data: locked } = await sb
       .from("ai_action_proposals")
-      .update({ status: "EXECUTING", confirmed_at: new Date().toISOString(), payload: payload as never })
+      .update({
+        status: "EXECUTING",
+        confirmed_at: new Date().toISOString(),
+        payload: payload as never,
+      })
       .eq("id", row.id)
       .in("status", ["PROPOSED", "PREVIEWED", "FAILED"])
       .select("id")
       .maybeSingle();
     if (!locked) {
-      const { data: again } = await sb.from("ai_action_proposals").select("status, result").eq("id", row.id).maybeSingle();
-      if (again?.status === "SUCCEEDED" && again.result) return again.result as unknown as AiActionExecutionResult;
+      const { data: again } = await sb
+        .from("ai_action_proposals")
+        .select("status, result")
+        .eq("id", row.id)
+        .maybeSingle();
+      if (again?.status === "SUCCEEDED" && again.result)
+        return again.result as unknown as AiActionExecutionResult;
       throw fail("ACTION_ALREADY_DONE");
     }
 
@@ -399,15 +481,64 @@ export const confirmAiAction = createServerFn({ method: "POST" })
           final.message = `${final.message} · Đã gán agent "${assigned.agentName}"`;
         }
       }
+
+      // Sau khi thực thi thành công: tự động cập nhật tiến độ công việc liên quan
+      // (todo → in_progress) và ghi nhật ký vào bình luận công việc. Không bao giờ
+      // ghi đè trạng thái done/canceled/blocked, và lỗi ở đây không làm hỏng hành động.
+      if (result.status === "SUCCEEDED") {
+        const relatedTaskId =
+          row.target_type === "TASK" && row.target_id
+            ? (row.target_id as string)
+            : result.entityType === "TASK" && result.entityId
+              ? (result.entityId as string)
+              : null;
+
+        if (relatedTaskId) {
+          try {
+            const { data: task } = await sb
+              .from("tasks")
+              .select("id, status, row_version")
+              .eq("id", relatedTaskId)
+              .is("deleted_at", null)
+              .maybeSingle();
+            if (task) {
+              if (task.status === "todo") {
+                const { error: trErr } = await sb.rpc("transition_task", {
+                  _task_id: task.id,
+                  _to_status: "in_progress",
+                  _expected_row_version: task.row_version ?? undefined,
+                  _idempotency_key: `${row.idempotency_key}-progress`,
+                });
+                if (!trErr) final.message = `${final.message} · Tiến độ cập nhật: Đang làm`;
+              }
+              await sb.rpc("comment_task", {
+                _task_id: task.id,
+                _body: `🤖 AI đã thực hiện sau khi bạn duyệt: ${final.message}`,
+                _idempotency_key: `${row.idempotency_key}-comment`,
+              });
+            }
+          } catch {
+            // bỏ qua: cập nhật tiến độ là phụ trợ, không chặn kết quả chính
+          }
+        }
+      }
+
       await sb
         .from("ai_action_proposals")
-        .update({ status: "SUCCEEDED", executed_at: new Date().toISOString(), result: final as never })
+        .update({
+          status: "SUCCEEDED",
+          executed_at: new Date().toISOString(),
+          result: final as never,
+        })
         .eq("id", row.id);
       return final;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "UNKNOWN";
       const code = msg === "ACTION_STALE" ? "ACTION_STALE" : "ACTION_FAILED";
-      await sb.from("ai_action_proposals").update({ status: "FAILED", error_code: code }).eq("id", row.id);
+      await sb
+        .from("ai_action_proposals")
+        .update({ status: "FAILED", error_code: code })
+        .eq("id", row.id);
       if (code === "ACTION_STALE") throw fail("ACTION_STALE");
       throw new ApiError({
         code: "ACTION_FAILED" as never,
@@ -445,7 +576,11 @@ export const refreshAiActionProposal = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ actionId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<RefreshedAiActionPreview> => {
     const sb = context.supabase;
-    const { data: row } = await sb.from("ai_action_proposals").select("*").eq("id", data.actionId).maybeSingle();
+    const { data: row } = await sb
+      .from("ai_action_proposals")
+      .select("*")
+      .eq("id", data.actionId)
+      .maybeSingle();
     if (!row || row.user_id !== context.userId) throw fail("ACTION_NOT_FOUND");
     if (row.status === "SUCCEEDED") throw fail("ACTION_ALREADY_DONE");
     if (row.status === "CANCELLED") throw fail("ACTION_NOT_FOUND", "Đề xuất đã bị huỷ.");
@@ -488,7 +623,9 @@ export const refreshAiActionProposal = createServerFn({ method: "POST" })
 
 export const listAiActionProposals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ limit: z.number().int().min(1).max(50).default(10) }).parse(i ?? {}))
+  .inputValidator((i: unknown) =>
+    z.object({ limit: z.number().int().min(1).max(50).default(10) }).parse(i ?? {}),
+  )
   .handler(async ({ data, context }) => {
     const { data: rows } = await context.supabase
       .from("ai_action_proposals")
