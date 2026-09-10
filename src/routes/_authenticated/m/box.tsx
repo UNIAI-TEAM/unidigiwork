@@ -215,38 +215,54 @@ function MobileBoxPage() {
         </div>
       ) : (
         <ul className="grid gap-2">
-          {items.map((it) => (
-            <li key={it.key} className="flex items-stretch gap-2">
-              <MobileListItem
-                title={it.title}
-                subtitle={it.subtitle}
-                icon={icon(it.kind)}
-                priorityBar={it.priority ?? null}
-                onClick={it.onOpen}
-                className="min-h-16 flex-1 rounded-2xl"
-              />
-              {it.kind === "task" && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-auto w-12 shrink-0 rounded-2xl"
-                  aria-label="Đánh dấu hoàn tất"
-                  onClick={() => doneMut.mutate(it.key)}
-                >
-                  <CheckSquare className="h-4 w-4" />
-                </Button>
-              )}
-              {it.kind === "notification" && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-auto w-12 shrink-0 rounded-2xl"
-                  aria-label="Đánh dấu đã đọc"
-                  onClick={() => readMut.mutate([it.key])}
-                >
-                  <Bell className="h-4 w-4" />
-                </Button>
-              )}
+          {visibleItems.map((it) => (
+            <li key={it.key}>
+              <SwipeRow
+                rightLabel={it.kind === "notification" ? "Đã đọc" : "Duyệt"}
+                leftLabel="Hoãn"
+                onSwipeRight={() => {
+                  if (it.kind === "task") doneMut.mutate(it.key);
+                  else if (it.kind === "notification") readMut.mutate([it.key]);
+                  else it.onOpen();
+                }}
+                onSwipeLeft={() => {
+                  if (it.kind === "task") snoozeMut.mutate(it.key);
+                  else hide(it.key);
+                }}
+              >
+                <div className="flex items-stretch gap-2 bg-background">
+                  <MobileListItem
+                    title={it.title}
+                    subtitle={it.subtitle}
+                    icon={icon(it.kind)}
+                    priorityBar={it.priority ?? null}
+                    onClick={it.onOpen}
+                    className="min-h-16 flex-1 rounded-2xl"
+                  />
+                  {it.kind === "task" && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-auto w-12 shrink-0 rounded-2xl"
+                      aria-label="Đánh dấu hoàn tất"
+                      onClick={() => doneMut.mutate(it.key)}
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {it.kind === "notification" && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-auto w-12 shrink-0 rounded-2xl"
+                      aria-label="Đánh dấu đã đọc"
+                      onClick={() => readMut.mutate([it.key])}
+                    >
+                      <Bell className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </SwipeRow>
             </li>
           ))}
         </ul>
