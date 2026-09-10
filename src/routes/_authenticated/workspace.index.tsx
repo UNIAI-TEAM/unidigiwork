@@ -122,13 +122,15 @@ function WorkspaceManagePage() {
 
         <div className="mx-auto w-full max-w-none flex-1 px-4 py-6 sm:px-6">
           <header className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Không gian làm việc</h1>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                Không gian làm việc
+              </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Tạo, chỉnh sửa, lưu trữ workspace và phân quyền thành viên.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto [&>*]:min-h-11 [&>*]:flex-1 sm:[&>*]:flex-none">
               <Button variant="outline" asChild>
                 <Link to="/workspace/audit">
                   <History className="mr-1.5 h-4 w-4" /> Nhật ký
@@ -306,11 +308,7 @@ function WorkspaceManagePage() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="ws-edit-name">Tên workspace</Label>
-              <Input
-                id="ws-edit-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <Input id="ws-edit-name" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <TimezoneSelect value={timezone} onChange={setTimezone} />
             <div className="flex justify-end gap-2">
@@ -356,11 +354,7 @@ function WorkspaceManagePage() {
       </Dialog>
 
       {/* Phân quyền thành viên */}
-      <MembersDialog
-        workspace={membersOf}
-        onClose={() => setMembersOf(null)}
-        onChanged={refresh}
-      />
+      <MembersDialog workspace={membersOf} onClose={() => setMembersOf(null)} onChanged={refresh} />
     </div>
   );
 }
@@ -418,8 +412,7 @@ function MembersDialog({
   });
 
   const removeMut = useMutation({
-    mutationFn: (userId: string) =>
-      removeWorkspaceMember({ data: { workspaceId: wsId!, userId } }),
+    mutationFn: (userId: string) => removeWorkspaceMember({ data: { workspaceId: wsId!, userId } }),
     onSuccess: () => {
       toast.success("Đã gỡ thành viên");
       invalidate();

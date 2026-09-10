@@ -91,14 +91,14 @@ function AiWorkforcePage() {
             </Link>
           </div>
 
-          <nav className="mt-5 flex gap-1 border-b border-border text-sm">
+          <nav className="mt-5 -mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 text-sm sm:mx-0 sm:px-0 [scrollbar-width:none]">
             {TABS.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
                 className={cn(
-                  "-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 transition-colors",
+                  "-mb-px inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 transition-colors",
                   tab === item.id
                     ? "border-primary font-medium text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground",
