@@ -2,7 +2,7 @@
   "name": "UNIWORK",
   "short_name": "UNIWORK",
   "description": "Digital Workplace Platform — quản lý công việc, họp, email và đội nhóm trên mọi thiết bị.",
-  "start_url": "/m/home",
+  "start_url": "/welcome",
   "display": "standalone",
   "background_color": "#0b0d12",
   "theme_color": "#0b0d12",

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
 import { MobileUniCopilotButton } from "@/components/ai/uni-copilot-mobile";
+import { ThemeToggle } from "@/lib/theme";
 import { useEffect, useRef, useState } from "react";
 
 const TABS = [
@@ -178,7 +179,7 @@ function MobileTopbar() {
       </button>
 
       <div className="flex items-center gap-1">
-        <MobileUniCopilotButton workspaceId={workspaceId ?? null} />
+        <ThemeToggle className="grid h-9 w-9 place-items-center p-0" />
         <Link
           to="/m/search"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"
@@ -198,6 +199,9 @@ function MobileTopbar() {
             </span>
           )}
         </Link>
+        <div className="hidden">
+          <MobileUniCopilotButton workspaceId={workspaceId ?? null} />
+        </div>
       </div>
     </header>
   );

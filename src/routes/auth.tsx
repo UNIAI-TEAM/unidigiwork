@@ -5,15 +5,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
+const authDescription = "Đăng nhập hoặc tạo tài khoản UNIWORK bằng email.";
+
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Đăng nhập — UNIWORK" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    mode: search.mode === "signup" ? ("signup" as const) : undefined,
+  }),
+  head: () => ({
+    meta: [
+      { title: "Đăng nhập · UNIWORK" },
+      { name: "description", content: authDescription },
+      { property: "og:title", content: "Đăng nhập · UNIWORK" },
+      { property: "og:description", content: authDescription },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const { t } = useI18n();
+  const search = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup" | "code">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "code">(
+    search.mode === "signup" ? "signup" : "signin",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");

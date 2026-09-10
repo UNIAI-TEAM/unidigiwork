@@ -97,7 +97,7 @@ function MobileHomePage() {
                 title={m.title}
                 subtitle={formatDateLabel(m.start_at)}
                 icon={
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <CalendarDays className="h-4 w-4" />
                   </span>
                 }
@@ -172,7 +172,7 @@ function MobileHomePage() {
                 meta={formatRelative(n.created_at)}
                 priorityBar={notifPriority(n.type)}
                 icon={
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
                     <Bell className="h-4 w-4" />
                   </span>
                 }

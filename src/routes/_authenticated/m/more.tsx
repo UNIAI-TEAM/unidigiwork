@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { getMyIsAdmin } from "@/lib/api/admin.functions";
 import { MOBILE_MORE_ITEMS, NAV_GROUPS, isNavItemVisible } from "@/config/navigation";
+import { ThemeToggle, useTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/m/more")({
   head: () => ({
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/m/more")({
 
 function MorePage() {
   const { t } = useI18n();
+  const { theme } = useTheme();
   const { data } = useQuery({
     queryKey: ["admin", "isAdmin"],
     queryFn: () => getMyIsAdmin(),
@@ -77,6 +79,14 @@ function MorePage() {
           {t("nav.settings")}
         </h2>
         <ul className="grid gap-2">
+          <li className="flex min-h-14 items-center gap-3 rounded-xl border border-border bg-surface p-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2">
+              <ThemeToggle className="p-0" />
+            </span>
+            <span className="flex-1 font-medium">
+              {theme === "dark" ? "Giao diện tối" : "Giao diện sáng"}
+            </span>
+          </li>
           <li>
             <Row to="/settings" label={t("nav.settings")} icon={Settings} />
           </li>
