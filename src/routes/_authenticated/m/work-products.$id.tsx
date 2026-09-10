@@ -105,11 +105,15 @@ function MobileWorkProductDetail() {
   const documents = linked.filter((l) => l.entityType === "DOCUMENT");
   const meetings = linked
     .filter((l) => l.entityType === "MEETING")
-    .sort(
-      (a, b) =>
-        new Date(a.startsAt ?? 0).getTime() - new Date(b.startsAt ?? 0).getTime() ||
-        String(a.title).localeCompare(String(b.title)),
-    );
+    .sort((a, b) => {
+      if (!a.startsAt && !b.startsAt) return String(a.title).localeCompare(String(b.title));
+      if (!a.startsAt) return 1;
+      if (!b.startsAt) return -1;
+      return (
+        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime() ||
+        String(a.title).localeCompare(String(b.title))
+      );
+    });
   const following = Boolean((follow.data as any)?.following);
 
   const url = typeof window !== "undefined" ? `${window.location.origin}/work-products/${id}` : "";
@@ -147,8 +151,8 @@ function MobileWorkProductDetail() {
     );
 
   return (
-    <div className="flex min-h-full flex-col gap-4 pb-28">
-      <div className="relative">
+    <div className="flex min-h-full w-full min-w-0 max-w-full flex-col gap-4 overflow-x-hidden pb-28">
+      <div className="relative min-w-0 overflow-hidden">
         <img
           src={coverImage}
           alt=""
@@ -166,13 +170,13 @@ function MobileWorkProductDetail() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-4 px-4">
-        <header className="flex items-start gap-3">
+      <div className="flex w-full min-w-0 max-w-full flex-col gap-4 px-4">
+        <header className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
             <FileText className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-semibold leading-tight">{product.title}</h1>
+            <h1 className="break-words text-xl font-semibold leading-tight">{product.title}</h1>
             <p className="mt-1 text-xs text-muted-foreground">
               {product.business_type} · v{product.current_version ?? 1} ·{" "}
               {format(new Date(product.updated_at ?? product.created_at), "d MMM yyyy", {
@@ -180,12 +184,12 @@ function MobileWorkProductDetail() {
               })}
             </p>
           </div>
-          <Badge variant="secondary" className="shrink-0">
+          <Badge variant="secondary" className="col-span-2 w-fit max-w-full">
             {STATUS_LABEL[product.status] ?? product.status}
           </Badge>
         </header>
 
-        <div className="flex gap-2">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] gap-2">
           <Button asChild className="min-h-11 flex-1">
             <Link to="/work-products/$id" params={{ id }}>
               <ExternalLink className="mr-2 h-4 w-4" /> Mở
@@ -221,7 +225,7 @@ function MobileWorkProductDetail() {
 
         <Button
           variant={following ? "secondary" : "outline"}
-          className="min-h-11"
+          className="min-h-11 w-full"
           disabled={followMut.isPending}
           onClick={() => followMut.mutate(!following)}
         >
@@ -235,13 +239,13 @@ function MobileWorkProductDetail() {
         </Button>
 
         {product.description && (
-          <section className="rounded-2xl border border-border bg-surface p-4">
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
             <h2 className="mb-1 text-sm font-semibold">Tóm tắt</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>
           </section>
         )}
 
-        <section className="rounded-2xl border border-border bg-surface p-4">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <CheckSquare className="h-4 w-4 text-muted-foreground" /> Công việc liên quan
             <Badge variant="outline" className="ml-auto text-[10px]">
@@ -251,13 +255,13 @@ function MobileWorkProductDetail() {
           {tasks.length === 0 ? (
             <p className="text-xs text-muted-foreground">Chưa gắn công việc nào.</p>
           ) : (
-            <ul className="grid gap-2">
+            <ul className="grid min-w-0 gap-2">
               {tasks.map((t) => (
                 <li key={t.entityId}>
                   <Link
                     to="/tasks/$id"
                     params={{ id: t.entityId }}
-                    className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
+                    className="flex min-h-11 min-w-0 items-center gap-2 overflow-hidden rounded-xl bg-surface-2 px-3 py-2 text-sm"
                   >
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
                     {t.status && (
@@ -275,7 +279,7 @@ function MobileWorkProductDetail() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-surface p-4">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Files className="h-4 w-4 text-muted-foreground" /> Tài liệu gắn kèm
             <Badge variant="outline" className="ml-auto text-[10px]">
@@ -285,13 +289,13 @@ function MobileWorkProductDetail() {
           {documents.length === 0 ? (
             <p className="text-xs text-muted-foreground">Chưa gắn tài liệu nào.</p>
           ) : (
-            <ul className="grid gap-2">
+            <ul className="grid min-w-0 gap-2">
               {documents.map((d) => (
                 <li key={d.entityId}>
                   <Link
                     to="/documents/$id"
                     params={{ id: d.entityId }}
-                    className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
+                    className="flex min-h-11 min-w-0 items-center gap-2 overflow-hidden rounded-xl bg-surface-2 px-3 py-2 text-sm"
                   >
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="min-w-0 flex-1 truncate">{d.title}</span>
@@ -307,7 +311,7 @@ function MobileWorkProductDetail() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-surface p-4">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <CalendarClock className="h-4 w-4 text-muted-foreground" /> Lịch họp
             <Badge variant="outline" className="ml-auto text-[10px]">
@@ -317,13 +321,13 @@ function MobileWorkProductDetail() {
           {meetings.length === 0 ? (
             <p className="text-xs text-muted-foreground">Chưa có cuộc họp liên quan.</p>
           ) : (
-            <ul className="grid gap-2">
+            <ul className="grid min-w-0 gap-2">
               {meetings.map((m) => (
                 <li key={m.entityId}>
                   <Link
                     to="/meeting/$id"
                     params={{ id: m.entityId }}
-                    className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
+                    className="flex min-h-11 min-w-0 items-center gap-2 overflow-hidden rounded-xl bg-surface-2 px-3 py-2 text-sm"
                   >
                     <span className="min-w-0 flex-1 truncate">{m.title}</span>
                     {m.subtitle && (
@@ -338,7 +342,7 @@ function MobileWorkProductDetail() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-surface p-4">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
           <h2 className="mb-2 text-sm font-semibold">Thông tin</h2>
           <dl className="grid gap-2 text-sm">
             <div className="flex items-center gap-2">
@@ -363,7 +367,7 @@ function MobileWorkProductDetail() {
         </section>
 
         {versions.length > 0 && (
-          <section className="rounded-2xl border border-border bg-surface p-4">
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
             <h2 className="mb-2 text-sm font-semibold">Phiên bản gần đây</h2>
             <ul className="grid gap-2">
               {versions.slice(0, 5).map((v: any) => (
