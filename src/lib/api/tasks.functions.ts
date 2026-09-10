@@ -333,3 +333,58 @@ export const deleteTaskAttachment = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true };
   });
+
+// ---- Mobile task detail: follow state ----
+
+export const getTaskFollowState = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const [mine, all] = await Promise.all([
+      context.supabase
+        .from("task_followers")
+        .select("id")
+        .eq("task_id", data.taskId)
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+      context.supabase
+        .from("task_followers")
+        .select("id", { count: "exact", head: true })
+        .eq("task_id", data.taskId),
+    ]);
+    return {
+      following: Boolean(mine.data),
+      followerCount: all.count ?? 0,
+    };
+  });
+
+export const toggleTaskFollow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid(), follow: z.boolean() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: task, error } = await context.supabase
+      .from("tasks")
+      .select("id, tenant_id")
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    if (!task) throw new Error("TASK_NOT_FOUND");
+
+    if (data.follow) {
+      const { error: insErr } = await context.supabase.from("task_followers").insert({
+        task_id: data.taskId,
+        tenant_id: task.tenant_id,
+        user_id: context.userId,
+      });
+      if (insErr && !/duplicate key/i.test(insErr.message)) mapPgError(insErr);
+    } else {
+      const { error: delErr } = await context.supabase
+        .from("task_followers")
+        .delete()
+        .eq("task_id", data.taskId)
+        .eq("user_id", context.userId);
+      if (delErr) mapPgError(delErr);
+    }
+    return { following: data.follow };
+  });
