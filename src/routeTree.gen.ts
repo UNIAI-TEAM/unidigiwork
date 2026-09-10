@@ -103,6 +103,7 @@ import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
 import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
 import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authenticated/admin.accounts'
+import { Route as AuthenticatedMWorkProductsIndexRouteImport } from './routes/_authenticated/m/work-products.index'
 import { Route as AuthenticatedMEmailIndexRouteImport } from './routes/_authenticated/m/email.index'
 import { Route as AuthenticatedMAiWorkforceIndexRouteImport } from './routes/_authenticated/m/ai-workforce.index'
 import { Route as AuthenticatedMAiMarketIndexRouteImport } from './routes/_authenticated/m/ai-market.index'
@@ -618,6 +619,12 @@ const AuthenticatedAdminAccountsRoute =
     path: '/accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedMWorkProductsIndexRoute =
+  AuthenticatedMWorkProductsIndexRouteImport.update({
+    id: '/work-products/',
+    path: '/work-products/',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMEmailIndexRoute =
   AuthenticatedMEmailIndexRouteImport.update({
     id: '/email/',
@@ -813,6 +820,7 @@ export interface FileRoutesByFullPath {
   '/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email/': typeof AuthenticatedMEmailIndexRoute
+  '/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
@@ -921,6 +929,7 @@ export interface FileRoutesByTo {
   '/m/ai-market': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email': typeof AuthenticatedMEmailIndexRoute
+  '/m/work-products': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
@@ -1033,6 +1042,7 @@ export interface FileRoutesById {
   '/_authenticated/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/_authenticated/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/_authenticated/m/email/': typeof AuthenticatedMEmailIndexRoute
+  '/_authenticated/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/_authenticated/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
@@ -1145,6 +1155,7 @@ export interface FileRouteTypes {
     | '/m/ai-market/'
     | '/m/ai-workforce/'
     | '/m/email/'
+    | '/m/work-products/'
     | '/admin/sell-work/pilots/$pilotId'
     | '/api/internal/office/v1/render'
   fileRoutesByTo: FileRoutesByTo
@@ -1253,6 +1264,7 @@ export interface FileRouteTypes {
     | '/m/ai-market'
     | '/m/ai-workforce'
     | '/m/email'
+    | '/m/work-products'
     | '/admin/sell-work/pilots/$pilotId'
     | '/api/internal/office/v1/render'
   id:
@@ -1364,6 +1376,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/ai-market/'
     | '/_authenticated/m/ai-workforce/'
     | '/_authenticated/m/email/'
+    | '/_authenticated/m/work-products/'
     | '/_authenticated/admin/sell-work/pilots/$pilotId'
     | '/api/internal/office/v1/render'
   fileRoutesById: FileRoutesById
@@ -2063,6 +2076,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAccountsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/m/work-products/': {
+      id: '/_authenticated/m/work-products/'
+      path: '/work-products'
+      fullPath: '/m/work-products/'
+      preLoaderRoute: typeof AuthenticatedMWorkProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/email/': {
       id: '/_authenticated/m/email/'
       path: '/email'
@@ -2263,6 +2283,7 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMAiMarketIndexRoute: typeof AuthenticatedMAiMarketIndexRoute
   AuthenticatedMAiWorkforceIndexRoute: typeof AuthenticatedMAiWorkforceIndexRoute
   AuthenticatedMEmailIndexRoute: typeof AuthenticatedMEmailIndexRoute
+  AuthenticatedMWorkProductsIndexRoute: typeof AuthenticatedMWorkProductsIndexRoute
 }
 
 const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
@@ -2280,6 +2301,7 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMAiMarketIndexRoute: AuthenticatedMAiMarketIndexRoute,
   AuthenticatedMAiWorkforceIndexRoute: AuthenticatedMAiWorkforceIndexRoute,
   AuthenticatedMEmailIndexRoute: AuthenticatedMEmailIndexRoute,
+  AuthenticatedMWorkProductsIndexRoute: AuthenticatedMWorkProductsIndexRoute,
 }
 
 const AuthenticatedMRouteWithChildren = AuthenticatedMRoute._addFileChildren(
