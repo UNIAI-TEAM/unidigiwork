@@ -879,8 +879,13 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         "Đọc kỹ DÒNG THỜI GIAN HOẠT ĐỘNG để hiểu ai thường làm gì, vào lúc nào và kết quả ra sao; ưu tiên kỹ năng lặp lại theo thói quen làm việc thật đó. " +
         "Dùng LỊCH HỌP THẬT làm mốc thời gian: kỹ năng liên quan tới họp phải bám đúng cuộc họp có thật (tên, dự án, ngày giờ, địa điểm), " +
         "ví dụ chuẩn bị tài liệu trước cuộc họp sắp tới, đối soát việc cần chốt trong cuộc họp đó, theo dõi sau họp. TUYỆT ĐỐI không bịa cuộc họp không có trong dữ liệu. " +
-        "BẮT BUỘC: nếu phần LỊCH HỌP THẬT có ít nhất một cuộc họp, ít nhất 2 trong số kỹ năng trả về phải gắn với cuộc họp có thật đó và nêu đúng tên cuộc họp cùng ngày giờ trong description và example. " +
-        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ, tên và thời gian cuộc họp).",
+        "BẮT BUỘC: nếu phần LỊCH HỌP THẬT có ít nhất một cuộc họp, ít nhất 1 kỹ năng trả về phải gắn với cuộc họp có thật đó và nêu đúng tên cuộc họp cùng ngày giờ. " +
+        "QUAN TRỌNG NHẤT: nếu có phần KPI ĐIỀU HÀNH (CEO COMMAND CENTER), ít nhất 3 trong số kỹ năng trả về phải bám trực tiếp vào các KPI đó — " +
+        "giao việc theo khối lượng và giờ làm của từng nhân sự (người và AI), cảnh báo khi số việc quá hạn hoặc tỉ lệ review đạt xấu đi so với kỳ trước, " +
+        "theo dõi tỉ lệ chuyển dịch Người ↔ AI và tỉ lệ việc có kết quả. Mỗi kỹ năng như vậy phải nêu ĐÚNG con số KPI quan sát được và ngưỡng kích hoạt cụ thể. " +
+        "Không được lấy lịch họp cũ làm căn cứ chính khi KPI đã cho thấy vấn đề khác. Giờ người là ƯỚC TÍNH — phải nói rõ, không coi là chấm công. " +
+        "Không bịa doanh thu, chi phí hay bất kỳ số nào không có trong dữ liệu. " +
+        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu KPI, tên và thời gian cuộc họp).",
       prompt: corpus,
     });
 
