@@ -397,7 +397,8 @@ function CeoPage() {
             <div className="min-w-0">
               <h1 className="text-2xl font-semibold tracking-tight">CEO Command Center</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Toàn cảnh hiệu quả tổ chức: người, AI, kết quả và vấn đề cần xử lý.
+                Toàn cảnh hiệu quả tổ chức: người, AI, kết quả và vấn đề cần xử lý. KPI tự làm mới
+                mỗi ngày sau khi Bộ não đào tạo.
               </p>
             </div>
             <div className="text-right text-xs text-muted-foreground">
