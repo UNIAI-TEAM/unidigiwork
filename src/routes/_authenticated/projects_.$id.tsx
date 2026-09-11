@@ -39,6 +39,7 @@ import {
   importTaskProgress,
   listProjectMeetings,
   scheduleProjectMeeting,
+  importProjectMeetings,
   type ProjectRow,
   type ProjectStatus,
 } from "@/lib/api/projects.functions";
