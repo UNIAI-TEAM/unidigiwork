@@ -92,6 +92,26 @@ function CeoPage() {
   const [period, setPeriod] = useState<CeoPeriod>("month");
   const { workspaceId } = useActiveWorkspace();
   const fn = useServerFn(getCeoOverview);
+  const exportFn = useServerFn(exportCeoReport);
+  const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
+
+  const download = async (format: "pdf" | "xlsx") => {
+    setExporting(format);
+    try {
+      const res = await exportFn({ data: { period, workspaceId: workspaceId ?? null, format } });
+      const bin = atob(res.base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([bytes], { type: res.mimeType }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["ceo", "overview", period, workspaceId ?? ""],
