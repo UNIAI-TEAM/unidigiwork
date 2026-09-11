@@ -187,6 +187,9 @@ function ProjectDetailPage() {
     queryFn: () => listProjectMeetings({ data: { projectId: id } }),
   });
   const scheduleMeetingFn = useServerFn(scheduleProjectMeeting);
+  const importMeetingsFn = useServerFn(importProjectMeetings);
+  const [importingMeetings, setImportingMeetings] = useState(false);
+  const meetingFileRef = useRef<HTMLInputElement>(null);
   const [mTitle, setMTitle] = useState("");
   const [mStart, setMStart] = useState("");
   const [mEnd, setMEnd] = useState("");
