@@ -6,6 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 import { AI_ACTION_TYPES, AI_ACTION_SOURCES } from "@/domain/ai-actions/contracts";
 import { AI_SKILL_KINDS } from "@/domain/workflow-agents/skills";
+import { loadCeoOverview } from "./ceo.server";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
