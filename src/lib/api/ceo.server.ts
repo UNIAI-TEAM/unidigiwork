@@ -41,6 +41,20 @@ export type CeoIssue = {
   href: string;
 };
 
+export type CeoProposalEntry = {
+  id: string;
+  title: string;
+  actionType: string;
+  status: string;
+  source: string | null;
+  risk: string | null;
+  createdAt: string;
+  executedAt: string | null;
+  workerName: string | null;
+  taskTitle: string | null;
+  taskId: string | null;
+};
+
 export type CeoOverview = {
   period: CeoPeriod;
   from: string;
