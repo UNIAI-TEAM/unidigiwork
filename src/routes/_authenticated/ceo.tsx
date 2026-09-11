@@ -504,6 +504,82 @@ function CeoPage() {
                 </Card>
               </div>
 
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <Card>
+                  <div className="text-xs text-muted-foreground">Đề xuất trong kỳ</div>
+                  <div className="mt-1 text-3xl font-semibold tracking-tight">
+                    {n(data.proposals.total.current)}
+                  </div>
+                  <Delta value={data.proposals.total.changePct} />
+                </Card>
+                <Card>
+                  <div className="text-xs text-muted-foreground">Đề xuất giao việc</div>
+                  <div className="mt-1 text-3xl font-semibold tracking-tight">
+                    {n(data.proposals.assignment)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">gắn với công việc thật</div>
+                </Card>
+                <Card>
+                  <div className="text-xs text-muted-foreground">Đã duyệt & thực thi</div>
+                  <div className="mt-1 text-3xl font-semibold tracking-tight">
+                    {n(data.proposals.executed)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {data.proposals.executionRate === null
+                      ? "—"
+                      : `${data.proposals.executionRate}% số đề xuất`}
+                  </div>
+                </Card>
+                <Card>
+                  <div className="text-xs text-muted-foreground">Chờ duyệt / bị từ chối</div>
+                  <div className="mt-1 text-3xl font-semibold tracking-tight">
+                    {n(data.proposals.pending)} / {n(data.proposals.rejected)}
+                  </div>
+                  <Link to="/ai-brain" className="text-xs text-primary hover:underline">
+                    Mở Bộ não AI
+                  </Link>
+                </Card>
+              </div>
+
+              <Card title="Nhật ký đề xuất giao việc">
+                {data.proposals.entries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Chưa có đề xuất nào.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {data.proposals.entries.map((p) => (
+                      <li
+                        key={p.id}
+                        className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{p.title}</span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {p.actionType}
+                            {p.workerName ? ` · ${p.workerName}` : ""}
+                            {p.taskTitle ? ` · ${p.taskTitle}` : ""} ·{" "}
+                            {new Date(p.createdAt).toLocaleDateString("vi-VN")}
+                          </span>
+                        </span>
+                        <span className="mt-2 flex items-center gap-2 sm:mt-0 sm:shrink-0">
+                          <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
+                            {STATUS_LABEL[p.status] ?? p.status}
+                          </Badge>
+                          {p.taskId ? (
+                            <Link
+                              to="/tasks/$taskId"
+                              params={{ taskId: p.taskId }}
+                              className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
+                            >
+                              Xem việc
+                            </Link>
+                          ) : null}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+
               <Card title="Bốn câu hỏi của CEO">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <Answer
