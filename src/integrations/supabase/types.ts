@@ -1538,6 +1538,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ceo_kpi_settings: {
+        Row: {
+          created_at: string
+          department_weights: Json
+          targets: Json
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          department_weights?: Json
+          targets?: Json
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          department_weights?: Json
+          targets?: Json
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ceo_report_runs: {
         Row: {
           created_at: string

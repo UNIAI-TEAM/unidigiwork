@@ -12,6 +12,7 @@ import {
   Download,
   Loader2,
   RefreshCcw,
+  Target,
   Timer,
   TrendingDown,
   TrendingUp,
@@ -20,7 +21,13 @@ import {
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { exportCeoReport, getCeoOverview, type CeoPeriod } from "@/lib/api/ceo.functions";
+import {
+  exportCeoReport,
+  getCeoOverview,
+  saveCeoKpiSettings,
+  type CeoPeriod,
+} from "@/lib/api/ceo.functions";
+import type { CeoOverview } from "@/lib/api/ceo.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo")({
   head: () => ({
@@ -106,6 +113,166 @@ function Delta({ value }: { value: number | null }) {
       {up ? "+" : ""}
       {value}%
     </span>
+  );
+}
+
+const KPI_FIELDS: {
+  key: keyof CeoOverview["kpi"]["targets"];
+  label: string;
+  hint: string;
+}[] = [
+  { key: "completed", label: "Việc hoàn thành / kỳ", hint: "việc" },
+  { key: "maxOverdue", label: "Việc quá hạn tối đa", hint: "việc" },
+  { key: "aiSharePct", label: "Tỉ lệ AI đảm nhiệm", hint: "%" },
+  { key: "resultRatePct", label: "Tỉ lệ việc có kết quả", hint: "%" },
+  { key: "passRatePct", label: "Tỉ lệ kết quả đạt review", hint: "%" },
+];
+
+function KpiSettings({ data, onSaved }: { data: CeoOverview; onSaved: () => void }) {
+  const save = useServerFn(saveCeoKpiSettings);
+  const { workspaceId } = useActiveWorkspace();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [targets, setTargets] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      KPI_FIELDS.map((f) => [
+        f.key,
+        data.kpi.targets[f.key] === null ? "" : String(data.kpi.targets[f.key]),
+      ]),
+    ),
+  );
+  const [weights, setWeights] = useState<Record<string, string>>(() =>
+    Object.fromEntries(data.departments.map((d) => [d.id, String(d.weight)])),
+  );
+
+  const num = (v: string) => {
+    const t = v.trim();
+    if (!t) return null;
+    const n = Number(t);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await save({
+        data: {
+          workspaceId: workspaceId ?? null,
+          targets: {
+            completed: num(targets["completed"] ?? ""),
+            maxOverdue: num(targets["maxOverdue"] ?? ""),
+            aiSharePct: num(targets["aiSharePct"] ?? ""),
+            resultRatePct: num(targets["resultRatePct"] ?? ""),
+            passRatePct: num(targets["passRatePct"] ?? ""),
+          },
+          departmentWeights: Object.fromEntries(
+            Object.entries(weights)
+              .map(([k, v]) => [k, num(v) ?? 1] as const)
+              .filter(([, v]) => v >= 0),
+          ),
+        },
+      });
+      setEditing(false);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không lưu được KPI.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card title="KPI mục tiêu do CEO đặt">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          {data.kpi.configured
+            ? `Điểm đạt KPI tổng hợp: ${data.kpi.score ?? "—"}%`
+            : "Chưa đặt KPI. Bộ não AI sẽ đề xuất bám theo KPI ngay sau khi bạn lưu."}
+        </p>
+        <button
+          onClick={() => setEditing((v) => !v)}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium hover:bg-surface-2"
+        >
+          <Target className="h-4 w-4" />
+          {editing ? "Đóng" : "Thiết lập KPI"}
+        </button>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {data.kpi.rows.map((r) => (
+          <div key={r.key} className="rounded-xl border border-border px-3 py-2">
+            <div className="text-xs text-muted-foreground">{r.label}</div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-xl font-semibold tabular-nums">{r.actual ?? "—"}</span>
+              <span className="text-xs text-muted-foreground">
+                / mục tiêu{" "}
+                {r.target === null ? "chưa đặt" : `${r.target}${r.unit === "%" ? "%" : ""}`}
+              </span>
+            </div>
+            {r.ok === null ? null : (
+              <Badge variant={r.ok ? "default" : "destructive"} className="mt-1">
+                {r.ok ? "Đạt" : "Chưa đạt"} {r.achievedPct !== null ? `· ${r.achievedPct}%` : ""}
+              </Badge>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {editing ? (
+        <div className="mt-4 space-y-4 rounded-xl border border-border p-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {KPI_FIELDS.map((f) => (
+              <label key={f.key} className="block text-sm">
+                <span className="text-xs text-muted-foreground">
+                  {f.label} ({f.hint})
+                </span>
+                <input
+                  inputMode="numeric"
+                  value={targets[f.key] ?? ""}
+                  onChange={(e) => setTargets((p) => ({ ...p, [f.key]: e.target.value }))}
+                  placeholder="Chưa đặt"
+                  className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm"
+                />
+              </label>
+            ))}
+          </div>
+
+          {data.departments.length ? (
+            <div>
+              <div className="text-xs font-medium text-muted-foreground">
+                Trọng số từng bộ phận (0 = bỏ qua, 1 = bình thường, cao hơn = ưu tiên)
+              </div>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {data.departments.map((d) => (
+                  <label key={d.id} className="block text-sm">
+                    <span className="block truncate text-xs text-muted-foreground">{d.name}</span>
+                    <input
+                      inputMode="numeric"
+                      value={weights[d.id] ?? "1"}
+                      onChange={(e) => setWeights((p) => ({ ...p, [d.id]: e.target.value }))}
+                      className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+          <button
+            onClick={() => void submit()}
+            disabled={saving}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Lưu KPI
+          </button>
+        </div>
+      ) : null}
+    </Card>
   );
 }
 
@@ -525,6 +692,8 @@ function CeoPage() {
                   )}
                 </Card>
               </div>
+
+              <KpiSettings data={data} onSaved={() => void refetch()} />
 
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Card>

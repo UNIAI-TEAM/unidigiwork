@@ -724,10 +724,24 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         `- Chuyển dịch Người ↔ AI: người ${ceo.split.human}, AI ${ceo.split.ai}; AI đảm nhiệm ${ceo.split.aiSharePct}% (kỳ trước ${ceo.split.aiSharePrevPct}%).`,
         `- Thời gian: giờ người ${ceo.time.humanHours} (ƯỚC TÍNH, chưa có chấm công), giờ AI ${ceo.time.aiHours} (đo thật), giờ họp ${ceo.time.meetingHours}, ước tính tiết kiệm ${ceo.time.savedHours}, đòn bẩy AI ${ceo.time.leverage ?? "chưa đủ dữ liệu"}.`,
         `- Chất lượng: ${ceo.quality.withResult}/${ceo.quality.tasksCreated} việc có kết quả (${ceo.quality.resultRate ?? "—"}%), đã review ${ceo.quality.reviewed}, đạt ${ceo.quality.passed} (${ceo.quality.passRate ?? "—"}%).`,
+        ...(ceo.kpi.configured
+          ? [
+              "- KPI DO CEO TỰ ĐẶT (bắt buộc bám theo, không tự đặt mục tiêu khác):",
+              ...ceo.kpi.rows
+                .filter((r) => r.target !== null)
+                .map(
+                  (r) =>
+                    `  · ${r.label}: mục tiêu ${r.target}${r.unit === "%" ? "%" : ` ${r.unit}`}, thực tế ${r.actual ?? "—"}${r.unit === "%" ? "%" : ""} → ${r.ok ? "ĐẠT" : "CHƯA ĐẠT"}${r.achievedPct !== null ? ` (${r.achievedPct}%)` : ""}`,
+                ),
+              `  · Điểm KPI tổng hợp: ${ceo.kpi.score ?? "—"}%`,
+            ]
+          : ["- CEO chưa đặt KPI mục tiêu."]),
         ...(ceo.departments.length
           ? [
-              "- Phân bổ theo bộ phận (người/AI):",
-              ...ceo.departments.map((d) => `  · ${d.name}: ${d.human}/${d.ai} (tổng ${d.total})`),
+              "- Phân bổ theo bộ phận (người/AI · trọng số CEO đặt):",
+              ...ceo.departments.map(
+                (d) => `  · ${d.name}: ${d.human}/${d.ai} (tổng ${d.total}, trọng số ${d.weight})`,
+              ),
             ]
           : []),
         ...(ceo.people.length
@@ -880,7 +894,8 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         "Dùng LỊCH HỌP THẬT làm mốc thời gian: kỹ năng liên quan tới họp phải bám đúng cuộc họp có thật (tên, dự án, ngày giờ, địa điểm), " +
         "ví dụ chuẩn bị tài liệu trước cuộc họp sắp tới, đối soát việc cần chốt trong cuộc họp đó, theo dõi sau họp. TUYỆT ĐỐI không bịa cuộc họp không có trong dữ liệu. " +
         "BẮT BUỘC: nếu phần LỊCH HỌP THẬT có ít nhất một cuộc họp, ít nhất 1 kỹ năng trả về phải gắn với cuộc họp có thật đó và nêu đúng tên cuộc họp cùng ngày giờ. " +
-        "QUAN TRỌNG NHẤT: nếu có phần KPI ĐIỀU HÀNH (CEO COMMAND CENTER), ít nhất 3 trong số kỹ năng trả về phải bám trực tiếp vào các KPI đó — " +
+        "QUAN TRỌNG NHẤT: nếu CEO đã đặt KPI mục tiêu, ưu tiên tuyệt đối các KPI CHƯA ĐẠT và các bộ phận có trọng số cao hơn khi đề xuất giao việc và cảnh báo. " +
+        "Nếu có phần KPI ĐIỀU HÀNH (CEO COMMAND CENTER), ít nhất 3 trong số kỹ năng trả về phải bám trực tiếp vào các KPI đó — " +
         "giao việc theo khối lượng và giờ làm của từng nhân sự (người và AI), cảnh báo khi số việc quá hạn hoặc tỉ lệ review đạt xấu đi so với kỳ trước, " +
         "theo dõi tỉ lệ chuyển dịch Người ↔ AI và tỉ lệ việc có kết quả. Mỗi kỹ năng như vậy phải nêu ĐÚNG con số KPI quan sát được và ngưỡng kích hoạt cụ thể. " +
         "Không được lấy lịch họp cũ làm căn cứ chính khi KPI đã cho thấy vấn đề khác. Giờ người là ƯỚC TÍNH — phải nói rõ, không coi là chấm công. " +

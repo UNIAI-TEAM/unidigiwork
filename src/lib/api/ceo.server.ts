@@ -88,7 +88,21 @@ export type CeoOverview = {
     resultRate: number | null;
   };
   people: CeoPersonRow[];
-  departments: { id: string; name: string; human: number; ai: number; total: number }[];
+  departments: {
+    id: string;
+    name: string;
+    human: number;
+    ai: number;
+    total: number;
+    weight: number;
+  }[];
+  kpi: {
+    configured: boolean;
+    updatedAt: string | null;
+    targets: CeoKpiTargets;
+    rows: CeoKpiRow[];
+    score: number | null;
+  };
   issues: CeoIssue[];
   proposals: {
     total: CeoDelta;
@@ -106,6 +120,58 @@ export type CeoOverview = {
     value: string[];
   };
 };
+
+export type CeoKpiTargets = {
+  completed: number | null;
+  maxOverdue: number | null;
+  aiSharePct: number | null;
+  resultRatePct: number | null;
+  passRatePct: number | null;
+};
+
+export type CeoKpiRow = {
+  key: keyof CeoKpiTargets;
+  label: string;
+  unit: string;
+  target: number | null;
+  actual: number | null;
+  /** "up" = càng cao càng tốt, "down" = càng thấp càng tốt. */
+  direction: "up" | "down";
+  achievedPct: number | null;
+  ok: boolean | null;
+};
+
+export const EMPTY_CEO_KPI_TARGETS: CeoKpiTargets = {
+  completed: null,
+  maxOverdue: null,
+  aiSharePct: null,
+  resultRatePct: null,
+  passRatePct: null,
+};
+
+const numOrNull = (v: unknown): number | null =>
+  typeof v === "number" && Number.isFinite(v) ? v : null;
+
+export function parseCeoKpiTargets(raw: unknown): CeoKpiTargets {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  return {
+    completed: numOrNull(o["completed"]),
+    maxOverdue: numOrNull(o["maxOverdue"]),
+    aiSharePct: numOrNull(o["aiSharePct"]),
+    resultRatePct: numOrNull(o["resultRatePct"]),
+    passRatePct: numOrNull(o["passRatePct"]),
+  };
+}
+
+export function parseDepartmentWeights(raw: unknown): Record<string, number> {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(o)) {
+    const n = numOrNull(v);
+    if (n !== null && n >= 0) out[k] = Math.round(n);
+  }
+  return out;
+}
 
 function pct(cur: number, prev: number): number | null {
   if (!prev) return cur ? 100 : null;
@@ -150,6 +216,21 @@ export async function loadCeoOverview(
 
   const scope = <T extends { eq: (c: string, v: string) => T }>(q: T): T =>
     workspaceId ? q.eq("workspace_id", workspaceId) : q;
+
+  // KPI do CEO tự đặt (nếu có) — dùng để chấm điểm và để Bộ não AI bám theo.
+  const kpiSettingsR = await supabase
+    .from("ceo_kpi_settings")
+    .select("targets, department_weights, updated_at")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  const kpiTargets = parseCeoKpiTargets(
+    (kpiSettingsR.data as { targets?: unknown } | null)?.targets,
+  );
+  const kpiWeights = parseDepartmentWeights(
+    (kpiSettingsR.data as { department_weights?: unknown } | null)?.department_weights,
+  );
+  const kpiUpdatedAt = ((kpiSettingsR.data as { updated_at?: string } | null)?.updated_at ??
+    null) as string | null;
 
   const [tasksR, prevTasksR, execR, metricsR, meetingsR, workersR, wsR, proposalsR] =
     await Promise.all([
@@ -368,6 +449,7 @@ export async function loadCeoOverview(
       human: v.human,
       ai: v.ai,
       total: v.human + v.ai,
+      weight: kpiWeights[id] ?? 1,
     }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 8);
@@ -488,6 +570,66 @@ export async function loadCeoOverview(
   const passRate = reviewed.length ? Math.round((passed.length / reviewed.length) * 100) : null;
   const resultRate = cur.length ? Math.round((execs.length / cur.length) * 100) : null;
 
+  const aiShareNow = cur.length ? Math.round((aiCur / cur.length) * 100) : 0;
+  const kpiActuals: Record<keyof CeoKpiTargets, number | null> = {
+    completed: completedCur,
+    maxOverdue: overdue.length,
+    aiSharePct: aiShareNow,
+    resultRatePct: resultRate,
+    passRatePct: passRate,
+  };
+  const KPI_META: {
+    key: keyof CeoKpiTargets;
+    label: string;
+    unit: string;
+    direction: "up" | "down";
+  }[] = [
+    { key: "completed", label: "Việc hoàn thành trong kỳ", unit: "việc", direction: "up" },
+    { key: "maxOverdue", label: "Việc quá hạn tối đa", unit: "việc", direction: "down" },
+    { key: "aiSharePct", label: "Tỉ lệ AI đảm nhiệm", unit: "%", direction: "up" },
+    { key: "resultRatePct", label: "Tỉ lệ việc có kết quả", unit: "%", direction: "up" },
+    { key: "passRatePct", label: "Tỉ lệ kết quả đạt review", unit: "%", direction: "up" },
+  ];
+  const kpiRows: CeoKpiRow[] = KPI_META.map((m) => {
+    const target = kpiTargets[m.key];
+    const actual = kpiActuals[m.key];
+    let achievedPct: number | null = null;
+    let ok: boolean | null = null;
+    if (target !== null && actual !== null) {
+      if (m.direction === "up") {
+        achievedPct = target > 0 ? Math.round((actual / target) * 100) : actual > 0 ? 100 : null;
+        ok = actual >= target;
+      } else {
+        achievedPct = actual <= target ? 100 : target > 0 ? Math.round((target / actual) * 100) : 0;
+        ok = actual <= target;
+      }
+    }
+    return { ...m, target, actual, achievedPct, ok };
+  });
+  const scored = kpiRows.filter((r) => r.achievedPct !== null);
+  const kpiBlock = {
+    configured: kpiRows.some((r) => r.target !== null),
+    updatedAt: kpiUpdatedAt,
+    targets: kpiTargets,
+    rows: kpiRows,
+    score: scored.length
+      ? Math.round(
+          scored.reduce((a, r) => a + Math.min(120, r.achievedPct ?? 0), 0) / scored.length,
+        )
+      : null,
+  };
+  for (const r of kpiRows) {
+    if (r.ok === false) {
+      issues.push({
+        id: `kpi-${r.key}`,
+        kind: "stalled",
+        title: `KPI chưa đạt: ${r.label}`,
+        detail: `Thực tế ${r.actual}${r.unit === "%" ? "%" : ` ${r.unit}`} so với mục tiêu ${r.target}${r.unit === "%" ? "%" : ` ${r.unit}`}`,
+        href: "/ceo",
+      });
+    }
+  }
+
   return {
     period,
     from: iso(from),
@@ -530,6 +672,7 @@ export async function loadCeoOverview(
     },
     people: people.slice(0, 30),
     departments,
+    kpi: kpiBlock,
     issues: issues.slice(0, 12),
     proposals: proposalsBlock,
     answers: {

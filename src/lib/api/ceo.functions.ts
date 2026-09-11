@@ -62,3 +62,61 @@ export const exportCeoReport = createServerFn({ method: "POST" })
       };
     },
   );
+
+// ===== KPI DO CEO TỰ ĐẶT =====
+
+const TargetsSchema = z.object({
+  completed: z.number().min(0).max(100000).nullable(),
+  maxOverdue: z.number().min(0).max(100000).nullable(),
+  aiSharePct: z.number().min(0).max(100).nullable(),
+  resultRatePct: z.number().min(0).max(100).nullable(),
+  passRatePct: z.number().min(0).max(100).nullable(),
+});
+
+const SaveKpiInput = z.object({
+  workspaceId: z.string().uuid().nullable().optional(),
+  targets: TargetsSchema,
+  departmentWeights: z.record(z.string(), z.number().min(0).max(100)).default({}),
+});
+
+/** CEO/quản trị viên tổ chức đặt mục tiêu KPI và trọng số từng bộ phận. */
+export const saveCeoKpiSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => SaveKpiInput.parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const tenantId = await resolveTenantId(context.supabase, context.userId, data.workspaceId);
+    if (!tenantId)
+      throw new ApiError({
+        code: "WORKSPACE_NOT_FOUND" as never,
+        message: "Không tìm thấy tổ chức đang hoạt động.",
+      });
+    const { data: member } = await context.supabase
+      .from("tenant_members")
+      .select("role, status")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const role = member?.status === "active" ? member?.role : null;
+    if (role !== "tenant_owner" && role !== "tenant_admin") {
+      throw new ApiError({
+        code: "FORBIDDEN" as never,
+        message: "Chỉ chủ sở hữu hoặc quản trị viên tổ chức được đặt KPI.",
+      });
+    }
+    const { error } = await context.supabase.from("ceo_kpi_settings").upsert(
+      {
+        tenant_id: tenantId,
+        targets: data.targets,
+        department_weights: data.departmentWeights,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "tenant_id" },
+    );
+    if (error)
+      throw new ApiError({
+        code: "INTERNAL" as never,
+        message: `Không lưu được KPI: ${error.message}`,
+      });
+    return { ok: true };
+  });
