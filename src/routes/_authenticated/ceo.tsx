@@ -295,6 +295,7 @@ function CeoPage() {
   const fn = useServerFn(getCeoOverview);
   const exportFn = useServerFn(exportCeoReport);
   const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
+  const [deptFilter, setDeptFilter] = useState<string>("all");
 
   const download = async (format: "pdf" | "xlsx") => {
     setExporting(format);
