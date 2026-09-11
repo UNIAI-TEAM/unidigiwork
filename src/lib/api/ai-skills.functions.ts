@@ -703,7 +703,15 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     // KPI THẬT TỪ CEO COMMAND CENTER: cùng nguồn số liệu với màn điều hành,
     // để đề xuất giao việc và cảnh báo bám đúng KPI đang hiển thị cho ban lãnh đạo.
     let ceoLines: string[] = [];
-    let ceoKpi: { period: string; overdue: number; aiSharePct: number } | null = null;
+    let ceoKpi: {
+      period: string;
+      overdue: number;
+      aiSharePct: number;
+      meetingHours: number;
+      upcomingMeetings: number;
+      avgProgressPct: number;
+      kpiScore: number | null;
+    } | null = null;
     try {
       const ceo = await loadCeoOverview(
         context.supabase,
@@ -715,6 +723,10 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         period: ceo.period,
         overdue: ceo.totals.overdue,
         aiSharePct: ceo.split.aiSharePct,
+        meetingHours: ceo.time.meetingHours,
+        upcomingMeetings: ceo.time.upcomingMeetings,
+        avgProgressPct: ceo.time.avgProgressPct,
+        kpiScore: ceo.kpi.score ?? null,
       };
       ceoLines = [
         "KPI ĐIỀU HÀNH (CEO COMMAND CENTER — kỳ 30 ngày gần nhất, so với kỳ liền trước):",
@@ -722,7 +734,13 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         `- Hoàn thành: ${ceo.totals.completed.current} (kỳ trước ${ceo.totals.completed.previous}, thay đổi ${ceo.totals.completed.changePct ?? "—"}%).`,
         `- Đang thực hiện: ${ceo.totals.inProgress}. Quá hạn: ${ceo.totals.overdue}.`,
         `- Chuyển dịch Người ↔ AI: người ${ceo.split.human}, AI ${ceo.split.ai}; AI đảm nhiệm ${ceo.split.aiSharePct}% (kỳ trước ${ceo.split.aiSharePrevPct}%).`,
-        `- Thời gian: giờ người ${ceo.time.humanHours} (ƯỚC TÍNH, chưa có chấm công), giờ AI ${ceo.time.aiHours} (đo thật), giờ họp ${ceo.time.meetingHours}, ước tính tiết kiệm ${ceo.time.savedHours}, đòn bẩy AI ${ceo.time.leverage ?? "chưa đủ dữ liệu"}.`,
+        `- Thời gian: giờ người ${ceo.time.humanHours} (ƯỚC TÍNH, chưa có chấm công), giờ AI ${ceo.time.aiHours} (đo thật), ước tính tiết kiệm ${ceo.time.savedHours}, đòn bẩy AI ${ceo.time.leverage ?? "chưa đủ dữ liệu"}.`,
+        `- Họp ĐÃ DIỄN RA trong kỳ: ${ceo.time.meetingHours} giờ. Họp SẮP TỚI (chưa tính KPI): ${ceo.time.upcomingMeetings} cuộc, ${ceo.time.upcomingMeetingHours} giờ.${
+          ceo.time.nextMeeting
+            ? ` Cuộc họp kế tiếp: ${ceo.time.nextMeeting.title} @${ceo.time.nextMeeting.startAt.slice(0, 16).replace("T", " ")}.`
+            : " Chưa có cuộc họp nào sắp tới."
+        }`,
+        `- Tiến độ trung bình việc đang chạy: ${ceo.time.avgProgressPct}%.`,
         `- Chất lượng: ${ceo.quality.withResult}/${ceo.quality.tasksCreated} việc có kết quả (${ceo.quality.resultRate ?? "—"}%), đã review ${ceo.quality.reviewed}, đạt ${ceo.quality.passed} (${ceo.quality.passRate ?? "—"}%).`,
         ...(ceo.kpi.configured
           ? [
@@ -738,9 +756,10 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
           : ["- CEO chưa đặt KPI mục tiêu."]),
         ...(ceo.departments.length
           ? [
-              "- Phân bổ theo bộ phận (người/AI · trọng số CEO đặt):",
+              "- BÁO CÁO BỘ PHẬN (người/AI · tổng · hoàn thành · quá hạn · giờ ước tính · đề xuất · %AI · trọng số):",
               ...ceo.departments.map(
-                (d) => `  · ${d.name}: ${d.human}/${d.ai} (tổng ${d.total}, trọng số ${d.weight})`,
+                (d) =>
+                  `  · ${d.name}: ${d.human}/${d.ai} · tổng ${d.total} · hoàn thành ${d.completed} · quá hạn ${d.overdue} · ${d.hoursEstimated} giờ (ước tính) · ${d.proposals} đề xuất · AI ${d.aiSharePct}% · trọng số ${d.weight}`,
               ),
             ]
           : []),
@@ -832,8 +851,11 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
     ];
 
     const corpus = [
-      `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
+      ceoLines.length
+        ? `NGUỒN SỐ LIỆU CHÍNH: BÁO CÁO CEO COMMAND CENTER dưới đây, chốt lúc ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC. Mọi kỹ năng phải bám đúng các con số của lần chạy này.`
+        : "Không lấy được báo cáo CEO Command Center trong lần chạy này.",
       ...ceoLines,
+      `Số liệu bổ sung: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
       "LỊCH HỌP THẬT (sắp xếp theo thời gian, gồm cuộc họp sắp tới):",
       ...meetings.map((m) => {
         const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
@@ -898,6 +920,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         "Nếu có phần KPI ĐIỀU HÀNH (CEO COMMAND CENTER), ít nhất 3 trong số kỹ năng trả về phải bám trực tiếp vào các KPI đó — " +
         "giao việc theo khối lượng và giờ làm của từng nhân sự (người và AI), cảnh báo khi số việc quá hạn hoặc tỉ lệ review đạt xấu đi so với kỳ trước, " +
         "theo dõi tỉ lệ chuyển dịch Người ↔ AI và tỉ lệ việc có kết quả. Mỗi kỹ năng như vậy phải nêu ĐÚNG con số KPI quan sát được và ngưỡng kích hoạt cụ thể. " +
+        "Báo cáo CEO Command Center là nguồn số liệu chính và được chốt lại ở MỖI LẦN chạy: mỗi kỹ năng phải trích đúng con số của lần chạy này " +
+        "(việc mới, hoàn thành, quá hạn, tiến độ trung bình, giờ họp đã diễn ra, giờ người/AI, tỉ lệ review, số liệu từng bộ phận) kèm ngưỡng kích hoạt so với kỳ trước. " +
+        "Chỉ dùng cuộc họp SẮP TỚI để chuẩn bị; họp đã diễn ra chỉ để đối chiếu giờ. " +
         "Không được lấy lịch họp cũ làm căn cứ chính khi KPI đã cho thấy vấn đề khác. Giờ người là ƯỚC TÍNH — phải nói rõ, không coi là chấm công. " +
         "Không bịa doanh thu, chi phí hay bất kỳ số nào không có trong dữ liệu. " +
         "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu KPI, tên và thời gian cuộc họp).",
