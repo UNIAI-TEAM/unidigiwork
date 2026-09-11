@@ -17,6 +17,7 @@ import echoAvatar from "@/assets/ai-workers/echo.png.asset.json";
 import sageAvatar from "@/assets/ai-workers/sage.png.asset.json";
 import nexusAvatar from "@/assets/ai-workers/nexus.png.asset.json";
 import guardAvatar from "@/assets/ai-workers/guard.png.asset.json";
+import { assetUrl } from "@/lib/asset-url";
 
 export interface AiWorkerProfile {
   id: string;
