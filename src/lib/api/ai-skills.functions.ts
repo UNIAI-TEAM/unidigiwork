@@ -601,6 +601,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       })
       .filter(Boolean);
 
+    // Danh bạ nhân sự AI (gồm hồ sơ nhập từ Excel) để Bộ não biết vai trò thật hiện có.
+    const rosterLines = aiWorkers.slice(0, 60).map((w) => `- ${w.name} — ${w.role}`);
+
     // DÒNG THỜI GIAN HOẠT ĐỘNG: ai làm gì, khi nào, kết quả ra sao.
     const [auditRes, execRes, commentRes] = await Promise.all([
       context.supabase
@@ -775,6 +778,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         }${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`;
       }),
       ...progressLines,
+      ...(rosterLines.length ? ["DANH BẠ NHÂN SỰ AI (vai trò thật):", ...rosterLines] : []),
       ...(roleLines.length ? ["VAI TRÒ NHÂN SỰ AI (việc đang được giao):", ...roleLines] : []),
       ...(timelineLines.length
         ? ["DÒNG THỜI GIAN HOẠT ĐỘNG (ai làm gì, khi nào, kết quả):", ...timelineLines]

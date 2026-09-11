@@ -178,3 +178,121 @@ export const assignTasksToWorkerProfile = createServerFn({ method: "POST" })
       throw fail("TASK_NOT_FOUND", errors[0] ?? "Không giao được công việc cho nhân sự AI.");
     return { ok: true as const, assigned, failed: data.taskIds.length - assigned };
   });
+
+/** Một dòng nhân sự AI nhập từ tệp Excel/CSV. */
+const importRowSchema = z.object({
+  code: z.string().trim().max(60).nullable().optional(),
+  name: z.string().trim().min(1).max(120),
+  role: z.string().trim().max(160).nullable().optional(),
+  skills: z.array(z.string().trim().max(80)).max(30).optional(),
+  status: z.string().trim().max(20).nullable().optional(),
+});
+
+/**
+ * Nhập danh sách nhân sự AI từ tệp Excel/CSV.
+ * Chỉ chủ sở hữu/quản trị tổ chức được nhập; vai trò và kỹ năng được đồng bộ
+ * vào bảng ai_workers nên Bộ não AI sẽ học ngay ở lần đào tạo kế tiếp.
+ */
+export const importAiWorkers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        rows: z.array(importRowSchema).min(1).max(200),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenant(context, data.workspaceId);
+    const { data: member } = await context.supabase
+      .from("tenant_members")
+      .select("role, status")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const role = (member as { role?: string; status?: string } | null)?.role ?? "";
+    const status = (member as { status?: string } | null)?.status ?? "";
+    if (status !== "active" || !["tenant_owner", "tenant_admin"].includes(role)) {
+      throw fail("FORBIDDEN", "Chỉ quản trị tổ chức mới được nhập nhân sự AI.");
+    }
+
+    const { data: existingRows } = await context.supabase
+      .from("ai_workers")
+      .select("id, code")
+      .eq("tenant_id", tenantId);
+    const byCode = new Map<string, string>();
+    for (const r of (existingRows ?? []) as { id: string; code: string }[]) {
+      byCode.set(r.code.toUpperCase(), r.id);
+    }
+
+    const slug = (name: string) =>
+      name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/gi, "d")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 40) || "AI_WORKER";
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let created = 0;
+    let updated = 0;
+    const failed: string[] = [];
+    const seen = new Set<string>();
+
+    for (const row of data.rows) {
+      const code = (row.code?.trim() || slug(row.name)).toUpperCase().slice(0, 60);
+      if (seen.has(code)) continue;
+      seen.add(code);
+      const payload = {
+        name: row.name,
+        role: row.role?.trim() || "Nhân sự AI",
+        skills: row.skills?.filter(Boolean) ?? [],
+        status: (row.status?.trim().toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE") as string,
+      };
+      const existingId = byCode.get(code);
+      if (existingId) {
+        const res = await supabaseAdmin
+          .from("ai_workers" as never)
+          .update({ ...payload, updated_at: new Date().toISOString() } as never)
+          .eq("id", existingId)
+          .eq("tenant_id", tenantId);
+        if (res.error) failed.push(row.name);
+        else updated += 1;
+      } else {
+        const res = await supabaseAdmin
+          .from("ai_workers" as never)
+          .insert({ tenant_id: tenantId, code, ...payload } as never);
+        if (res.error) failed.push(row.name);
+        else created += 1;
+      }
+    }
+
+    if (!created && !updated) {
+      throw fail("AI_WORKER_NOT_FOUND", "Không nhập được nhân sự AI nào từ tệp.");
+    }
+    return { ok: true as const, created, updated, failed };
+  });
+
+/** Danh sách nhân sự AI thật của tổ chức (gồm cả hồ sơ nhập từ Excel). */
+export const listTenantAiWorkers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenant(context, data.workspaceId);
+    const { data: rows } = await context.supabase
+      .from("ai_workers")
+      .select("id, code, name, role, skills, status")
+      .eq("tenant_id", tenantId)
+      .order("name", { ascending: true });
+    return (rows ?? []) as {
+      id: string;
+      code: string;
+      name: string;
+      role: string;
+      skills: string[] | null;
+      status: string;
+    }[];
+  });

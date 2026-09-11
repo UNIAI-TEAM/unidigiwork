@@ -27,6 +27,7 @@ import { AiWorkerKpiSection } from "@/components/ai/ai-worker-kpi";
 import { AiSkillsManager } from "@/components/ai/ai-skills-manager";
 import { AiWorkforceEvaluation } from "@/components/ai/ai-workforce-evaluation";
 import { AiWorkforceAssignments } from "@/components/ai/ai-workforce-assignments";
+import { AiWorkforceImport } from "@/components/ai/ai-workforce-import";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 
 export const Route = createFileRoute("/_authenticated/ai-workforce")({
@@ -110,34 +111,37 @@ function AiWorkforcePage() {
           </nav>
 
           {tab === "workers" ? (
-            <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {workers.map((w) => (
-                <li
-                  key={w.id}
-                  className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-5 text-center shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <img
-                    src={w.avatarUrl}
-                    alt={`Ảnh đại diện ${w.name}`}
-                    loading="lazy"
-                    className="h-20 w-20 rounded-full object-cover ring-2 ring-primary/15"
-                  />
-                  <span className="mt-1 text-sm font-semibold tracking-wide">{w.name}</span>
-                  <span className="text-xs font-medium text-primary">{w.title}</span>
-                  <span className="text-xs text-muted-foreground">{w.tagline}</span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-success">
-                    <span className="h-1.5 w-1.5 rounded-full bg-success" /> Đang hoạt động
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setProfileId(w.id)}
-                    className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-surface-2"
+            <>
+              <AiWorkforceImport />
+              <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {workers.map((w) => (
+                  <li
+                    key={w.id}
+                    className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-5 text-center shadow-sm transition-shadow hover:shadow-md"
                   >
-                    Xem hồ sơ
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <img
+                      src={w.avatarUrl}
+                      alt={`Ảnh đại diện ${w.name}`}
+                      loading="lazy"
+                      className="h-20 w-20 rounded-full object-cover ring-2 ring-primary/15"
+                    />
+                    <span className="mt-1 text-sm font-semibold tracking-wide">{w.name}</span>
+                    <span className="text-xs font-medium text-primary">{w.title}</span>
+                    <span className="text-xs text-muted-foreground">{w.tagline}</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-success">
+                      <span className="h-1.5 w-1.5 rounded-full bg-success" /> Đang hoạt động
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setProfileId(w.id)}
+                      className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-surface-2"
+                    >
+                      Xem hồ sơ
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : tab === "assign" ? (
             <AiWorkforceAssignments />
           ) : tab === "contracts" ? (
