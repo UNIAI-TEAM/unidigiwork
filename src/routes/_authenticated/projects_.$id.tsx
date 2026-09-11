@@ -415,6 +415,68 @@ function ProjectDetailPage() {
     }
   }
 
+  function downloadMeetingTemplate() {
+    const csv =
+      "Tiêu đề,Bắt đầu,Kết thúc,Địa điểm,Nội dung\nHọp tiến độ tuần,2026-09-14 09:00,2026-09-14 10:00,Phòng họp A,Rà soát tiến độ\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mau-lich-hop.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportMeetingFile(file: File) {
+    setImportingMeetings(true);
+    try {
+      const { readXlsxRows, readCsvRows, normalizeDateCell } = await import("@/lib/xlsx-read");
+      const rows = file.name.toLowerCase().endsWith(".csv")
+        ? readCsvRows(await file.text())
+        : readXlsxRows(await file.arrayBuffer());
+      if (rows.length < 2) throw new Error("Tệp không có dữ liệu");
+
+      const headers = (rows[0] ?? []).map((h) => h.toLowerCase().trim());
+      const titleCol = pickColumn(headers, ["tiêu đề", "tieu de", "title", "cuộc họp", "họp"]);
+      const startCol = pickColumn(headers, ["bắt đầu", "bat dau", "start", "thời gian"]);
+      const endCol = pickColumn(headers, ["kết thúc", "ket thuc", "end"]);
+      const locCol = pickColumn(headers, ["địa điểm", "dia diem", "location", "phòng"]);
+      const agendaCol = pickColumn(headers, ["nội dung", "noi dung", "agenda", "chương trình"]);
+      if (titleCol < 0 || startCol < 0) throw new Error("Thiếu cột tiêu đề hoặc thời gian bắt đầu");
+
+      const payload = rows
+        .slice(1)
+        .map((r) => {
+          const title = (r[titleCol] ?? "").trim();
+          const rawStart = (r[startCol] ?? "").trim();
+          if (!title || !rawStart) return null;
+          const startAt = normalizeDateCell(rawStart) ?? rawStart;
+          const rawEnd = endCol >= 0 ? (r[endCol] ?? "").trim() : "";
+          return {
+            title,
+            startAt,
+            endAt: rawEnd ? (normalizeDateCell(rawEnd) ?? rawEnd) : null,
+            location: locCol >= 0 ? (r[locCol] ?? "").trim() || null : null,
+            agenda: agendaCol >= 0 ? (r[agendaCol] ?? "").trim() || null : null,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .slice(0, 100);
+      if (!payload.length) throw new Error("Không đọc được dòng lịch họp nào");
+
+      const result = await importMeetingsFn({ data: { projectId: id, rows: payload } });
+      qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      toast.success(
+        `Đã nhập ${result.created} cuộc họp${result.invalid.length ? ` · ${result.invalid.length} dòng lỗi` : ""}`,
+      );
+    } catch (e) {
+      toast.error((e as Error)?.message || "Không nhập được lịch họp");
+    } finally {
+      setImportingMeetings(false);
+    }
+  }
+
   function moveTask(taskId: string, toStatus: string) {
     const current = tasks.find((t) => t.id === taskId);
     if (!current || current.status === toStatus) return;
