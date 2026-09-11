@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type Theme = "light" | "dark";
-export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose";
+export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose" | "gradient";
 export type Contrast = "normal" | "high";
 export type FontScale = "sm" | "md" | "lg" | "xl";
 export type FontFamily = "sans" | "serif" | "mono";
