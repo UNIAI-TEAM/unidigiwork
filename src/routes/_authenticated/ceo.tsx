@@ -19,6 +19,7 @@ import {
   User,
 } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
+import { CeoImportPanel } from "@/components/ceo/ceo-import";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import {
