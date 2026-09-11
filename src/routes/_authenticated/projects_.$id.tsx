@@ -938,7 +938,12 @@ function ProjectDetailPage() {
                     </Button>
                   </section>
 
-                  <ProjectCalendar tasks={tasks} meetings={meetingsQuery.data ?? []} />
+                  <ProjectCalendar
+                    tasks={tasks}
+                    meetings={meetingsQuery.data ?? []}
+                    proposals={proposalsQuery.data ?? []}
+                  />
+
 
                   <section className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
