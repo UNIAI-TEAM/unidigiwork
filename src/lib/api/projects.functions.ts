@@ -301,14 +301,14 @@ export const importTaskProgress = createServerFn({ method: "POST" })
       }
       if (Object.keys(patch).length <= 1) continue;
 
-      const { error: upErr } = await context.supabase
+      const { error: upErr } = await supabaseAdmin
         .from("tasks")
         .update(patch as never)
         .eq("id", taskId)
         .eq("project_id", data.projectId)
         .is("deleted_at", null);
       if (upErr) {
-        invalid.push(`${label}: ${upErr.message}`);
+        invalid.push(label);
         continue;
       }
       updated += 1;
