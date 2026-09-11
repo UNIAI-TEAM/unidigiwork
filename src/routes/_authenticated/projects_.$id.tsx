@@ -941,6 +941,38 @@ function ProjectDetailPage() {
                       </span>
                     </div>
 
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11"
+                        onClick={downloadMeetingTemplate}
+                      >
+                        Tải mẫu lịch họp
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11"
+                        disabled={importingMeetings}
+                        onClick={() => meetingFileRef.current?.click()}
+                      >
+                        {importingMeetings ? "Đang nhập..." : "Nhập lịch họp từ Excel"}
+                      </Button>
+                      <input
+                        ref={meetingFileRef}
+                        type="file"
+                        accept=".xlsx,.csv"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void handleImportMeetingFile(f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </div>
+
+
                     <div className="mt-3 space-y-2">
                       <Input
                         value={mTitle}
