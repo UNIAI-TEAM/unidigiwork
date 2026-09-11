@@ -295,6 +295,7 @@ function CeoPage() {
   const fn = useServerFn(getCeoOverview);
   const exportFn = useServerFn(exportCeoReport);
   const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
+  const [deptFilter, setDeptFilter] = useState<string>("all");
 
   const download = async (format: "pdf" | "xlsx") => {
     setExporting(format);
@@ -750,50 +751,77 @@ function CeoPage() {
               </div>
 
               <Card title="Nhật ký đề xuất giao việc">
-                {data.proposals.entries.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Chưa có đề xuất nào.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {data.proposals.entries.map((p) => (
-                      <li
-                        key={p.id}
-                        className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium">{p.title}</span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {p.actionType}
-                            {p.workerName ? ` · ${p.workerName}` : ""}
-                            {p.taskTitle ? ` · ${p.taskTitle}` : ""} ·{" "}
-                            {new Date(p.createdAt).toLocaleDateString("vi-VN")}
-                          </span>
-                        </span>
-                        <span className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
-                          {typeof p.taskProgressPct === "number" ? (
-                            <ProgressPill value={p.taskProgressPct} />
-                          ) : null}
-                          {p.taskDueAt ? (
-                            <span className="text-xs text-muted-foreground">
-                              hạn {new Date(p.taskDueAt).toLocaleDateString("vi-VN")}
-                            </span>
-                          ) : null}
-                          <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
-                            {STATUS_LABEL[p.status] ?? p.status}
-                          </Badge>
-                          {p.taskId ? (
-                            <Link
-                              to="/tasks/$id"
-                              params={{ id: p.taskId }}
-                              className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
-                            >
-                              Xem việc
-                            </Link>
-                          ) : null}
-                        </span>
-                      </li>
+                <div className="mb-3 flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground" htmlFor="dept-filter">
+                    Bộ phận
+                  </label>
+                  <select
+                    id="dept-filter"
+                    value={deptFilter}
+                    onChange={(e) => setDeptFilter(e.target.value)}
+                    className="min-h-11 rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    <option value="all">Tất cả bộ phận</option>
+                    <option value="none">Chưa gắn bộ phận</option>
+                    {data.departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
                     ))}
-                  </ul>
-                )}
+                  </select>
+                </div>
+                {(() => {
+                  const filtered =
+                    deptFilter === "all"
+                      ? data.proposals.entries
+                      : deptFilter === "none"
+                        ? data.proposals.entries.filter((p) => !p.workspaceId)
+                        : data.proposals.entries.filter((p) => p.workspaceId === deptFilter);
+                  return filtered.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Chưa có đề xuất nào.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {filtered.map((p) => (
+                        <li
+                          key={p.id}
+                          className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{p.title}</span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {p.actionType}
+                              {p.workerName ? ` · ${p.workerName}` : ""}
+                              {p.taskTitle ? ` · ${p.taskTitle}` : ""} ·{" "}
+                              {new Date(p.createdAt).toLocaleDateString("vi-VN")}
+                            </span>
+                          </span>
+                          <span className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
+                            {typeof p.taskProgressPct === "number" ? (
+                              <ProgressPill value={p.taskProgressPct} />
+                            ) : null}
+                            {p.taskDueAt ? (
+                              <span className="text-xs text-muted-foreground">
+                                hạn {new Date(p.taskDueAt).toLocaleDateString("vi-VN")}
+                              </span>
+                            ) : null}
+                            <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
+                              {STATUS_LABEL[p.status] ?? p.status}
+                            </Badge>
+                            {p.taskId ? (
+                              <Link
+                                to="/tasks/$id"
+                                params={{ id: p.taskId }}
+                                className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
+                              >
+                                Xem việc
+                              </Link>
+                            ) : null}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
               </Card>
 
               <Card title="Bốn câu hỏi của CEO">

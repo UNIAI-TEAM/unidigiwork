@@ -58,6 +58,7 @@ export type CeoProposalEntry = {
   taskStatus: string | null;
   taskProgressPct: number | null;
   taskDueAt: string | null;
+  workspaceId: string | null;
 };
 
 export type CeoOverview = {
@@ -574,6 +575,7 @@ export async function loadCeoOverview(
         p.target_type === "TASK" && p.target_id
           ? (taskById.get(p.target_id)?.due_at ?? null)
           : null,
+      workspaceId: p.workspace_id,
     })),
   };
 
