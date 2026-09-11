@@ -103,9 +103,9 @@ function AuthPage() {
   };
 
   return (
-    <div className="auth-bg min-h-screen px-4 py-6 sm:py-10">
+    <div className="auth-bg min-h-screen px-4 py-4 sm:py-10">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center">
-        <div className="mb-3 flex items-center gap-2 self-start">
+        <div className="mb-2 flex items-center gap-2 self-start">
           <BrandMark className="h-9 w-9" />
           <div>
             <div className="font-heading text-base font-bold">UNIWORK</div>
