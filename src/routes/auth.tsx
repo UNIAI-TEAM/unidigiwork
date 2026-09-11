@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import authHero from "@/assets/auth-hero.png";
 
 const authDescription = "Đăng nhập hoặc tạo tài khoản UNIWORK bằng email.";
 
