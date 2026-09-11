@@ -207,7 +207,18 @@ export const updateTaskProgress = createServerFn({ method: "POST" })
     ) {
       throw new Error("INVALID_DATE_RANGE");
     }
-    const { data: row, error } = await context.supabase
+    // RLS xác nhận quyền đọc task trước, sau đó ghi bằng client quản trị.
+    const { data: allowed, error: readErr } = await context.supabase
+      .from("tasks")
+      .select("id")
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (readErr) mapPgError(readErr);
+    if (!allowed) throw new Error("TASK_NOT_FOUND");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("tasks")
       .update(patch as never)
       .eq("id", data.taskId)
