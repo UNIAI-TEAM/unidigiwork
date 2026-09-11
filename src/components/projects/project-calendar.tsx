@@ -49,7 +49,6 @@ type DayItem =
       workerName?: string | null;
     };
 
-
 function dayKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
@@ -75,7 +74,6 @@ export function ProjectCalendar({
   meetings: CalendarMeeting[];
   proposals?: CalendarProposal[];
 }) {
-
   const today = new Date();
   const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<string>(() => dayKey(today));
@@ -141,7 +139,6 @@ export function ProjectCalendar({
     }
     return map;
   }, [tasks, meetings, proposals]);
-
 
   const grid = useMemo(() => {
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
@@ -225,7 +222,6 @@ export function ProjectCalendar({
                 {hasMeeting && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
                 {hasTask && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
                 {hasProposal && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
-
               </span>
             </button>
           );
@@ -242,7 +238,6 @@ export function ProjectCalendar({
         <span className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-violet-500" /> Đề xuất giao việc
         </span>
-
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
@@ -307,7 +302,6 @@ export function ProjectCalendar({
                   </div>
                 </>
               )}
-
             </li>
           ))}
         </ul>

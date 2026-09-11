@@ -42,7 +42,6 @@ import {
   importProjectMeetings,
   listProjectProposals,
   type ProjectProposal,
-
   type ProjectRow,
   type ProjectStatus,
 } from "@/lib/api/projects.functions";
@@ -80,7 +79,6 @@ function proposalsByDay(list: ProjectProposal[]) {
   }
   return map;
 }
-
 
 const STATUS_LABEL: Record<ProjectStatus, string> = {
   planning: "Lập kế hoạch",
@@ -957,7 +955,6 @@ function ProjectDetailPage() {
                     proposals={proposalsQuery.data ?? []}
                   />
 
-
                   <section className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h2 className="flex items-center gap-2 font-semibold">
@@ -1099,7 +1096,6 @@ function ProjectDetailPage() {
                               </div>
                             ))}
                         </li>
-
                       ))}
                     </ul>
                   </section>
