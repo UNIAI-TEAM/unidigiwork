@@ -816,6 +816,13 @@ function CeoPage() {
                                 Xem việc
                               </Link>
                             ) : null}
+                            <ProposalActions
+                              entry={p}
+                              workers={workers.data ?? []}
+                              workspaceId={workspaceId ?? null}
+                              onDone={() => void refetch()}
+                            />
+                          </span>
                           </span>
                         </li>
                       ))}
