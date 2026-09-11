@@ -695,6 +695,40 @@ function CeoPage() {
                           </div>
                         );
                       })}
+                      <div className="mt-3 overflow-x-auto">
+                        <table className="w-full min-w-[520px] text-sm">
+                          <thead>
+                            <tr className="text-left text-xs text-muted-foreground">
+                              <th className="py-1 pr-2 font-medium">Bộ phận</th>
+                              <th className="py-1 pr-2 text-right font-medium">Hoàn thành</th>
+                              <th className="py-1 pr-2 text-right font-medium">Quá hạn</th>
+                              <th className="py-1 pr-2 text-right font-medium">AI %</th>
+                              <th className="py-1 pr-2 text-right font-medium">Giờ ước tính</th>
+                              <th className="py-1 text-right font-medium">Đề xuất</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {data.departments.map((d) => (
+                              <tr key={`kpi-${d.id}`} className="border-t border-border">
+                                <td className="max-w-40 truncate py-1.5 pr-2">{d.name}</td>
+                                <td className="py-1.5 pr-2 text-right tabular-nums">
+                                  {n(d.completed)}
+                                </td>
+                                <td className="py-1.5 pr-2 text-right tabular-nums text-destructive">
+                                  {n(d.overdue)}
+                                </td>
+                                <td className="py-1.5 pr-2 text-right tabular-nums">
+                                  {d.aiSharePct}%
+                                </td>
+                                <td className="py-1.5 pr-2 text-right tabular-nums">
+                                  {d.hoursEstimated}
+                                </td>
+                                <td className="py-1.5 text-right tabular-nums">{n(d.proposals)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </Card>
