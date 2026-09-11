@@ -32,7 +32,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cancelAiAction, confirmAiAction } from "@/lib/api/ai-actions.functions";
-import { assignTasksToRole, getRoleWorkload, type RoleWorkload } from "@/lib/api/ai-brain.functions";
+import {
+  assignTasksToRole,
+  getRoleWorkload,
+  type RoleWorkload,
+} from "@/lib/api/ai-brain.functions";
+import { assignTask } from "@/lib/api/tasks.functions";
+import { updateTaskProgress } from "@/lib/api/projects.functions";
+import { listWorkspaceMembers } from "@/lib/api/workspaces.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo")({
   head: () => ({
