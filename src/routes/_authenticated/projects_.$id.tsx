@@ -190,6 +190,12 @@ function ProjectDetailPage() {
     queryKey: ["project", id, "meetings"],
     queryFn: () => listProjectMeetings({ data: { projectId: id } }),
   });
+  // Đề xuất giao việc của AI gắn với dự án (hiển thị trên lịch và trong lịch họp).
+  const proposalsQuery = useQuery({
+    queryKey: ["project", id, "proposals"],
+    queryFn: () => listProjectProposals({ data: { projectId: id } }),
+  });
+
   const scheduleMeetingFn = useServerFn(scheduleProjectMeeting);
   const importMeetingsFn = useServerFn(importProjectMeetings);
   const [importingMeetings, setImportingMeetings] = useState(false);
