@@ -14,6 +14,7 @@ import { useI18n } from "@/lib/i18n";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
 import { AiBrainRoles } from "@/components/ai/ai-brain-roles";
+import { AiProposalLog } from "@/components/ai/ai-proposal-log";
 import { createAiSkillFromProposal, retrainAiSkillsFromWork } from "@/lib/api/ai-skills.functions";
 import {
   cancelAiAction,
@@ -261,6 +262,8 @@ function AiBrainPage() {
           <div className="mt-6">
             <AiBrainRoles />
           </div>
+
+          <AiProposalLog />
 
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {/* Đề xuất đang chờ duyệt */}

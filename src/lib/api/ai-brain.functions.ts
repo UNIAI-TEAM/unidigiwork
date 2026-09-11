@@ -345,7 +345,9 @@ export const getProposalLog = createServerFn({ method: "POST" })
           .map((r) =>
             r.target_type === "TASK"
               ? r.target_id
-              : ((r.result as any)?.entityType === "TASK" ? (r.result as any)?.entityId : null),
+              : (r.result as any)?.entityType === "TASK"
+                ? (r.result as any)?.entityId
+                : null,
           )
           .filter(Boolean),
       ),
@@ -370,7 +372,9 @@ export const getProposalLog = createServerFn({ method: "POST" })
       const taskId =
         r.target_type === "TASK"
           ? r.target_id
-          : ((r.result as any)?.entityType === "TASK" ? (r.result as any)?.entityId : null);
+          : (r.result as any)?.entityType === "TASK"
+            ? (r.result as any)?.entityId
+            : null;
       const task = taskId ? taskById.get(taskId) : null;
       return {
         id: r.id as string,
