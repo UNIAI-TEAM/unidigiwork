@@ -101,6 +101,12 @@ export type CeoOverview = {
     ai: number;
     total: number;
     weight: number;
+    completed: number;
+    overdue: number;
+    aiSharePct: number;
+    /** Giờ ước tính theo số việc hoàn thành, không phải giờ chấm công thật. */
+    hoursEstimated: number;
+    proposals: number;
   }[];
   kpi: {
     configured: boolean;
