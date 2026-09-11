@@ -431,6 +431,45 @@ export async function loadCeoOverview(
       href: "/ai-brain",
     });
   }
+  // Đề xuất giao việc từ Bộ não AI cũng là một dòng KPI của Command Center.
+  const ASSIGNMENT_ACTIONS = new Set([
+    "CREATE_TASK",
+    "PROPOSE_TASK",
+    "ASSIGN_TASK",
+    "UPDATE_TASK_FIELDS",
+    "TRANSITION_TASK",
+  ]);
+  const workerNames = new Map(workers.map((w) => [w.id, w.name]));
+  const taskTitles = new Map(allTasks.map((t) => [t.id, t.title ?? "Công việc"]));
+  const propCur = allProposals.filter((p) => inRange(p.created_at));
+  const propPrev = allProposals.filter((p) => inPrev(p.created_at));
+  const propExecuted = propCur.filter((p) => p.status === "SUCCEEDED" || !!p.executed_at).length;
+  const propRejected = propCur.filter((p) =>
+    ["REJECTED", "CANCELLED", "EXPIRED", "FAILED"].includes(p.status),
+  ).length;
+  const proposalsBlock = {
+    total: { current: propCur.length, previous: propPrev.length, changePct: pct(propCur.length, propPrev.length) },
+    pending: pendingProposals.length,
+    executed: propExecuted,
+    rejected: propRejected,
+    assignment: propCur.filter((p) => ASSIGNMENT_ACTIONS.has(p.action_type)).length,
+    executionRate: propCur.length ? Math.round((propExecuted / propCur.length) * 100) : null,
+    entries: allProposals.slice(0, 20).map((p) => ({
+      id: p.id,
+      title: p.title,
+      actionType: p.action_type,
+      status: p.status,
+      source: p.source,
+      risk: p.risk,
+      createdAt: p.created_at,
+      executedAt: p.executed_at,
+      workerName: p.ai_worker_id ? (workerNames.get(p.ai_worker_id) ?? null) : null,
+      taskTitle:
+        p.target_type === "TASK" && p.target_id ? (taskTitles.get(p.target_id) ?? null) : null,
+      taskId: p.target_type === "TASK" ? p.target_id : null,
+    })),
+  };
+
   const awaitingReview = execs.filter((e) => !e.reviewed_at && e.status !== "FAILED").length;
   if (awaitingReview)
     issues.push({
