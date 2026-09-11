@@ -64,6 +64,31 @@ export async function runDailyBrainRetraining(admin: any, limit = 20): Promise<D
       const res = await retrainSkillsForTenant({ supabase: admin, userId }, row.tenant_id, null);
       result.retrained += 1;
       result.createdSkills += res.created;
+
+      // Sau khi đào tạo, tính lại KPI của tổ chức và lưu ảnh chụp để Command Center
+      // hiển thị số liệu mới ngay, không cần bấm "Làm mới".
+      try {
+        const overview = await loadCeoOverview(admin, row.tenant_id, "week");
+        await admin
+          .from("ceo_kpi_settings")
+          .update({
+            kpi_refreshed_at: new Date().toISOString(),
+            kpi_snapshot: {
+              score: overview.kpi.score ?? null,
+              configured: overview.kpi.configured,
+              totalTasks: overview.totals.total,
+              completed: overview.totals.completed.current,
+              overdue: overview.totals.overdue,
+              aiSharePct: overview.split.aiSharePct,
+            },
+          })
+          .eq("tenant_id", row.tenant_id);
+        result.kpiRefreshed += 1;
+      } catch (e) {
+        result.errors.push(
+          `KPI ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
     } catch (e) {
       result.errors.push(
         `${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
