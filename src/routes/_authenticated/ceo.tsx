@@ -27,7 +27,12 @@ import {
   saveCeoKpiSettings,
   type CeoPeriod,
 } from "@/lib/api/ceo.functions";
-import type { CeoOverview } from "@/lib/api/ceo.functions";
+import type { CeoOverview, CeoProposalEntry } from "@/lib/api/ceo.functions";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { cancelAiAction, confirmAiAction } from "@/lib/api/ai-actions.functions";
+import { assignTasksToRole, getRoleWorkload, type RoleWorkload } from "@/lib/api/ai-brain.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo")({
   head: () => ({
