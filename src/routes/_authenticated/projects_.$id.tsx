@@ -40,6 +40,9 @@ import {
   listProjectMeetings,
   scheduleProjectMeeting,
   importProjectMeetings,
+  listProjectProposals,
+  type ProjectProposal,
+
   type ProjectRow,
   type ProjectStatus,
 } from "@/lib/api/projects.functions";
