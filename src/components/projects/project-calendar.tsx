@@ -224,6 +224,8 @@ export function ProjectCalendar({
               <span className="mt-0.5 flex h-1.5 items-center gap-0.5">
                 {hasMeeting && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
                 {hasTask && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+                {hasProposal && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
+
               </span>
             </button>
           );
