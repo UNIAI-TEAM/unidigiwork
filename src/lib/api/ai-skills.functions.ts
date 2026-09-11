@@ -819,7 +819,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         `actionTypes: chỉ trong ${AI_ACTION_TYPES.join(",")}; rỗng nếu chỉ tra cứu/phân tích/soạn thảo. ` +
         "Ưu tiên các kỹ năng bám sát TIẾN ĐỘ THỰC TẾ: việc quá hạn, việc bị chặn, việc ì ạch không cập nhật, việc sắp đến hạn, việc thiếu hạn. " +
         "Đọc kỹ DÒNG THỜI GIAN HOẠT ĐỘNG để hiểu ai thường làm gì, vào lúc nào và kết quả ra sao; ưu tiên kỹ năng lặp lại theo thói quen làm việc thật đó. " +
-        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ).",
+        "Dùng LỊCH HỌP THẬT làm mốc thời gian: kỹ năng liên quan tới họp phải bám đúng cuộc họp có thật (tên, dự án, ngày giờ, địa điểm), " +
+        "ví dụ chuẩn bị tài liệu trước cuộc họp sắp tới, đối soát việc cần chốt trong cuộc họp đó, theo dõi sau họp. TUYỆT ĐỐI không bịa cuộc họp không có trong dữ liệu. " +
+        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ, tên và thời gian cuộc họp).",
       prompt: corpus,
     });
 
