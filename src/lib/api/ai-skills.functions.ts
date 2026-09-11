@@ -700,6 +700,58 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       );
     }
 
+    // KPI THẬT TỪ CEO COMMAND CENTER: cùng nguồn số liệu với màn điều hành,
+    // để đề xuất giao việc và cảnh báo bám đúng KPI đang hiển thị cho ban lãnh đạo.
+    let ceoLines: string[] = [];
+    let ceoKpi: { period: string; overdue: number; aiSharePct: number } | null = null;
+    try {
+      const ceo = await loadCeoOverview(
+        context.supabase,
+        tenantId,
+        "month",
+        data.workspaceId ?? null,
+      );
+      ceoKpi = {
+        period: ceo.period,
+        overdue: ceo.totals.overdue,
+        aiSharePct: ceo.split.aiSharePct,
+      };
+      ceoLines = [
+        "KPI ĐIỀU HÀNH (CEO COMMAND CENTER — kỳ 30 ngày gần nhất, so với kỳ liền trước):",
+        `- Việc mới: ${ceo.totals.tasks.current} (kỳ trước ${ceo.totals.tasks.previous}, thay đổi ${ceo.totals.tasks.changePct ?? "—"}%).`,
+        `- Hoàn thành: ${ceo.totals.completed.current} (kỳ trước ${ceo.totals.completed.previous}, thay đổi ${ceo.totals.completed.changePct ?? "—"}%).`,
+        `- Đang thực hiện: ${ceo.totals.inProgress}. Quá hạn: ${ceo.totals.overdue}.`,
+        `- Chuyển dịch Người ↔ AI: người ${ceo.split.human}, AI ${ceo.split.ai}; AI đảm nhiệm ${ceo.split.aiSharePct}% (kỳ trước ${ceo.split.aiSharePrevPct}%).`,
+        `- Thời gian: giờ người ${ceo.time.humanHours} (ƯỚC TÍNH, chưa có chấm công), giờ AI ${ceo.time.aiHours} (đo thật), giờ họp ${ceo.time.meetingHours}, ước tính tiết kiệm ${ceo.time.savedHours}, đòn bẩy AI ${ceo.time.leverage ?? "chưa đủ dữ liệu"}.`,
+        `- Chất lượng: ${ceo.quality.withResult}/${ceo.quality.tasksCreated} việc có kết quả (${ceo.quality.resultRate ?? "—"}%), đã review ${ceo.quality.reviewed}, đạt ${ceo.quality.passed} (${ceo.quality.passRate ?? "—"}%).`,
+        ...(ceo.departments.length
+          ? [
+              "- Phân bổ theo bộ phận (người/AI):",
+              ...ceo.departments.map((d) => `  · ${d.name}: ${d.human}/${d.ai} (tổng ${d.total})`),
+            ]
+          : []),
+        ...(ceo.people.length
+          ? [
+              "- Khối lượng theo nhân sự (loại · việc · hoàn thành · giờ · đạt review):",
+              ...ceo.people
+                .slice(0, 15)
+                .map(
+                  (p) =>
+                    `  · ${p.name} · ${p.kind === "ai" ? "AI" : "Người"} · ${p.tasks} · ${p.completed} · ${p.hours}${p.hoursEstimated ? " (ước tính)" : ""} · ${p.reviewPassRate ?? "—"}%`,
+                ),
+            ]
+          : []),
+        ...(ceo.issues.length
+          ? [
+              "- Vấn đề CEO đang nhìn thấy:",
+              ...ceo.issues.map((i) => `  · [${i.kind}] ${i.title} — ${i.detail}`),
+            ]
+          : []),
+      ];
+    } catch {
+      ceoLines = [];
+    }
+
     const now = Date.now();
     const DAY = 86_400_000;
     const overdue = tasks.filter(
