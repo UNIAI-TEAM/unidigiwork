@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type Theme = "light" | "dark";
-export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose";
+export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose" | "gradient";
 export type Contrast = "normal" | "high";
 export type FontScale = "sm" | "md" | "lg" | "xl";
 export type FontFamily = "sans" | "serif" | "mono";
@@ -47,6 +47,12 @@ export const TONES: { id: Tone; label: string; swatch: string }[] = [
   { id: "emerald", label: "Xanh lá", swatch: "oklch(0.62 0.15 155)" },
   { id: "amber", label: "Hổ phách", swatch: "oklch(0.72 0.15 75)" },
   { id: "rose", label: "Hồng đỏ", swatch: "oklch(0.62 0.18 15)" },
+  {
+    id: "gradient",
+    label: "Gradient (ClickUp)",
+    swatch:
+      "linear-gradient(135deg, oklch(0.66 0.20 340), oklch(0.58 0.20 300), oklch(0.62 0.17 250))",
+  },
 ];
 
 const TONE_KEY = "uniwork-tone";

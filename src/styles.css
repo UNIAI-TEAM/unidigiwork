@@ -660,3 +660,53 @@ html[data-font-family="mono"] body {
   font-family:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
+
+/* ---------------------------------------------------------------------------
+ * Tone "gradient" — dải hồng → tím → xanh kiểu ClickUp. Màu nhấn đặc là tím
+ * để giữ độ tương phản, kèm --gradient-primary cho nền chuyển sắc.
+ * ------------------------------------------------------------------------- */
+
+:root[data-tone="gradient"] {
+  --tone-h: 300;
+  --primary: oklch(0.56 0.19 300);
+  --accent: oklch(0.6 0.19 330);
+  --ring: oklch(0.56 0.19 300 / 55%);
+  --sidebar-primary: oklch(0.52 0.18 300);
+  --sidebar-ring: oklch(0.56 0.19 300 / 55%);
+  --gradient-primary: linear-gradient(
+    135deg,
+    oklch(0.66 0.2 340),
+    oklch(0.58 0.2 300),
+    oklch(0.62 0.17 250)
+  );
+}
+
+:root[data-tone="gradient"].dark,
+.dark :root[data-tone="gradient"],
+.dark:root[data-tone="gradient"] {
+  --primary: oklch(0.72 0.16 305);
+  --accent: oklch(0.74 0.16 335);
+  --ring: oklch(0.72 0.16 305 / 55%);
+  --sidebar-primary: oklch(0.72 0.16 305);
+  --sidebar-ring: oklch(0.72 0.16 305 / 55%);
+  --gradient-primary: linear-gradient(
+    135deg,
+    oklch(0.74 0.18 340),
+    oklch(0.68 0.18 300),
+    oklch(0.7 0.15 250)
+  );
+}
+
+:root[data-tone="gradient"][data-contrast="high"] {
+  --primary: oklch(0.42 0.21 300);
+  --accent: oklch(0.44 0.21 330);
+  --ring: oklch(0.3 0.05 300 / 90%);
+  --sidebar-primary: oklch(0.38 0.2 300);
+}
+
+:root[data-tone="gradient"][data-contrast="high"].dark,
+.dark:root[data-tone="gradient"][data-contrast="high"] {
+  --primary: oklch(0.86 0.14 305);
+  --accent: oklch(0.86 0.14 335);
+  --ring: oklch(0.94 0.05 305 / 90%);
+}

@@ -10,7 +10,13 @@ const Input = z.object({
   workspaceId: z.string().uuid().nullable().optional(),
 });
 
-export type { CeoOverview, CeoPeriod, CeoPersonRow, CeoIssue } from "./ceo.server";
+export type {
+  CeoOverview,
+  CeoPeriod,
+  CeoPersonRow,
+  CeoIssue,
+  CeoProposalEntry,
+} from "./ceo.server";
 
 export const getCeoOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

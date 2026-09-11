@@ -74,7 +74,9 @@ export function ceoReportMarkdown(o: CeoOverview): string {
   if (o.departments.length) {
     lines.push("## Công việc theo bộ phận");
     for (const dep of o.departments) {
-      lines.push(`- ${dep.name}: người ${dep.human} · AI ${dep.ai} · tổng ${dep.total}`);
+      lines.push(
+        `- ${dep.name}: người ${dep.human} · AI ${dep.ai} · tổng ${dep.total} · hoàn thành ${dep.completed} · quá hạn ${dep.overdue} · AI ${dep.aiSharePct}% · ~${dep.hoursEstimated} giờ · ${dep.proposals} đề xuất`,
+      );
     }
   }
 
@@ -182,6 +184,12 @@ export function buildCeoXlsx(o: CeoOverview): Uint8Array {
         Người: x.human,
         AI: x.ai,
         Tổng: x.total,
+        "Hoàn thành": x.completed,
+        "Quá hạn": x.overdue,
+        "Tỷ lệ AI (%)": x.aiSharePct,
+        "Giờ ước tính": x.hoursEstimated,
+        "Đề xuất": x.proposals,
+        "Trọng số KPI": x.weight,
       })),
     ),
     "Bộ phận",
