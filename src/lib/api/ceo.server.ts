@@ -441,13 +441,29 @@ export async function loadCeoOverview(
   const wsNames = new Map(
     ((wsR.data ?? []) as { id: string; name: string }[]).map((w) => [w.id, w.name]),
   );
-  const deptMap = new Map<string, { human: number; ai: number }>();
+  const deptMap = new Map<
+    string,
+    { human: number; ai: number; completed: number; overdue: number }
+  >();
   for (const t of cur) {
     const key = t.workspace_id ?? "none";
-    const row = deptMap.get(key) ?? { human: 0, ai: 0 };
+    const row = deptMap.get(key) ?? { human: 0, ai: 0, completed: 0, overdue: 0 };
     if (isAi(t)) row.ai += 1;
     else row.human += 1;
+    if (t.status === "done") row.completed += 1;
+    if (
+      t.due_at &&
+      t.status !== "done" &&
+      t.status !== "canceled" &&
+      new Date(t.due_at as string).getTime() < now.getTime()
+    )
+      row.overdue += 1;
     deptMap.set(key, row);
+  }
+  const deptProposals = new Map<string, number>();
+  for (const p of proposalEntries) {
+    const key = p.workspaceId ?? "none";
+    deptProposals.set(key, (deptProposals.get(key) ?? 0) + 1);
   }
   const departments = Array.from(deptMap.entries())
     .map(([id, v]) => ({
@@ -457,6 +473,11 @@ export async function loadCeoOverview(
       ai: v.ai,
       total: v.human + v.ai,
       weight: kpiWeights[id] ?? 1,
+      completed: v.completed,
+      overdue: v.overdue,
+      aiSharePct: v.human + v.ai ? Math.round((v.ai / (v.human + v.ai)) * 100) : 0,
+      hoursEstimated: Math.round(v.completed * HUMAN_HOURS_PER_TASK * 10) / 10,
+      proposals: deptProposals.get(id) ?? 0,
     }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 8);
