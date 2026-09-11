@@ -1053,7 +1053,26 @@ function ProjectDetailPage() {
                           {m.agenda && (
                             <p className="mt-1 text-xs text-muted-foreground">{m.agenda}</p>
                           )}
+                          {proposalsByDay(proposalsQuery.data ?? [])
+                            .get(new Date(m.startAt).toDateString())
+                            ?.map((p) => (
+                              <div
+                                key={p.id}
+                                className="mt-2 flex min-w-0 flex-wrap items-center gap-2 rounded-md bg-muted/60 px-2 py-1.5"
+                              >
+                                <Sparkles className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+                                <span className="min-w-0 flex-1 text-xs">{p.title}</span>
+                                <Badge variant={p.handled === "PENDING" ? "default" : "secondary"}>
+                                  {p.handled === "PENDING"
+                                    ? "Chờ xử lý"
+                                    : p.handled === "DONE"
+                                      ? "Đã xử lý"
+                                      : "Đã bỏ qua"}
+                                </Badge>
+                              </div>
+                            ))}
                         </li>
+
                       ))}
                     </ul>
                   </section>
