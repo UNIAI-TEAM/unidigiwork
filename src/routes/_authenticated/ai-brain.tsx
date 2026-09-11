@@ -1,11 +1,11 @@
 // AI BRAIN — trung tâm điều hành AI: đề xuất chờ duyệt, đội ngũ AI, nhật ký.
 // Chỉ đọc + dùng lại lớp hành động AI hiện có; AI không bao giờ tự thực thi.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bot, Check, ChevronDown, Loader2, Shield, Sparkles, X } from "lucide-react";
+import { Bot, Check, ChevronDown, Loader2, RefreshCw, Shield, Sparkles, X } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,12 @@ import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
 import { AiBrainRoles } from "@/components/ai/ai-brain-roles";
 import { AiProposalLog } from "@/components/ai/ai-proposal-log";
-import { createAiSkillFromProposal, retrainAiSkillsFromWork } from "@/lib/api/ai-skills.functions";
+import {
+  createAiSkillFromProposal,
+  getAutoRetrainState,
+  retrainAiSkillsFromWork,
+  setAutoRetrain,
+} from "@/lib/api/ai-skills.functions";
 import {
   cancelAiAction,
   confirmAiAction,
@@ -175,6 +180,39 @@ function AiBrainPage() {
     onError: (e: Error) => toast.error(e.message || "Không đào tạo lại được."),
   });
 
+  // TỰ ĐỘNG ĐÀO TẠO LẠI: theo dõi dấu vết KPI + tiến độ; khi đổi thì chạy lại.
+  const autoStateFn = useServerFn(getAutoRetrainState);
+  const setAutoFn = useServerFn(setAutoRetrain);
+  const autoState = useQuery({
+    queryKey: ["ai-brain", "auto-retrain", workspaceId ?? ""],
+    queryFn: () => autoStateFn({ data: { workspaceId: workspaceId ?? null } }),
+    refetchInterval: 60_000,
+  });
+  const setAuto = useMutation({
+    mutationFn: (enabled: boolean) =>
+      setAutoFn({ data: { workspaceId: workspaceId ?? null, enabled } }),
+    onSuccess: (r: { enabled: boolean }) => {
+      toast.success(
+        r.enabled
+          ? "Đã bật tự động đào tạo lại khi KPI hoặc tiến độ thay đổi."
+          : "Đã tắt tự động đào tạo lại.",
+      );
+      void qc.invalidateQueries({ queryKey: ["ai-brain", "auto-retrain"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không đổi được chế độ tự động."),
+  });
+
+  const autoFired = useRef<string | null>(null);
+  useEffect(() => {
+    const s = autoState.data;
+    if (!s?.shouldRetrain || retrain.isPending) return;
+    if (autoFired.current === s.signature) return;
+    autoFired.current = s.signature;
+    retrain.mutate(undefined, {
+      onSettled: () => void qc.invalidateQueries({ queryKey: ["ai-brain", "auto-retrain"] }),
+    });
+  }, [autoState.data, retrain, qc]);
+
   // Mobile: thẻ đề xuất thu gọn mặc định, chạm để mở chi tiết.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) =>
@@ -212,6 +250,20 @@ function AiBrainPage() {
                   <Sparkles className="mr-1.5 h-4 w-4" />
                 )}
                 Đào tạo lại từ dữ liệu thật
+              </Button>
+              <Button
+                variant={autoState.data?.enabled ? "secondary" : "outline"}
+                className="min-h-11"
+                disabled={setAuto.isPending || autoState.isLoading}
+                title="Tự động đào tạo lại mỗi khi KPI hoặc tiến độ công việc thay đổi"
+                onClick={() => setAuto.mutate(!autoState.data?.enabled)}
+              >
+                {setAuto.isPending ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1.5 h-4 w-4" />
+                )}
+                {autoState.data?.enabled ? "Tự động: Bật" : "Tự động: Tắt"}
               </Button>
               <Link
                 to="/workflows/agents"

@@ -1540,6 +1540,9 @@ export type Database = {
       }
       ceo_kpi_settings: {
         Row: {
+          auto_retrain: boolean
+          auto_retrain_at: string | null
+          auto_retrain_signature: string | null
           created_at: string
           department_weights: Json
           targets: Json
@@ -1548,6 +1551,9 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          auto_retrain?: boolean
+          auto_retrain_at?: string | null
+          auto_retrain_signature?: string | null
           created_at?: string
           department_weights?: Json
           targets?: Json
@@ -1556,6 +1562,9 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          auto_retrain?: boolean
+          auto_retrain_at?: string | null
+          auto_retrain_signature?: string | null
           created_at?: string
           department_weights?: Json
           targets?: Json

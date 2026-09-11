@@ -961,6 +961,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     }
 
+    // Ghi lại dấu vết dữ liệu đã học để chế độ tự động không chạy lặp vô ích.
+    await recordRetrainMark(context, tenantId);
+
     return {
       created: rows.length,
       names: rows.map((r) => r["name"] as string),
@@ -973,4 +976,128 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         ceoKpi,
       },
     };
+  });
+
+/* ---------------------------------------------------------------------------
+ * TỰ ĐỘNG ĐÀO TẠO LẠI — bật/tắt theo tổ chức. Dấu vết (signature) gồm KPI và
+ * tiến độ công việc; khi dấu vết đổi, giao diện sẽ tự gọi retrain (có chặn
+ * tần suất tối thiểu 15 phút để không tốn tài nguyên).
+ * ------------------------------------------------------------------------- */
+
+const AUTO_RETRAIN_MIN_INTERVAL_MS = 15 * 60 * 1000;
+
+async function computeWorkSignature(context: any, tenantId: string): Promise<string> {
+  const [tasksRes, kpiRes] = await Promise.all([
+    context.supabase
+      .from("tasks")
+      .select("id, status, progress_pct, updated_at")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(100),
+    context.supabase
+      .from("ceo_kpi_settings")
+      .select("updated_at, targets, department_weights")
+      .eq("tenant_id", tenantId)
+      .maybeSingle(),
+  ]);
+  const tasks = (tasksRes.data ?? []) as {
+    id: string;
+    status: string;
+    progress_pct: number | null;
+    updated_at: string | null;
+  }[];
+  const progressSum = tasks.reduce((s, t) => s + (t.progress_pct ?? 0), 0);
+  const latest = tasks[0]?.updated_at ?? "";
+  const statuses = tasks.map((t) => `${t.status}:${t.progress_pct ?? ""}`).join("|");
+  const kpi = kpiRes.data as { updated_at?: string } | null;
+  let hash = 0;
+  const raw = `${statuses}#${progressSum}#${latest}#${kpi?.updated_at ?? ""}`;
+  for (let i = 0; i < raw.length; i++) hash = (hash * 31 + raw.charCodeAt(i)) | 0;
+  return `${tasks.length}-${progressSum}-${hash}`;
+}
+
+async function recordRetrainMark(context: any, tenantId: string) {
+  try {
+    const signature = await computeWorkSignature(context, tenantId);
+    await context.supabase.from("ceo_kpi_settings").upsert(
+      {
+        tenant_id: tenantId,
+        auto_retrain_at: new Date().toISOString(),
+        auto_retrain_signature: signature,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "tenant_id" },
+    );
+  } catch {
+    /* không chặn kết quả đào tạo nếu ghi dấu vết thất bại */
+  }
+}
+
+export type AutoRetrainState = {
+  enabled: boolean;
+  lastRunAt: string | null;
+  signature: string;
+  lastSignature: string | null;
+  /** true khi dữ liệu đã đổi và đủ khoảng cách thời gian để chạy lại. */
+  shouldRetrain: boolean;
+};
+
+export const getAutoRetrainState = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ workspaceId: z.string().uuid().nullable().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<AutoRetrainState> => {
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
+    const [{ data: row }, signature] = await Promise.all([
+      context.supabase
+        .from("ceo_kpi_settings")
+        .select("auto_retrain, auto_retrain_at, auto_retrain_signature")
+        .eq("tenant_id", tenantId)
+        .maybeSingle(),
+      computeWorkSignature(context, tenantId),
+    ]);
+    const settings = row as {
+      auto_retrain?: boolean;
+      auto_retrain_at?: string | null;
+      auto_retrain_signature?: string | null;
+    } | null;
+    const enabled = Boolean(settings?.auto_retrain);
+    const lastRunAt = settings?.auto_retrain_at ?? null;
+    const lastSignature = settings?.auto_retrain_signature ?? null;
+    const fresh = lastRunAt
+      ? Date.now() - new Date(lastRunAt).getTime() < AUTO_RETRAIN_MIN_INTERVAL_MS
+      : false;
+    return {
+      enabled,
+      lastRunAt,
+      signature,
+      lastSignature,
+      shouldRetrain: enabled && !fresh && signature !== lastSignature,
+    };
+  });
+
+export const setAutoRetrain = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({ workspaceId: z.string().uuid().nullable().optional(), enabled: z.boolean() })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenantFlexible(context, data.workspaceId ?? null);
+    await assertCanEditSkills(context, tenantId);
+    const { error } = await context.supabase.from("ceo_kpi_settings").upsert(
+      {
+        tenant_id: tenantId,
+        auto_retrain: data.enabled,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "tenant_id" },
+    );
+    if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
+    return { enabled: data.enabled };
   });
