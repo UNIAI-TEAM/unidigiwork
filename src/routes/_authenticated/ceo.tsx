@@ -320,6 +320,13 @@ function CeoPage() {
     queryFn: () => fn({ data: { period, workspaceId: workspaceId ?? null } }),
   });
 
+  const rolesFn = useServerFn(getRoleWorkload);
+  const workers = useQuery({
+    queryKey: ["ceo", "roles", workspaceId ?? ""],
+    queryFn: () => rolesFn({ data: { workspaceId: workspaceId! } }),
+    enabled: Boolean(workspaceId),
+  });
+
   const today = new Date().toLocaleDateString("vi-VN", {
     weekday: "long",
     day: "2-digit",
