@@ -202,6 +202,8 @@ export function ProjectCalendar({
           const isSelected = k === selected;
           const hasMeeting = items.some((i) => i.kind === "meeting");
           const hasTask = items.some((i) => i.kind === "task");
+          const hasProposal = items.some((i) => i.kind === "proposal");
+
           return (
             <button
               key={k}
