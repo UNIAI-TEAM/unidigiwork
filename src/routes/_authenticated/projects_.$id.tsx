@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Upload,
   Download,
+  CalendarClock,
 } from "lucide-react";
 import { CommentThread } from "@/components/projects/comment-thread";
 import { ProjectCalendar } from "@/components/projects/project-calendar";
@@ -32,6 +33,15 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  addProjectComment,
   getProject,
   getProjectActivity,
   updateProject,
@@ -345,6 +355,67 @@ function ProjectDetailPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được tiến độ"),
   });
 
+  // Nhập tiến độ theo tuần: cập nhật % nhiều công việc cùng lúc + ghi nhật ký tuần.
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [weeklyValues, setWeeklyValues] = useState<Record<string, string>>({});
+  const [weeklyNote, setWeeklyNote] = useState("");
+  const updateProgressFn = useServerFn(updateTaskProgress);
+  const addProjectCommentFn = useServerFn(addProjectComment);
+
+  const weekLabel = useMemo(() => {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return `${monday.toLocaleDateString("vi-VN")} – ${sunday.toLocaleDateString("vi-VN")}`;
+  }, []);
+
+  function openWeekly() {
+    const init: Record<string, string> = {};
+    for (const t of tasks) init[t.id] = String(t.progress_pct ?? 0);
+    setWeeklyValues(init);
+    setWeeklyNote("");
+    setWeeklyOpen(true);
+  }
+
+  const weeklyMutation = useMutation({
+    mutationFn: async () => {
+      const changed = tasks.filter((t) => {
+        const raw = weeklyValues[t.id];
+        if (raw === undefined) return false;
+        const pct = Number(raw);
+        return Number.isFinite(pct) && pct !== (t.progress_pct ?? 0);
+      });
+      for (const t of changed) {
+        const pct = Math.max(0, Math.min(100, Math.round(Number(weeklyValues[t.id]))));
+        await updateProgressFn({ data: { taskId: t.id, progressPct: pct } });
+      }
+      const lines = changed.map(
+        (t) => `- ${t.title}: ${t.progress_pct ?? 0}% → ${Math.round(Number(weeklyValues[t.id]))}%`,
+      );
+      const body = [
+        `Cập nhật tiến độ tuần ${weekLabel}`,
+        ...(lines.length ? lines : ["- Không có thay đổi tiến độ"]),
+        ...(weeklyNote.trim() ? ["", `Ghi chú: ${weeklyNote.trim()}`] : []),
+      ].join("\n");
+      await addProjectCommentFn({ data: { projectId: id, body } });
+      return changed.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`Đã ghi nhận tiến độ tuần (${n} công việc)`);
+      setWeeklyOpen(false);
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
+      qc.invalidateQueries({ queryKey: ["project", id, "proposals"] });
+      qc.invalidateQueries({ queryKey: ["project", id, "activity"] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["project-comments", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không lưu được tiến độ tuần"),
+  });
+
   // Nhập tiến độ hàng loạt từ Excel/CSV.
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [importing, setImporting] = useState(false);
@@ -610,6 +681,14 @@ function ProjectDetailPage() {
                           if (f) void handleImportFile(f);
                         }}
                       />
+                      <Button
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        onClick={openWeekly}
+                        disabled={tasks.length === 0}
+                      >
+                        <CalendarClock className="h-3.5 w-3.5" /> Nhập tiến độ tuần
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -1195,6 +1274,54 @@ function ProjectDetailPage() {
           )}
         </main>
       </div>
+
+      <Dialog open={weeklyOpen} onOpenChange={setWeeklyOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nhập tiến độ tuần</DialogTitle>
+            <DialogDescription>
+              Tuần {weekLabel}. Cập nhật % hoàn thành từng việc.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {tasks.map((t) => (
+              <div key={t.id} className="flex items-center gap-3">
+                <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  inputMode="numeric"
+                  className="h-11 w-20"
+                  value={weeklyValues[t.id] ?? "0"}
+                  onChange={(e) => setWeeklyValues((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+              </div>
+            ))}
+            <Textarea
+              placeholder="Ghi chú tuần (tuỳ chọn)"
+              value={weeklyNote}
+              onChange={(e) => setWeeklyNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={weeklyMutation.isPending}
+              onClick={() => weeklyMutation.mutate()}
+            >
+              {weeklyMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Lưu tiến độ tuần
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
