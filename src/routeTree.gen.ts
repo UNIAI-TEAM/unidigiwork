@@ -93,6 +93,7 @@ import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
 import { Route as AuthenticatedAiMarketSearchRouteImport } from './routes/_authenticated/ai-market.search'
 import { Route as AuthenticatedAiMarketIdRouteImport } from './routes/_authenticated/ai-market.$id'
+import { Route as AuthenticatedAiBrainTrackingRouteImport } from './routes/_authenticated/ai-brain_.tracking'
 import { Route as AuthenticatedAiBrainSkillsRouteImport } from './routes/_authenticated/ai-brain_.skills'
 import { Route as AuthenticatedAdminWebhooksRouteImport } from './routes/_authenticated/admin.webhooks'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
@@ -570,6 +571,12 @@ const AuthenticatedAiMarketIdRoute = AuthenticatedAiMarketIdRouteImport.update({
   path: '/ai-market/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAiBrainTrackingRoute =
+  AuthenticatedAiBrainTrackingRouteImport.update({
+    id: '/ai-brain_/tracking',
+    path: '/ai-brain/tracking',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiBrainSkillsRoute =
   AuthenticatedAiBrainSkillsRouteImport.update({
     id: '/ai-brain_/skills',
@@ -852,6 +859,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
   '/ai-brain/skills': typeof AuthenticatedAiBrainSkillsRoute
+  '/ai-brain/tracking': typeof AuthenticatedAiBrainTrackingRoute
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
@@ -972,6 +980,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
   '/ai-brain/skills': typeof AuthenticatedAiBrainSkillsRoute
+  '/ai-brain/tracking': typeof AuthenticatedAiBrainTrackingRoute
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
@@ -1096,6 +1105,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/webhooks': typeof AuthenticatedAdminWebhooksRoute
   '/_authenticated/ai-brain_/skills': typeof AuthenticatedAiBrainSkillsRoute
+  '/_authenticated/ai-brain_/tracking': typeof AuthenticatedAiBrainTrackingRoute
   '/_authenticated/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/_authenticated/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
@@ -1220,6 +1230,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/webhooks'
     | '/ai-brain/skills'
+    | '/ai-brain/tracking'
     | '/ai-market/$id'
     | '/ai-market/search'
     | '/chat/$channelId'
@@ -1340,6 +1351,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/webhooks'
     | '/ai-brain/skills'
+    | '/ai-brain/tracking'
     | '/ai-market/$id'
     | '/ai-market/search'
     | '/chat/$channelId'
@@ -1463,6 +1475,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/webhooks'
     | '/_authenticated/ai-brain_/skills'
+    | '/_authenticated/ai-brain_/tracking'
     | '/_authenticated/ai-market/$id'
     | '/_authenticated/ai-market/search'
     | '/_authenticated/chat_/$channelId'
@@ -2143,6 +2156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiMarketIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ai-brain_/tracking': {
+      id: '/_authenticated/ai-brain_/tracking'
+      path: '/ai-brain/tracking'
+      fullPath: '/ai-brain/tracking'
+      preLoaderRoute: typeof AuthenticatedAiBrainTrackingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-brain_/skills': {
       id: '/_authenticated/ai-brain_/skills'
       path: '/ai-brain/skills'
@@ -2565,6 +2585,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWorkCatalogRoute: typeof AuthenticatedWorkCatalogRoute
   AuthenticatedWorkProductsRoute: typeof AuthenticatedWorkProductsRoute
   AuthenticatedAiBrainSkillsRoute: typeof AuthenticatedAiBrainSkillsRoute
+  AuthenticatedAiBrainTrackingRoute: typeof AuthenticatedAiBrainTrackingRoute
   AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
   AuthenticatedAiMarketSearchRoute: typeof AuthenticatedAiMarketSearchRoute
   AuthenticatedChatChannelIdRoute: typeof AuthenticatedChatChannelIdRoute
@@ -2608,6 +2629,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWorkCatalogRoute: AuthenticatedWorkCatalogRoute,
   AuthenticatedWorkProductsRoute: AuthenticatedWorkProductsRoute,
   AuthenticatedAiBrainSkillsRoute: AuthenticatedAiBrainSkillsRoute,
+  AuthenticatedAiBrainTrackingRoute: AuthenticatedAiBrainTrackingRoute,
   AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,
   AuthenticatedAiMarketSearchRoute: AuthenticatedAiMarketSearchRoute,
   AuthenticatedChatChannelIdRoute: AuthenticatedChatChannelIdRoute,
