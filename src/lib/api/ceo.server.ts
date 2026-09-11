@@ -180,10 +180,13 @@ export async function loadCeoOverview(
       supabase.from("workspaces").select("id, name").eq("tenant_id", tenantId),
       supabase
         .from("ai_action_proposals")
-        .select("id, title, status, created_at")
+        .select(
+          "id, title, status, created_at, action_type, source, risk, target_type, target_id, ai_worker_id, workspace_id, executed_at",
+        )
         .eq("tenant_id", tenantId)
-        .in("status", ["PROPOSED", "PREVIEWED"])
-        .limit(200),
+        .gte("created_at", iso(prevFrom))
+        .order("created_at", { ascending: false })
+        .limit(300),
     ]);
 
   type Task = {
