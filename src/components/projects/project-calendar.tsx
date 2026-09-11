@@ -69,10 +69,13 @@ const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 export function ProjectCalendar({
   tasks,
   meetings,
+  proposals = [],
 }: {
   tasks: CalendarTask[];
   meetings: CalendarMeeting[];
+  proposals?: CalendarProposal[];
 }) {
+
   const today = new Date();
   const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<string>(() => dayKey(today));
