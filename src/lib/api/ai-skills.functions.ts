@@ -781,6 +781,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         }${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`;
       }),
       ...progressLines,
+      ...(rosterLines.length ? ["DANH BẠ NHÂN SỰ AI (vai trò thật):", ...rosterLines] : []),
       ...(roleLines.length ? ["VAI TRÒ NHÂN SỰ AI (việc đang được giao):", ...roleLines] : []),
       ...(timelineLines.length
         ? ["DÒNG THỜI GIAN HOẠT ĐỘNG (ai làm gì, khi nào, kết quả):", ...timelineLines]
