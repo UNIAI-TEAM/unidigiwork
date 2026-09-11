@@ -622,7 +622,7 @@ export async function loadCeoOverview(
     if (r.ok === false) {
       issues.push({
         id: `kpi-${r.key}`,
-        kind: "decide",
+        kind: "stalled",
         title: `KPI chưa đạt: ${r.label}`,
         detail: `Thực tế ${r.actual}${r.unit === "%" ? "%" : ` ${r.unit}`} so với mục tiêu ${r.target}${r.unit === "%" ? "%" : ` ${r.unit}`}`,
         href: "/ceo",
