@@ -278,6 +278,12 @@ function AiBrainPage() {
               >
                 <Sparkles className="h-4 w-4" /> {t("aiBrain.manageSkills")}
               </Link>
+              <Link
+                to="/ai-brain/tracking"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3.5 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                <Bot className="h-4 w-4" /> Theo dõi đề xuất
+              </Link>
             </div>
           </div>
 
