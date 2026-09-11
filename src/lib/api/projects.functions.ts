@@ -305,7 +305,7 @@ export const importTaskProgress = createServerFn({ method: "POST" })
         .eq("project_id", data.projectId)
         .is("deleted_at", null);
       if (upErr) {
-        invalid.push(label);
+        invalid.push(`${label}: ${upErr.message}`);
         continue;
       }
       updated += 1;
