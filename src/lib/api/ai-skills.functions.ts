@@ -821,6 +821,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         "Đọc kỹ DÒNG THỜI GIAN HOẠT ĐỘNG để hiểu ai thường làm gì, vào lúc nào và kết quả ra sao; ưu tiên kỹ năng lặp lại theo thói quen làm việc thật đó. " +
         "Dùng LỊCH HỌP THẬT làm mốc thời gian: kỹ năng liên quan tới họp phải bám đúng cuộc họp có thật (tên, dự án, ngày giờ, địa điểm), " +
         "ví dụ chuẩn bị tài liệu trước cuộc họp sắp tới, đối soát việc cần chốt trong cuộc họp đó, theo dõi sau họp. TUYỆT ĐỐI không bịa cuộc họp không có trong dữ liệu. " +
+        "BẮT BUỘC: nếu phần LỊCH HỌP THẬT có ít nhất một cuộc họp, ít nhất 2 trong số kỹ năng trả về phải gắn với cuộc họp có thật đó và nêu đúng tên cuộc họp cùng ngày giờ trong description và example. " +
         "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ, tên và thời gian cuộc họp).",
       prompt: corpus,
     });
