@@ -378,7 +378,13 @@ function ProjectDetailPage() {
           const pct =
             pctNum === null || Number.isNaN(pctNum)
               ? null
-              : Math.max(0, Math.min(100, Math.round(pctNum <= 1 && pctRaw.includes(".") ? pctNum * 100 : pctNum)));
+              : Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    Math.round(pctNum <= 1 && pctRaw.includes(".") ? pctNum * 100 : pctNum),
+                  ),
+                );
           return {
             title,
             progressPct: pct,

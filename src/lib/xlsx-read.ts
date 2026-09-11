@@ -25,9 +25,7 @@ function readSharedStrings(xml: string): string[] {
   const items = xml.match(/<si\b[\s\S]*?<\/si>/g) ?? [];
   for (const si of items) {
     const parts = si.match(/<t[^>]*>([\s\S]*?)<\/t>/g) ?? [];
-    out.push(
-      decodeXmlEntities(parts.map((p) => p.replace(/<[^>]+>/g, "")).join("")),
-    );
+    out.push(decodeXmlEntities(parts.map((p) => p.replace(/<[^>]+>/g, "")).join("")));
   }
   return out;
 }
@@ -59,8 +57,7 @@ export function readXlsxRows(buffer: ArrayBuffer): SheetRows {
         );
       } else {
         const raw = cellXml.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? "";
-        value =
-          type === "s" ? (shared[Number(raw)] ?? "") : decodeXmlEntities(raw);
+        value = type === "s" ? (shared[Number(raw)] ?? "") : decodeXmlEntities(raw);
       }
       while (cells.length < idx) cells.push("");
       cells[idx] = value.trim();
