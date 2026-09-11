@@ -826,3 +826,81 @@ export const scheduleProjectMeeting = createServerFn({ method: "POST" })
 
     return { ok: true, meetingId: meeting.id };
   });
+
+/**
+ * Nhập lịch họp thật cho dự án từ tệp Excel/CSV.
+ * Mỗi dòng tạo một cuộc họp qua RPC schedule_meeting rồi gắn vào dự án,
+ * nên lịch dự án và corpus đào tạo Bộ não AI đều thấy dữ liệu ngay.
+ */
+export const importProjectMeetings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        rows: z
+          .array(
+            z.object({
+              title: z.string().trim().min(1).max(500),
+              startAt: z.string().min(1).max(60),
+              endAt: z.string().max(60).nullable().optional(),
+              location: z.string().max(500).nullable().optional(),
+              agenda: z.string().max(4000).nullable().optional(),
+            }),
+          )
+          .min(1)
+          .max(100),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: project, error: pErr } = await context.supabase
+      .from("projects")
+      .select("id, workspace_id")
+      .eq("id", data.projectId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!project) throw new Error("PROJECT_NOT_FOUND");
+    const workspaceId = (project as unknown as { workspace_id: string }).workspace_id;
+
+    let created = 0;
+    const invalid: string[] = [];
+
+    for (const row of data.rows) {
+      const start = new Date(row.startAt);
+      if (Number.isNaN(start.getTime())) {
+        invalid.push(row.title);
+        continue;
+      }
+      const end = row.endAt ? new Date(row.endAt) : new Date(start.getTime() + 60 * 60 * 1000);
+      const endAt =
+        Number.isNaN(end.getTime()) || end <= start
+          ? new Date(start.getTime() + 60 * 60 * 1000)
+          : end;
+
+      const res = await context.supabase.rpc("schedule_meeting", {
+        _workspace_id: workspaceId,
+        _title: row.title,
+        _start_at: start.toISOString(),
+        _end_at: endAt.toISOString(),
+        _agenda: row.agenda ?? undefined,
+        _timezone: "Asia/Ho_Chi_Minh",
+        _location: row.location ?? undefined,
+        _idempotency_key: crypto.randomUUID(),
+      } as never);
+      const meeting = res.data as unknown as { id: string } | null;
+      if (res.error || !meeting?.id) {
+        invalid.push(row.title);
+        continue;
+      }
+      await context.supabase
+        .from("meetings")
+        .update({ project_id: data.projectId } as never)
+        .eq("id", meeting.id);
+      created += 1;
+    }
+
+    if (!created) throw new Error("MEETING_NOT_CREATED");
+    return { ok: true as const, created, invalid };
+  });

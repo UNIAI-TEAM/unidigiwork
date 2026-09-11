@@ -13,6 +13,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useI18n } from "@/lib/i18n";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
+import { AiBrainRoles } from "@/components/ai/ai-brain-roles";
 import { createAiSkillFromProposal, retrainAiSkillsFromWork } from "@/lib/api/ai-skills.functions";
 import {
   cancelAiAction,
@@ -256,6 +257,10 @@ function AiBrainPage() {
               </Link>
             </div>
           )}
+
+          <div className="mt-6">
+            <AiBrainRoles />
+          </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {/* Đề xuất đang chờ duyệt */}

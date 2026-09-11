@@ -142,3 +142,159 @@ export const getAiBrainOverview = createServerFn({ method: "GET" })
       })),
     };
   });
+
+// ===== GIAO VIỆC THEO VAI TRÒ =====
+// Bộ não AI nhìn theo vai trò (ai_workers), không chỉ theo hồ sơ mặc định.
+
+const WorkspaceInput = z.object({ workspaceId: z.string().uuid() });
+
+async function tenantOf(context: any, workspaceId: string) {
+  const { data, error } = await context.supabase
+    .from("workspaces")
+    .select("id, tenant_id")
+    .eq("id", workspaceId)
+    .maybeSingle();
+  if (error || !data) throw fail("WORKSPACE_NOT_FOUND", "Không tìm thấy không gian làm việc.");
+  return data.tenant_id as string;
+}
+
+export type RoleWorkload = {
+  workerId: string;
+  name: string;
+  role: string;
+  status: string;
+  total: number;
+  done: number;
+  avgProgress: number;
+  stalled: { id: string; title: string; status: string; progressPct: number; reason: string }[];
+};
+
+const STALE_DAYS = 7;
+
+/** Khối lượng và tiến độ công việc theo từng vai trò AI, kèm danh sách việc ì ạch. */
+export const getRoleWorkload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => WorkspaceInput.parse(i))
+  .handler(async ({ data, context }): Promise<RoleWorkload[]> => {
+    const tenantId = await tenantOf(context, data.workspaceId);
+    const { data: workers } = await context.supabase
+      .from("ai_workers")
+      .select("id, name, role, status")
+      .eq("tenant_id", tenantId)
+      .order("name", { ascending: true });
+    const list = (workers ?? []) as { id: string; name: string; role: string; status: string }[];
+    if (!list.length) return [];
+
+    const { data: tasks } = await context.supabase
+      .from("tasks")
+      .select("id, title, status, progress_pct, due_at, updated_at, ai_worker_id")
+      .eq("tenant_id", tenantId)
+      .in(
+        "ai_worker_id",
+        list.map((w) => w.id),
+      )
+      .is("deleted_at", null)
+      .limit(500);
+    const rows = (tasks ?? []) as any[];
+    const now = Date.now();
+    const staleMs = STALE_DAYS * 24 * 60 * 60 * 1000;
+
+    return list.map((w) => {
+      const own = rows.filter((t) => t.ai_worker_id === w.id);
+      const open = own.filter((t) => !["done", "canceled"].includes(t.status));
+      const progress = own.length
+        ? Math.round(own.reduce((s, t) => s + (t.progress_pct ?? 0), 0) / own.length)
+        : 0;
+      const stalled = open
+        .map((t) => {
+          const overdue = t.due_at && new Date(t.due_at).getTime() < now;
+          const stale = t.updated_at && now - new Date(t.updated_at).getTime() > staleMs;
+          if (!overdue && !stale) return null;
+          return {
+            id: t.id as string,
+            title: t.title as string,
+            status: t.status as string,
+            progressPct: (t.progress_pct ?? 0) as number,
+            reason: overdue ? "Quá hạn" : `Không cập nhật hơn ${STALE_DAYS} ngày`,
+          };
+        })
+        .filter(Boolean)
+        .slice(0, 5) as RoleWorkload["stalled"];
+      return {
+        workerId: w.id,
+        name: w.name,
+        role: w.role,
+        status: w.status,
+        total: own.length,
+        done: own.filter((t) => t.status === "done").length,
+        avgProgress: progress,
+        stalled,
+      };
+    });
+  });
+
+/** Công việc chưa giao cho vai trò AI nào trong không gian làm việc. */
+export const listUnassignedTasksForRoles = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => WorkspaceInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows } = await context.supabase
+      .from("tasks")
+      .select("id, title, status, due_at, progress_pct")
+      .eq("workspace_id", data.workspaceId)
+      .is("deleted_at", null)
+      .is("ai_worker_id", null)
+      .neq("status", "canceled")
+      .neq("status", "done")
+      .order("due_at", { ascending: true, nullsFirst: false })
+      .limit(50);
+    return (rows ?? []) as {
+      id: string;
+      title: string;
+      status: string;
+      due_at: string | null;
+      progress_pct: number | null;
+    }[];
+  });
+
+/** Giao công việc cho một vai trò AI, dùng RPC sẵn có (RLS + outbox). */
+export const assignTasksToRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        workerId: z.string().uuid(),
+        taskIds: z.array(z.string().uuid()).min(1).max(20),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await tenantOf(context, data.workspaceId);
+    const { data: worker } = await context.supabase
+      .from("ai_workers")
+      .select("id, name, role")
+      .eq("id", data.workerId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    if (!worker) throw fail("AI_WORKER_NOT_FOUND", "Không tìm thấy vai trò AI.");
+
+    let assigned = 0;
+    let lastError = "";
+    for (const taskId of data.taskIds) {
+      const res = await context.supabase.rpc(
+        "assign_task_to_ai" as never,
+        {
+          _task_id: taskId,
+          _ai_worker_id: data.workerId,
+          _expected_deliverable: `Kết quả theo vai trò ${(worker as any).role ?? (worker as any).name}`,
+          _acceptance_criteria: "Bám đúng vai trò, cập nhật tiến độ khi hoàn thành từng phần.",
+          _idempotency_key: `brain-assign:${taskId}:${data.workerId}`,
+        } as never,
+      );
+      if (res.error) lastError = res.error.message;
+      else assigned += 1;
+    }
+    if (!assigned) throw fail("TASK_NOT_FOUND", lastError || "Không giao được công việc.");
+    return { ok: true as const, assigned, failed: data.taskIds.length - assigned };
+  });
