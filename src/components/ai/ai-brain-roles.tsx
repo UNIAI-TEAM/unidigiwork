@@ -80,8 +80,8 @@ export function AiBrainRoles() {
         <span className="text-xs text-muted-foreground">{roles.length} vai trò AI</span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Tiến độ được đồng bộ từ công việc thật. Việc quá hạn hoặc lâu không cập nhật sẽ được đề
-        xuất xử lý và chờ bạn duyệt.
+        Tiến độ được đồng bộ từ công việc thật. Việc quá hạn hoặc lâu không cập nhật sẽ được đề xuất
+        xử lý và chờ bạn duyệt.
       </p>
 
       {workload.isLoading && (
@@ -196,9 +196,7 @@ export function AiBrainRoles() {
                   disabled={selected.length === 0 || assign.isPending}
                   onClick={() => assign.mutate(r.workerId)}
                 >
-                  {assign.isPending ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : null}
+                  {assign.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
                   Giao {selected.length} việc cho {r.name}
                 </Button>
               </div>

@@ -972,7 +972,6 @@ function ProjectDetailPage() {
                       />
                     </div>
 
-
                     <div className="mt-3 space-y-2">
                       <Input
                         value={mTitle}

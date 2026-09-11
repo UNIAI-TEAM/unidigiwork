@@ -874,9 +874,10 @@ export const importProjectMeetings = createServerFn({ method: "POST" })
         continue;
       }
       const end = row.endAt ? new Date(row.endAt) : new Date(start.getTime() + 60 * 60 * 1000);
-      const endAt = Number.isNaN(end.getTime()) || end <= start
-        ? new Date(start.getTime() + 60 * 60 * 1000)
-        : end;
+      const endAt =
+        Number.isNaN(end.getTime()) || end <= start
+          ? new Date(start.getTime() + 60 * 60 * 1000)
+          : end;
 
       const res = await context.supabase.rpc("schedule_meeting", {
         _workspace_id: workspaceId,

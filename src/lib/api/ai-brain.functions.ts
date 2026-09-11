@@ -282,13 +282,16 @@ export const assignTasksToRole = createServerFn({ method: "POST" })
     let assigned = 0;
     let lastError = "";
     for (const taskId of data.taskIds) {
-      const res = await context.supabase.rpc("assign_task_to_ai" as never, {
-        _task_id: taskId,
-        _ai_worker_id: data.workerId,
-        _expected_deliverable: `Kết quả theo vai trò ${(worker as any).role ?? (worker as any).name}`,
-        _acceptance_criteria: "Bám đúng vai trò, cập nhật tiến độ khi hoàn thành từng phần.",
-        _idempotency_key: `brain-assign:${taskId}:${data.workerId}`,
-      } as never);
+      const res = await context.supabase.rpc(
+        "assign_task_to_ai" as never,
+        {
+          _task_id: taskId,
+          _ai_worker_id: data.workerId,
+          _expected_deliverable: `Kết quả theo vai trò ${(worker as any).role ?? (worker as any).name}`,
+          _acceptance_criteria: "Bám đúng vai trò, cập nhật tiến độ khi hoàn thành từng phần.",
+          _idempotency_key: `brain-assign:${taskId}:${data.workerId}`,
+        } as never,
+      );
       if (res.error) lastError = res.error.message;
       else assigned += 1;
     }
