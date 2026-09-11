@@ -25,6 +25,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { CommentThread } from "@/components/projects/comment-thread";
+import { AssignToCommandCenter } from "@/components/projects/assign-to-command-center";
 import { ProjectCalendar } from "@/components/projects/project-calendar";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -685,6 +686,12 @@ function ProjectDetailPage() {
                           e.target.value = "";
                           if (f) void handleImportFile(f);
                         }}
+                      />
+                      <AssignToCommandCenter
+                        projectId={id}
+                        projectName={project.name}
+                        workspaceId={project.workspace_id ?? null}
+                        tasks={tasks}
                       />
                       <Button
                         size="sm"
