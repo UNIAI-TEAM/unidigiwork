@@ -961,6 +961,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       if (error) throw fail("AI_SKILL_SAVE_FAILED", error.message);
     }
 
+    // Ghi lại dấu vết dữ liệu đã học để chế độ tự động không chạy lặp vô ích.
+    await recordRetrainMark(context, tenantId);
+
     return {
       created: rows.length,
       names: rows.map((r) => r["name"] as string),
