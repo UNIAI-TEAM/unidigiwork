@@ -470,6 +470,9 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       tags: string[] | null;
       updated_at: string | null;
       created_at: string | null;
+      progress_pct: number | null;
+      start_at: string | null;
+      end_at: string | null;
     }[];
     const meetings = (meetingsRes.data ?? []) as {
       title: string;
