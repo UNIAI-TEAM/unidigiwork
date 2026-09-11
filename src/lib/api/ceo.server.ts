@@ -184,7 +184,6 @@ export async function loadCeoOverview(
           "id, title, status, created_at, action_type, source, risk, target_type, target_id, ai_worker_id, workspace_id, executed_at",
         )
         .eq("tenant_id", tenantId)
-        .gte("created_at", iso(prevFrom))
         .order("created_at", { ascending: false })
         .limit(300),
     ]);
