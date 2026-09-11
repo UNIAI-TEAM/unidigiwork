@@ -195,15 +195,15 @@ export const updateTaskProgress = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const patch: Record<string, unknown> = { updated_by: context.userId };
-    if (data.progressPct !== undefined) patch['progress_pct'] = data.progressPct;
+    if (data.progressPct !== undefined) patch["progress_pct"] = data.progressPct;
     if (data.startAt !== undefined)
-      patch['start_at'] = data.startAt ? new Date(data.startAt).toISOString() : null;
+      patch["start_at"] = data.startAt ? new Date(data.startAt).toISOString() : null;
     if (data.endAt !== undefined)
-      patch['end_at'] = data.endAt ? new Date(data.endAt).toISOString() : null;
+      patch["end_at"] = data.endAt ? new Date(data.endAt).toISOString() : null;
     if (
-      patch['start_at'] &&
-      patch['end_at'] &&
-      new Date(patch['start_at'] as string) > new Date(patch['end_at'] as string)
+      patch["start_at"] &&
+      patch["end_at"] &&
+      new Date(patch["start_at"] as string) > new Date(patch["end_at"] as string)
     ) {
       throw new Error("INVALID_DATE_RANGE");
     }
