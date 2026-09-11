@@ -1470,7 +1470,7 @@ export function AppTopbar({
   // standard search field (Enter → /search).
 
   return (
-    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-2.5 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3 sm:px-5 lg:flex lg:gap-4">
+    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-2.5 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3 sm:px-5 lg:flex lg:flex-nowrap lg:gap-4">
       <button
         aria-label="Open sidebar"
         className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 lg:hidden"
