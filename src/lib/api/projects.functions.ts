@@ -119,7 +119,7 @@ export const getProject = createServerFn({ method: "GET" })
 
     const { data: tasks, error: taskErr } = await context.supabase
       .from("tasks")
-      .select("id, title, status, priority, due_at, updated_at")
+      .select("id, title, status, priority, due_at, updated_at, progress_pct, start_at, end_at")
       .eq("project_id", data.projectId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
@@ -171,9 +171,56 @@ export const getProject = createServerFn({ method: "GET" })
           priority: string;
           due_at: string | null;
           updated_at: string;
+          progress_pct: number | null;
+          start_at: string | null;
+          end_at: string | null;
         }),
         assignees: assigneeMap.get((t as unknown as { id: string }).id) ?? [],
       })),
+    };
+  });
+
+/** Cập nhật tiến độ công việc: % hoàn thành, ngày bắt đầu, ngày kết thúc. */
+export const updateTaskProgress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        progressPct: z.number().int().min(0).max(100).optional(),
+        startAt: z.string().max(40).nullable().optional(),
+        endAt: z.string().max(40).nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const patch: Record<string, unknown> = { updated_by: context.userId };
+    if (data.progressPct !== undefined) patch["progress_pct"] = data.progressPct;
+    if (data.startAt !== undefined)
+      patch["start_at"] = data.startAt ? new Date(data.startAt).toISOString() : null;
+    if (data.endAt !== undefined)
+      patch["end_at"] = data.endAt ? new Date(data.endAt).toISOString() : null;
+    if (
+      patch["start_at"] &&
+      patch["end_at"] &&
+      new Date(patch["start_at"] as string) > new Date(patch["end_at"] as string)
+    ) {
+      throw new Error("INVALID_DATE_RANGE");
+    }
+    const { data: row, error } = await context.supabase
+      .from("tasks")
+      .update(patch as never)
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .select("id, progress_pct, start_at, end_at")
+      .maybeSingle();
+    if (error) mapPgError(error);
+    if (!row) throw new Error("TASK_NOT_FOUND");
+    return row as unknown as {
+      id: string;
+      progress_pct: number | null;
+      start_at: string | null;
+      end_at: string | null;
     };
   });
 
