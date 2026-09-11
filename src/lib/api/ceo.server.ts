@@ -378,11 +378,26 @@ export async function loadCeoOverview(
       href: `/tasks/${t.id}`,
     });
   }
-  const pendingProposals = (proposalsR.data ?? []) as {
+  type RawProposal = {
     id: string;
     title: string;
     created_at: string;
-  }[];
+    status: string;
+    action_type: string;
+    source: string | null;
+    risk: string | null;
+    target_type: string | null;
+    target_id: string | null;
+    ai_worker_id: string | null;
+    workspace_id: string | null;
+    executed_at: string | null;
+  };
+  const allProposals = ((proposalsR.data ?? []) as RawProposal[]).filter(
+    (p) => !workspaceId || !p.workspace_id || p.workspace_id === workspaceId,
+  );
+  const pendingProposals = allProposals.filter((p) =>
+    ["PROPOSED", "PREVIEWED"].includes(p.status),
+  );
   for (const p of pendingProposals.slice(0, 5)) {
     const waiting = Math.floor((now.getTime() - new Date(p.created_at).getTime()) / 86_400_000);
     issues.push({
