@@ -2,6 +2,7 @@
 // Chỉ đọc dữ liệu vận hành của từng tổ chức và ghi kỹ năng mới + dấu vết lần chạy.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { retrainSkillsForTenant } from "./ai-skills-retrain.server";
+import { loadCeoOverview } from "./ceo.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000; // tối đa 1 lần / ngày
@@ -11,6 +12,7 @@ export type DailyBrainResult = {
   retrained: number;
   skipped: number;
   createdSkills: number;
+  kpiRefreshed: number;
   errors: string[];
 };
 
@@ -20,6 +22,7 @@ export async function runDailyBrainRetraining(admin: any, limit = 20): Promise<D
     retrained: 0,
     skipped: 0,
     createdSkills: 0,
+    kpiRefreshed: 0,
     errors: [],
   };
 
@@ -63,6 +66,31 @@ export async function runDailyBrainRetraining(admin: any, limit = 20): Promise<D
       const res = await retrainSkillsForTenant({ supabase: admin, userId }, row.tenant_id, null);
       result.retrained += 1;
       result.createdSkills += res.created;
+
+      // Sau khi đào tạo, tính lại KPI của tổ chức và lưu ảnh chụp để Command Center
+      // hiển thị số liệu mới ngay, không cần bấm "Làm mới".
+      try {
+        const overview = await loadCeoOverview(admin, row.tenant_id, "week");
+        await admin
+          .from("ceo_kpi_settings")
+          .update({
+            kpi_refreshed_at: new Date().toISOString(),
+            kpi_snapshot: {
+              score: overview.kpi.score ?? null,
+              configured: overview.kpi.configured,
+              totalTasks: overview.totals.tasks.current,
+              completed: overview.totals.completed.current,
+              overdue: overview.totals.overdue,
+              aiSharePct: overview.split.aiSharePct,
+            },
+          })
+          .eq("tenant_id", row.tenant_id);
+        result.kpiRefreshed += 1;
+      } catch (e) {
+        result.errors.push(
+          `KPI ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
     } catch (e) {
       result.errors.push(
         `${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),

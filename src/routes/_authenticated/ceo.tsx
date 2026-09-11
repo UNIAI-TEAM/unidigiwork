@@ -331,6 +331,13 @@ function CeoPage() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["ceo", "overview", period, workspaceId ?? ""],
     queryFn: () => fn({ data: { period, workspaceId: workspaceId ?? null } }),
+    // KPI tự làm mới: mở trang, quay lại tab hoặc sau mỗi 10 phút đều lấy số liệu mới,
+    // nên sau lần Bộ não đào tạo ban đêm CEO không phải bấm "Làm mới".
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 10 * 60 * 1000,
+    refetchIntervalInBackground: false,
   });
 
   const rolesFn = useServerFn(getRoleWorkload);
@@ -390,7 +397,8 @@ function CeoPage() {
             <div className="min-w-0">
               <h1 className="text-2xl font-semibold tracking-tight">CEO Command Center</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Toàn cảnh hiệu quả tổ chức: người, AI, kết quả và vấn đề cần xử lý.
+                Toàn cảnh hiệu quả tổ chức: người, AI, kết quả và vấn đề cần xử lý. KPI tự làm mới
+                mỗi ngày sau khi Bộ não đào tạo.
               </p>
             </div>
             <div className="text-right text-xs text-muted-foreground">
