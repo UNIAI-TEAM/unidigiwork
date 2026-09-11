@@ -392,3 +392,121 @@ export const getProposalLog = createServerFn({ method: "POST" })
       };
     });
   });
+
+/* ---------------------------------------------------------------------------
+ * THEO DÕI ĐỀ XUẤT — công việc đã giao từ đề xuất, người phụ trách và tiến độ.
+ * Chỉ đọc; cập nhật trạng thái dùng lại lệnh transition_task hiện có.
+ * ------------------------------------------------------------------------- */
+
+export type ProposalTrackingItem = {
+  id: string;
+  title: string;
+  actionType: string;
+  status: string;
+  source: string;
+  createdAt: string;
+  executedAt: string | null;
+  workerName: string | null;
+  taskId: string | null;
+  taskTitle: string | null;
+  taskStatus: string | null;
+  taskProgress: number | null;
+  taskDueAt: string | null;
+  taskUpdatedAt: string | null;
+  assignees: { id: string; name: string }[];
+};
+
+export const getProposalTracking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        limit: z.number().int().min(1).max(100).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<ProposalTrackingItem[]> => {
+    const tenantId = await tenantOf(context, data.workspaceId);
+    const { data: rows } = await context.supabase
+      .from("ai_action_proposals")
+      .select(
+        "id, title, action_type, status, source, created_at, executed_at, ai_worker_id, target_type, target_id, result",
+      )
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 60);
+    const list = (rows ?? []) as any[];
+    if (!list.length) return [];
+
+    const taskIdOf = (r: any): string | null =>
+      r.target_type === "TASK"
+        ? (r.target_id as string)
+        : (r.result as any)?.entityType === "TASK"
+          ? ((r.result as any)?.entityId as string)
+          : null;
+
+    const workerIds = Array.from(new Set(list.map((r) => r.ai_worker_id).filter(Boolean)));
+    const taskIds = Array.from(new Set(list.map(taskIdOf).filter(Boolean))) as string[];
+
+    const [workersRes, tasksRes, assigneeRes] = await Promise.all([
+      workerIds.length
+        ? context.supabase.from("ai_workers").select("id, name").in("id", workerIds)
+        : Promise.resolve({ data: [] as any[] }),
+      taskIds.length
+        ? context.supabase
+            .from("tasks")
+            .select("id, title, status, progress_pct, due_at, updated_at")
+            .eq("tenant_id", tenantId)
+            .is("deleted_at", null)
+            .in("id", taskIds)
+        : Promise.resolve({ data: [] as any[] }),
+      taskIds.length
+        ? context.supabase.from("task_assignees").select("task_id, user_id").in("task_id", taskIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const assigneeRows = (assigneeRes.data ?? []) as { task_id: string; user_id: string }[];
+    const userIds = Array.from(new Set(assigneeRows.map((a) => a.user_id)));
+    const usersRes = userIds.length
+      ? await context.supabase
+          .from("users")
+          .select("id, display_name, primary_email")
+          .in("id", userIds)
+      : { data: [] as any[] };
+    const userName = new Map<string, string>();
+    for (const u of (usersRes.data ?? []) as any[]) {
+      userName.set(u.id as string, (u.display_name ?? u.primary_email ?? "Thành viên") as string);
+    }
+    const byTask = new Map<string, { id: string; name: string }[]>();
+    for (const a of assigneeRows) {
+      const arr = byTask.get(a.task_id) ?? [];
+      arr.push({ id: a.user_id, name: userName.get(a.user_id) ?? "Thành viên" });
+      byTask.set(a.task_id, arr);
+    }
+
+    const workerById = new Map(((workersRes.data ?? []) as any[]).map((w) => [w.id, w.name]));
+    const taskById = new Map(((tasksRes.data ?? []) as any[]).map((t) => [t.id, t]));
+
+    return list.map((r) => {
+      const taskId = taskIdOf(r);
+      const task = taskId ? taskById.get(taskId) : null;
+      return {
+        id: r.id as string,
+        title: (r.title as string) ?? "",
+        actionType: (r.action_type as string) ?? "",
+        status: (r.status as string) ?? "",
+        source: (r.source as string) ?? "",
+        createdAt: r.created_at as string,
+        executedAt: (r.executed_at as string) ?? null,
+        workerName: r.ai_worker_id ? (workerById.get(r.ai_worker_id) ?? null) : null,
+        taskId: task ? (taskId as string) : null,
+        taskTitle: task?.title ?? null,
+        taskStatus: task?.status ?? null,
+        taskProgress: task?.progress_pct ?? null,
+        taskDueAt: task?.due_at ?? null,
+        taskUpdatedAt: task?.updated_at ?? null,
+        assignees: taskId ? (byTask.get(taskId) ?? []) : [],
+      };
+    });
+  });
