@@ -2,6 +2,7 @@
 // Chỉ đọc dữ liệu vận hành của từng tổ chức và ghi kỹ năng mới + dấu vết lần chạy.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { retrainSkillsForTenant } from "./ai-skills-retrain.server";
+import { loadCeoOverview } from "./ceo.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000; // tối đa 1 lần / ngày
