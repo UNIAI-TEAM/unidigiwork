@@ -88,7 +88,21 @@ export type CeoOverview = {
     resultRate: number | null;
   };
   people: CeoPersonRow[];
-  departments: { id: string; name: string; human: number; ai: number; total: number }[];
+  departments: {
+    id: string;
+    name: string;
+    human: number;
+    ai: number;
+    total: number;
+    weight: number;
+  }[];
+  kpi: {
+    configured: boolean;
+    updatedAt: string | null;
+    targets: CeoKpiTargets;
+    rows: CeoKpiRow[];
+    score: number | null;
+  };
   issues: CeoIssue[];
   proposals: {
     total: CeoDelta;
@@ -106,6 +120,58 @@ export type CeoOverview = {
     value: string[];
   };
 };
+
+export type CeoKpiTargets = {
+  completed: number | null;
+  maxOverdue: number | null;
+  aiSharePct: number | null;
+  resultRatePct: number | null;
+  passRatePct: number | null;
+};
+
+export type CeoKpiRow = {
+  key: keyof CeoKpiTargets;
+  label: string;
+  unit: string;
+  target: number | null;
+  actual: number | null;
+  /** "up" = càng cao càng tốt, "down" = càng thấp càng tốt. */
+  direction: "up" | "down";
+  achievedPct: number | null;
+  ok: boolean | null;
+};
+
+export const EMPTY_CEO_KPI_TARGETS: CeoKpiTargets = {
+  completed: null,
+  maxOverdue: null,
+  aiSharePct: null,
+  resultRatePct: null,
+  passRatePct: null,
+};
+
+const numOrNull = (v: unknown): number | null =>
+  typeof v === "number" && Number.isFinite(v) ? v : null;
+
+export function parseCeoKpiTargets(raw: unknown): CeoKpiTargets {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  return {
+    completed: numOrNull(o["completed"]),
+    maxOverdue: numOrNull(o["maxOverdue"]),
+    aiSharePct: numOrNull(o["aiSharePct"]),
+    resultRatePct: numOrNull(o["resultRatePct"]),
+    passRatePct: numOrNull(o["passRatePct"]),
+  };
+}
+
+export function parseDepartmentWeights(raw: unknown): Record<string, number> {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(o)) {
+    const n = numOrNull(v);
+    if (n !== null && n >= 0) out[k] = Math.round(n);
+  }
+  return out;
+}
 
 function pct(cur: number, prev: number): number | null {
   if (!prev) return cur ? 100 : null;
@@ -368,6 +434,7 @@ export async function loadCeoOverview(
       human: v.human,
       ai: v.ai,
       total: v.human + v.ai,
+      weight: kpiWeights[id] ?? 1,
     }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 8);
@@ -530,6 +597,7 @@ export async function loadCeoOverview(
     },
     people: people.slice(0, 30),
     departments,
+    kpi: kpiBlock,
     issues: issues.slice(0, 12),
     proposals: proposalsBlock,
     answers: {
