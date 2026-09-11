@@ -25,7 +25,9 @@
 - [x] Tone gradient kiểu ClickUp
 
 ## Nhân sự, lịch họp & lịch tự động (mới)
-- [ ] Trang quản lý nhân sự: thêm/sửa/xóa hồ sơ, gán bộ phận + vai trò, đồng bộ Bộ não
-- [ ] Trang quản lý lịch họp: thêm/sửa/xóa, gán nhân sự + bộ phận, cập nhật KPI Command Center
-- [ ] Lịch chạy Bộ não hằng ngày (tự đào tạo lại + cập nhật đề xuất), hiển thị trong Command Center
+- [x] Trang quản lý nhân sự: thêm/sửa/xóa hồ sơ, gán bộ phận + vai trò, đồng bộ Bộ não
+- [x] Trang quản lý lịch họp: thêm/sửa/xóa, gán nhân sự + bộ phận, cập nhật KPI Command Center
+- [x] Lịch chạy Bộ não hằng ngày (tự đào tạo lại + cập nhật đề xuất), hiển thị trong Command Center
 - [ ] Import Excel thật trong Command Center: nhân sự, bộ phận, lịch họp, tiến độ công việc → KPI tự cập nhật
+
+- [ ] Tạo tài khoản demo có dữ liệu để anh Nam đăng nhập xem
