@@ -90,6 +90,15 @@ export type CeoOverview = {
   people: CeoPersonRow[];
   departments: { id: string; name: string; human: number; ai: number; total: number }[];
   issues: CeoIssue[];
+  proposals: {
+    total: CeoDelta;
+    pending: number;
+    executed: number;
+    rejected: number;
+    assignment: number;
+    executionRate: number | null;
+    entries: CeoProposalEntry[];
+  };
   answers: {
     resources: string[];
     outputs: string[];
