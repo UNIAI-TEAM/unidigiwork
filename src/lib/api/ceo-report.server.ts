@@ -35,7 +35,11 @@ export function ceoReportMarkdown(o: CeoOverview): string {
   lines.push("## Thời gian làm việc");
   lines.push(`- Giờ AI (đo thật): ${o.time.aiHours}`);
   lines.push(`- Giờ người (ƯỚC TÍNH, chưa có chấm công): ${o.time.humanHours}`);
-  lines.push(`- Giờ họp: ${o.time.meetingHours} · Ước tính tiết kiệm: ${o.time.savedHours}`);
+  lines.push(
+    `- Giờ họp đã diễn ra: ${o.time.meetingHours} · Họp sắp tới (chưa tính KPI): ${o.time.upcomingMeetingHours} (${o.time.upcomingMeetings} cuộc)`,
+  );
+  lines.push(`- Tiến độ trung bình việc đang chạy: ${o.time.avgProgressPct}%`);
+  lines.push(`- Ước tính tiết kiệm: ${o.time.savedHours}`);
   lines.push(`- Đòn bẩy AI: ${o.time.leverage ?? "chưa đủ dữ liệu"}`);
 
   lines.push("## Chất lượng kết quả");
@@ -141,7 +145,9 @@ export function buildCeoXlsx(o: CeoOverview): Uint8Array {
     { "Chỉ số": "Tỷ trọng AI kỳ trước (%)", "Giá trị": o.split.aiSharePrevPct },
     { "Chỉ số": "Giờ AI (đo thật)", "Giá trị": o.time.aiHours },
     { "Chỉ số": "Giờ người (ước tính)", "Giá trị": o.time.humanHours },
-    { "Chỉ số": "Giờ họp", "Giá trị": o.time.meetingHours },
+    { "Chỉ số": "Giờ họp đã diễn ra", "Giá trị": o.time.meetingHours },
+    { "Chỉ số": "Giờ họp sắp tới (chưa tính KPI)", "Giá trị": o.time.upcomingMeetingHours },
+    { "Chỉ số": "Tiến độ TB việc đang chạy (%)", "Giá trị": o.time.avgProgressPct },
     { "Chỉ số": "Ước tính tiết kiệm (giờ)", "Giá trị": o.time.savedHours },
     { "Chỉ số": "Đòn bẩy AI", "Giá trị": o.time.leverage ?? "—" },
     { "Chỉ số": "Việc có kết quả", "Giá trị": o.quality.withResult },

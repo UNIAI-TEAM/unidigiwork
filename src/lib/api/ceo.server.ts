@@ -501,7 +501,8 @@ export async function loadCeoOverview(
       progressHours: 0,
     };
     if (t.status !== "done" && t.status !== "canceled")
-      row.progressHours += (Math.min(100, Math.max(0, t.progress_pct ?? 0)) / 100) * HUMAN_HOURS_PER_TASK;
+      row.progressHours +=
+        (Math.min(100, Math.max(0, t.progress_pct ?? 0)) / 100) * HUMAN_HOURS_PER_TASK;
     if (isAi(t)) row.ai += 1;
     else row.human += 1;
     if (t.status === "done") row.completed += 1;
@@ -530,8 +531,7 @@ export async function loadCeoOverview(
       completed: v.completed,
       overdue: v.overdue,
       aiSharePct: v.human + v.ai ? Math.round((v.ai / (v.human + v.ai)) * 100) : 0,
-      hoursEstimated:
-        Math.round((v.completed * HUMAN_HOURS_PER_TASK + v.progressHours) * 10) / 10,
+      hoursEstimated: Math.round((v.completed * HUMAN_HOURS_PER_TASK + v.progressHours) * 10) / 10,
       proposals: deptProposals.get(id) ?? 0,
     }))
     .sort((a, b) => b.total - a.total)
