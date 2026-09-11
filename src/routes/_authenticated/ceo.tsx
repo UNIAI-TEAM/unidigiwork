@@ -751,11 +751,37 @@ function CeoPage() {
               </div>
 
               <Card title="Nhật ký đề xuất giao việc">
-                {data.proposals.entries.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Chưa có đề xuất nào.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {data.proposals.entries.map((p) => (
+                <div className="mb-3 flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground" htmlFor="dept-filter">
+                    Bộ phận
+                  </label>
+                  <select
+                    id="dept-filter"
+                    value={deptFilter}
+                    onChange={(e) => setDeptFilter(e.target.value)}
+                    className="min-h-11 rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    <option value="all">Tất cả bộ phận</option>
+                    <option value="none">Chưa gắn bộ phận</option>
+                    {data.departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {(() => {
+                  const filtered =
+                    deptFilter === "all"
+                      ? data.proposals.entries
+                      : deptFilter === "none"
+                        ? data.proposals.entries.filter((p) => !p.workspaceId)
+                        : data.proposals.entries.filter((p) => p.workspaceId === deptFilter);
+                  return filtered.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Chưa có đề xuất nào.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {filtered.map((p) => (
                       <li
                         key={p.id}
                         className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
