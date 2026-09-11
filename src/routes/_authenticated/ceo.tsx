@@ -823,7 +823,6 @@ function CeoPage() {
                               onDone={() => void refetch()}
                             />
                           </span>
-                          </span>
                         </li>
                       ))}
                     </ul>
