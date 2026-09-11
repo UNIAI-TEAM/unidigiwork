@@ -265,6 +265,9 @@ export const importTaskProgress = createServerFn({ method: "POST" })
       byTitle.set(t.title.trim().toLowerCase(), t.id);
     }
 
+    // Ghi qua client quản trị nhưng chỉ trên các task đã được RLS xác nhận thuộc dự án.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     let updated = 0;
     const notFound: string[] = [];
     const invalid: string[] = [];
