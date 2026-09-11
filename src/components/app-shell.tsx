@@ -1619,7 +1619,7 @@ export function AppTopbar({
           aria-haspopup="dialog"
           aria-expanded={calOpen}
           className={cn(
-            "flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2",
+            "hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 sm:flex",
             calOpen && "bg-surface-2",
           )}
         >
