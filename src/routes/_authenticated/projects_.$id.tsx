@@ -23,7 +23,6 @@ import {
   Upload,
   Download,
   CalendarClock,
-
 } from "lucide-react";
 import { CommentThread } from "@/components/projects/comment-thread";
 import { ProjectCalendar } from "@/components/projects/project-calendar";
@@ -43,7 +42,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   addProjectComment,
-
   getProject,
   getProjectActivity,
   updateProject,
@@ -418,7 +416,6 @@ function ProjectDetailPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không lưu được tiến độ tuần"),
   });
 
-
   // Nhập tiến độ hàng loạt từ Excel/CSV.
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [importing, setImporting] = useState(false);
@@ -693,7 +690,6 @@ function ProjectDetailPage() {
                         <CalendarClock className="h-3.5 w-3.5" /> Nhập tiến độ tuần
                       </Button>
                       <Button
-
                         variant="outline"
                         size="sm"
                         className="min-h-11 gap-1 px-3 text-xs"
@@ -1283,7 +1279,9 @@ function ProjectDetailPage() {
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Nhập tiến độ tuần</DialogTitle>
-            <DialogDescription>Tuần {weekLabel}. Cập nhật % hoàn thành từng việc.</DialogDescription>
+            <DialogDescription>
+              Tuần {weekLabel}. Cập nhật % hoàn thành từng việc.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             {tasks.map((t) => (
@@ -1296,9 +1294,7 @@ function ProjectDetailPage() {
                   inputMode="numeric"
                   className="h-11 w-20"
                   value={weeklyValues[t.id] ?? "0"}
-                  onChange={(e) =>
-                    setWeeklyValues((prev) => ({ ...prev, [t.id]: e.target.value }))
-                  }
+                  onChange={(e) => setWeeklyValues((prev) => ({ ...prev, [t.id]: e.target.value }))}
                 />
                 <span className="text-xs text-muted-foreground">%</span>
               </div>
@@ -1327,6 +1323,5 @@ function ProjectDetailPage() {
         </DialogContent>
       </Dialog>
     </div>
-
   );
 }
