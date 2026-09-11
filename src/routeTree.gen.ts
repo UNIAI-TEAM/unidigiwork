@@ -48,7 +48,9 @@ import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedMeetingsManageRouteImport } from './routes/_authenticated/meetings-manage'
 import { Route as AuthenticatedMRouteImport } from './routes/_authenticated/m'
+import { Route as AuthenticatedHrRouteImport } from './routes/_authenticated/hr'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/email'
@@ -329,9 +331,20 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMeetingsManageRoute =
+  AuthenticatedMeetingsManageRouteImport.update({
+    id: '/meetings-manage',
+    path: '/meetings-manage',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMRoute = AuthenticatedMRouteImport.update({
   id: '/m',
   path: '/m',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHrRoute = AuthenticatedHrRouteImport.update({
+  id: '/hr',
+  path: '/hr',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
@@ -818,7 +831,9 @@ export interface FileRoutesByFullPath {
   '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/hr': typeof AuthenticatedHrRoute
   '/m': typeof AuthenticatedMRouteWithChildren
+  '/meetings-manage': typeof AuthenticatedMeetingsManageRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -939,7 +954,9 @@ export interface FileRoutesByTo {
   '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/hr': typeof AuthenticatedHrRoute
   '/m': typeof AuthenticatedMRouteWithChildren
+  '/meetings-manage': typeof AuthenticatedMeetingsManageRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -1064,7 +1081,9 @@ export interface FileRoutesById {
   '/_authenticated/email': typeof AuthenticatedEmailRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/hr': typeof AuthenticatedHrRoute
   '/_authenticated/m': typeof AuthenticatedMRouteWithChildren
+  '/_authenticated/meetings-manage': typeof AuthenticatedMeetingsManageRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
@@ -1189,7 +1208,9 @@ export interface FileRouteTypes {
     | '/email'
     | '/help'
     | '/home'
+    | '/hr'
     | '/m'
+    | '/meetings-manage'
     | '/notifications'
     | '/people'
     | '/projects'
@@ -1310,7 +1331,9 @@ export interface FileRouteTypes {
     | '/email'
     | '/help'
     | '/home'
+    | '/hr'
     | '/m'
+    | '/meetings-manage'
     | '/notifications'
     | '/people'
     | '/projects'
@@ -1434,7 +1457,9 @@ export interface FileRouteTypes {
     | '/_authenticated/email'
     | '/_authenticated/help'
     | '/_authenticated/home'
+    | '/_authenticated/hr'
     | '/_authenticated/m'
+    | '/_authenticated/meetings-manage'
     | '/_authenticated/notifications'
     | '/_authenticated/people'
     | '/_authenticated/projects'
@@ -1841,11 +1866,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/meetings-manage': {
+      id: '/_authenticated/meetings-manage'
+      path: '/meetings-manage'
+      fullPath: '/meetings-manage'
+      preLoaderRoute: typeof AuthenticatedMeetingsManageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/m': {
       id: '/_authenticated/m'
       path: '/m'
       fullPath: '/m'
       preLoaderRoute: typeof AuthenticatedMRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hr': {
+      id: '/_authenticated/hr'
+      path: '/hr'
+      fullPath: '/hr'
+      preLoaderRoute: typeof AuthenticatedHrRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
@@ -2575,7 +2614,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedHrRoute: typeof AuthenticatedHrRoute
   AuthenticatedMRoute: typeof AuthenticatedMRouteWithChildren
+  AuthenticatedMeetingsManageRoute: typeof AuthenticatedMeetingsManageRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -2619,7 +2660,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmailRoute: AuthenticatedEmailRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedHrRoute: AuthenticatedHrRoute,
   AuthenticatedMRoute: AuthenticatedMRouteWithChildren,
+  AuthenticatedMeetingsManageRoute: AuthenticatedMeetingsManageRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,

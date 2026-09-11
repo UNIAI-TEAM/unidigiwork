@@ -244,3 +244,68 @@ export const removePerson = createServerFn({ method: "POST" })
       .eq("user_id", data.userId);
     return { ok: true };
   });
+/** Một dòng nhân sự nhập từ Excel/CSV: khớp thành viên theo email. */
+const PeopleImportRow = z.object({
+  email: z.string().trim().email(),
+  displayName: z.string().trim().max(120).nullable().optional(),
+  department: z.string().trim().max(120).nullable().optional(),
+  title: z.string().trim().max(120).nullable().optional(),
+  team: z.string().trim().max(120).nullable().optional(),
+  location: z.string().trim().max(160).nullable().optional(),
+  phone: z.string().trim().max(40).nullable().optional(),
+  empId: z.string().trim().max(40).nullable().optional(),
+});
+
+/**
+ * Nhập bộ phận / chức danh cho thành viên đã có trong tổ chức từ tệp Excel.
+ * Không tạo tài khoản mới: email không khớp thành viên sẽ được báo lại để mời riêng.
+ */
+export const importPeopleProfiles = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ rows: z.array(PeopleImportRow).min(1).max(500) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as Ctx;
+    const tenant = await resolveTenant(ctx);
+    if (!tenant)
+      throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "TENANT_ACCESS_DENIED" });
+    if (!MANAGER_ROLES.includes(tenant.role))
+      throw new ApiError({ code: "PERMISSION_DENIED", message: "PERMISSION_DENIED" });
+
+    const people = await loadPeople(ctx, tenant.tenantId);
+    const byEmail = new Map(people.map((p) => [p.email.toLowerCase(), p]));
+
+    let updated = 0;
+    const notFound: string[] = [];
+    for (const row of data.rows) {
+      const person = byEmail.get(row.email.toLowerCase());
+      if (!person) {
+        notFound.push(row.email);
+        continue;
+      }
+      const payload = {
+        tenant_id: tenant.tenantId,
+        user_id: person.id,
+        title: row.title ?? person.title ?? null,
+        department: row.department ?? person.department ?? null,
+        team: row.team ?? person.team ?? null,
+        location: row.location ?? person.location ?? null,
+        phone: row.phone ?? person.phone ?? null,
+        emp_id: row.empId ?? person.empId ?? null,
+        skills: person.skills ?? [],
+        teams: person.teams ?? [],
+      };
+      const { error } = await ctx.supabase
+        .from("tenant_member_profiles")
+        .upsert(payload, { onConflict: "tenant_id,user_id" });
+      if (error) continue;
+      if (row.displayName && row.displayName.trim()) {
+        await ctx.supabase
+          .from("users")
+          .update({ display_name: row.displayName.trim() })
+          .eq("id", person.id);
+      }
+      updated += 1;
+    }
+
+    return { ok: true as const, updated, notFound: notFound.slice(0, 20) };
+  });
