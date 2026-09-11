@@ -1,7 +1,7 @@
 // AI BRAIN — trung tâm điều hành AI: đề xuất chờ duyệt, đội ngũ AI, nhật ký.
 // Chỉ đọc + dùng lại lớp hành động AI hiện có; AI không bao giờ tự thực thi.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -15,7 +15,12 @@ import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
 import { AiBrainRoles } from "@/components/ai/ai-brain-roles";
 import { AiProposalLog } from "@/components/ai/ai-proposal-log";
-import { createAiSkillFromProposal, retrainAiSkillsFromWork } from "@/lib/api/ai-skills.functions";
+import {
+  createAiSkillFromProposal,
+  getAutoRetrainState,
+  retrainAiSkillsFromWork,
+  setAutoRetrain,
+} from "@/lib/api/ai-skills.functions";
 import {
   cancelAiAction,
   confirmAiAction,
