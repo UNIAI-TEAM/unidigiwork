@@ -296,3 +296,132 @@ export const listTenantAiWorkers = createServerFn({ method: "POST" })
       status: string;
     }[];
   });
+
+/* ---------------------------------------------------------------------------
+ * QUẢN LÝ HỒ SƠ NHÂN SỰ (danh bạ ai_workers): thêm / sửa / xóa.
+ * Chỉ chủ sở hữu hoặc quản trị tổ chức được thao tác. Dữ liệu này là nguồn
+ * "vai trò thật" mà Bộ não AI đọc khi đào tạo lại.
+ * ------------------------------------------------------------------------- */
+
+async function assertTenantAdmin(context: any, tenantId: string) {
+  const { data: member } = await context.supabase
+    .from("tenant_members")
+    .select("role, status")
+    .eq("tenant_id", tenantId)
+    .eq("user_id", context.userId)
+    .maybeSingle();
+  const row = (member ?? {}) as { role?: string; status?: string };
+  if (row.status !== "active" || !["tenant_owner", "tenant_admin"].includes(row.role ?? "")) {
+    throw fail("FORBIDDEN", "Chỉ quản trị tổ chức mới được quản lý hồ sơ nhân sự.");
+  }
+}
+
+export const upsertTenantAiWorker = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        id: z.string().uuid().nullable().optional(),
+        code: z
+          .string()
+          .trim()
+          .regex(/^[A-Za-z0-9_]{2,60}$/, "Mã chỉ gồm chữ, số và _")
+          .nullable()
+          .optional(),
+        name: z.string().trim().min(1).max(120),
+        role: z.string().trim().max(160).default(""),
+        skills: z.array(z.string().trim().max(80)).max(30).default([]),
+        status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenant(context, data.workspaceId);
+    await assertTenantAdmin(context, tenantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const payload = {
+      name: data.name,
+      role: data.role.trim() || "Nhân sự AI",
+      skills: data.skills.filter(Boolean),
+      status: data.status,
+    };
+
+    if (data.id) {
+      const res = await supabaseAdmin
+        .from("ai_workers" as never)
+        .update({ ...payload, updated_at: new Date().toISOString() } as never)
+        .eq("id", data.id)
+        .eq("tenant_id", tenantId)
+        .select("id")
+        .maybeSingle();
+      if (res.error || !res.data) throw fail("AI_WORKER_NOT_FOUND", "Không cập nhật được hồ sơ.");
+      return { ok: true as const, id: data.id };
+    }
+
+    const slug =
+      (data.code?.trim() ||
+        data.name
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/gi, "d")
+          .replace(/[^A-Za-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, ""))
+        .toUpperCase()
+        .slice(0, 60) || "AI_WORKER";
+
+    const { data: existing } = await context.supabase
+      .from("ai_workers")
+      .select("code")
+      .eq("tenant_id", tenantId);
+    const taken = new Set(
+      ((existing ?? []) as { code: string }[]).map((r) => r.code.toUpperCase()),
+    );
+    let code = slug;
+    let n = 2;
+    while (taken.has(code)) code = `${slug.slice(0, 56)}_${n++}`;
+
+    const res = await supabaseAdmin
+      .from("ai_workers" as never)
+      .insert({ tenant_id: tenantId, code, ...payload } as never)
+      .select("id")
+      .maybeSingle();
+    if (res.error || !res.data) throw fail("AI_WORKER_NOT_FOUND", "Không tạo được hồ sơ nhân sự.");
+    return { ok: true as const, id: (res.data as { id: string }).id, code };
+  });
+
+export const deleteTenantAiWorker = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ workspaceId: z.string().uuid(), id: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await resolveTenant(context, data.workspaceId);
+    await assertTenantAdmin(context, tenantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Còn công việc đang gắn với hồ sơ này thì chỉ ngừng hoạt động, không xóa cứng.
+    const { count } = await supabaseAdmin
+      .from("tasks" as never)
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("ai_worker_id", data.id);
+    if ((count ?? 0) > 0) {
+      const res = await supabaseAdmin
+        .from("ai_workers" as never)
+        .update({ status: "INACTIVE", updated_at: new Date().toISOString() } as never)
+        .eq("id", data.id)
+        .eq("tenant_id", tenantId);
+      if (res.error) throw fail("AI_WORKER_NOT_FOUND", "Không cập nhật được hồ sơ.");
+      return { ok: true as const, deactivated: true as const, tasks: count ?? 0 };
+    }
+
+    const res = await supabaseAdmin
+      .from("ai_workers" as never)
+      .delete()
+      .eq("id", data.id)
+      .eq("tenant_id", tenantId);
+    if (res.error) throw fail("AI_WORKER_NOT_FOUND", "Không xóa được hồ sơ nhân sự.");
+    return { ok: true as const, deactivated: false as const, tasks: 0 };
+  });

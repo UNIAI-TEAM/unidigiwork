@@ -3466,6 +3466,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department: string | null
           end_at: string
           id: string
           location: string | null
@@ -3488,6 +3489,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          department?: string | null
           end_at: string
           id?: string
           location?: string | null
@@ -3510,6 +3512,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          department?: string | null
           end_at?: string
           id?: string
           location?: string | null
@@ -8247,6 +8250,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department: string | null
           end_at: string
           id: string
           location: string | null
@@ -8729,6 +8733,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department: string | null
           end_at: string
           id: string
           location: string | null
@@ -9411,6 +9416,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department: string | null
           end_at: string
           id: string
           location: string | null
@@ -10545,6 +10551,7 @@ export type Database = {
               created_at: string
               created_by: string | null
               deleted_at: string | null
+              department: string | null
               end_at: string
               id: string
               location: string | null
@@ -10588,6 +10595,7 @@ export type Database = {
               created_at: string
               created_by: string | null
               deleted_at: string | null
+              department: string | null
               end_at: string
               id: string
               location: string | null
@@ -10866,6 +10874,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department: string | null
           end_at: string
           id: string
           location: string | null
@@ -11102,6 +11111,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department: string | null
           end_at: string
           id: string
           location: string | null
