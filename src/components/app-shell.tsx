@@ -1560,9 +1560,15 @@ export function AppTopbar({
           </Link>
         </>
       )}
-      <LanguageToggle />
-      <ToneToggle />
-      <ThemeToggle />
+      <span className="hidden md:inline-flex">
+        <LanguageToggle />
+      </span>
+      <span className="hidden md:inline-flex">
+        <ToneToggle />
+      </span>
+      <span className="hidden sm:inline-flex">
+        <ThemeToggle />
+      </span>
       <Link
         to="/settings"
         className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"
