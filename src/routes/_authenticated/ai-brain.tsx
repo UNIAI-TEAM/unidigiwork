@@ -257,6 +257,10 @@ function AiBrainPage() {
             </div>
           )}
 
+          <div className="mt-6">
+            <AiBrainRoles />
+          </div>
+
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {/* Đề xuất đang chờ duyệt */}
             <section className="lg:col-span-2">
