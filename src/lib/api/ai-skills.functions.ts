@@ -819,6 +819,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
 
     const corpus = [
       `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
+      ...ceoLines,
       "LỊCH HỌP THẬT (sắp xếp theo thời gian, gồm cuộc họp sắp tới):",
       ...meetings.map((m) => {
         const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
