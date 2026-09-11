@@ -933,3 +933,186 @@ function Answer({ icon: Icon, q, items }: { icon: typeof User; q: string; items:
     </div>
   );
 }
+
+const PENDING_PROPOSAL = new Set(["PROPOSED", "PREVIEWED"]);
+
+/** Duyệt / bỏ qua đề xuất và giao việc thật ngay tại Command Center. */
+function ProposalActions({
+  entry,
+  workers,
+  workspaceId,
+  onDone,
+}: {
+  entry: CeoProposalEntry;
+  workers: RoleWorkload[];
+  workspaceId: string | null;
+  onDone: () => void;
+}) {
+  const qc = useQueryClient();
+  const confirmFn = useServerFn(confirmAiAction);
+  const cancelFn = useServerFn(cancelAiAction);
+  const assignRoleFn = useServerFn(assignTasksToRole);
+  const assignPersonFn = useServerFn(assignTask);
+  const progressFn = useServerFn(updateTaskProgress);
+  const membersFn = useServerFn(listWorkspaceMembers);
+
+  const [openForm, setOpenForm] = useState(false);
+  const [workerId, setWorkerId] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [progress, setProgress] = useState<string>(
+    entry.taskProgressPct === null ? "" : String(entry.taskProgressPct),
+  );
+
+  const wsId = entry.workspaceId ?? workspaceId;
+  const members = useQuery({
+    queryKey: ["ceo", "members", wsId ?? ""],
+    queryFn: () => membersFn({ data: { workspaceId: wsId! } }),
+    enabled: openForm && Boolean(wsId),
+  });
+
+  const refresh = () => {
+    onDone();
+    void qc.invalidateQueries({ queryKey: ["ceo"] });
+    void qc.invalidateQueries({ queryKey: ["ai-brain"] });
+  };
+
+  const approve = useMutation({
+    mutationFn: () => confirmFn({ data: { actionId: entry.id } }),
+    onSuccess: (res: { message?: string } | undefined) => {
+      toast.success(res?.message ?? "Đã duyệt và thực hiện đề xuất.");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message || "Không duyệt được đề xuất."),
+  });
+
+  const reject = useMutation({
+    mutationFn: () => cancelFn({ data: { actionId: entry.id } }),
+    onSuccess: () => {
+      toast.success("Đã bỏ qua đề xuất.");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message || "Không bỏ qua được đề xuất."),
+  });
+
+  const assign = useMutation({
+    mutationFn: async () => {
+      if (!entry.taskId) throw new Error("Đề xuất chưa gắn với công việc cụ thể.");
+      if (!workerId && !assigneeId) throw new Error("Hãy chọn nhân sự thật hoặc vai trò AI.");
+      if (assigneeId) {
+        await assignPersonFn({
+          data: {
+            taskId: entry.taskId,
+            assigneeId,
+            role: "assignee",
+            idempotencyKey: crypto.randomUUID(),
+          },
+        });
+      }
+      if (workerId && wsId) {
+        await assignRoleFn({
+          data: { workspaceId: wsId, workerId, taskIds: [entry.taskId] },
+        });
+      }
+      const pct = progress.trim() === "" ? null : Number(progress);
+      if (pct !== null && Number.isFinite(pct)) {
+        await progressFn({
+          data: { taskId: entry.taskId, progressPct: Math.max(0, Math.min(100, Math.round(pct))) },
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.success("Đã giao việc và cập nhật tiến độ.");
+      setOpenForm(false);
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message || "Không giao được việc."),
+  });
+
+  const pending = PENDING_PROPOSAL.has(entry.status);
+
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      {pending ? (
+        <>
+          <Button
+            size="sm"
+            className="min-h-11"
+            disabled={approve.isPending}
+            onClick={() => approve.mutate()}
+          >
+            {approve.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+            Duyệt
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="min-h-11"
+            disabled={reject.isPending}
+            onClick={() => reject.mutate()}
+          >
+            Bỏ qua
+          </Button>
+        </>
+      ) : null}
+      {entry.taskId ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="min-h-11"
+          onClick={() => setOpenForm((v) => !v)}
+        >
+          {openForm ? "Đóng" : "Giao việc"}
+        </Button>
+      ) : null}
+      {openForm && entry.taskId ? (
+        <span className="mt-2 flex w-full flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/40 p-2">
+          <select
+            aria-label="Nhân sự thật"
+            value={assigneeId}
+            onChange={(e) => setAssigneeId(e.target.value)}
+            className="min-h-11 min-w-40 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="">Nhân sự thật…</option>
+            {(members.data ?? []).map((m) => (
+              <option key={m.userId} value={m.userId}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Vai trò nhân sự AI"
+            value={workerId}
+            onChange={(e) => setWorkerId(e.target.value)}
+            className="min-h-11 min-w-40 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="">Hồ sơ nhân sự AI…</option>
+            {workers.map((w) => (
+              <option key={w.workerId} value={w.workerId}>
+                {w.name} · {w.role}
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label="Tiến độ %"
+            type="number"
+            min={0}
+            max={100}
+            value={progress}
+            onChange={(e) => setProgress(e.target.value)}
+            placeholder="Tiến độ %"
+            className="min-h-11 w-28 rounded-md border border-input bg-background px-2 text-sm"
+          />
+          <Button
+            size="sm"
+            className="min-h-11"
+            disabled={assign.isPending}
+            onClick={() => assign.mutate()}
+          >
+            {assign.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+            Giao
+          </Button>
+        </span>
+      ) : null}
+    </span>
+  );
+}
