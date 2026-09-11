@@ -318,6 +318,94 @@ function ProjectDetailPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được tiến độ"),
   });
 
+  // Nhập tiến độ hàng loạt từ Excel/CSV.
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  function downloadTemplate() {
+    const header = "Tên công việc,% hoàn thành,Ngày bắt đầu,Ngày kết thúc\n";
+    const sample = tasks
+      .slice(0, 10)
+      .map(
+        (t) =>
+          `"${t.title.replace(/"/g, '""')}",${t.progress_pct ?? 0},${
+            t.start_at ? t.start_at.slice(0, 10) : ""
+          },${t.end_at ? t.end_at.slice(0, 10) : ""}`,
+      )
+      .join("\n");
+    const blob = new Blob(["\ufeff" + header + sample], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mau-tien-do-cong-viec.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function pickColumn(headers: string[], keys: string[]) {
+    return headers.findIndex((h) => keys.some((k) => h.includes(k)));
+  }
+
+  async function handleImportFile(file: File) {
+    setImporting(true);
+    try {
+      const [{ readXlsxRows, readCsvRows, normalizeDateCell }] = await Promise.all([
+        import("@/lib/xlsx-read"),
+      ]);
+      const rows = file.name.toLowerCase().endsWith(".csv")
+        ? readCsvRows(await file.text())
+        : readXlsxRows(await file.arrayBuffer());
+      if (rows.length < 2) throw new Error("Tệp không có dữ liệu");
+
+      const headers = (rows[0] ?? []).map((h) => h.toLowerCase().trim());
+      const titleCol = pickColumn(headers, ["tên", "ten", "title", "công việc", "task"]);
+      const pctCol = pickColumn(headers, ["%", "hoàn thành", "hoan thanh", "progress"]);
+      const startCol = pickColumn(headers, ["bắt đầu", "bat dau", "start"]);
+      const endCol = pickColumn(headers, ["kết thúc", "ket thuc", "end", "finish"]);
+      if (titleCol < 0) throw new Error("Thiếu cột tên công việc");
+
+      const payload = rows
+        .slice(1)
+        .map((r) => {
+          const title = (r[titleCol] ?? "").trim();
+          if (!title) return null;
+          const pctRaw = pctCol >= 0 ? (r[pctCol] ?? "").replace("%", "").trim() : "";
+          const pctNum = pctRaw === "" ? null : Number(pctRaw.replace(",", "."));
+          const pct =
+            pctNum === null || Number.isNaN(pctNum)
+              ? null
+              : Math.max(0, Math.min(100, Math.round(pctNum <= 1 && pctRaw.includes(".") ? pctNum * 100 : pctNum)));
+          return {
+            title,
+            progressPct: pct,
+            ...(startCol >= 0 ? { startAt: normalizeDateCell(r[startCol] ?? "") } : {}),
+            ...(endCol >= 0 ? { endAt: normalizeDateCell(r[endCol] ?? "") } : {}),
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .slice(0, 500);
+
+      if (payload.length === 0) throw new Error("Không đọc được dòng dữ liệu nào");
+
+      const result = await importProgress({ data: { projectId: id, rows: payload } });
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      const warn: string[] = [];
+      if (result.notFoundCount > 0) warn.push(`${result.notFoundCount} dòng không khớp công việc`);
+      if (result.invalidCount > 0) warn.push(`${result.invalidCount} dòng lỗi dữ liệu`);
+      toast.success(
+        `Đã cập nhật tiến độ ${result.updated} công việc${warn.length ? ` · ${warn.join(", ")}` : ""}`,
+      );
+    } catch (e) {
+      toast.error((e as Error)?.message || "Không đọc được tệp");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   function moveTask(taskId: string, toStatus: string) {
     const current = tasks.find((t) => t.id === taskId);
     if (!current || current.status === toStatus) return;
