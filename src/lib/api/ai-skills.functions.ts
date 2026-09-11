@@ -435,13 +435,15 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
         .limit(40),
+      // Ưu tiên lịch họp sắp tới (từ 7 ngày trước trở đi) để đề xuất bám lịch thực tế.
       context.supabase
         .from("meetings")
         .select("title, agenda, start_at, end_at, location, status, project_id")
         .eq("tenant_id", tenantId)
         .is("deleted_at", null)
-        .order("start_at", { ascending: false })
-        .limit(15),
+        .gte("start_at", new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString())
+        .order("start_at", { ascending: true })
+        .limit(20),
       context.supabase
         .from("notifications")
         .select("type, title")
@@ -761,6 +763,17 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
 
     const corpus = [
       `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
+      "LỊCH HỌP THẬT (sắp xếp theo thời gian, gồm cuộc họp sắp tới):",
+      ...meetings.map((m) => {
+        const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
+        const when = m.start_at ? m.start_at.slice(0, 16).replace("T", " ") : "";
+        const upcoming = m.start_at ? new Date(m.start_at).getTime() >= Date.now() : false;
+        return `- ${m.title}${proj ? " [dự án: " + proj + "]" : ""}${
+          when ? " @" + when : ""
+        }${upcoming ? " (sắp tới)" : ""}${m.location ? " tại " + m.location : ""}${
+          m.status ? " (" + m.status + ")" : ""
+        }${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`;
+      }),
       ...progressLines,
       ...(roleLines.length ? ["VAI TRÒ NHÂN SỰ AI (việc đang được giao):", ...roleLines] : []),
       ...(timelineLines.length
@@ -773,16 +786,6 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
             t.due_at ? "/hạn " + t.due_at.slice(0, 10) : ""
           }]${(t.tags ?? []).length ? " #" + (t.tags ?? []).join(" #") : ""}`,
       ),
-      "CUỘC HỌP:",
-      ...meetings.map((m) => {
-        const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
-        const when = m.start_at ? m.start_at.slice(0, 16).replace("T", " ") : "";
-        return `- ${m.title}${proj ? " [dự án: " + proj + "]" : ""}${
-          when ? " @" + when : ""
-        }${m.location ? " tại " + m.location : ""}${m.status ? " (" + m.status + ")" : ""}${
-          m.agenda ? ": " + m.agenda.slice(0, 160) : ""
-        }`;
-      }),
       ...(projectNoteLines.length ? ["GHI CHÚ DỰ ÁN:", ...projectNoteLines] : []),
       ...(projectCommentLines.length
         ? ["THẢO LUẬN TRONG DỰ ÁN (bình luận thật):", ...projectCommentLines]
@@ -816,7 +819,10 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         `actionTypes: chỉ trong ${AI_ACTION_TYPES.join(",")}; rỗng nếu chỉ tra cứu/phân tích/soạn thảo. ` +
         "Ưu tiên các kỹ năng bám sát TIẾN ĐỘ THỰC TẾ: việc quá hạn, việc bị chặn, việc ì ạch không cập nhật, việc sắp đến hạn, việc thiếu hạn. " +
         "Đọc kỹ DÒNG THỜI GIAN HOẠT ĐỘNG để hiểu ai thường làm gì, vào lúc nào và kết quả ra sao; ưu tiên kỹ năng lặp lại theo thói quen làm việc thật đó. " +
-        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ).",
+        "Dùng LỊCH HỌP THẬT làm mốc thời gian: kỹ năng liên quan tới họp phải bám đúng cuộc họp có thật (tên, dự án, ngày giờ, địa điểm), " +
+        "ví dụ chuẩn bị tài liệu trước cuộc họp sắp tới, đối soát việc cần chốt trong cuộc họp đó, theo dõi sau họp. TUYỆT ĐỐI không bịa cuộc họp không có trong dữ liệu. " +
+        "BẮT BUỘC: nếu phần LỊCH HỌP THẬT có ít nhất một cuộc họp, ít nhất 2 trong số kỹ năng trả về phải gắn với cuộc họp có thật đó và nêu đúng tên cuộc họp cùng ngày giờ trong description và example. " +
+        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ, tên và thời gian cuộc họp).",
       prompt: corpus,
     });
 
