@@ -13,3 +13,9 @@
 - [x] Verify 360–440px overflow and 44px CTA targets
 - [x] Merge My Work and My Box navigation into My Space command center
 - [x] Match desktop menu hierarchy and collapsible groups to supplied reference
+
+## CEO Command Center (đang làm)
+- [ ] Nút duyệt/từ chối đề xuất giao việc + gán vai trò AI ngay tại Command Center
+- [ ] Nút giao việc thực tế: chọn đề xuất, gán nhân sự thật + tiến độ, cập nhật nhật ký/KPI
+- [ ] Màn giao ban: CEO ghi nhận kết quả từng việc, Bộ não tính KPI và đề xuất giao việc mới
+- [ ] Trang báo cáo theo bộ phận: so sánh KPI, giờ làm, đề xuất theo nhóm, xuất PDF/Excel
