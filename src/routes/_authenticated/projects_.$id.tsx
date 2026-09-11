@@ -20,6 +20,8 @@ import {
   User,
   History as HistoryIcon,
   MessageSquare,
+  Upload,
+  Download,
 } from "lucide-react";
 import { CommentThread } from "@/components/projects/comment-thread";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
