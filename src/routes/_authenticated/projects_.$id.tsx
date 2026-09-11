@@ -685,6 +685,15 @@ function ProjectDetailPage() {
                         }}
                       />
                       <Button
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        onClick={openWeekly}
+                        disabled={tasks.length === 0}
+                      >
+                        <CalendarClock className="h-3.5 w-3.5" /> Nhập tiến độ tuần
+                      </Button>
+                      <Button
+
                         variant="outline"
                         size="sm"
                         className="min-h-11 gap-1 px-3 text-xs"
