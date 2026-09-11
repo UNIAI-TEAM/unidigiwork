@@ -217,6 +217,21 @@ export async function loadCeoOverview(
   const scope = <T extends { eq: (c: string, v: string) => T }>(q: T): T =>
     workspaceId ? q.eq("workspace_id", workspaceId) : q;
 
+  // KPI do CEO tự đặt (nếu có) — dùng để chấm điểm và để Bộ não AI bám theo.
+  const kpiSettingsR = await supabase
+    .from("ceo_kpi_settings")
+    .select("targets, department_weights, updated_at")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  const kpiTargets = parseCeoKpiTargets(
+    (kpiSettingsR.data as { targets?: unknown } | null)?.targets,
+  );
+  const kpiWeights = parseDepartmentWeights(
+    (kpiSettingsR.data as { department_weights?: unknown } | null)?.department_weights,
+  );
+  const kpiUpdatedAt = ((kpiSettingsR.data as { updated_at?: string } | null)?.updated_at ??
+    null) as string | null;
+
   const [tasksR, prevTasksR, execR, metricsR, meetingsR, workersR, wsR, proposalsR] =
     await Promise.all([
       scope(
@@ -554,6 +569,66 @@ export async function loadCeoOverview(
     : null;
   const passRate = reviewed.length ? Math.round((passed.length / reviewed.length) * 100) : null;
   const resultRate = cur.length ? Math.round((execs.length / cur.length) * 100) : null;
+
+  const aiShareNow = cur.length ? Math.round((aiCur / cur.length) * 100) : 0;
+  const kpiActuals: Record<keyof CeoKpiTargets, number | null> = {
+    completed: completedCur,
+    maxOverdue: overdue.length,
+    aiSharePct: aiShareNow,
+    resultRatePct: resultRate,
+    passRatePct: passRate,
+  };
+  const KPI_META: {
+    key: keyof CeoKpiTargets;
+    label: string;
+    unit: string;
+    direction: "up" | "down";
+  }[] = [
+    { key: "completed", label: "Việc hoàn thành trong kỳ", unit: "việc", direction: "up" },
+    { key: "maxOverdue", label: "Việc quá hạn tối đa", unit: "việc", direction: "down" },
+    { key: "aiSharePct", label: "Tỉ lệ AI đảm nhiệm", unit: "%", direction: "up" },
+    { key: "resultRatePct", label: "Tỉ lệ việc có kết quả", unit: "%", direction: "up" },
+    { key: "passRatePct", label: "Tỉ lệ kết quả đạt review", unit: "%", direction: "up" },
+  ];
+  const kpiRows: CeoKpiRow[] = KPI_META.map((m) => {
+    const target = kpiTargets[m.key];
+    const actual = kpiActuals[m.key];
+    let achievedPct: number | null = null;
+    let ok: boolean | null = null;
+    if (target !== null && actual !== null) {
+      if (m.direction === "up") {
+        achievedPct = target > 0 ? Math.round((actual / target) * 100) : actual > 0 ? 100 : null;
+        ok = actual >= target;
+      } else {
+        achievedPct = actual <= target ? 100 : target > 0 ? Math.round((target / actual) * 100) : 0;
+        ok = actual <= target;
+      }
+    }
+    return { ...m, target, actual, achievedPct, ok };
+  });
+  const scored = kpiRows.filter((r) => r.achievedPct !== null);
+  const kpiBlock = {
+    configured: kpiRows.some((r) => r.target !== null),
+    updatedAt: kpiUpdatedAt,
+    targets: kpiTargets,
+    rows: kpiRows,
+    score: scored.length
+      ? Math.round(
+          scored.reduce((a, r) => a + Math.min(120, r.achievedPct ?? 0), 0) / scored.length,
+        )
+      : null,
+  };
+  for (const r of kpiRows) {
+    if (r.ok === false) {
+      issues.push({
+        id: `kpi-${r.key}`,
+        kind: "decide",
+        title: `KPI chưa đạt: ${r.label}`,
+        detail: `Thực tế ${r.actual}${r.unit === "%" ? "%" : ` ${r.unit}`} so với mục tiêu ${r.target}${r.unit === "%" ? "%" : ` ${r.unit}`}`,
+        href: "/ceo",
+      });
+    }
+  }
 
   return {
     period,
