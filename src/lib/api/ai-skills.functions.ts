@@ -763,6 +763,17 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
 
     const corpus = [
       `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
+      "LỊCH HỌP THẬT (sắp xếp theo thời gian, gồm cuộc họp sắp tới):",
+      ...meetings.map((m) => {
+        const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
+        const when = m.start_at ? m.start_at.slice(0, 16).replace("T", " ") : "";
+        const upcoming = m.start_at ? new Date(m.start_at).getTime() >= Date.now() : false;
+        return `- ${m.title}${proj ? " [dự án: " + proj + "]" : ""}${
+          when ? " @" + when : ""
+        }${upcoming ? " (sắp tới)" : ""}${m.location ? " tại " + m.location : ""}${
+          m.status ? " (" + m.status + ")" : ""
+        }${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`;
+      }),
       ...progressLines,
       ...(roleLines.length ? ["VAI TRÒ NHÂN SỰ AI (việc đang được giao):", ...roleLines] : []),
       ...(timelineLines.length
