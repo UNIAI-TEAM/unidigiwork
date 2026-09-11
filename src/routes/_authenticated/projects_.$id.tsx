@@ -1,5 +1,5 @@
 // Chi tiết dự án — bảng công việc, tiến độ, ghi chú và gợi ý kỹ năng AI từ Skill Hub.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,6 +20,8 @@ import {
   User,
   History as HistoryIcon,
   MessageSquare,
+  Upload,
+  Download,
 } from "lucide-react";
 import { CommentThread } from "@/components/projects/comment-thread";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
@@ -33,6 +35,7 @@ import {
   getProjectActivity,
   updateProject,
   updateTaskProgress,
+  importTaskProgress,
   listProjectMeetings,
   scheduleProjectMeeting,
   type ProjectRow,
@@ -161,6 +164,7 @@ function ProjectDetailPage() {
   }, [project, notesDirty]);
 
   const update = useServerFn(updateProject);
+  const importProgress = useServerFn(importTaskProgress);
   const saveNotes = useMutation({
     mutationFn: async () => update({ data: { projectId: id, notes } }),
     onSuccess: () => {
@@ -316,6 +320,100 @@ function ProjectDetailPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được tiến độ"),
   });
 
+  // Nhập tiến độ hàng loạt từ Excel/CSV.
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  function downloadTemplate() {
+    const header = "Tên công việc,% hoàn thành,Ngày bắt đầu,Ngày kết thúc\n";
+    const sample = tasks
+      .slice(0, 10)
+      .map(
+        (t) =>
+          `"${t.title.replace(/"/g, '""')}",${t.progress_pct ?? 0},${
+            t.start_at ? t.start_at.slice(0, 10) : ""
+          },${t.end_at ? t.end_at.slice(0, 10) : ""}`,
+      )
+      .join("\n");
+    const blob = new Blob(["\ufeff" + header + sample], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mau-tien-do-cong-viec.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function pickColumn(headers: string[], keys: string[]) {
+    return headers.findIndex((h) => keys.some((k) => h.includes(k)));
+  }
+
+  async function handleImportFile(file: File) {
+    setImporting(true);
+    try {
+      const [{ readXlsxRows, readCsvRows, normalizeDateCell }] = await Promise.all([
+        import("@/lib/xlsx-read"),
+      ]);
+      const rows = file.name.toLowerCase().endsWith(".csv")
+        ? readCsvRows(await file.text())
+        : readXlsxRows(await file.arrayBuffer());
+      if (rows.length < 2) throw new Error("Tệp không có dữ liệu");
+
+      const headers = (rows[0] ?? []).map((h) => h.toLowerCase().trim());
+      const titleCol = pickColumn(headers, ["tên", "ten", "title", "công việc", "task"]);
+      const pctCol = pickColumn(headers, ["%", "hoàn thành", "hoan thanh", "progress"]);
+      const startCol = pickColumn(headers, ["bắt đầu", "bat dau", "start"]);
+      const endCol = pickColumn(headers, ["kết thúc", "ket thuc", "end", "finish"]);
+      if (titleCol < 0) throw new Error("Thiếu cột tên công việc");
+
+      const payload = rows
+        .slice(1)
+        .map((r) => {
+          const title = (r[titleCol] ?? "").trim();
+          if (!title) return null;
+          const pctRaw = pctCol >= 0 ? (r[pctCol] ?? "").replace("%", "").trim() : "";
+          const pctNum = pctRaw === "" ? null : Number(pctRaw.replace(",", "."));
+          const pct =
+            pctNum === null || Number.isNaN(pctNum)
+              ? null
+              : Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    Math.round(pctNum <= 1 && pctRaw.includes(".") ? pctNum * 100 : pctNum),
+                  ),
+                );
+          return {
+            title,
+            progressPct: pct,
+            ...(startCol >= 0 ? { startAt: normalizeDateCell(r[startCol] ?? "") } : {}),
+            ...(endCol >= 0 ? { endAt: normalizeDateCell(r[endCol] ?? "") } : {}),
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .slice(0, 500);
+
+      if (payload.length === 0) throw new Error("Không đọc được dòng dữ liệu nào");
+
+      const result = await importProgress({ data: { projectId: id, rows: payload } });
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      const warn: string[] = [];
+      if (result.notFoundCount > 0) warn.push(`${result.notFoundCount} dòng không khớp công việc`);
+      if (result.invalidCount > 0) warn.push(`${result.invalidCount} dòng lỗi dữ liệu`);
+      toast.success(
+        `Đã cập nhật tiến độ ${result.updated} công việc${warn.length ? ` · ${warn.join(", ")}` : ""}`,
+      );
+    } catch (e) {
+      toast.error((e as Error)?.message || "Không đọc được tệp");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   function moveTask(taskId: string, toStatus: string) {
     const current = tasks.find((t) => t.id === taskId);
     if (!current || current.status === toStatus) return;
@@ -407,11 +505,51 @@ function ProjectDetailPage() {
 
               <div className="mt-5 grid gap-4 xl:grid-cols-3">
                 <section className="rounded-xl border border-border bg-card p-4 xl:col-span-2">
-                  <h2 className="flex items-center gap-2 font-semibold">
-                    <ListChecks className="h-4 w-4 text-primary" /> Công việc (
-                    {filteredTasks.length}
-                    {hasFilter && `/${tasks.length}`})
-                  </h2>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+                      <ListChecks className="h-4 w-4 text-primary" /> Công việc (
+                      {filteredTasks.length}
+                      {hasFilter && `/${tasks.length}`})
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept=".xlsx,.csv,text/csv"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void handleImportFile(f);
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        disabled={importing}
+                        onClick={() => fileRef.current?.click()}
+                      >
+                        {importing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        Nhập tiến độ từ Excel
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        onClick={downloadTemplate}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Tải mẫu
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tệp cần có cột: Tên công việc, % hoàn thành, Ngày bắt đầu, Ngày kết thúc.
+                  </p>
                   {tasks.length === 0 && (
                     <p className="mt-2 text-sm text-muted-foreground">
                       Chưa có công việc nào gắn với dự án này.

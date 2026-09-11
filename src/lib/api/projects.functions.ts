@@ -207,7 +207,18 @@ export const updateTaskProgress = createServerFn({ method: "POST" })
     ) {
       throw new Error("INVALID_DATE_RANGE");
     }
-    const { data: row, error } = await context.supabase
+    // RLS xác nhận quyền đọc task trước, sau đó ghi bằng client quản trị.
+    const { data: allowed, error: readErr } = await context.supabase
+      .from("tasks")
+      .select("id")
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (readErr) mapPgError(readErr);
+    if (!allowed) throw new Error("TASK_NOT_FOUND");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("tasks")
       .update(patch as never)
       .eq("id", data.taskId)
@@ -221,6 +232,105 @@ export const updateTaskProgress = createServerFn({ method: "POST" })
       progress_pct: number | null;
       start_at: string | null;
       end_at: string | null;
+    };
+  });
+
+/**
+ * Nhập tiến độ hàng loạt từ bảng tính: khớp công việc theo mã (id) hoặc theo tiêu đề
+ * trong đúng dự án. Chỉ cập nhật công việc thuộc dự án được chỉ định.
+ */
+export const importTaskProgress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        rows: z
+          .array(
+            z.object({
+              taskId: z.string().uuid().nullable().optional(),
+              title: z.string().max(400).nullable().optional(),
+              progressPct: z.number().int().min(0).max(100).nullable().optional(),
+              startAt: z.string().max(40).nullable().optional(),
+              endAt: z.string().max(40).nullable().optional(),
+            }),
+          )
+          .min(1)
+          .max(500),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: tasks, error } = await context.supabase
+      .from("tasks")
+      .select("id, title")
+      .eq("project_id", data.projectId)
+      .is("deleted_at", null)
+      .limit(500);
+    if (error) mapPgError(error);
+
+    const byId = new Map<string, string>();
+    const byTitle = new Map<string, string>();
+    for (const t of (tasks ?? []) as Array<{ id: string; title: string }>) {
+      byId.set(t.id, t.id);
+      byTitle.set(t.title.trim().toLowerCase(), t.id);
+    }
+
+    // Ghi qua client quản trị nhưng chỉ trên các task đã được RLS xác nhận thuộc dự án.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let updated = 0;
+    const notFound: string[] = [];
+    const invalid: string[] = [];
+
+    for (const row of data.rows) {
+      const label = row.title?.trim() || row.taskId || "(trống)";
+      const taskId =
+        (row.taskId && byId.get(row.taskId)) ||
+        (row.title ? byTitle.get(row.title.trim().toLowerCase()) : undefined);
+      if (!taskId) {
+        notFound.push(label);
+        continue;
+      }
+      const patch: Record<string, unknown> = { updated_by: context.userId };
+      if (row.progressPct !== undefined && row.progressPct !== null) {
+        patch["progress_pct"] = row.progressPct;
+      }
+      if (row.startAt !== undefined) {
+        patch["start_at"] = row.startAt ? new Date(row.startAt).toISOString() : null;
+      }
+      if (row.endAt !== undefined) {
+        patch["end_at"] = row.endAt ? new Date(row.endAt).toISOString() : null;
+      }
+      if (
+        patch["start_at"] &&
+        patch["end_at"] &&
+        new Date(patch["start_at"] as string) > new Date(patch["end_at"] as string)
+      ) {
+        invalid.push(label);
+        continue;
+      }
+      if (Object.keys(patch).length <= 1) continue;
+
+      const { error: upErr } = await supabaseAdmin
+        .from("tasks")
+        .update(patch as never)
+        .eq("id", taskId)
+        .eq("project_id", data.projectId)
+        .is("deleted_at", null);
+      if (upErr) {
+        invalid.push(label);
+        continue;
+      }
+      updated += 1;
+    }
+
+    return {
+      updated,
+      notFound: notFound.slice(0, 20),
+      notFoundCount: notFound.length,
+      invalid: invalid.slice(0, 20),
+      invalidCount: invalid.length,
     };
   });
 
