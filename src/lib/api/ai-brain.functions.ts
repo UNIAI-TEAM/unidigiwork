@@ -298,3 +298,93 @@ export const assignTasksToRole = createServerFn({ method: "POST" })
     if (!assigned) throw fail("TASK_NOT_FOUND", lastError || "Không giao được công việc.");
     return { ok: true as const, assigned, failed: data.taskIds.length - assigned };
   });
+
+export type ProposalLogItem = {
+  id: string;
+  title: string;
+  actionType: string;
+  status: string;
+  source: string;
+  risk: string;
+  createdAt: string;
+  executedAt: string | null;
+  workerName: string | null;
+  taskTitle: string | null;
+  taskStatus: string | null;
+  taskProgress: number | null;
+};
+
+/** Nhật ký đề xuất: lịch sử đề xuất, vai trò được giao và công việc đã xử lý. */
+export const getProposalLog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        limit: z.number().int().min(1).max(100).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<ProposalLogItem[]> => {
+    const tenantId = await tenantOf(context, data.workspaceId);
+    const { data: rows } = await context.supabase
+      .from("ai_action_proposals")
+      .select(
+        "id, title, action_type, status, source, risk, created_at, executed_at, ai_worker_id, target_type, target_id, result",
+      )
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 40);
+    const list = (rows ?? []) as any[];
+    if (!list.length) return [];
+
+    const workerIds = Array.from(new Set(list.map((r) => r.ai_worker_id).filter(Boolean)));
+    const taskIds = Array.from(
+      new Set(
+        list
+          .map((r) =>
+            r.target_type === "TASK"
+              ? r.target_id
+              : ((r.result as any)?.entityType === "TASK" ? (r.result as any)?.entityId : null),
+          )
+          .filter(Boolean),
+      ),
+    );
+
+    const [workersRes, tasksRes] = await Promise.all([
+      workerIds.length
+        ? context.supabase.from("ai_workers").select("id, name").in("id", workerIds)
+        : Promise.resolve({ data: [] as any[] }),
+      taskIds.length
+        ? context.supabase
+            .from("tasks")
+            .select("id, title, status, progress_pct")
+            .eq("tenant_id", tenantId)
+            .in("id", taskIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const workerById = new Map(((workersRes.data ?? []) as any[]).map((w) => [w.id, w.name]));
+    const taskById = new Map(((tasksRes.data ?? []) as any[]).map((t) => [t.id, t]));
+
+    return list.map((r) => {
+      const taskId =
+        r.target_type === "TASK"
+          ? r.target_id
+          : ((r.result as any)?.entityType === "TASK" ? (r.result as any)?.entityId : null);
+      const task = taskId ? taskById.get(taskId) : null;
+      return {
+        id: r.id as string,
+        title: (r.title as string) ?? "",
+        actionType: (r.action_type as string) ?? "",
+        status: (r.status as string) ?? "",
+        source: (r.source as string) ?? "",
+        risk: (r.risk as string) ?? "",
+        createdAt: r.created_at as string,
+        executedAt: (r.executed_at as string) ?? null,
+        workerName: r.ai_worker_id ? (workerById.get(r.ai_worker_id) ?? null) : null,
+        taskTitle: task?.title ?? null,
+        taskStatus: task?.status ?? null,
+        taskProgress: task?.progress_pct ?? null,
+      };
+    });
+  });
