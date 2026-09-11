@@ -509,6 +509,8 @@ function CeoPage() {
                 </Card>
               </div>
 
+              <CeoImportPanel workspaceId={workspaceId ?? null} />
+
               <div className="grid gap-3 lg:grid-cols-3">
                 <Card title="Chuyển dịch Người ↔ AI">
                   <div className="flex items-center gap-4">
