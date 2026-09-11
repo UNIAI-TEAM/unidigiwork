@@ -19,3 +19,4 @@
 - [ ] Nút giao việc thực tế: chọn đề xuất, gán nhân sự thật + tiến độ, cập nhật nhật ký/KPI
 - [ ] Màn giao ban: CEO ghi nhận kết quả từng việc, Bộ não tính KPI và đề xuất giao việc mới
 - [ ] Trang báo cáo theo bộ phận: so sánh KPI, giờ làm, đề xuất theo nhóm, xuất PDF/Excel
+- [ ] Thêm tone gradient kiểu ClickUp vào bộ tone giao diện
