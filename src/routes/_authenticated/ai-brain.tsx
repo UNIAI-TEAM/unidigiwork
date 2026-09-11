@@ -251,6 +251,20 @@ function AiBrainPage() {
                 )}
                 Đào tạo lại từ dữ liệu thật
               </Button>
+              <Button
+                variant={autoState.data?.enabled ? "secondary" : "outline"}
+                className="min-h-11"
+                disabled={setAuto.isPending || autoState.isLoading}
+                title="Tự động đào tạo lại mỗi khi KPI hoặc tiến độ công việc thay đổi"
+                onClick={() => setAuto.mutate(!autoState.data?.enabled)}
+              >
+                {setAuto.isPending ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1.5 h-4 w-4" />
+                )}
+                {autoState.data?.enabled ? "Tự động: Bật" : "Tự động: Tắt"}
+              </Button>
               <Link
                 to="/workflows/agents"
                 search={{ profile: undefined }}
