@@ -9,6 +9,7 @@ import {
   Bot,
   CheckCircle2,
   Clock,
+  Download,
   Loader2,
   RefreshCcw,
   Timer,
@@ -19,7 +20,7 @@ import {
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { getCeoOverview, type CeoPeriod } from "@/lib/api/ceo.functions";
+import { exportCeoReport, getCeoOverview, type CeoPeriod } from "@/lib/api/ceo.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo")({
   head: () => ({
@@ -91,6 +92,26 @@ function CeoPage() {
   const [period, setPeriod] = useState<CeoPeriod>("month");
   const { workspaceId } = useActiveWorkspace();
   const fn = useServerFn(getCeoOverview);
+  const exportFn = useServerFn(exportCeoReport);
+  const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
+
+  const download = async (format: "pdf" | "xlsx") => {
+    setExporting(format);
+    try {
+      const res = await exportFn({ data: { period, workspaceId: workspaceId ?? null, format } });
+      const bin = atob(res.base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([bytes], { type: res.mimeType }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["ceo", "overview", period, workspaceId ?? ""],
@@ -152,12 +173,40 @@ function CeoPage() {
             </div>
             <div className="text-right text-xs text-muted-foreground">
               <div>{today}</div>
-              <button
-                onClick={() => void refetch()}
-                className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2"
-              >
-                <RefreshCcw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Làm mới
-              </button>
+              <div className="mt-1 flex flex-wrap justify-end gap-2">
+                <button
+                  onClick={() => void refetch()}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2"
+                >
+                  <RefreshCcw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Làm
+                  mới
+                </button>
+                <button
+                  onClick={() => void download("pdf")}
+                  disabled={exporting !== null}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2 disabled:opacity-60"
+                >
+                  {exporting === "pdf" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}{" "}
+                  Tải PDF
+                </button>
+                <button
+                  onClick={() => void download("xlsx")}
+                  disabled={exporting !== null}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2 disabled:opacity-60"
+                >
+                  {exporting === "xlsx" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}{" "}
+                  Tải Excel
+                </button>
+              </div>
+              <div className="mt-1 text-[11px]">Báo cáo tự chạy 7h sáng thứ Bảy hằng tuần.</div>
             </div>
           </div>
 

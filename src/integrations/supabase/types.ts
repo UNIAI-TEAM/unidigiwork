@@ -1538,6 +1538,44 @@ export type Database = {
         }
         Relationships: []
       }
+      ceo_report_runs: {
+        Row: {
+          created_at: string
+          id: string
+          notified_count: number
+          pdf_path: string | null
+          period_end: string
+          tenant_id: string
+          xlsx_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notified_count?: number
+          pdf_path?: string | null
+          period_end: string
+          tenant_id: string
+          xlsx_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notified_count?: number
+          pdf_path?: string | null
+          period_end?: string
+          tenant_id?: string
+          xlsx_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ceo_report_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_channels: {
         Row: {
           created_at: string

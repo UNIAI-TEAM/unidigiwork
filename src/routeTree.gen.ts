@@ -120,6 +120,7 @@ import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/
 import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/public/hooks/process-outbox'
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
 import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
+import { Route as ApiPublicHooksCeoWeeklyReportRouteImport } from './routes/api/public/hooks/ceo-weekly-report'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
 import { Route as AuthenticatedMTasksIdRouteImport } from './routes/_authenticated/m/tasks_.$id'
@@ -722,6 +723,12 @@ const ApiPublicHooksLivekitRoute = ApiPublicHooksLivekitRouteImport.update({
   path: '/api/public/hooks/livekit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksCeoWeeklyReportRoute =
+  ApiPublicHooksCeoWeeklyReportRouteImport.update({
+    id: '/api/public/hooks/ceo-weekly-report',
+    path: '/api/public/hooks/ceo-weekly-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminTraceCorrelationIdRoute =
   ApiAdminTraceCorrelationIdRouteImport.update({
     id: '/api/admin/trace/$correlationId',
@@ -884,6 +891,7 @@ export interface FileRoutesByFullPath {
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
@@ -1003,6 +1011,7 @@ export interface FileRoutesByTo {
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
@@ -1126,6 +1135,7 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks_/$id': typeof AuthenticatedMTasksIdRoute
   '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
@@ -1249,6 +1259,7 @@ export interface FileRouteTypes {
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
@@ -1368,6 +1379,7 @@ export interface FileRouteTypes {
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
@@ -1490,6 +1502,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/tasks_/$id'
     | '/_authenticated/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
+    | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
@@ -1531,6 +1544,7 @@ export interface RootRouteChildren {
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
   ShareWorkGraphTokenRoute: typeof ShareWorkGraphTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
+  ApiPublicHooksCeoWeeklyReportRoute: typeof ApiPublicHooksCeoWeeklyReportRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
   ApiPublicHooksProcessOutboxRoute: typeof ApiPublicHooksProcessOutboxRoute
@@ -2318,6 +2332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLivekitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ceo-weekly-report': {
+      id: '/api/public/hooks/ceo-weekly-report'
+      path: '/api/public/hooks/ceo-weekly-report'
+      fullPath: '/api/public/hooks/ceo-weekly-report'
+      preLoaderRoute: typeof ApiPublicHooksCeoWeeklyReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/trace/$correlationId': {
       id: '/api/admin/trace/$correlationId'
       path: '/api/admin/trace/$correlationId'
@@ -2690,6 +2711,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsRunsRoute: WorkflowsRunsRoute,
   ShareWorkGraphTokenRoute: ShareWorkGraphTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
+  ApiPublicHooksCeoWeeklyReportRoute: ApiPublicHooksCeoWeeklyReportRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,
   ApiPublicHooksProcessOutboxRoute: ApiPublicHooksProcessOutboxRoute,
