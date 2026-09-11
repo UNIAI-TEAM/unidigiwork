@@ -239,6 +239,10 @@ export function ProjectCalendar({
         <span className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Mốc công việc
         </span>
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-500" /> Đề xuất giao việc
+        </span>
+
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
