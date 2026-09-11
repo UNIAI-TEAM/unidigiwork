@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 
 const themeSchema = z.enum(["light", "dark"]);
-const toneSchema = z.enum(["violet", "blue", "teal", "emerald", "amber", "rose"]);
+const toneSchema = z.enum(["violet", "blue", "teal", "emerald", "amber", "rose", "gradient"]);
 const contrastSchema = z.enum(["normal", "high"]);
 const fontScaleSchema = z.enum(["sm", "md", "lg", "xl"]);
 const fontFamilySchema = z.enum(["sans", "serif", "mono"]);
