@@ -529,6 +529,7 @@ export async function loadCeoOverview(
     people: people.slice(0, 30),
     departments,
     issues: issues.slice(0, 12),
+    proposals: proposalsBlock,
     answers: {
       resources: [
         `${humanHours} giờ người (ước tính)`,
