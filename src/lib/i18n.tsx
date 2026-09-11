@@ -317,7 +317,8 @@ const dict = {
     "aiBrain.log.empty": "Chưa có hoạt động nào.",
     "aiBrain.guarantee": "AI không bao giờ tự thực hiện. Mọi thay đổi dữ liệu đều cần người duyệt.",
     "aiBrain.skills.title": "Skill Hub",
-    "aiBrain.skills.subtitle": "Thư viện kỹ năng của tổ chức. Bật kỹ năng nào thì AI mới được dùng kỹ năng đó để đề xuất.",
+    "aiBrain.skills.subtitle":
+      "Thư viện kỹ năng của tổ chức. Bật kỹ năng nào thì AI mới được dùng kỹ năng đó để đề xuất.",
     "aiBrain.skills.readonly": "Chỉ quản trị tổ chức mới thay đổi được. Bạn đang ở chế độ xem.",
     "aiBrain.skills.empty": "Chưa có kỹ năng nào trong tổ chức này.",
     "aiBrain.skills.approvalRequired": "Bắt buộc người duyệt",

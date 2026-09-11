@@ -30,4 +30,4 @@
 - [x] Lịch chạy Bộ não hằng ngày (tự đào tạo lại + cập nhật đề xuất), hiển thị trong Command Center
 - [ ] Import Excel thật trong Command Center: nhân sự, bộ phận, lịch họp, tiến độ công việc → KPI tự cập nhật
 
-- [ ] Tạo tài khoản demo có dữ liệu để anh Nam đăng nhập xem
+- [x] Tạo tài khoản demo có dữ liệu để anh Nam đăng nhập xem
