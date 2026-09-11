@@ -1545,6 +1545,8 @@ export type Database = {
           auto_retrain_signature: string | null
           created_at: string
           department_weights: Json
+          kpi_refreshed_at: string | null
+          kpi_snapshot: Json | null
           targets: Json
           tenant_id: string
           updated_at: string
@@ -1556,6 +1558,8 @@ export type Database = {
           auto_retrain_signature?: string | null
           created_at?: string
           department_weights?: Json
+          kpi_refreshed_at?: string | null
+          kpi_snapshot?: Json | null
           targets?: Json
           tenant_id: string
           updated_at?: string
@@ -1567,6 +1571,8 @@ export type Database = {
           auto_retrain_signature?: string | null
           created_at?: string
           department_weights?: Json
+          kpi_refreshed_at?: string | null
+          kpi_snapshot?: Json | null
           targets?: Json
           tenant_id?: string
           updated_at?: string
