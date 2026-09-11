@@ -357,6 +357,68 @@ function ProjectDetailPage() {
     onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được tiến độ"),
   });
 
+  // Nhập tiến độ theo tuần: cập nhật % nhiều công việc cùng lúc + ghi nhật ký tuần.
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [weeklyValues, setWeeklyValues] = useState<Record<string, string>>({});
+  const [weeklyNote, setWeeklyNote] = useState("");
+  const updateProgressFn = useServerFn(updateTaskProgress);
+  const addProjectCommentFn = useServerFn(addProjectComment);
+
+  const weekLabel = useMemo(() => {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return `${monday.toLocaleDateString("vi-VN")} – ${sunday.toLocaleDateString("vi-VN")}`;
+  }, []);
+
+  function openWeekly() {
+    const init: Record<string, string> = {};
+    for (const t of tasks) init[t.id] = String(t.progress_pct ?? 0);
+    setWeeklyValues(init);
+    setWeeklyNote("");
+    setWeeklyOpen(true);
+  }
+
+  const weeklyMutation = useMutation({
+    mutationFn: async () => {
+      const changed = tasks.filter((t) => {
+        const raw = weeklyValues[t.id];
+        if (raw === undefined) return false;
+        const pct = Number(raw);
+        return Number.isFinite(pct) && pct !== (t.progress_pct ?? 0);
+      });
+      for (const t of changed) {
+        const pct = Math.max(0, Math.min(100, Math.round(Number(weeklyValues[t.id]))));
+        await updateProgressFn({ data: { taskId: t.id, progressPct: pct } });
+      }
+      const lines = changed.map(
+        (t) => `- ${t.title}: ${t.progress_pct ?? 0}% → ${Math.round(Number(weeklyValues[t.id]))}%`,
+      );
+      const body = [
+        `Cập nhật tiến độ tuần ${weekLabel}`,
+        ...(lines.length ? lines : ["- Không có thay đổi tiến độ"]),
+        ...(weeklyNote.trim() ? ["", `Ghi chú: ${weeklyNote.trim()}`] : []),
+      ].join("\n");
+      await addProjectCommentFn({ data: { projectId: id, body } });
+      return changed.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`Đã ghi nhận tiến độ tuần (${n} công việc)`);
+      setWeeklyOpen(false);
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
+      qc.invalidateQueries({ queryKey: ["project", id, "proposals"] });
+      qc.invalidateQueries({ queryKey: ["project", id, "activity"] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["project-comments", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không lưu được tiến độ tuần"),
+  });
+
+
   // Nhập tiến độ hàng loạt từ Excel/CSV.
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [importing, setImporting] = useState(false);
