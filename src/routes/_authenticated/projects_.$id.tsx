@@ -69,6 +69,19 @@ export const Route = createFileRoute("/_authenticated/projects_/$id")({
   }),
 });
 
+/** Gom đề xuất AI theo ngày tạo để hiển thị cạnh cuộc họp cùng ngày. */
+function proposalsByDay(list: ProjectProposal[]) {
+  const map = new Map<string, ProjectProposal[]>();
+  for (const p of list) {
+    const d = new Date(p.createdAt);
+    if (Number.isNaN(d.getTime())) continue;
+    const k = d.toDateString();
+    map.set(k, [...(map.get(k) ?? []), p]);
+  }
+  return map;
+}
+
+
 const STATUS_LABEL: Record<ProjectStatus, string> = {
   planning: "Lập kế hoạch",
   active: "Đang chạy",
