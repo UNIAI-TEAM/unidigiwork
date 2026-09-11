@@ -540,11 +540,15 @@ export async function loadCeoOverview(
         `${completedCur} việc hoàn thành`,
         `${execs.length} kết quả AI được tạo`,
         `${cur.length} việc mới trong kỳ`,
+        `${proposalsBlock.assignment} đề xuất giao việc từ Bộ não AI`,
       ],
       changes: [
         passRate === null ? "Chưa có kết quả nào được review" : `${passRate}% kết quả đạt review`,
         `${overdue.length} việc đang quá hạn`,
         `${savedHours} giờ người được AI gánh thay (ước tính)`,
+        proposalsBlock.executionRate === null
+          ? "Chưa có đề xuất nào trong kỳ"
+          : `${proposalsBlock.executionRate}% đề xuất trong kỳ đã được duyệt và thực thi`,
       ],
       value: [
         leverage === null ? "Chưa đủ dữ liệu đòn bẩy" : `Đòn bẩy AI ${leverage}×`,
