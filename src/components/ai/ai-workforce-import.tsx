@@ -19,11 +19,11 @@ interface ImportRow {
 const HEADER_ALIASES: Record<string, keyof ImportRow> = {
   ma: "code",
   code: "code",
-  "mã": "code",
+  mã: "code",
   ten: "name",
-  "tên": "name",
+  tên: "name",
   name: "name",
-  "hoten": "name",
+  hoten: "name",
   vaitro: "role",
   "vai trò": "role",
   role: "role",
@@ -51,7 +51,11 @@ function toRows(sheet: SheetRows): ImportRow[] {
     headers.forEach((h, i) => {
       const cell = (line[i] ?? "").trim();
       if (!h || !cell) return;
-      if (h === "skills") row.skills = cell.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
+      if (h === "skills")
+        row.skills = cell
+          .split(/[,;|]/)
+          .map((s) => s.trim())
+          .filter(Boolean);
       else row[h] = cell as never;
     });
     if (row.name) out.push(row);
@@ -59,7 +63,8 @@ function toRows(sheet: SheetRows): ImportRow[] {
   return out;
 }
 
-const TEMPLATE = "Mã,Tên,Vai trò,Kỹ năng,Trạng thái\nWF_NOVA,NOVA,Trợ lý điều hành,Báo cáo;Lịch họp,ACTIVE\n";
+const TEMPLATE =
+  "Mã,Tên,Vai trò,Kỹ năng,Trạng thái\nWF_NOVA,NOVA,Trợ lý điều hành,Báo cáo;Lịch họp,ACTIVE\n";
 
 export function AiWorkforceImport() {
   const { workspaceId } = useActiveWorkspace();
@@ -124,8 +129,8 @@ export function AiWorkforceImport() {
         <div className="min-w-0">
           <h2 className="text-sm font-semibold">Nhập nhân sự AI từ Excel</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cột: Mã, Tên, Vai trò, Kỹ năng, Trạng thái. Vai trò và lịch sử làm việc được đồng bộ
-            vào Bộ não AI ở lần đào tạo kế tiếp.
+            Cột: Mã, Tên, Vai trò, Kỹ năng, Trạng thái. Vai trò và lịch sử làm việc được đồng bộ vào
+            Bộ não AI ở lần đào tạo kế tiếp.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
