@@ -12,6 +12,7 @@ export type DailyBrainResult = {
   retrained: number;
   skipped: number;
   createdSkills: number;
+  kpiRefreshed: number;
   errors: string[];
 };
 
@@ -21,6 +22,7 @@ export async function runDailyBrainRetraining(admin: any, limit = 20): Promise<D
     retrained: 0,
     skipped: 0,
     createdSkills: 0,
+    kpiRefreshed: 0,
     errors: [],
   };
 
@@ -76,7 +78,7 @@ export async function runDailyBrainRetraining(admin: any, limit = 20): Promise<D
             kpi_snapshot: {
               score: overview.kpi.score ?? null,
               configured: overview.kpi.configured,
-              totalTasks: overview.totals.total,
+              totalTasks: overview.totals.tasks.current,
               completed: overview.totals.completed.current,
               overdue: overview.totals.overdue,
               aiSharePct: overview.split.aiSharePct,
