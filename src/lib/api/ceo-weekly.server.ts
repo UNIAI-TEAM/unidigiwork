@@ -7,7 +7,8 @@ import { buildCeoPdf, buildCeoXlsx, ceoReportFileName } from "./ceo-report.serve
 const BUCKET = "ceo-reports";
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 
-type Client = SupabaseClient<never>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Client = SupabaseClient<any, "public", any>;
 
 export type WeeklyRunResult = {
   tenants: number;
