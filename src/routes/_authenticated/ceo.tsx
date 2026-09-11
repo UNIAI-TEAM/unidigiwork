@@ -818,9 +818,10 @@ function CeoPage() {
                           ) : null}
                         </span>
                       </li>
-                    ))}
-                  </ul>
-                )}
+                      ))}
+                    </ul>
+                  );
+                })()}
               </Card>
 
               <Card title="Bốn câu hỏi của CEO">
