@@ -334,6 +334,17 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/people", order: 4 },
   },
   {
+    id: "ceo",
+    labelKey: "nav.ceo",
+    icon: BarChart3,
+    href: "/ceo",
+    group: "organization",
+    match: ["/ceo"],
+    visibility: "admin",
+    order: 1.5,
+    mobile: { placement: "more", href: "/ceo", order: 8.5 },
+  },
+  {
     id: "reports",
     labelKey: "nav.reports",
     icon: BarChart3,

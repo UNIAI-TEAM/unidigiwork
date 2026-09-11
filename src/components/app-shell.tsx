@@ -109,6 +109,7 @@ type NavKey =
   | "ai"
   | "ai-workforce"
   | "ai-brain"
+  | "ceo"
   | "notifications"
   | "settings"
   | "help";
