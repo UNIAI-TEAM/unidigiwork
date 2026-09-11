@@ -32,10 +32,7 @@ export const exportCeoReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => ExportInput.parse(i ?? {}))
   .handler(
-    async ({
-      data,
-      context,
-    }): Promise<{ fileName: string; mimeType: string; base64: string }> => {
+    async ({ data, context }): Promise<{ fileName: string; mimeType: string; base64: string }> => {
       const tenantId = await resolveTenantId(context.supabase, context.userId, data.workspaceId);
       if (!tenantId)
         throw new ApiError({
@@ -48,9 +45,8 @@ export const exportCeoReport = createServerFn({ method: "POST" })
         data.period,
         data.workspaceId,
       );
-      const { buildCeoPdf, buildCeoXlsx, ceoReportFileName, toBase64 } = await import(
-        "./ceo-report.server"
-      );
+      const { buildCeoPdf, buildCeoXlsx, ceoReportFileName, toBase64 } =
+        await import("./ceo-report.server");
       if (data.format === "xlsx") {
         return {
           fileName: ceoReportFileName(overview, "xlsx"),
