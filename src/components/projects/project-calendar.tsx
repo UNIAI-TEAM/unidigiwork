@@ -249,6 +249,22 @@ export function ProjectCalendar({
                     <p className="mt-1 text-xs text-muted-foreground">{item.location}</p>
                   )}
                 </>
+              ) : item.kind === "proposal" ? (
+                <>
+                  <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
+                    <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                      <Sparkles className="h-3.5 w-3.5 text-violet-500" /> {item.title}
+                    </p>
+                    <Badge variant={item.handled === "PENDING" ? "default" : "secondary"}>
+                      {HANDLED_LABEL[item.handled]}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {[item.workerName ? `Vai trò: ${item.workerName}` : null, item.taskTitle]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </>
               ) : (
                 <>
                   <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
@@ -268,6 +284,7 @@ export function ProjectCalendar({
                   </div>
                 </>
               )}
+
             </li>
           ))}
         </ul>
