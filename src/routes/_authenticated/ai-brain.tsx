@@ -175,6 +175,39 @@ function AiBrainPage() {
     onError: (e: Error) => toast.error(e.message || "Không đào tạo lại được."),
   });
 
+  // TỰ ĐỘNG ĐÀO TẠO LẠI: theo dõi dấu vết KPI + tiến độ; khi đổi thì chạy lại.
+  const autoStateFn = useServerFn(getAutoRetrainState);
+  const setAutoFn = useServerFn(setAutoRetrain);
+  const autoState = useQuery({
+    queryKey: ["ai-brain", "auto-retrain", workspaceId ?? ""],
+    queryFn: () => autoStateFn({ data: { workspaceId: workspaceId ?? null } }),
+    refetchInterval: 60_000,
+  });
+  const setAuto = useMutation({
+    mutationFn: (enabled: boolean) =>
+      setAutoFn({ data: { workspaceId: workspaceId ?? null, enabled } }),
+    onSuccess: (r: { enabled: boolean }) => {
+      toast.success(
+        r.enabled
+          ? "Đã bật tự động đào tạo lại khi KPI hoặc tiến độ thay đổi."
+          : "Đã tắt tự động đào tạo lại.",
+      );
+      void qc.invalidateQueries({ queryKey: ["ai-brain", "auto-retrain"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không đổi được chế độ tự động."),
+  });
+
+  const autoFired = useRef<string | null>(null);
+  useEffect(() => {
+    const s = autoState.data;
+    if (!s?.shouldRetrain || retrain.isPending) return;
+    if (autoFired.current === s.signature) return;
+    autoFired.current = s.signature;
+    retrain.mutate(undefined, {
+      onSettled: () => void qc.invalidateQueries({ queryKey: ["ai-brain", "auto-retrain"] }),
+    });
+  }, [autoState.data, retrain, qc]);
+
   // Mobile: thẻ đề xuất thu gọn mặc định, chạm để mở chi tiết.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) =>
