@@ -20,3 +20,6 @@
 - [ ] Màn giao ban: CEO ghi nhận kết quả từng việc, Bộ não tính KPI và đề xuất giao việc mới
 - [ ] Trang báo cáo theo bộ phận: so sánh KPI, giờ làm, đề xuất theo nhóm, xuất PDF/Excel
 - [ ] Thêm tone gradient kiểu ClickUp vào bộ tone giao diện
+- [x] CEO: duyệt/bỏ qua đề xuất + giao việc thật (người/AI) + tiến độ
+- [x] CEO: báo cáo bộ phận (KPI, giờ, đề xuất) + xuất PDF/Excel
+- [x] Tone gradient kiểu ClickUp
