@@ -24,6 +24,7 @@ import {
   Download,
 } from "lucide-react";
 import { CommentThread } from "@/components/projects/comment-thread";
+import { ProjectCalendar } from "@/components/projects/project-calendar";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -861,6 +862,8 @@ function ProjectDetailPage() {
                       Lưu ghi chú
                     </Button>
                   </section>
+
+                  <ProjectCalendar tasks={tasks} meetings={meetingsQuery.data ?? []} />
 
                   <section className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
