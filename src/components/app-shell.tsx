@@ -1470,7 +1470,7 @@ export function AppTopbar({
   // standard search field (Enter → /search).
 
   return (
-    <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/95 px-3 py-2.5 sm:gap-3 sm:px-5 lg:flex lg:gap-4">
+    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-2.5 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3 sm:px-5 lg:flex lg:flex-nowrap lg:gap-4">
       <button
         aria-label="Open sidebar"
         className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 lg:hidden"
@@ -1492,7 +1492,7 @@ export function AppTopbar({
           const q = searchValue.trim();
           navigate({ to: "/search", search: q ? { q } : {} });
         }}
-        className="relative col-span-3 row-start-2 w-full min-w-0 flex-1 sm:col-span-1 sm:row-auto sm:max-w-2xl"
+        className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:col-span-1 sm:row-auto sm:basis-auto sm:max-w-2xl"
       >
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -1536,7 +1536,7 @@ export function AppTopbar({
             </button>
             {newOpen && <NewPanel onClose={() => setNewOpen(false)} />}
           </div>
-          <div className="relative" ref={aiRef}>
+          <div className="relative hidden sm:block" ref={aiRef}>
             <button
               onClick={() => setAiOpen((v) => !v)}
               aria-haspopup="dialog"
@@ -1560,9 +1560,15 @@ export function AppTopbar({
           </Link>
         </>
       )}
-      <LanguageToggle />
-      <ToneToggle />
-      <ThemeToggle />
+      <span className="hidden md:inline-flex">
+        <LanguageToggle />
+      </span>
+      <span className="hidden md:inline-flex">
+        <ToneToggle />
+      </span>
+      <span className="hidden sm:inline-flex">
+        <ThemeToggle />
+      </span>
       <Link
         to="/settings"
         className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"
@@ -1613,7 +1619,7 @@ export function AppTopbar({
           aria-haspopup="dialog"
           aria-expanded={calOpen}
           className={cn(
-            "flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2",
+            "hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 sm:flex",
             calOpen && "bg-surface-2",
           )}
         >
