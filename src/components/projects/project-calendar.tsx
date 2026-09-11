@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, Users, ListChecks } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Users, ListChecks, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,9 +22,33 @@ export type CalendarMeeting = {
   status?: string | null;
 };
 
+export type CalendarProposal = {
+  id: string;
+  title: string;
+  createdAt: string;
+  handled: "PENDING" | "DONE" | "DISMISSED";
+  taskTitle?: string | null;
+  workerName?: string | null;
+};
+
+const HANDLED_LABEL: Record<CalendarProposal["handled"], string> = {
+  PENDING: "Chờ xử lý",
+  DONE: "Đã xử lý",
+  DISMISSED: "Đã bỏ qua",
+};
+
 type DayItem =
   | { kind: "meeting"; id: string; title: string; time: string; location?: string | null }
-  | { kind: "task"; id: string; title: string; label: string; progress: number };
+  | { kind: "task"; id: string; title: string; label: string; progress: number }
+  | {
+      kind: "proposal";
+      id: string;
+      title: string;
+      handled: CalendarProposal["handled"];
+      taskTitle?: string | null;
+      workerName?: string | null;
+    };
+
 
 function dayKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
