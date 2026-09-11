@@ -128,8 +128,20 @@ export function ProjectCalendar({
         });
       }
     }
+
+    for (const p of proposals) {
+      push(keyOf(p.createdAt), {
+        kind: "proposal",
+        id: `p-${p.id}`,
+        title: p.title,
+        handled: p.handled,
+        taskTitle: p.taskTitle ?? null,
+        workerName: p.workerName ?? null,
+      });
+    }
     return map;
-  }, [tasks, meetings]);
+  }, [tasks, meetings, proposals]);
+
 
   const grid = useMemo(() => {
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
