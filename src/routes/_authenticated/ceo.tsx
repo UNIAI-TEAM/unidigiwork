@@ -152,12 +152,40 @@ function CeoPage() {
             </div>
             <div className="text-right text-xs text-muted-foreground">
               <div>{today}</div>
-              <button
-                onClick={() => void refetch()}
-                className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2"
-              >
-                <RefreshCcw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Làm mới
-              </button>
+              <div className="mt-1 flex flex-wrap justify-end gap-2">
+                <button
+                  onClick={() => void refetch()}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2"
+                >
+                  <RefreshCcw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Làm
+                  mới
+                </button>
+                <button
+                  onClick={() => void download("pdf")}
+                  disabled={exporting !== null}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2 disabled:opacity-60"
+                >
+                  {exporting === "pdf" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}{" "}
+                  Tải PDF
+                </button>
+                <button
+                  onClick={() => void download("xlsx")}
+                  disabled={exporting !== null}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2 disabled:opacity-60"
+                >
+                  {exporting === "xlsx" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}{" "}
+                  Tải Excel
+                </button>
+              </div>
+              <div className="mt-1 text-[11px]">Báo cáo tự chạy 7h sáng thứ Bảy hằng tuần.</div>
             </div>
           </div>
 
