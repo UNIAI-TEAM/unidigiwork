@@ -41,6 +41,20 @@ export type CeoIssue = {
   href: string;
 };
 
+export type CeoProposalEntry = {
+  id: string;
+  title: string;
+  actionType: string;
+  status: string;
+  source: string | null;
+  risk: string | null;
+  createdAt: string;
+  executedAt: string | null;
+  workerName: string | null;
+  taskTitle: string | null;
+  taskId: string | null;
+};
+
 export type CeoOverview = {
   period: CeoPeriod;
   from: string;
@@ -76,6 +90,15 @@ export type CeoOverview = {
   people: CeoPersonRow[];
   departments: { id: string; name: string; human: number; ai: number; total: number }[];
   issues: CeoIssue[];
+  proposals: {
+    total: CeoDelta;
+    pending: number;
+    executed: number;
+    rejected: number;
+    assignment: number;
+    executionRate: number | null;
+    entries: CeoProposalEntry[];
+  };
   answers: {
     resources: string[];
     outputs: string[];
@@ -180,10 +203,12 @@ export async function loadCeoOverview(
       supabase.from("workspaces").select("id, name").eq("tenant_id", tenantId),
       supabase
         .from("ai_action_proposals")
-        .select("id, title, status, created_at")
+        .select(
+          "id, title, status, created_at, action_type, source, risk, target_type, target_id, ai_worker_id, workspace_id, executed_at",
+        )
         .eq("tenant_id", tenantId)
-        .in("status", ["PROPOSED", "PREVIEWED"])
-        .limit(200),
+        .order("created_at", { ascending: false })
+        .limit(300),
     ]);
 
   type Task = {
@@ -376,11 +401,24 @@ export async function loadCeoOverview(
       href: `/tasks/${t.id}`,
     });
   }
-  const pendingProposals = (proposalsR.data ?? []) as {
+  type RawProposal = {
     id: string;
     title: string;
     created_at: string;
-  }[];
+    status: string;
+    action_type: string;
+    source: string | null;
+    risk: string | null;
+    target_type: string | null;
+    target_id: string | null;
+    ai_worker_id: string | null;
+    workspace_id: string | null;
+    executed_at: string | null;
+  };
+  const allProposals = ((proposalsR.data ?? []) as RawProposal[]).filter(
+    (p) => !workspaceId || !p.workspace_id || p.workspace_id === workspaceId,
+  );
+  const pendingProposals = allProposals.filter((p) => ["PROPOSED", "PREVIEWED"].includes(p.status));
   for (const p of pendingProposals.slice(0, 5)) {
     const waiting = Math.floor((now.getTime() - new Date(p.created_at).getTime()) / 86_400_000);
     issues.push({
@@ -391,6 +429,49 @@ export async function loadCeoOverview(
       href: "/ai-brain",
     });
   }
+  // Đề xuất giao việc từ Bộ não AI cũng là một dòng KPI của Command Center.
+  const ASSIGNMENT_ACTIONS = new Set([
+    "CREATE_TASK",
+    "PROPOSE_TASK",
+    "ASSIGN_TASK",
+    "UPDATE_TASK_FIELDS",
+    "TRANSITION_TASK",
+  ]);
+  const workerNames = new Map(workers.map((w) => [w.id, w.name]));
+  const taskTitles = new Map(allTasks.map((t) => [t.id, t.title ?? "Công việc"]));
+  const propCur = allProposals.filter((p) => inRange(p.created_at));
+  const propPrev = allProposals.filter((p) => inPrev(p.created_at));
+  const propExecuted = propCur.filter((p) => p.status === "SUCCEEDED" || !!p.executed_at).length;
+  const propRejected = propCur.filter((p) =>
+    ["REJECTED", "CANCELLED", "EXPIRED", "FAILED"].includes(p.status),
+  ).length;
+  const proposalsBlock = {
+    total: {
+      current: propCur.length,
+      previous: propPrev.length,
+      changePct: pct(propCur.length, propPrev.length),
+    },
+    pending: pendingProposals.length,
+    executed: propExecuted,
+    rejected: propRejected,
+    assignment: propCur.filter((p) => ASSIGNMENT_ACTIONS.has(p.action_type)).length,
+    executionRate: propCur.length ? Math.round((propExecuted / propCur.length) * 100) : null,
+    entries: allProposals.slice(0, 20).map((p) => ({
+      id: p.id,
+      title: p.title,
+      actionType: p.action_type,
+      status: p.status,
+      source: p.source,
+      risk: p.risk,
+      createdAt: p.created_at,
+      executedAt: p.executed_at,
+      workerName: p.ai_worker_id ? (workerNames.get(p.ai_worker_id) ?? null) : null,
+      taskTitle:
+        p.target_type === "TASK" && p.target_id ? (taskTitles.get(p.target_id) ?? null) : null,
+      taskId: p.target_type === "TASK" ? p.target_id : null,
+    })),
+  };
+
   const awaitingReview = execs.filter((e) => !e.reviewed_at && e.status !== "FAILED").length;
   if (awaitingReview)
     issues.push({
@@ -450,6 +531,7 @@ export async function loadCeoOverview(
     people: people.slice(0, 30),
     departments,
     issues: issues.slice(0, 12),
+    proposals: proposalsBlock,
     answers: {
       resources: [
         `${humanHours} giờ người (ước tính)`,
@@ -460,11 +542,15 @@ export async function loadCeoOverview(
         `${completedCur} việc hoàn thành`,
         `${execs.length} kết quả AI được tạo`,
         `${cur.length} việc mới trong kỳ`,
+        `${proposalsBlock.assignment} đề xuất giao việc từ Bộ não AI`,
       ],
       changes: [
         passRate === null ? "Chưa có kết quả nào được review" : `${passRate}% kết quả đạt review`,
         `${overdue.length} việc đang quá hạn`,
         `${savedHours} giờ người được AI gánh thay (ước tính)`,
+        proposalsBlock.executionRate === null
+          ? "Chưa có đề xuất nào trong kỳ"
+          : `${proposalsBlock.executionRate}% đề xuất trong kỳ đã được duyệt và thực thi`,
       ],
       value: [
         leverage === null ? "Chưa đủ dữ liệu đòn bẩy" : `Đòn bẩy AI ${leverage}×`,

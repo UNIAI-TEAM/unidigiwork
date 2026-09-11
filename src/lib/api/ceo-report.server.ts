@@ -46,6 +46,22 @@ export function ceoReportMarkdown(o: CeoOverview): string {
     `- Đã review: ${num(o.quality.reviewed)} · Đạt: ${num(o.quality.passed)} (${o.quality.passRate ?? "—"}%)`,
   );
 
+  lines.push("## Đề xuất từ Bộ não AI");
+  lines.push(
+    `- Đề xuất trong kỳ: ${num(o.proposals.total.current)} (kỳ trước ${num(o.proposals.total.previous)}, ${delta(o.proposals.total.changePct)})`,
+  );
+  lines.push(
+    `- Đề xuất giao việc: ${num(o.proposals.assignment)} · Đã thực thi: ${num(o.proposals.executed)} (${o.proposals.executionRate ?? "—"}%)`,
+  );
+  lines.push(
+    `- Chờ duyệt: ${num(o.proposals.pending)} · Từ chối/hủy: ${num(o.proposals.rejected)}`,
+  );
+  for (const p of o.proposals.entries.slice(0, 15)) {
+    lines.push(
+      `- ${p.title} — ${p.actionType} · ${p.status}${p.workerName ? ` · ${p.workerName}` : ""}${p.taskTitle ? ` · ${p.taskTitle}` : ""} · ${d(p.createdAt)}`,
+    );
+  }
+
   if (o.people.length) {
     lines.push("## Thời gian và khối lượng theo nhân sự");
     for (const p of o.people.slice(0, 30)) {
@@ -132,6 +148,12 @@ export function buildCeoXlsx(o: CeoOverview): Uint8Array {
     { "Chỉ số": "Đã review", "Giá trị": o.quality.reviewed },
     { "Chỉ số": "Review đạt", "Giá trị": o.quality.passed },
     { "Chỉ số": "Tỷ lệ đạt (%)", "Giá trị": o.quality.passRate ?? "—" },
+    { "Chỉ số": "Đề xuất trong kỳ", "Giá trị": o.proposals.total.current },
+    { "Chỉ số": "Đề xuất giao việc", "Giá trị": o.proposals.assignment },
+    { "Chỉ số": "Đề xuất đã thực thi", "Giá trị": o.proposals.executed },
+    { "Chỉ số": "Đề xuất chờ duyệt", "Giá trị": o.proposals.pending },
+    { "Chỉ số": "Đề xuất bị từ chối/hủy", "Giá trị": o.proposals.rejected },
+    { "Chỉ số": "Tỷ lệ đề xuất được thực thi (%)", "Giá trị": o.proposals.executionRate ?? "—" },
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(overview), "Tổng quan");
 
@@ -163,6 +185,24 @@ export function buildCeoXlsx(o: CeoOverview): Uint8Array {
       })),
     ),
     "Bộ phận",
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet(
+      o.proposals.entries.map((p) => ({
+        "Đề xuất": p.title,
+        "Loại hành động": p.actionType,
+        "Trạng thái": p.status,
+        Nguồn: p.source ?? "",
+        "Rủi ro": p.risk ?? "",
+        "Nhân sự AI": p.workerName ?? "",
+        "Công việc": p.taskTitle ?? "",
+        "Ngày tạo": d(p.createdAt),
+        "Ngày thực thi": p.executedAt ? d(p.executedAt) : "",
+      })),
+    ),
+    "Đề xuất",
   );
 
   XLSX.utils.book_append_sheet(
