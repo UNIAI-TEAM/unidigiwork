@@ -207,8 +207,8 @@ function KpiSettings({ data, onSaved }: { data: CeoOverview; onSaved: () => void
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-xl font-semibold tabular-nums">{r.actual ?? "—"}</span>
               <span className="text-xs text-muted-foreground">
-                / mục tiêu {r.target ?? "chưa đặt"}
-                {r.unit === "%" ? "%" : ""}
+                / mục tiêu{" "}
+                {r.target === null ? "chưa đặt" : `${r.target}${r.unit === "%" ? "%" : ""}`}
               </span>
             </div>
             {r.ok === null ? null : (
