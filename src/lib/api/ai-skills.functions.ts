@@ -775,15 +775,16 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
             t.due_at ? "/hạn " + t.due_at.slice(0, 10) : ""
           }]${(t.tags ?? []).length ? " #" + (t.tags ?? []).join(" #") : ""}`,
       ),
-      "CUỘC HỌP:",
+      "LỊCH HỌP THẬT (sắp xếp theo thời gian, gồm cuộc họp sắp tới):",
       ...meetings.map((m) => {
         const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
         const when = m.start_at ? m.start_at.slice(0, 16).replace("T", " ") : "";
+        const upcoming = m.start_at ? new Date(m.start_at).getTime() >= Date.now() : false;
         return `- ${m.title}${proj ? " [dự án: " + proj + "]" : ""}${
           when ? " @" + when : ""
-        }${m.location ? " tại " + m.location : ""}${m.status ? " (" + m.status + ")" : ""}${
-          m.agenda ? ": " + m.agenda.slice(0, 160) : ""
-        }`;
+        }${upcoming ? " (sắp tới)" : ""}${m.location ? " tại " + m.location : ""}${
+          m.status ? " (" + m.status + ")" : ""
+        }${m.agenda ? ": " + m.agenda.slice(0, 160) : ""}`;
       }),
       ...(projectNoteLines.length ? ["GHI CHÚ DỰ ÁN:", ...projectNoteLines] : []),
       ...(projectCommentLines.length
