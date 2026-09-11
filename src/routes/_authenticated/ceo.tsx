@@ -128,6 +128,18 @@ const KPI_FIELDS: {
   { key: "passRatePct", label: "Tỉ lệ kết quả đạt review", hint: "%" },
 ];
 
+function ProgressPill({ value }: { value: number }) {
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="h-1.5 w-14 overflow-hidden rounded-full bg-surface-3">
+        <span className="block h-full rounded-full bg-primary" style={{ width: `${v}%` }} />
+      </span>
+      <span className="text-xs tabular-nums text-muted-foreground">{v}%</span>
+    </span>
+  );
+}
+
 function KpiSettings({ data, onSaved }: { data: CeoOverview; onSaved: () => void }) {
   const save = useServerFn(saveCeoKpiSettings);
   const { workspaceId } = useActiveWorkspace();
@@ -684,7 +696,12 @@ function CeoPage() {
                                 {i.detail}
                               </span>
                             </span>
-                            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="flex shrink-0 items-center gap-2">
+                              {typeof i.progressPct === "number" ? (
+                                <ProgressPill value={i.progressPct} />
+                              ) : null}
+                              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                            </span>
                           </Link>
                         </li>
                       ))}
@@ -751,7 +768,15 @@ function CeoPage() {
                             {new Date(p.createdAt).toLocaleDateString("vi-VN")}
                           </span>
                         </span>
-                        <span className="mt-2 flex items-center gap-2 sm:mt-0 sm:shrink-0">
+                        <span className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
+                          {typeof p.taskProgressPct === "number" ? (
+                            <ProgressPill value={p.taskProgressPct} />
+                          ) : null}
+                          {p.taskDueAt ? (
+                            <span className="text-xs text-muted-foreground">
+                              hạn {new Date(p.taskDueAt).toLocaleDateString("vi-VN")}
+                            </span>
+                          ) : null}
                           <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
                             {STATUS_LABEL[p.status] ?? p.status}
                           </Badge>

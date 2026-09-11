@@ -39,6 +39,8 @@ export type CeoIssue = {
   title: string;
   detail: string;
   href: string;
+  progressPct?: number | null;
+  status?: string | null;
 };
 
 export type CeoProposalEntry = {
@@ -53,6 +55,9 @@ export type CeoProposalEntry = {
   workerName: string | null;
   taskTitle: string | null;
   taskId: string | null;
+  taskStatus: string | null;
+  taskProgressPct: number | null;
+  taskDueAt: string | null;
 };
 
 export type CeoOverview = {
@@ -248,7 +253,7 @@ export async function loadCeoOverview(
       scope(
         supabase
           .from("tasks")
-          .select("id, status, due_at, updated_at, ai_worker_id, title, workspace_id")
+          .select("id, status, due_at, updated_at, ai_worker_id, title, workspace_id, progress_pct")
           .eq("tenant_id", tenantId)
           .is("deleted_at", null)
           .limit(2000),
@@ -304,6 +309,7 @@ export async function loadCeoOverview(
     human_owner_id?: string | null;
     ai_worker_id?: string | null;
     execution_mode?: string | null;
+    progress_pct?: number | null;
   };
 
   const windowTasks = (tasksR.data ?? []) as Task[];
@@ -461,8 +467,10 @@ export async function loadCeoOverview(
       id: `overdue-${t.id}`,
       kind: "overdue",
       title: t.title ?? "Công việc",
-      detail: `Quá hạn ${late} ngày`,
+      detail: `Quá hạn ${late} ngày · tiến độ ${t.progress_pct ?? 0}%`,
       href: `/tasks/${t.id}`,
+      progressPct: t.progress_pct ?? 0,
+      status: t.status,
     });
   }
   const stalled = allTasks.filter(
@@ -479,8 +487,10 @@ export async function loadCeoOverview(
       id: `stalled-${t.id}`,
       kind: "stalled",
       title: t.title ?? "Công việc",
-      detail: `Không cập nhật ${idle} ngày`,
+      detail: `Không cập nhật ${idle} ngày · tiến độ ${t.progress_pct ?? 0}%`,
       href: `/tasks/${t.id}`,
+      progressPct: t.progress_pct ?? 0,
+      status: t.status,
     });
   }
   type RawProposal = {
@@ -521,6 +531,7 @@ export async function loadCeoOverview(
   ]);
   const workerNames = new Map(workers.map((w) => [w.id, w.name]));
   const taskTitles = new Map(allTasks.map((t) => [t.id, t.title ?? "Công việc"]));
+  const taskById = new Map(allTasks.map((t) => [t.id, t]));
   const propCur = allProposals.filter((p) => inRange(p.created_at));
   const propPrev = allProposals.filter((p) => inPrev(p.created_at));
   const propExecuted = propCur.filter((p) => p.status === "SUCCEEDED" || !!p.executed_at).length;
@@ -551,6 +562,18 @@ export async function loadCeoOverview(
       taskTitle:
         p.target_type === "TASK" && p.target_id ? (taskTitles.get(p.target_id) ?? null) : null,
       taskId: p.target_type === "TASK" ? p.target_id : null,
+      taskStatus:
+        p.target_type === "TASK" && p.target_id
+          ? (taskById.get(p.target_id)?.status ?? null)
+          : null,
+      taskProgressPct:
+        p.target_type === "TASK" && p.target_id
+          ? (taskById.get(p.target_id)?.progress_pct ?? null)
+          : null,
+      taskDueAt:
+        p.target_type === "TASK" && p.target_id
+          ? (taskById.get(p.target_id)?.due_at ?? null)
+          : null,
     })),
   };
 
