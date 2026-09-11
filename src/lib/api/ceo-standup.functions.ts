@@ -46,7 +46,7 @@ export const getStandupBoard = createServerFn({ method: "GET" })
   .inputValidator((i) =>
     z
       .object({
-        workspaceId: z.string().uuid(),
+        workspaceId: z.string().uuid().nullable().optional(),
         projectId: z.string().uuid().nullable().optional(),
         limit: z.number().int().min(1).max(100).default(40),
       })
@@ -57,25 +57,26 @@ export const getStandupBoard = createServerFn({ method: "GET" })
     const from = new Date(now - 7 * 86400000).toISOString();
     const to = new Date(now + 7 * 86400000).toISOString();
 
-    const meetingsRes = await context.supabase
+    let meetingQuery = context.supabase
       .from("meetings")
       .select("id, title, start_at, end_at, status, location")
-      .eq("workspace_id", data.workspaceId)
       .is("deleted_at", null)
       .gte("start_at", from)
       .lte("start_at", to)
       .order("start_at", { ascending: false })
       .limit(20);
+    if (data.workspaceId) meetingQuery = meetingQuery.eq("workspace_id", data.workspaceId);
+    const meetingsRes = await meetingQuery;
     if (meetingsRes.error) mapPgError(meetingsRes.error);
 
     let taskQuery = context.supabase
       .from("tasks")
       .select("id, title, status, progress_pct, due_at, project_id, updated_at")
-      .eq("workspace_id", data.workspaceId)
       .is("deleted_at", null)
       .not("status", "in", "(canceled)")
       .order("due_at", { ascending: true, nullsFirst: false })
       .limit(data.limit);
+    if (data.workspaceId) taskQuery = taskQuery.eq("workspace_id", data.workspaceId);
     if (data.projectId) taskQuery = taskQuery.eq("project_id", data.projectId);
     const tasksRes = await taskQuery;
     if (tasksRes.error) mapPgError(tasksRes.error);

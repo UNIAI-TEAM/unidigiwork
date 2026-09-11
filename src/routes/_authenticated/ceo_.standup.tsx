@@ -176,8 +176,7 @@ function StandupPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["ceo", "standup", workspaceId ?? ""],
-    queryFn: () => boardFn({ data: { workspaceId: workspaceId! } }),
-    enabled: Boolean(workspaceId),
+    queryFn: () => boardFn({ data: { workspaceId: workspaceId ?? null } }),
   });
 
   const meeting = data?.meetings.find((m) => m.id === meetingId) ?? null;
