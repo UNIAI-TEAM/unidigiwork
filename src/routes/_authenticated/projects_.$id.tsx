@@ -1278,6 +1278,55 @@ function ProjectDetailPage() {
           )}
         </main>
       </div>
+
+      <Dialog open={weeklyOpen} onOpenChange={setWeeklyOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nhập tiến độ tuần</DialogTitle>
+            <DialogDescription>Tuần {weekLabel}. Cập nhật % hoàn thành từng việc.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {tasks.map((t) => (
+              <div key={t.id} className="flex items-center gap-3">
+                <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  inputMode="numeric"
+                  className="h-11 w-20"
+                  value={weeklyValues[t.id] ?? "0"}
+                  onChange={(e) =>
+                    setWeeklyValues((prev) => ({ ...prev, [t.id]: e.target.value }))
+                  }
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+              </div>
+            ))}
+            <Textarea
+              placeholder="Ghi chú tuần (tuỳ chọn)"
+              value={weeklyNote}
+              onChange={(e) => setWeeklyNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={weeklyMutation.isPending}
+              onClick={() => weeklyMutation.mutate()}
+            >
+              {weeklyMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Lưu tiến độ tuần
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
