@@ -461,8 +461,8 @@ export async function loadCeoOverview(
     deptMap.set(key, row);
   }
   const deptProposals = new Map<string, number>();
-  for (const p of proposalEntries) {
-    const key = p.workspaceId ?? "none";
+  for (const p of (proposalsR.data ?? []) as { workspace_id: string | null }[]) {
+    const key = p.workspace_id ?? "none";
     deptProposals.set(key, (deptProposals.get(key) ?? 0) + 1);
   }
   const departments = Array.from(deptMap.entries())
