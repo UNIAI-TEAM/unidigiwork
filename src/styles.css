@@ -245,6 +245,15 @@
   box-shadow: 0 10px 25px color-mix(in oklab, var(--color-primary) 10%, transparent);
 }
 
+@utility auth-bg {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--color-primary) 16%, var(--color-background)),
+    var(--color-background) 45%,
+    color-mix(in oklab, var(--color-accent) 12%, var(--color-background))
+  );
+}
+
 @utility module-label {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
