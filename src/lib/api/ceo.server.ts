@@ -254,10 +254,7 @@ export async function loadCeoOverview(
     wall_duration_ms: number | null;
     ai_worker_id: string | null;
   }[];
-  const aiMs = metrics.reduce(
-    (s, m) => s + (m.machine_duration_ms ?? m.wall_duration_ms ?? 0),
-    0,
-  );
+  const aiMs = metrics.reduce((s, m) => s + (m.machine_duration_ms ?? m.wall_duration_ms ?? 0), 0);
 
   const meetings = (meetingsR.data ?? []) as { start_at: string; end_at: string | null }[];
   const meetingMs = meetings.reduce((s, m) => {
@@ -266,7 +263,8 @@ export async function loadCeoOverview(
   }, 0);
 
   const humanCompleted = windowTasks.filter((t) => inRange(t.completed_at) && !isAi(t)).length;
-  const humanHours = Math.round((hours(meetingMs) + humanCompleted * HUMAN_HOURS_PER_TASK) * 10) / 10;
+  const humanHours =
+    Math.round((hours(meetingMs) + humanCompleted * HUMAN_HOURS_PER_TASK) * 10) / 10;
   const aiCompleted = windowTasks.filter((t) => inRange(t.completed_at) && isAi(t)).length;
   const savedHours = aiCompleted * HUMAN_HOURS_PER_TASK;
 
@@ -403,7 +401,9 @@ export async function loadCeoOverview(
       href: "/work-products",
     });
 
-  const leverage = humanHours ? Math.round(((humanHours + savedHours) / humanHours) * 100) / 100 : null;
+  const leverage = humanHours
+    ? Math.round(((humanHours + savedHours) / humanHours) * 100) / 100
+    : null;
   const passRate = reviewed.length ? Math.round((passed.length / reviewed.length) * 100) : null;
   const resultRate = cur.length ? Math.round((execs.length / cur.length) * 100) : null;
 
@@ -412,7 +412,11 @@ export async function loadCeoOverview(
     from: iso(from),
     to: iso(now),
     totals: {
-      tasks: { current: cur.length, previous: prev.length, changePct: pct(cur.length, prev.length) },
+      tasks: {
+        current: cur.length,
+        previous: prev.length,
+        changePct: pct(cur.length, prev.length),
+      },
       completed: {
         current: completedCur,
         previous: completedPrev,

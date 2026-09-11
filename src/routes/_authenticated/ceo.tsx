@@ -243,18 +243,29 @@ function CeoPage() {
                 <Card title="Chuyển dịch Người ↔ AI">
                   <div className="flex items-center gap-4">
                     <div className="flex-1 space-y-2">
-                      <Row label="Con người" value={data.split.human} tone="primary" total={data.split.human + data.split.ai} />
-                      <Row label="AI" value={data.split.ai} tone="accent" total={data.split.human + data.split.ai} />
+                      <Row
+                        label="Con người"
+                        value={data.split.human}
+                        tone="primary"
+                        total={data.split.human + data.split.ai}
+                      />
+                      <Row
+                        label="AI"
+                        value={data.split.ai}
+                        tone="accent"
+                        total={data.split.human + data.split.ai}
+                      />
                     </div>
                   </div>
                   <div className="mt-4 flex h-24 items-end gap-1">
                     {data.split.trend.map((b) => {
-                      const max = Math.max(
-                        1,
-                        ...data.split.trend.map((x) => x.human + x.ai),
-                      );
+                      const max = Math.max(1, ...data.split.trend.map((x) => x.human + x.ai));
                       return (
-                        <div key={b.label} className="flex min-w-0 flex-1 flex-col justify-end gap-0.5" title={`${b.label}: người ${b.human} · AI ${b.ai}`}>
+                        <div
+                          key={b.label}
+                          className="flex min-w-0 flex-1 flex-col justify-end gap-0.5"
+                          title={`${b.label}: người ${b.human} · AI ${b.ai}`}
+                        >
                           <div
                             className="w-full rounded-t bg-violet-500/70"
                             style={{ height: `${(b.ai / max) * 70}%` }}
@@ -278,7 +289,9 @@ function CeoPage() {
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <User className="h-3.5 w-3.5" /> Con người
                       </div>
-                      <div className="mt-1 text-2xl font-semibold">{n(data.time.humanHours)} giờ</div>
+                      <div className="mt-1 text-2xl font-semibold">
+                        {n(data.time.humanHours)} giờ
+                      </div>
                       <div className="text-[11px] text-muted-foreground">ước tính</div>
                     </div>
                     <div className="rounded-xl border border-border bg-surface-2 p-3">
@@ -518,15 +531,7 @@ function Bar({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-function Answer({
-  icon: Icon,
-  q,
-  items,
-}: {
-  icon: typeof User;
-  q: string;
-  items: string[];
-}) {
+function Answer({ icon: Icon, q, items }: { icon: typeof User; q: string; items: string[] }) {
   return (
     <div className="rounded-xl border border-border bg-surface-2 p-3">
       <div className="flex items-start gap-2">
