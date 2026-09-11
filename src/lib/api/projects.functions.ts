@@ -737,6 +737,107 @@ export const addTaskComment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Đề xuất giao việc của AI gắn với dự án ----------
+
+export type ProjectProposal = {
+  id: string;
+  title: string;
+  actionType: string;
+  status: string;
+  /** Trạng thái xử lý gọn cho giao diện. */
+  handled: "PENDING" | "DONE" | "DISMISSED";
+  createdAt: string;
+  executedAt: string | null;
+  taskId: string | null;
+  taskTitle: string | null;
+  workerName: string | null;
+};
+
+const PROPOSAL_PENDING = ["PROPOSED", "PREVIEWED", "CONFIRMED", "EXECUTING"];
+const PROPOSAL_DISMISSED = ["CANCELLED", "FAILED", "EXPIRED", "REJECTED"];
+
+export const listProjectProposals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ projectId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<ProjectProposal[]> => {
+    const { data: project, error: pErr } = await context.supabase
+      .from("projects")
+      .select("id, tenant_id")
+      .eq("id", data.projectId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (pErr) mapPgError(pErr);
+    if (!project) return [];
+    const tenantId = (project as { tenant_id: string }).tenant_id;
+
+    const { data: taskRows } = await context.supabase
+      .from("tasks")
+      .select("id, title")
+      .eq("project_id", data.projectId)
+      .is("deleted_at", null)
+      .limit(500);
+    const taskById = new Map(
+      ((taskRows ?? []) as { id: string; title: string }[]).map((t) => [t.id, t.title]),
+    );
+    if (taskById.size === 0) return [];
+
+    const { data: rows, error } = await context.supabase
+      .from("ai_action_proposals")
+      .select(
+        "id, title, action_type, status, created_at, executed_at, ai_worker_id, target_type, target_id, result",
+      )
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) mapPgError(error);
+
+    const list = ((rows ?? []) as Array<Record<string, unknown>>)
+      .map((r) => {
+        const result = (r["result"] ?? {}) as { entityType?: string; entityId?: string };
+        const taskId =
+          r["target_type"] === "TASK"
+            ? ((r["target_id"] as string | null) ?? null)
+            : result.entityType === "TASK"
+              ? (result.entityId ?? null)
+              : null;
+        return { r, taskId };
+      })
+      .filter((x) => x.taskId && taskById.has(x.taskId));
+    if (!list.length) return [];
+
+    const workerIds = Array.from(
+      new Set(list.map((x) => x.r["ai_worker_id"] as string | null).filter(Boolean) as string[]),
+    );
+    const { data: workers } = workerIds.length
+      ? await context.supabase.from("ai_workers").select("id, name").in("id", workerIds)
+      : { data: [] as { id: string; name: string }[] };
+    const workerById = new Map(
+      ((workers ?? []) as { id: string; name: string }[]).map((w) => [w.id, w.name]),
+    );
+
+    return list.map(({ r, taskId }) => {
+      const status = String(r["status"] ?? "");
+      const handled: ProjectProposal["handled"] = PROPOSAL_PENDING.includes(status)
+        ? "PENDING"
+        : PROPOSAL_DISMISSED.includes(status)
+          ? "DISMISSED"
+          : "DONE";
+      const workerId = r["ai_worker_id"] as string | null;
+      return {
+        id: String(r["id"]),
+        title: String(r["title"] ?? ""),
+        actionType: String(r["action_type"] ?? ""),
+        status,
+        handled,
+        createdAt: String(r["created_at"]),
+        executedAt: (r["executed_at"] as string | null) ?? null,
+        taskId: taskId as string,
+        taskTitle: taskById.get(taskId as string) ?? null,
+        workerName: workerId ? (workerById.get(workerId) ?? null) : null,
+      };
+    });
+  });
+
 // ---------- Lịch họp của dự án ----------
 
 export type ProjectMeeting = {

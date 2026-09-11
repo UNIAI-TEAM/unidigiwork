@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, Users, ListChecks } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Users, ListChecks, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,9 +22,32 @@ export type CalendarMeeting = {
   status?: string | null;
 };
 
+export type CalendarProposal = {
+  id: string;
+  title: string;
+  createdAt: string;
+  handled: "PENDING" | "DONE" | "DISMISSED";
+  taskTitle?: string | null;
+  workerName?: string | null;
+};
+
+const HANDLED_LABEL: Record<CalendarProposal["handled"], string> = {
+  PENDING: "Chờ xử lý",
+  DONE: "Đã xử lý",
+  DISMISSED: "Đã bỏ qua",
+};
+
 type DayItem =
   | { kind: "meeting"; id: string; title: string; time: string; location?: string | null }
-  | { kind: "task"; id: string; title: string; label: string; progress: number };
+  | { kind: "task"; id: string; title: string; label: string; progress: number }
+  | {
+      kind: "proposal";
+      id: string;
+      title: string;
+      handled: CalendarProposal["handled"];
+      taskTitle?: string | null;
+      workerName?: string | null;
+    };
 
 function dayKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -45,9 +68,11 @@ const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 export function ProjectCalendar({
   tasks,
   meetings,
+  proposals = [],
 }: {
   tasks: CalendarTask[];
   meetings: CalendarMeeting[];
+  proposals?: CalendarProposal[];
 }) {
   const today = new Date();
   const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
@@ -101,8 +126,19 @@ export function ProjectCalendar({
         });
       }
     }
+
+    for (const p of proposals) {
+      push(keyOf(p.createdAt), {
+        kind: "proposal",
+        id: `p-${p.id}`,
+        title: p.title,
+        handled: p.handled,
+        taskTitle: p.taskTitle ?? null,
+        workerName: p.workerName ?? null,
+      });
+    }
     return map;
-  }, [tasks, meetings]);
+  }, [tasks, meetings, proposals]);
 
   const grid = useMemo(() => {
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
@@ -163,6 +199,8 @@ export function ProjectCalendar({
           const isSelected = k === selected;
           const hasMeeting = items.some((i) => i.kind === "meeting");
           const hasTask = items.some((i) => i.kind === "task");
+          const hasProposal = items.some((i) => i.kind === "proposal");
+
           return (
             <button
               key={k}
@@ -183,6 +221,7 @@ export function ProjectCalendar({
               <span className="mt-0.5 flex h-1.5 items-center gap-0.5">
                 {hasMeeting && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
                 {hasTask && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+                {hasProposal && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
               </span>
             </button>
           );
@@ -195,6 +234,9 @@ export function ProjectCalendar({
         </span>
         <span className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Mốc công việc
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-500" /> Đề xuất giao việc
         </span>
       </div>
 
@@ -224,6 +266,22 @@ export function ProjectCalendar({
                   {item.location && (
                     <p className="mt-1 text-xs text-muted-foreground">{item.location}</p>
                   )}
+                </>
+              ) : item.kind === "proposal" ? (
+                <>
+                  <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
+                    <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                      <Sparkles className="h-3.5 w-3.5 text-violet-500" /> {item.title}
+                    </p>
+                    <Badge variant={item.handled === "PENDING" ? "default" : "secondary"}>
+                      {HANDLED_LABEL[item.handled]}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {[item.workerName ? `Vai trò: ${item.workerName}` : null, item.taskTitle]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 </>
               ) : (
                 <>

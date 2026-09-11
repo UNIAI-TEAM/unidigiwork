@@ -40,6 +40,8 @@ import {
   listProjectMeetings,
   scheduleProjectMeeting,
   importProjectMeetings,
+  listProjectProposals,
+  type ProjectProposal,
   type ProjectRow,
   type ProjectStatus,
 } from "@/lib/api/projects.functions";
@@ -65,6 +67,18 @@ export const Route = createFileRoute("/_authenticated/projects_/$id")({
     ],
   }),
 });
+
+/** Gom đề xuất AI theo ngày tạo để hiển thị cạnh cuộc họp cùng ngày. */
+function proposalsByDay(list: ProjectProposal[]) {
+  const map = new Map<string, ProjectProposal[]>();
+  for (const p of list) {
+    const d = new Date(p.createdAt);
+    if (Number.isNaN(d.getTime())) continue;
+    const k = d.toDateString();
+    map.set(k, [...(map.get(k) ?? []), p]);
+  }
+  return map;
+}
 
 const STATUS_LABEL: Record<ProjectStatus, string> = {
   planning: "Lập kế hoạch",
@@ -187,6 +201,12 @@ function ProjectDetailPage() {
     queryKey: ["project", id, "meetings"],
     queryFn: () => listProjectMeetings({ data: { projectId: id } }),
   });
+  // Đề xuất giao việc của AI gắn với dự án (hiển thị trên lịch và trong lịch họp).
+  const proposalsQuery = useQuery({
+    queryKey: ["project", id, "proposals"],
+    queryFn: () => listProjectProposals({ data: { projectId: id } }),
+  });
+
   const scheduleMeetingFn = useServerFn(scheduleProjectMeeting);
   const importMeetingsFn = useServerFn(importProjectMeetings);
   const [importingMeetings, setImportingMeetings] = useState(false);
@@ -929,7 +949,11 @@ function ProjectDetailPage() {
                     </Button>
                   </section>
 
-                  <ProjectCalendar tasks={tasks} meetings={meetingsQuery.data ?? []} />
+                  <ProjectCalendar
+                    tasks={tasks}
+                    meetings={meetingsQuery.data ?? []}
+                    proposals={proposalsQuery.data ?? []}
+                  />
 
                   <section className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1053,6 +1077,24 @@ function ProjectDetailPage() {
                           {m.agenda && (
                             <p className="mt-1 text-xs text-muted-foreground">{m.agenda}</p>
                           )}
+                          {proposalsByDay(proposalsQuery.data ?? [])
+                            .get(new Date(m.startAt).toDateString())
+                            ?.map((p) => (
+                              <div
+                                key={p.id}
+                                className="mt-2 flex min-w-0 flex-wrap items-center gap-2 rounded-md bg-muted/60 px-2 py-1.5"
+                              >
+                                <Sparkles className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+                                <span className="min-w-0 flex-1 text-xs">{p.title}</span>
+                                <Badge variant={p.handled === "PENDING" ? "default" : "secondary"}>
+                                  {p.handled === "PENDING"
+                                    ? "Chờ xử lý"
+                                    : p.handled === "DONE"
+                                      ? "Đã xử lý"
+                                      : "Đã bỏ qua"}
+                                </Badge>
+                              </div>
+                            ))}
                         </li>
                       ))}
                     </ul>
