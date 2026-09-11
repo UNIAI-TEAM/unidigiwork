@@ -1536,7 +1536,7 @@ export function AppTopbar({
             </button>
             {newOpen && <NewPanel onClose={() => setNewOpen(false)} />}
           </div>
-          <div className="relative" ref={aiRef}>
+          <div className="relative hidden sm:block" ref={aiRef}>
             <button
               onClick={() => setAiOpen((v) => !v)}
               aria-haspopup="dialog"
