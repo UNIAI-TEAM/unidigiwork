@@ -19,6 +19,7 @@ import {
   User,
 } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
+import { CeoImportPanel } from "@/components/ceo/ceo-import";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import {
@@ -508,6 +509,8 @@ function CeoPage() {
                   </div>
                 </Card>
               </div>
+
+              <CeoImportPanel workspaceId={workspaceId ?? null} />
 
               <div className="grid gap-3 lg:grid-cols-3">
                 <Card title="Chuyển dịch Người ↔ AI">
