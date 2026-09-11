@@ -163,6 +163,7 @@ function ProjectDetailPage() {
   }, [project, notesDirty]);
 
   const update = useServerFn(updateProject);
+  const importProgress = useServerFn(importTaskProgress);
   const saveNotes = useMutation({
     mutationFn: async () => update({ data: { projectId: id, notes } }),
     onSuccess: () => {
