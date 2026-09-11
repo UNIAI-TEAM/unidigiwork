@@ -82,6 +82,12 @@ export type CeoOverview = {
     aiHours: number;
     humanHours: number;
     meetingHours: number;
+    /** Giờ họp đã lên lịch nhưng chưa diễn ra — không tính vào KPI. */
+    upcomingMeetingHours: number;
+    upcomingMeetings: number;
+    nextMeeting: { title: string; startAt: string } | null;
+    /** % tiến độ trung bình của việc đang chạy trong kỳ. */
+    avgProgressPct: number;
     savedHours: number;
     leverage: number | null;
   };
@@ -250,7 +256,7 @@ export async function loadCeoOverview(
         supabase
           .from("tasks")
           .select(
-            "id, title, status, due_at, completed_at, created_at, updated_at, workspace_id, human_owner_id, ai_worker_id, execution_mode",
+            "id, title, status, due_at, completed_at, created_at, updated_at, workspace_id, human_owner_id, ai_worker_id, execution_mode, progress_pct",
           )
           .eq("tenant_id", tenantId)
           .is("deleted_at", null)
@@ -286,7 +292,7 @@ export async function loadCeoOverview(
       scope(
         supabase
           .from("meetings")
-          .select("id, start_at, end_at, workspace_id")
+          .select("id, title, start_at, end_at, status, workspace_id, project_id")
           .eq("tenant_id", tenantId)
           .is("deleted_at", null)
           .gte("start_at", iso(from))
@@ -375,15 +381,49 @@ export async function loadCeoOverview(
   }[];
   const aiMs = metrics.reduce((s, m) => s + (m.machine_duration_ms ?? m.wall_duration_ms ?? 0), 0);
 
-  const meetings = (meetingsR.data ?? []) as { start_at: string; end_at: string | null }[];
-  const meetingMs = meetings.reduce((s, m) => {
-    if (!m.end_at) return s;
-    return s + Math.max(0, new Date(m.end_at).getTime() - new Date(m.start_at).getTime());
-  }, 0);
+  // LỊCH HỌP THẬT: chỉ tính cuộc họp ĐÃ DIỄN RA trong kỳ và chưa bị hủy.
+  // Họp thiếu giờ kết thúc được tính mặc định 60 phút; họp tương lai không vào KPI.
+  const DEFAULT_MEETING_MS = 60 * 60 * 1000;
+  const CANCELED_MEETING = new Set(["canceled", "cancelled", "CANCELED", "CANCELLED"]);
+  const meetingRows = (meetingsR.data ?? []) as {
+    id: string;
+    title: string | null;
+    start_at: string;
+    end_at: string | null;
+    status: string | null;
+    workspace_id: string | null;
+  }[];
+  const meetingDuration = (m: { start_at: string; end_at: string | null }) =>
+    m.end_at
+      ? Math.max(0, new Date(m.end_at).getTime() - new Date(m.start_at).getTime())
+      : DEFAULT_MEETING_MS;
+  const liveMeetings = meetingRows.filter((m) => !CANCELED_MEETING.has(m.status ?? ""));
+  const pastMeetings = liveMeetings.filter(
+    (m) => new Date(m.end_at ?? m.start_at).getTime() <= now.getTime(),
+  );
+  const upcomingMeetings = liveMeetings.filter(
+    (m) => new Date(m.end_at ?? m.start_at).getTime() > now.getTime(),
+  );
+  const meetingMs = pastMeetings.reduce((s, m) => s + meetingDuration(m), 0);
+  const upcomingMeetingMs = upcomingMeetings.reduce((s, m) => s + meetingDuration(m), 0);
+  const nextMeeting = upcomingMeetings
+    .slice()
+    .sort((a, b) => a.start_at.localeCompare(b.start_at))[0];
 
+  // GIỜ NGƯỜI: việc hoàn thành tính đủ, việc đang chạy tính theo % tiến độ thật.
+  const progressOf = (t: Task) => Math.min(100, Math.max(0, t.progress_pct ?? 0));
   const humanCompleted = windowTasks.filter((t) => inRange(t.completed_at) && !isAi(t)).length;
+  const humanPartialHours = cur
+    .filter((t) => !isAi(t) && !inRange(t.completed_at) && t.status !== "canceled")
+    .reduce((s, t) => s + (progressOf(t) / 100) * HUMAN_HOURS_PER_TASK, 0);
   const humanHours =
-    Math.round((hours(meetingMs) + humanCompleted * HUMAN_HOURS_PER_TASK) * 10) / 10;
+    Math.round(
+      (hours(meetingMs) + humanCompleted * HUMAN_HOURS_PER_TASK + humanPartialHours) * 10,
+    ) / 10;
+  const activeTasks = cur.filter((t) => !terminal.has(t.status));
+  const avgProgressPct = activeTasks.length
+    ? Math.round(activeTasks.reduce((s, t) => s + progressOf(t), 0) / activeTasks.length)
+    : 0;
   const aiCompleted = windowTasks.filter((t) => inRange(t.completed_at) && isAi(t)).length;
   const savedHours = aiCompleted * HUMAN_HOURS_PER_TASK;
 
@@ -449,11 +489,19 @@ export async function loadCeoOverview(
   );
   const deptMap = new Map<
     string,
-    { human: number; ai: number; completed: number; overdue: number }
+    { human: number; ai: number; completed: number; overdue: number; progressHours: number }
   >();
   for (const t of cur) {
     const key = t.workspace_id ?? "none";
-    const row = deptMap.get(key) ?? { human: 0, ai: 0, completed: 0, overdue: 0 };
+    const row = deptMap.get(key) ?? {
+      human: 0,
+      ai: 0,
+      completed: 0,
+      overdue: 0,
+      progressHours: 0,
+    };
+    if (t.status !== "done" && t.status !== "canceled")
+      row.progressHours += (Math.min(100, Math.max(0, t.progress_pct ?? 0)) / 100) * HUMAN_HOURS_PER_TASK;
     if (isAi(t)) row.ai += 1;
     else row.human += 1;
     if (t.status === "done") row.completed += 1;
@@ -482,7 +530,8 @@ export async function loadCeoOverview(
       completed: v.completed,
       overdue: v.overdue,
       aiSharePct: v.human + v.ai ? Math.round((v.ai / (v.human + v.ai)) * 100) : 0,
-      hoursEstimated: Math.round(v.completed * HUMAN_HOURS_PER_TASK * 10) / 10,
+      hoursEstimated:
+        Math.round((v.completed * HUMAN_HOURS_PER_TASK + v.progressHours) * 10) / 10,
       proposals: deptProposals.get(id) ?? 0,
     }))
     .sort((a, b) => b.total - a.total)
@@ -711,6 +760,12 @@ export async function loadCeoOverview(
       aiHours: hours(aiMs),
       humanHours,
       meetingHours: hours(meetingMs),
+      upcomingMeetingHours: hours(upcomingMeetingMs),
+      upcomingMeetings: upcomingMeetings.length,
+      nextMeeting: nextMeeting
+        ? { title: nextMeeting.title ?? "Cuộc họp", startAt: nextMeeting.start_at }
+        : null,
+      avgProgressPct,
       savedHours,
       leverage,
     },
@@ -731,7 +786,9 @@ export async function loadCeoOverview(
       resources: [
         `${humanHours} giờ người (ước tính)`,
         `${hours(aiMs)} giờ AI (đo thật)`,
-        `${hours(meetingMs)} giờ họp thực tế`,
+        `${hours(meetingMs)} giờ họp đã diễn ra (${pastMeetings.length} cuộc)`,
+        `${hours(upcomingMeetingMs)} giờ họp sắp tới (${upcomingMeetings.length} cuộc, chưa tính KPI)`,
+        `Tiến độ trung bình việc đang chạy: ${avgProgressPct}%`,
       ],
       outputs: [
         `${completedCur} việc hoàn thành`,
