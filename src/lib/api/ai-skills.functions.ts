@@ -955,6 +955,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         meetings: meetings.length,
         notifications: notifs.length,
         approvedProposals: proposals.length,
+        ceoKpi,
       },
     };
   });
