@@ -31,7 +31,13 @@ export type StandupTask = {
 export type StandupBoard = {
   meetings: StandupMeeting[];
   tasks: StandupTask[];
-  summary: { total: number; done: number; inProgress: number; overdue: number; avgProgress: number };
+  summary: {
+    total: number;
+    done: number;
+    inProgress: number;
+    overdue: number;
+    avgProgress: number;
+  };
 };
 
 /** Danh sách cuộc họp gần đây và công việc cần điểm danh trong buổi giao ban. */
@@ -138,14 +144,16 @@ export const getStandupBoard = createServerFn({ method: "GET" })
       : 0;
 
     return {
-      meetings: ((meetingsRes.data ?? []) as unknown as Array<Record<string, unknown>>).map((m) => ({
-        id: m['id'] as string,
-        title: (m['title'] as string) ?? "Cuộc họp",
-        startAt: (m['start_at'] as string) ?? null,
-        endAt: (m['end_at'] as string) ?? null,
-        status: (m['status'] as string) ?? null,
-        location: (m['location'] as string) ?? null,
-      })),
+      meetings: ((meetingsRes.data ?? []) as unknown as Array<Record<string, unknown>>).map(
+        (m) => ({
+          id: m["id"] as string,
+          title: (m["title"] as string) ?? "Cuộc họp",
+          startAt: (m["start_at"] as string) ?? null,
+          endAt: (m["end_at"] as string) ?? null,
+          status: (m["status"] as string) ?? null,
+          location: (m["location"] as string) ?? null,
+        }),
+      ),
       tasks,
       summary: { total: tasks.length, done, inProgress, overdue, avgProgress },
     };
