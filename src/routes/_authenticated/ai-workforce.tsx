@@ -110,7 +110,9 @@ function AiWorkforcePage() {
           </nav>
 
           {tab === "workers" ? (
-            <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <>
+              <AiWorkforceImport />
+              <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {workers.map((w) => (
                 <li
                   key={w.id}
