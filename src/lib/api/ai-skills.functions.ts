@@ -6,6 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 import { AI_ACTION_TYPES, AI_ACTION_SOURCES } from "@/domain/ai-actions/contracts";
 import { AI_SKILL_KINDS } from "@/domain/workflow-agents/skills";
+import { loadCeoOverview } from "./ceo.server";
 
 const fail = (code: string, message: string) => new ApiError({ code: code as never, message });
 
@@ -699,6 +700,58 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       );
     }
 
+    // KPI THẬT TỪ CEO COMMAND CENTER: cùng nguồn số liệu với màn điều hành,
+    // để đề xuất giao việc và cảnh báo bám đúng KPI đang hiển thị cho ban lãnh đạo.
+    let ceoLines: string[] = [];
+    let ceoKpi: { period: string; overdue: number; aiSharePct: number } | null = null;
+    try {
+      const ceo = await loadCeoOverview(
+        context.supabase,
+        tenantId,
+        "month",
+        data.workspaceId ?? null,
+      );
+      ceoKpi = {
+        period: ceo.period,
+        overdue: ceo.totals.overdue,
+        aiSharePct: ceo.split.aiSharePct,
+      };
+      ceoLines = [
+        "KPI ĐIỀU HÀNH (CEO COMMAND CENTER — kỳ 30 ngày gần nhất, so với kỳ liền trước):",
+        `- Việc mới: ${ceo.totals.tasks.current} (kỳ trước ${ceo.totals.tasks.previous}, thay đổi ${ceo.totals.tasks.changePct ?? "—"}%).`,
+        `- Hoàn thành: ${ceo.totals.completed.current} (kỳ trước ${ceo.totals.completed.previous}, thay đổi ${ceo.totals.completed.changePct ?? "—"}%).`,
+        `- Đang thực hiện: ${ceo.totals.inProgress}. Quá hạn: ${ceo.totals.overdue}.`,
+        `- Chuyển dịch Người ↔ AI: người ${ceo.split.human}, AI ${ceo.split.ai}; AI đảm nhiệm ${ceo.split.aiSharePct}% (kỳ trước ${ceo.split.aiSharePrevPct}%).`,
+        `- Thời gian: giờ người ${ceo.time.humanHours} (ƯỚC TÍNH, chưa có chấm công), giờ AI ${ceo.time.aiHours} (đo thật), giờ họp ${ceo.time.meetingHours}, ước tính tiết kiệm ${ceo.time.savedHours}, đòn bẩy AI ${ceo.time.leverage ?? "chưa đủ dữ liệu"}.`,
+        `- Chất lượng: ${ceo.quality.withResult}/${ceo.quality.tasksCreated} việc có kết quả (${ceo.quality.resultRate ?? "—"}%), đã review ${ceo.quality.reviewed}, đạt ${ceo.quality.passed} (${ceo.quality.passRate ?? "—"}%).`,
+        ...(ceo.departments.length
+          ? [
+              "- Phân bổ theo bộ phận (người/AI):",
+              ...ceo.departments.map((d) => `  · ${d.name}: ${d.human}/${d.ai} (tổng ${d.total})`),
+            ]
+          : []),
+        ...(ceo.people.length
+          ? [
+              "- Khối lượng theo nhân sự (loại · việc · hoàn thành · giờ · đạt review):",
+              ...ceo.people
+                .slice(0, 15)
+                .map(
+                  (p) =>
+                    `  · ${p.name} · ${p.kind === "ai" ? "AI" : "Người"} · ${p.tasks} · ${p.completed} · ${p.hours}${p.hoursEstimated ? " (ước tính)" : ""} · ${p.reviewPassRate ?? "—"}%`,
+                ),
+            ]
+          : []),
+        ...(ceo.issues.length
+          ? [
+              "- Vấn đề CEO đang nhìn thấy:",
+              ...ceo.issues.map((i) => `  · [${i.kind}] ${i.title} — ${i.detail}`),
+            ]
+          : []),
+      ];
+    } catch {
+      ceoLines = [];
+    }
+
     const now = Date.now();
     const DAY = 86_400_000;
     const overdue = tasks.filter(
@@ -766,6 +819,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
 
     const corpus = [
       `Số liệu: ${tasks.length} công việc gần đây (${overdue} quá hạn), ${meetings.length} cuộc họp, ${notifs.length} thông báo, ${proposals.length} đề xuất đã duyệt.`,
+      ...ceoLines,
       "LỊCH HỌP THẬT (sắp xếp theo thời gian, gồm cuộc họp sắp tới):",
       ...meetings.map((m) => {
         const proj = m.project_id ? meetingProjectName.get(m.project_id) : null;
@@ -825,8 +879,13 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         "Đọc kỹ DÒNG THỜI GIAN HOẠT ĐỘNG để hiểu ai thường làm gì, vào lúc nào và kết quả ra sao; ưu tiên kỹ năng lặp lại theo thói quen làm việc thật đó. " +
         "Dùng LỊCH HỌP THẬT làm mốc thời gian: kỹ năng liên quan tới họp phải bám đúng cuộc họp có thật (tên, dự án, ngày giờ, địa điểm), " +
         "ví dụ chuẩn bị tài liệu trước cuộc họp sắp tới, đối soát việc cần chốt trong cuộc họp đó, theo dõi sau họp. TUYỆT ĐỐI không bịa cuộc họp không có trong dữ liệu. " +
-        "BẮT BUỘC: nếu phần LỊCH HỌP THẬT có ít nhất một cuộc họp, ít nhất 2 trong số kỹ năng trả về phải gắn với cuộc họp có thật đó và nêu đúng tên cuộc họp cùng ngày giờ trong description và example. " +
-        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu tiến độ, tên và thời gian cuộc họp).",
+        "BẮT BUỘC: nếu phần LỊCH HỌP THẬT có ít nhất một cuộc họp, ít nhất 1 kỹ năng trả về phải gắn với cuộc họp có thật đó và nêu đúng tên cuộc họp cùng ngày giờ. " +
+        "QUAN TRỌNG NHẤT: nếu có phần KPI ĐIỀU HÀNH (CEO COMMAND CENTER), ít nhất 3 trong số kỹ năng trả về phải bám trực tiếp vào các KPI đó — " +
+        "giao việc theo khối lượng và giờ làm của từng nhân sự (người và AI), cảnh báo khi số việc quá hạn hoặc tỉ lệ review đạt xấu đi so với kỳ trước, " +
+        "theo dõi tỉ lệ chuyển dịch Người ↔ AI và tỉ lệ việc có kết quả. Mỗi kỹ năng như vậy phải nêu ĐÚNG con số KPI quan sát được và ngưỡng kích hoạt cụ thể. " +
+        "Không được lấy lịch họp cũ làm căn cứ chính khi KPI đã cho thấy vấn đề khác. Giờ người là ƯỚC TÍNH — phải nói rõ, không coi là chấm công. " +
+        "Không bịa doanh thu, chi phí hay bất kỳ số nào không có trong dữ liệu. " +
+        "description phải nhắc tới bằng chứng cụ thể quan sát được trong dữ liệu (tên việc, trạng thái, số liệu KPI, tên và thời gian cuộc họp).",
       prompt: corpus,
     });
 
@@ -896,6 +955,7 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         meetings: meetings.length,
         notifications: notifs.length,
         approvedProposals: proposals.length,
+        ceoKpi,
       },
     };
   });
