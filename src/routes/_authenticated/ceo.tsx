@@ -782,42 +782,42 @@ function CeoPage() {
                   ) : (
                     <ul className="space-y-1.5">
                       {filtered.map((p) => (
-                      <li
-                        key={p.id}
-                        className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium">{p.title}</span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {p.actionType}
-                            {p.workerName ? ` · ${p.workerName}` : ""}
-                            {p.taskTitle ? ` · ${p.taskTitle}` : ""} ·{" "}
-                            {new Date(p.createdAt).toLocaleDateString("vi-VN")}
-                          </span>
-                        </span>
-                        <span className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
-                          {typeof p.taskProgressPct === "number" ? (
-                            <ProgressPill value={p.taskProgressPct} />
-                          ) : null}
-                          {p.taskDueAt ? (
-                            <span className="text-xs text-muted-foreground">
-                              hạn {new Date(p.taskDueAt).toLocaleDateString("vi-VN")}
+                        <li
+                          key={p.id}
+                          className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{p.title}</span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {p.actionType}
+                              {p.workerName ? ` · ${p.workerName}` : ""}
+                              {p.taskTitle ? ` · ${p.taskTitle}` : ""} ·{" "}
+                              {new Date(p.createdAt).toLocaleDateString("vi-VN")}
                             </span>
-                          ) : null}
-                          <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
-                            {STATUS_LABEL[p.status] ?? p.status}
-                          </Badge>
-                          {p.taskId ? (
-                            <Link
-                              to="/tasks/$id"
-                              params={{ id: p.taskId }}
-                              className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
-                            >
-                              Xem việc
-                            </Link>
-                          ) : null}
-                        </span>
-                      </li>
+                          </span>
+                          <span className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
+                            {typeof p.taskProgressPct === "number" ? (
+                              <ProgressPill value={p.taskProgressPct} />
+                            ) : null}
+                            {p.taskDueAt ? (
+                              <span className="text-xs text-muted-foreground">
+                                hạn {new Date(p.taskDueAt).toLocaleDateString("vi-VN")}
+                              </span>
+                            ) : null}
+                            <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
+                              {STATUS_LABEL[p.status] ?? p.status}
+                            </Badge>
+                            {p.taskId ? (
+                              <Link
+                                to="/tasks/$id"
+                                params={{ id: p.taskId }}
+                                className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
+                              >
+                                Xem việc
+                              </Link>
+                            ) : null}
+                          </span>
+                        </li>
                       ))}
                     </ul>
                   );
