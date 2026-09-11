@@ -687,6 +687,12 @@ function ProjectDetailPage() {
                           if (f) void handleImportFile(f);
                         }}
                       />
+                      <AssignToCommandCenter
+                        projectId={id}
+                        projectName={project.name}
+                        workspaceId={project.workspace_id ?? null}
+                        tasks={tasks}
+                      />
                       <Button
                         size="sm"
                         className="min-h-11 gap-1 px-3 text-xs"
