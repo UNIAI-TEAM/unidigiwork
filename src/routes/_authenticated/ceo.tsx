@@ -574,8 +574,32 @@ function CeoPage() {
                   </div>
                   <div className="mt-3 space-y-1.5 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Giờ họp thực tế</span>
+                      <span className="text-muted-foreground">Giờ họp đã diễn ra</span>
                       <span className="font-medium">{n(data.time.meetingHours)} giờ</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Họp sắp tới (chưa tính KPI)</span>
+                      <span className="font-medium">
+                        {n(data.time.upcomingMeetingHours)} giờ · {data.time.upcomingMeetings} cuộc
+                      </span>
+                    </div>
+                    {data.time.nextMeeting ? (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Cuộc họp kế tiếp</span>
+                        <span className="truncate font-medium">
+                          {data.time.nextMeeting.title} ·{" "}
+                          {new Date(data.time.nextMeeting.startAt).toLocaleString("vi-VN", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tiến độ TB việc đang chạy</span>
+                      <span className="font-medium">{data.time.avgProgressPct}%</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Ước tính tiết kiệm</span>
