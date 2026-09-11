@@ -91,7 +91,11 @@ function ProposalTrackingPage() {
   const transition = useMutation({
     mutationFn: (p: { taskId: string; toStatus: string }) =>
       transitionFn({
-        data: { taskId: p.taskId, toStatus: p.toStatus as never, idempotencyKey: crypto.randomUUID() },
+        data: {
+          taskId: p.taskId,
+          toStatus: p.toStatus as never,
+          idempotencyKey: crypto.randomUUID(),
+        },
       }),
     onSuccess: (_d, p) => {
       toast.success(`Đã chuyển sang “${TASK_STATUS_LABEL[p.toStatus] ?? p.toStatus}”`);
@@ -118,7 +122,10 @@ function ProposalTrackingPage() {
     const term = q.trim().toLowerCase();
     return all.filter((r) => {
       if (filter === "assigned" && !r.taskId) return false;
-      if (filter === "open" && (!r.taskId || r.taskStatus === "done" || r.taskStatus === "canceled"))
+      if (
+        filter === "open" &&
+        (!r.taskId || r.taskStatus === "done" || r.taskStatus === "canceled")
+      )
         return false;
       if (filter === "overdue") {
         if (!r.taskId || !r.taskDueAt) return false;
