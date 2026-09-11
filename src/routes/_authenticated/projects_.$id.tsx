@@ -247,6 +247,7 @@ function ProjectDetailPage() {
       setMAgenda("");
       qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
       qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Không thêm được lịch họp"),
   });
@@ -351,6 +352,7 @@ function ProjectDetailPage() {
       toast.success("Đã cập nhật tiến độ");
       qc.invalidateQueries({ queryKey: ["project", id] });
       qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được tiến độ"),
   });
@@ -412,6 +414,7 @@ function ProjectDetailPage() {
       qc.invalidateQueries({ queryKey: ["project-activity", id] });
       qc.invalidateQueries({ queryKey: ["project-comments", id] });
       qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Không lưu được tiến độ tuần"),
   });
@@ -497,6 +500,7 @@ function ProjectDetailPage() {
       qc.invalidateQueries({ queryKey: ["project", id] });
       qc.invalidateQueries({ queryKey: ["project-activity", id] });
       qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
       const warn: string[] = [];
       if (result.notFoundCount > 0) warn.push(`${result.notFoundCount} dòng không khớp công việc`);
       if (result.invalidCount > 0) warn.push(`${result.invalidCount} dòng lỗi dữ liệu`);
@@ -562,6 +566,7 @@ function ProjectDetailPage() {
       qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
       qc.invalidateQueries({ queryKey: ["project-activity", id] });
       qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
       toast.success(
         `Đã nhập ${result.created} cuộc họp${result.invalid.length ? ` · ${result.invalid.length} dòng lỗi` : ""}`,
       );
