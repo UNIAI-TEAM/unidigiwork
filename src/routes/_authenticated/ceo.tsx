@@ -55,6 +55,28 @@ const PERIODS: { id: CeoPeriod; label: string }[] = [
 
 const n = (v: number) => v.toLocaleString("vi-VN");
 
+const STATUS_LABEL: Record<string, string> = {
+  PROPOSED: "Chờ duyệt",
+  PREVIEWED: "Đã xem trước",
+  CONFIRMED: "Đã duyệt",
+  SUCCEEDED: "Đã thực thi",
+  FAILED: "Thất bại",
+  REJECTED: "Từ chối",
+  CANCELLED: "Đã hủy",
+  EXPIRED: "Hết hạn",
+};
+
+const STATUS_TONE: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  PROPOSED: "outline",
+  PREVIEWED: "outline",
+  CONFIRMED: "secondary",
+  SUCCEEDED: "default",
+  FAILED: "destructive",
+  REJECTED: "destructive",
+  CANCELLED: "secondary",
+  EXPIRED: "secondary",
+};
+
 function Card({
   title,
   children,
@@ -566,8 +588,8 @@ function CeoPage() {
                           </Badge>
                           {p.taskId ? (
                             <Link
-                              to="/tasks/$taskId"
-                              params={{ taskId: p.taskId }}
+                              to="/tasks/$id"
+                              params={{ id: p.taskId }}
                               className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
                             >
                               Xem việc

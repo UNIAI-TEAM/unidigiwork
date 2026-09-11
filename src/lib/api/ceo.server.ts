@@ -418,9 +418,7 @@ export async function loadCeoOverview(
   const allProposals = ((proposalsR.data ?? []) as RawProposal[]).filter(
     (p) => !workspaceId || !p.workspace_id || p.workspace_id === workspaceId,
   );
-  const pendingProposals = allProposals.filter((p) =>
-    ["PROPOSED", "PREVIEWED"].includes(p.status),
-  );
+  const pendingProposals = allProposals.filter((p) => ["PROPOSED", "PREVIEWED"].includes(p.status));
   for (const p of pendingProposals.slice(0, 5)) {
     const waiting = Math.floor((now.getTime() - new Date(p.created_at).getTime()) / 86_400_000);
     issues.push({
@@ -448,7 +446,11 @@ export async function loadCeoOverview(
     ["REJECTED", "CANCELLED", "EXPIRED", "FAILED"].includes(p.status),
   ).length;
   const proposalsBlock = {
-    total: { current: propCur.length, previous: propPrev.length, changePct: pct(propCur.length, propPrev.length) },
+    total: {
+      current: propCur.length,
+      previous: propPrev.length,
+      changePct: pct(propCur.length, propPrev.length),
+    },
     pending: pendingProposals.length,
     executed: propExecuted,
     rejected: propRejected,
