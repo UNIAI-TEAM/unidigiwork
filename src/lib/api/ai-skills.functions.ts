@@ -435,13 +435,15 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
         .limit(40),
+      // Ưu tiên lịch họp sắp tới (từ 7 ngày trước trở đi) để đề xuất bám lịch thực tế.
       context.supabase
         .from("meetings")
         .select("title, agenda, start_at, end_at, location, status, project_id")
         .eq("tenant_id", tenantId)
         .is("deleted_at", null)
-        .order("start_at", { ascending: false })
-        .limit(15),
+        .gte("start_at", new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString())
+        .order("start_at", { ascending: true })
+        .limit(20),
       context.supabase
         .from("notifications")
         .select("type, title")
