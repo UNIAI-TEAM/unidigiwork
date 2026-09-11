@@ -93,6 +93,7 @@ import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authent
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
+import { Route as AuthenticatedCeoStandupRouteImport } from './routes/_authenticated/ceo_.standup'
 import { Route as AuthenticatedAiMarketSearchRouteImport } from './routes/_authenticated/ai-market.search'
 import { Route as AuthenticatedAiMarketIdRouteImport } from './routes/_authenticated/ai-market.$id'
 import { Route as AuthenticatedAiBrainTrackingRouteImport } from './routes/_authenticated/ai-brain_.tracking'
@@ -574,6 +575,11 @@ const AuthenticatedChatChannelIdRoute =
     path: '/chat/$channelId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCeoStandupRoute = AuthenticatedCeoStandupRouteImport.update({
+  id: '/ceo_/standup',
+  path: '/ceo/standup',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAiMarketSearchRoute =
   AuthenticatedAiMarketSearchRouteImport.update({
     id: '/ai-market/search',
@@ -884,6 +890,7 @@ export interface FileRoutesByFullPath {
   '/ai-brain/tracking': typeof AuthenticatedAiBrainTrackingRoute
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
+  '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -1008,6 +1015,7 @@ export interface FileRoutesByTo {
   '/ai-brain/tracking': typeof AuthenticatedAiBrainTrackingRoute
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
+  '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
@@ -1136,6 +1144,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-brain_/tracking': typeof AuthenticatedAiBrainTrackingRoute
   '/_authenticated/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/_authenticated/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
+  '/_authenticated/ceo_/standup': typeof AuthenticatedCeoStandupRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
@@ -1264,6 +1273,7 @@ export interface FileRouteTypes {
     | '/ai-brain/tracking'
     | '/ai-market/$id'
     | '/ai-market/search'
+    | '/ceo/standup'
     | '/chat/$channelId'
     | '/documents/$id'
     | '/email/$id'
@@ -1388,6 +1398,7 @@ export interface FileRouteTypes {
     | '/ai-brain/tracking'
     | '/ai-market/$id'
     | '/ai-market/search'
+    | '/ceo/standup'
     | '/chat/$channelId'
     | '/documents/$id'
     | '/email/$id'
@@ -1515,6 +1526,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-brain_/tracking'
     | '/_authenticated/ai-market/$id'
     | '/_authenticated/ai-market/search'
+    | '/_authenticated/ceo_/standup'
     | '/_authenticated/chat_/$channelId'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email_/$id'
@@ -2195,6 +2207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatChannelIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ceo_/standup': {
+      id: '/_authenticated/ceo_/standup'
+      path: '/ceo/standup'
+      fullPath: '/ceo/standup'
+      preLoaderRoute: typeof AuthenticatedCeoStandupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-market/search': {
       id: '/_authenticated/ai-market/search'
       path: '/ai-market/search'
@@ -2650,6 +2669,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiBrainTrackingRoute: typeof AuthenticatedAiBrainTrackingRoute
   AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
   AuthenticatedAiMarketSearchRoute: typeof AuthenticatedAiMarketSearchRoute
+  AuthenticatedCeoStandupRoute: typeof AuthenticatedCeoStandupRoute
   AuthenticatedChatChannelIdRoute: typeof AuthenticatedChatChannelIdRoute
   AuthenticatedEmailIdRoute: typeof AuthenticatedEmailIdRoute
   AuthenticatedEmailComposeRoute: typeof AuthenticatedEmailComposeRoute
@@ -2696,6 +2716,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiBrainTrackingRoute: AuthenticatedAiBrainTrackingRoute,
   AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,
   AuthenticatedAiMarketSearchRoute: AuthenticatedAiMarketSearchRoute,
+  AuthenticatedCeoStandupRoute: AuthenticatedCeoStandupRoute,
   AuthenticatedChatChannelIdRoute: AuthenticatedChatChannelIdRoute,
   AuthenticatedEmailIdRoute: AuthenticatedEmailIdRoute,
   AuthenticatedEmailComposeRoute: AuthenticatedEmailComposeRoute,

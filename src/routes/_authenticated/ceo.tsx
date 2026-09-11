@@ -510,6 +510,19 @@ function CeoPage() {
                 </Card>
               </div>
 
+              <Link
+                to="/ceo/standup"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">Giao ban thực tế</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    Ghi nhận kết quả từng việc trong cuộc họp — KPI và nhật ký tự cập nhật.
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0" />
+              </Link>
+
               <CeoImportPanel workspaceId={workspaceId ?? null} />
 
               <div className="grid gap-3 lg:grid-cols-3">
