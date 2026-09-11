@@ -17,6 +17,7 @@ import echoAvatar from "@/assets/ai-workers/echo.png.asset.json";
 import sageAvatar from "@/assets/ai-workers/sage.png.asset.json";
 import nexusAvatar from "@/assets/ai-workers/nexus.png.asset.json";
 import guardAvatar from "@/assets/ai-workers/guard.png.asset.json";
+import { assetUrl } from "@/lib/asset-url";
 
 export interface AiWorkerProfile {
   id: string;
@@ -45,7 +46,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "NOVA",
     title: "AI Executive Assistant",
     tagline: "Lập kế hoạch. Điều phối. Hoàn thành.",
-    avatarUrl: novaAvatar.url,
+    avatarUrl: assetUrl(novaAvatar),
     domain: "Trợ lý điều hành",
     mission:
       "Điều phối ưu tiên trong tuần, chuẩn bị cuộc họp và theo dõi cam kết của ban lãnh đạo.",
@@ -65,7 +66,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "ATLAS",
     title: "AI Project Manager",
     tagline: "Giữ nhịp tiến độ dự án.",
-    avatarUrl: atlasAvatar.url,
+    avatarUrl: assetUrl(atlasAvatar),
     domain: "Quản lý dự án",
     mission: "Theo dõi tiến độ, phát hiện rủi ro trễ hạn và đề xuất việc cần làm sau mỗi cuộc họp.",
     skills: ["SUMMARIZE_WORK", "RISK_ANALYSIS", "PROPOSE_TASK", "PROPOSE_TASK_UPDATE"],
@@ -85,7 +86,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "SAGE",
     title: "AI Knowledge Agent",
     tagline: "Tìm hiểu. Thấu hiểu. Áp dụng.",
-    avatarUrl: sageAvatar.url,
+    avatarUrl: assetUrl(sageAvatar),
     domain: "Nghiên cứu & Phân tích",
     mission:
       "Tổng hợp tài liệu, biên bản họp và tri thức nội bộ thành kết luận có trích dẫn nguồn.",
@@ -106,7 +107,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "ARIA",
     title: "AI Sales Agent",
     tagline: "Biến cơ hội thành tăng trưởng.",
-    avatarUrl: ariaAvatar.url,
+    avatarUrl: assetUrl(ariaAvatar),
     domain: "Kinh doanh & CRM",
     mission: "Soạn thư theo dõi khách hàng và nhắc các cơ hội đang chững lại.",
     skills: ["SUMMARIZE_WORK", "DRAFT_EMAIL", "PROPOSE_TASK"],
@@ -126,7 +127,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "DEX",
     title: "AI Data Analyst",
     tagline: "Biến dữ liệu thành quyết định.",
-    avatarUrl: dexAvatar.url,
+    avatarUrl: assetUrl(dexAvatar),
     domain: "Dữ liệu & BI",
     mission: "Phân tích khối lượng công việc và xếp ưu tiên dựa trên dữ liệu vận hành.",
     skills: ["RISK_ANALYSIS", "WORKLOAD_TRIAGE"],
@@ -141,7 +142,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "MIRA",
     title: "AI HR Agent",
     tagline: "Con người. Tiềm năng. Luôn đồng hành.",
-    avatarUrl: miraAvatar.url,
+    avatarUrl: assetUrl(miraAvatar),
     domain: "Nhân sự",
     mission: "Hỗ trợ quy trình nội bộ, nhắc việc onboarding và soạn thông báo.",
     skills: ["SUMMARIZE_WORK", "DRAFT_EMAIL", "PROPOSE_TASK"],
@@ -156,7 +157,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "ECHO",
     title: "AI Meeting Agent",
     tagline: "Lắng nghe. Ghi nhận. Biến thành hành động.",
-    avatarUrl: echoAvatar.url,
+    avatarUrl: assetUrl(echoAvatar),
     domain: "Hỗ trợ khách hàng",
     mission: "Phân loại yêu cầu, soạn phản hồi nháp và chuyển tiếp đúng người phụ trách.",
     skills: ["WORKLOAD_TRIAGE", "DRAFT_EMAIL", "PROPOSE_TASK_UPDATE"],
@@ -175,7 +176,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "GUARD",
     title: "AI Compliance & Risk",
     tagline: "Tương lai an toàn cho doanh nghiệp.",
-    avatarUrl: guardAvatar.url,
+    avatarUrl: assetUrl(guardAvatar),
     domain: "Pháp lý & Tuân thủ",
     mission: "Rà soát tài liệu, ghi nhận cam kết và nhắc mốc tuân thủ.",
     skills: ["SUMMARIZE_WORK", "MEETING_RECALL", "PROPOSE_MEETING"],
@@ -194,7 +195,7 @@ export const AI_WORKER_PROFILES: readonly AiWorkerProfile[] = [
     name: "NEXUS",
     title: "AI Operations Agent",
     tagline: "Giữ mọi thứ vận hành trơn tru.",
-    avatarUrl: nexusAvatar.url,
+    avatarUrl: assetUrl(nexusAvatar),
     domain: "Nội dung & Marketing",
     mission: "Chuyển kết luận công việc thành nội dung truyền thông và bản tin nội bộ.",
     skills: ["DRAFT_FOLLOW_UP", "DRAFT_EMAIL", "SUMMARIZE_WORK"],
