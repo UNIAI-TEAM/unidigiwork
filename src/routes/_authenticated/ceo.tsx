@@ -20,7 +20,7 @@ import {
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { getCeoOverview, type CeoPeriod } from "@/lib/api/ceo.functions";
+import { exportCeoReport, getCeoOverview, type CeoPeriod } from "@/lib/api/ceo.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo")({
   head: () => ({
