@@ -407,11 +407,51 @@ function ProjectDetailPage() {
 
               <div className="mt-5 grid gap-4 xl:grid-cols-3">
                 <section className="rounded-xl border border-border bg-card p-4 xl:col-span-2">
-                  <h2 className="flex items-center gap-2 font-semibold">
-                    <ListChecks className="h-4 w-4 text-primary" /> Công việc (
-                    {filteredTasks.length}
-                    {hasFilter && `/${tasks.length}`})
-                  </h2>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+                      <ListChecks className="h-4 w-4 text-primary" /> Công việc (
+                      {filteredTasks.length}
+                      {hasFilter && `/${tasks.length}`})
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept=".xlsx,.csv,text/csv"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void handleImportFile(f);
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        disabled={importing}
+                        onClick={() => fileRef.current?.click()}
+                      >
+                        {importing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        Nhập tiến độ từ Excel
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        onClick={downloadTemplate}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Tải mẫu
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tệp cần có cột: Tên công việc, % hoàn thành, Ngày bắt đầu, Ngày kết thúc.
+                  </p>
                   {tasks.length === 0 && (
                     <p className="mt-2 text-sm text-muted-foreground">
                       Chưa có công việc nào gắn với dự án này.
