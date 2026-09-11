@@ -103,24 +103,24 @@ function AuthPage() {
   };
 
   return (
-    <div className="auth-bg min-h-screen px-4 py-6 sm:py-10">
+    <div className="auth-bg min-h-screen px-4 py-4 sm:py-10">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center">
-        <div className="mb-3 flex items-center gap-2 self-start">
+        <div className="mb-2 flex items-center gap-2 self-start">
           <BrandMark className="h-9 w-9" />
           <div>
             <div className="font-heading text-base font-bold">UNIWORK</div>
             <div className="module-label text-muted-foreground">Digital Workplace Platform</div>
           </div>
         </div>
-        <div className="relative mb-4 w-full overflow-hidden rounded-3xl border border-border shadow-panel">
+        <div className="relative mb-3 w-full overflow-hidden rounded-3xl border border-border shadow-panel">
           <img
             src={authHero}
             alt="Đội ngũ UniWork — People + AI"
             width={1200}
             height={900}
-            className="h-44 w-full object-cover object-top sm:h-56"
+            className="h-64 w-full object-cover object-top sm:h-72"
           />
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 to-transparent px-5 pb-3 pt-10">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 to-transparent px-5 pb-3 pt-12">
             <p className="font-heading text-lg font-bold leading-tight text-foreground">
               People + AI.
             </p>
@@ -130,7 +130,7 @@ function AuthPage() {
           </div>
         </div>
       </div>
-      <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 p-6 shadow-panel backdrop-blur sm:p-8">
+      <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 p-5 shadow-panel backdrop-blur sm:p-8">
         {reset ? (
           <div className="mb-4">
             <div className="text-sm font-semibold">{t("ac.12")}</div>
