@@ -22,6 +22,8 @@ import {
   MessageSquare,
   Upload,
   Download,
+  CalendarClock,
+
 } from "lucide-react";
 import { CommentThread } from "@/components/projects/comment-thread";
 import { ProjectCalendar } from "@/components/projects/project-calendar";
