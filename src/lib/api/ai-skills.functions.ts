@@ -739,6 +739,24 @@ export const retrainAiSkillsFromWork = createServerFn({ method: "POST" })
       ...dueSoon
         .slice(0, 10)
         .map((t) => `- Sắp đến hạn: ${t.title} [${t.status}] hạn ${(t.due_at ?? "").slice(0, 10)}`),
+      `- % hoàn thành trung bình: ${
+        tasks.length
+          ? Math.round(tasks.reduce((s, t) => s + (t.progress_pct ?? 0), 0) / tasks.length)
+          : 0
+      }%. Việc đang làm nhưng 0%: ${
+        tasks.filter((t) => t.status === "in_progress" && (t.progress_pct ?? 0) === 0).length
+      }. Việc ≥80% nhưng chưa hoàn thành: ${
+        tasks.filter((t) => (t.progress_pct ?? 0) >= 80 && t.status !== "done").length
+      }.`,
+      ...tasks
+        .filter((t) => (t.progress_pct ?? 0) > 0 || t.start_at || t.end_at)
+        .slice(0, 15)
+        .map(
+          (t) =>
+            `- Tiến độ: ${t.title} [${t.status}] ${t.progress_pct ?? 0}%${
+              t.start_at ? " bắt đầu " + t.start_at.slice(0, 10) : ""
+            }${t.end_at ? " kết thúc " + t.end_at.slice(0, 10) : ""}`,
+        ),
     ];
 
     const corpus = [
