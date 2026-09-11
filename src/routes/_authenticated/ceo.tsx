@@ -331,6 +331,13 @@ function CeoPage() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["ceo", "overview", period, workspaceId ?? ""],
     queryFn: () => fn({ data: { period, workspaceId: workspaceId ?? null } }),
+    // KPI tự làm mới: mở trang, quay lại tab hoặc sau mỗi 10 phút đều lấy số liệu mới,
+    // nên sau lần Bộ não đào tạo ban đêm CEO không phải bấm "Làm mới".
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 10 * 60 * 1000,
+    refetchIntervalInBackground: false,
   });
 
   const rolesFn = useServerFn(getRoleWorkload);
