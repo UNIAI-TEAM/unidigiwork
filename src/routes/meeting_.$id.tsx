@@ -1,18 +1,19 @@
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { playMeetingCue } from "@/lib/meeting-cues";
-
-/** Thời gian một người đã chờ trong hàng đợi giơ tay (tick chỉ để buộc render lại). */
-function formatWaiting(at: number, _tick: number): string {
-  if (!at) return "";
-  const s = Math.max(0, Math.floor((Date.now() - at) / 1000));
-  if (s < 60) return `${s}s`;
-  return `${Math.floor(s / 60)}p${String(s % 60).padStart(2, "0")}`;
-}
 import {
   ArrowLeft,
   Mic,
@@ -28,31 +29,39 @@ import {
   ClipboardList,
   Hand,
   MoreHorizontal,
-  MonitorUp,
-  Captions,
-  Send,
   FileText,
   Clock,
   Loader2,
   Lock,
   Crown,
-  Video as VideoIcon,
   RefreshCw,
   ChevronDown,
   ChevronUp,
   Maximize2,
   Minimize2,
+  PanelRight,
 } from "lucide-react";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,9 +75,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { JoinRequestPanel, JoinRequestInbox } from "@/components/meeting/join-request-panel";
 import {
-  SHARE_QUALITY_LABELS,
   SHARE_QUALITY_STORAGE_KEY,
-  SHARE_SOURCE_LABELS,
   SHARE_SOURCE_STORAGE_KEY,
   applyPresetToTrack,
   degrade,
@@ -77,19 +84,24 @@ import {
   resolvePreset,
   type ShareQualityKey,
   type ShareSourceKey,
-  describeDisplayMediaError,
 } from "@/lib/screen-share-quality";
+import {
+  SHARE_QUALITY_KEY,
+  SHARE_SOURCE_KEY,
+  toastDisplayMediaError,
+} from "@/components/meeting/share-messages";
 import { useLiveCaptions } from "@/lib/use-live-captions";
 import { MeetingIntelligencePanel } from "@/components/meeting/meeting-intelligence-panel";
 import {
+  appendMeetingTranscript,
   getMeetingSummary,
   generateMeetingSummary,
 } from "@/lib/api/meeting-intelligence.functions";
 import { MeetingContentPanel } from "@/components/meeting/meeting-content-panel";
 import { MeetingStatusHistoryPanel } from "@/components/meeting/meeting-status-history-panel";
 import { MeetingParticipantsManagerPanel } from "@/components/meeting/participants-manager-panel";
-import { appendMeetingTranscript } from "@/lib/api/meeting-intelligence.functions";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
+import { ParticipantAvatar } from "@/components/meeting/participant-avatar";
 import {
   openMeetingAttendance,
   closeMeetingAttendance,
@@ -108,87 +120,95 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveMeetingApi } from "@/sdk/meetings";
 import { ApiError } from "@/contracts/errors";
 import type { MeetingId } from "@/contracts";
-import { notifyComingSoon } from "@/lib/coming-soon";
 import { usePanelCollapse, usePanelCollapseControls } from "@/hooks/use-panel-collapse";
+import { playMeetingCue } from "@/lib/meeting-cues";
+import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n-interpolate";
+
+type Translate = (k: Key) => string;
+type PresetKey = Exclude<ShareQualityKey, "auto">;
+type SideTab = "ai" | "content" | "chat" | "participants" | "transcript" | "recording";
 
 const MEETING_AI_PANEL_IDS = ["ai-copilot", "meeting-intelligence", "uni-copilot"];
 
-
 const LiveKitStage = lazy(() => import("@/components/meeting/livekit-stage"));
 
-const JOIN_ERRORS: Record<string, string> = {
-  MEETING_ACCESS_DENIED: "Bạn không có quyền tham gia cuộc họp này.",
-  MEETING_NOT_FOUND: "Không tìm thấy cuộc họp.",
-  MEETING_NOT_JOINABLE: "Cuộc họp đã kết thúc hoặc bị hủy.",
-  ENTITLEMENT_DENIED: "Gói dịch vụ hiện tại chưa bật hội nghị trực tuyến.",
-  QUOTA_EXCEEDED: "Đã vượt hạn mức phút họp của tổ chức.",
-  CONFERENCE_PROVIDER_UNAVAILABLE: "Hệ thống hội nghị chưa được cấu hình.",
-  MEETING_TOKEN_ISSUE_FAILED: "Không cấp được vé vào phòng. Vui lòng thử lại.",
-  TENANT_ACCESS_DENIED: "Phòng họp này thuộc tổ chức khác với tổ chức bạn đang chọn.",
+const JOIN_ERROR_KEY: Record<string, Key> = {
+  MEETING_ACCESS_DENIED: "mtg.room.err.accessDenied",
+  MEETING_NOT_FOUND: "mtg.room.err.notFound",
+  MEETING_NOT_JOINABLE: "mtg.room.err.notJoinable",
+  ENTITLEMENT_DENIED: "mtg.room.err.entitlement",
+  QUOTA_EXCEEDED: "mtg.room.err.quota",
+  CONFERENCE_PROVIDER_UNAVAILABLE: "mtg.room.err.provider",
+  MEETING_TOKEN_ISSUE_FAILED: "mtg.room.err.token",
+  TENANT_ACCESS_DENIED: "mtg.room.err.tenant",
 };
 
 // Lý do chi tiết + gợi ý xử lý, hiển thị ngay trên trang thay vì chỉ toast.
-const JOIN_ERROR_HINTS: Record<string, string> = {
-  MEETING_ACCESS_DENIED:
-    "Bạn chưa nằm trong danh sách người tham gia của phòng này, hoặc phòng thuộc workspace khác với workspace bạn đang mở. Hãy yêu cầu người tổ chức mời bạn, hoặc đổi sang đúng workspace rồi thử lại.",
-  TENANT_ACCESS_DENIED:
-    "Hãy dùng bộ chọn tổ chức ở thanh trên cùng để chuyển sang đúng tổ chức chứa phòng họp này, sau đó thử lại.",
-  MEETING_NOT_FOUND: "Phòng có thể đã bị xóa. Kiểm tra lại đường dẫn hoặc mở danh sách phòng họp.",
-  MEETING_NOT_JOINABLE: "Bạn có thể xem lại thông tin cuộc họp trong lịch sử cuộc họp.",
-  ENTITLEMENT_DENIED: "Liên hệ quản trị tổ chức để nâng cấp gói có hội nghị trực tuyến.",
-  QUOTA_EXCEEDED: "Liên hệ quản trị tổ chức để tăng hạn mức phút họp hoặc chờ chu kỳ kế tiếp.",
+const JOIN_ERROR_HINT_KEY: Record<string, Key> = {
+  MEETING_ACCESS_DENIED: "mtg.room.hint.accessDenied",
+  TENANT_ACCESS_DENIED: "mtg.room.hint.tenant",
+  MEETING_NOT_FOUND: "mtg.room.hint.notFound",
+  MEETING_NOT_JOINABLE: "mtg.room.hint.notJoinable",
+  ENTITLEMENT_DENIED: "mtg.room.hint.entitlement",
+  QUOTA_EXCEEDED: "mtg.room.hint.quota",
 };
 
-const RSVP_LABELS: Record<string, string> = {
-  pending: "Chờ phản hồi",
-  accepted: "Tham gia",
-  declined: "Từ chối",
-  tentative: "Chưa chắc",
+const RSVP_ACTION_KEY: Record<"accepted" | "tentative" | "declined", Key> = {
+  accepted: "mtg.room.rsvp.accept",
+  tentative: "mtg.room.rsvp.tentative",
+  declined: "mtg.room.rsvp.decline",
 };
 
-const PRESENCE_LABELS: Record<string, string> = {
-  online: "Đang online",
-  left: "Đã rời",
-  absent: "Chưa vào",
+const RSVP_STATUS_KEY: Record<string, Key> = {
+  pending: "mtg.rsvp.pending",
+  accepted: "mtg.rsvp.accepted",
+  declined: "mtg.rsvp.declined",
+  tentative: "mtg.rsvp.tentative",
 };
 
-const HOST_ACTION_LABELS: Record<string, string> = {
-  start: "Bắt đầu",
-  end: "Kết thúc",
-  cancel: "Hủy họp",
-  transfer_host: "Chuyển quyền chủ trì",
+const PRESENCE_KEY: Record<"online" | "left" | "absent", Key> = {
+  online: "mtg.room.presence.online",
+  left: "mtg.room.presence.left",
+  absent: "mtg.room.presence.absent",
 };
 
-const MEETING_STATUS_META: Record<
-  string,
-  { label: string; className: string; dotClassName: string }
-> = {
-  scheduled: {
-    label: "Chưa bắt đầu",
-    className: "bg-muted text-muted-foreground",
-    dotClassName: "bg-muted-foreground",
-  },
-  live: {
-    label: "Đang diễn ra",
-    className: "bg-destructive/20 text-destructive",
-    dotClassName: "bg-destructive animate-pulse",
-  },
-  ended: {
-    label: "Đã kết thúc",
-    className: "bg-muted text-muted-foreground",
-    dotClassName: "bg-muted-foreground",
-  },
-  canceled: {
-    label: "Đã hủy",
-    className: "bg-muted text-muted-foreground line-through",
-    dotClassName: "bg-muted-foreground",
-  },
+const HOST_ACTION_KEY: Record<string, Key> = {
+  start: "mtg.room.host.start",
+  end: "mtg.room.host.end",
+  cancel: "mtg.room.host.cancel",
+  transfer_host: "mtg.room.host.transfer",
 };
+
+const MEETING_STATUS_META: Record<string, { label: Key; className: string; dotClassName: string }> =
+  {
+    scheduled: {
+      label: "mtg.room.status.notStarted",
+      className: "bg-surface-2 text-muted-foreground",
+      dotClassName: "bg-muted-foreground",
+    },
+    live: {
+      label: "mtg.status.live",
+      className: "bg-destructive/12 text-destructive",
+      dotClassName: "bg-destructive animate-pulse",
+    },
+    ended: {
+      label: "mtg.status.ended",
+      className: "bg-surface-2 text-muted-foreground",
+      dotClassName: "bg-muted-foreground",
+    },
+    canceled: {
+      label: "mtg.status.canceled",
+      className: "bg-destructive/10 text-destructive",
+      dotClassName: "bg-destructive",
+    },
+  };
 
 function StageFallback() {
+  const { t } = useI18n();
   return (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang kết nối phòng họp…
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("mtg.room.connecting")}
     </div>
   );
 }
@@ -204,10 +224,10 @@ function formatDuration(ms: number) {
 
 export const Route = createFileRoute("/meeting_/$id")({
   validateSearch: (search: Record<string, unknown>): { invite?: string } => ({
-    invite: typeof search['invite'] === "string" ? (search['invite'] as string) : undefined,
+    invite: typeof search["invite"] === "string" ? (search["invite"] as string) : undefined,
   }),
-  head: ({ params }) => ({
-    meta: [{ title: `Phòng họp ${params.id} · UNIWORK` }],
+  head: () => ({
+    meta: [{ title: "Phòng họp · UNIWORK" }],
   }),
   component: MeetingDetailPage,
 });
@@ -215,53 +235,71 @@ export const Route = createFileRoute("/meeting_/$id")({
 function MeetingDetailPage() {
   const { id } = Route.useParams();
   const { invite } = Route.useSearch();
+  const { t, lang } = useI18n();
+  const locale = localeTag(lang);
+  // Callback realtime/timer đọc hàm dịch mới nhất mà không phải đăng ký lại kênh.
+  const tRef = useRef(t);
+  tRef.current = t;
   const isRealRoom = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const [open, setOpen] = useSidebarState();
-  const [tab, setTab] = useState<
-    "chat" | "participants" | "transcript" | "ai" | "recording" | "content"
-  >("ai");
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [tab, setTab] = useState<SideTab>("ai");
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const sharingRef = useRef(false);
+  sharingRef.current = sharing;
   const screenRef = useRef<MediaStream | null>(null);
-  // Chất lượng chia sẻ màn hình (ghi nhớ theo trình duyệt).
+
+  // Chất lượng + nguồn chia sẻ màn hình (ghi nhớ theo trình duyệt).
   const [shareQuality, setShareQuality] = useState<ShareQualityKey>("auto");
-  const [shareQualityInfo, setShareQualityInfo] = useState<string | null>(null);
-  const prevSharingRef = useRef(false);
+  const [shareQualityInfo, setShareQualityInfo] = useState<{
+    key: PresetKey;
+    degraded: boolean;
+  } | null>(null);
+  const [shareSource, setShareSource] = useState<ShareSourceKey>("any");
+  const [activeSurface, setActiveSurface] = useState<ShareSourceKey | null>(null);
+  const autoLevelRef = useRef<PresetKey>("balanced");
+
   // Thông báo rõ ràng mỗi khi trạng thái chia sẻ màn hình đổi (kể cả khi
   // người dùng bấm "Stop sharing" của trình duyệt).
+  const prevSharingRef = useRef(false);
   useEffect(() => {
     if (prevSharingRef.current === sharing) return;
     prevSharingRef.current = sharing;
-    if (sharing) toast.success("Đang chia sẻ màn hình");
+    if (sharing) toast.success(tRef.current("mtg.room.share.started"));
     else {
-      toast.info("Đã dừng chia sẻ màn hình");
+      toast.info(tRef.current("mtg.room.share.stopped"));
       setShareQualityInfo(null);
       setActiveSurface(null);
     }
   }, [sharing]);
-  const autoLevelRef = useRef<Exclude<ShareQualityKey, "auto">>("balanced");
+
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = window.localStorage.getItem(SHARE_QUALITY_STORAGE_KEY) as ShareQualityKey | null;
-    if (saved && saved in SHARE_QUALITY_LABELS) setShareQuality(saved);
+    const savedQuality = window.localStorage.getItem(
+      SHARE_QUALITY_STORAGE_KEY,
+    ) as ShareQualityKey | null;
+    if (savedQuality && savedQuality in SHARE_QUALITY_KEY) setShareQuality(savedQuality);
+    const savedSource = window.localStorage.getItem(
+      SHARE_SOURCE_STORAGE_KEY,
+    ) as ShareSourceKey | null;
+    if (savedSource && savedSource in SHARE_SOURCE_KEY) setShareSource(savedSource);
   }, []);
   const changeShareQuality = useCallback((key: ShareQualityKey) => {
     setShareQuality(key);
     if (typeof window !== "undefined") window.localStorage.setItem(SHARE_QUALITY_STORAGE_KEY, key);
   }, []);
-  // Nguồn chia sẻ mong muốn (toàn màn hình / cửa sổ / tab).
-  const [shareSource, setShareSource] = useState<ShareSourceKey>("any");
-  const [activeSurface, setActiveSurface] = useState<ShareSourceKey | null>(null);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = window.localStorage.getItem(SHARE_SOURCE_STORAGE_KEY) as ShareSourceKey | null;
-    if (saved && saved in SHARE_SOURCE_LABELS) setShareSource(saved);
-  }, []);
   const changeShareSource = useCallback((key: ShareSourceKey) => {
     setShareSource(key);
     if (typeof window !== "undefined") window.localStorage.setItem(SHARE_SOURCE_STORAGE_KEY, key);
   }, []);
+  const shareQualityLabel = shareQualityInfo
+    ? shareQualityInfo.degraded
+      ? fmt(t("mtg.share.degraded"), { quality: t(SHARE_QUALITY_KEY[shareQualityInfo.key]) })
+      : t(SHARE_QUALITY_KEY[shareQualityInfo.key])
+    : null;
+
   const [session, setSession] = useState<{
     serverUrl: string;
     token: string;
@@ -269,9 +307,10 @@ function MeetingDetailPage() {
   } | null>(null);
   const [joining, setJoining] = useState(false);
   const [autoStatus, setAutoStatus] = useState<null | "refreshing" | "rejoining">(null);
-  const [joinError, setJoinError] = useState<{ code: string; message: string } | null>(null);
+  const [joinErrorCode, setJoinErrorCode] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
   // Chọn thiết bị mic/camera và áp dụng ngay cho luồng xem trước.
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [camId, setCamId] = useState<string>("");
@@ -282,7 +321,7 @@ function MeetingDetailPage() {
       const list = await navigator.mediaDevices.enumerateDevices();
       setDevices(list.filter((d) => d.kind === "videoinput" || d.kind === "audioinput"));
     } catch {
-      toast.error("Không đọc được danh sách thiết bị.");
+      toast.error(tRef.current("mtg.room.devicesError"));
     }
   }, []);
   useEffect(() => {
@@ -292,13 +331,16 @@ function MeetingDetailPage() {
     navigator.mediaDevices.addEventListener?.("devicechange", handler);
     return () => navigator.mediaDevices.removeEventListener?.("devicechange", handler);
   }, [refreshDevices]);
+
   // Rời phòng chủ động thì KHÔNG auto rejoin.
   const manualLeaveRef = useRef(false);
-  // Phụ đề trực tiếp (nếu trình duyệt hỗ trợ Web Speech API).
-  const captions = useLiveCaptions("vi-VN");
+  // Phụ đề trực tiếp (nếu trình duyệt hỗ trợ Web Speech API), nhận dạng theo ngôn ngữ giao diện.
+  const captions = useLiveCaptions(locale);
   // Lưu phụ đề trực tiếp thành biên bản thật (gom mỗi ~10s để giảm số request).
   const captionFlushRef = useRef<{ start: number | null; last: string }>({ start: null, last: "" });
   const captionSpeakerRef = useRef<string | null>(null);
+  const captionTextRef = useRef("");
+  captionTextRef.current = captions.text;
   useEffect(() => {
     if (!isRealRoom || !captions.enabled) {
       captionFlushRef.current = { start: null, last: "" };
@@ -307,7 +349,7 @@ function MeetingDetailPage() {
     if (captionFlushRef.current.start === null) captionFlushRef.current.start = Date.now();
     const startedAt = captionFlushRef.current.start;
     const timer = window.setInterval(() => {
-      const text = captions.text.trim();
+      const text = captionTextRef.current.trim();
       const prev = captionFlushRef.current.last;
       const delta = text.startsWith(prev) ? text.slice(prev.length).trim() : text;
       if (delta.length < 8) return;
@@ -327,13 +369,15 @@ function MeetingDetailPage() {
       }).catch(() => undefined);
     }, 10_000);
     return () => window.clearInterval(timer);
-  }, [captions.enabled, captions.text, id, isRealRoom]);
+  }, [captions.enabled, id, isRealRoom]);
+
   const inRoomRef = useRef(false);
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Xem trước camera trước khi vào phòng — giúp phát hiện sớm lỗi quyền thiết bị.
+  // Không phụ thuộc `sharing`: bật/tắt chia sẻ không được khởi động lại camera.
   useEffect(() => {
     let cancelled = false;
     async function start() {
@@ -343,28 +387,30 @@ function MeetingDetailPage() {
           audio: micId ? { deviceId: { exact: micId } } : false,
         });
         if (cancelled) {
-          s.getTracks().forEach((t) => t.stop());
+          s.getTracks().forEach((track) => track.stop());
           return;
         }
         streamRef.current = s;
-        if (videoRef.current) videoRef.current.srcObject = s;
+        if (videoRef.current && !sharingRef.current) videoRef.current.srcObject = s;
         void refreshDevices();
       } catch (e) {
         const name = e instanceof DOMException ? e.name : "Error";
         toast.error(
-          name === "NotAllowedError"
-            ? "Trình duyệt đã chặn camera. Hãy cho phép quyền camera cho trang này."
-            : name === "NotFoundError"
-              ? "Không tìm thấy camera trên thiết bị."
-              : "Không mở được camera.",
+          tRef.current(
+            name === "NotAllowedError"
+              ? "mtg.room.cam.blocked"
+              : name === "NotFoundError"
+                ? "mtg.room.cam.notFound"
+                : "mtg.room.cam.error",
+          ),
         );
         setCamOff(true);
       }
     }
     function stop() {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
+      if (videoRef.current && !sharingRef.current) videoRef.current.srcObject = null;
     }
     if (!session && !camOff) void start();
     else stop();
@@ -372,11 +418,19 @@ function MeetingDetailPage() {
       cancelled = true;
       stop();
     };
-  }, [camOff, session, sharing, camId, micId, refreshDevices]);
+  }, [camOff, session, camId, micId, refreshDevices]);
+
+  // Gắn đúng luồng vào khung xem trước: màn hình khi đang chia sẻ, camera khi không.
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const next = sharing ? screenRef.current : streamRef.current;
+    if (el.srcObject !== next) el.srcObject = next;
+  }, [sharing, camOff]);
 
   // Chia sẻ màn hình thật bằng getDisplayMedia; dừng khi người dùng bấm "Stop sharing" của trình duyệt.
   const stopShare = useCallback(() => {
-    screenRef.current?.getTracks().forEach((t) => t.stop());
+    screenRef.current?.getTracks().forEach((track) => track.stop());
     screenRef.current = null;
     setSharing(false);
   }, []);
@@ -392,9 +446,8 @@ function MeetingDetailPage() {
       return;
     }
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
-      toast.error("Thiết bị hoặc trình duyệt không hỗ trợ chia sẻ màn hình", {
-        description:
-          "Tính năng này cần Chrome, Edge, Firefox hoặc Safari trên máy tính (trang phải chạy trên HTTPS). Trình duyệt di động chưa hỗ trợ.",
+      toast.error(t("mtg.room.share.unsupported"), {
+        description: t("mtg.room.share.unsupportedDesc"),
         duration: 8000,
       });
       return;
@@ -402,24 +455,24 @@ function MeetingDetailPage() {
     try {
       const preset = resolvePreset(shareQuality);
       autoLevelRef.current = preset.key;
-      const s = await navigator.mediaDevices.getDisplayMedia(displayMediaConstraints(preset, shareSource));
+      const s = await navigator.mediaDevices.getDisplayMedia(
+        displayMediaConstraints(preset, shareSource),
+      );
       await applyPresetToTrack(s.getVideoTracks()[0], preset);
       screenRef.current = s;
       setActiveSurface(readTrackSurface(s.getVideoTracks()[0]));
-      setShareQualityInfo(preset.label);
+      setShareQualityInfo({ key: preset.key, degraded: false });
       setSharing(true);
       s.getVideoTracks()[0]?.addEventListener("ended", () => stopShare());
     } catch (e) {
-      const info = describeDisplayMediaError(e);
-      if (info.cancelled) toast.info(info.title, { description: info.hint });
-      else toast.error(info.title, { description: info.hint, duration: 8000 });
+      toastDisplayMediaError(e, t);
     }
-  }, [sharing, stopShare, shareQuality, shareSource, session]);
+  }, [sharing, stopShare, shareQuality, shareSource, session, t]);
 
   // Vào phòng: dừng luồng xem trước cục bộ, LiveKit sẽ tự lấy lại luồng để publish.
   useEffect(() => {
     if (!session) return;
-    screenRef.current?.getTracks().forEach((t) => t.stop());
+    screenRef.current?.getTracks().forEach((track) => track.stop());
     screenRef.current = null;
   }, [session]);
 
@@ -429,14 +482,17 @@ function MeetingDetailPage() {
     const preset = resolvePreset(shareQuality);
     autoLevelRef.current = preset.key;
     void applyPresetToTrack(screenRef.current.getVideoTracks()[0], preset);
-    setShareQualityInfo(preset.label);
+    setShareQualityInfo({ key: preset.key, degraded: false });
   }, [shareQuality, sharing, session]);
 
   // Tự hạ bậc khi mạng yếu (chế độ "Tự động") ở màn hình chờ.
   useEffect(() => {
     if (session || !sharing || shareQuality !== "auto" || typeof navigator === "undefined") return;
-    const conn = (navigator as unknown as { connection?: EventTarget & { effectiveType?: string; downlink?: number } })
-      .connection;
+    const conn = (
+      navigator as unknown as {
+        connection?: EventTarget & { effectiveType?: string; downlink?: number };
+      }
+    ).connection;
     const adjust = () => {
       const weak =
         !conn ||
@@ -446,9 +502,8 @@ function MeetingDetailPage() {
       const next = degrade(autoLevelRef.current);
       if (next === autoLevelRef.current) return;
       autoLevelRef.current = next;
-      const preset = resolvePreset(next);
-      void applyPresetToTrack(screenRef.current?.getVideoTracks()[0], preset);
-      setShareQualityInfo(`${preset.label} · tự giảm do mạng yếu`);
+      void applyPresetToTrack(screenRef.current?.getVideoTracks()[0], resolvePreset(next));
+      setShareQualityInfo({ key: next, degraded: true });
     };
     adjust();
     const timer = setInterval(adjust, 8000);
@@ -458,13 +513,6 @@ function MeetingDetailPage() {
       conn?.removeEventListener?.("change", adjust);
     };
   }, [sharing, shareQuality, session]);
-
-  // Gắn luồng màn hình vào khung xem trước.
-  useEffect(() => {
-    if (sharing && videoRef.current && screenRef.current) {
-      videoRef.current.srcObject = screenRef.current;
-    }
-  }, [sharing]);
 
   useEffect(() => () => stopShare(), [stopShare]);
 
@@ -478,19 +526,19 @@ function MeetingDetailPage() {
         const { redeemMeetingInviteLink } = await import("@/lib/api/meeting-rooms.functions");
         const res = await redeemMeetingInviteLink({ data: { token: invite } });
         if (cancelled) return;
-        const messages: Record<string, string> = {
-          joined: "Đã dùng link mời — bạn có thể vào phòng.",
-          already: "Bạn đã có quyền tham gia phòng này.",
-          expired: "Link mời đã hết hạn. Hãy xin link mới từ người tổ chức.",
-          exhausted: "Link mời đã hết số lượt sử dụng.",
-          revoked: "Link mời đã bị thu hồi.",
-          invalid: "Link mời không hợp lệ.",
+        const messages: Record<string, Key> = {
+          joined: "mtg.room.invite.joined",
+          already: "mtg.room.invite.already",
+          expired: "mtg.room.invite.expired",
+          exhausted: "mtg.room.invite.exhausted",
+          revoked: "mtg.room.invite.revoked",
+          invalid: "mtg.room.invite.invalid",
         };
-        const msg = messages[res.status] ?? "Không xử lý được link mời.";
+        const msg = tRef.current(messages[res.status] ?? "mtg.room.invite.invalid");
         if (res.status === "joined" || res.status === "already") toast.success(msg);
         else toast.error(msg);
-      } catch (err) {
-        if (!cancelled) toast.error(err instanceof Error ? err.message : "Link mời không hợp lệ.");
+      } catch {
+        if (!cancelled) toast.error(tRef.current("mtg.room.invite.invalid"));
       } finally {
         if (!cancelled) setRedeeming(false);
       }
@@ -514,20 +562,19 @@ function MeetingDetailPage() {
 
   async function handleJoin() {
     if (!isRealRoom) {
-      toast.error("Đây là phòng demo. Hãy tạo phòng họp thật từ trang Họp.");
+      toast.error(t("mtg.room.demoJoin"));
       return;
     }
     setJoining(true);
-    setJoinError(null);
+    setJoinErrorCode(null);
     manualLeaveRef.current = false;
     attemptsRef.current = 0;
     try {
       setSession(await fetchSession());
     } catch (e) {
       const code = e instanceof ApiError ? e.code : "INTERNAL_ERROR";
-      const message = JOIN_ERRORS[code] ?? "Không thể vào phòng họp.";
-      setJoinError({ code, message });
-      toast.error(message);
+      setJoinErrorCode(code);
+      toast.error(t(JOIN_ERROR_KEY[code] ?? "mtg.room.err.generic"));
     } finally {
       setJoining(false);
     }
@@ -542,20 +589,20 @@ function MeetingDetailPage() {
   function toggleCaptions() {
     if (captions.enabled) {
       captions.stop();
-      toast.info("Đã tắt phụ đề.");
+      toast.info(t("mtg.room.captions.off"));
       return;
     }
     if (!captions.supported) {
-      toast.error("Trình duyệt không hỗ trợ phụ đề trực tiếp", {
-        description: "Phụ đề cần Chrome hoặc Edge trên máy tính (Web Speech API). Hãy thử mở lại bằng Chrome.",
+      toast.error(t("mtg.room.captions.unsupported"), {
+        description: t("mtg.room.captions.unsupportedDesc"),
         duration: 8000,
       });
       return;
     }
-    if (captions.start()) toast.success("Đã bật phụ đề (nhận giọng nói của bạn qua micro).");
+    if (captions.start()) toast.success(t("mtg.room.captions.on"));
     else
-      toast.error("Không bật được phụ đề", {
-        description: "Hãy cho phép quyền micro cho trang này rồi thử lại.",
+      toast.error(t("mtg.room.captions.failed"), {
+        description: t("mtg.room.captions.failedDesc"),
       });
   }
 
@@ -569,7 +616,7 @@ function MeetingDetailPage() {
         const next = await fetchSession();
         setSession(next);
       } catch {
-        toast.error("Không gia hạn được vé phòng họp — sẽ thử kết nối lại khi mất kết nối.");
+        toast.error(tRef.current("mtg.room.token.refreshError"));
       } finally {
         setAutoStatus(null);
       }
@@ -584,7 +631,7 @@ function MeetingDetailPage() {
     if (manualLeaveRef.current) return;
     if (attemptsRef.current >= 5) {
       setAutoStatus(null);
-      toast.error("Không thể tự kết nối lại. Vui lòng bấm Vào phòng họp để thử lại.");
+      toast.error(tRef.current("mtg.room.rejoin.failed"));
       return;
     }
     const delay = Math.min(1000 * 2 ** attemptsRef.current, 15_000);
@@ -596,18 +643,42 @@ function MeetingDetailPage() {
         setSession(next);
         setAutoStatus(null);
         attemptsRef.current = 0;
-        toast.success("Đã tự động vào lại phòng họp.");
+        toast.success(tRef.current("mtg.room.rejoin.success"));
       } catch {
         scheduleRejoin();
       }
     }, delay);
   }, [fetchSession]);
 
-  function handleStageDisconnected() {
+  const handleStageDisconnected = useCallback(() => {
     inRoomRef.current = false;
     setSession(null);
     if (!manualLeaveRef.current) scheduleRejoin();
-  }
+  }, [scheduleRejoin]);
+
+  // Callback ổn định cho LiveKit stage: tránh chạy lại effect đồng bộ ở mỗi lần render.
+  const handleShareQualityResolved = useCallback(
+    (key: PresetKey) => setShareQualityInfo({ key, degraded: false }),
+    [],
+  );
+  const handleScreenShareStateChange = useCallback(
+    (on: boolean) => setSharing((s) => (s === on ? s : on)),
+    [],
+  );
+  const handleMediaStateChange = useCallback(({ mic, cam }: { mic: boolean; cam: boolean }) => {
+    setMuted((m) => (m === !mic ? m : !mic));
+    setCamOff((c) => (c === !cam ? c : !cam));
+  }, []);
+  const handleConnectionStateChange = useCallback(
+    (s: "connected" | "reconnecting" | "disconnected" | "connecting") => {
+      if (s === "connected") {
+        inRoomRef.current = true;
+        attemptsRef.current = 0;
+        setAutoStatus(null);
+      }
+    },
+    [],
+  );
 
   // Mạng trở lại: thử ngay thay vì chờ hết backoff.
   useEffect(() => {
@@ -631,13 +702,10 @@ function MeetingDetailPage() {
   // Ghi nhận phiên tham dự để tính phút họp (usage) — mở khi vào phòng, đóng khi rời.
   useEffect(() => {
     if (!session || !isRealRoom) return;
-    let cancelled = false;
     void openMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
     inRoomRef.current = true;
     return () => {
-      cancelled = true;
       void closeMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
-      void cancelled;
     };
   }, [session, id, isRealRoom]);
 
@@ -675,16 +743,11 @@ function MeetingDetailPage() {
   }
 
   const participants = (participantsQuery.data ?? []).map((p) => ({
-    seed: p.userId,
     userId: p.userId,
-    name: p.name ?? p.email ?? "Thành viên",
-    email: p.email ?? null,
+    name: p.name ?? p.email ?? t("mtg.room.member"),
     role: p.role,
     rsvp: p.rsvp,
-    rsvpAt: p.rsvpAt ?? null,
-    invitedAt: p.invitedAt ?? null,
     presence: presenceByUser.get(p.userId) ?? ("absent" as const),
-    speaking: false,
   }));
 
   // Realtime: cập nhật RSVP/roster ngay khi có thay đổi
@@ -752,30 +815,25 @@ function MeetingDetailPage() {
       alive = false;
     };
   }, []);
-  const myRsvp =
-    (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.rsvp ?? null;
+  const myParticipant = (participantsQuery.data ?? []).find((p) => p.userId === myUserId);
+  const myRsvp = myParticipant?.rsvp ?? null;
 
   // ==== Giơ tay realtime (Supabase Presence trên kênh riêng của cuộc họp) ====
-  const myName =
-    (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.name ??
-    (participantsQuery.data ?? []).find((p) => p.userId === myUserId)?.email ??
-    "Bạn";
+  const myName = myParticipant?.name ?? myParticipant?.email ?? t("mtg.room.you");
   captionSpeakerRef.current = myName;
-  const [raisedHands, setRaisedHands] = useState<Array<{ userId: string; name: string; at: number }>>([]);
+  const [raisedHands, setRaisedHands] = useState<
+    Array<{ userId: string; name: string; at: number }>
+  >([]);
   // Danh sách người được chủ trì cấp quyền phát biểu (đồng bộ qua presence).
   const [speakers, setSpeakers] = useState<Array<{ userId: string; name: string }>>([]);
-  // Nhịp đếm để cập nhật thời gian chờ của hàng đợi giơ tay theo thời gian thực.
-  const [handsTick, setHandsTick] = useState(0);
   const handsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  useEffect(() => {
-    if (raisedHands.length === 0) return;
-    const t = setInterval(() => setHandsTick((n) => n + 1), 1000);
-    return () => clearInterval(t);
-  }, [raisedHands.length]);
   const handRaised = raisedHands.some((h) => h.userId === myUserId);
   const canSpeak = speakers.some((s) => s.userId === myUserId);
-  const myMetaRef = useRef<{ raised: boolean; speaking: boolean }>({ raised: false, speaking: false });
+  const myMetaRef = useRef<{ raised: boolean; speaking: boolean }>({
+    raised: false,
+    speaking: false,
+  });
   // Theo dõi thay đổi hàng đợi giơ tay để bắn toast realtime cho mọi người.
   const prevRaisedRef = useRef<Map<string, string> | null>(null);
 
@@ -786,6 +844,7 @@ function MeetingDetailPage() {
     });
     channel
       .on("presence", { event: "sync" }, () => {
+        const tr = tRef.current;
         const state = channel.presenceState<{
           raised?: boolean;
           name?: string;
@@ -796,8 +855,9 @@ function MeetingDetailPage() {
         const speaking: Array<{ userId: string; name: string }> = [];
         for (const [key, metas] of Object.entries(state)) {
           const meta = metas[metas.length - 1];
-          if (meta?.raised) next.push({ userId: key, name: meta.name ?? "Thành viên", at: meta.at ?? 0 });
-          if (meta?.speaking) speaking.push({ userId: key, name: meta.name ?? "Thành viên" });
+          const name = meta?.name ?? tr("mtg.room.member");
+          if (meta?.raised) next.push({ userId: key, name, at: meta.at ?? 0 });
+          if (meta?.speaking) speaking.push({ userId: key, name });
         }
         next.sort((a, b) => a.at - b.at);
         const currentMap = new Map(next.map((h) => [h.userId, h.name]));
@@ -806,13 +866,15 @@ function MeetingDetailPage() {
           for (const [uid, name] of currentMap) {
             if (!prev.has(uid) && uid !== myUserId) {
               playMeetingCue("raise");
-              toast.info(`${name} đã giơ tay`, { description: "Đang chờ được phát biểu." });
+              toast.info(fmt(tr("mtg.room.hands.raisedToast"), { name }), {
+                description: tr("mtg.room.hands.waiting"),
+              });
             }
           }
           for (const [uid, name] of prev) {
             if (!currentMap.has(uid) && uid !== myUserId) {
               playMeetingCue("lower");
-              toast(`${name} đã hạ tay`);
+              toast(fmt(tr("mtg.room.hands.loweredToast"), { name }));
             }
           }
         }
@@ -822,6 +884,7 @@ function MeetingDetailPage() {
       })
       // Chủ trì cấp/thu quyền phát biểu: chỉ người được nhắc tới mới đổi trạng thái của mình.
       .on("broadcast", { event: "speak" }, ({ payload }) => {
+        const tr = tRef.current;
         const p = payload as { userId?: string; allow?: boolean; hostName?: string };
         if (!p?.userId || p.userId !== myUserId) return;
         const allow = !!p.allow;
@@ -829,10 +892,12 @@ function MeetingDetailPage() {
         void channel.track({ raised: false, speaking: allow, name: myName, at: Date.now() });
         setMuted(!allow);
         if (allow)
-          toast.success("Bạn được mời phát biểu", {
-            description: `${p.hostName ?? "Chủ trì"} đã bật quyền nói cho bạn — micro đã được bật.`,
+          toast.success(tr("mtg.room.speak.granted"), {
+            description: fmt(tr("mtg.room.speak.grantedDesc"), {
+              host: p.hostName ?? tr("mtg.room.speak.hostFallback"),
+            }),
           });
-        else toast.info("Chủ trì đã thu quyền phát biểu — micro đã tắt.");
+        else toast.info(tr("mtg.room.speak.revoked"));
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED")
@@ -848,21 +913,21 @@ function MeetingDetailPage() {
   const toggleHand = useCallback(async () => {
     const channel = handsChannelRef.current;
     if (!channel) {
-      toast.error("Chưa kết nối được trạng thái phòng họp.");
+      toast.error(t("mtg.room.hands.notConnected"));
       return;
     }
     const next = !handRaised;
     myMetaRef.current = { ...myMetaRef.current, raised: next };
     await channel.track({ ...myMetaRef.current, name: myName, at: Date.now() });
-    toast.success(next ? "Bạn đã giơ tay." : "Bạn đã hạ tay.");
-  }, [handRaised, myName]);
+    toast.success(next ? t("mtg.room.hands.youRaised") : t("mtg.room.hands.youLowered"));
+  }, [handRaised, myName, t]);
 
   // Chủ trì cấp / thu quyền phát biểu cho một người trong hàng đợi.
   const setSpeakPermission = useCallback(
     async (userId: string, name: string, allow: boolean) => {
       const channel = handsChannelRef.current;
       if (!channel) {
-        toast.error("Chưa kết nối được trạng thái phòng họp.");
+        toast.error(t("mtg.room.hands.notConnected"));
         return;
       }
       await channel.send({
@@ -870,9 +935,11 @@ function MeetingDetailPage() {
         event: "speak",
         payload: { userId, allow, hostName: myName },
       });
-      toast.success(allow ? `Đã cho ${name} phát biểu.` : `Đã thu quyền phát biểu của ${name}.`);
+      toast.success(
+        fmt(t(allow ? "mtg.room.speak.allowed" : "mtg.room.speak.revokedFor"), { name }),
+      );
     },
-    [myName],
+    [myName, t],
   );
 
   const raisedSet = new Set(raisedHands.map((h) => h.userId));
@@ -896,17 +963,17 @@ function MeetingDetailPage() {
         await setMeetingRsvp({
           data: { meetingId: id, rsvp, idempotencyKey: crypto.randomUUID() },
         });
-        toast.success(`Đã cập nhật: ${RSVP_LABELS[rsvp]}`);
+        toast.success(fmt(t("mtg.room.rsvp.updated"), { label: t(RSVP_STATUS_KEY[rsvp]!) }));
         await syncMeetingQueries();
       } catch {
         if (previous !== undefined) queryClient.setQueryData(key, previous);
-        toast.error("Không cập nhật được phản hồi tham dự.");
+        toast.error(t("mtg.room.rsvp.error"));
         void refetchParticipants();
       } finally {
         setRsvpSaving(null);
       }
     },
-    [id, isRealRoom, myUserId, queryClient, refetchParticipants, syncMeetingQueries],
+    [id, isRealRoom, myUserId, queryClient, refetchParticipants, syncMeetingQueries, t],
   );
 
   // Trạng thái cuộc họp + quyền chủ trì để hiện nút Bắt đầu / Kết thúc.
@@ -916,11 +983,15 @@ function MeetingDetailPage() {
     staleTime: 15_000,
     queryFn: () => getMeeting({ data: { meetingId: id } }),
   });
-  const meetingStatus = (meetingQuery.data as { status?: string } | undefined)?.status ?? null;
-  const statusMeta = MEETING_STATUS_META[meetingStatus ?? ""] ?? MEETING_STATUS_META["scheduled"];
-  const isHost =
-    !!myUserId &&
-    (participantsQuery.data ?? []).some((p) => p.userId === myUserId && p.role === "host");
+  const meetingRow = meetingQuery.data as
+    | { title?: string | null; status?: string; start_at?: string | null; end_at?: string | null }
+    | undefined;
+  const meetingStatus = meetingRow?.status ?? null;
+  const statusMeta = MEETING_STATUS_META[meetingStatus ?? ""] ?? MEETING_STATUS_META["scheduled"]!;
+  const meetingTitle = !isRealRoom
+    ? t("mtg.room.demoTitle")
+    : meetingRow?.title?.trim() || t("mtg.room.untitled");
+  const isHost = myParticipant?.role === "host";
   const [lifecycleBusy, setLifecycleBusy] = useState<null | "start" | "end">(null);
   const [confirmEndOpen, setConfirmEndOpen] = useState(false);
   const [transferBusy, setTransferBusy] = useState<string | null>(null);
@@ -939,7 +1010,7 @@ function MeetingDetailPage() {
       try {
         const fn = action === "start" ? startMeeting : endMeeting;
         await fn({ data: { meetingId: id, idempotencyKey: crypto.randomUUID() } });
-        toast.success(action === "start" ? "Đã bắt đầu cuộc họp." : "Đã kết thúc cuộc họp.");
+        toast.success(t(action === "start" ? "mtg.room.startedToast" : "mtg.room.endedToast"));
         // Đồng bộ ngay roster + thông tin phòng họp
         await syncMeetingQueries();
         await Promise.all([meetingQuery.refetch(), refetchParticipants(), hostLogQuery.refetch()]);
@@ -949,14 +1020,13 @@ function MeetingDetailPage() {
           void hostLogQuery.refetch();
         }, 2500);
       } catch {
-        toast.error(
-          action === "start" ? "Không bắt đầu được cuộc họp." : "Không kết thúc được cuộc họp.",
-        );
+        toast.error(t(action === "start" ? "mtg.room.startError" : "mtg.room.endError"));
       } finally {
         setLifecycleBusy(null);
+        setConfirmEndOpen(false);
       }
     },
-    [id, meetingQuery, hostLogQuery, refetchParticipants, syncMeetingQueries],
+    [id, meetingQuery, hostLogQuery, refetchParticipants, syncMeetingQueries, t],
   );
 
   const handleTransferHost = useCallback(
@@ -966,16 +1036,16 @@ function MeetingDetailPage() {
         await transferMeetingHost({
           data: { meetingId: id, newHostUserId: userId, idempotencyKey: crypto.randomUUID() },
         });
-        toast.success(`Đã chuyển quyền chủ trì cho ${name}.`);
+        toast.success(fmt(t("mtg.room.transfer.success"), { name }));
         await syncMeetingQueries();
         await Promise.all([refetchParticipants(), hostLogQuery.refetch()]);
       } catch {
-        toast.error("Không chuyển được quyền chủ trì.");
+        toast.error(t("mtg.room.transfer.error"));
       } finally {
         setTransferBusy(null);
       }
     },
-    [id, hostLogQuery, refetchParticipants, syncMeetingQueries],
+    [id, hostLogQuery, refetchParticipants, syncMeetingQueries, t],
   );
 
   // Thời lượng cuộc họp: suy ra từ nhật ký thao tác chủ trì (start/end thành công).
@@ -983,195 +1053,320 @@ function MeetingDetailPage() {
   const successStarts = hostLog.filter((e) => e.action === "start" && e.outcome === "success");
   const successEnds = hostLog.filter((e) => e.action === "end" && e.outcome === "success");
   const actualStartAt =
-    successStarts.length > 0
-      ? successStarts[successStarts.length - 1]!.occurredAt
-      : null;
+    successStarts.length > 0 ? successStarts[successStarts.length - 1]!.occurredAt : null;
   const actualEndAt = successEnds.length > 0 ? successEnds[0]!.occurredAt : null;
-  const isLive = meetingStatus === "live";
 
-  const [nowTick, setNowTick] = useState(() => Date.now());
-  useEffect(() => {
-    if (!isRealRoom || meetingStatus === "ended") return;
-    const t = window.setInterval(() => setNowTick(Date.now()), 1000);
-    return () => window.clearInterval(t);
-  }, [isRealRoom, meetingStatus]);
-
-  const elapsedMs = actualStartAt
-    ? (isLive || !actualEndAt ? nowTick : new Date(actualEndAt).getTime()) -
-      new Date(actualStartAt).getTime()
-    : null;
-  const durationLabel =
-    elapsedMs !== null && elapsedMs >= 0 ? formatDuration(elapsedMs) : null;
-  const startTimeLabel = actualStartAt
-    ? new Date(actualStartAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
-    : null;
-
-  // Lịch dự kiến (start_at / end_at) để đếm ngược và cảnh báo quá giờ.
-  const meetingRow = meetingQuery.data as
-    | { start_at?: string | null; end_at?: string | null }
-    | undefined;
   const plannedStart = meetingRow?.start_at ? new Date(meetingRow.start_at) : null;
   const plannedEnd = meetingRow?.end_at ? new Date(meetingRow.end_at) : null;
-  const fmtTime = (d: Date) =>
-    d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-  const fmtDateTime = (d: Date) =>
-    d.toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-  // Bộ đếm theo trạng thái: chưa bắt đầu -> đếm ngược tới giờ bắt đầu (hoặc trễ giờ);
-  // đang diễn ra -> còn lại tới giờ kết thúc dự kiến (hoặc quá giờ).
-  let timerLabel: string | null = null;
-  let timerTone: "normal" | "warn" | "over" = "normal";
-  if (isRealRoom) {
-    if (meetingStatus === "live" && plannedEnd) {
-      const diff = plannedEnd.getTime() - nowTick;
-      if (diff >= 0) {
-        timerLabel = `Còn ${formatDuration(diff)}`;
-        timerTone = diff <= 5 * 60_000 ? "warn" : "normal";
-      } else {
-        timerLabel = `Quá giờ ${formatDuration(-diff)}`;
-        timerTone = "over";
-      }
-    } else if ((meetingStatus === "scheduled" || !meetingStatus) && plannedStart) {
-      const diff = plannedStart.getTime() - nowTick;
-      if (diff >= 0) {
-        timerLabel = `Bắt đầu sau ${formatDuration(diff)}`;
-        timerTone = diff <= 5 * 60_000 ? "warn" : "normal";
-      } else {
-        timerLabel = `Trễ ${formatDuration(-diff)}`;
-        timerTone = "over";
-      }
-    }
-  }
-  const timerToneClass =
-    timerTone === "over"
-      ? "bg-destructive/15 text-destructive"
-      : timerTone === "warn"
-        ? "bg-primary/15 text-primary"
-        : "bg-muted text-muted-foreground";
-
-  // Khóa RSVP khi cuộc họp đã kết thúc hoặc đã hủy.
-  const rsvpLocked = meetingStatus === "ended" || meetingStatus === "canceled";
+  // Khóa RSVP và nút vào phòng khi cuộc họp đã kết thúc hoặc đã hủy.
+  const meetingClosed = meetingStatus === "ended" || meetingStatus === "canceled";
   const rsvpLockReason =
     meetingStatus === "ended"
-      ? "Cuộc họp đã kết thúc nên không thể thay đổi phản hồi tham dự."
+      ? t("mtg.room.rsvp.lockedEnded")
       : meetingStatus === "canceled"
-        ? "Cuộc họp đã bị hủy nên không thể thay đổi phản hồi tham dự."
+        ? t("mtg.room.rsvp.lockedCanceled")
         : null;
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-bg text-foreground">
-      <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <AppTopbar variant="meeting" onOpenSidebar={() => setOpen(true)} />
-
-        <div className="flex flex-1 overflow-hidden">
-          <main className="flex flex-1 flex-col overflow-hidden p-4 lg:p-6">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-              <Link to="/meeting" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-3.5 w-3.5" /> Tất cả cuộc họp
-              </Link>
-              <h1 className="mt-1 text-lg font-semibold">
-                Sprint Review · <span className="font-mono text-muted-foreground">{id}</span>
-              </h1>
-              <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${statusMeta.className}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} /> {statusMeta.label}
-                </span>
-                {isRealRoom ? (
-                  <>
-                    {(plannedStart || plannedEnd) && (
-                      <>
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {plannedStart ? fmtDateTime(plannedStart) : "—"}
-                          {plannedEnd ? ` → ${fmtTime(plannedEnd)}` : ""}
-                        </span>
-                        <span>·</span>
-                      </>
-                    )}
-                    {timerLabel && (
-                      <>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono tabular-nums ${timerToneClass}`}
-                        >
-                          {timerLabel}
-                        </span>
-                        <span>·</span>
-                      </>
-                    )}
-                    {durationLabel && (
-                      <>
-                        <span>
-                          {startTimeLabel ? `Bắt đầu thật ${startTimeLabel} · ` : ""}
-                          {isLive ? "Đã diễn ra" : "Tổng"}{" "}
-                          <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
-                        </span>
-                        <span>·</span>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Clock className="h-3 w-3" /> 32:14
-                    <span>·</span>
-                  </>
+  const participantsTab = (
+    <div className="space-y-3">
+      {isRealRoom && (
+        <div className="rounded-lg border border-border bg-surface-2 p-2.5">
+          <p className="mb-2 text-xs text-muted-foreground">
+            {t("mtg.room.rsvp.yours")}
+            {myRsvp ? ` · ${t(RSVP_STATUS_KEY[myRsvp] ?? "mtg.rsvp.pending")}` : ""}
+          </p>
+          <div className="flex gap-1.5" role="group" aria-label={t("mtg.room.rsvp.yours")}>
+            {(["accepted", "tentative", "declined"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                disabled={rsvpSaving !== null || meetingClosed}
+                aria-pressed={myRsvp === v}
+                onClick={() => void handleRsvp(v)}
+                className={`h-8 flex-1 rounded-md border px-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 ${
+                  myRsvp === v
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-surface hover:bg-surface-3"
+                }`}
+              >
+                {rsvpSaving === v ? t("mtg.saving") : t(RSVP_ACTION_KEY[v])}
+              </button>
+            ))}
+          </div>
+          {rsvpLockReason && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+              <Lock className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>{rsvpLockReason}</span>
+            </p>
+          )}
+        </div>
+      )}
+      {participantsQuery.isLoading ? (
+        <div className="space-y-2" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-8 rounded-md" />
+          ))}
+        </div>
+      ) : participants.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {isRealRoom ? t("mtg.room.people.empty") : t("mtg.room.demoPeople")}
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {participants.map((p) => (
+            <li key={p.userId} className="flex items-center gap-2">
+              <ParticipantAvatar name={p.name} className="h-7 w-7 text-[11px]" />
+              <span className="min-w-0 flex-1 truncate">
+                {p.name}
+                {p.role === "host" && (
+                  <span className="ml-1 text-xs text-muted-foreground">({t("mtg.room.host")})</span>
                 )}
-                <Users className="h-3 w-3" /> {participants.length} người
-              </div>
-              </div>
-              {isRealRoom && isHost && (
-                <div className="flex shrink-0 items-center gap-2">
-                  {meetingStatus !== "live" && meetingStatus !== "ended" && (
+              </span>
+              {raisedSet.has(p.userId) && (
+                <Hand
+                  className="h-3.5 w-3.5 shrink-0 text-primary"
+                  aria-label={t("mtg.room.raisedHand")}
+                />
+              )}
+              <span
+                className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] ${
+                  p.presence === "online"
+                    ? "bg-success/10 text-success"
+                    : p.presence === "left"
+                      ? "bg-surface-3 text-muted-foreground"
+                      : "text-muted-foreground"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    p.presence === "online"
+                      ? "bg-success"
+                      : p.presence === "left"
+                        ? "bg-muted-foreground"
+                        : "bg-border"
+                  }`}
+                />
+                {t(PRESENCE_KEY[p.presence])}
+              </span>
+              <span className="hidden text-[11px] text-muted-foreground sm:inline">
+                {t(RSVP_STATUS_KEY[p.rsvp] ?? "mtg.rsvp.pending")}
+              </span>
+              {isHost && p.userId !== myUserId && !meetingClosed && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                     <button
                       type="button"
-                      disabled={lifecycleBusy !== null}
-                      onClick={() => void handleLifecycle("start")}
-                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                      disabled={transferBusy !== null}
+                      aria-label={fmt(t("mtg.room.transfer.label"), { name: p.name })}
+                      title={fmt(t("mtg.room.transfer.label"), { name: p.name })}
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                     >
-                      {lifecycleBusy === "start" ? "Đang bắt đầu…" : "Bắt đầu họp"}
+                      {transferBusy === p.userId ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Crown className="h-3.5 w-3.5" />
+                      )}
                     </button>
-                  )}
-                  {meetingStatus === "live" && (
-                    <AlertDialog open={confirmEndOpen} onOpenChange={setConfirmEndOpen}>
-                      <AlertDialogTrigger asChild>
-                        <button
-                          type="button"
-                          disabled={lifecycleBusy !== null}
-                          className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-60"
-                        >
-                          {lifecycleBusy === "end" ? "Đang kết thúc…" : "Kết thúc họp"}
-                        </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Kết thúc cuộc họp?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Hành động này sẽ dừng cuộc họp cho tất cả người tham gia và không thể hoàn tác.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel disabled={lifecycleBusy === "end"}>Hủy</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => void handleLifecycle("end")}
-                            disabled={lifecycleBusy === "end"}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            {lifecycleBusy === "end" ? "Đang kết thúc…" : "Xác nhận kết thúc"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                  {meetingStatus === "ended" && (
-                    <span className="text-xs text-muted-foreground">Cuộc họp đã kết thúc</span>
-                  )}
-                </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t("mtg.room.transfer.title")}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {fmt(t("mtg.room.transfer.desc"), { name: p.name })}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t("mtg.cancelAction")}</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => void handleTransferHost(p.userId, p.name)}>
+                        {t("mtg.room.transfer.confirm")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {isRealRoom && (
+        <div className="mt-5 border-t border-border pt-3">
+          <h3 className="mb-2 text-xs font-semibold">{t("mtg.room.hostLog")}</h3>
+          {hostLogQuery.isLoading ? (
+            <p className="text-xs text-muted-foreground">{t("mtg.loading")}</p>
+          ) : hostLog.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{t("mtg.room.hostLogEmpty")}</p>
+          ) : (
+            <ul className="space-y-2">
+              {hostLog.map((e) => (
+                <li key={e.id} className="text-xs">
+                  <span
+                    className={`inline-flex rounded-full px-1.5 py-0.5 text-[11px] ${
+                      e.outcome === "success"
+                        ? "bg-success/10 text-success"
+                        : "bg-destructive/10 text-destructive"
+                    }`}
+                  >
+                    {HOST_ACTION_KEY[e.action] ? t(HOST_ACTION_KEY[e.action]!) : e.action} ·{" "}
+                    {e.outcome === "success"
+                      ? t("mtg.room.host.success")
+                      : t("mtg.room.host.failed")}
+                  </span>
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">
+                    {e.actorName ?? t("mtg.room.user")} ·{" "}
+                    {new Date(e.occurredAt).toLocaleString(locale)}
+                  </div>
+                  {e.errorCode && (
+                    <div className="font-mono text-[11px] text-destructive">{e.errorCode}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const sidePanelProps = {
+    meetingId: id,
+    isRealRoom,
+    inRoom: !!session,
+    tab,
+    onTabChange: setTab,
+    participantsContent: participantsTab,
+  };
+
+  const shareStatus = sharing
+    ? fmt(t("mtg.room.share.status"), {
+        source: activeSurface ? t(SHARE_SOURCE_KEY[activeSurface]) : t("mtg.room.share.screen"),
+      }) + (shareQualityLabel ? ` · ${shareQualityLabel}` : "")
+    : fmt(t("mtg.room.share.idle"), { source: t(SHARE_SOURCE_KEY[shareSource]) });
+
+  return (
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+      <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
+
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <main className="flex min-w-0 flex-1 flex-col overflow-y-auto p-4 lg:p-6">
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 basis-64">
+                <Link
+                  to="/meeting"
+                  className="inline-flex min-h-8 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> {t("mtg.room.all")}
+                </Link>
+                {isRealRoom && meetingQuery.isLoading ? (
+                  <Skeleton className="mt-1 h-7 w-64 max-w-full" />
+                ) : (
+                  <h1 className="mt-1 line-clamp-2 break-words text-lg font-semibold">
+                    {meetingTitle}
+                  </h1>
+                )}
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium ${statusMeta.className}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`}
+                    />
+                    {t(statusMeta.label)}
+                  </span>
+                  {isRealRoom && (plannedStart || plannedEnd) && (
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {plannedStart
+                        ? plannedStart.toLocaleString(locale, {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                      {plannedEnd
+                        ? ` → ${plannedEnd.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`
+                        : ""}
+                    </span>
+                  )}
+                  {isRealRoom && (
+                    <MeetingTimers
+                      status={meetingStatus}
+                      plannedStart={meetingRow?.start_at ?? null}
+                      plannedEnd={meetingRow?.end_at ?? null}
+                      actualStartAt={actualStartAt}
+                      actualEndAt={actualEndAt}
+                    />
+                  )}
+                  <span className="inline-flex items-center gap-1">
+                    <Users className="h-3 w-3" />{" "}
+                    {fmt(t("mtg.room.peopleCount"), { n: participants.length })}
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                {isRealRoom && isHost && meetingStatus !== "live" && !meetingClosed && (
+                  <Button
+                    size="sm"
+                    disabled={lifecycleBusy !== null}
+                    onClick={() => void handleLifecycle("start")}
+                  >
+                    {lifecycleBusy === "start"
+                      ? t("mtg.room.starting")
+                      : t("mtg.room.startMeeting")}
+                  </Button>
+                )}
+                {isRealRoom && isHost && meetingStatus === "live" && (
+                  <AlertDialog open={confirmEndOpen} onOpenChange={setConfirmEndOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive" disabled={lifecycleBusy !== null}>
+                        {lifecycleBusy === "end" ? t("mtg.room.ending") : t("mtg.room.endMeeting")}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("mtg.room.endConfirm.title")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t("mtg.room.endConfirm.desc")}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={lifecycleBusy === "end"}>
+                          {t("mtg.cancelAction")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.preventDefault();
+                            void handleLifecycle("end");
+                          }}
+                          disabled={lifecycleBusy === "end"}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {lifecycleBusy === "end"
+                            ? t("mtg.room.ending")
+                            : t("mtg.room.endConfirm.confirm")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden"
+                  onClick={() => setPanelOpen(true)}
+                >
+                  <PanelRight /> {t("mtg.room.panel.open")}
+                </Button>
+              </div>
             </div>
 
             {session ? (
-              <div className="flex-1 overflow-hidden rounded-xl bg-surface-2">
+              <div className="relative min-h-[18rem] flex-1 overflow-hidden rounded-xl bg-surface-2 sm:min-h-[24rem]">
                 <ClientOnly fallback={<StageFallback />}>
                   <Suspense fallback={<StageFallback />}>
                     <LiveKitStage
@@ -1183,189 +1378,227 @@ function MeetingDetailPage() {
                       micDeviceId={micId || undefined}
                       camDeviceId={camId || undefined}
                       shareQuality={shareQuality}
-                      onShareQualityResolved={setShareQualityInfo}
+                      onShareQualityResolved={handleShareQualityResolved}
                       screenShareEnabled={sharing}
                       shareSource={shareSource}
                       onShareSourceResolved={setActiveSurface}
-                      onScreenShareStateChange={(on) => setSharing((s) => (s === on ? s : on))}
-                      onMediaStateChange={({ mic, cam }) => {
-                        setMuted((m) => (m === !mic ? m : !mic));
-                        setCamOff((c) => (c === !cam ? c : !cam));
-                      }}
-                      onConnectionStateChange={(s) => {
-                        if (s === "connected") {
-                          inRoomRef.current = true;
-                          attemptsRef.current = 0;
-                          setAutoStatus(null);
-                        }
-                      }}
+                      onScreenShareStateChange={handleScreenShareStateChange}
+                      onMediaStateChange={handleMediaStateChange}
+                      onConnectionStateChange={handleConnectionStateChange}
                     />
                   </Suspense>
                 </ClientOnly>
               </div>
             ) : (
-            <div className="grid flex-1 grid-cols-2 gap-2 overflow-hidden lg:grid-cols-3">
-              <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-surface-2">
-                {camOff && !sharing ? (
-                  <VideoOff className="h-8 w-8 text-muted-foreground" />
-                ) : (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className={`h-full w-full ${sharing ? "object-contain bg-black" : "object-cover"}`}
-                  />
-                )}
-                <div className="absolute bottom-2 left-2 right-2 rounded-md bg-black/40 px-2 py-1 text-xs backdrop-blur">
-                  {sharing
-                    ? `Bạn (đang chia sẻ màn hình${shareQualityInfo ? ` · ${shareQualityInfo}` : ""})`
-                    : "Bạn (xem trước)"}
-                </div>
-              </div>
-              {participants.map((p) => (
+              <div
+                className={`grid content-start gap-2 ${
+                  participants.length === 0 ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
+                }`}
+              >
                 <div
-                  key={p.seed}
-                  className={`relative flex items-center justify-center rounded-xl bg-surface-2 ${p.speaking ? "ring-2 ring-success" : ""}`}
+                  className={`relative flex aspect-video items-center justify-center overflow-hidden rounded-xl bg-surface-2 ${
+                    participants.length === 0 ? "mx-auto w-full max-w-3xl" : ""
+                  }`}
                 >
-                  <img src={avatar(p.seed)} className="h-20 w-20 rounded-full" alt="" />
-                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between rounded-md bg-black/40 px-2 py-1 text-xs backdrop-blur">
-                    <span className="flex min-w-0 items-center gap-1.5 truncate">
-                      <span
-                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                          p.presence === "online"
-                            ? "bg-success"
-                            : p.presence === "left"
-                              ? "bg-muted-foreground"
-                              : "bg-border"
-                        }`}
-                      />
-                      <span className="truncate">{p.name}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      {raisedSet.has(p.userId) && <Hand className="h-3 w-3 text-primary" />}
-                      {p.speaking && <Mic className="h-3 w-3 text-success" />}
-                    </span>
+                  {camOff && !sharing ? (
+                    <VideoOff className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                  ) : (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className={`h-full w-full ${sharing ? "bg-black object-contain" : "object-cover"}`}
+                    />
+                  )}
+                  <div className="absolute bottom-2 left-2 right-2 truncate rounded-md bg-black/60 px-2 py-1 text-xs text-white">
+                    {sharing
+                      ? shareQualityLabel
+                        ? fmt(t("mtg.room.sharingSelfQuality"), { quality: shareQualityLabel })
+                        : t("mtg.room.sharingSelf")
+                      : t("mtg.room.previewSelf")}
                   </div>
                 </div>
-              ))}
-            </div>
+                {participants.map((p) => (
+                  <div
+                    key={p.userId}
+                    className="relative flex aspect-video items-center justify-center rounded-xl bg-surface-2"
+                  >
+                    <ParticipantAvatar name={p.name} className="h-16 w-16 text-lg" />
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span
+                          title={t(PRESENCE_KEY[p.presence])}
+                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                            p.presence === "online"
+                              ? "bg-success"
+                              : p.presence === "left"
+                                ? "bg-white/50"
+                                : "bg-white/25"
+                          }`}
+                        />
+                        <span className="truncate">{p.name}</span>
+                        <span className="sr-only">{t(PRESENCE_KEY[p.presence])}</span>
+                      </span>
+                      {raisedSet.has(p.userId) && (
+                        <Hand className="h-3 w-3 shrink-0" aria-label={t("mtg.room.raisedHand")} />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
-            {!session && joinError && (
-              <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3">
-                <p className="text-sm font-medium text-destructive">{joinError.message}</p>
-                {JOIN_ERROR_HINTS[joinError.code] && (
-                  <p className="mt-1 text-xs text-muted-foreground">{JOIN_ERROR_HINTS[joinError.code]}</p>
+            {isRealRoom && meetingQuery.isError && !joinErrorCode && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface px-4 py-3">
+                <p className="text-sm text-foreground">{t("mtg.room.loadMeetingError")}</p>
+                <Button variant="outline" size="sm" onClick={() => void meetingQuery.refetch()}>
+                  {t("mtg.retry")}
+                </Button>
+              </div>
+            )}
+
+            {!session && isRealRoom && meetingClosed && (
+              <div className="mt-3 rounded-lg border border-border bg-surface px-4 py-3">
+                <p className="text-sm font-medium text-foreground">
+                  {t("mtg.room.err.notJoinable")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("mtg.room.hint.notJoinable")}
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <Link to="/meeting/history">{t("mtg.home.history")}</Link>
+                </Button>
+              </div>
+            )}
+
+            {!session && joinErrorCode && (
+              <div
+                className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3"
+                role="alert"
+              >
+                <p className="text-sm font-medium text-destructive">
+                  {t(JOIN_ERROR_KEY[joinErrorCode] ?? "mtg.room.err.generic")}
+                </p>
+                {JOIN_ERROR_HINT_KEY[joinErrorCode] && (
+                  <p className="mt-1 text-xs text-foreground">
+                    {t(JOIN_ERROR_HINT_KEY[joinErrorCode]!)}
+                  </p>
                 )}
-                <p className="mt-1 text-[11px] font-mono text-muted-foreground">
-                  Mã lỗi: {joinError.code} · Phòng: {id}
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                  {fmt(t("mtg.room.err.code"), { code: joinErrorCode })}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={handleJoin}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleJoin()}
                     disabled={joining || redeeming}
-                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2 disabled:opacity-50"
                   >
-                    Thử vào lại
-                  </button>
-                  <Link
-                    to="/meeting"
-                    search={{ focus: "rooms" }}
-                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-surface-2"
-                  >
-                    Phòng họp của workspace này
-                  </Link>
+                    {t("mtg.room.retryJoin")}
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/meeting">{t("mtg.room.backToList")}</Link>
+                  </Button>
                 </div>
-                {isRealRoom && (joinError.code === "MEETING_ACCESS_DENIED" || joinError.code === "TENANT_ACCESS_DENIED") && (
-                  <JoinRequestPanel meetingId={id} onApproved={() => void handleJoin()} />
-                )}
+                {isRealRoom &&
+                  (joinErrorCode === "MEETING_ACCESS_DENIED" ||
+                    joinErrorCode === "TENANT_ACCESS_DENIED") && (
+                    <JoinRequestPanel meetingId={id} onApproved={() => void handleJoin()} />
+                  )}
               </div>
             )}
 
             {!session && isRealRoom && <JoinRequestInbox meetingId={id} />}
 
             {autoStatus && (
-              <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
+              <p
+                role="status"
+                className="mt-3 inline-flex items-center gap-2 self-start rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground"
+              >
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 {autoStatus === "refreshing"
-                  ? "Đang gia hạn vé phòng họp…"
-                  : "Mất kết nối — đang tự động vào lại phòng họp…"}
+                  ? t("mtg.room.auto.refreshing")
+                  : t("mtg.room.auto.rejoining")}
               </p>
             )}
 
             {!session && !isRealRoom && (
               <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
-                Phòng <span className="font-mono">{id}</span> là dữ liệu mẫu nên không kết nối được
-                máy chủ họp.{" "}
+                {t("mtg.room.demoNotice")}{" "}
                 <Link to="/meeting" className="text-primary hover:underline">
-                  Tạo phòng họp thật
-                </Link>{" "}
-                để dùng camera và micro.
+                  {t("mtg.room.demoCreate")}
+                </Link>
               </p>
             )}
 
             {(session || raisedHands.length > 0 || speakers.length > 0) && (
-              <div className="mt-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
-                <div className="flex items-center gap-2 text-primary">
-                  <Hand className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Đang giơ tay ({raisedHands.length})</span>
-                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-normal text-muted-foreground">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-                    Trực tiếp
+              <section
+                aria-label={fmt(t("mtg.room.hands.title"), { n: raisedHands.length })}
+                className="mt-4 space-y-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-xs"
+              >
+                <div className="flex items-center gap-2">
+                  <Hand className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="font-medium text-foreground">
+                    {fmt(t("mtg.room.hands.title"), { n: raisedHands.length })}
+                  </span>
+                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <span
+                      className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"
+                      aria-hidden="true"
+                    />
+                    {t("mtg.room.hands.live")}
                   </span>
                 </div>
                 {raisedHands.length === 0 && (
-                  <p className="text-muted-foreground">Chưa có ai giơ tay.</p>
+                  <p className="text-muted-foreground">{t("mtg.room.hands.empty")}</p>
                 )}
-                {raisedHands.map((h, i) => (
-                  <div
-                    key={h.userId}
-                    className={`flex items-center justify-between gap-2 rounded-md px-1.5 py-1 ${
-                      h.userId === myUserId ? "bg-primary/10" : ""
-                    }`}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-semibold text-primary">
-                        {i + 1}
-                      </span>
-                      <span className="min-w-0 truncate text-foreground">
-                        {h.userId === myUserId ? "Bạn" : h.name}
-                      </span>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {formatWaiting(h.at, handsTick)}
-                      </span>
-                    </span>
-                    {isHost && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => void setSpeakPermission(h.userId, h.name, true)}
+                {raisedHands.length > 0 && (
+                  <ol className="space-y-1">
+                    {raisedHands.map((h, i) => (
+                      <li
+                        key={h.userId}
+                        className={`flex items-center justify-between gap-2 rounded-md px-1.5 py-1 ${
+                          h.userId === myUserId ? "bg-primary/10" : ""
+                        }`}
                       >
-                        <Mic className="mr-1 h-3.5 w-3.5" />
-                        Cho phát biểu
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary">
+                            {i + 1}
+                          </span>
+                          <span className="min-w-0 truncate text-foreground">
+                            {h.userId === myUserId ? t("mtg.room.you") : h.name}
+                          </span>
+                          <WaitingTime at={h.at} />
+                        </span>
+                        {isHost && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => void setSpeakPermission(h.userId, h.name, true)}
+                          >
+                            <Mic /> {t("mtg.room.hands.allow")}
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 {speakers.length > 0 && (
-                  <div className="space-y-1 border-t border-primary/20 pt-2">
-                    <p className="font-medium text-primary">Đang được phát biểu</p>
+                  <div className="space-y-1 border-t border-border pt-2">
+                    <p className="font-medium text-foreground">{t("mtg.room.hands.speaking")}</p>
                     {speakers.map((s) => (
                       <div key={s.userId} className="flex items-center justify-between gap-2">
                         <span className="min-w-0 truncate text-muted-foreground">
-                          {s.userId === myUserId ? "Bạn" : s.name}
+                          {s.userId === myUserId ? t("mtg.room.you") : s.name}
                         </span>
                         {isHost && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 px-2 text-xs"
                             onClick={() => void setSpeakPermission(s.userId, s.name, false)}
                           >
-                            <MicOff className="mr-1 h-3.5 w-3.5" />
-                            Thu quyền
+                            <MicOff /> {t("mtg.room.hands.revoke")}
                           </Button>
                         )}
                       </div>
@@ -1373,280 +1606,106 @@ function MeetingDetailPage() {
                   </div>
                 )}
                 {canSpeak && (
-                  <p className="text-muted-foreground">
-                    Bạn đã được chủ trì cấp quyền phát biểu — micro đã được bật.
-                  </p>
+                  <p className="text-muted-foreground">{t("mtg.room.hands.canSpeak")}</p>
                 )}
-              </div>
+              </section>
             )}
 
             {captions.enabled && (
-              <div className="mt-4 rounded-lg border border-border bg-foreground/90 px-4 py-3 text-center text-sm text-background">
-                <span className="mr-2 rounded bg-background/20 px-1.5 py-0.5 text-[11px] uppercase tracking-wide">
-                  Phụ đề
+              <div className="mt-4 rounded-lg bg-foreground/90 px-4 py-3 text-center text-sm text-background">
+                <span className="mr-2 rounded bg-background/20 px-1.5 py-0.5 text-[11px] font-medium">
+                  {t("mtg.room.captions.label")}
                 </span>
-                {captions.text || "Đang lắng nghe…"}
+                {captions.text || t("mtg.room.captions.listening")}
               </div>
             )}
 
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <span
-                className={`mr-1 hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${
-                  sharing
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-border bg-surface-2 text-muted-foreground"
-                }`}
-                aria-live="polite"
-              >
-                {sharing ? <ScreenShare className="h-3.5 w-3.5" /> : <ScreenShareOff className="h-3.5 w-3.5" />}
-                {sharing
-                  ? `Đang chia sẻ ${activeSurface ? SHARE_SOURCE_LABELS[activeSurface].toLowerCase() : "màn hình"}${
-                      shareQualityInfo ? ` · ${shareQualityInfo}` : ""
-                    }`
-                  : `Chưa chia sẻ · ${SHARE_SOURCE_LABELS[shareSource]}`}
-              </span>
+            <div
+              role="group"
+              aria-label={t("mtg.room.controls")}
+              className="mt-4 flex flex-wrap items-center justify-center gap-2"
+            >
+              {sharing && (
+                <span
+                  role="status"
+                  className="mr-1 hidden max-w-[22rem] items-center gap-1.5 truncate rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary md:inline-flex"
+                >
+                  <ScreenShare className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{shareStatus}</span>
+                </span>
+              )}
+              <CtrlBtn
+                label={t("mtg.room.ctrl.mute")}
+                pressed={muted}
+                tone="danger"
+                onClick={() => setMuted(!muted)}
+                icon={muted ? MicOff : Mic}
+              />
+              <CtrlBtn
+                label={t("mtg.room.ctrl.camOff")}
+                pressed={camOff}
+                tone="danger"
+                onClick={() => setCamOff(!camOff)}
+                icon={camOff ? VideoOff : Video}
+              />
+              <CtrlBtn
+                label={t("mtg.room.ctrl.share")}
+                pressed={sharing}
+                tone="primary"
+                onClick={() => void toggleShare()}
+                icon={sharing ? ScreenShareOff : ScreenShare}
+              />
+              <CtrlBtn
+                label={t("mtg.room.ctrl.hand")}
+                pressed={handRaised}
+                tone="primary"
+                onClick={() => void toggleHand()}
+                icon={Hand}
+              />
+              <DeviceMenu
+                devices={devices}
+                micId={micId}
+                camId={camId}
+                onPickMic={(deviceId) => {
+                  setMicId(deviceId);
+                  setMuted(false);
+                }}
+                onPickCam={(deviceId) => {
+                  setCamId(deviceId);
+                  setCamOff(false);
+                }}
+                onRefresh={() => {
+                  void refreshDevices();
+                  toast.success(t("mtg.room.menu.refreshed"));
+                }}
+                captionsEnabled={captions.enabled}
+                captionsSupported={captions.supported}
+                onToggleCaptions={toggleCaptions}
+                shareSource={shareSource}
+                onShareSource={changeShareSource}
+                shareQuality={shareQuality}
+                onShareQuality={changeShareQuality}
+                shareQualityLabel={shareQualityLabel}
+              />
               {session ? (
-                <>
-                  <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
-                  <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
-                  <CtrlBtn
-                    active={!sharing}
-                    onClick={() => void toggleShare()}
-                    icon={sharing ? ScreenShareOff : ScreenShare}
-                  />
-                  <CtrlBtn active={!handRaised} onClick={() => void toggleHand()} icon={Hand} />
-                  <button
-                    onClick={leaveRoom}
-                    className="ml-2 flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    <PhoneOff className="h-4 w-4" /> Rời phòng
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 transition-colors hover:bg-surface-3"
-                        aria-label="Chất lượng chia sẻ màn hình"
-                      >
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-72">
-                      <DropdownMenuLabel className="flex items-center justify-between gap-2">
-                        Micro
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            void refreshDevices();
-                            toast.success("Đã làm mới danh sách thiết bị.");
-                          }}
-                          className="text-xs font-normal text-primary hover:underline"
-                        >
-                          Làm mới
-                        </button>
-                      </DropdownMenuLabel>
-                      {devices.filter((d) => d.kind === "audioinput").length === 0 ? (
-                        <DropdownMenuItem disabled>Không có micro</DropdownMenuItem>
-                      ) : (
-                        devices
-                          .filter((d) => d.kind === "audioinput")
-                          .map((d, i) => (
-                            <DropdownMenuItem
-                              key={d.deviceId || i}
-                              onSelect={() => {
-                                setMicId(d.deviceId);
-                                setMuted(false);
-                              }}
-                              className={micId === d.deviceId ? "font-medium text-primary" : ""}
-                            >
-                              <Mic className="mr-2 h-4 w-4" />
-                              <span className="truncate">{d.label || `Micro ${i + 1}`}</span>
-                            </DropdownMenuItem>
-                          ))
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Camera</DropdownMenuLabel>
-                      {devices.filter((d) => d.kind === "videoinput").length === 0 ? (
-                        <DropdownMenuItem disabled>Không có camera</DropdownMenuItem>
-                      ) : (
-                        devices
-                          .filter((d) => d.kind === "videoinput")
-                          .map((d, i) => (
-                            <DropdownMenuItem
-                              key={d.deviceId || i}
-                              onSelect={() => {
-                                setCamId(d.deviceId);
-                                setCamOff(false);
-                              }}
-                              className={camId === d.deviceId ? "font-medium text-primary" : ""}
-                            >
-                              <Video className="mr-2 h-4 w-4" />
-                              <span className="truncate">{d.label || `Camera ${i + 1}`}</span>
-                            </DropdownMenuItem>
-                          ))
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Phụ đề</DropdownMenuLabel>
-                      <DropdownMenuItem onSelect={() => toggleCaptions()}>
-                        <Captions className="mr-2 h-4 w-4" />
-                        <span className="truncate">
-                          {captions.enabled ? "Tắt phụ đề" : "Bật phụ đề trực tiếp"}
-                        </span>
-                        {!captions.supported && (
-                          <span className="ml-auto text-[11px] text-muted-foreground">Không hỗ trợ</span>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Nguồn chia sẻ</DropdownMenuLabel>
-                      {(Object.keys(SHARE_SOURCE_LABELS) as ShareSourceKey[]).map((k) => (
-                        <DropdownMenuItem
-                          key={k}
-                          onSelect={() => changeShareSource(k)}
-                          className={shareSource === k ? "font-medium text-primary" : ""}
-                        >
-                          <MonitorUp className="mr-2 h-4 w-4" />
-                          <span className="truncate">{SHARE_SOURCE_LABELS[k]}</span>
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Chất lượng chia sẻ màn hình</DropdownMenuLabel>
-                      {(Object.keys(SHARE_QUALITY_LABELS) as ShareQualityKey[]).map((k) => (
-                        <DropdownMenuItem
-                          key={k}
-                          onSelect={() => changeShareQuality(k)}
-                          className={shareQuality === k ? "font-medium text-primary" : ""}
-                        >
-                          <ScreenShare className="mr-2 h-4 w-4" />
-                          {SHARE_QUALITY_LABELS[k]}
-                        </DropdownMenuItem>
-                      ))}
-                      {shareQualityInfo && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                            Đang áp dụng: {shareQualityInfo}
-                          </DropdownMenuLabel>
-                        </>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={() => leaveRoom()}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <PhoneOff className="mr-2 h-4 w-4" />
-                        Rời phòng ngay
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
+                <Button
+                  variant="destructive"
+                  className="h-11 rounded-full px-4"
+                  onClick={leaveRoom}
+                  aria-label={t("mtg.room.leave")}
+                >
+                  <PhoneOff />
+                  <span className="hidden sm:inline">{t("mtg.room.leave")}</span>
+                </Button>
               ) : (
-                <>
-                  <CtrlBtn active={!muted} onClick={() => setMuted(!muted)} icon={muted ? MicOff : Mic} />
-                  <CtrlBtn active={!camOff} onClick={() => setCamOff(!camOff)} icon={camOff ? VideoOff : Video} />
-                  <CtrlBtn
-                    active={!sharing}
-                    onClick={() => void toggleShare()}
-                    icon={sharing ? ScreenShareOff : ScreenShare}
-                  />
-                  <CtrlBtn
-                    active={!handRaised}
-                    onClick={() => void toggleHand()}
-                    icon={Hand}
-                  />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 transition-colors hover:bg-surface-3">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-72">
-                      <DropdownMenuLabel className="flex items-center justify-between gap-2">
-                        Micro
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            void refreshDevices();
-                            toast.success("Đã làm mới danh sách thiết bị.");
-                          }}
-                          className="text-xs font-normal text-primary hover:underline"
-                        >
-                          Làm mới
-                        </button>
-                      </DropdownMenuLabel>
-                      {devices.filter((d) => d.kind === "audioinput").length === 0 ? (
-                        <DropdownMenuItem disabled>Không có micro</DropdownMenuItem>
-                      ) : (
-                        devices
-                          .filter((d) => d.kind === "audioinput")
-                          .map((d, i) => (
-                            <DropdownMenuItem
-                              key={d.deviceId || i}
-                              onSelect={() => setMicId(d.deviceId)}
-                              className={micId === d.deviceId ? "font-medium text-primary" : ""}
-                            >
-                              <Mic className="mr-2 h-4 w-4" />
-                              <span className="truncate">{d.label || `Micro ${i + 1}`}</span>
-                            </DropdownMenuItem>
-                          ))
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Camera</DropdownMenuLabel>
-                      {devices.filter((d) => d.kind === "videoinput").length === 0 ? (
-                        <DropdownMenuItem disabled>Không có camera</DropdownMenuItem>
-                      ) : (
-                        devices
-                          .filter((d) => d.kind === "videoinput")
-                          .map((d, i) => (
-                            <DropdownMenuItem
-                              key={d.deviceId || i}
-                              onSelect={() => {
-                                setCamId(d.deviceId);
-                                setCamOff(false);
-                              }}
-                              className={camId === d.deviceId ? "font-medium text-primary" : ""}
-                            >
-                              <Video className="mr-2 h-4 w-4" />
-                              <span className="truncate">{d.label || `Camera ${i + 1}`}</span>
-                            </DropdownMenuItem>
-                          ))
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Chất lượng chia sẻ màn hình</DropdownMenuLabel>
-                      {(Object.keys(SHARE_QUALITY_LABELS) as ShareQualityKey[]).map((k) => (
-                        <DropdownMenuItem
-                          key={k}
-                          onSelect={() => changeShareQuality(k)}
-                          className={shareQuality === k ? "font-medium text-primary" : ""}
-                        >
-                          <ScreenShare className="mr-2 h-4 w-4" />
-                          <span className="truncate">{SHARE_QUALITY_LABELS[k]}</span>
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Phụ đề</DropdownMenuLabel>
-                      <DropdownMenuItem onSelect={() => toggleCaptions()}>
-                        <Captions className="mr-2 h-4 w-4" />
-                        <span className="truncate">
-                          {captions.enabled ? "Tắt phụ đề" : "Bật phụ đề trực tiếp"}
-                        </span>
-                        {!captions.supported && (
-                          <span className="ml-auto text-[11px] text-muted-foreground">Không hỗ trợ</span>
-                        )}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <button
-                    onClick={handleJoin}
-                    disabled={joining || redeeming}
-                    className="ml-2 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                  >
-                    {joining || redeeming ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Video className="h-4 w-4" />
-                    )}
-                    {redeeming ? "Đang xử lý link mời…" : "Vào phòng họp"}
-                  </button>
-                </>
+                <Button
+                  className="h-11 rounded-full px-5"
+                  onClick={() => void handleJoin()}
+                  disabled={joining || redeeming || meetingClosed}
+                >
+                  {joining || redeeming ? <Loader2 className="animate-spin" /> : <Video />}
+                  {redeeming ? t("mtg.room.redeeming") : t("mtg.room.join")}
+                </Button>
               )}
             </div>
 
@@ -1657,294 +1716,461 @@ function MeetingDetailPage() {
             )}
           </main>
 
-          <aside className="hidden w-80 shrink-0 flex-col border-l border-border bg-surface lg:flex">
-            <div className="flex items-center justify-between border-b border-border px-3 py-2">
-              <span className="text-[11px] font-medium text-muted-foreground">AI & nội dung</span>
-              <div className="flex items-center gap-1">
-                <ExpandCollapseAllButtons panelIds={MEETING_AI_PANEL_IDS} />
-              </div>
-            </div>
-            <div className="flex border-b border-border text-xs">
-              {(
-                [
-                  { k: "ai", label: "AI", icon: Sparkles },
-                  { k: "content", label: "Nội dung", icon: ClipboardList },
-                  { k: "chat", label: "Chat", icon: MessageSquare },
-                  { k: "participants", label: "Người", icon: Users },
-                  { k: "transcript", label: "Biên bản", icon: FileText },
-                  { k: "recording", label: "Ghi hình", icon: VideoIcon },
-                ] as const
-              ).map((it) => (
-                <button
-                  key={it.k}
-                  onClick={() => setTab(it.k)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 py-3 transition-colors ${tab === it.k ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                >
-                  <it.icon className="h-3.5 w-3.5" /> {it.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 text-sm">
-              {tab === "ai" && <AICopilotPanel meetingId={id} isRealRoom={isRealRoom} />}
-              {tab === "content" &&
-                (isRealRoom ? (
-                  <div className="space-y-5">
-                    <MeetingContentPanel meetingId={id} />
-                    <MeetingStatusHistoryPanel meetingId={id} />
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Phòng demo không có agenda, ghi chú hay tài liệu thật.
-                  </p>
-                ))}
-              {tab === "recording" &&
-                (isRealRoom ? (
-                  <MeetingRecordingPanel meetingId={id} />
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Phòng demo không có dữ liệu ghi hình. Hãy tạo phòng họp thật để dùng tính năng
-                    này.
-                  </p>
-                ))}
-              {tab === "chat" && <ChatPanel />}
-              {tab === "participants" && (
-                <div className="space-y-3">
-                  {isRealRoom && (
-                    <div className="rounded-lg border border-border bg-surface-2 p-2">
-                      <p className="mb-2 text-[11px] text-muted-foreground">
-                        Phản hồi tham dự của bạn
-                        {myRsvp ? ` · ${RSVP_LABELS[myRsvp] ?? myRsvp}` : ""}
-                      </p>
-                      <div className="flex gap-1.5">
-                        {(["accepted", "tentative", "declined"] as const).map((v) => (
-                          <button
-                            key={v}
-                            type="button"
-                            disabled={rsvpSaving !== null || rsvpLocked}
-                            title={rsvpLockReason ?? undefined}
-                            onClick={() => void handleRsvp(v)}
-                            className={`flex-1 rounded-md border px-2 py-1.5 text-[11px] transition-colors disabled:opacity-60 ${
-                              myRsvp === v
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border bg-surface hover:bg-surface-3"
-                            }`}
-                          >
-                            {rsvpSaving === v ? "Đang lưu…" : RSVP_LABELS[v]}
-                          </button>
-                        ))}
-                      </div>
-                      {rsvpLockReason && (
-                        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground">
-                          <Lock className="mt-0.5 h-3 w-3 shrink-0" />
-                          <span>{rsvpLockReason}</span>
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {participantsQuery.isLoading ? (
-                  <p className="text-xs text-muted-foreground">Đang tải danh sách…</p>
-                ) : participants.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    {isRealRoom
-                      ? "Chưa có người tham gia nào được mời."
-                      : "Phòng demo không có danh sách người tham gia thật."}
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {participants.map((p) => (
-                      <li key={p.seed} className="flex items-center gap-2">
-                        <img src={avatar(p.seed)} className="h-7 w-7 rounded-full" alt="" />
-                        <span className="flex-1 truncate">
-                          {p.name}
-                          {p.role === "host" && (
-                            <span className="ml-1 text-[10px] text-muted-foreground">(Chủ trì)</span>
-                          )}
-                        </span>
-                        {raisedSet.has(p.userId) && (
-                          <Hand className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Đang giơ tay" />
-                        )}
-                        <span
-                          title={PRESENCE_LABELS[p.presence]}
-                          className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] ${
-                            p.presence === "online"
-                              ? "bg-success/10 text-success"
-                              : p.presence === "left"
-                                ? "bg-surface-3 text-muted-foreground"
-                                : "text-muted-foreground"
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              p.presence === "online"
-                                ? "bg-success"
-                                : p.presence === "left"
-                                  ? "bg-muted-foreground"
-                                  : "bg-border"
-                            }`}
-                          />
-                          {PRESENCE_LABELS[p.presence]}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {RSVP_LABELS[p.rsvp] ?? p.rsvp}
-                        </span>
-                        {isHost &&
-                          p.userId !== myUserId &&
-                          meetingStatus !== "ended" &&
-                          meetingStatus !== "canceled" && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <button
-                                  type="button"
-                                  disabled={transferBusy !== null}
-                                  title="Chuyển quyền chủ trì"
-                                  className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground disabled:opacity-60"
-                                >
-                                  {transferBusy === p.userId ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Crown className="h-3 w-3" />
-                                  )}
-                                </button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Chuyển quyền chủ trì?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {p.name} sẽ trở thành người chủ trì cuộc họp. Bạn sẽ chuyển
-                                    thành người tham gia và mất quyền bắt đầu/kết thúc cuộc họp.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => void handleTransferHost(p.userId, p.name)}
-                                  >
-                                    Chuyển quyền
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                      </li>
-                    ))}
-                  </ul>
-                  )}
-                  {isRealRoom && (
-                    <div className="mt-5 border-t border-border pt-3">
-                      <h4 className="mb-2 text-xs font-semibold">Lịch sử thao tác chủ trì</h4>
-                      {hostLogQuery.isLoading ? (
-                        <p className="text-xs text-muted-foreground">Đang tải…</p>
-                      ) : (hostLogQuery.data ?? []).length === 0 ? (
-                        <p className="text-xs text-muted-foreground">Chưa có thao tác nào.</p>
-                      ) : (
-                        <ul className="space-y-2">
-                          {(hostLogQuery.data ?? []).map((e) => (
-                            <li key={e.id} className="text-xs">
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                                    e.outcome === "success"
-                                      ? "bg-success/10 text-success"
-                                      : "bg-destructive/10 text-destructive"
-                                  }`}
-                                >
-                                  {HOST_ACTION_LABELS[e.action] ?? e.action} ·{" "}
-                                  {e.outcome === "success" ? "Thành công" : "Thất bại"}
-                                </span>
-                              </div>
-                              <div className="mt-0.5 text-[10px] text-muted-foreground">
-                                {e.actorName ?? "Người dùng"} ·{" "}
-                                {new Date(e.occurredAt).toLocaleString("vi-VN")}
-                              </div>
-                              {e.errorCode && (
-                                <div className="text-[10px] font-mono text-destructive">
-                                  {e.errorCode}
-                                </div>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-              {tab === "transcript" && (
-                isRealRoom ? (
-                  <MeetingIntelligencePanel meetingId={id} />
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Biên bản và tóm tắt AI chỉ khả dụng trong phòng họp thật.
-                  </p>
-                )
-              )}
-            </div>
-            <div className="border-t border-border p-4">
-              <AskUniPanel
-                rootEntity={{ type: "MEETING", id }}
-                label="Hỏi UNI về cuộc họp này"
-                suggestions={[
-                  "Tóm tắt nội dung cuộc họp",
-                  "Có việc nào cần theo dõi sau họp?",
-                  "Ai chưa tham gia?",
-                ]}
-              />
-            </div>
-            <div className="border-t border-border p-4">
-              <RelatedWorkPanel entityType="MEETING" entityId={id} />
-            </div>
+          <aside className="hidden w-80 shrink-0 border-l border-border bg-surface lg:flex lg:flex-col">
+            <MeetingSidePanel {...sidePanelProps} idPrefix="aside" />
           </aside>
         </div>
       </div>
+
+      <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+          <SheetHeader className="sr-only">
+            <SheetTitle>{t("mtg.room.panel.title")}</SheetTitle>
+            <SheetDescription>{t("mtg.room.panel.desc")}</SheetDescription>
+          </SheetHeader>
+          <MeetingSidePanel {...sidePanelProps} idPrefix="sheet" inSheet />
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+}
+
+/** Đồng hồ đếm ngược / thời lượng — tự tick mỗi giây mà không render lại cả trang. */
+function MeetingTimers({
+  status,
+  plannedStart,
+  plannedEnd,
+  actualStartAt,
+  actualEndAt,
+}: {
+  status: string | null;
+  plannedStart: string | null;
+  plannedEnd: string | null;
+  actualStartAt: string | null;
+  actualEndAt: string | null;
+}) {
+  const { t, lang } = useI18n();
+  const [now, setNow] = useState(() => Date.now());
+  const ticking = status !== "ended" && status !== "canceled";
+  useEffect(() => {
+    if (!ticking) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [ticking]);
+
+  const isLive = status === "live";
+  let timer: { label: string; tone: "normal" | "warn" | "over" } | null = null;
+  if (isLive && plannedEnd) {
+    const diff = new Date(plannedEnd).getTime() - now;
+    timer =
+      diff >= 0
+        ? {
+            label: fmt(t("mtg.room.timer.remaining"), { time: formatDuration(diff) }),
+            tone: diff <= 5 * 60_000 ? "warn" : "normal",
+          }
+        : {
+            label: fmt(t("mtg.room.timer.overtime"), { time: formatDuration(-diff) }),
+            tone: "over",
+          };
+  } else if ((status === "scheduled" || !status) && plannedStart) {
+    const diff = new Date(plannedStart).getTime() - now;
+    timer =
+      diff >= 0
+        ? {
+            label: fmt(t("mtg.room.timer.startsIn"), { time: formatDuration(diff) }),
+            tone: diff <= 5 * 60_000 ? "warn" : "normal",
+          }
+        : { label: fmt(t("mtg.room.timer.late"), { time: formatDuration(-diff) }), tone: "over" };
+  }
+
+  const elapsedMs = actualStartAt
+    ? (isLive || !actualEndAt ? now : new Date(actualEndAt).getTime()) -
+      new Date(actualStartAt).getTime()
+    : null;
+  const durationLabel = elapsedMs !== null && elapsedMs >= 0 ? formatDuration(elapsedMs) : null;
+  const startTime = actualStartAt
+    ? new Date(actualStartAt).toLocaleTimeString(localeTag(lang), {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+  const toneClass =
+    timer?.tone === "over"
+      ? "bg-destructive/12 text-destructive"
+      : timer?.tone === "warn"
+        ? "bg-warning/15 text-foreground"
+        : "bg-surface-2 text-muted-foreground";
+
+  return (
+    <>
+      {timer && (
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 font-mono tabular-nums ${toneClass}`}
+        >
+          {timer.label}
+        </span>
+      )}
+      {durationLabel && (
+        <span>
+          {startTime ? `${fmt(t("mtg.room.actualStart"), { time: startTime })} · ` : ""}
+          {isLive ? t("mtg.room.elapsed") : t("mtg.room.total")}{" "}
+          <span className="font-mono tabular-nums text-foreground">{durationLabel}</span>
+        </span>
+      )}
+    </>
+  );
+}
+
+/** Thời gian một người đã chờ trong hàng đợi giơ tay — tick riêng, không render lại cả trang. */
+function WaitingTime({ at }: { at: number }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setTick((n) => n + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  if (!at) return null;
+  const s = Math.max(0, Math.floor((Date.now() - at) / 1000));
+  return (
+    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+      {s < 60 ? `${s}s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`}
+    </span>
   );
 }
 
 function CtrlBtn({
   icon: Icon,
-  active = true,
+  label,
+  pressed,
+  tone,
   onClick,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  active?: boolean;
-  onClick?: () => void;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  pressed: boolean;
+  tone: "danger" | "primary";
+  onClick: () => void;
 }) {
+  const pressedClass =
+    tone === "danger"
+      ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
+      : "bg-primary text-primary-foreground hover:bg-primary/90";
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${active ? "bg-surface-2 hover:bg-surface-3" : "bg-destructive/20 text-destructive"}`}
+      aria-label={label}
+      aria-pressed={pressed}
+      title={label}
+      className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        pressed ? pressedClass : "bg-surface-2 text-foreground hover:bg-surface-3"
+      }`}
     >
       <Icon className="h-5 w-5" />
     </button>
   );
 }
 
+function DeviceMenu({
+  devices,
+  micId,
+  camId,
+  onPickMic,
+  onPickCam,
+  onRefresh,
+  captionsEnabled,
+  captionsSupported,
+  onToggleCaptions,
+  shareSource,
+  onShareSource,
+  shareQuality,
+  onShareQuality,
+  shareQualityLabel,
+}: {
+  devices: MediaDeviceInfo[];
+  micId: string;
+  camId: string;
+  onPickMic: (deviceId: string) => void;
+  onPickCam: (deviceId: string) => void;
+  onRefresh: () => void;
+  captionsEnabled: boolean;
+  captionsSupported: boolean;
+  onToggleCaptions: () => void;
+  shareSource: ShareSourceKey;
+  onShareSource: (key: ShareSourceKey) => void;
+  shareQuality: ShareQualityKey;
+  onShareQuality: (key: ShareQualityKey) => void;
+  shareQualityLabel: string | null;
+}) {
+  const { t } = useI18n();
+  const mics = devices.filter((d) => d.kind === "audioinput");
+  const cams = devices.filter((d) => d.kind === "videoinput");
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("mtg.room.menu")}
+          title={t("mtg.room.menu")}
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 text-foreground transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <MoreHorizontal className="h-5 w-5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-[70dvh] w-72 overflow-y-auto">
+        <DropdownMenuLabel>{t("mtg.room.menu.mic")}</DropdownMenuLabel>
+        {mics.length === 0 ? (
+          <DropdownMenuItem disabled>{t("mtg.room.menu.noMic")}</DropdownMenuItem>
+        ) : (
+          <DropdownMenuRadioGroup value={micId} onValueChange={onPickMic}>
+            {mics.map((d, i) => (
+              <DropdownMenuRadioItem key={d.deviceId || i} value={d.deviceId}>
+                <span className="truncate">
+                  {d.label || fmt(t("mtg.room.menu.micN"), { n: i + 1 })}
+                </span>
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t("mtg.room.menu.cam")}</DropdownMenuLabel>
+        {cams.length === 0 ? (
+          <DropdownMenuItem disabled>{t("mtg.room.menu.noCam")}</DropdownMenuItem>
+        ) : (
+          <DropdownMenuRadioGroup value={camId} onValueChange={onPickCam}>
+            {cams.map((d, i) => (
+              <DropdownMenuRadioItem key={d.deviceId || i} value={d.deviceId}>
+                <span className="truncate">
+                  {d.label || fmt(t("mtg.room.menu.camN"), { n: i + 1 })}
+                </span>
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        )}
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            onRefresh();
+          }}
+        >
+          <RefreshCw className="mr-2 h-4 w-4" /> {t("mtg.room.menu.refresh")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem
+          checked={captionsEnabled}
+          onCheckedChange={() => onToggleCaptions()}
+        >
+          <span className="truncate">{t("mtg.room.menu.captions")}</span>
+          {!captionsSupported && (
+            <span className="ml-auto pl-2 text-xs text-muted-foreground">
+              {t("mtg.room.menu.unsupported")}
+            </span>
+          )}
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t("mtg.room.menu.source")}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={shareSource}
+          onValueChange={(v) => onShareSource(v as ShareSourceKey)}
+        >
+          {(Object.keys(SHARE_SOURCE_KEY) as ShareSourceKey[]).map((k) => (
+            <DropdownMenuRadioItem key={k} value={k}>
+              {t(SHARE_SOURCE_KEY[k])}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t("mtg.room.menu.quality")}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={shareQuality}
+          onValueChange={(v) => onShareQuality(v as ShareQualityKey)}
+        >
+          {(Object.keys(SHARE_QUALITY_KEY) as ShareQualityKey[]).map((k) => (
+            <DropdownMenuRadioItem key={k} value={k}>
+              {t(SHARE_QUALITY_KEY[k])}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        {shareQualityLabel && (
+          <>
+            <DropdownMenuSeparator />
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">
+              {fmt(t("mtg.room.menu.applied"), { quality: shareQualityLabel })}
+            </p>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+const SIDE_TABS: { k: SideTab; label: Key; icon: ComponentType<{ className?: string }> }[] = [
+  { k: "ai", label: "mtg.room.tab.ai", icon: Sparkles },
+  { k: "content", label: "mtg.room.tab.content", icon: ClipboardList },
+  { k: "chat", label: "mtg.room.tab.chat", icon: MessageSquare },
+  { k: "participants", label: "mtg.room.tab.people", icon: Users },
+  { k: "transcript", label: "mtg.room.tab.transcript", icon: FileText },
+  { k: "recording", label: "mtg.room.tab.recording", icon: Video },
+];
+
+function MeetingSidePanel({
+  meetingId,
+  isRealRoom,
+  inRoom,
+  tab,
+  onTabChange,
+  participantsContent,
+  idPrefix,
+  inSheet = false,
+}: {
+  meetingId: string;
+  isRealRoom: boolean;
+  inRoom: boolean;
+  tab: SideTab;
+  onTabChange: (tab: SideTab) => void;
+  participantsContent: ReactNode;
+  idPrefix: string;
+  inSheet?: boolean;
+}) {
+  const { t } = useI18n();
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Điều hướng tab bằng phím mũi tên / Home / End theo mẫu WAI-ARIA Tabs.
+  const onTabKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const index = SIDE_TABS.findIndex((it) => it.k === tab);
+    let next = -1;
+    if (e.key === "ArrowRight") next = (index + 1) % SIDE_TABS.length;
+    else if (e.key === "ArrowLeft") next = (index - 1 + SIDE_TABS.length) % SIDE_TABS.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = SIDE_TABS.length - 1;
+    if (next < 0) return;
+    e.preventDefault();
+    const target = SIDE_TABS[next]!.k;
+    onTabChange(target);
+    tabRefs.current[target]?.focus();
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        className={`flex items-center justify-between gap-2 border-b border-border py-2 pl-3 ${inSheet ? "pr-12" : "pr-3"}`}
+      >
+        <span className="text-xs font-medium text-muted-foreground">
+          {t("mtg.room.panel.title")}
+        </span>
+        <ExpandCollapseAllButtons panelIds={MEETING_AI_PANEL_IDS} />
+      </div>
+      <div
+        role="tablist"
+        aria-label={t("mtg.room.panel.title")}
+        className="grid grid-cols-3 gap-1 border-b border-border p-2 text-xs"
+      >
+        {SIDE_TABS.map((it) => {
+          const selected = tab === it.k;
+          return (
+            <button
+              key={it.k}
+              ref={(el) => {
+                tabRefs.current[it.k] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`${idPrefix}-meeting-tab-${it.k}`}
+              aria-selected={selected}
+              aria-controls={`${idPrefix}-meeting-tabpanel`}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => onTabChange(it.k)}
+              onKeyDown={onTabKeyDown}
+              className={`flex min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                selected
+                  ? "bg-primary/10 font-medium text-primary"
+                  : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+              }`}
+            >
+              <it.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">{t(it.label)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        role="tabpanel"
+        id={`${idPrefix}-meeting-tabpanel`}
+        aria-labelledby={`${idPrefix}-meeting-tab-${tab}`}
+        className="min-h-0 flex-1 overflow-y-auto p-4 text-sm"
+      >
+        {tab === "ai" && <AICopilotPanel meetingId={meetingId} isRealRoom={isRealRoom} />}
+        {tab === "content" &&
+          (isRealRoom ? (
+            <div className="space-y-5">
+              <MeetingContentPanel meetingId={meetingId} />
+              <MeetingStatusHistoryPanel meetingId={meetingId} />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t("mtg.room.demoContent")}</p>
+          ))}
+        {tab === "recording" &&
+          (isRealRoom ? (
+            <MeetingRecordingPanel meetingId={meetingId} />
+          ) : (
+            <p className="text-xs text-muted-foreground">{t("mtg.room.demoRecording")}</p>
+          ))}
+        {tab === "chat" && <ChatPanel inRoom={inRoom} />}
+        {tab === "participants" && participantsContent}
+        {tab === "transcript" &&
+          (isRealRoom ? (
+            <MeetingIntelligencePanel meetingId={meetingId} />
+          ) : (
+            <p className="text-xs text-muted-foreground">{t("mtg.room.demoTranscript")}</p>
+          ))}
+      </div>
+      <div className="border-t border-border p-4">
+        <AskUniPanel
+          rootEntity={{ type: "MEETING", id: meetingId }}
+          label={t("mtg.room.askUni")}
+          suggestions={[t("mtg.room.askUni.s1"), t("mtg.room.askUni.s2"), t("mtg.room.askUni.s3")]}
+        />
+      </div>
+      <div className="border-t border-border p-4">
+        <RelatedWorkPanel entityType="MEETING" entityId={meetingId} />
+      </div>
+    </div>
+  );
+}
+
 function ExpandCollapseAllButtons({ panelIds }: { panelIds: string[] }) {
+  const { t } = useI18n();
   const { expandAll, collapseAll } = usePanelCollapseControls(panelIds);
   return (
     <div className="flex items-center gap-1">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
+        className="w-8 px-0 text-muted-foreground"
         onClick={expandAll}
-        title="Mở rộng tất cả"
-        className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-surface px-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground"
+        aria-label={t("mtg.room.panel.expandAll")}
+        title={t("mtg.room.panel.expandAll")}
       >
-        <Maximize2 className="h-3 w-3" /> Mở rộng tất cả
-      </button>
-      <button
+        <Maximize2 />
+      </Button>
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
+        className="w-8 px-0 text-muted-foreground"
         onClick={collapseAll}
-        title="Thu gọn tất cả"
-        className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-surface px-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-surface-3 hover:text-foreground"
+        aria-label={t("mtg.room.panel.collapseAll")}
+        title={t("mtg.room.panel.collapseAll")}
       >
-        <Minimize2 className="h-3 w-3" /> Thu gọn tất cả
-      </button>
+        <Minimize2 />
+      </Button>
     </div>
   );
 }
 
 function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRoom: boolean }) {
+  const { t, lang } = useI18n();
   const [collapsed, setCollapsed] = usePanelCollapse("ai-copilot");
   const queryClient = useQueryClient();
   const summaryQuery = useQuery({
@@ -1959,145 +2185,113 @@ function AICopilotPanel({ meetingId, isRealRoom }: { meetingId: string; isRealRo
       queryClient.setQueryData(["meeting-summary", meetingId], data);
       void queryClient.invalidateQueries({ queryKey: ["meeting-transcript", meetingId] });
       void queryClient.invalidateQueries({ queryKey: ["meeting-summary-progress", meetingId] });
-      toast.success("Đã cập nhật tóm tắt cuộc họp.");
+      toast.success(t("mtg.room.ai.updated"));
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Không tạo được tóm tắt."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : t("mtg.room.ai.error")),
   });
 
-  const toggle = (
-    <button
-      type="button"
-      onClick={() => setCollapsed((v) => !v)}
-      aria-expanded={!collapsed}
-      aria-label={collapsed ? "Mở rộng panel AI" : "Thu gọn panel AI"}
-      title={collapsed ? "Mở rộng" : "Thu gọn"}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-    >
-      {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-    </button>
-  );
+  const summary = summaryQuery.data ?? null;
 
   const rerunButton = (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="sm"
       disabled={regenerate.isPending}
       onClick={() => regenerate.mutate()}
-      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-surface-3 disabled:opacity-60"
     >
-      {regenerate.isPending ? (
-        <Loader2 className="h-3 w-3 animate-spin" />
-      ) : (
-        <RefreshCw className="h-3 w-3" />
-      )}
-      {regenerate.isPending ? "Đang tóm tắt…" : "Chạy lại tóm tắt"}
-    </button>
+      {regenerate.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+      {regenerate.isPending
+        ? t("mtg.room.ai.running")
+        : summary
+          ? t("mtg.room.ai.rerun")
+          : t("mtg.room.ai.generate")}
+    </Button>
   );
-
-  const summary = summaryQuery.data ?? null;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-          <Sparkles className="h-3.5 w-3.5 text-primary" /> Tóm tắt AI
+          <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />{" "}
+          {t("mtg.room.ai.title")}
         </h3>
-        {toggle}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-8 px-0 text-muted-foreground"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? t("mtg.room.ai.expand") : t("mtg.room.ai.collapse")}
+        >
+          {collapsed ? <ChevronDown /> : <ChevronUp />}
+        </Button>
       </div>
 
-      {collapsed
-        ? null
-        : !isRealRoom
-          ? (
-            <p className="text-xs text-muted-foreground">
-              Tóm tắt AI chỉ khả dụng trong phòng họp thật.
+      {collapsed ? null : !isRealRoom ? (
+        <p className="text-xs text-muted-foreground">{t("mtg.room.ai.demo")}</p>
+      ) : summaryQuery.isLoading ? (
+        <div className="space-y-2" aria-busy="true">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-16" />
+        </div>
+      ) : !summary ? (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">{t("mtg.room.ai.empty")}</p>
+          {rerunButton}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border bg-surface-2 p-3">
+            <div className="mb-1.5 text-xs font-semibold text-foreground">
+              {summary.status === "partial" ? t("mtg.room.ai.partial") : t("mtg.room.ai.full")}
+            </div>
+            <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+              {summary.summary || t("mtg.room.ai.noContent")}
             </p>
-          )
-          : summaryQuery.isLoading
-            ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Đang tải tóm tắt…
-              </div>
-            )
-            : !summary
-              ? (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    Chưa có tóm tắt cho cuộc họp này. Mở tab &quot;Biên bản&quot; để nạp biên bản (phụ
-                    đề trực tiếp, file ghi âm hoặc dán văn bản), rồi bấm nút bên dưới — không cần tải
-                    lại trang.
-                  </p>
-                  {rerunButton}
-                </div>
-              )
-              : (
-                <div className="space-y-4">
-                  <div className="flex justify-end">{rerunButton}</div>
-                  <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
-                    <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-primary">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {summary.status === "partial" ? "Tóm tắt (một phần)" : "Tóm tắt cuộc họp"}
-                    </div>
-                    <p className="whitespace-pre-wrap text-xs text-muted-foreground">
-                      {summary.summary || "Chưa có nội dung tóm tắt."}
-                    </p>
-                    <div className="mt-2 text-[10px] text-muted-foreground">
-                      {summary.segmentCount} đoạn biên bản ·{" "}
-                      {new Date(summary.generatedAt).toLocaleString("vi-VN")}
-                    </div>
-                  </div>
-                  {summary.actionItems.length > 0 && (
-                    <div>
-                      <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                        Action items
+            <div className="mt-2 text-[11px] text-muted-foreground">
+              {fmt(t("mtg.room.ai.meta"), {
+                n: summary.segmentCount,
+                date: new Date(summary.generatedAt).toLocaleString(localeTag(lang)),
+              })}
+            </div>
+          </div>
+          {summary.actionItems.length > 0 && (
+            <div>
+              <h4 className="mb-2 text-xs font-semibold text-foreground">
+                {t("mtg.room.ai.actions")}
+              </h4>
+              <ul className="space-y-2 text-xs">
+                {summary.actionItems.map((a, i) => (
+                  <li key={i} className="rounded-md bg-surface-2 p-2">
+                    <div className="text-foreground">{a.title}</div>
+                    {(a.owner || a.dueHint) && (
+                      <div className="text-[11px] text-muted-foreground">
+                        {[a.owner, a.dueHint].filter(Boolean).join(" · ")}
                       </div>
-                      <ul className="space-y-2 text-xs">
-                        {summary.actionItems.map((a, i) => (
-                          <li key={i} className="rounded-md bg-surface-2 p-2">
-                            <div className="text-foreground">{a.title}</div>
-                            {(a.owner || a.dueHint) && (
-                              <div className="text-[10px] text-muted-foreground">
-                                {[a.owner, a.dueHint].filter(Boolean).join(" · ")}
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {rerunButton}
+        </div>
+      )}
     </div>
   );
 }
 
-function ChatPanel() {
-  const [msg, setMsg] = useState("");
+function ChatPanel({ inRoom }: { inRoom: boolean }) {
+  const { t } = useI18n();
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-        {[
-          { who: "Minh Anh", text: "Mọi người đã sẵn sàng chưa?", time: "10:00" },
-          { who: "Tuấn Nam", text: "Sẵn sàng nhé", time: "10:01" },
-        ].map((m, i) => (
-          <div key={i} className="text-xs">
-            <span className="font-medium">{m.who}</span>{" "}
-            <span className="text-[10px] text-muted-foreground">{m.time}</span>
-            <div className="text-muted-foreground">{m.text}</div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-2">
-        <input
-          value={msg}
-          onChange={(e) => setMsg(e.target.value)}
-          placeholder="Nhập tin nhắn…"
-          className="flex-1 bg-transparent text-xs focus:outline-none"
-        />
-        <button onClick={() => notifyComingSoon()} className="rounded p-1 hover:bg-surface-3">
-          <Send className="h-3.5 w-3.5" />
-        </button>
-      </div>
+    <div className="flex flex-col items-center gap-2 py-8 text-center">
+      <MessageSquare className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
+      <p className="text-sm font-medium text-foreground">{t("mtg.room.chat.title")}</p>
+      <p className="max-w-[16rem] text-xs text-muted-foreground">
+        {inRoom ? t("mtg.room.chat.inRoom") : t("mtg.room.chat.preJoin")}
+      </p>
     </div>
   );
 }

@@ -74,7 +74,8 @@ function SwipeableMain({
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!enabled || isAnimating || e.button !== 0) return;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    // Không capture ngay khi chạm: capture ở đây làm sự kiện click của nút bên trong bị chuyển
+    // sang <main>, khiến mọi thao tác chạm vào danh sách/nút trong tab không có tác dụng.
     setStart({ x: e.clientX, y: e.clientY, pointerId: e.pointerId });
     setOffset(0);
     setIsAnimating(false);
@@ -87,6 +88,15 @@ function SwipeableMain({
     const dy = e.clientY - start.y;
 
     if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 8) {
+      if (directionRef.current === null) {
+        // Chỉ capture khi đã chắc là vuốt ngang: vẫn nhận pointerup dù ngón tay ra khỏi vùng,
+        // và click sau khi vuốt không rơi nhầm vào nút bên dưới.
+        try {
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        } catch {
+          // pointer có thể đã kết thúc
+        }
+      }
       directionRef.current = dx > 0 ? -1 : 1;
       setOffset(dx);
     }

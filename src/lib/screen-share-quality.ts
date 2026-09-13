@@ -72,8 +72,11 @@ export function upgrade(key: Exclude<ShareQualityKey, "auto">): Exclude<ShareQua
 /** Đoán chất lượng khởi điểm từ thông tin mạng của trình duyệt. */
 export function detectPreset(): ShareQualityPreset {
   if (typeof navigator === "undefined") return SHARE_QUALITY_PRESETS.balanced;
-  const conn = (navigator as unknown as { connection?: { effectiveType?: string; downlink?: number; saveData?: boolean } })
-    .connection;
+  const conn = (
+    navigator as unknown as {
+      connection?: { effectiveType?: string; downlink?: number; saveData?: boolean };
+    }
+  ).connection;
   if (!conn) return SHARE_QUALITY_PRESETS.balanced;
   if (conn.saveData) return SHARE_QUALITY_PRESETS.text;
   const et = conn.effectiveType ?? "";
@@ -119,7 +122,10 @@ export function readTrackSurface(track: MediaStreamTrack | undefined): ShareSour
 }
 
 /** Áp cấu hình mới cho track màn hình đang chạy (không cần chọn lại màn hình). */
-export async function applyPresetToTrack(track: MediaStreamTrack | undefined, p: ShareQualityPreset) {
+export async function applyPresetToTrack(
+  track: MediaStreamTrack | undefined,
+  p: ShareQualityPreset,
+) {
   if (!track) return;
   try {
     (track as MediaStreamTrack & { contentHint: string }).contentHint = p.contentHint;
@@ -135,30 +141,50 @@ export async function applyPresetToTrack(track: MediaStreamTrack | undefined, p:
 
 export const SHARE_QUALITY_STORAGE_KEY = "uniwork.meeting.shareQuality";
 
-/** Diễn giải lỗi getDisplayMedia thành thông báo + hướng dẫn khắc phục cho người dùng. */
-export function describeDisplayMediaError(e: unknown): { title: string; hint: string; cancelled: boolean } {
+export type DisplayMediaErrorCode =
+  | "denied"
+  | "cancelled"
+  | "notFound"
+  | "notReadable"
+  | "unsupported"
+  | "unknown";
+
+/**
+ * Diễn giải lỗi getDisplayMedia thành thông báo + hướng dẫn khắc phục cho người dùng.
+ * `code` ổn định để UI tra chuỗi dịch; `title`/`hint` là bản tiếng Việt mặc định.
+ */
+export function describeDisplayMediaError(e: unknown): {
+  code: DisplayMediaErrorCode;
+  title: string;
+  hint: string;
+  cancelled: boolean;
+} {
   const name = e instanceof DOMException || e instanceof Error ? e.name : "Error";
   switch (name) {
     case "NotAllowedError":
       return {
+        code: "denied",
         title: "Bạn đã từ chối quyền chia sẻ màn hình",
-        hint: "Bấm biểu tượng ổ khóa trên thanh địa chỉ → cho phép \"Chia sẻ màn hình\", hoặc bấm lại nút và chọn một cửa sổ/tab trong hộp thoại.",
+        hint: 'Bấm biểu tượng ổ khóa trên thanh địa chỉ → cho phép "Chia sẻ màn hình", hoặc bấm lại nút và chọn một cửa sổ/tab trong hộp thoại.',
         cancelled: false,
       };
     case "AbortError":
       return {
+        code: "cancelled",
         title: "Đã hủy chia sẻ màn hình",
         hint: "Bấm lại nút chia sẻ và chọn màn hình, cửa sổ hoặc tab muốn hiển thị.",
         cancelled: true,
       };
     case "NotFoundError":
       return {
+        code: "notFound",
         title: "Không tìm thấy nguồn để chia sẻ",
         hint: "Hãy mở sẵn cửa sổ hoặc tab cần chia sẻ rồi thử lại.",
         cancelled: false,
       };
     case "NotReadableError":
       return {
+        code: "notReadable",
         title: "Không đọc được nội dung màn hình",
         hint: "Một ứng dụng khác có thể đang chiếm quyền ghi màn hình. Đóng ứng dụng đó rồi thử lại.",
         cancelled: false,
@@ -166,12 +192,14 @@ export function describeDisplayMediaError(e: unknown): { title: string; hint: st
     case "NotSupportedError":
     case "TypeError":
       return {
+        code: "unsupported",
         title: "Thiết bị hoặc trình duyệt không hỗ trợ chia sẻ màn hình",
         hint: "Trên iOS/Android, chia sẻ màn hình chưa được hỗ trợ. Hãy dùng Chrome, Edge hoặc Safari trên máy tính.",
         cancelled: false,
       };
     default:
       return {
+        code: "unknown",
         title: "Không chia sẻ được màn hình",
         hint: "Kiểm tra quyền chia sẻ màn hình của trình duyệt (macOS: Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Ghi màn hình) rồi thử lại.",
         cancelled: false,

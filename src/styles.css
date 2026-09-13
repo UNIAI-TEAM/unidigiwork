@@ -29,9 +29,12 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
+  /* Alias lịch sử: nhiều màn dùng `bg-bg` — trỏ về cùng token nền. */
+  --color-bg: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-card: var(--card);
@@ -84,6 +87,7 @@
   --background: oklch(0.985 0.004 260);
   --surface: oklch(0.97 0.005 260);
   --surface-2: oklch(0.95 0.006 260);
+  --surface-3: oklch(0.925 0.008 260);
   --foreground: oklch(0.24 0.018 260);
   --card: oklch(0.978 0.004 260);
   --card-foreground: oklch(0.24 0.018 260);
@@ -135,6 +139,7 @@
   --background: oklch(0.175 0.014 260);
   --surface: oklch(0.205 0.014 260);
   --surface-2: oklch(0.235 0.014 260);
+  --surface-3: oklch(0.27 0.014 260);
   --foreground: oklch(0.94 0.006 260);
   --card: oklch(0.205 0.014 260);
   --card-foreground: oklch(0.94 0.006 260);
@@ -490,6 +495,7 @@
   --background: oklch(1 0 0);
   --surface: oklch(0.985 0.003 260);
   --surface-2: oklch(0.965 0.004 260);
+  --surface-3: oklch(0.935 0.006 260);
   --foreground: oklch(0.14 0.02 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.14 0.02 260);
@@ -515,6 +521,7 @@
   --background: oklch(0.12 0.01 260);
   --surface: oklch(0.16 0.012 260);
   --surface-2: oklch(0.21 0.012 260);
+  --surface-3: oklch(0.26 0.012 260);
   --foreground: oklch(0.99 0 0);
   --card: oklch(0.16 0.012 260);
   --card-foreground: oklch(0.99 0 0);
@@ -532,6 +539,25 @@
   --ring: oklch(0.92 0.05 285 / 90%);
   --sidebar-foreground: oklch(0.99 0 0);
   --sidebar-border: oklch(0.99 0 0 / 35%);
+}
+
+/* ---------------------------------------------------------------------------
+ * Giảm chuyển động (prefers-reduced-motion): tắt các hiệu ứng lặp mang tính
+ * trang trí (pulse/ping/bounce) và rút ngắn transition. Spinner tải vẫn giữ vì
+ * nó truyền tải trạng thái đang xử lý.
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-ping,
+  .animate-bounce {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 :root[data-contrast="high"] *:focus-visible {

@@ -20,17 +20,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n-interpolate";
 
-const RSVP_LABELS: Record<string, string> = {
-  pending: "Chờ phản hồi",
-  accepted: "Tham dự",
-  declined: "Từ chối",
-  tentative: "Có thể",
+const RSVP_KEY: Record<string, Key> = {
+  pending: "mtg.rsvp.pending",
+  accepted: "mtg.rsvp.accepted",
+  declined: "mtg.rsvp.declined",
+  tentative: "mtg.rsvp.tentative",
 };
+const RSVP_ORDER = ["accepted", "tentative", "declined", "pending"] as const;
 
 export function MeetingParticipantsManagerPanel({ meetingId }: { meetingId: string }) {
+  const { t, lang } = useI18n();
+  const locale = localeTag(lang);
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
+  const titleId = `participants-manager-${meetingId}`;
 
   const accessQuery = useQuery({
     queryKey: ["meeting-access", meetingId],
@@ -56,17 +65,25 @@ export function MeetingParticipantsManagerPanel({ meetingId }: { meetingId: stri
         data: { meetingId, email: value, idempotencyKey: crypto.randomUUID() },
       }),
     onSuccess: async (res) => {
-      if (res.status === "invited") toast.success(`Đã mời ${res.email}`);
-      else if (res.status === "already") toast.info("Người này đã có trong danh sách.");
-      else toast.error("Không tìm thấy người dùng với email này.");
-      setEmail("");
+      if (res.status === "invited") {
+        toast.success(fmt(t("mtg.pm.invited"), { email: res.email }));
+        setEmail("");
+      } else if (res.status === "already") {
+        toast.info(t("mtg.pm.already"));
+        setEmail("");
+      } else {
+        // Giữ nguyên email để người dùng sửa lỗi gõ.
+        toast.error(t("mtg.pm.notFound"));
+      }
       await refresh();
     },
     onError: (e: unknown) =>
       toast.error(
-        String((e as Error)?.message ?? "").includes("MEETING_ACCESS_DENIED")
-          ? "Bạn không có quyền mời người tham dự."
-          : "Không mời được. Vui lòng thử lại.",
+        t(
+          String((e as Error)?.message ?? "").includes("MEETING_ACCESS_DENIED")
+            ? "mtg.pm.inviteDenied"
+            : "mtg.pm.inviteError",
+        ),
       ),
   });
 
@@ -76,47 +93,54 @@ export function MeetingParticipantsManagerPanel({ meetingId }: { meetingId: stri
         data: { meetingId, userId, idempotencyKey: crypto.randomUUID() },
       }),
     onSuccess: async () => {
-      toast.success("Đã loại khỏi buổi họp.");
+      toast.success(t("mtg.pm.removed"));
       await refresh();
     },
     onError: (e: unknown) => {
       const msg = String((e as Error)?.message ?? "");
       toast.error(
-        msg.includes("MEETING_LAST_HOST")
-          ? "Không thể loại người chủ trì duy nhất."
-          : msg.includes("MEETING_ACCESS_DENIED")
-            ? "Bạn không có quyền loại người tham dự."
-            : "Không loại được. Vui lòng thử lại.",
+        t(
+          msg.includes("MEETING_LAST_HOST")
+            ? "mtg.pm.lastHost"
+            : msg.includes("MEETING_ACCESS_DENIED")
+              ? "mtg.pm.removeDenied"
+              : "mtg.pm.removeError",
+        ),
       );
     },
   });
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-surface text-left">
+    <section
+      aria-labelledby={titleId}
+      className="overflow-hidden rounded-xl border border-border bg-surface text-left"
+    >
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <div>
-          <h3 className="flex items-center gap-2 text-sm font-semibold">
-            <Users className="h-4 w-4" /> Quản lý người tham dự
-          </h3>
+        <div className="min-w-0">
+          <h2 id={titleId} className="flex items-center gap-2 text-sm font-semibold">
+            <Users className="h-4 w-4" aria-hidden="true" /> {t("mtg.pm.title")}
+          </h2>
           <p className="text-xs text-muted-foreground">
-            {canManage
-              ? "Bạn có quyền mời thêm và loại bỏ người tham dự."
-              : "Bạn chỉ có quyền xem danh sách người tham dự."}
+            {accessQuery.isLoading
+              ? t("mtg.loading")
+              : canManage
+                ? t("mtg.pm.canManage")
+                : t("mtg.pm.viewOnly")}
           </p>
         </div>
-        <div className="flex flex-wrap gap-1.5 text-[11px]">
-          {(["accepted", "tentative", "declined", "pending"] as const).map((v) => (
-            <span
+        <ul className="flex flex-wrap gap-1.5 text-[11px]" aria-label={t("mtg.pm.rsvpSummary")}>
+          {RSVP_ORDER.map((v) => (
+            <li
               key={v}
               className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-muted-foreground"
             >
-              {RSVP_LABELS[v]}:{" "}
-              <span className="font-medium text-foreground">
+              {t(RSVP_KEY[v]!)}:{" "}
+              <span className="font-medium tabular-nums text-foreground">
                 {participants.filter((p) => p.rsvp === v).length}
               </span>
-            </span>
+            </li>
           ))}
-        </div>
+        </ul>
       </header>
 
       {canManage ? (
@@ -125,111 +149,138 @@ export function MeetingParticipantsManagerPanel({ meetingId }: { meetingId: stri
           onSubmit={(e) => {
             e.preventDefault();
             const value = email.trim();
-            if (!value) return;
+            if (!value || inviteMutation.isPending) return;
             inviteMutation.mutate(value);
           }}
         >
-          <div className="relative min-w-[220px] flex-1">
-            <Mail className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
+          <div className="relative min-w-0 flex-1 basis-56">
+            <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
               type="email"
+              required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email người cần mời"
-              className="w-full rounded-md border border-border bg-surface py-2 pl-8 pr-3 text-xs outline-none focus:border-primary"
+              placeholder={t("mtg.pm.emailLabel")}
+              aria-label={t("mtg.pm.emailLabel")}
+              className="bg-surface pl-8"
             />
           </div>
-          <button
-            type="submit"
-            disabled={inviteMutation.isPending || email.trim().length === 0}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-          >
-            {inviteMutation.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <UserPlus className="h-3.5 w-3.5" />
-            )}
-            Mời tham dự
-          </button>
+          <Button type="submit" disabled={inviteMutation.isPending || email.trim().length === 0}>
+            {inviteMutation.isPending ? <Loader2 className="animate-spin" /> : <UserPlus />}
+            {t("mtg.pm.invite")}
+          </Button>
         </form>
-      ) : (
-        <p className="flex items-center gap-1.5 border-b border-border bg-surface-2 px-4 py-2.5 text-[11px] text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5" /> Chỉ chủ trì hoặc quản trị tổ chức mới được mời và
-          loại bỏ người tham dự.
+      ) : accessQuery.isLoading ? null : (
+        <p className="flex items-center gap-1.5 border-b border-border bg-surface-2 px-4 py-2.5 text-xs text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {t("mtg.pm.onlyHost")}
         </p>
       )}
 
       {participantsQuery.isLoading ? (
-        <p className="px-4 py-4 text-xs text-muted-foreground">Đang tải danh sách…</p>
+        <div className="space-y-2 px-4 py-4" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-9 rounded-md" />
+          ))}
+        </div>
+      ) : participantsQuery.isError ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-4">
+          <p className="text-xs text-foreground">{t("mtg.pm.loadError")}</p>
+          <Button variant="outline" size="sm" onClick={() => void participantsQuery.refetch()}>
+            {t("mtg.retry")}
+          </Button>
+        </div>
       ) : participants.length === 0 ? (
-        <p className="px-4 py-4 text-xs text-muted-foreground">Chưa có người tham dự nào.</p>
+        <p className="px-4 py-4 text-xs text-muted-foreground">{t("mtg.pm.empty")}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-surface-2 text-muted-foreground">
               <tr>
-                <th className="px-4 py-2 font-medium">Người tham dự</th>
-                <th className="px-4 py-2 font-medium">Vai trò</th>
-                <th className="px-4 py-2 font-medium">RSVP</th>
-                <th className="px-4 py-2 font-medium">Được mời lúc</th>
-                {canManage && <th className="px-4 py-2 text-right font-medium">Thao tác</th>}
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("mtg.pm.col.person")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("mtg.pm.col.role")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("mtg.pm.col.rsvp")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("mtg.pm.col.invited")}
+                </th>
+                {canManage && (
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                    {t("mtg.pm.col.actions")}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {participants.map((p) => (
-                <tr key={p.userId} className="border-t border-border">
-                  <td className="px-4 py-2">
-                    <div className="font-medium text-foreground">
-                      {p.name ?? p.email ?? "Thành viên"}
-                    </div>
-                    {p.email && <div className="text-[11px] text-muted-foreground">{p.email}</div>}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {p.role === "host" || p.role === "organizer" ? "Chủ trì" : "Tham dự"}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {RSVP_LABELS[p.rsvp] ?? p.rsvp}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {p.invitedAt ? new Date(p.invitedAt).toLocaleString("vi-VN") : "—"}
-                  </td>
-                  {canManage && (
-                    <td className="px-4 py-2 text-right">
-                      {p.userId === myUserId ? (
-                        <span className="text-[11px] text-muted-foreground">Bạn</span>
-                      ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <button
-                              type="button"
-                              disabled={removeMutation.isPending}
-                              title="Loại khỏi buổi họp"
-                              className="rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Loại khỏi buổi họp?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {p.name ?? p.email} sẽ không còn trong danh sách tham dự và mất
-                                quyền vào phòng họp này.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Hủy</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => removeMutation.mutate(p.userId)}>
-                                Loại bỏ
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+              {participants.map((p) => {
+                const name = p.name ?? p.email ?? t("mtg.room.member");
+                return (
+                  <tr key={p.userId} className="border-t border-border">
+                    <td className="px-4 py-2">
+                      <div className="font-medium text-foreground">{name}</div>
+                      {p.email && (
+                        <div className="text-[11px] text-muted-foreground">{p.email}</div>
                       )}
                     </td>
-                  )}
-                </tr>
-              ))}
+                    <td className="px-4 py-2 text-muted-foreground">
+                      {p.role === "host" || p.role === "organizer"
+                        ? t("mtg.room.host")
+                        : t("mtg.pm.role.attendee")}
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground">
+                      {RSVP_KEY[p.rsvp] ? t(RSVP_KEY[p.rsvp]!) : p.rsvp}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2 text-muted-foreground">
+                      {p.invitedAt ? new Date(p.invitedAt).toLocaleString(locale) : "—"}
+                    </td>
+                    {canManage && (
+                      <td className="px-4 py-2 text-right">
+                        {p.userId === myUserId ? (
+                          <span className="text-[11px] text-muted-foreground">
+                            {t("mtg.room.you")}
+                          </span>
+                        ) : (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                type="button"
+                                disabled={removeMutation.isPending}
+                                aria-label={fmt(t("mtg.pm.remove.label"), { name })}
+                                title={fmt(t("mtg.pm.remove.label"), { name })}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>{t("mtg.pm.remove.title")}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {fmt(t("mtg.pm.remove.desc"), { name })}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>{t("mtg.cancelAction")}</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => removeMutation.mutate(p.userId)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  {t("mtg.pm.remove.confirm")}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

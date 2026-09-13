@@ -5,11 +5,20 @@ import { km } from "./i18n-locales/km";
 import { lo } from "./i18n-locales/lo";
 import { id } from "./i18n-locales/id";
 import { ms } from "./i18n-locales/ms";
+import { meetingsListEn, meetingsListVi } from "./i18n-locales/meetings-list";
+import { meetingsHomeEn, meetingsHomeVi } from "./i18n-locales/meetings-home";
+import { meetingsRoomEn, meetingsRoomVi } from "./i18n-locales/meetings-room";
+import { meetingsPanelsEn, meetingsPanelsVi } from "./i18n-locales/meetings-panels";
 
 export type Lang = "vi" | "en" | "my" | "km" | "lo" | "id" | "ms";
 
 const dict = {
   vi: {
+    // module Họp (tách file riêng cho dễ bảo trì)
+    ...meetingsListVi,
+    ...meetingsHomeVi,
+    ...meetingsRoomVi,
+    ...meetingsPanelsVi,
     // nav
     "nav.dashboard": "Bảng điều khiển",
     "nav.chat": "Trò chuyện",
@@ -1679,6 +1688,10 @@ const dict = {
     "em.157": "Trân trọng,",
   },
   en: {
+    ...meetingsListEn,
+    ...meetingsHomeEn,
+    ...meetingsRoomEn,
+    ...meetingsPanelsEn,
     "nav.dashboard": "Dashboard",
     "nav.chat": "Chat",
     "nav.meetings": "Meetings",

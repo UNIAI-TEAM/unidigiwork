@@ -1,25 +1,28 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { isToday, isTomorrow } from "date-fns";
+import { Search, X, Video } from "lucide-react";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { supabase } from "@/integrations/supabase/client";
+import { listMeetings } from "@/lib/api/meetings.functions";
+import { localeTag, useI18n } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n-interpolate";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { MobileFAB } from "@/components/mobile/mobile-fab";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, X, Video } from "lucide-react";
-import { format, isToday, isTomorrow } from "date-fns";
-import { vi } from "date-fns/locale";
-import type { Database } from "@/integrations/supabase/types";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
+const STATUS_KEY = {
+  scheduled: "mtg.status.scheduled",
+  live: "mtg.status.live",
+  ended: "mtg.status.ended",
+  canceled: "mtg.status.canceled",
+} as const;
 
-const statusLabel: Record<string, string> = {
-  scheduled: "Sắp diễn ra",
-  live: "Đang diễn ra",
-  ended: "Đã kết thúc",
-  canceled: "Đã hủy",
-};
+type Filter = "all" | "scheduled" | "live" | "ended";
+const FILTERS: Filter[] = ["all", "scheduled", "live", "ended"];
 
 export const Route = createFileRoute("/_authenticated/m/meet")({
   head: () => ({
@@ -35,70 +38,118 @@ export const Route = createFileRoute("/_authenticated/m/meet")({
 
 function MobileMeetPage() {
   const navigate = useNavigate();
-  const { workspaceId } = useActiveWorkspace();
+  const { t, lang } = useI18n();
+  const locale = localeTag(lang);
+  const {
+    workspaceId: selectedWorkspaceId,
+    workspaces,
+    ready,
+    isLoading: workspacesLoading,
+  } = useActiveWorkspace();
+  // "Tất cả workspace" không có truy vấn gộp — dùng workspace đầu tiên như trang Họp trên desktop.
+  const workspaceId = selectedWorkspaceId ?? workspaces[0]?.id ?? null;
+  const resolvingWorkspace = !ready || (workspacesLoading && !workspaceId);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<Filter>("all");
 
-  const { data: meetings } = useSuspenseQuery({
+  // Đọc qua server function (RLS theo JWT người dùng), không gọi thẳng bảng từ client.
+  const meetingsQuery = useQuery({
     queryKey: ["mobile-meetings", workspaceId],
-    queryFn: async () => {
-      if (!workspaceId) return [];
-      const { data } = await supabase
-        .from("meetings")
-        .select("id, title, start_at, end_at, status, location")
-        .eq("workspace_id", workspaceId)
-        .is("deleted_at", null)
-        .order("start_at", { ascending: true });
-      return data ?? [];
-    },
+    enabled: !!workspaceId,
+    queryFn: () =>
+      listMeetings({ data: { workspaceId: workspaceId as string, sort: "asc", limit: 200 } }),
   });
 
-  const filtered = (meetings ?? []).filter((m) => {
-    const matchesSearch = m.title.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || m.status === filter;
+  const term = search.trim().toLowerCase();
+  const filtered = (meetingsQuery.data ?? []).filter((m) => {
+    const matchesSearch = !term || m.title.toLowerCase().includes(term);
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "scheduled"
+        ? m.status === "scheduled" && new Date(m.start_at).getTime() > Date.now()
+        : m.status === filter);
     return matchesSearch && matchesFilter;
   });
+
+  const time = (d: Date) => d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const formatRange = (startIso: string, endIso: string) => {
+    const s = new Date(startIso);
+    const e = new Date(endIso);
+    if (isToday(s)) return fmt(t("mtg.m.today"), { start: time(s), end: time(e) });
+    if (isTomorrow(s)) return fmt(t("mtg.m.tomorrow"), { start: time(s) });
+    return `${s.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })} ${time(s)} – ${time(e)}`;
+  };
 
   return (
     <div className="flex min-h-full flex-col gap-3 p-4 pb-24">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm cuộc họp..."
-          className="pl-9 pr-9"
+          placeholder={t("mtg.m.search")}
+          aria-label={t("mtg.m.search")}
+          className="h-11 pl-9 pr-11"
         />
         {search && (
           <button
+            type="button"
             onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            aria-label="Xóa"
+            className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+            aria-label={t("mtg.m.clearSearch")}
           >
             <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {["all", "scheduled", "live", "ended"].map((s) => (
+      <div
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+        role="group"
+        aria-label={t("mtg.m.filterLabel")}
+      >
+        {FILTERS.map((s) => (
           <button
             key={s}
+            type="button"
             onClick={() => setFilter(s)}
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+            aria-pressed={filter === s}
+            className={`h-9 shrink-0 rounded-full px-3.5 text-xs font-medium transition-colors ${
               filter === s
                 ? "bg-primary text-primary-foreground"
-                : "border border-border bg-surface text-muted-foreground"
+                : "border border-border bg-surface text-muted-foreground hover:text-foreground"
             }`}
           >
-            {s === "all" ? "Tất cả" : statusLabel[s]}
+            {s === "all" ? t("mtg.filter.all") : t(STATUS_KEY[s])}
           </button>
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {!resolvingWorkspace && !workspaceId ? (
         <p className="rounded-xl border border-border bg-surface p-4 text-sm text-muted-foreground">
-          {search || filter !== "all" ? "Không tìm thấy cuộc họp." : "Chưa có cuộc họp nào."}
+          {t("mtg.m.noWorkspace")}
+        </p>
+      ) : resolvingWorkspace || meetingsQuery.isLoading ? (
+        <div className="flex flex-col gap-2" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-[68px] rounded-xl" />
+          ))}
+        </div>
+      ) : meetingsQuery.isError ? (
+        <div className="rounded-xl border border-border bg-surface p-4 text-sm">
+          <p className="text-foreground">{t("mtg.loadError")}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => void meetingsQuery.refetch()}
+          >
+            {t("mtg.retry")}
+          </Button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="rounded-xl border border-border bg-surface p-4 text-sm text-muted-foreground">
+          {term || filter !== "all" ? t("mtg.m.noMatch") : t("mtg.m.empty")}
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -106,35 +157,36 @@ function MobileMeetPage() {
             <MobileListItem
               key={m.id}
               title={m.title}
-              subtitle={formatDateRange(m.start_at, m.end_at)}
-              meta={m.location ?? "Họp trực tuyến"}
+              subtitle={formatRange(m.start_at, m.end_at)}
+              meta={m.location ?? t("mtg.m.online")}
               icon={
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Video className="h-4 w-4" />
                 </span>
               }
               badge={
                 m.status === "live" ? (
-                  <Badge variant="default">Đang diễn ra</Badge>
+                  <Badge variant="destructive">{t("mtg.status.live")}</Badge>
                 ) : m.status === "scheduled" ? (
-                  <Badge variant="outline">{statusLabel[m.status]}</Badge>
+                  // Đã lên lịch nhưng quá giờ: không được hiện là "Sắp diễn ra" (khớp trang Họp desktop).
+                  <Badge variant="outline">
+                    {t(
+                      new Date(m.end_at).getTime() < Date.now()
+                        ? "mtg.chip.overdue"
+                        : new Date(m.start_at).getTime() <= Date.now()
+                          ? "mtg.chip.late"
+                          : "mtg.status.scheduled",
+                    )}
+                  </Badge>
                 ) : null
               }
-              onClick={() => navigate({ to: `/meetings` as any })}
+              onClick={() => void navigate({ to: "/meeting/$id", params: { id: m.id } })}
             />
           ))}
         </div>
       )}
 
-      <MobileFAB label="Tạo cuộc họp" to="/meetings" />
+      <MobileFAB label={t("mtg.m.create")} onClick={() => void navigate({ to: "/meeting" })} />
     </div>
   );
-}
-
-function formatDateRange(start: string, end: string) {
-  const s = new Date(start);
-  const e = new Date(end);
-  if (isToday(s)) return `Hôm nay, ${format(s, "HH:mm", { locale: vi })} - ${format(e, "HH:mm", { locale: vi })}`;
-  if (isTomorrow(s)) return `Ngày mai, ${format(s, "HH:mm", { locale: vi })}`;
-  return `${format(s, "dd/MM HH:mm", { locale: vi })} - ${format(e, "HH:mm", { locale: vi })}`;
 }

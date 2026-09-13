@@ -1,10 +1,32 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import type { LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  ArrowUpRight,
+  Calendar,
+  CalendarX2,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  Clock,
+  Copy,
+  Link2,
+  Loader2,
+  Mail,
+  MailQuestion,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Send,
+  Users,
+  Video as VideoIcon,
+  X,
+  XCircle,
+} from "lucide-react";
 import {
   createInstantMeeting,
   createMeetingInviteLink,
@@ -31,75 +53,43 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  ListChecks,
-  Users,
-  BarChart3,
-  Plus,
-  Calendar,
-  MoreHorizontal,
-  MicOff,
-  VideoIcon,
-  Monitor,
-  Hand,
-  MessageCircle,
-  Sparkles,
-  PhoneOff,
-  Hash,
-  Circle,
-  Video,
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Link2,
-  PlayCircle,
-  FileText,
-  Download,
-  Star,
-  ArrowUpRight,
-  ArrowUpDown,
-  CheckCircle2,
-  AlertCircle,
-  Send,
-  Paperclip,
-  Smile,
-  Image as ImageIcon,
-  FileSpreadsheet,
-  FileArchive,
-  UserPlus,
-  Crown,
-  Pin,
-  MoreVertical,
-  ShieldCheck,
-  Eye,
-  XCircle,
-  MailQuestion,
-  Mail,
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useMeetingsRealtime } from "@/hooks/use-meetings-realtime";
+import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n-interpolate";
 
 export const Route = createFileRoute("/meeting")({
-  validateSearch: (search: {
-    ws?: string;
-    q?: string;
-    focus?: "rooms";
-    state?: "live" | "upcoming" | "ended";
-    page?: number;
-    from?: string;
-    to?: string;
-    sort?: "asc" | "desc";
-  } & Partial<Record<string, unknown>>): {
+  validateSearch: (
+    search: {
+      ws?: string;
+      q?: string;
+      focus?: "rooms";
+      state?: "live" | "upcoming" | "ended";
+      page?: number;
+      from?: string;
+      to?: string;
+      sort?: "asc" | "desc";
+    } & Partial<Record<string, unknown>>,
+  ): {
     ws?: string;
     q?: string;
     focus?: "rooms";
@@ -113,14 +103,13 @@ export const Route = createFileRoute("/meeting")({
     q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
     focus: search["focus"] === "rooms" ? ("rooms" as const) : undefined,
     state:
-      search["state"] === "live" ||
-      search["state"] === "upcoming" ||
-      search["state"] === "ended"
+      search["state"] === "live" || search["state"] === "upcoming" || search["state"] === "ended"
         ? (search["state"] as "live" | "upcoming" | "ended")
         : undefined,
-    page: typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
-      ? Number(search["page"])
-      : 1,
+    page:
+      typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
+        ? Number(search["page"])
+        : 1,
     from:
       typeof search["from"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["from"] as string)
         ? (search["from"] as string)
@@ -143,86 +132,125 @@ export const Route = createFileRoute("/meeting")({
   component: MeetingPage,
 });
 
-type RoomChipState = "live" | "upcoming" | "ended";
+type Translate = (k: Key) => string;
+type RoomFilterState = "all" | "live" | "upcoming" | "ended";
+type ListRoom = { id: string; title: string; status: string; start_at: string; end_at: string };
+
+const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
+const ROOM_PAGE_SIZE = 20;
+
+const STATE_FILTERS: { key: RoomFilterState; label: Key }[] = [
+  { key: "all", label: "mtg.filter.all" },
+  { key: "upcoming", label: "mtg.status.scheduled" },
+  { key: "live", label: "mtg.status.live" },
+  { key: "ended", label: "mtg.status.ended" },
+];
+
+// "late" / "overdue": cuộc họp vẫn ở trạng thái đã lên lịch nhưng đã quá giờ bắt đầu / kết thúc
+// mà chưa ai bắt đầu — không được hiển thị là "Đang diễn ra".
+type RoomChipState = "live" | "upcoming" | "late" | "overdue" | "ended" | "canceled";
 
 function resolveRoomState(status: string, startAt?: string, endAt?: string): RoomChipState {
   if (status === "live") return "live";
-  if (status === "ended" || status === "canceled") return "ended";
+  if (status === "canceled") return "canceled";
+  if (status === "ended") return "ended";
   const now = Date.now();
-  if (endAt && new Date(endAt).getTime() < now) return "ended";
-  if (startAt && new Date(startAt).getTime() <= now) return "live";
+  if (endAt && new Date(endAt).getTime() < now) return "overdue";
+  if (startAt && new Date(startAt).getTime() <= now) return "late";
   return "upcoming";
 }
 
-const ROOM_CHIP: Record<RoomChipState, { label: string; className: string }> = {
-  live: { label: "Đang diễn ra", className: "bg-destructive/15 text-destructive" },
-  upcoming: { label: "Sắp diễn ra", className: "bg-primary/10 text-primary" },
-  ended: { label: "Đã kết thúc", className: "bg-surface-2 text-muted-foreground" },
+const ROOM_CHIP: Record<RoomChipState, { label: Key; className: string; dot: string }> = {
+  live: {
+    label: "mtg.status.live",
+    className: "bg-destructive/12 text-destructive",
+    dot: "bg-destructive animate-pulse",
+  },
+  upcoming: {
+    label: "mtg.status.scheduled",
+    className: "bg-primary/10 text-primary",
+    dot: "bg-primary",
+  },
+  late: { label: "mtg.chip.late", className: "bg-warning/15 text-foreground", dot: "bg-warning" },
+  overdue: {
+    label: "mtg.chip.overdue",
+    className: "bg-surface-2 text-muted-foreground",
+    dot: "bg-warning",
+  },
+  ended: {
+    label: "mtg.status.ended",
+    className: "bg-surface-2 text-muted-foreground",
+    dot: "bg-muted-foreground",
+  },
+  canceled: {
+    label: "mtg.status.canceled",
+    className: "bg-destructive/10 text-destructive",
+    dot: "bg-destructive",
+  },
 };
 
-function RoomStatusChip({
-  status,
-  startAt,
-  endAt,
-}: {
-  status: string;
-  startAt?: string;
-  endAt?: string;
-}) {
-  const state = resolveRoomState(status, startAt, endAt);
+function RoomStatusChip({ state }: { state: RoomChipState }) {
+  const { t } = useI18n();
   const chip = ROOM_CHIP[state];
   return (
     <span
-      className={`ml-3 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.className}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.className}`}
     >
-      <span
-        className={`h-1.5 w-1.5 rounded-full bg-current ${state === "live" ? "animate-pulse" : ""}`}
-      />
-      {chip.label}
+      <span className={`h-1.5 w-1.5 rounded-full ${chip.dot}`} aria-hidden="true" />
+      {t(chip.label)}
     </span>
   );
 }
 
-const participants = [
-  { name: "Nguyễn Văn A", seed: "nguyen-van-a-1" },
-  { name: "Trần Thị B", seed: "tran-thi-b" },
-  { name: "Phạm Minh C", seed: "pham-minh-c" },
-  { name: "Lê Hoàng D", seed: "le-hoang-d" },
-  { name: "Nguyễn Hương", seed: "nguyen-huong" },
-  { name: "Đỗ Tuấn Nam", seed: "do-tuan-nam" },
-  { name: "Duy Anh", seed: "duy-anh" },
-  { name: "Quang Minh", seed: "quang-minh" },
-  { name: "Mỹ Linh", seed: "my-linh" },
-  { name: "Bảo Ngọc", seed: "bao-ngoc" },
-];
-
-type Tab = "upcoming" | "live" | "ended" | "recordings" | "rooms";
-
-function formatRange(startAt?: string, endAt?: string) {
-  if (!startAt) return "Chưa đặt thời gian";
+function formatRange(
+  startAt: string | undefined,
+  endAt: string | undefined,
+  locale: string,
+  t: Translate,
+) {
+  if (!startAt) return t("mtg.row.noTime");
   const s = new Date(startAt);
   const e = endAt ? new Date(endAt) : null;
-  const time = s.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-  const date = s.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
-  const mins = e ? Math.max(0, Math.round((e.getTime() - s.getTime()) / 60000)) : null;
-  return `${time} · ${date}${mins ? ` · ${mins}p` : ""}`;
+  const time = s.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const date = s.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" });
+  const mins = e ? Math.max(0, Math.round((e.getTime() - s.getTime()) / 60000)) : 0;
+  return mins ? `${time} · ${date} · ${fmt(t("mtg.dur.min"), { m: mins })}` : `${time} · ${date}`;
+}
+
+function toLocalInput(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function isRangeInvalid(start: string, end: string) {
+  return !!start && !!end && new Date(end).getTime() <= new Date(start).getTime();
+}
+
+/** Chấp nhận cả mã mời lẫn cả đường link có tham số `?invite=`. */
+function extractInviteToken(value: string) {
+  const raw = value.trim();
+  if (!raw) return "";
+  try {
+    return new URL(raw).searchParams.get("invite")?.trim() || raw;
+  } catch {
+    return raw;
+  }
 }
 
 function MeetingPage() {
   const [open, setOpen] = useSidebarState();
-  const [tab, setTab] = useState<Tab>("upcoming");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
+  const { t, lang } = useI18n();
+  const locale = localeTag(lang);
 
   const workspaces = useQuery({
     queryKey: ["my-workspaces"],
     queryFn: () => listMyWorkspaces(),
   });
 
-  // Ghi nhớ bộ lọc phòng gần nhất (workspace + từ khóa + trạng thái + sắp xếp) giữa các lần truy cập.
-  const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
-  type RoomFilterState = "all" | "live" | "upcoming" | "ended";
+  // Ghi nhớ bộ lọc gần nhất (workspace + từ khóa + trạng thái + sắp xếp) giữa các lần truy cập.
   const [restoredFilter, setRestoredFilter] = useState<{
     ws?: string;
     q?: string;
@@ -231,11 +259,22 @@ function MeetingPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (search.ws !== undefined || search.q !== undefined || search.state !== undefined || search.sort !== undefined) return;
+    if (
+      search.ws !== undefined ||
+      search.q !== undefined ||
+      search.state !== undefined ||
+      search.sort !== undefined
+    )
+      return;
     try {
       const raw = window.localStorage.getItem(ROOM_FILTER_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { ws?: string; q?: string; state?: RoomFilterState; sort?: "asc" | "desc" };
+      const saved = JSON.parse(raw) as {
+        ws?: string;
+        q?: string;
+        state?: RoomFilterState;
+        sort?: "asc" | "desc";
+      };
       if (!saved || (!saved.ws && !saved.q && !saved.state && !saved.sort)) return;
       setRestoredFilter(saved);
       void navigate({
@@ -261,8 +300,6 @@ function MeetingPage() {
   const activeWs = search.ws ?? restoredFilter?.ws ?? workspaces.data?.[0]?.id;
   const roomQuery = search.q ?? restoredFilter?.q ?? "";
   const currentPage = search.page ?? 1;
-  const ROOM_PAGE_SIZE = 20;
-
   const roomState: RoomFilterState = search.state ?? restoredFilter?.state ?? "all";
   const sortStartAt: "asc" | "desc" = search.sort ?? "asc";
 
@@ -281,20 +318,6 @@ function MeetingPage() {
       /* storage không khả dụng */
     }
   }, [activeWs, roomQuery, roomState, sortStartAt]);
-
-  const [createOpen, setCreateOpen] = useState(false);
-  const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
-
-  // Lên lịch họp thật
-  const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [schTitle, setSchTitle] = useState("");
-  const [schStart, setSchStart] = useState("");
-  const [schEnd, setSchEnd] = useState("");
-  const [schAgenda, setSchAgenda] = useState("");
-
-  // Tham gia bằng mã mời
-  const [joinOpen, setJoinOpen] = useState(false);
-  const [joinCode, setJoinCode] = useState("");
 
   const setRoomFilter = (next: {
     ws?: string;
@@ -323,6 +346,31 @@ function MeetingPage() {
       },
       replace: true,
     });
+  };
+
+  // Ô tìm kiếm: gõ vào bản nháp, 300ms sau khi ngừng gõ mới ghi vào URL (tránh gọi server mỗi phím).
+  const [queryDraft, setQueryDraft] = useState(roomQuery);
+  const committedQueryRef = useRef(roomQuery);
+  useEffect(() => {
+    if (roomQuery === committedQueryRef.current) return;
+    committedQueryRef.current = roomQuery;
+    setQueryDraft(roomQuery);
+  }, [roomQuery]);
+  useEffect(() => {
+    if (queryDraft === committedQueryRef.current) return;
+    const timer = window.setTimeout(() => {
+      committedQueryRef.current = queryDraft;
+      setRoomFilter({ q: queryDraft, page: 1 });
+    }, 300);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryDraft]);
+
+  const filtersActive = !!roomQuery || roomState !== "all" || rangeActive;
+  const clearFilters = () => {
+    committedQueryRef.current = "";
+    setQueryDraft("");
+    setRoomFilter({ q: "", state: "all", from: "", to: "", page: 1 });
   };
 
   const rooms = useQuery({
@@ -358,8 +406,6 @@ function MeetingPage() {
       }),
   });
 
-  type ListRoom = { id: string; title: string; status: string; start_at: string; end_at: string };
-
   // Khi lọc theo ngày: lọc thêm từ khóa/trạng thái và phân trang phía client.
   const rangeFiltered = useMemo<ListRoom[]>(() => {
     if (!rangeActive) return [];
@@ -375,12 +421,14 @@ function MeetingPage() {
     });
   }, [rangeActive, rangeQuery.data, roomQuery, roomState]);
 
+  const activeListQuery = rangeActive ? rangeQuery : rooms;
   const listItems: ListRoom[] = rangeActive
     ? rangeFiltered.slice((currentPage - 1) * ROOM_PAGE_SIZE, currentPage * ROOM_PAGE_SIZE)
     : ((rooms.data?.items ?? []) as ListRoom[]);
   const listTotal = rangeActive ? rangeFiltered.length : (rooms.data?.total ?? 0);
-  const listLoading = rangeActive ? rangeQuery.isLoading : rooms.isLoading;
-  const listFetching = rangeActive ? rangeQuery.isFetching : rooms.isFetching;
+  const listLoading = activeListQuery.isLoading || (!activeWs && workspaces.isLoading);
+  const listFetching = activeListQuery.isFetching;
+  const listError = activeListQuery.isError;
 
   // Panel "Sắp diễn ra": luôn lấy dữ liệu thật, độc lập với bộ lọc đang chọn.
   useMeetingsRealtime(activeWs ?? null);
@@ -389,7 +437,13 @@ function MeetingPage() {
     enabled: !!activeWs,
     queryFn: () =>
       listMyMeetingRooms({
-        data: { workspaceId: activeWs as string, state: "upcoming", sort: "asc", limit: 3, offset: 0 },
+        data: {
+          workspaceId: activeWs as string,
+          state: "upcoming",
+          sort: "asc",
+          limit: 3,
+          offset: 0,
+        },
       }),
   });
   const upcomingItems = (upcomingPanel.data?.items ?? []) as unknown as ListRoom[];
@@ -401,14 +455,17 @@ function MeetingPage() {
     staleTime: 30_000,
     queryFn: () => getWorkspaceMeetingStats({ data: { workspaceId: activeWs as string } }),
   });
-  const stats = statsQuery.data ?? { today: 0, live: 0, recordings: 0, summaries: 0 };
+  const stats = statsQuery.data;
+  const statValue = (n: number | undefined) => (n === undefined ? "–" : String(n));
 
-  // Phân quyền: chỉ chủ trì / quản trị tổ chức mới được hủy buổi họp.
+  // Phân quyền: chỉ chủ trì / quản trị tổ chức mới được sửa hoặc hủy buổi họp.
+  const idsKey = listItems.map((r) => r.id).join(",");
   const permIds = useMemo(
     () =>
-      Array.from(new Set([...listItems, ...upcomingItems].map((r) => r.id))).sort().slice(0, 100),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [listItems.map((r) => r.id).join(","), upcomingItems.map((r) => r.id).join(",")],
+      Array.from(new Set(idsKey ? idsKey.split(",") : []))
+        .sort()
+        .slice(0, 100),
+    [idsKey],
   );
   const permsQuery = useQuery({
     queryKey: ["meeting-manage-perms", permIds],
@@ -417,8 +474,54 @@ function MeetingPage() {
     queryFn: () => getMeetingManagePermissions({ data: { meetingIds: permIds } }),
   });
   const canManageMeeting = (id: string) => permsQuery.data?.[id] === true;
-  const DENY_HINT =
-    "Bạn không có quyền hủy buổi họp này. Chỉ người chủ trì hoặc quản trị viên tổ chức mới được hủy.";
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
+
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [schTitle, setSchTitle] = useState("");
+  const [schStart, setSchStart] = useState("");
+  const [schEnd, setSchEnd] = useState("");
+  const [schAgenda, setSchAgenda] = useState("");
+  const schRangeInvalid = isRangeInvalid(schStart, schEnd);
+
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const joinToken = extractInviteToken(joinCode);
+
+  const [editRoom, setEditRoom] = useState<ListRoom | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const editRangeInvalid = isRangeInvalid(editStart, editEnd);
+
+  const [cancelRoom, setCancelRoom] = useState<ListRoom | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const reasonLength = cancelReason.trim().length;
+
+  const openSchedule = () => {
+    const start = new Date(Date.now() + 30 * 60000);
+    const end = new Date(start.getTime() + 30 * 60000);
+    setSchStart(toLocalInput(start));
+    setSchEnd(toLocalInput(end));
+    setScheduleOpen(true);
+  };
+
+  const openEdit = (r: ListRoom) => {
+    setEditRoom(r);
+    setEditTitle(r.title);
+    setEditStart(r.start_at ? toLocalInput(new Date(r.start_at)) : "");
+    setEditEnd(r.end_at ? toLocalInput(new Date(r.end_at)) : "");
+  };
+
+  const openCancel = (r: ListRoom) => {
+    setCancelRoom(r);
+    setCancelReason("");
+  };
+  const closeCancel = () => {
+    setCancelRoom(null);
+    setCancelReason("");
+  };
 
   const createRoom = useMutation({
     mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
@@ -434,55 +537,8 @@ function MeetingPage() {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
       setCreated({ id: m.id, title: m.title });
     },
-    onError: () => toast.error("Không tạo được phòng họp. Kiểm tra quyền và hạn mức của tổ chức."),
+    onError: () => toast.error(t("mtg.create.error")),
   });
-
-  // Sửa / hủy phòng họp thật.
-  type RoomItem = { id: string; title: string; status: string; start_at: string; end_at: string };
-  const [editRoom, setEditRoom] = useState<RoomItem | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editStart, setEditStart] = useState("");
-  const [editEnd, setEditEnd] = useState("");
-  const [cancelRoom, setCancelRoom] = useState<RoomItem | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
-  const [cancelStep, setCancelStep] = useState<"edit" | "review">("edit");
-  const [reviewCountdown, setReviewCountdown] = useState(10);
-
-  const openCancel = (r: RoomItem) => {
-    setCancelRoom(r);
-    setCancelReason("");
-    setCancelStep("edit");
-    setReviewCountdown(10);
-  };
-
-  const closeCancel = () => {
-    setCancelRoom(null);
-    setCancelReason("");
-    setCancelStep("edit");
-    setReviewCountdown(10);
-  };
-
-  const startCancelReview = () => {
-    setCancelStep("review");
-    setReviewCountdown(10);
-  };
-
-  useEffect(() => {
-    if (cancelStep !== "review" || cancelRoom === null) return;
-    if (reviewCountdown <= 0) {
-      cancelRoomMutation.mutate();
-      return;
-    }
-    const t = setTimeout(() => setReviewCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cancelStep, reviewCountdown, cancelRoom]);
-
-  const openEdit = (r: RoomItem) => {
-    setEditRoom(r);
-    setEditTitle(r.title);
-    setEditStart(r.start_at ? toLocalInput(new Date(r.start_at)) : "");
-    setEditEnd(r.end_at ? toLocalInput(new Date(r.end_at)) : "");
-  };
 
   const updateRoom = useMutation({
     mutationFn: () =>
@@ -497,10 +553,11 @@ function MeetingPage() {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
       setEditRoom(null);
-      toast.success("Đã cập nhật cuộc họp.");
+      toast.success(t("mtg.edit.success"));
     },
-    onError: () => toast.error("Không cập nhật được cuộc họp. Kiểm tra quyền của bạn."),
+    onError: () => toast.error(t("mtg.edit.error")),
   });
 
   const scheduleMutation = useMutation({
@@ -524,13 +581,20 @@ function MeetingPage() {
       setSchStart("");
       setSchEnd("");
       setSchAgenda("");
-      toast.success("Đã lên lịch cuộc họp.");
+      toast.success(t("mtg.sch.success"));
     },
-    onError: () => toast.error("Không lên lịch được. Kiểm tra quyền và thời gian hợp lệ."),
+    onError: () => toast.error(t("mtg.sch.error")),
   });
+  const canSubmitSchedule =
+    !scheduleMutation.isPending &&
+    !!activeWs &&
+    !!schTitle.trim() &&
+    !!schStart &&
+    !!schEnd &&
+    !schRangeInvalid;
 
   const joinByCode = useMutation({
-    mutationFn: () => redeemMeetingInviteLink({ data: { token: joinCode.trim() } }),
+    mutationFn: () => redeemMeetingInviteLink({ data: { token: joinToken } }),
     onSuccess: (res) => {
       if ((res.status === "joined" || res.status === "already") && res.meetingId) {
         setJoinOpen(false);
@@ -538,16 +602,17 @@ function MeetingPage() {
         void navigate({ to: "/meeting/$id", params: { id: res.meetingId } });
         return;
       }
-      const msg: Record<string, string> = {
-        expired: "Mã mời đã hết hạn.",
-        exhausted: "Mã mời đã hết lượt sử dụng.",
-        revoked: "Mã mời đã bị thu hồi.",
-        invalid: "Mã mời không hợp lệ.",
+      const msg: Record<string, Key> = {
+        expired: "mtg.join.expired",
+        exhausted: "mtg.join.exhausted",
+        revoked: "mtg.join.revoked",
+        invalid: "mtg.join.invalid",
       };
-      toast.error(msg[res.status] ?? "Không tham gia được bằng mã này.");
+      toast.error(t(msg[res.status] ?? "mtg.join.error"));
     },
-    onError: () => toast.error("Không tham gia được. Kiểm tra lại mã mời."),
+    onError: () => toast.error(t("mtg.join.error")),
   });
+  const canSubmitJoin = !joinByCode.isPending && joinToken.length >= 10;
 
   const cancelRoomMutation = useMutation({
     mutationFn: () =>
@@ -555,29 +620,48 @@ function MeetingPage() {
         data: {
           idempotencyKey: crypto.randomUUID(),
           meetingId: cancelRoom!.id,
-          ...(cancelReason.trim() ? { reason: cancelReason.trim() } : {}),
+          reason: cancelReason.trim(),
         },
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
       closeCancel();
-      toast.success("Đã hủy cuộc họp.");
+      toast.success(t("mtg.cancel.success"));
     },
     onError: (err: unknown) => {
       const msg = String((err as { message?: string })?.message ?? "");
       if (msg.includes("42501") || /denied|permission|FORBIDDEN/i.test(msg)) {
-        toast.error(DENY_HINT);
+        toast.error(t("mtg.perm.denyManage"));
       } else if (/MEETING_NOT_FOUND/.test(msg)) {
-        toast.error("Buổi họp không tồn tại hoặc đã bị hủy trước đó.");
+        toast.error(t("mtg.cancel.notFound"));
       } else {
-        toast.error("Không hủy được cuộc họp. Vui lòng thử lại.");
+        toast.error(t("mtg.cancel.error"));
       }
     },
   });
+  const canConfirmCancel =
+    !cancelRoomMutation.isPending &&
+    reasonLength >= 5 &&
+    !!cancelRoom &&
+    canManageMeeting(cancelRoom.id);
+
+  const emptyMessage = rangeActive
+    ? t("mtg.empty.range")
+    : roomQuery
+      ? t("mtg.empty.query")
+      : roomState === "live"
+        ? t("mtg.empty.live")
+        : roomState === "upcoming"
+          ? t("mtg.empty.upcoming")
+          : roomState === "ended"
+            ? t("mtg.empty.ended")
+            : t("mtg.empty.none");
+
+  const workspaceCount = workspaces.data?.length ?? 0;
 
   return (
-    <TooltipProvider>
-    <div className="flex min-h-screen bg-bg text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar
@@ -586,580 +670,279 @@ function MeetingPage() {
           onNew={() => setCreateOpen(true)}
         />
 
-        {tab === "rooms" ? null : null}
-
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          {/* Main column */}
-          <section className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-            {/* Header */}
-            <div className="border-b border-border px-6 py-5">
+          <section className="flex min-w-0 flex-1 flex-col">
+            <div className="border-b border-border px-4 py-5 sm:px-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h1 className="text-2xl font-bold">Họp</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Lên lịch, tham gia và xem lại cuộc họp với AI Copilot.
-                  </p>
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-semibold">{t("mtg.home.title")}</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">{t("mtg.home.desc")}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => setCreateOpen(true)}
-                    disabled={createRoom.isPending}
-                    className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                  >
-                    {createRoom.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <VideoIcon className="h-4 w-4" />
-                    )}
-                    Bắt đầu họp ngay
-                  </button>
-                  <button
-                    onClick={() => {
-                      const now = new Date();
-                      const start = new Date(now.getTime() + 30 * 60000);
-                      const end = new Date(start.getTime() + 30 * 60000);
-                      setSchStart(toLocalInput(start));
-                      setSchEnd(toLocalInput(end));
-                      setScheduleOpen(true);
-                    }}
-                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
-                  >
-                    <Calendar className="h-4 w-4" /> Lên lịch
-                  </button>
-                  <button
-                    onClick={() => setJoinOpen(true)}
-                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
-                  >
-                    <Link2 className="h-4 w-4" /> Tham gia bằng mã
-                  </button>
-                  <Link
-                    to="/meeting/history"
-                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:border-primary/40"
-                  >
-                    <Clock className="h-4 w-4" /> Lịch sử họp
-                  </Link>
+                  <Button onClick={() => setCreateOpen(true)} disabled={createRoom.isPending}>
+                    {createRoom.isPending ? <Loader2 className="animate-spin" /> : <VideoIcon />}
+                    {t("mtg.home.startNow")}
+                  </Button>
+                  <Button variant="outline" onClick={openSchedule} disabled={!activeWs}>
+                    <Calendar /> {t("mtg.home.schedule")}
+                  </Button>
+                  <Button variant="outline" onClick={() => setJoinOpen(true)}>
+                    <Link2 /> {t("mtg.home.joinByCode")}
+                  </Button>
+                  <Button variant="ghost" asChild>
+                    <Link to="/meeting/history">
+                      <Clock /> {t("mtg.home.history")}
+                    </Link>
+                  </Button>
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <StatCard
-                  label="Hôm nay"
-                  value={String(stats.today)}
-                  sub="cuộc họp"
-                  icon={Calendar}
-                  color="text-primary"
+              <dl
+                aria-label={t("mtg.stats.label")}
+                aria-busy={statsQuery.isLoading}
+                className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm"
+              >
+                <StatItem label={t("mtg.stats.today")} value={statValue(stats?.today)} />
+                <StatItem
+                  label={t("mtg.stats.live")}
+                  value={statValue(stats?.live)}
+                  live={(stats?.live ?? 0) > 0}
                 />
-                <StatCard
-                  label="Đang diễn ra"
-                  value={String(stats.live)}
-                  sub="LIVE"
-                  icon={Circle}
-                  color="text-destructive"
-                />
-                <StatCard
-                  label="Bản ghi 7 ngày"
-                  value={String(stats.recordings)}
-                  sub="bản ghi"
-                  icon={Video}
-                  color="text-sky-300"
-                />
-                <StatCard
-                  label="Tóm tắt AI"
-                  value={String(stats.summaries)}
-                  sub="tháng này"
-                  icon={Sparkles}
-                  color="text-violet-300"
-                />
-              </div>
+                <StatItem label={t("mtg.stats.recordings")} value={statValue(stats?.recordings)} />
+                <StatItem label={t("mtg.stats.summaries")} value={statValue(stats?.summaries)} />
+              </dl>
             </div>
 
-            {/* Tabs + search */}
-            {/* Phòng họp thật (LiveKit) */}
-            <div
-              id="online-rooms"
-              className={`border-b border-border px-6 py-4 ${search.focus === "rooms" ? "bg-primary/5 ring-1 ring-inset ring-primary/30" : ""}`}
-            >
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold">Phòng họp trực tuyến</h2>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">
-                    Cần bật camera/micro khi trình duyệt hỏi quyền
-                  </span>
+            {/* Một thanh công cụ duy nhất cho mọi bộ lọc */}
+            <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-3 sm:px-6">
+              <div
+                role="group"
+                aria-label={t("mtg.filter.stateLabel")}
+                className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-surface-2 p-1"
+              >
+                {STATE_FILTERS.map((s) => (
                   <button
-                    onClick={() => setCreateOpen(true)}
-                    disabled={createRoom.isPending || !activeWs}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    key={s.key}
+                    type="button"
+                    aria-pressed={roomState === s.key}
+                    onClick={() => setRoomFilter({ state: s.key, page: 1 })}
+                    className={`h-8 shrink-0 rounded-md px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      roomState === s.key
+                        ? "bg-background font-medium text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
-                    {createRoom.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="h-3.5 w-3.5" />
-                    )}
-                    Tạo phòng nhanh
+                    {t(s.label)}
                   </button>
-                </div>
+                ))}
               </div>
 
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <select
+              <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={queryDraft}
+                  onChange={(e) => setQueryDraft(e.target.value)}
+                  placeholder={t("mtg.filter.search")}
+                  aria-label={t("mtg.filter.search")}
+                  className="h-9 pl-9"
+                />
+              </div>
+
+              {workspaceCount > 1 && (
+                <Select
                   value={activeWs ?? ""}
-                  onChange={(e) => setRoomFilter({ ws: e.target.value, page: 1 })}
-                  disabled={workspaces.isLoading}
-                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
-                  aria-label="Chọn workspace"
+                  onValueChange={(v) => setRoomFilter({ ws: v, page: 1 })}
                 >
-                  {workspaces.data?.length ? (
-                    workspaces.data.map((w) => (
-                      <option key={w.id} value={w.id}>
+                  <SelectTrigger
+                    className="h-9 w-auto min-w-[10rem]"
+                    aria-label={t("mtg.filter.workspace")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workspaces.data!.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
                         {w.name}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Chưa có workspace</option>
-                  )}
-                </select>
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <input
-                    value={roomQuery}
-                    onChange={(e) => setRoomFilter({ q: e.target.value, page: 1 })}
-                    placeholder="Tìm phòng theo tên…"
-                    className="w-52 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
-                  />
-                  {roomQuery && (
-                    <button
-                      onClick={() => setRoomFilter({ q: "", page: 1 })}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Xóa
-                    </button>
-                  )}
-                </div>
-                <div
-                  className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1"
-                  role="group"
-                  aria-label="Lọc trạng thái phòng"
-                >
-                  {(
-                    [
-                      { key: "all", label: "Tất cả" },
-                      { key: "live", label: "Đang diễn ra" },
-                      { key: "upcoming", label: "Sắp diễn ra" },
-                      { key: "ended", label: "Đã kết thúc" },
-                    ] as const
-                  ).map((s) => (
-                    <button
-                      key={s.key}
-                      onClick={() => setRoomFilter({ state: s.key, page: 1 })}
-                      aria-pressed={roomState === s.key}
-                      className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
-                        roomState === s.key
-                          ? "bg-primary/15 text-primary"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
-                  <span className="text-xs text-muted-foreground">Từ</span>
-                  <input
-                    type="date"
-                    value={dateFrom ?? ""}
-                    max={dateTo ?? undefined}
-                    onChange={(e) => setRoomFilter({ from: e.target.value, page: 1 })}
-                    aria-label="Từ ngày"
-                    className="bg-transparent text-sm focus:outline-none"
-                  />
-                  <span className="text-xs text-muted-foreground">đến</span>
-                  <input
-                    type="date"
-                    value={dateTo ?? ""}
-                    min={dateFrom ?? undefined}
-                    onChange={(e) => setRoomFilter({ to: e.target.value, page: 1 })}
-                    aria-label="Đến ngày"
-                    className="bg-transparent text-sm focus:outline-none"
-                  />
-                  {rangeActive && (
-                    <button
-                      onClick={() => setRoomFilter({ from: "", to: "", page: 1 })}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Xóa
-                    </button>
-                  )}
-                </div>
-                <button
-                  onClick={() => setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })}
-                  aria-label={sortStartAt === "asc" ? "Sắp xếp ngày bắt đầu tăng dần" : "Sắp xếp ngày bắt đầu giảm dần"}
-                  className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowUpDown className="h-3.5 w-3.5" />
-                  {sortStartAt === "asc" ? "Ngày bắt đầu ↑" : "Ngày bắt đầu ↓"}
-                </button>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="date"
+                  value={dateFrom ?? ""}
+                  max={dateTo ?? undefined}
+                  onChange={(e) => setRoomFilter({ from: e.target.value, page: 1 })}
+                  aria-label={t("mtg.filter.from")}
+                  className="h-9 w-auto"
+                />
+                <span className="text-muted-foreground" aria-hidden="true">
+                  –
+                </span>
+                <Input
+                  type="date"
+                  value={dateTo ?? ""}
+                  min={dateFrom ?? undefined}
+                  onChange={(e) => setRoomFilter({ to: e.target.value, page: 1 })}
+                  aria-label={t("mtg.filter.to")}
+                  className="h-9 w-auto"
+                />
               </div>
 
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9"
+                title={t("mtg.filter.sortLabel")}
+                onClick={() =>
+                  setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })
+                }
+              >
+                <ArrowUpDown />
+                {sortStartAt === "asc" ? t("mtg.filter.sortAsc") : t("mtg.filter.sortDesc")}
+              </Button>
+
+              {filtersActive && (
+                <Button variant="ghost" size="sm" className="h-9" onClick={clearFilters}>
+                  <X /> {t("mtg.filter.clear")}
+                </Button>
+              )}
+            </div>
+
+            <div className="px-4 py-5 sm:px-6">
               {listLoading ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải phòng…
+                <ul className="space-y-2" aria-busy="true">
+                  {[0, 1, 2, 3].map((i) => (
+                    <li key={i}>
+                      <Skeleton className="h-[74px] rounded-xl" />
+                    </li>
+                  ))}
+                </ul>
+              ) : listError ? (
+                <div className="rounded-xl border border-border p-8 text-center">
+                  <p className="text-sm text-foreground">{t("mtg.loadError")}</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => void activeListQuery.refetch()}
+                  >
+                    {t("mtg.retry")}
+                  </Button>
                 </div>
               ) : listItems.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {rangeActive
-                    ? "Không có cuộc họp nào trong khoảng ngày đã chọn."
-                    : roomState === "live"
-                    ? "Không có phòng nào đang diễn ra trong workspace này."
-                    : roomState === "upcoming"
-                      ? "Không có phòng nào sắp diễn ra trong workspace này."
-                      : roomState === "ended"
-                        ? "Chưa có cuộc họp nào đã kết thúc trong workspace này."
-                      : roomQuery
-                    ? "Không có phòng nào khớp từ khóa trong workspace này."
-                    : "Workspace này chưa có phòng nào. Bấm “Bắt đầu họp ngay” để tạo phòng thật và vào bằng camera."}
-                </p>
+                <div className="rounded-xl border border-dashed border-border p-10 text-center">
+                  <p className="mx-auto max-w-md text-sm text-muted-foreground">{emptyMessage}</p>
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {filtersActive ? (
+                      <Button variant="outline" onClick={clearFilters}>
+                        <X /> {t("mtg.filter.clear")}
+                      </Button>
+                    ) : (
+                      <>
+                        <Button onClick={() => setCreateOpen(true)}>
+                          <VideoIcon /> {t("mtg.home.startNow")}
+                        </Button>
+                        <Button variant="outline" onClick={openSchedule} disabled={!activeWs}>
+                          <Calendar /> {t("mtg.home.schedule")}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
               ) : (
                 <>
-                  <ul className="grid gap-2 md:grid-cols-2">
-                    {listItems.map((r) => (
-                      <li key={r.id}>
-                        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm hover:border-primary/40">
-                          <Link
-                            to="/meeting/$id"
-                            params={{ id: r.id }}
-                            className="flex min-w-0 flex-1 items-center justify-between gap-2"
-                          >
-                            <span className="min-w-0 flex-1 truncate">{r.title}</span>
-                            <RoomStatusChip
-                              status={r.status}
-                              startAt={r.start_at}
-                              endAt={r.end_at}
-                            />
-                          </Link>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openEdit(r)}
-                              className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-                            >
-                              Sửa
-                            </button>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span>
-                                  <button
-                                    type="button"
-                                    disabled={!canManageMeeting(r.id)}
-                                    onClick={() => {
-                                      openCancel(r);
-                                    }}
-                                    className="rounded-md border border-border px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    Hủy
-                                  </button>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {canManageMeeting(r.id) ? "Hủy buổi họp này" : DENY_HINT}
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      </li>
+                  <ul className="space-y-2">
+                    {listItems.map((m) => (
+                      <MeetingRow
+                        key={m.id}
+                        meeting={m}
+                        canManage={canManageMeeting(m.id)}
+                        permsLoading={permsQuery.isLoading}
+                        onEdit={() => openEdit(m)}
+                        onCancel={() => openCancel(m)}
+                      />
                     ))}
                   </ul>
                   {listTotal > ROOM_PAGE_SIZE && (
-                    <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
                       <span className="text-muted-foreground">
-                        Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
-                        {Math.min(currentPage * ROOM_PAGE_SIZE, listTotal)} / {listTotal} phòng
+                        {fmt(t("mtg.list.page"), {
+                          page: currentPage,
+                          from: (currentPage - 1) * ROOM_PAGE_SIZE + 1,
+                          to: Math.min(currentPage * ROOM_PAGE_SIZE, listTotal),
+                          total: listTotal,
+                        })}
                       </span>
                       <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setRoomFilter({ page: currentPage - 1 })}
                           disabled={currentPage <= 1 || listFetching}
-                          className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
                         >
-                          Trước
-                        </button>
-                        <button
+                          {t("mtg.prev")}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setRoomFilter({ page: currentPage + 1 })}
                           disabled={currentPage * ROOM_PAGE_SIZE >= listTotal || listFetching}
-                          className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
                         >
-                          Sau
-                        </button>
+                          {t("mtg.next")}
+                        </Button>
                       </div>
                     </div>
                   )}
                 </>
               )}
             </div>
-
-            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-bg/95 px-6 py-3 backdrop-blur">
-              <div className="flex gap-1 rounded-lg bg-surface p-1 text-sm">
-                {(
-                  [
-                    ["upcoming", "Sắp tới"],
-                    ["live", "Đang diễn ra"],
-                    ["ended", "Đã kết thúc"],
-                    ["recordings", "Bản ghi"],
-                    ["rooms", "Phòng họp"],
-                  ] as [Tab, string][]
-                ).map(([k, label]) => (
-                  <button
-                    key={k}
-                    onClick={() => {
-                      setTab(k);
-                      setRoomFilter({
-                        state:
-                          k === "live"
-                            ? "live"
-                            : k === "upcoming"
-                              ? "upcoming"
-                              : k === "ended" || k === "recordings"
-                                ? "ended"
-                                : "all",
-                        page: 1,
-                      });
-                    }}
-                    className={`rounded-md px-3 py-1.5 transition-colors ${
-                      tab === k
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <input
-                    value={roomQuery}
-                    onChange={(e) => setRoomFilter({ q: e.target.value, page: 1 })}
-                    placeholder="Tìm cuộc họp…"
-                    className="w-56 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
-                  />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      aria-label="Lọc trạng thái phòng họp"
-                      className="rounded-lg border border-border bg-surface p-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Filter className="h-4 w-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {(
-                      [
-                        ["all", "Tất cả"],
-                        ["live", "Đang diễn ra"],
-                        ["upcoming", "Sắp diễn ra"],
-                        ["ended", "Đã kết thúc"],
-                      ] as [RoomFilterState, string][]
-                    ).map(([value, label]) => (
-                      <DropdownMenuItem
-                        key={value}
-                        onClick={() => setRoomFilter({ state: value, page: 1 })}
-                      >
-                        {label}
-                        {roomState === value ? " ✓" : ""}
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuItem
-                      onClick={() =>
-                        setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })
-                      }
-                    >
-                      {sortStartAt === "asc" ? "Sắp xếp: mới nhất trước" : "Sắp xếp: sớm nhất trước"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-
-            {/* Body by tab */}
-            <div className="px-6 py-5">
-              {tab === "rooms" ? (
-                <RoomsGrid />
-              ) : (
-                <div className="space-y-3">
-                  {listLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Đang tải cuộc họp…
-                    </div>
-                  ) : listItems.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-                      Không tìm thấy cuộc họp nào
-                    </div>
-                  ) : (
-                    <>
-                      {listItems.map((m) => (
-                        <div
-                          key={m.id}
-                          className={`flex flex-wrap items-center gap-4 rounded-xl border bg-surface p-4 ${m.status === "live" ? "border-destructive/40" : "border-border"} hover:border-primary/40`}
-                        >
-                          <div
-                            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${m.status === "live" ? "bg-destructive/15 text-destructive" : m.status === "ended" || m.status === "canceled" ? "bg-surface-2 text-muted-foreground" : "bg-primary/15 text-primary"}`}
-                          >
-                            {m.status === "live" ? (
-                              <Circle className="h-5 w-5 fill-current" />
-                            ) : m.status === "ended" || m.status === "canceled" ? (
-                              <CheckCircle2 className="h-5 w-5" />
-                            ) : (
-                              <VideoIcon className="h-5 w-5" />
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate font-medium">{m.title}</span>
-                              <RoomStatusChip status={m.status} startAt={m.start_at} endAt={m.end_at} />
-                            </div>
-                            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {formatRange(m.start_at, m.end_at)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Link
-                              to="/meeting/$id"
-                              params={{ id: m.id }}
-                              className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium ${m.status === "live" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
-                            >
-                              <ArrowUpRight className="h-3.5 w-3.5" />
-                              {m.status === "live" ? "Tham gia" : "Vào phòng"}
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => openEdit(m)}
-                              className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-                            >
-                              Sửa
-                            </button>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span>
-                                  <button
-                                    type="button"
-                                    disabled={!canManageMeeting(m.id)}
-                                    onClick={() => {
-                                      openCancel(m);
-                                    }}
-                                    className="rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    Hủy
-                                  </button>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {canManageMeeting(m.id) ? "Hủy buổi họp này" : DENY_HINT}
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      ))}
-                      {listTotal > ROOM_PAGE_SIZE && (
-                        <div className="flex items-center justify-between gap-3 pt-2 text-xs">
-                          <span className="text-muted-foreground">
-                            Trang {currentPage} · {(currentPage - 1) * ROOM_PAGE_SIZE + 1} -{" "}
-                            {Math.min(currentPage * ROOM_PAGE_SIZE, listTotal)} / {listTotal} cuộc họp
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setRoomFilter({ page: currentPage - 1 })}
-                              disabled={currentPage <= 1 || listFetching}
-                              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
-                            >
-                              Trước
-                            </button>
-                            <button
-                              onClick={() => setRoomFilter({ page: currentPage + 1 })}
-                              disabled={currentPage * ROOM_PAGE_SIZE >= listTotal || listFetching}
-                              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 disabled:opacity-50"
-                            >
-                              Sau
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
           </section>
 
-          {/* Right panel */}
           <aside className="hidden w-[340px] shrink-0 flex-col border-l border-border bg-surface xl:flex">
             <MiniCalendar workspaceId={activeWs} />
             <div className="border-t border-border p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Sắp diễn ra</h3>
+                <h2 className="text-sm font-semibold">{t("mtg.upcoming.title")}</h2>
                 <Link to="/calendar" className="text-xs text-primary hover:underline">
-                  Tất cả
+                  {t("mtg.upcoming.all")}
                 </Link>
               </div>
               <div className="space-y-2">
                 {upcomingPanel.isLoading ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải…
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("mtg.loading")}
                   </div>
                 ) : upcomingItems.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Chưa có cuộc họp nào sắp diễn ra.</p>
+                  <p className="text-xs text-muted-foreground">{t("mtg.upcoming.empty")}</p>
                 ) : (
                   upcomingItems.slice(0, 3).map((m) => (
                     <Link
                       key={m.id}
                       to="/meeting/$id"
                       params={{ id: m.id }}
-                      className="block w-full rounded-lg border border-border bg-bg p-3 text-left hover:border-primary/40"
+                      className="block w-full rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/40"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 truncate text-sm font-medium">{m.title}</div>
-                        <RoomStatusChip status={m.status} startAt={m.start_at} endAt={m.end_at} />
+                        <RoomStatusChip state={resolveRoomState(m.status, m.start_at, m.end_at)} />
                       </div>
-                      <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        {formatRange(m.start_at, m.end_at)}
+                        {formatRange(m.start_at, m.end_at, locale, t)}
                       </div>
                     </Link>
                   ))
                 )}
               </div>
             </div>
-
-            <div className="border-t border-border p-4">
-              <h3 className="mb-3 text-sm font-semibold">Tích hợp</h3>
-              <div className="space-y-2 text-sm">
-                {[
-                  { name: "Google Calendar", on: true },
-                  { name: "Outlook 365", on: true },
-                  { name: "Zalo OA Notify", on: true },
-                  { name: "Slack Reminders", on: false },
-                ].map((i) => (
-                  <div
-                    key={i.name}
-                    className="flex items-center justify-between rounded-lg bg-bg px-3 py-2"
-                  >
-                    <span className="text-muted-foreground">{i.name}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${i.on ? "bg-emerald-500/15 text-emerald-300" : "bg-surface-2 text-muted-foreground"}`}
-                    >
-                      {i.on ? "Đang bật" : "Tắt"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </aside>
         </div>
       </main>
+
       {createOpen ? (
-        <QuickRoomModal
+        <QuickRoomDialog
           pending={createRoom.isPending}
           created={created}
           onEnter={() => {
@@ -1180,38 +963,76 @@ function MeetingPage() {
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Lên lịch cuộc họp</DialogTitle>
-            <DialogDescription>Tạo cuộc họp có thời gian cụ thể trong workspace hiện tại.</DialogDescription>
+            <DialogTitle>{t("mtg.sch.title")}</DialogTitle>
+            <DialogDescription>{t("mtg.sch.desc")}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <form
+            id="schedule-form"
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canSubmitSchedule) scheduleMutation.mutate();
+            }}
+          >
             <div className="space-y-1.5">
-              <Label htmlFor="sch-title">Tiêu đề</Label>
-              <Input id="sch-title" value={schTitle} onChange={(e) => setSchTitle(e.target.value)} placeholder="Họp review sprint" />
+              <Label htmlFor="sch-title">{t("mtg.form.title")}</Label>
+              <Input
+                id="sch-title"
+                value={schTitle}
+                onChange={(e) => setSchTitle(e.target.value)}
+                placeholder={t("mtg.sch.titlePlaceholder")}
+                maxLength={500}
+                required
+              />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="sch-start">Bắt đầu</Label>
-                <Input id="sch-start" type="datetime-local" value={schStart} onChange={(e) => setSchStart(e.target.value)} />
+                <Label htmlFor="sch-start">{t("mtg.form.start")}</Label>
+                <Input
+                  id="sch-start"
+                  type="datetime-local"
+                  value={schStart}
+                  onChange={(e) => setSchStart(e.target.value)}
+                  required
+                />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sch-end">Kết thúc</Label>
-                <Input id="sch-end" type="datetime-local" value={schEnd} onChange={(e) => setSchEnd(e.target.value)} />
+                <Label htmlFor="sch-end">{t("mtg.form.end")}</Label>
+                <Input
+                  id="sch-end"
+                  type="datetime-local"
+                  value={schEnd}
+                  min={schStart || undefined}
+                  onChange={(e) => setSchEnd(e.target.value)}
+                  aria-invalid={schRangeInvalid}
+                  aria-describedby={schRangeInvalid ? "sch-range-error" : undefined}
+                  required
+                />
               </div>
             </div>
+            {schRangeInvalid && (
+              <p id="sch-range-error" role="alert" className="text-xs text-destructive">
+                {t("mtg.form.rangeInvalid")}
+              </p>
+            )}
             <div className="space-y-1.5">
-              <Label htmlFor="sch-agenda">Nội dung (tùy chọn)</Label>
-              <Input id="sch-agenda" value={schAgenda} onChange={(e) => setSchAgenda(e.target.value)} placeholder="Chương trình họp" />
+              <Label htmlFor="sch-agenda">{t("mtg.sch.agenda")}</Label>
+              <Textarea
+                id="sch-agenda"
+                rows={3}
+                value={schAgenda}
+                onChange={(e) => setSchAgenda(e.target.value)}
+                placeholder={t("mtg.sch.agendaPlaceholder")}
+                maxLength={10000}
+              />
             </div>
-          </div>
+          </form>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleOpen(false)}>Đóng</Button>
-            <Button
-              onClick={() => scheduleMutation.mutate()}
-              disabled={
-                scheduleMutation.isPending || !activeWs || !schTitle.trim() || !schStart || !schEnd
-              }
-            >
-              {scheduleMutation.isPending ? "Đang lưu…" : "Lên lịch"}
+            <Button type="button" variant="outline" onClick={() => setScheduleOpen(false)}>
+              {t("mtg.close")}
+            </Button>
+            <Button type="submit" form="schedule-form" disabled={!canSubmitSchedule}>
+              {scheduleMutation.isPending ? t("mtg.saving") : t("mtg.sch.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1220,28 +1041,32 @@ function MeetingPage() {
       <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Tham gia bằng mã</DialogTitle>
-            <DialogDescription>Nhập mã mời để vào phòng họp.</DialogDescription>
+            <DialogTitle>{t("mtg.join.title")}</DialogTitle>
+            <DialogDescription>{t("mtg.join.desc")}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="join-code">Mã mời</Label>
+          <form
+            id="join-form"
+            className="space-y-1.5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canSubmitJoin) joinByCode.mutate();
+            }}
+          >
+            <Label htmlFor="join-code">{t("mtg.join.label")}</Label>
             <Input
               id="join-code"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value)}
-              placeholder="Dán mã mời tại đây"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && joinCode.trim().length >= 10) joinByCode.mutate();
-              }}
+              placeholder={t("mtg.join.placeholder")}
+              autoComplete="off"
             />
-          </div>
+          </form>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setJoinOpen(false)}>Đóng</Button>
-            <Button
-              onClick={() => joinByCode.mutate()}
-              disabled={joinByCode.isPending || joinCode.trim().length < 10}
-            >
-              {joinByCode.isPending ? "Đang kiểm tra…" : "Tham gia"}
+            <Button type="button" variant="outline" onClick={() => setJoinOpen(false)}>
+              {t("mtg.close")}
+            </Button>
+            <Button type="submit" form="join-form" disabled={!canSubmitJoin}>
+              {joinByCode.isPending ? t("mtg.join.checking") : t("mtg.join.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1250,21 +1075,31 @@ function MeetingPage() {
       <Dialog open={!!editRoom} onOpenChange={(o) => !o && setEditRoom(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Sửa cuộc họp</DialogTitle>
-            <DialogDescription>Cập nhật tiêu đề và thời gian của cuộc họp.</DialogDescription>
+            <DialogTitle>{t("mtg.edit.title")}</DialogTitle>
+            <DialogDescription>{t("mtg.edit.desc")}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <form
+            id="edit-form"
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!updateRoom.isPending && editTitle.trim() && !editRangeInvalid)
+                updateRoom.mutate();
+            }}
+          >
             <div className="space-y-1.5">
-              <Label htmlFor="edit-title">Tiêu đề</Label>
+              <Label htmlFor="edit-title">{t("mtg.form.title")}</Label>
               <Input
                 id="edit-title"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
+                maxLength={500}
+                required
               />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-start">Bắt đầu</Label>
+                <Label htmlFor="edit-start">{t("mtg.form.start")}</Label>
                 <Input
                   id="edit-start"
                   type="datetime-local"
@@ -1273,157 +1108,302 @@ function MeetingPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit-end">Kết thúc</Label>
+                <Label htmlFor="edit-end">{t("mtg.form.end")}</Label>
                 <Input
                   id="edit-end"
                   type="datetime-local"
                   value={editEnd}
+                  min={editStart || undefined}
                   onChange={(e) => setEditEnd(e.target.value)}
+                  aria-invalid={editRangeInvalid}
+                  aria-describedby={editRangeInvalid ? "edit-range-error" : undefined}
                 />
               </div>
             </div>
-          </div>
+            {editRangeInvalid && (
+              <p id="edit-range-error" role="alert" className="text-xs text-destructive">
+                {t("mtg.form.rangeInvalid")}
+              </p>
+            )}
+          </form>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditRoom(null)}>
-              Đóng
+            <Button type="button" variant="outline" onClick={() => setEditRoom(null)}>
+              {t("mtg.close")}
             </Button>
             <Button
-              onClick={() => updateRoom.mutate()}
-              disabled={updateRoom.isPending || !editTitle.trim()}
+              type="submit"
+              form="edit-form"
+              disabled={updateRoom.isPending || !editTitle.trim() || editRangeInvalid}
             >
-              {updateRoom.isPending ? "Đang lưu…" : "Lưu thay đổi"}
+              {updateRoom.isPending ? t("mtg.saving") : t("mtg.edit.submit")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!cancelRoom} onOpenChange={(o) => !o && closeCancel()}>
+      <Dialog
+        open={!!cancelRoom}
+        onOpenChange={(o) => {
+          if (!o && !cancelRoomMutation.isPending) closeCancel();
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {cancelStep === "edit" ? "Hủy cuộc họp" : "Xác nhận lý do hủy"}
-            </DialogTitle>
+            <DialogTitle>{t("mtg.cancel.title")}</DialogTitle>
             <DialogDescription>
-              {cancelRoom
-                ? cancelStep === "edit"
-                  ? `“${cancelRoom.title}” sẽ được đánh dấu là đã hủy.`
-                  : `Vui lòng kiểm tra lý do hủy cho “${cancelRoom.title}” trước khi lưu.`
-                : ""}
+              {cancelRoom ? fmt(t("mtg.cancel.desc"), { title: cancelRoom.title }) : ""}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            {cancelRoom && !canManageMeeting(cancelRoom.id) && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-                {DENY_HINT}
-              </div>
+          <form
+            id="cancel-form"
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canConfirmCancel) cancelRoomMutation.mutate();
+            }}
+          >
+            {cancelRoom && permsQuery.isSuccess && !canManageMeeting(cancelRoom.id) && (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                {t("mtg.perm.denyManage")}
+              </p>
             )}
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-              Thao tác này không thể hoàn tác. Người tham dự sẽ thấy cuộc họp ở trạng thái “Đã hủy”.
-            </div>
-
-            {cancelStep === "edit" ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="cancel-reason">
-                  Lý do hủy <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="cancel-reason"
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Ví dụ: dời sang tuần sau"
-                  maxLength={1000}
-                />
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {[
-                    "Dời sang tuần sau",
-                    "Thiếu người tham dự",
-                    "Trùng lịch",
-                    "Không còn cần thiết",
-                  ].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setCancelReason(preset)}
-                      className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
-                {cancelReason.trim().length > 0 && cancelReason.trim().length < 5 && (
-                  <p className="text-xs text-destructive">Lý do cần ít nhất 5 ký tự.</p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Lý do hủy</p>
-                    <p className="text-sm font-medium text-foreground">{cancelReason.trim()}</p>
-                  </div>
-                  <Button
+            <div className="space-y-1.5">
+              <Label htmlFor="cancel-reason">
+                {t("mtg.cancel.reason")}{" "}
+                <span className="text-destructive" aria-hidden="true">
+                  *
+                </span>
+              </Label>
+              <Input
+                id="cancel-reason"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder={t("mtg.cancel.reasonPlaceholder")}
+                maxLength={1000}
+                required
+                aria-invalid={reasonLength > 0 && reasonLength < 5}
+                aria-describedby="cancel-reason-hint"
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {(
+                  [
+                    "mtg.cancel.preset.postpone",
+                    "mtg.cancel.preset.attendance",
+                    "mtg.cancel.preset.conflict",
+                    "mtg.cancel.preset.notNeeded",
+                  ] as const
+                ).map((preset) => (
+                  <button
+                    key={preset}
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCancelStep("edit")}
-                    disabled={cancelRoomMutation.isPending}
+                    onClick={() => setCancelReason(t(preset))}
+                    className="h-8 rounded-full border border-border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    Sửa
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Bạn còn {reviewCountdown} giây để sửa lý do trước khi hệ thống tự động xác nhận.
-                </p>
+                    {t(preset)}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+              <p
+                id="cancel-reason-hint"
+                className={`text-xs ${reasonLength > 0 && reasonLength < 5 ? "text-destructive" : "text-muted-foreground"}`}
+              >
+                {t("mtg.cancel.reasonHint")}
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("mtg.cancel.irreversible")}</p>
+          </form>
           <DialogFooter>
             <Button
+              type="button"
               variant="outline"
-              onClick={() => (cancelStep === "review" ? setCancelStep("edit") : closeCancel())}
+              onClick={closeCancel}
               disabled={cancelRoomMutation.isPending}
             >
-              {cancelStep === "review" ? "Sửa lý do" : "Quay lại"}
+              {t("mtg.back")}
             </Button>
-            {cancelStep === "edit" ? (
-              <Button
-                variant="destructive"
-                onClick={() => startCancelReview()}
-                disabled={
-                  cancelRoomMutation.isPending ||
-                  cancelReason.trim().length < 5 ||
-                  (!!cancelRoom && !canManageMeeting(cancelRoom.id))
-                }
-              >
-                Tiếp tục
-              </Button>
-            ) : (
-              <Button
-                variant="destructive"
-                onClick={() => cancelRoomMutation.mutate()}
-                disabled={
-                  cancelRoomMutation.isPending ||
-                  cancelReason.trim().length < 5 ||
-                  (!!cancelRoom && !canManageMeeting(cancelRoom.id))
-                }
-              >
-                {cancelRoomMutation.isPending ? "Đang hủy…" : "Xác nhận hủy"}
-              </Button>
-            )}
+            <Button
+              type="submit"
+              form="cancel-form"
+              variant="destructive"
+              disabled={!canConfirmCancel}
+            >
+              {cancelRoomMutation.isPending ? t("mtg.cancel.pending") : t("mtg.cancel.confirm")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-    </TooltipProvider>
   );
 }
 
-function toLocalInput(d: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function StatItem({ label, value, live }: { label: string; value: string; live?: boolean }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="flex items-center gap-1.5 font-semibold tabular-nums text-foreground">
+        {live && (
+          <span
+            className="h-1.5 w-1.5 animate-pulse rounded-full bg-destructive"
+            aria-hidden="true"
+          />
+        )}
+        {value}
+      </dd>
+    </div>
+  );
 }
 
-function QuickRoomModal({
+function MeetingRow({
+  meeting: m,
+  canManage,
+  permsLoading,
+  onEdit,
+  onCancel,
+}: {
+  meeting: ListRoom;
+  canManage: boolean;
+  permsLoading: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+}) {
+  const { t, lang } = useI18n();
+  const state = resolveRoomState(m.status, m.start_at, m.end_at);
+  const isLive = state === "live";
+  const finished = state === "ended" || state === "canceled" || state === "overdue";
+  const isScheduled = m.status === "scheduled";
+
+  return (
+    <li
+      className={`flex flex-col gap-3 rounded-xl border bg-surface p-4 transition-colors hover:border-primary/40 sm:flex-row sm:items-center ${
+        isLive ? "border-destructive/40" : "border-border"
+      }`}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div
+          aria-hidden="true"
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+            isLive
+              ? "bg-destructive/12 text-destructive"
+              : finished
+                ? "bg-surface-2 text-muted-foreground"
+                : "bg-primary/10 text-primary"
+          }`}
+        >
+          {isLive ? (
+            <Circle className="h-4 w-4 fill-current" />
+          ) : state === "overdue" || state === "canceled" ? (
+            <CalendarX2 className="h-5 w-5" />
+          ) : finished ? (
+            <CheckCircle2 className="h-5 w-5" />
+          ) : (
+            <VideoIcon className="h-5 w-5" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <Link
+              to="/meeting/$id"
+              params={{ id: m.id }}
+              className="block max-w-full truncate rounded-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {m.title}
+            </Link>
+            <RoomStatusChip state={state} />
+          </div>
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3 shrink-0" />
+            {formatRange(m.start_at, m.end_at, localeTag(lang), t)}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 sm:shrink-0">
+        <Button
+          asChild
+          size="sm"
+          variant={finished ? "outline" : "default"}
+          className="flex-1 sm:flex-none"
+        >
+          <Link to="/meeting/$id" params={{ id: m.id }}>
+            <ArrowUpRight />
+            {isLive ? t("mtg.row.join") : finished ? t("mtg.row.view") : t("mtg.row.enter")}
+          </Link>
+        </Button>
+        {isScheduled && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-8 px-0"
+                aria-label={fmt(t("mtg.row.more"), { title: m.title })}
+              >
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuItem disabled={!canManage} onSelect={onEdit}>
+                <Pencil className="mr-2 h-4 w-4" /> {t("mtg.row.edit")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!canManage}
+                onSelect={onCancel}
+                className="text-destructive focus:text-destructive"
+              >
+                <XCircle className="mr-2 h-4 w-4" /> {t("mtg.row.cancel")}
+              </DropdownMenuItem>
+              {!canManage && (
+                <>
+                  <DropdownMenuSeparator />
+                  <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {permsLoading ? t("mtg.row.permLoading") : t("mtg.perm.denyManage")}
+                  </p>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </li>
+  );
+}
+
+type InviteState = "pending" | "sending" | "invited" | "already" | "not_found" | "failed";
+type InviteResult = { email: string; state: InviteState; detail?: string };
+type InvitedParticipant = {
+  userId: string;
+  role: string;
+  rsvp: string;
+  rsvpAt: string | null;
+  invitedAt: string;
+  name: string | null;
+  email: string | null;
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+const DURATIONS = [15, 30, 45, 60, 90, 120];
+const EXPIRY_OPTIONS: { value: string; label: Key }[] = [
+  { value: "60", label: "mtg.qr.exp.1h" },
+  { value: "360", label: "mtg.qr.exp.6h" },
+  { value: "1440", label: "mtg.qr.exp.1d" },
+  { value: "10080", label: "mtg.qr.exp.7d" },
+  { value: "43200", label: "mtg.qr.exp.30d" },
+  { value: "never", label: "mtg.qr.unlimited" },
+];
+const USE_OPTIONS = ["1", "5", "10", "50", "unlimited"];
+const RSVP_KEY: Record<string, Key> = {
+  accepted: "mtg.rsvp.accepted",
+  declined: "mtg.rsvp.declined",
+  tentative: "mtg.rsvp.tentative",
+  pending: "mtg.rsvp.pending",
+};
+const RSVP_TONE: Record<string, string> = {
+  accepted: "text-success",
+  declined: "text-destructive",
+  tentative: "text-foreground",
+  pending: "text-muted-foreground",
+};
+
+function QuickRoomDialog({
   pending,
   created,
   onClose,
@@ -1436,31 +1416,16 @@ function QuickRoomModal({
   onEnter: () => void;
   onSubmit: (v: { title?: string; startAt?: string; durationMinutes?: number }) => void;
 }) {
+  const { t, lang } = useI18n();
+  const locale = localeTag(lang);
   const [title, setTitle] = useState("");
   const [startNow, setStartNow] = useState(true);
   const [startAt, setStartAt] = useState(() => toLocalInput(new Date(Date.now() + 15 * 60_000)));
   const [duration, setDuration] = useState(60);
   const [invitees, setInvitees] = useState("");
-  // Tiến trình & kết quả gửi lời mời theo từng email.
-  type InviteResult = {
-    email: string;
-    state: "pending" | "sending" | "invited" | "already" | "not_found" | "failed";
-    detail?: string;
-  };
   const [inviteResults, setInviteResults] = useState<InviteResult[] | null>(null);
   const [inviteRunning, setInviteRunning] = useState(false);
-
-  // Danh sách người đã được mời + trạng thái tham gia của phòng vừa tạo.
-  type Participant = {
-    userId: string;
-    role: string;
-    rsvp: string;
-    rsvpAt: string | null;
-    invitedAt: string;
-    name: string | null;
-    email: string | null;
-  };
-  const [participants, setParticipants] = useState<Participant[] | null>(null);
+  const [participants, setParticipants] = useState<InvitedParticipant[] | null>(null);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
 
   const refreshParticipants = useCallback(async () => {
@@ -1468,30 +1433,28 @@ function QuickRoomModal({
     setLoadingParticipants(true);
     try {
       const rows = await listMeetingParticipants({ data: { meetingId: created.id } });
-      setParticipants(rows as Participant[]);
+      setParticipants(rows as InvitedParticipant[]);
     } catch {
-      toast.error("Không tải được danh sách người tham gia");
+      toast.error(t("mtg.qr.participantsError"));
     } finally {
       setLoadingParticipants(false);
     }
-  }, [created]);
+  }, [created, t]);
 
   useEffect(() => {
     if (created) void refreshParticipants();
-  }, [created, refreshParticipants]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [created]);
 
   const inviteDone = (inviteResults ?? []).filter(
     (r) => r.state !== "pending" && r.state !== "sending",
   ).length;
-  const inviteSummary = {
-    // Người chưa thực sự nhận được lời mời trong hệ thống → gợi ý gửi email link.
-    mailable: (inviteResults ?? [])
-      .filter((r) => r.state === "not_found" || r.state === "failed")
-      .map((r) => r.email),
-  };
+  // Người chưa thực sự nhận được lời mời trong hệ thống → gợi ý gửi email link.
+  const mailable = (inviteResults ?? [])
+    .filter((r) => r.state === "not_found" || r.state === "failed")
+    .map((r) => r.email);
 
   // Phân tích danh sách email: kiểm tra định dạng + phát hiện trùng lặp.
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
   const parsedInvitees = useMemo(() => {
     const raw = invitees
       .split(/[\s,;]+/)
@@ -1531,7 +1494,6 @@ function QuickRoomModal({
     maxUses: number | null;
   } | null>(null);
   const [creatingLink, setCreatingLink] = useState(false);
-
   const shareLink = controlledLink?.url ?? inviteLink;
 
   const generateControlledLink = async () => {
@@ -1550,9 +1512,9 @@ function QuickRoomModal({
         expiresAt: res.expiresAt,
         maxUses: res.maxUses,
       });
-      toast.success("Đã tạo link mời có kiểm soát");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không tạo được link mời");
+      toast.success(t("mtg.qr.linkCreated"));
+    } catch {
+      toast.error(t("mtg.qr.linkError"));
     } finally {
       setCreatingLink(false);
     }
@@ -1561,24 +1523,24 @@ function QuickRoomModal({
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
-      toast.success("Đã copy link mời");
+      toast.success(t("mtg.qr.copied"));
     } catch {
-      toast.error("Không copy được link, hãy chọn và copy thủ công");
+      toast.error(t("mtg.qr.copyError"));
     }
   };
 
   const sendInvites = async () => {
     const { valid, invalid, duplicates } = parsedInvitees;
     if (invalid.length) {
-      toast.error(`Email không hợp lệ: ${invalid.join(", ")}`);
+      toast.error(fmt(t("mtg.qr.errInvalid"), { list: invalid.join(", ") }));
       return;
     }
     if (!valid.length) {
-      toast.error("Nhập ít nhất một email người tham gia");
+      toast.error(t("mtg.qr.errNone"));
       return;
     }
     if (duplicates.length) {
-      toast.warning(`Đã bỏ ${duplicates.length} email trùng: ${duplicates.join(", ")}`);
+      toast.warning(fmt(t("mtg.qr.warnDup"), { n: duplicates.length }));
     }
     if (!created) return;
 
@@ -1596,7 +1558,7 @@ function QuickRoomModal({
         });
         setInviteResults((prev) =>
           (prev ?? []).map((r, idx) =>
-            idx === i ? { ...r, state: res.status as InviteResult["state"] } : r,
+            idx === i ? { ...r, state: res.status as InviteState } : r,
           ),
         );
       } catch (err) {
@@ -1606,7 +1568,7 @@ function QuickRoomModal({
               ? {
                   ...r,
                   state: "failed",
-                  detail: err instanceof Error ? err.message : "Lỗi không xác định",
+                  detail: err instanceof Error ? err.message : t("mtg.qr.unknownError"),
                 }
               : r,
           ),
@@ -1618,9 +1580,11 @@ function QuickRoomModal({
   };
 
   const mailtoFallback = (emails: string[]) => {
-    const subject = encodeURIComponent(`Mời họp: ${created?.title ?? "Phòng họp"}`);
+    const subject = encodeURIComponent(
+      fmt(t("mtg.qr.mailSubject"), { title: created?.title ?? "" }),
+    );
     const body = encodeURIComponent(
-      `Bạn được mời tham gia phòng họp "${created?.title ?? ""}".\n\nLink: ${shareLink}`,
+      fmt(t("mtg.qr.mailBody"), { title: created?.title ?? "", link: shareLink }),
     );
     window.location.href = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
   };
@@ -1634,490 +1598,352 @@ function QuickRoomModal({
     });
   };
 
+  const STATE_VIEW: Record<InviteState, { icon?: React.ReactNode; label: Key; tone: string }> = {
+    pending: { label: "mtg.qr.st.pending", tone: "text-muted-foreground" },
+    sending: {
+      icon: <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />,
+      label: "mtg.qr.st.sending",
+      tone: "text-muted-foreground",
+    },
+    invited: {
+      icon: <CheckCircle2 className="h-3.5 w-3.5 text-success" />,
+      label: "mtg.qr.st.invited",
+      tone: "text-success",
+    },
+    already: {
+      icon: <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />,
+      label: "mtg.qr.st.already",
+      tone: "text-muted-foreground",
+    },
+    not_found: {
+      icon: <MailQuestion className="h-3.5 w-3.5 text-warning" />,
+      label: "mtg.qr.st.notFound",
+      tone: "text-foreground",
+    },
+    failed: {
+      icon: <XCircle className="h-3.5 w-3.5 text-destructive" />,
+      label: "mtg.qr.st.failed",
+      tone: "text-destructive",
+    },
+  };
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Tạo phòng nhanh"
-      onClick={onClose}
-    >
-      {created ? (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl"
-        >
-          <h2 className="text-base font-semibold">Đã tạo phòng · Mời người tham gia</h2>
-          <p className="mt-1 text-xs text-muted-foreground">{created.title}</p>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+        {created ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>{t("mtg.qr.createdTitle")}</DialogTitle>
+              <DialogDescription className="truncate">{created.title}</DialogDescription>
+            </DialogHeader>
 
-          <label className="mt-4 block text-sm font-medium" htmlFor="qr-link">
-            Link mời
-          </label>
-          <div className="mt-1 flex gap-2">
-            <input
-              id="qr-link"
-              readOnly
-              value={shareLink}
-              onFocus={(e) => e.currentTarget.select()}
-              className="min-w-0 flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm"
-            />
-            <button
-              type="button"
-              onClick={() => void copyLink()}
-              className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
-            >
-              Copy
-            </button>
-          </div>
-
-          <div className="mt-3 rounded-lg border border-border bg-bg p-3">
-            <p className="text-xs font-medium">Kiểm soát quyền truy cập của link</p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="block text-xs text-muted-foreground">
-                Hết hạn sau
-                <select
-                  value={linkExpiry}
-                  onChange={(e) => setLinkExpiry(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground"
-                >
-                  <option value="60">1 giờ</option>
-                  <option value="360">6 giờ</option>
-                  <option value="1440">1 ngày</option>
-                  <option value="10080">7 ngày</option>
-                  <option value="43200">30 ngày</option>
-                  <option value="never">Không giới hạn</option>
-                </select>
-              </label>
-              <label className="block text-xs text-muted-foreground">
-                Số lần sử dụng
-                <select
-                  value={linkUses}
-                  onChange={(e) => setLinkUses(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground"
-                >
-                  <option value="1">1 lượt</option>
-                  <option value="5">5 lượt</option>
-                  <option value="10">10 lượt</option>
-                  <option value="50">50 lượt</option>
-                  <option value="unlimited">Không giới hạn</option>
-                </select>
-              </label>
-            </div>
-            <button
-              type="button"
-              disabled={creatingLink}
-              onClick={() => void generateControlledLink()}
-              className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40 disabled:opacity-60"
-            >
-              {creatingLink ? "Đang tạo link…" : "Tạo link mời có kiểm soát"}
-            </button>
-            {controlledLink && (
-              <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
-                Link hiện tại:{" "}
-                {controlledLink.expiresAt
-                  ? `hết hạn ${new Date(controlledLink.expiresAt).toLocaleString("vi-VN")}`
-                  : "không hết hạn"}{" "}
-                ·{" "}
-                {controlledLink.maxUses
-                  ? `tối đa ${controlledLink.maxUses} lượt dùng`
-                  : "không giới hạn lượt dùng"}
-              </p>
-            )}
-          </div>
-
-          <label className="mt-4 block text-sm font-medium" htmlFor="qr-invitees">
-            Danh sách người tham gia (email, cách nhau bằng dấu phẩy)
-          </label>
-          <textarea
-            id="qr-invitees"
-            rows={3}
-            value={invitees}
-            onChange={(e) => setInvitees(e.target.value)}
-            placeholder="an@uniwork.vn, binh@uniwork.vn"
-            aria-invalid={parsedInvitees.invalid.length > 0}
-            className={`mt-1 w-full rounded-lg border bg-bg px-3 py-2 text-sm focus:outline-none ${
-              parsedInvitees.invalid.length
-                ? "border-destructive focus:border-destructive"
-                : "border-border focus:border-primary/40"
-            }`}
-          />
-          {invitees.trim() && (
-            <div className="mt-2 space-y-1 text-xs" aria-live="polite">
-              <p className="text-muted-foreground">
-                {parsedInvitees.valid.length} email hợp lệ sẽ được mời.
-              </p>
-              {parsedInvitees.invalid.length > 0 && (
-                <p className="text-destructive">
-                  Sai định dạng: {parsedInvitees.invalid.join(", ")}
-                </p>
-              )}
-              {parsedInvitees.duplicates.length > 0 && (
-                <p className="text-amber-600">
-                  Trùng lặp (sẽ chỉ gửi một lần): {parsedInvitees.duplicates.join(", ")}
-                </p>
-              )}
-            </div>
-          )}
-
-          {inviteResults && (
-            <div className="mt-4 rounded-lg border border-border bg-bg p-3" aria-live="polite">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium">
-                  {inviteRunning ? "Đang gửi lời mời…" : "Kết quả gửi lời mời"}
-                </span>
-                <span className="text-muted-foreground">
-                  {inviteDone}/{inviteResults.length}
-                </span>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="qr-link">{t("mtg.qr.link")}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="qr-link"
+                    readOnly
+                    value={shareLink}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="min-w-0 flex-1"
+                  />
+                  <Button type="button" variant="outline" onClick={() => void copyLink()}>
+                    <Copy /> {t("mtg.qr.copy")}
+                  </Button>
+                </div>
               </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-                <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  style={{
-                    width: `${inviteResults.length ? (inviteDone / inviteResults.length) * 100 : 0}%`,
-                  }}
+
+              <fieldset className="space-y-2 rounded-lg border border-border p-3">
+                <legend className="px-1 text-xs font-medium">{t("mtg.qr.linkControl")}</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="qr-expiry" className="text-xs text-muted-foreground">
+                      {t("mtg.qr.expiry")}
+                    </Label>
+                    <Select value={linkExpiry} onValueChange={setLinkExpiry}>
+                      <SelectTrigger id="qr-expiry" className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPIRY_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {t(o.label)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="qr-uses" className="text-xs text-muted-foreground">
+                      {t("mtg.qr.usesLabel")}
+                    </Label>
+                    <Select value={linkUses} onValueChange={setLinkUses}>
+                      <SelectTrigger id="qr-uses" className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {USE_OPTIONS.map((v) => (
+                          <SelectItem key={v} value={v}>
+                            {v === "unlimited"
+                              ? t("mtg.qr.unlimited")
+                              : fmt(t("mtg.qr.uses"), { n: v })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={creatingLink}
+                  onClick={() => void generateControlledLink()}
+                >
+                  {creatingLink ? t("mtg.qr.linkCreating") : t("mtg.qr.linkCreate")}
+                </Button>
+                {controlledLink && (
+                  <p className="text-xs text-muted-foreground" aria-live="polite">
+                    {fmt(t("mtg.qr.currentLink"), {
+                      expiry: controlledLink.expiresAt
+                        ? fmt(t("mtg.qr.expiresAt"), {
+                            date: new Date(controlledLink.expiresAt).toLocaleString(locale),
+                          })
+                        : t("mtg.qr.noExpiry"),
+                      uses: controlledLink.maxUses
+                        ? fmt(t("mtg.qr.maxUses"), { n: controlledLink.maxUses })
+                        : t("mtg.qr.unlimitedUses"),
+                    })}
+                  </p>
+                )}
+              </fieldset>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="qr-invitees">{t("mtg.qr.invitees")}</Label>
+                <Textarea
+                  id="qr-invitees"
+                  rows={3}
+                  value={invitees}
+                  onChange={(e) => setInvitees(e.target.value)}
+                  placeholder={t("mtg.qr.inviteesPlaceholder")}
+                  aria-invalid={parsedInvitees.invalid.length > 0}
+                  aria-describedby="qr-invitees-status"
+                  className={parsedInvitees.invalid.length ? "border-destructive" : undefined}
+                />
+                <div id="qr-invitees-status" className="space-y-1 text-xs" aria-live="polite">
+                  {invitees.trim() ? (
+                    <>
+                      <p className="text-muted-foreground">
+                        {fmt(t("mtg.qr.validCount"), { n: parsedInvitees.valid.length })}
+                      </p>
+                      {parsedInvitees.invalid.length > 0 && (
+                        <p className="text-destructive">
+                          {fmt(t("mtg.qr.invalidList"), {
+                            list: parsedInvitees.invalid.join(", "),
+                          })}
+                        </p>
+                      )}
+                      {parsedInvitees.duplicates.length > 0 && (
+                        <p className="text-foreground">
+                          {fmt(t("mtg.qr.dupList"), { list: parsedInvitees.duplicates.join(", ") })}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">{t("mtg.qr.inviteesHint")}</p>
+                  )}
+                </div>
+              </div>
+
+              {inviteResults && (
+                <div className="rounded-lg border border-border p-3" aria-live="polite">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">
+                      {inviteRunning ? t("mtg.qr.sending") : t("mtg.qr.results")}
+                    </span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {inviteDone}/{inviteResults.length}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className="h-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out"
+                      style={{
+                        transform: `scaleX(${inviteResults.length ? inviteDone / inviteResults.length : 0})`,
+                      }}
+                    />
+                  </div>
+                  <ul className="mt-3 max-h-40 space-y-1.5 overflow-y-auto text-xs">
+                    {inviteResults.map((r) => {
+                      const view = STATE_VIEW[r.state];
+                      return (
+                        <li key={r.email} className="flex items-center justify-between gap-2">
+                          <span className="min-w-0 truncate">{r.email}</span>
+                          <span className="flex shrink-0 items-center gap-1" title={r.detail}>
+                            {view.icon}
+                            <span className={view.tone}>{t(view.label)}</span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {!inviteRunning && mailable.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => mailtoFallback(mailable)}
+                    >
+                      <Mail /> {fmt(t("mtg.qr.mailto"), { n: mailable.length })}
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <div className="rounded-lg border border-border p-3">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-xs font-medium">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    {fmt(t("mtg.qr.invited"), { n: participants?.length ?? 0 })}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void refreshParticipants()}
+                    disabled={loadingParticipants}
+                  >
+                    {loadingParticipants ? t("mtg.loading") : t("mtg.qr.refresh")}
+                  </Button>
+                </div>
+                {participants && participants.length > 0 ? (
+                  <ul className="mt-2 max-h-44 space-y-1.5 overflow-y-auto text-xs">
+                    {participants.map((p) => (
+                      <li key={p.userId} className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate">
+                          {p.name ?? p.email ?? p.userId}
+                          {p.role === "host" && (
+                            <span className="ml-1 text-muted-foreground">· {t("mtg.qr.host")}</span>
+                          )}
+                        </span>
+                        <span
+                          className={`shrink-0 ${RSVP_TONE[p.rsvp] ?? "text-muted-foreground"}`}
+                        >
+                          {t(RSVP_KEY[p.rsvp] ?? "mtg.rsvp.pending")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {loadingParticipants ? t("mtg.loading") : t("mtg.qr.noInvited")}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter className="flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t("mtg.qr.later")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void sendInvites()}
+                disabled={
+                  inviteRunning ||
+                  parsedInvitees.invalid.length > 0 ||
+                  parsedInvitees.valid.length === 0
+                }
+              >
+                {inviteRunning ? <Loader2 className="animate-spin" /> : <Send />}
+                {inviteRunning ? t("mtg.qr.sendingShort") : t("mtg.qr.sendInvites")}
+              </Button>
+              <Button type="button" onClick={onEnter}>
+                <VideoIcon /> {t("mtg.row.enter")}
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>{t("mtg.qr.title")}</DialogTitle>
+              <DialogDescription>{t("mtg.qr.desc")}</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="qr-title">{t("mtg.qr.name")}</Label>
+              <Input
+                id="qr-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("mtg.qr.namePlaceholder")}
+                maxLength={200}
+                autoFocus
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="qr-now"
+                checked={startNow}
+                onCheckedChange={(v) => setStartNow(v === true)}
+              />
+              <Label htmlFor="qr-now" className="font-normal">
+                {t("mtg.qr.startNow")}
+              </Label>
+            </div>
+
+            {!startNow && (
+              <div className="space-y-1.5">
+                <Label htmlFor="qr-start">{t("mtg.qr.startAt")}</Label>
+                <Input
+                  id="qr-start"
+                  type="datetime-local"
+                  value={startAt}
+                  onChange={(e) => setStartAt(e.target.value)}
+                  required
                 />
               </div>
-              <ul className="mt-3 max-h-40 space-y-1.5 overflow-y-auto text-xs">
-                {inviteResults.map((r) => (
-                  <li key={r.email} className="flex items-center justify-between gap-2">
-                    <span className="truncate">{r.email}</span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      {r.state === "pending" && (
-                        <span className="text-muted-foreground">Chờ gửi</span>
-                      )}
-                      {r.state === "sending" && (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                          <span className="text-muted-foreground">Đang gửi</span>
-                        </>
-                      )}
-                      {r.state === "invited" && (
-                        <>
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                          <span className="text-emerald-600">Đã mời</span>
-                        </>
-                      )}
-                      {r.state === "already" && (
-                        <>
-                          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-muted-foreground">Đã có trong phòng</span>
-                        </>
-                      )}
-                      {r.state === "not_found" && (
-                        <>
-                          <MailQuestion className="h-3.5 w-3.5 text-amber-500" />
-                          <span className="text-amber-600">Chưa có tài khoản</span>
-                        </>
-                      )}
-                      {r.state === "failed" && (
-                        <>
-                          <XCircle className="h-3.5 w-3.5 text-destructive" />
-                          <span className="text-destructive" title={r.detail}>
-                            Thất bại
-                          </span>
-                        </>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {!inviteRunning && inviteSummary.mailable.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => mailtoFallback(inviteSummary.mailable)}
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-xs hover:border-primary/40"
-                >
-                  <Mail className="h-3.5 w-3.5" /> Gửi email link mời cho{" "}
-                  {inviteSummary.mailable.length} người chưa nhận được
-                </button>
-              )}
-            </div>
-          )}
-
-          <div className="mt-4 rounded-lg border border-border bg-bg p-3">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-xs font-medium">
-                <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                Người đã mời ({participants?.length ?? 0})
-              </span>
-              <button
-                type="button"
-                onClick={() => void refreshParticipants()}
-                disabled={loadingParticipants}
-                className="rounded-md border border-border px-2 py-1 text-[11px] hover:border-primary/40 disabled:opacity-50"
-              >
-                {loadingParticipants ? "Đang tải…" : "Làm mới"}
-              </button>
-            </div>
-            {participants && participants.length > 0 ? (
-              <ul className="mt-2 max-h-44 space-y-1.5 overflow-y-auto text-xs">
-                {participants.map((p) => (
-                  <li key={p.userId} className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate">
-                      {p.name ?? p.email ?? p.userId}
-                      {p.role === "host" && (
-                        <span className="ml-1 text-muted-foreground">· Chủ phòng</span>
-                      )}
-                    </span>
-                    <span
-                      className={
-                        p.rsvp === "accepted"
-                          ? "shrink-0 text-emerald-600"
-                          : p.rsvp === "declined"
-                            ? "shrink-0 text-destructive"
-                            : p.rsvp === "tentative"
-                              ? "shrink-0 text-amber-600"
-                              : "shrink-0 text-muted-foreground"
-                      }
-                    >
-                      {p.rsvp === "accepted"
-                        ? "Đã nhận lời"
-                        : p.rsvp === "declined"
-                          ? "Từ chối"
-                          : p.rsvp === "tentative"
-                            ? "Có thể tham gia"
-                            : "Chờ phản hồi"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {loadingParticipants ? "Đang tải danh sách…" : "Chưa có ai được mời vào phòng này."}
-              </p>
             )}
-          </div>
 
-          <div className="mt-5 flex flex-wrap justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
-            >
-              Để sau
-            </button>
-            <button
-              type="button"
-              onClick={() => void sendInvites()}
-              disabled={
-                inviteRunning ||
-                parsedInvitees.invalid.length > 0 ||
-                parsedInvitees.valid.length === 0
-              }
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {inviteRunning ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              {inviteRunning ? "Đang gửi…" : "Gửi lời mời"}
-            </button>
-            <button
-              type="button"
-              onClick={onEnter}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              <VideoIcon className="h-4 w-4" /> Vào phòng
-            </button>
-          </div>
-        </div>
-      ) : (
-      <form
-        onSubmit={submit}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl"
-      >
-        <h2 className="text-base font-semibold">Tạo phòng nhanh</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Đặt tên và thời gian bắt đầu để tạo phòng chính xác.
-        </p>
-
-        <label className="mt-4 block text-sm font-medium" htmlFor="qr-title">
-          Tên phòng
-        </label>
-        <input
-          id="qr-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Phòng họp nhanh"
-          maxLength={200}
-          className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
-        />
-
-        <div className="mt-4 flex items-center gap-2">
-          <input
-            id="qr-now"
-            type="checkbox"
-            checked={startNow}
-            onChange={(e) => setStartNow(e.target.checked)}
-            className="h-4 w-4 accent-primary"
-          />
-          <label htmlFor="qr-now" className="text-sm">
-            Bắt đầu ngay
-          </label>
-        </div>
-
-        {!startNow ? (
-          <>
-            <label className="mt-3 block text-sm font-medium" htmlFor="qr-start">
-              Thời gian bắt đầu
-            </label>
-            <input
-              id="qr-start"
-              type="datetime-local"
-              value={startAt}
-              onChange={(e) => setStartAt(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
-            />
-          </>
-        ) : null}
-
-        <label className="mt-4 block text-sm font-medium" htmlFor="qr-duration">
-          Thời lượng (phút)
-        </label>
-        <select
-          id="qr-duration"
-          value={duration}
-          onChange={(e) => setDuration(Number(e.target.value))}
-          className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
-        >
-          {[15, 30, 45, 60, 90, 120].map((m) => (
-            <option key={m} value={m}>
-              {m} phút
-            </option>
-          ))}
-        </select>
-
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-border px-3 py-2 text-sm hover:border-primary/40"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-          >
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Tạo và vào phòng
-          </button>
-        </div>
-      </form>
-      )}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  icon: LucideIcon;
-  color: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <Icon className={`h-4 w-4 ${color}`} />
-      </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-bold">{value}</span>
-        <span className="text-[11px] text-muted-foreground">{sub}</span>
-      </div>
-    </div>
-  );
-}
-
-function RoomsGrid() {
-const ROOMS = [
-  {
-    name: "Phòng họp lớn – Tầng 5",
-    capacity: 30,
-    free: true,
-    equipment: ['TV 75"', "Polycom", "Whiteboard"],
-  },
-  { name: "Hội trường A", capacity: 80, free: false, equipment: ["Projector", "Mic không dây"] },
-  { name: "Phòng nhỏ – Tầng 3", capacity: 8, free: true, equipment: ['TV 55"', "Jabra"] },
-  { name: "Phòng nhỏ – Tầng 4", capacity: 6, free: true, equipment: ['TV 55"'] },
-];
-
-  return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {ROOMS.map((r) => (
-        <div key={r.name} className="rounded-xl border border-border bg-surface p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-medium">{r.name}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Users className="h-3 w-3" /> Sức chứa {r.capacity} người
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qr-duration">{t("mtg.qr.duration")}</Label>
+              <Select value={String(duration)} onValueChange={(v) => setDuration(Number(v))}>
+                <SelectTrigger id="qr-duration">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DURATIONS.map((m) => (
+                    <SelectItem key={m} value={String(m)}>
+                      {fmt(t("mtg.dur.min"), { m })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${r.free ? "bg-emerald-500/15 text-emerald-300" : "bg-destructive/15 text-destructive"}`}
-            >
-              {r.free ? "Trống" : "Đang dùng"}
-            </span>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {r.equipment.map((e) => (
-              <span
-                key={e}
-                className="rounded bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground"
-              >
-                {e}
-              </span>
-            ))}
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="flex-1">
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full cursor-not-allowed rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground opacity-40"
-                  >
-                    Đặt phòng
-                  </button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                Đặt phòng họp vật lý chưa khả dụng. Hãy tạo phòng họp trực tuyến.
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <button
-                    type="button"
-                    disabled
-                    className="cursor-not-allowed rounded-lg border border-border px-3 py-2 text-xs opacity-40"
-                  >
-                    Lịch sử
-                  </button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Lịch sử sử dụng phòng vật lý chưa khả dụng.</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      ))}
-    </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t("mtg.cancelAction")}
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? <Loader2 className="animate-spin" /> : <Plus />}
+                {t("mtg.qr.create")}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
+  const { t, lang } = useI18n();
+  const locale = localeTag(lang);
   const now = new Date();
   const [cursor, setCursor] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
   const [selected, setSelected] = useState<string | null>(null);
@@ -2141,10 +1967,9 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
       }),
   });
 
-  type DayMeeting = { id: string; title: string; status: string; start_at: string; end_at: string };
   const byDay = useMemo(() => {
-    const map = new Map<string, DayMeeting[]>();
-    for (const r of (monthQuery.data ?? []) as unknown as DayMeeting[]) {
+    const map = new Map<string, ListRoom[]>();
+    for (const r of (monthQuery.data ?? []) as unknown as ListRoom[]) {
       if (!r.start_at) continue;
       const d = new Date(r.start_at);
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -2155,8 +1980,16 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
     return map;
   }, [monthQuery.data]);
 
+  // 01/01/2024 là Thứ 2 — dùng để lấy tên thứ theo ngôn ngữ, tuần bắt đầu từ Thứ 2.
+  const weekdays = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) =>
+        new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: "narrow" }),
+      ),
+    [locale],
+  );
+
   const daysInMonth = monthEnd.getDate();
-  // Bắt đầu tuần từ Thứ 2.
   const leading = (monthStart.getDay() + 6) % 7;
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const dayKey = (d: number) => `${cursor.getFullYear()}-${cursor.getMonth()}-${d}`;
@@ -2164,38 +1997,44 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
     cursor.getFullYear() === now.getFullYear() && cursor.getMonth() === now.getMonth();
   const selectedList = selected ? (byDay.get(selected) ?? []) : [];
 
+  const shiftMonth = (delta: number) => {
+    setSelected(null);
+    setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
+  };
+
   return (
     <div className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">
-          Tháng {cursor.getMonth() + 1}, {cursor.getFullYear()}
-        </h3>
+        <h2 className="text-sm font-semibold capitalize">
+          {cursor.toLocaleDateString(locale, { month: "long", year: "numeric" })}
+        </h2>
         <div className="flex items-center gap-1">
-          <button
-            aria-label="Tháng trước"
-            onClick={() => {
-              setSelected(null);
-              setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
-            }}
-            className="rounded p-1 hover:bg-surface-2"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 px-0"
+            aria-label={t("mtg.cal.prev")}
+            onClick={() => shiftMonth(-1)}
           >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            aria-label="Tháng sau"
-            onClick={() => {
-              setSelected(null);
-              setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
-            }}
-            className="rounded p-1 hover:bg-surface-2"
+            <ChevronLeft />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 px-0"
+            aria-label={t("mtg.cal.next")}
+            onClick={() => shiftMonth(1)}
           >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+            <ChevronRight />
+          </Button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted-foreground">
-        {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((d) => (
-          <div key={d} className="py-1">
+      <div
+        className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground"
+        aria-hidden="true"
+      >
+        {weekdays.map((d, i) => (
+          <div key={i} className="py-1">
             {d}
           </div>
         ))}
@@ -2209,13 +2048,22 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
           const isToday = isSameMonthAsToday && d === now.getDate();
           const count = byDay.get(key)?.length ?? 0;
           const isSelected = selected === key;
+          const dateLabel = new Date(cursor.getFullYear(), cursor.getMonth(), d).toLocaleDateString(
+            locale,
+            {
+              day: "numeric",
+              month: "long",
+            },
+          );
           return (
             <button
               key={d}
               type="button"
-              aria-label={`Ngày ${d}: ${count} cuộc họp`}
+              aria-label={fmt(t("mtg.cal.day"), { date: dateLabel, n: count })}
+              aria-pressed={isSelected}
+              aria-current={isToday ? "date" : undefined}
               onClick={() => setSelected(isSelected ? null : key)}
-              className={`relative aspect-square rounded text-xs ${
+              className={`relative aspect-square rounded-md text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 isToday
                   ? "bg-primary font-semibold text-primary-foreground"
                   : isSelected
@@ -2224,11 +2072,12 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
               }`}
             >
               {d}
-              {count > 0 && !isToday && (
-                <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
-              )}
-              {count > 0 && isToday && (
-                <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary-foreground" />
+              {count > 0 && (
+                <span
+                  className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${
+                    isToday ? "bg-primary-foreground" : "bg-primary"
+                  }`}
+                />
               )}
             </button>
           );
@@ -2236,27 +2085,27 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
       </div>
 
       {monthQuery.isLoading && (
-        <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" /> Đang tải lịch họp…
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> {t("mtg.cal.loading")}
         </div>
       )}
 
       {selected && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           {selectedList.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">Không có cuộc họp trong ngày này.</p>
+            <p className="text-xs text-muted-foreground">{t("mtg.cal.emptyDay")}</p>
           ) : (
             selectedList.map((m) => (
               <Link
                 key={m.id}
                 to="/meeting/$id"
                 params={{ id: m.id }}
-                className="block rounded-lg border border-border bg-bg p-2.5 hover:border-primary/40"
+                className="block rounded-lg border border-border bg-background p-2.5 transition-colors hover:border-primary/40"
               >
                 <div className="truncate text-xs font-medium">{m.title}</div>
-                <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  {formatRange(m.start_at, m.end_at)}
+                  {formatRange(m.start_at, m.end_at, locale, t)}
                 </div>
               </Link>
             ))
@@ -2266,7 +2115,3 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
     </div>
   );
 }
-
-/* keep referenced for typing */
-void AlertCircle;
-void Star;
