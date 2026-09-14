@@ -9,6 +9,7 @@ import { recordKpiSnapshot } from "./kpi-snapshot.server";
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000; // tối đa 1 lần / ngày
 const MAX_TASKS_PER_TENANT = 30;
+const MAX_PROGRESS_TASKS = 200; // ghi tiến độ toàn bộ việc đang mở mỗi sáng
 const AUTO_PREFIX = "[Giao ban tự động]";
 
 export type DailyStandupResult = {
@@ -318,16 +319,19 @@ export async function runDailyStandup(
     try {
       const SELECT = "id, title, status, progress_pct, due_at, completed_at, updated_at";
 
-      // 1) Việc đang mở trong bảng giao ban (sắp đến hạn trước) — ghi nhận kết quả từng việc.
-      const { data: boardData, error: boardErr } = await admin
+      // 1) Toàn bộ việc đang mở — mỗi sáng ghi tiến độ từng việc vào nhật ký,
+      // không chỉ kết quả thay đổi, để KPI làm mới trọn bộ.
+      const { data: openData, error: boardErr } = await admin
         .from("tasks")
         .select(SELECT)
         .eq("tenant_id", row.tenant_id)
         .is("deleted_at", null)
         .in("status", ["todo", "in_progress", "blocked"])
         .order("due_at", { ascending: true, nullsFirst: false })
-        .limit(MAX_TASKS_PER_TENANT);
+        .limit(MAX_PROGRESS_TASKS);
       if (boardErr) throw new Error(boardErr.message);
+      // Bảng giao ban / thống kê KPI giữ tối đa 30 việc ưu tiên hạn chót.
+      const boardData = (openData ?? []).slice(0, MAX_TASKS_PER_TENANT);
 
       // 2) Việc vừa thay đổi trong 24 giờ qua (kể cả đã hoàn thành).
       const { data: taskData, error: taskErr } = await admin
