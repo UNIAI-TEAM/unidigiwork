@@ -20,8 +20,10 @@ import {
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import {
   canManageTaskTracking,
+  listTaskProgressMonthly,
   listTaskTracking,
   updateTaskTrackingProgress,
+  type TaskProgressMonthlyRow,
   type TaskTrackingRow,
 } from "@/lib/api/task-tracking.functions";
 
@@ -251,6 +253,112 @@ function TaskCard({
   );
 }
 
+/** Biểu đồ tiến độ từng việc theo tháng, so với mức tăng trong 7 ngày. */
+function MonthlyProgressChart({ workspaceId }: { workspaceId: string | null }) {
+  const fn = useServerFn(listTaskProgressMonthly);
+  const [onlyStalled, setOnlyStalled] = useState(false);
+  const q = useQuery({
+    queryKey: ["ceo", "task-progress-monthly", workspaceId ?? ""],
+    queryFn: () => fn({ data: { workspaceId, months: 6, limit: 12 } }),
+  });
+
+  const all = q.data ?? [];
+  const rows = onlyStalled ? all.filter((r) => r.stalled) : all;
+  const labels = all[0]?.points.map((p) => p.label) ?? [];
+  const stalledCount = all.filter((r) => r.stalled).length;
+
+  return (
+    <section className="rounded-2xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold">Tiến độ từng việc theo tháng</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Cột là mức tiến độ cuối mỗi tháng; so sánh với mức tăng trong 7 ngày gần nhất để thấy
+            việc nào kéo dài. {stalledCount} việc đang kéo dài.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant={onlyStalled ? "default" : "outline"}
+          size="sm"
+          className="min-h-[44px]"
+          onClick={() => setOnlyStalled((v) => !v)}
+        >
+          Chỉ việc kéo dài
+        </Button>
+      </div>
+
+      {q.isLoading ? (
+        <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Đang tải biểu đồ…
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="py-6 text-sm text-muted-foreground">Chưa đủ dữ liệu tiến độ để vẽ biểu đồ.</p>
+      ) : (
+        <ul className="mt-4 space-y-4">
+          {rows.map((r) => (
+            <MonthlyProgressRow key={r.id} row={r} labels={labels} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function MonthlyProgressRow({ row, labels }: { row: TaskProgressMonthlyRow; labels: string[] }) {
+  return (
+    <li className="min-w-0 border-b border-border pb-4 last:border-0 last:pb-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">{row.title}</span>
+        {row.stalled ? (
+          <Badge variant="outline" className="border-destructive/40 text-destructive">
+            Kéo dài {row.ageDays} ngày
+          </Badge>
+        ) : (
+          <Badge variant="outline">{row.ageDays} ngày</Badge>
+        )}
+        {row.overdue ? <Badge variant="destructive">Quá hạn</Badge> : null}
+      </div>
+
+      <div className="mt-3 flex items-end gap-2">
+        {row.points.map((p, i) => (
+          <div key={p.month} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+            <div className="flex h-24 w-full items-end rounded-md bg-muted/40">
+              <div
+                className={
+                  "w-full rounded-md " +
+                  (i === row.points.length - 1 ? "bg-primary" : "bg-primary/40")
+                }
+                style={{ height: `${Math.max(2, p.pct ?? 0)}%` }}
+                aria-label={`${labels[i] ?? p.label}: ${p.pct ?? 0}%`}
+              />
+            </div>
+            <span className="truncate text-[11px] text-muted-foreground">{p.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+        <span>
+          Hiện tại: <strong className="text-foreground">{row.currentPct}%</strong>
+        </span>
+        <span>
+          30 ngày:{" "}
+          <strong className={(row.gain30d ?? 0) > 0 ? "text-emerald-600" : "text-destructive"}>
+            {row.gain30d === null ? "—" : `${row.gain30d > 0 ? "+" : ""}${row.gain30d}%`}
+          </strong>
+        </span>
+        <span>
+          7 ngày:{" "}
+          <strong className={(row.gain7d ?? 0) > 0 ? "text-emerald-600" : "text-destructive"}>
+            {row.gain7d === null ? "—" : `${row.gain7d > 0 ? "+" : ""}${row.gain7d}%`}
+          </strong>
+        </span>
+      </div>
+    </li>
+  );
+}
+
 function TaskTrackingPage() {
   const [nav, setNav] = useState(false);
   const { workspaceId } = useActiveWorkspace();
@@ -289,6 +397,8 @@ function TaskTrackingPage() {
               ảnh hưởng lên KPI trong kỳ 7 ngày.
             </p>
           </div>
+
+          <MonthlyProgressChart workspaceId={workspaceId ?? null} />
 
           {q.isLoading ? (
             <div className="flex items-center gap-2 p-8 text-sm text-muted-foreground">
