@@ -14,6 +14,7 @@ export type KpiHistoryRow = {
   completed: number;
   overdue: number;
   aiSharePct: number | null;
+  proposalsCreated: number | null;
 };
 
 export const listKpiHistory = createServerFn({ method: "GET" })
@@ -33,7 +34,7 @@ export const listKpiHistory = createServerFn({ method: "GET" })
     const { data: rows } = await context.supabase
       .from("ceo_kpi_snapshots")
       .select(
-        "id, captured_at, source, score, configured, total_tasks, completed, overdue, ai_share_pct",
+        "id, captured_at, source, score, configured, total_tasks, completed, overdue, ai_share_pct, payload",
       )
       .eq("tenant_id", tenantId)
       .order("captured_at", { ascending: false })
@@ -52,5 +53,10 @@ export const listKpiHistory = createServerFn({ method: "GET" })
         r["ai_share_pct"] === null || r["ai_share_pct"] === undefined
           ? null
           : Number(r["ai_share_pct"]),
+      proposalsCreated: (() => {
+        const p = r["payload"] as Record<string, unknown> | null;
+        const v = p?.["proposalsCreated"];
+        return v === null || v === undefined ? null : Number(v);
+      })(),
     }));
   });

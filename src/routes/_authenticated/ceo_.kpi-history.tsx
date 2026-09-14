@@ -104,6 +104,23 @@ function KpiHistoryPage() {
   const latest = rows[0] ?? null;
   const loading = history.isLoading || overview.isLoading;
 
+  // Đề xuất sinh ra mỗi sáng so với số việc quá hạn — để thấy đề xuất có bù đắp kịp không.
+  const coverage = useMemo(() => {
+    const withProposals = rows.filter((r) => r.proposalsCreated !== null);
+    if (withProposals.length === 0) return null;
+    const proposals = withProposals.reduce((s, r) => s + (r.proposalsCreated ?? 0), 0);
+    const overdue = withProposals.reduce((s, r) => s + r.overdue, 0);
+    const last = withProposals[0]!;
+    return {
+      days: withProposals.length,
+      proposals,
+      overdue,
+      ratio: overdue > 0 ? Math.round((proposals / overdue) * 100) : null,
+      lastProposals: last.proposalsCreated ?? 0,
+      lastOverdue: last.overdue,
+    };
+  }, [rows]);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="ceo" open={open} onClose={() => setOpen(false)} />
@@ -178,6 +195,55 @@ function KpiHistoryPage() {
                 ))}
               </div>
 
+              {coverage ? (
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="text-sm font-medium">Đề xuất có bù đắp kịp việc quá hạn?</div>
+                  <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Đề xuất sáng gần nhất</div>
+                      <div className="mt-1 text-2xl font-semibold tracking-tight">
+                        {coverage.lastProposals}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Quá hạn cùng mốc</div>
+                      <div className="mt-1 text-2xl font-semibold tracking-tight">
+                        {coverage.lastOverdue}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">
+                        Tổng {coverage.days} mốc gần đây
+                      </div>
+                      <div className="mt-1 text-2xl font-semibold tracking-tight">
+                        {coverage.proposals} / {coverage.overdue}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Mức bù đắp</div>
+                      <div
+                        className={`mt-1 text-2xl font-semibold tracking-tight ${
+                          coverage.ratio === null
+                            ? ""
+                            : coverage.ratio >= 100
+                              ? "text-emerald-600"
+                              : "text-destructive"
+                        }`}
+                      >
+                        {coverage.ratio === null ? "—" : `${coverage.ratio}%`}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {coverage.ratio === null
+                      ? "Chưa có việc quá hạn trong các mốc này."
+                      : coverage.ratio >= 100
+                        ? "Số đề xuất sinh ra đang nhiều hơn số việc quá hạn — đủ sức bù đắp."
+                        : "Số đề xuất còn ít hơn số việc quá hạn — cần giao thêm người hoặc AI."}
+                  </p>
+                </div>
+              ) : null}
+
               <div className="rounded-2xl border border-border bg-surface">
                 <div className="border-b border-border px-4 py-3 text-sm font-medium">
                   Các mốc đã ghi ({rows.length})
@@ -197,6 +263,8 @@ function KpiHistoryPage() {
                           <th className="px-4 py-2 font-medium text-right">Việc</th>
                           <th className="px-4 py-2 font-medium text-right">Hoàn thành</th>
                           <th className="px-4 py-2 font-medium text-right">Quá hạn</th>
+                          <th className="px-4 py-2 font-medium text-right">Đề xuất</th>
+                          <th className="px-4 py-2 font-medium text-right">Bù đắp</th>
                           <th className="px-4 py-2 font-medium text-right">AI (%)</th>
                         </tr>
                       </thead>
@@ -213,6 +281,24 @@ function KpiHistoryPage() {
                             <td className="px-4 py-3 text-right">{r.totalTasks}</td>
                             <td className="px-4 py-3 text-right">{r.completed}</td>
                             <td className="px-4 py-3 text-right">{r.overdue}</td>
+                            <td className="px-4 py-3 text-right">
+                              {r.proposalsCreated === null ? "—" : r.proposalsCreated}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {r.proposalsCreated === null || r.overdue === 0 ? (
+                                "—"
+                              ) : (
+                                <span
+                                  className={
+                                    r.proposalsCreated >= r.overdue
+                                      ? "text-emerald-600"
+                                      : "text-destructive"
+                                  }
+                                >
+                                  {Math.round((r.proposalsCreated / r.overdue) * 100)}%
+                                </span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 text-right">{num(r.aiSharePct)}</td>
                           </tr>
                         ))}
