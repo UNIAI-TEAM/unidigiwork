@@ -22,23 +22,28 @@ export type DailyStandupResult = {
   errors: string[];
 };
 
-// Buổi giao ban mặc định: 08:30–09:00 giờ Việt Nam mỗi ngày.
+// Buổi giao ban mặc định: 30 phút, bắt đầu vào giờ tổ chức đã chọn (giờ Việt Nam).
 const MEETING_TZ = "Asia/Ho_Chi_Minh";
 const MEETING_TITLE = "Giao ban hằng ngày";
 const MEETING_LOCATION = "Phòng họp trực tuyến UniWork";
-const MEETING_START_HOUR_VN = 8;
+const DEFAULT_STANDUP_HOUR_VN = 6;
 const MEETING_START_MINUTE_VN = 30;
 const MEETING_MINUTES = 30;
 const MAX_MEETING_PARTICIPANTS = 100;
 
+/** Giờ Việt Nam hiện tại (0-23). */
+function currentVnHour(now = new Date()): number {
+  return new Date(now.getTime() + 7 * 60 * 60 * 1000).getUTCHours();
+}
+
 /** Mốc bắt đầu buổi giao ban của ngày hiện tại theo giờ Việt Nam (trả về UTC). */
-function todayStandupStart(now = new Date()): Date {
+function todayStandupStart(hourVn: number, now = new Date()): Date {
   const vn = new Date(now.getTime() + 7 * 60 * 60 * 1000);
   const startUtcMs = Date.UTC(
     vn.getUTCFullYear(),
     vn.getUTCMonth(),
     vn.getUTCDate(),
-    MEETING_START_HOUR_VN - 7,
+    hourVn - 7,
     MEETING_START_MINUTE_VN,
     0,
     0,
