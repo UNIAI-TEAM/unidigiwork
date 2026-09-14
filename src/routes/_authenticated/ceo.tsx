@@ -870,6 +870,20 @@ function CeoPage() {
                       </option>
                     ))}
                   </select>
+                  <span className="ml-auto">
+                    <AssignProposalsToProject
+                      entries={
+                        deptFilter === "all"
+                          ? data.proposals.entries
+                          : deptFilter === "none"
+                            ? data.proposals.entries.filter((p) => !p.workspaceId)
+                            : data.proposals.entries.filter((p) => p.workspaceId === deptFilter)
+                      }
+                      workers={workers.data ?? []}
+                      workspaceId={workspaceId ?? null}
+                      onDone={() => void refetch()}
+                    />
+                  </span>
                 </div>
                 {(() => {
                   const filtered =
