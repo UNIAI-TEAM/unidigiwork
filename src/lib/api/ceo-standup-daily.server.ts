@@ -262,6 +262,8 @@ export async function runDailyStandup(
     proposals: 0,
     proposalsAssigned: 0,
     proposalsAssignedPeople: 0,
+    retrained: 0,
+    createdSkills: 0,
     kpiRefreshed: 0,
     errors: [],
   };
