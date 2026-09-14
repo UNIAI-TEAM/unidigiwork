@@ -77,9 +77,23 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
     }
 
     try {
+      const SELECT = "id, title, status, progress_pct, due_at, completed_at, updated_at";
+
+      // 1) Việc đang mở trong bảng giao ban (sắp đến hạn trước) — ghi nhận kết quả từng việc.
+      const { data: boardData, error: boardErr } = await admin
+        .from("tasks")
+        .select(SELECT)
+        .eq("tenant_id", row.tenant_id)
+        .is("deleted_at", null)
+        .in("status", ["todo", "in_progress", "blocked"])
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .limit(MAX_TASKS_PER_TENANT);
+      if (boardErr) throw new Error(boardErr.message);
+
+      // 2) Việc vừa thay đổi trong 24 giờ qua (kể cả đã hoàn thành).
       const { data: taskData, error: taskErr } = await admin
         .from("tasks")
-        .select("id, title, status, progress_pct, due_at, completed_at, updated_at")
+        .select(SELECT)
         .eq("tenant_id", row.tenant_id)
         .is("deleted_at", null)
         .neq("status", "canceled")
@@ -88,7 +102,14 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
         .limit(MAX_TASKS_PER_TENANT);
       if (taskErr) throw new Error(taskErr.message);
 
-      const tasks = (taskData ?? []) as TaskRow[];
+      const byId = new Map<string, TaskRow>();
+      for (const t of [
+        ...((boardData ?? []) as TaskRow[]),
+        ...((taskData ?? []) as TaskRow[]),
+      ]) {
+        byId.set(t.id, t);
+      }
+      const tasks = [...byId.values()].slice(0, MAX_TASKS_PER_TENANT);
       const nowMs = Date.now();
 
       // Không ghi trùng: bỏ qua công việc đã có ghi chú tự động trong 20 giờ qua.
