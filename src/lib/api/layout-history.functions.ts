@@ -54,7 +54,7 @@ export const listLayoutHistory = createServerFn({ method: "POST" })
     if (error) fail(error, "Không tải được lịch sử bố cục");
     return ((rows ?? []) as unknown as Array<Record<string, unknown>>).map((r) => ({
       id: r["id"] as string,
-      scope: r["scope"] as "home" | "dashboard",
+      scope: r["scope"] as "home" | "dashboard" | "ceo",
       label: (r["label"] as string | null) ?? null,
       prefs: JSON.stringify(r["prefs"] ?? null),
       createdAt: r["created_at"] as string,
