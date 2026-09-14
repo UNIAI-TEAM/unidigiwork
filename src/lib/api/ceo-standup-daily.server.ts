@@ -157,6 +157,7 @@ export async function runDailyStandup(
     meetings: 0,
     proposals: 0,
     proposalsAssigned: 0,
+    proposalsAssignedPeople: 0,
     kpiRefreshed: 0,
     errors: [],
   };
