@@ -281,6 +281,24 @@ function KpiHistoryPage() {
                             <td className="px-4 py-3 text-right">{r.totalTasks}</td>
                             <td className="px-4 py-3 text-right">{r.completed}</td>
                             <td className="px-4 py-3 text-right">{r.overdue}</td>
+                            <td className="px-4 py-3 text-right">
+                              {r.proposalsCreated === null ? "—" : r.proposalsCreated}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {r.proposalsCreated === null || r.overdue === 0 ? (
+                                "—"
+                              ) : (
+                                <span
+                                  className={
+                                    r.proposalsCreated >= r.overdue
+                                      ? "text-emerald-600"
+                                      : "text-destructive"
+                                  }
+                                >
+                                  {Math.round((r.proposalsCreated / r.overdue) * 100)}%
+                                </span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 text-right">{num(r.aiSharePct)}</td>
                           </tr>
                         ))}
