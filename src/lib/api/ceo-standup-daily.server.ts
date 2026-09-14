@@ -144,6 +144,8 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
     skipped: 0,
     notes: 0,
     meetings: 0,
+    proposals: 0,
+    proposalsAssigned: 0,
     kpiRefreshed: 0,
     errors: [],
   };
