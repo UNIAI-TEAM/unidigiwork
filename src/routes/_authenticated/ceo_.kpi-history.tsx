@@ -263,6 +263,8 @@ function KpiHistoryPage() {
                           <th className="px-4 py-2 font-medium text-right">Việc</th>
                           <th className="px-4 py-2 font-medium text-right">Hoàn thành</th>
                           <th className="px-4 py-2 font-medium text-right">Quá hạn</th>
+                          <th className="px-4 py-2 font-medium text-right">Đề xuất</th>
+                          <th className="px-4 py-2 font-medium text-right">Bù đắp</th>
                           <th className="px-4 py-2 font-medium text-right">AI (%)</th>
                         </tr>
                       </thead>
