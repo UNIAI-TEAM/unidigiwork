@@ -213,8 +213,10 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
       const tasks = [...byId.values()].slice(0, MAX_TASKS_PER_TENANT);
       const nowMs = Date.now();
 
-      // Không ghi trùng: bỏ qua công việc đã có ghi chú tự động trong 20 giờ qua.
+      // Lần ghi tự động gần nhất của từng việc: dùng để chống ghi trùng
+      // và để so sánh tiến độ với lần giao ban trước.
       const recent = new Set<string>();
+      const prevProgress = new Map<string, number>();
       if (tasks.length) {
         const { data: existing } = await admin
           .from("task_comments")
@@ -225,25 +227,58 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
             tasks.map((t) => t.id),
           )
           .is("deleted_at", null)
-          .gte("created_at", new Date(nowMs - MIN_INTERVAL_MS).toISOString())
+          .order("created_at", { ascending: false })
           .limit(500);
-        for (const c of (existing ?? []) as { task_id: string; body: string }[]) {
-          if (c.body?.startsWith(AUTO_PREFIX)) recent.add(c.task_id);
+        const seen = new Set<string>();
+        for (const c of (existing ?? []) as {
+          task_id: string;
+          body: string;
+          created_at: string;
+        }[]) {
+          if (!c.body?.startsWith(AUTO_PREFIX)) continue;
+          if (new Date(c.created_at).getTime() > nowMs - MIN_INTERVAL_MS) recent.add(c.task_id);
+          if (seen.has(c.task_id)) continue;
+          seen.add(c.task_id);
+          const m = /tiến độ (\d+)%/.exec(c.body);
+          if (m) prevProgress.set(c.task_id, Number(m[1]));
         }
       }
+
+      const progressOf = (t: TaskRow) =>
+        t.status === "done" ? 100 : Math.max(0, Math.min(100, t.progress_pct ?? 0));
+
+      let advanced = 0;
+      let stalled = 0;
+      for (const t of tasks) {
+        const prev = prevProgress.get(t.id);
+        if (prev === undefined) continue;
+        if (progressOf(t) > prev) advanced += 1;
+        else if (progressOf(t) === prev && t.status !== "done") stalled += 1;
+      }
+      const avgProgressPct = tasks.length
+        ? Math.round(tasks.reduce((s, t) => s + progressOf(t), 0) / tasks.length)
+        : 0;
 
       const notes = tasks
         .filter((t) => !recent.has(t.id))
         .map((t) => {
           const overdue = Boolean(t.due_at && new Date(t.due_at).getTime() < nowMs);
+          const pct = progressOf(t);
+          const prev = prevProgress.get(t.id);
           const parts: string[] = [];
           if (t.status === "done") parts.push("đã hoàn thành trong 24 giờ qua");
           else if (t.status === "blocked") parts.push("đang vướng mắc, cần tháo gỡ");
-          else if (t.status === "in_progress")
-            parts.push(`đang làm, tiến độ ${t.progress_pct ?? 0}%`);
+          else if (t.status === "in_progress") parts.push("đang làm");
           else parts.push("chưa bắt đầu");
+          // Ghi nhận tiến độ từng việc, kèm mức thay đổi so với lần giao ban trước.
+          if (prev === undefined) parts.push(`tiến độ ${pct}%`);
+          else if (pct > prev) parts.push(`tiến độ ${pct}% (tăng ${pct - prev} điểm)`);
+          else if (pct < prev) parts.push(`tiến độ ${pct}% (giảm ${prev - pct} điểm)`);
+          else parts.push(`tiến độ ${pct}% (không đổi)`);
           if (overdue && t.status !== "done") {
             parts.push(`quá hạn từ ${fmtDate(t.due_at as string)}`);
+          } else if (t.due_at && t.status !== "done") {
+            parts.push(`hạn ${fmtDate(t.due_at)}`);
           }
           return {
             task_id: t.id,
@@ -261,9 +296,12 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
 
       const done = tasks.filter((t) => t.status === "done").length;
       const blocked = tasks.filter((t) => t.status === "blocked").length;
+      const inProgress = tasks.filter((t) => t.status === "in_progress").length;
       const overdue = tasks.filter(
         (t) => t.due_at && new Date(t.due_at).getTime() < nowMs && t.status !== "done",
       ).length;
+
+      const progress = { avgProgressPct, advanced, stalled, inProgress };
 
       const patch: Record<string, unknown> = {
         auto_standup_at: new Date().toISOString(),
@@ -274,6 +312,7 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
           blocked,
           overdue,
           notes: notes.length,
+          ...progress,
         },
       };
 
@@ -300,8 +339,8 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
           aiSharePct: overview.split.aiSharePct,
         };
         patch["kpi_refreshed_at"] = new Date().toISOString();
-        patch["kpi_snapshot"] = values;
-        await recordKpiSnapshot(admin, row.tenant_id, "standup", values);
+        patch["kpi_snapshot"] = { ...values, ...progress };
+        await recordKpiSnapshot(admin, row.tenant_id, "standup", values, progress);
         result.kpiRefreshed += 1;
       } catch (e) {
         result.errors.push(
