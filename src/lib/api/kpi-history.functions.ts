@@ -53,5 +53,10 @@ export const listKpiHistory = createServerFn({ method: "GET" })
         r["ai_share_pct"] === null || r["ai_share_pct"] === undefined
           ? null
           : Number(r["ai_share_pct"]),
+      proposalsCreated: (() => {
+        const p = r["payload"] as Record<string, unknown> | null;
+        const v = p?.["proposalsCreated"];
+        return v === null || v === undefined ? null : Number(v);
+      })(),
     }));
   });
