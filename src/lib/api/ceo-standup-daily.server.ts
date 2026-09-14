@@ -286,8 +286,6 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
         );
       }
 
-
-
       // Làm mới KPI ngay sau khi ghi nhận để Command Center hiển thị số liệu mới.
       try {
         const overview = await loadCeoOverview(admin, row.tenant_id, "week");
