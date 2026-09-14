@@ -289,3 +289,155 @@ export const updateTaskTrackingProgress = createServerFn({ method: "POST" })
 
     return { ok: true, progressPct: data.progressPct, status: nextStatus, kpi };
   });
+
+// ===== BIỂU ĐỒ TIẾN ĐỘ TỪNG VIỆC THEO THÁNG =====
+// Mốc tiến độ mỗi tháng lấy từ nhật ký (giao ban tự động + cập nhật thủ công),
+// so sánh với mức tăng trong 7 ngày gần nhất để thấy việc nào kéo dài.
+
+export type TaskMonthlyPoint = { month: string; label: string; pct: number | null };
+
+export type TaskProgressMonthlyRow = {
+  id: string;
+  title: string;
+  status: string;
+  dueAt: string | null;
+  overdue: boolean;
+  currentPct: number;
+  points: TaskMonthlyPoint[];
+  /** Mức tăng trong 30 ngày và trong 7 ngày gần nhất */
+  gain30d: number | null;
+  gain7d: number | null;
+  ageDays: number;
+  /** Kéo dài: đã mở > 14 ngày, 30 ngày tăng < 10% và 7 ngày không tăng */
+  stalled: boolean;
+};
+
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+
+function monthKey(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export const listTaskProgressMonthly = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid().nullable().optional(),
+        months: z.number().int().min(2).max(12).default(6),
+        limit: z.number().int().min(1).max(40).default(12),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<TaskProgressMonthlyRow[]> => {
+    const tenantId = await resolveTenantId(context.supabase, context.userId, data.workspaceId);
+    if (!tenantId) return [];
+
+    const now = Date.now();
+    const nowIso = new Date(now).toISOString();
+
+    const { data: openData } = await context.supabase
+      .from("tasks")
+      .select("id, title, status, progress_pct, due_at, created_at")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .in("status", ["todo", "in_progress", "blocked"])
+      .order("created_at", { ascending: true })
+      .limit(data.limit);
+
+    const tasks = (openData ?? []) as Array<{
+      id: string;
+      title: string;
+      status: string;
+      progress_pct: number | null;
+      due_at: string | null;
+      created_at: string | null;
+    }>;
+    if (!tasks.length) return [];
+
+    const { data: comments } = await context.supabase
+      .from("task_comments")
+      .select("task_id, body, created_at")
+      .eq("tenant_id", tenantId)
+      .in(
+        "task_id",
+        tasks.map((t) => t.id),
+      )
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(2000);
+
+    // Danh sách mốc tiến độ theo thời gian cho từng việc.
+    const series = new Map<string, Array<{ at: number; pct: number }>>();
+    for (const c of (comments ?? []) as Array<{
+      task_id: string;
+      body: string | null;
+      created_at: string;
+    }>) {
+      const m = /tiến độ (\d+)%/.exec(c.body ?? "");
+      if (!m?.[1]) continue;
+      const list = series.get(c.task_id) ?? [];
+      list.push({ at: Date.parse(c.created_at), pct: Math.max(0, Math.min(100, Number(m[1]))) });
+      series.set(c.task_id, list);
+    }
+
+    const pctAt = (taskId: string, cutoff: number): number | null => {
+      const list = series.get(taskId);
+      if (!list?.length) return null;
+      let found: number | null = null;
+      for (const p of list) {
+        if (p.at <= cutoff) found = p.pct;
+        else break;
+      }
+      return found;
+    };
+
+    // Các mốc cuối tháng gần nhất (tháng hiện tại dùng giá trị hiện tại).
+    const monthEnds: Array<{ month: string; label: string; cutoff: number }> = [];
+    for (let k = data.months - 1; k >= 0; k -= 1) {
+      const d = new Date(
+        Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth() - k, 1),
+      );
+      const end = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) - 1;
+      monthEnds.push({
+        month: monthKey(d),
+        label: `${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`,
+        cutoff: Math.min(end, now),
+      });
+    }
+
+    const rows = tasks.map((t) => {
+      const currentPct = Math.max(0, Math.min(100, t.progress_pct ?? 0));
+      const points = monthEnds.map((m) => ({
+        month: m.month,
+        label: m.label,
+        pct: m.cutoff >= now ? currentPct : pctAt(t.id, m.cutoff),
+      }));
+      const p30 = pctAt(t.id, now - MONTH_MS);
+      const p7 = pctAt(t.id, now - 7 * 24 * 60 * 60 * 1000);
+      const gain30d = p30 === null ? null : currentPct - p30;
+      const gain7d = p7 === null ? null : currentPct - p7;
+      const ageDays = t.created_at
+        ? Math.max(0, Math.round((now - Date.parse(t.created_at)) / (24 * 60 * 60 * 1000)))
+        : 0;
+      const overdue = !!t.due_at && t.due_at < nowIso;
+      const stalled = ageDays > 14 && (gain30d ?? 0) < 10 && (gain7d ?? 0) <= 0;
+      return {
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        dueAt: t.due_at,
+        overdue,
+        currentPct,
+        points,
+        gain30d,
+        gain7d,
+        ageDays,
+        stalled,
+      } satisfies TaskProgressMonthlyRow;
+    });
+
+    // Việc kéo dài lên đầu, rồi theo tuổi việc giảm dần.
+    rows.sort((a, b) => (a.stalled === b.stalled ? b.ageDays - a.ageDays : a.stalled ? -1 : 1));
+    return rows;
+  });
