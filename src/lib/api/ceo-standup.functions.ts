@@ -251,20 +251,44 @@ export const getAutoStandupSettings = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<AutoStandupSettings> => {
     const { data, error } = await context.supabase
       .from("ceo_kpi_settings")
-      .select("auto_standup, auto_standup_at, standup_snapshot")
+      .select("auto_standup, auto_standup_at, standup_hour_vn, standup_snapshot")
       .limit(1)
       .maybeSingle();
     if (error) mapPgError(error);
     const row = data as unknown as {
       auto_standup?: boolean;
       auto_standup_at?: string | null;
+      standup_hour_vn?: number | null;
       standup_snapshot?: AutoStandupSettings["snapshot"];
     } | null;
     return {
       enabled: row ? Boolean(row.auto_standup) : true,
       lastRunAt: row?.auto_standup_at ?? null,
+      hourVn: row?.standup_hour_vn ?? 6,
       snapshot: row?.standup_snapshot ?? null,
     };
+  });
+
+/** Chọn giờ chạy giao ban tự động mỗi sáng (giờ Việt Nam, 0-23). */
+export const setAutoStandupHour = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ hourVn: z.number().int().min(0).max(23) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: existing, error: readErr } = await context.supabase
+      .from("ceo_kpi_settings")
+      .select("tenant_id")
+      .limit(1)
+      .maybeSingle();
+    if (readErr) mapPgError(readErr);
+    const tenantId = (existing as { tenant_id?: string } | null)?.tenant_id;
+    if (!tenantId) throw new Error("KPI_SETTINGS_NOT_FOUND");
+
+    const { error } = await context.supabase
+      .from("ceo_kpi_settings")
+      .update({ standup_hour_vn: data.hourVn, updated_by: context.userId } as never)
+      .eq("tenant_id", tenantId);
+    if (error) mapPgError(error);
+    return { ok: true as const, hourVn: data.hourVn };
   });
 
 /** Bật/tắt lịch ghi nhận giao ban tự động mỗi sáng. */
