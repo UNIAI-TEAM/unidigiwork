@@ -15,6 +15,13 @@
       "when": 1789373545727,
       "tag": "0001_ceo_auto_standup",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789373840701,
+      "tag": "0002_schedule_ceo_standup_daily",
+      "breakpoints": true
     }
   ]
 }
