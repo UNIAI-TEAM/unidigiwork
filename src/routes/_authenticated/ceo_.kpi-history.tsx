@@ -104,6 +104,23 @@ function KpiHistoryPage() {
   const latest = rows[0] ?? null;
   const loading = history.isLoading || overview.isLoading;
 
+  // Đề xuất sinh ra mỗi sáng so với số việc quá hạn — để thấy đề xuất có bù đắp kịp không.
+  const coverage = useMemo(() => {
+    const withProposals = rows.filter((r) => r.proposalsCreated !== null);
+    if (withProposals.length === 0) return null;
+    const proposals = withProposals.reduce((s, r) => s + (r.proposalsCreated ?? 0), 0);
+    const overdue = withProposals.reduce((s, r) => s + r.overdue, 0);
+    const last = withProposals[0]!;
+    return {
+      days: withProposals.length,
+      proposals,
+      overdue,
+      ratio: overdue > 0 ? Math.round((proposals / overdue) * 100) : null,
+      lastProposals: last.proposalsCreated ?? 0,
+      lastOverdue: last.overdue,
+    };
+  }, [rows]);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AppSidebar active="ceo" open={open} onClose={() => setOpen(false)} />
