@@ -79,7 +79,115 @@ function Delta({ value }: { value: number | null }) {
   );
 }
 
-function TaskCard({ row }: { row: TaskTrackingRow }) {
+const EDIT_STATUS = ["todo", "in_progress", "blocked", "done"] as const;
+
+function ProgressEditor({
+  row,
+  workspaceId,
+}: {
+  row: TaskTrackingRow;
+  workspaceId: string | null;
+}) {
+  const qc = useQueryClient();
+  const update = useServerFn(updateTaskTrackingProgress);
+  const [pct, setPct] = useState(String(row.progressPct));
+  const [status, setStatus] = useState<string>(row.status);
+  const [note, setNote] = useState("");
+
+  const m = useMutation({
+    mutationFn: () =>
+      update({
+        data: {
+          workspaceId,
+          taskId: row.id,
+          progressPct: Math.max(0, Math.min(100, Number(pct) || 0)),
+          status: status as (typeof EDIT_STATUS)[number],
+          note: note.trim() || undefined,
+        },
+      }),
+    onSuccess: (res) => {
+      toast.success(
+        res.kpi?.score !== null && res.kpi
+          ? `Đã cập nhật tiến độ. Điểm KPI hiện tại ${res.kpi.score}.`
+          : "Đã cập nhật tiến độ và làm mới KPI.",
+      );
+      setNote("");
+      void qc.invalidateQueries({ queryKey: ["ceo"] });
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(
+        msg.includes("FORBIDDEN")
+          ? "Chỉ quản trị viên tổ chức được cập nhật tiến độ."
+          : "Không cập nhật được tiến độ.",
+      );
+    },
+  });
+
+  return (
+    <div className="mb-3 grid gap-3 rounded-xl border border-border bg-background p-3 sm:grid-cols-[7rem_11rem_1fr_auto] sm:items-end">
+      <div className="space-y-1">
+        <Label htmlFor={`pct-${row.id}`} className="text-xs">
+          Tiến độ (%)
+        </Label>
+        <Input
+          id={`pct-${row.id}`}
+          type="number"
+          min={0}
+          max={100}
+          value={pct}
+          onChange={(e) => setPct(e.target.value)}
+          className="h-11"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Trạng thái</Label>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="h-11">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {EDIT_STATUS.map((s) => (
+              <SelectItem key={s} value={s}>
+                {STATUS_LABEL[s] ?? s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor={`note-${row.id}`} className="text-xs">
+          Ghi chú (tuỳ chọn)
+        </Label>
+        <Input
+          id={`note-${row.id}`}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Lý do thay đổi tiến độ…"
+          className="h-11"
+        />
+      </div>
+      <Button
+        type="button"
+        className="h-11 min-h-[44px]"
+        disabled={m.isPending}
+        onClick={() => m.mutate()}
+      >
+        {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Lưu"}
+      </Button>
+    </div>
+  );
+}
+
+function TaskCard({
+  row,
+  canManage,
+  workspaceId,
+}: {
+  row: TaskTrackingRow;
+  canManage: boolean;
+  workspaceId: string | null;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-2xl border border-border bg-surface">
