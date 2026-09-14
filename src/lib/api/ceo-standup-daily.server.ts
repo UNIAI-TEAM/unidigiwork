@@ -454,13 +454,35 @@ export async function runDailyStandup(
         );
       }
 
-      // Tự tạo đề xuất cho việc sắp đến hạn và gán nhân sự AI (vào nhật ký đề xuất).
+      // Tự tạo đề xuất cho việc sắp đến hạn, ghi nhật ký việc và đưa lên lịch họp.
+      let proposalCreated = 0;
       try {
         const proposals = await runDailyProposals(admin, row.tenant_id, authorId);
         result.proposals += proposals.created;
         result.proposalsAssigned += proposals.assigned;
         result.proposalsAssignedPeople += proposals.assignedPeople;
-        (patch["standup_snapshot"] as Record<string, unknown>)["proposals"] = proposals;
+        result.notes += proposals.notes;
+        proposalCreated = proposals.created;
+        (patch["standup_snapshot"] as Record<string, unknown>)["proposals"] = {
+          created: proposals.created,
+          assigned: proposals.assigned,
+          assignedPeople: proposals.assignedPeople,
+          skipped: proposals.skipped,
+          notes: proposals.notes,
+        };
+
+        const proposalMeeting = await ensureDailyProposalMeeting(
+          admin,
+          row.tenant_id,
+          authorId,
+          hourVn,
+          proposals.items,
+        );
+        if (proposalMeeting === "created") {
+          result.meetings += 1;
+          result.proposalMeetings += 1;
+        }
+        (patch["standup_snapshot"] as Record<string, unknown>)["proposalMeeting"] = proposalMeeting;
       } catch (e) {
         result.errors.push(
           `Đề xuất ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
