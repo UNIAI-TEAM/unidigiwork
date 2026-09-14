@@ -231,3 +231,59 @@ export const recordStandupOutcome = createServerFn({ method: "POST" })
 
     return { ok: true as const, changes };
   });
+
+export type AutoStandupSettings = {
+  enabled: boolean;
+  lastRunAt: string | null;
+  snapshot: {
+    tasksTouched?: number;
+    done?: number;
+    blocked?: number;
+    overdue?: number;
+    notes?: number;
+  } | null;
+};
+
+/** Trạng thái lịch ghi nhận giao ban tự động mỗi sáng của tổ chức hiện tại. */
+export const getAutoStandupSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AutoStandupSettings> => {
+    const { data, error } = await context.supabase
+      .from("ceo_kpi_settings")
+      .select("auto_standup, auto_standup_at, standup_snapshot")
+      .limit(1)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    const row = data as unknown as {
+      auto_standup?: boolean;
+      auto_standup_at?: string | null;
+      standup_snapshot?: AutoStandupSettings["snapshot"];
+    } | null;
+    return {
+      enabled: row ? Boolean(row.auto_standup) : true,
+      lastRunAt: row?.auto_standup_at ?? null,
+      snapshot: row?.standup_snapshot ?? null,
+    };
+  });
+
+/** Bật/tắt lịch ghi nhận giao ban tự động mỗi sáng. */
+export const setAutoStandupEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ enabled: z.boolean() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: existing, error: readErr } = await context.supabase
+      .from("ceo_kpi_settings")
+      .select("tenant_id")
+      .limit(1)
+      .maybeSingle();
+    if (readErr) mapPgError(readErr);
+    const tenantId = (existing as { tenant_id?: string } | null)?.tenant_id;
+    if (!tenantId) throw new Error("KPI_SETTINGS_NOT_FOUND");
+
+    const { error } = await context.supabase
+      .from("ceo_kpi_settings")
+      .update({ auto_standup: data.enabled, updated_by: context.userId } as never)
+      .eq("tenant_id", tenantId);
+    if (error) mapPgError(error);
+    return { ok: true as const, enabled: data.enabled };
+  });

@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import {
+  getAutoStandupSettings,
   getStandupBoard,
   recordStandupOutcome,
+  setAutoStandupEnabled,
   type StandupTask,
 } from "@/lib/api/ceo-standup.functions";
 
@@ -166,6 +168,65 @@ function TaskRow({
   );
 }
 
+function AutoStandupCard() {
+  const qc = useQueryClient();
+  const getSettings = useServerFn(getAutoStandupSettings);
+  const setEnabled = useServerFn(setAutoStandupEnabled);
+  const { data } = useQuery({
+    queryKey: ["ceo", "auto-standup"],
+    queryFn: () => getSettings({}),
+  });
+
+  const toggle = useMutation({
+    mutationFn: (enabled: boolean) => setEnabled({ data: { enabled } }),
+    onSuccess: (res) => {
+      toast.success(res.enabled ? "Đã bật giao ban tự động" : "Đã tắt giao ban tự động");
+      void qc.invalidateQueries({ queryKey: ["ceo", "auto-standup"] });
+    },
+    onError: () => toast.error("Không lưu được cài đặt"),
+  });
+
+  const enabled = data?.enabled ?? true;
+  const s = data?.snapshot;
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <CheckCircle2 className="h-4 w-4" /> Giao ban tự động mỗi sáng
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Mỗi sáng hệ thống tự ghi nhận kết quả 24 giờ qua vào nhật ký công việc và làm mới KPI,
+            không cần bấm thủ công.
+          </p>
+          <div className="mt-2 text-xs text-muted-foreground">
+            Lần chạy gần nhất: {fmt(data?.lastRunAt ?? null)}
+            {s
+              ? ` · ${s.tasksTouched ?? 0} việc, ${s.done ?? 0} hoàn thành, ${s.overdue ?? 0} quá hạn, ${s.notes ?? 0} ghi chú`
+              : ""}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant={enabled ? "default" : "secondary"}>
+            {enabled ? "Đang bật" : "Đã tắt"}
+          </Badge>
+          <Button
+            size="sm"
+            variant={enabled ? "outline" : "default"}
+            className="min-h-11"
+            disabled={toggle.isPending}
+            onClick={() => toggle.mutate(!enabled)}
+          >
+            {toggle.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+            {enabled ? "Tắt" : "Bật"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StandupPage() {
   const [open, setOpen] = useState(false);
   const { workspaceId } = useActiveWorkspace();
@@ -235,6 +296,8 @@ function StandupPage() {
                   </div>
                 ))}
               </div>
+
+              <AutoStandupCard />
 
               <div className="rounded-2xl border border-border bg-surface p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
