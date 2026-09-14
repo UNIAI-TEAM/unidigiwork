@@ -36,6 +36,6 @@
 
 ## Tùy chỉnh Home / My Space
 
-- [ ] Sắp xếp và chỉnh kích thước card Trang chủ, lưu theo người dùng
-- [ ] Hoàn thiện kéo thả và kích thước card My Space trên desktop/tablet/mobile
-- [ ] Xác minh hai cấu hình độc lập và giữ nguyên sau khi tải lại
+- [x] Sắp xếp và chỉnh kích thước card Trang chủ, lưu theo người dùng
+- [x] Hoàn thiện kéo thả và kích thước card My Space trên desktop/tablet/mobile
+- [x] Xác minh hai cấu hình độc lập và giữ nguyên sau khi tải lại
