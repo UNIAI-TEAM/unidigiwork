@@ -2,6 +2,7 @@
 // và làm mới KPI của Command Center mà không cần thao tác thủ công.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { loadCeoOverview } from "./ceo.server";
+import { runDailyProposals } from "./ceo-proposals-daily.server";
 import { recordKpiSnapshot } from "./kpi-snapshot.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
@@ -15,6 +16,8 @@ export type DailyStandupResult = {
   skipped: number;
   notes: number;
   meetings: number;
+  proposals: number;
+  proposalsAssigned: number;
   kpiRefreshed: number;
   errors: string[];
 };
@@ -141,6 +144,8 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
     skipped: 0,
     notes: 0,
     meetings: 0,
+    proposals: 0,
+    proposalsAssigned: 0,
     kpiRefreshed: 0,
     errors: [],
   };
@@ -324,6 +329,18 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
       } catch (e) {
         result.errors.push(
           `Lịch họp ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
+
+      // Tự tạo đề xuất cho việc sắp đến hạn và gán nhân sự AI (vào nhật ký đề xuất).
+      try {
+        const proposals = await runDailyProposals(admin, row.tenant_id, authorId);
+        result.proposals += proposals.created;
+        result.proposalsAssigned += proposals.assigned;
+        (patch["standup_snapshot"] as Record<string, unknown>)["proposals"] = proposals;
+      } catch (e) {
+        result.errors.push(
+          `Đề xuất ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
         );
       }
 
