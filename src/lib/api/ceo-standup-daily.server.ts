@@ -497,6 +497,33 @@ export async function runDailyStandup(
         );
       }
 
+      // Tự đào tạo lại theo dữ liệu thật mỗi sáng — không phụ thuộc công tắc bật/tắt,
+      // vẫn giữ giới hạn tối đa 1 lần / ngày cho mỗi tổ chức.
+      try {
+        const retrainedRecently =
+          row.auto_retrain_at &&
+          Date.now() - new Date(row.auto_retrain_at).getTime() < MIN_INTERVAL_MS;
+        if (!retrainedRecently) {
+          const res = await retrainSkillsForTenant(
+            { supabase: admin, userId: authorId },
+            row.tenant_id,
+            null,
+          );
+          await recordRetrainMark({ supabase: admin, userId: authorId }, row.tenant_id);
+          result.retrained += 1;
+          result.createdSkills += res.created;
+          (patch["standup_snapshot"] as Record<string, unknown>)["retrain"] = {
+            createdSkills: res.created,
+          };
+        } else {
+          (patch["standup_snapshot"] as Record<string, unknown>)["retrain"] = { skipped: true };
+        }
+      } catch (e) {
+        result.errors.push(
+          `Đào tạo ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
+
       // Làm mới KPI ngay sau khi ghi nhận để Command Center hiển thị số liệu mới.
       try {
         const overview = await loadCeoOverview(admin, row.tenant_id, "week");
