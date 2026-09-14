@@ -1,6 +1,7 @@
 // GIAO BAN TỰ ĐỘNG MỖI SÁNG — ghi nhận kết quả 24 giờ qua vào nhật ký công việc
 // và làm mới KPI của Command Center mà không cần thao tác thủ công.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { recordRetrainMark, retrainSkillsForTenant } from "./ai-skills-retrain.server";
 import { loadCeoOverview } from "./ceo.server";
 import { runDailyProposals, type DailyProposalItem } from "./ceo-proposals-daily.server";
 import { recordKpiSnapshot } from "./kpi-snapshot.server";
