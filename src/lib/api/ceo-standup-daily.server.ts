@@ -273,7 +273,7 @@ export async function runDailyStandup(
 
   const { data: settings } = await admin
     .from("ceo_kpi_settings")
-    .select("tenant_id, auto_standup, auto_standup_at, standup_hour_vn")
+    .select("tenant_id, auto_standup, auto_standup_at, standup_hour_vn, auto_retrain_at")
     .eq("auto_standup", true)
     .limit(limit);
 
@@ -281,6 +281,7 @@ export async function runDailyStandup(
     tenant_id: string;
     auto_standup_at: string | null;
     standup_hour_vn: number | null;
+    auto_retrain_at: string | null;
   }[];
 
   for (const row of rows) {
