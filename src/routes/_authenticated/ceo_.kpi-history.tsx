@@ -8,7 +8,12 @@ import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { getCeoOverview } from "@/lib/api/ceo.functions";
-import { listKpiHistory, type KpiHistoryRow } from "@/lib/api/kpi-history.functions";
+import {
+  listKpiHistory,
+  listKpiMonthly,
+  type KpiHistoryRow,
+  type KpiMonthlyRow,
+} from "@/lib/api/kpi-history.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo_/kpi-history")({
   head: () => ({
