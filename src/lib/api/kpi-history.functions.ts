@@ -32,7 +32,9 @@ export const listKpiHistory = createServerFn({ method: "GET" })
 
     const { data: rows } = await context.supabase
       .from("ceo_kpi_snapshots")
-      .select("id, captured_at, source, score, configured, total_tasks, completed, overdue, ai_share_pct")
+      .select(
+        "id, captured_at, source, score, configured, total_tasks, completed, overdue, ai_share_pct",
+      )
       .eq("tenant_id", tenantId)
       .order("captured_at", { ascending: false })
       .limit(data.limit);

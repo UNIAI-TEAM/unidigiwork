@@ -16,8 +16,7 @@ export const Route = createFileRoute("/_authenticated/ceo_/kpi-history")({
       { title: "Lịch sử KPI — CEO Command Center" },
       {
         name: "description",
-        content:
-          "Xem các mốc KPI được ghi lại mỗi ngày và so sánh với KPI hiện tại của tổ chức.",
+        content: "Xem các mốc KPI được ghi lại mỗi ngày và so sánh với KPI hiện tại của tổ chức.",
       },
       { property: "og:title", content: "Lịch sử KPI — CEO Command Center" },
       {
@@ -47,8 +46,17 @@ const fmt = (iso: string) =>
 
 const num = (v: number | null) => (v === null ? "—" : `${Math.round(v)}`);
 
-function Delta({ current, past, inverse }: { current: number | null; past: number | null; inverse?: boolean }) {
-  if (current === null || past === null) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
+function Delta({
+  current,
+  past,
+  inverse,
+}: {
+  current: number | null;
+  past: number | null;
+  inverse?: boolean;
+}) {
+  if (current === null || past === null)
+    return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
   const d = Math.round(current - past);
   if (d === 0) return <span className="text-xs text-muted-foreground">±0</span>;
   const good = inverse ? d < 0 : d > 0;
