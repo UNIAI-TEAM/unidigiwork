@@ -308,7 +308,6 @@ import { useCeoLayout } from "@/components/ceo/use-ceo-layout";
 import {
   CEO_SECTION_LABEL,
   moveCeoSection,
-  type CeoLayoutPrefs,
   type CeoSectionKey,
   type CeoSize,
 } from "@/lib/ceo-layout-prefs";
