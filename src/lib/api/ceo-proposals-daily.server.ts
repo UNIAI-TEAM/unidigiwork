@@ -352,6 +352,29 @@ export async function runDailyProposals(
       continue;
     }
     result.created += 1;
+    result.items.push({
+      taskId: task.id,
+      title: task.title,
+      level,
+      score,
+      rank,
+      overdue,
+      dueLabel,
+      assigneeName: assignedPerson ? person!.name : null,
+      aiWorkerName: worker?.name ?? null,
+    });
+
+    // Ghi nhật ký công việc để CEO và người phụ trách thấy đề xuất ngay trong việc.
+    const { error: noteErr } = await admin.from("task_comments").insert({
+      task_id: task.id,
+      tenant_id: tenantId,
+      author_id: authorId,
+      body: `${PROPOSAL_PREFIX} Ưu tiên #${rank} — mức ${level} (điểm ${score}). ${description}`.slice(
+        0,
+        4000,
+      ),
+    });
+    if (!noteErr) result.notes += 1;
   }
 
   return result;
