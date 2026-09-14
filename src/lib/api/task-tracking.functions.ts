@@ -137,10 +137,12 @@ export const listTaskTracking = createServerFn({ method: "GET" })
     return tasks.map((t) => {
       const entries = history.get(t.id) ?? [];
       const withPct = entries.filter((e) => e.progressPct !== null);
-      const progressPct = t.status === "done" ? 100 : Math.max(0, Math.min(100, t.progress_pct ?? 0));
+      const progressPct =
+        t.status === "done" ? 100 : Math.max(0, Math.min(100, t.progress_pct ?? 0));
       const prev = withPct[1]?.progressPct ?? null;
       const isAi = !!t.ai_worker_id || t.execution_mode === "AI";
-      const overdue = !!t.due_at && t.due_at < nowIso && t.due_at >= from && !TERMINAL.has(t.status);
+      const overdue =
+        !!t.due_at && t.due_at < nowIso && t.due_at >= from && !TERMINAL.has(t.status);
       const completedInWindow = !!t.completed_at && t.completed_at >= from;
       const createdInWindow = !!t.created_at && t.created_at >= from;
 

@@ -581,7 +581,6 @@ function CeoPage() {
                         <ArrowRight className="h-4 w-4 shrink-0" />
                       </Link>
                     </div>
-
                   ),
                   import: <CeoImportPanel workspaceId={workspaceId ?? null} />,
                   analytics: (
