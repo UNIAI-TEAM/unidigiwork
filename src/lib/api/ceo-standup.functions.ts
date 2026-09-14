@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapPgError } from "./business.server";
+import { resolveTenantId } from "./ceo.server";
 
 export type StandupMeeting = {
   id: string;
@@ -245,71 +246,89 @@ export type AutoStandupSettings = {
   } | null;
 };
 
-/** Trạng thái lịch ghi nhận giao ban tự động mỗi sáng của tổ chức hiện tại. */
+const WS_INPUT = { workspaceId: z.string().uuid().nullable().optional() };
+
+/** Tổ chức đang xem (theo workspace đang chọn) — mỗi tổ chức có cài đặt riêng. */
+async function settingsTenantId(
+  supabase: Parameters<typeof resolveTenantId>[0],
+  userId: string,
+  workspaceId?: string | null,
+): Promise<string> {
+  const tenantId = await resolveTenantId(supabase, userId, workspaceId);
+  if (!tenantId) throw new Error("WORKSPACE_NOT_FOUND");
+  return tenantId;
+}
+
+/** Ghi cài đặt của đúng tổ chức đang xem; tạo dòng cài đặt nếu tổ chức chưa có. */
+async function upsertSettings(
+  supabase: Parameters<typeof resolveTenantId>[0],
+  tenantId: string,
+  userId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await supabase
+    .from("ceo_kpi_settings")
+    .upsert(
+      {
+        tenant_id: tenantId,
+        ...patch,
+        updated_by: userId,
+        updated_at: new Date().toISOString(),
+      } as never,
+      { onConflict: "tenant_id" },
+    );
+  if (error) mapPgError(error);
+}
+
+/** Trạng thái lịch ghi nhận giao ban tự động mỗi sáng của tổ chức đang xem. */
 export const getAutoStandupSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AutoStandupSettings> => {
-    const { data, error } = await context.supabase
+  .inputValidator((i: unknown) => z.object(WS_INPUT).parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<AutoStandupSettings> => {
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    const { data: row, error } = await context.supabase
       .from("ceo_kpi_settings")
       .select("auto_standup, auto_standup_at, standup_hour_vn, standup_snapshot")
-      .limit(1)
+      .eq("tenant_id", tenantId)
       .maybeSingle();
     if (error) mapPgError(error);
-    const row = data as unknown as {
+    const r = row as unknown as {
       auto_standup?: boolean;
       auto_standup_at?: string | null;
       standup_hour_vn?: number | null;
       standup_snapshot?: AutoStandupSettings["snapshot"];
     } | null;
     return {
-      enabled: row ? Boolean(row.auto_standup) : true,
-      lastRunAt: row?.auto_standup_at ?? null,
-      hourVn: row?.standup_hour_vn ?? 6,
-      snapshot: row?.standup_snapshot ?? null,
+      enabled: r ? Boolean(r.auto_standup) : true,
+      lastRunAt: r?.auto_standup_at ?? null,
+      hourVn: r?.standup_hour_vn ?? 6,
+      snapshot: r?.standup_snapshot ?? null,
     };
   });
 
-/** Chọn giờ chạy giao ban tự động mỗi sáng (giờ Việt Nam, 0-23). */
+/** Chọn giờ chạy giao ban tự động mỗi sáng cho tổ chức đang xem (giờ Việt Nam, 0-23). */
 export const setAutoStandupHour = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ hourVn: z.number().int().min(0).max(23) }).parse(i))
+  .inputValidator((i) =>
+    z.object({ ...WS_INPUT, hourVn: z.number().int().min(0).max(23) }).parse(i),
+  )
   .handler(async ({ data, context }) => {
-    const { data: existing, error: readErr } = await context.supabase
-      .from("ceo_kpi_settings")
-      .select("tenant_id")
-      .limit(1)
-      .maybeSingle();
-    if (readErr) mapPgError(readErr);
-    const tenantId = (existing as { tenant_id?: string } | null)?.tenant_id;
-    if (!tenantId) throw new Error("KPI_SETTINGS_NOT_FOUND");
-
-    const { error } = await context.supabase
-      .from("ceo_kpi_settings")
-      .update({ standup_hour_vn: data.hourVn, updated_by: context.userId } as never)
-      .eq("tenant_id", tenantId);
-    if (error) mapPgError(error);
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    await upsertSettings(context.supabase, tenantId, context.userId, {
+      standup_hour_vn: data.hourVn,
+    });
     return { ok: true as const, hourVn: data.hourVn };
   });
 
-/** Bật/tắt lịch ghi nhận giao ban tự động mỗi sáng. */
+/** Bật/tắt lịch ghi nhận giao ban tự động của tổ chức đang xem. */
 export const setAutoStandupEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ enabled: z.boolean() }).parse(i))
+  .inputValidator((i) => z.object({ ...WS_INPUT, enabled: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { data: existing, error: readErr } = await context.supabase
-      .from("ceo_kpi_settings")
-      .select("tenant_id")
-      .limit(1)
-      .maybeSingle();
-    if (readErr) mapPgError(readErr);
-    const tenantId = (existing as { tenant_id?: string } | null)?.tenant_id;
-    if (!tenantId) throw new Error("KPI_SETTINGS_NOT_FOUND");
-
-    const { error } = await context.supabase
-      .from("ceo_kpi_settings")
-      .update({ auto_standup: data.enabled, updated_by: context.userId } as never)
-      .eq("tenant_id", tenantId);
-    if (error) mapPgError(error);
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    await upsertSettings(context.supabase, tenantId, context.userId, {
+      auto_standup: data.enabled,
+    });
     return { ok: true as const, enabled: data.enabled };
   });
 
@@ -320,38 +339,41 @@ export type WeeklyMeetingSettings = {
   lastCreatedAt: string | null;
 };
 
-/** Cài đặt buổi họp tuần tự động (thứ, giờ Việt Nam, địa điểm). */
+/** Cài đặt buổi họp tuần tự động của tổ chức đang xem (thứ, giờ Việt Nam, địa điểm). */
 export const getWeeklyMeetingSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<WeeklyMeetingSettings> => {
-    const { data, error } = await context.supabase
+  .inputValidator((i: unknown) => z.object(WS_INPUT).parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<WeeklyMeetingSettings> => {
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    const { data: row, error } = await context.supabase
       .from("ceo_kpi_settings")
       .select(
         "weekly_meeting_dow, weekly_meeting_hour_vn, weekly_meeting_location, weekly_meeting_at",
       )
-      .limit(1)
+      .eq("tenant_id", tenantId)
       .maybeSingle();
     if (error) mapPgError(error);
-    const row = data as unknown as {
+    const r = row as unknown as {
       weekly_meeting_dow?: number | null;
       weekly_meeting_hour_vn?: number | null;
       weekly_meeting_location?: string | null;
       weekly_meeting_at?: string | null;
     } | null;
     return {
-      dow: row?.weekly_meeting_dow ?? 1,
-      hourVn: row?.weekly_meeting_hour_vn ?? 9,
-      location: row?.weekly_meeting_location ?? "Phòng họp trực tuyến UniWork",
-      lastCreatedAt: row?.weekly_meeting_at ?? null,
+      dow: r?.weekly_meeting_dow ?? 1,
+      hourVn: r?.weekly_meeting_hour_vn ?? 9,
+      location: r?.weekly_meeting_location ?? "Phòng họp trực tuyến UniWork",
+      lastCreatedAt: r?.weekly_meeting_at ?? null,
     };
   });
 
-/** Đặt thứ, giờ và địa điểm cho buổi họp tuần tự động. */
+/** Đặt thứ, giờ và địa điểm họp tuần cho tổ chức đang xem. */
 export const setWeeklyMeetingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
       .object({
+        ...WS_INPUT,
         dow: z.number().int().min(0).max(6),
         hourVn: z.number().int().min(0).max(23),
         location: z.string().trim().min(1).max(200),
@@ -359,24 +381,11 @@ export const setWeeklyMeetingSettings = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { data: existing, error: readErr } = await context.supabase
-      .from("ceo_kpi_settings")
-      .select("tenant_id")
-      .limit(1)
-      .maybeSingle();
-    if (readErr) mapPgError(readErr);
-    const tenantId = (existing as { tenant_id?: string } | null)?.tenant_id;
-    if (!tenantId) throw new Error("KPI_SETTINGS_NOT_FOUND");
-
-    const { error } = await context.supabase
-      .from("ceo_kpi_settings")
-      .update({
-        weekly_meeting_dow: data.dow,
-        weekly_meeting_hour_vn: data.hourVn,
-        weekly_meeting_location: data.location,
-        updated_by: context.userId,
-      } as never)
-      .eq("tenant_id", tenantId);
-    if (error) mapPgError(error);
-    return { ok: true as const, ...data };
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    await upsertSettings(context.supabase, tenantId, context.userId, {
+      weekly_meeting_dow: data.dow,
+      weekly_meeting_hour_vn: data.hourVn,
+      weekly_meeting_location: data.location,
+    });
+    return { ok: true as const, dow: data.dow, hourVn: data.hourVn, location: data.location };
   });
