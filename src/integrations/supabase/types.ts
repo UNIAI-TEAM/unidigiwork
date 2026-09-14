@@ -1589,6 +1589,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ceo_kpi_snapshots: {
+        Row: {
+          ai_share_pct: number | null
+          captured_at: string
+          completed: number
+          configured: boolean
+          id: string
+          overdue: number
+          payload: Json
+          score: number | null
+          source: string
+          tenant_id: string
+          total_tasks: number
+        }
+        Insert: {
+          ai_share_pct?: number | null
+          captured_at?: string
+          completed?: number
+          configured?: boolean
+          id?: string
+          overdue?: number
+          payload?: Json
+          score?: number | null
+          source?: string
+          tenant_id: string
+          total_tasks?: number
+        }
+        Update: {
+          ai_share_pct?: number | null
+          captured_at?: string
+          completed?: number
+          configured?: boolean
+          id?: string
+          overdue?: number
+          payload?: Json
+          score?: number | null
+          source?: string
+          tenant_id?: string
+          total_tasks?: number
+        }
+        Relationships: []
+      }
       ceo_report_runs: {
         Row: {
           created_at: string

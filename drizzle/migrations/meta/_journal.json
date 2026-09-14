@@ -36,6 +36,13 @@
       "when": 1789374144867,
       "tag": "0004_layout_history_scope_ceo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789374618515,
+      "tag": "0005_ceo_kpi_snapshots",
+      "breakpoints": true
     }
   ]
 }
