@@ -107,14 +107,16 @@ async function ensureDailyStandupMeeting(
   const ids = new Set<string>([hostId]);
   for (const m of (members ?? []) as { user_id: string }[]) ids.add(m.user_id);
 
-  await admin.from("meeting_participants").insert(
+  const { error: partErr } = await admin.from("meeting_participants").insert(
     [...ids].map((userId) => ({
       meeting_id: meetingId,
+      tenant_id: tenantId,
       user_id: userId,
       role: userId === hostId ? "host" : "attendee",
       rsvp: "pending",
     })),
   );
+  if (partErr) throw new Error(partErr.message);
 
   return "created";
 }
