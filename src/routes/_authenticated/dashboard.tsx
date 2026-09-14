@@ -4,17 +4,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { sendAiMessage } from "@/lib/api/ai-chat.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
+import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getDashboardPrefs, saveDashboardPrefs } from "@/lib/api/dashboard-prefs.functions";
 import {
-  queryOptions,
-  useSuspenseQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  getDashboardPrefs,
-  saveDashboardPrefs,
-  resetDashboardPrefs,
-} from "@/lib/api/dashboard-prefs.functions";
+  DASHBOARD_SECTIONS,
+  DASHBOARD_SIZES,
+  DEFAULT_DASHBOARD_PREFS,
+  moveDashboardSection,
+  readDashboardLayoutPrefs,
+  writeDashboardLayoutPrefs,
+  type DashboardCardSize,
+  type DashboardLayoutPrefs,
+  type DashboardSectionKey,
+} from "@/lib/dashboard-layout-prefs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -52,6 +54,8 @@ import {
   Bell,
   GripVertical,
   RefreshCw,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { useNotifSortMode } from "@/lib/notifications-data";
@@ -62,6 +66,10 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     meta: [
       { title: "Bảng điều khiển — UNIWORK" },
       { name: "description", content: "Tổng quan hoạt động của tổ chức trên UNIWORK." },
+      { property: "og:title", content: "Bảng điều khiển — UNIWORK" },
+      { property: "og:description", content: "Tổng quan hoạt động của tổ chức trên UNIWORK." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DashboardPage,
@@ -274,9 +282,14 @@ function notifPriorityRank(n: any): number {
   const type = String(n?.type ?? "").toLowerCase();
   const metaPriority = String(n?.meta?.priority ?? "").toLowerCase();
   const metaWeight =
-    metaPriority === "urgent" ? 60 : metaPriority === "high" ? 45 : metaPriority === "low" ? -10 : 0;
-  const typeWeight =
-    Object.entries(NOTIF_TYPE_WEIGHT).find(([k]) => type.includes(k))?.[1] ?? 10;
+    metaPriority === "urgent"
+      ? 60
+      : metaPriority === "high"
+        ? 45
+        : metaPriority === "low"
+          ? -10
+          : 0;
+  const typeWeight = Object.entries(NOTIF_TYPE_WEIGHT).find(([k]) => type.includes(k))?.[1] ?? 10;
   return typeWeight + metaWeight + (n?.is_read ? 0 : 25);
 }
 
@@ -515,59 +528,41 @@ function DashboardPage() {
 }
 
 const SECTIONS_STORAGE_KEY = "uniwork.dashboard.sections";
-
-const SECTION_OPTIONS = [
-  { key: "kpis", label: "Chỉ số KPI" },
-  { key: "activity", label: "Hoạt động tổng quan" },
-  { key: "donut", label: "Phân bổ công việc" },
-  { key: "projects", label: "Dự án nổi bật" },
-  { key: "recent", label: "Hoạt động gần đây" },
-  { key: "meetings", label: "Lịch họp hôm nay" },
-  { key: "workspaces", label: "Tổng quan không gian làm việc" },
-  { key: "ai", label: "Trợ lý AI (cột phải)" },
-] as const;
-
-type SectionKey = (typeof SECTION_OPTIONS)[number]["key"];
-
-const DEFAULT_SECTIONS = Object.fromEntries(
-  SECTION_OPTIONS.map((o) => [o.key, true]),
-) as Record<SectionKey, boolean>;
-
-const DEFAULT_ORDER = SECTION_OPTIONS.map((o) => o.key) as SectionKey[];
 const ORDER_STORAGE_KEY = "uniwork.dashboard.order.v1";
+const SIZES_STORAGE_KEY = "uniwork.dashboard.sizes.v1";
 
-// Chiều rộng mặc định của từng khối trong lưới 3 cột.
-const SECTION_SPAN: Record<SectionKey, string> = {
-  kpis: "lg:col-span-3",
-  activity: "lg:col-span-2",
-  donut: "lg:col-span-1",
-  projects: "lg:col-span-1",
-  recent: "lg:col-span-1",
-  meetings: "lg:col-span-1",
-  workspaces: "lg:col-span-3",
-  ai: "lg:col-span-1",
+const SECTION_SPAN: Record<DashboardCardSize, string> = {
+  sm: "lg:col-span-4",
+  md: "lg:col-span-6",
+  lg: "lg:col-span-8",
+  full: "lg:col-span-12",
 };
 
-function normalizeOrder(input: unknown): SectionKey[] {
+function normalizeOrder(input: unknown): DashboardSectionKey[] {
   const arr = Array.isArray(input) ? (input as string[]) : [];
-  const valid = arr.filter((k): k is SectionKey => DEFAULT_ORDER.includes(k as SectionKey));
+  const valid = arr.filter((key): key is DashboardSectionKey =>
+    DEFAULT_DASHBOARD_PREFS.order.includes(key as DashboardSectionKey),
+  );
   const seen = new Set(valid);
-  return [...valid, ...DEFAULT_ORDER.filter((k) => !seen.has(k))];
+  return [...valid, ...DEFAULT_DASHBOARD_PREFS.order.filter((key) => !seen.has(key))];
 }
 
 function DashboardInner() {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState(7);
-  const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
-  const [order, setOrder] = useState<SectionKey[]>(DEFAULT_ORDER);
-  const [dragKey, setDragKey] = useState<SectionKey | null>(null);
+  const [sections, setSections] = useState(DEFAULT_DASHBOARD_PREFS.enabled);
+  const [order, setOrder] = useState(DEFAULT_DASHBOARD_PREFS.order);
+  const [sizes, setSizes] = useState(DEFAULT_DASHBOARD_PREFS.sizes);
+  const [dragKey, setDragKey] = useState<DashboardSectionKey | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
   const userName = useMemo(
     () =>
-      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.full_name ||
-      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.display_name ||
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)
+        ?.full_name ||
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)
+        ?.display_name ||
       user?.email?.split("@")[0] ||
       "bạn",
     [user],
@@ -581,7 +576,7 @@ function DashboardInner() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SECTIONS_STORAGE_KEY);
-      if (raw) setSections({ ...DEFAULT_SECTIONS, ...JSON.parse(raw) });
+      if (raw) setSections({ ...DEFAULT_DASHBOARD_PREFS.enabled, ...JSON.parse(raw) });
     } catch {
       handleStorageFailure();
     }
@@ -589,29 +584,31 @@ function DashboardInner() {
       const rawOrder = localStorage.getItem(ORDER_STORAGE_KEY);
       if (rawOrder) setOrder(normalizeOrder(JSON.parse(rawOrder)));
     } catch {
-      setOrder(DEFAULT_ORDER);
+      setOrder(DEFAULT_DASHBOARD_PREFS.order);
+    }
+    try {
+      const rawSizes = localStorage.getItem(SIZES_STORAGE_KEY);
+      if (rawSizes) setSizes({ ...DEFAULT_DASHBOARD_PREFS.sizes, ...JSON.parse(rawSizes) });
+    } catch {
+      setSizes(DEFAULT_DASHBOARD_PREFS.sizes);
     }
     setHydrated(true);
   }, []);
 
   // Cấu hình từ server (đồng bộ đa thiết bị) luôn thắng cache cục bộ.
   useEffect(() => {
-    const remote = prefsQuery.data?.sections;
-    const remoteOrder = prefsQuery.data?.order;
-    if (remoteOrder) {
-      const nextOrder = normalizeOrder(remoteOrder);
-      setOrder(nextOrder);
-      try {
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(nextOrder));
-      } catch {
-        /* ignore */
-      }
-    }
-    if (!remote) return;
-    const merged = { ...DEFAULT_SECTIONS, ...remote } as Record<SectionKey, boolean>;
-    setSections(merged);
+    if (!prefsQuery.data) return;
+    const remote = readDashboardLayoutPrefs(
+      prefsQuery.data.sections ?? null,
+      prefsQuery.data.order ?? null,
+    );
+    setSections(remote.enabled);
+    setOrder(remote.order);
+    setSizes(remote.sizes);
     try {
-      localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(merged));
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(remote.order));
+      localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(remote.enabled));
+      localStorage.setItem(SIZES_STORAGE_KEY, JSON.stringify(remote.sizes));
     } catch {
       handleStorageFailure();
     }
@@ -622,7 +619,7 @@ function DashboardInner() {
     toast.error("Không lưu được tuỳ chỉnh bảng điều khiển", {
       description: "Bộ nhớ trình duyệt không khả dụng. Đã khôi phục bố cục mặc định.",
     });
-    setSections(DEFAULT_SECTIONS);
+    setSections(DEFAULT_DASHBOARD_PREFS.enabled);
     try {
       localStorage.removeItem(SECTIONS_STORAGE_KEY);
     } catch {
@@ -630,7 +627,18 @@ function DashboardInner() {
     }
   }
 
-  const toggleSection = (key: SectionKey) => {
+  const persistLayout = (next: DashboardLayoutPrefs, errorMessage: string) => {
+    const payload = writeDashboardLayoutPrefs(
+      next,
+      prefsQuery.data?.sections ?? null,
+      prefsQuery.data?.order ?? null,
+    );
+    void saveDashboardPrefs({ data: payload })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
+      .catch(() => toast.error(errorMessage));
+  };
+
+  const toggleSection = (key: DashboardSectionKey) => {
     const next = { ...sections, [key]: !sections[key] };
     try {
       localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(next));
@@ -639,15 +647,11 @@ function DashboardInner() {
       return;
     }
     setSections(next);
-    void saveDashboardPrefs({ data: { sections: next, order } })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
-      .catch(() => {
-        toast.error("Không đồng bộ được tuỳ chỉnh lên tài khoản");
-      });
+    persistLayout({ enabled: next, order, sizes }, "Không đồng bộ được tuỳ chỉnh lên tài khoản");
   };
 
   // Kéo-thả sắp xếp thứ tự khối.
-  const moveSection = (from: SectionKey, to: SectionKey) => {
+  const moveSection = (from: DashboardSectionKey, to: DashboardSectionKey) => {
     if (from === to) return;
     const next = order.filter((k) => k !== from);
     next.splice(next.indexOf(to), 0, from);
@@ -657,29 +661,58 @@ function DashboardInner() {
     } catch {
       /* ignore */
     }
-    void saveDashboardPrefs({ data: { sections, order: next } })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
-      .catch(() => {
-        toast.error("Không đồng bộ được thứ tự khối lên tài khoản");
-      });
+    persistLayout(
+      { enabled: sections, order: next, sizes },
+      "Không đồng bộ được thứ tự khối lên tài khoản",
+    );
   };
 
-  const resetSections = () => {
-    setSections(DEFAULT_SECTIONS);
-    setOrder(DEFAULT_ORDER);
+  const moveSectionBy = (key: DashboardSectionKey, direction: -1 | 1) => {
+    const next = moveDashboardSection(order, key, direction);
+    if (next === order) return;
+    setOrder(next);
     try {
-      localStorage.removeItem(SECTIONS_STORAGE_KEY);
-      localStorage.removeItem(ORDER_STORAGE_KEY);
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(next));
     } catch {
       /* ignore */
     }
-    void resetDashboardPrefs()
-      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
-      .catch(() => {});
+    persistLayout(
+      { enabled: sections, order: next, sizes },
+      "Không đồng bộ được thứ tự khối lên tài khoản",
+    );
   };
 
-  const visible = hydrated ? sections : DEFAULT_SECTIONS;
-  const layoutOrder = hydrated ? order : DEFAULT_ORDER;
+  const changeSectionSize = (key: DashboardSectionKey, size: DashboardCardSize) => {
+    const next = { ...sizes, [key]: size };
+    setSizes(next);
+    try {
+      localStorage.setItem(SIZES_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    persistLayout(
+      { enabled: sections, order, sizes: next },
+      "Không đồng bộ được kích thước khối lên tài khoản",
+    );
+  };
+
+  const resetSections = () => {
+    setSections(DEFAULT_DASHBOARD_PREFS.enabled);
+    setOrder(DEFAULT_DASHBOARD_PREFS.order);
+    setSizes(DEFAULT_DASHBOARD_PREFS.sizes);
+    try {
+      localStorage.removeItem(SECTIONS_STORAGE_KEY);
+      localStorage.removeItem(ORDER_STORAGE_KEY);
+      localStorage.removeItem(SIZES_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    persistLayout(DEFAULT_DASHBOARD_PREFS, "Không khôi phục được bố cục mặc định");
+  };
+
+  const visible = hydrated ? sections : DEFAULT_DASHBOARD_PREFS.enabled;
+  const layoutOrder = hydrated ? order : DEFAULT_DASHBOARD_PREFS.order;
+  const layoutSizes = hydrated ? sizes : DEFAULT_DASHBOARD_PREFS.sizes;
   const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId, workspaceName: activeWorkspaceName } =
     useActiveWorkspace();
@@ -765,21 +798,29 @@ function DashboardInner() {
   const sendAiFn = useServerFn(sendAiMessage);
   const [aiInput, setAiInput] = useState("");
   const [openedLinks, setOpenedLinks] = useState<
-    Array<{ label: string; path: string; filters?: Record<string, string | number | boolean>; at: string }>
+    Array<{
+      label: string;
+      path: string;
+      filters?: Record<string, string | number | boolean>;
+      at: string;
+    }>
   >([]);
-  const recordOpenedLink = (
-    label: string,
-    path: string,
-    filters?: Record<string, unknown>,
-  ) => {
+  const recordOpenedLink = (label: string, path: string, filters?: Record<string, unknown>) => {
     const safe: Record<string, string | number | boolean> = {};
     for (const [k, v] of Object.entries(filters ?? {})) {
       if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") safe[k] = v;
     }
     setOpenedLinks((prev) =>
       [
-        { label, path, ...(Object.keys(safe).length ? { filters: safe } : {}), at: new Date().toISOString() },
-        ...prev.filter((l) => l.path !== path || JSON.stringify(l.filters ?? {}) !== JSON.stringify(safe)),
+        {
+          label,
+          path,
+          ...(Object.keys(safe).length ? { filters: safe } : {}),
+          at: new Date().toISOString(),
+        },
+        ...prev.filter(
+          (l) => l.path !== path || JSON.stringify(l.filters ?? {}) !== JSON.stringify(safe),
+        ),
       ].slice(0, 5),
     );
   };
@@ -809,7 +850,10 @@ function DashboardInner() {
               (l) =>
                 `${l.label} (${l.path}${
                   l.filters && Object.keys(l.filters).length
-                    ? "?" + new URLSearchParams(Object.entries(l.filters).map(([k, v]) => [k, String(v)])).toString()
+                    ? "?" +
+                      new URLSearchParams(
+                        Object.entries(l.filters).map(([k, v]) => [k, String(v)]),
+                      ).toString()
                     : ""
                 })`,
             )
@@ -926,13 +970,14 @@ function DashboardInner() {
                     <div className="border-b border-border px-4 py-3">
                       <div className="text-sm font-semibold">Tuỳ chỉnh bảng điều khiển</div>
                       <p className="text-xs text-muted-foreground">
-                        Chọn khối muốn hiển thị và kéo-thả để đổi thứ tự. Thiết lập đồng bộ theo
-                        tài khoản của bạn.
+                        Chọn khối, kích thước và kéo-thả để đổi thứ tự. Thiết lập đồng bộ theo tài
+                        khoản của bạn.
                       </p>
                     </div>
                     <ul className="max-h-80 space-y-1 overflow-y-auto p-2">
-                      {layoutOrder.map((key) => {
-                        const opt = SECTION_OPTIONS.find((o) => o.key === key)!;
+                      {layoutOrder.map((key, index) => {
+                        const opt = DASHBOARD_SECTIONS.find((item) => item.key === key);
+                        if (!opt) return null;
                         return (
                           <li
                             key={key}
@@ -947,10 +992,30 @@ function DashboardInner() {
                             }}
                             className={`rounded-lg ${dragKey === key ? "opacity-50" : ""}`}
                           >
-                            <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
+                            <div className="flex min-h-11 items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
                               <span className="flex min-w-0 items-center gap-2">
-                                <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
+                                <GripVertical className="hidden h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing sm:block" />
                                 <span className="truncate">{opt.label}</span>
+                              </span>
+                              <span className="flex shrink-0 items-center sm:hidden">
+                                <button
+                                  type="button"
+                                  onClick={() => moveSectionBy(key, -1)}
+                                  disabled={index === 0}
+                                  aria-label={`Đưa ${opt.label} lên trên`}
+                                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface disabled:opacity-30"
+                                >
+                                  <ArrowUp className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveSectionBy(key, 1)}
+                                  disabled={index === layoutOrder.length - 1}
+                                  aria-label={`Đưa ${opt.label} xuống dưới`}
+                                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface disabled:opacity-30"
+                                >
+                                  <ArrowDown className="h-4 w-4" />
+                                </button>
                               </span>
                               <Switch
                                 checked={visible[key]}
@@ -958,6 +1023,26 @@ function DashboardInner() {
                                 aria-label={opt.label}
                               />
                             </div>
+                            {visible[key] && key !== "ai" ? (
+                              <div className="grid grid-cols-4 gap-1.5 px-2 pb-2">
+                                {DASHBOARD_SIZES.map((size) => (
+                                  <button
+                                    key={size.key}
+                                    type="button"
+                                    onClick={() => changeSectionSize(key, size.key)}
+                                    aria-pressed={layoutSizes[key] === size.key}
+                                    title={size.hint}
+                                    className={`min-h-11 rounded-md border px-1 text-xs transition-colors ${
+                                      layoutSizes[key] === size.key
+                                        ? "border-primary bg-primary/5 text-foreground"
+                                        : "border-border text-muted-foreground hover:bg-surface-2"
+                                    }`}
+                                  >
+                                    {size.label}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
                           </li>
                         );
                       })}
@@ -977,241 +1062,279 @@ function DashboardInner() {
             </div>
 
             {(() => {
-              const blocks: Partial<Record<SectionKey, ReactNode>> = {
+              const blocks: Partial<Record<DashboardSectionKey, ReactNode>> = {
                 kpis: (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {kpis.map((k) => (
-                  <KpiCard key={k.key} k={k} rangeDays={rangeDays} />
-                ))}
-              </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                    {kpis.map((k) => (
+                      <KpiCard key={k.key} k={k} rangeDays={rangeDays} />
+                    ))}
+                  </div>
                 ),
                 activity: (
-              <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
-                  <span className="rounded-md border border-border bg-surface-2 px-2.5 py-1 text-xs text-muted-foreground">
-                    {rangeDays} ngày qua
-                  </span>
-                </div>
-                <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_180px]">
-                  <ActivityChart activity={activity} />
-                  <ul className="space-y-3 text-sm">
-                    {activity.series.map((s) => (
-                      <li key={s.name}>
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
-                          <span className="text-muted-foreground">{s.name}</span>
-                        </div>
-                        <div className="ml-4 flex items-baseline justify-between">
-                          <span className="text-base font-semibold tabular-nums">{s.total}</span>
-                          <span className="text-xs text-emerald-400">{s.delta}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+                  <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
+                      <span className="rounded-md border border-border bg-surface-2 px-2.5 py-1 text-xs text-muted-foreground">
+                        {rangeDays} ngày qua
+                      </span>
+                    </div>
+                    <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_180px]">
+                      <ActivityChart activity={activity} />
+                      <ul className="space-y-3 text-sm">
+                        {activity.series.map((s) => (
+                          <li key={s.name}>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: s.color }}
+                              />
+                              <span className="text-muted-foreground">{s.name}</span>
+                            </div>
+                            <div className="ml-4 flex items-baseline justify-between">
+                              <span className="text-base font-semibold tabular-nums">
+                                {s.total}
+                              </span>
+                              <span className="text-xs text-emerald-400">{s.delta}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 ),
                 donut: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
-                <div className="mt-4 flex flex-col items-center gap-4">
-                  <Donut slices={donut.slices} total={donut.total} />
-                  <ul className="w-full space-y-2 text-sm">
-                    {donut.slices.map((d) => (
-                      <li key={d.label} className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-muted-foreground">
-                          <span className="h-2 w-2 rounded-full" style={{ background: d.color }} />{" "}
-                          {d.label}
-                        </span>
-                        <span className="tabular-nums">
-                          {d.value.toLocaleString()}{" "}
-                          <span className="text-muted-foreground">({d.pct}%)</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
+                    <div className="mt-4 flex flex-col items-center gap-4">
+                      <Donut slices={donut.slices} total={donut.total} />
+                      <ul className="w-full space-y-2 text-sm">
+                        {donut.slices.map((d) => (
+                          <li key={d.label} className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: d.color }}
+                              />{" "}
+                              {d.label}
+                            </span>
+                            <span className="tabular-nums">
+                              {d.value.toLocaleString()}{" "}
+                              <span className="text-muted-foreground">({d.pct}%)</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 ),
                 projects: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
-                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem tất cả</button>
-                </div>
-                {projects.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">Chưa có dự án nào.</p>
-                ) : (
-                  <ul className="mt-4 space-y-3">
-                    {projects.map((p, idx) => (
-                      <li
-                        key={p.id}
-                        className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="text-xs text-primary hover:underline"
                       >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                        Xem tất cả
+                      </button>
+                    </div>
+                    {projects.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">Chưa có dự án nào.</p>
+                    ) : (
+                      <ul className="mt-4 space-y-3">
+                        {projects.map((p, idx) => (
+                          <li
+                            key={p.id}
+                            className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
                           >
-                            {p.name.charAt(0).toUpperCase()}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium">{p.name}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              Tiến độ: {p.progress}% · {p.tasks} nhiệm vụ · {p.members} thành viên
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                              >
+                                {p.name.charAt(0).toUpperCase()}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-sm font-medium">{p.name}</div>
+                                <div className="text-[11px] text-muted-foreground">
+                                  Tiến độ: {p.progress}% · {p.tasks} nhiệm vụ · {p.members} thành
+                                  viên
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400"
-                            style={{ width: `${p.progress}%` }}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400"
+                                style={{ width: `${p.progress}%` }}
+                              />
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 ),
                 recent: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
-                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem tất cả</button>
-                </div>
-                {recent.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
-                ) : (
-                  <ul className="mt-4 space-y-3">
-                    {recent.map((r) => {
-                      const meta = AREA_META[r.area] ?? AREA_META.Tasks;
-                      const Icon = meta.icon;
-                      return (
-                        <li key={r.id} className="flex items-start gap-3">
-                          <div className="relative">
-                            <img
-                              src={avatar(r.who)}
-                              alt=""
-                              className="h-9 w-9 rounded-full object-cover"
-                            />
-                            <span
-                              className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-surface-2 ${meta.tint}`}
-                            >
-                              <Icon className="h-2.5 w-2.5" />
-                            </span>
-                          </div>
-                          <div className="min-w-0 flex-1 text-sm">
-                            <div className="leading-snug">
-                              <span className="font-medium">{r.who}</span>{" "}
-                              <span className="text-muted-foreground">{r.what}</span>{" "}
-                              <span className="font-medium">{r.target}</span>
-                            </div>
-                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                              <span>{r.area}</span>
-                              <span>·</span>
-                              <span>{fmtTime(r.at)}</span>
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Xem tất cả
+                      </button>
+                    </div>
+                    {recent.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
+                    ) : (
+                      <ul className="mt-4 space-y-3">
+                        {recent.map((r) => {
+                          const meta = AREA_META[r.area] ?? AREA_META.Tasks;
+                          const Icon = meta.icon;
+                          return (
+                            <li key={r.id} className="flex items-start gap-3">
+                              <div className="relative">
+                                <img
+                                  src={avatar(r.who)}
+                                  alt=""
+                                  className="h-9 w-9 rounded-full object-cover"
+                                />
+                                <span
+                                  className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-surface-2 ${meta.tint}`}
+                                >
+                                  <Icon className="h-2.5 w-2.5" />
+                                </span>
+                              </div>
+                              <div className="min-w-0 flex-1 text-sm">
+                                <div className="leading-snug">
+                                  <span className="font-medium">{r.who}</span>{" "}
+                                  <span className="text-muted-foreground">{r.what}</span>{" "}
+                                  <span className="font-medium">{r.target}</span>
+                                </div>
+                                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                  <span>{r.area}</span>
+                                  <span>·</span>
+                                  <span>{fmtTime(r.at)}</span>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
                 ),
                 meetings: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
-                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem lịch đầy đủ</button>
-                </div>
-                {meetings.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">Hôm nay không có cuộc họp.</p>
-                ) : (
-                  <ul className="mt-4 space-y-3">
-                    {meetings.map((m) => (
-                      <li
-                        key={m.id}
-                        className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="text-xs text-primary hover:underline"
                       >
-                        <div className="w-14 shrink-0">
-                          <div className="text-sm font-semibold tabular-nums">
-                            {fmtTime(m.start_at)}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {fmtDur(m.start_at, m.end_at)}
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{m.title}</div>
-                          <div className="mt-1">
-                            <AvatarStack count={m.participants} seed={m.id} />
-                          </div>
-                        </div>
-                        <button onClick={() => notifyComingSoon()} className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20">
-                          Tham gia
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                        Xem lịch đầy đủ
+                      </button>
+                    </div>
+                    {meetings.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        Hôm nay không có cuộc họp.
+                      </p>
+                    ) : (
+                      <ul className="mt-4 space-y-3">
+                        {meetings.map((m) => (
+                          <li
+                            key={m.id}
+                            className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                          >
+                            <div className="w-14 shrink-0">
+                              <div className="text-sm font-semibold tabular-nums">
+                                {fmtTime(m.start_at)}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {fmtDur(m.start_at, m.end_at)}
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium">{m.title}</div>
+                              <div className="mt-1">
+                                <AvatarStack count={m.participants} seed={m.id} />
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => notifyComingSoon()}
+                              className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                            >
+                              Tham gia
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 ),
                 workspaces: (
-            <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
-                <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                  <TrendingUp className="h-3.5 w-3.5" /> So sánh
-                </button>
-              </div>
-              {workspaces.length === 0 ? (
-                <p className="mt-4 text-sm text-muted-foreground">Chưa có không gian làm việc.</p>
-              ) : (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  {workspaces.slice(0, 5).map((w, idx) => (
-                    <div
-                      key={w.id}
-                      className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`flex h-7 w-7 items-center justify-center rounded text-[12px] font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
-                        >
-                          {w.name.charAt(0).toUpperCase()}
-                        </span>
-                        <div className="truncate text-sm font-medium">{w.name}</div>
-                      </div>
-                      <div className="mt-3 grid grid-cols-2 gap-1 text-xs">
-                        <div>
-                          <div className="text-base font-semibold tabular-nums">{w.members}</div>
-                          <div className="text-[10px] text-muted-foreground">thành viên</div>
-                        </div>
-                        <div>
-                          <div className="text-base font-semibold tabular-nums">{w.tasks}</div>
-                          <div className="text-[10px] text-muted-foreground">nhiệm vụ</div>
-                        </div>
-                      </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{ width: `${w.progress}%` }}
-                        />
-                      </div>
+                  <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <TrendingUp className="h-3.5 w-3.5" /> So sánh
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    {workspaces.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        Chưa có không gian làm việc.
+                      </p>
+                    ) : (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        {workspaces.slice(0, 5).map((w, idx) => (
+                          <div
+                            key={w.id}
+                            className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`flex h-7 w-7 items-center justify-center rounded text-[12px] font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                              >
+                                {w.name.charAt(0).toUpperCase()}
+                              </span>
+                              <div className="truncate text-sm font-medium">{w.name}</div>
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-1 text-xs">
+                              <div>
+                                <div className="text-base font-semibold tabular-nums">
+                                  {w.members}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">thành viên</div>
+                              </div>
+                              <div>
+                                <div className="text-base font-semibold tabular-nums">
+                                  {w.tasks}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">nhiệm vụ</div>
+                              </div>
+                            </div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
+                              <div
+                                className="h-full rounded-full bg-primary"
+                                style={{ width: `${w.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ),
               };
               return (
-                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
                   {layoutOrder
                     .filter((k) => k !== "ai" && visible[k] && blocks[k])
                     .map((k) => (
-                      <div key={k} className={`min-w-0 ${SECTION_SPAN[k]}`}>
+                      <div key={k} className={`min-w-0 ${SECTION_SPAN[layoutSizes[k]]}`}>
                         {blocks[k]}
                       </div>
                     ))}
@@ -1289,39 +1412,39 @@ function DashboardInner() {
                   </div>
                 </div>
               ) : (
-              <ul className="mt-4 space-y-2">
-                {aiItems.map((it) => {
-                  const Icon = it.icon;
-                  return (
-                    <li key={it.title}>
-                      <Link
-                        to={it.to}
-                        search={it.search as never}
-                        preload="intent"
-                        onClick={() =>
-                          recordOpenedLink(
-                            it.title,
-                            it.to,
-                            (it.search ?? {}) as Record<string, unknown>,
-                          )
-                        }
-                        className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
-                      >
-                        <span
-                          className={`flex h-9 w-9 items-center justify-center rounded-lg ${it.tint}`}
+                <ul className="mt-4 space-y-2">
+                  {aiItems.map((it) => {
+                    const Icon = it.icon;
+                    return (
+                      <li key={it.title}>
+                        <Link
+                          to={it.to}
+                          search={it.search as never}
+                          preload="intent"
+                          onClick={() =>
+                            recordOpenedLink(
+                              it.title,
+                              it.to,
+                              (it.search ?? {}) as Record<string, unknown>,
+                            )
+                          }
+                          className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
                         >
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{it.title}</div>
-                          <div className="text-[11px] text-primary">{it.action} →</div>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+                          <span
+                            className={`flex h-9 w-9 items-center justify-center rounded-lg ${it.tint}`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">{it.title}</div>
+                            <div className="text-[11px] text-primary">{it.action} →</div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
 
               {(aiThread.length > 0 || aiSending) && (
@@ -1352,7 +1475,14 @@ function DashboardInner() {
                   {openedLinks.map((l) => (
                     <span
                       key={`${l.path}-${l.at}`}
-                      title={`${l.path}${l.filters ? " · " + Object.entries(l.filters).map(([k, v]) => `${k}=${v}`).join(", ") : ""}`}
+                      title={`${l.path}${
+                        l.filters
+                          ? " · " +
+                            Object.entries(l.filters)
+                              .map(([k, v]) => `${k}=${v}`)
+                              .join(", ")
+                          : ""
+                      }`}
                       className="rounded-full border border-border/60 bg-surface-2/60 px-2 py-0.5 text-[10px] text-muted-foreground"
                     >
                       Đã mở: {l.label}
@@ -1384,10 +1514,7 @@ function DashboardInner() {
                 </button>
               </div>
               {aiConversationId && (
-                <Link
-                  to="/ai"
-                  className="mt-2 block text-[11px] text-primary hover:underline"
-                >
+                <Link to="/ai" className="mt-2 block text-[11px] text-primary hover:underline">
                   Mở hội thoại đầy đủ trong AI Workspace →
                 </Link>
               )}
@@ -1426,9 +1553,7 @@ function DashboardInner() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-destructive" />
                       <div className="min-w-0">
-                        <div className="font-medium text-destructive">
-                          Không tải được thông báo
-                        </div>
+                        <div className="font-medium text-destructive">Không tải được thông báo</div>
                         <div className="break-words text-muted-foreground">
                           {(notificationsQuery.error as Error)?.message ?? "Lỗi không xác định"}
                         </div>
@@ -1474,9 +1599,7 @@ function DashboardInner() {
                           >
                             {n.title}
                           </div>
-                          {n.body && (
-                            <div className="truncate text-muted-foreground">{n.body}</div>
-                          )}
+                          {n.body && <div className="truncate text-muted-foreground">{n.body}</div>}
                           <div className="text-muted-foreground">
                             {new Intl.DateTimeFormat("vi-VN", {
                               hour: "2-digit",
@@ -1509,7 +1632,10 @@ function DashboardInner() {
                 </Link>
               </div>
 
-              <button onClick={() => notifyComingSoon()} className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2">
+              <button
+                onClick={() => notifyComingSoon()}
+                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2"
+              >
                 <BookOpen className="h-3.5 w-3.5" /> Hướng dẫn sử dụng
               </button>
             </aside>
