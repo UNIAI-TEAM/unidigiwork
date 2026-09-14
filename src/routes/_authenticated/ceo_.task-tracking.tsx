@@ -225,6 +225,7 @@ function TaskCard({
 
       {open ? (
         <div className="border-t border-border px-4 py-3">
+          {canManage ? <ProgressEditor row={row} workspaceId={workspaceId} /> : null}
           {row.history.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Chưa có ghi nhận nào. Hệ thống sẽ tự ghi mỗi sáng.
