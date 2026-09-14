@@ -173,6 +173,7 @@ function AutoStandupCard() {
   const qc = useQueryClient();
   const getSettings = useServerFn(getAutoStandupSettings);
   const setEnabled = useServerFn(setAutoStandupEnabled);
+  const setHour = useServerFn(setAutoStandupHour);
   const { data } = useQuery({
     queryKey: ["ceo", "auto-standup"],
     queryFn: () => getSettings({}),
@@ -187,7 +188,17 @@ function AutoStandupCard() {
     onError: () => toast.error("Không lưu được cài đặt"),
   });
 
+  const changeHour = useMutation({
+    mutationFn: (hourVn: number) => setHour({ data: { hourVn } }),
+    onSuccess: (res) => {
+      toast.success(`Giao ban tự động sẽ chạy lúc ${String(res.hourVn).padStart(2, "0")}:30`);
+      void qc.invalidateQueries({ queryKey: ["ceo", "auto-standup"] });
+    },
+    onError: () => toast.error("Không lưu được giờ chạy"),
+  });
+
   const enabled = data?.enabled ?? true;
+  const hourVn = data?.hourVn ?? 6;
   const s = data?.snapshot;
 
   return (
