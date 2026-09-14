@@ -97,7 +97,11 @@ function MonthlyChart({
   );
   const max = Math.max(1, ...values, metric === "score" ? (current.score ?? 0) : 0);
   const refValue =
-    metric === "score" ? current.score : metric === "completed" ? current.completed : current.overdue;
+    metric === "score"
+      ? current.score
+      : metric === "completed"
+        ? current.completed
+        : current.overdue;
   const refPct = refValue === null ? null : Math.min(100, Math.round((refValue / max) * 100));
 
   return (
