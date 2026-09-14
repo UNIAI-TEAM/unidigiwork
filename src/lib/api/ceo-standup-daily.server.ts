@@ -344,7 +344,7 @@ export async function runDailyStandup(
 
       // Tự tạo buổi giao ban hằng ngày trên lịch họp (một buổi / ngày / tổ chức).
       try {
-        const meeting = await ensureDailyStandupMeeting(admin, row.tenant_id, authorId);
+        const meeting = await ensureDailyStandupMeeting(admin, row.tenant_id, authorId, hourVn);
         if (meeting === "created") result.meetings += 1;
         (patch["standup_snapshot"] as Record<string, unknown>)["meeting"] = meeting;
       } catch (e) {
