@@ -312,3 +312,71 @@ export const setAutoStandupEnabled = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     return { ok: true as const, enabled: data.enabled };
   });
+
+export type WeeklyMeetingSettings = {
+  dow: number;
+  hourVn: number;
+  location: string;
+  lastCreatedAt: string | null;
+};
+
+/** Cài đặt buổi họp tuần tự động (thứ, giờ Việt Nam, địa điểm). */
+export const getWeeklyMeetingSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<WeeklyMeetingSettings> => {
+    const { data, error } = await context.supabase
+      .from("ceo_kpi_settings")
+      .select(
+        "weekly_meeting_dow, weekly_meeting_hour_vn, weekly_meeting_location, weekly_meeting_at",
+      )
+      .limit(1)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    const row = data as unknown as {
+      weekly_meeting_dow?: number | null;
+      weekly_meeting_hour_vn?: number | null;
+      weekly_meeting_location?: string | null;
+      weekly_meeting_at?: string | null;
+    } | null;
+    return {
+      dow: row?.weekly_meeting_dow ?? 1,
+      hourVn: row?.weekly_meeting_hour_vn ?? 9,
+      location: row?.weekly_meeting_location ?? "Phòng họp trực tuyến UniWork",
+      lastCreatedAt: row?.weekly_meeting_at ?? null,
+    };
+  });
+
+/** Đặt thứ, giờ và địa điểm cho buổi họp tuần tự động. */
+export const setWeeklyMeetingSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        dow: z.number().int().min(0).max(6),
+        hourVn: z.number().int().min(0).max(23),
+        location: z.string().trim().min(1).max(200),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: existing, error: readErr } = await context.supabase
+      .from("ceo_kpi_settings")
+      .select("tenant_id")
+      .limit(1)
+      .maybeSingle();
+    if (readErr) mapPgError(readErr);
+    const tenantId = (existing as { tenant_id?: string } | null)?.tenant_id;
+    if (!tenantId) throw new Error("KPI_SETTINGS_NOT_FOUND");
+
+    const { error } = await context.supabase
+      .from("ceo_kpi_settings")
+      .update({
+        weekly_meeting_dow: data.dow,
+        weekly_meeting_hour_vn: data.hourVn,
+        weekly_meeting_location: data.location,
+        updated_by: context.userId,
+      } as never)
+      .eq("tenant_id", tenantId);
+    if (error) mapPgError(error);
+    return { ok: true as const, ...data };
+  });
