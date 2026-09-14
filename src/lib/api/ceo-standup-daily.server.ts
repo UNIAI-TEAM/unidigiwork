@@ -56,8 +56,9 @@ async function ensureDailyStandupMeeting(
   admin: any,
   tenantId: string,
   hostId: string,
+  hourVn: number,
 ): Promise<"created" | "exists" | "no_workspace"> {
-  const start = todayStandupStart();
+  const start = todayStandupStart(hourVn);
   const end = new Date(start.getTime() + MEETING_MINUTES * 60 * 1000);
   const dayStart = new Date(start.getTime() - 12 * 60 * 60 * 1000).toISOString();
   const dayEnd = new Date(start.getTime() + 12 * 60 * 60 * 1000).toISOString();
