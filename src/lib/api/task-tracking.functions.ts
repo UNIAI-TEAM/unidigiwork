@@ -222,7 +222,7 @@ export const updateTaskTrackingProgress = createServerFn({ method: "POST" })
 
     const { data: task } = await context.supabase
       .from("tasks")
-      .select("id, title, status, progress_pct")
+      .select("id, title, status, progress_pct, completed_at")
       .eq("id", data.taskId)
       .eq("tenant_id", tenantId)
       .is("deleted_at", null)
