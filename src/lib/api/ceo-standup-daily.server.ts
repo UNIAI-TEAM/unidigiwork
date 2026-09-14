@@ -103,10 +103,7 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
       if (taskErr) throw new Error(taskErr.message);
 
       const byId = new Map<string, TaskRow>();
-      for (const t of [
-        ...((boardData ?? []) as TaskRow[]),
-        ...((taskData ?? []) as TaskRow[]),
-      ]) {
+      for (const t of [...((boardData ?? []) as TaskRow[]), ...((taskData ?? []) as TaskRow[])]) {
         byId.set(t.id, t);
       }
       const tasks = [...byId.values()].slice(0, MAX_TASKS_PER_TENANT);
