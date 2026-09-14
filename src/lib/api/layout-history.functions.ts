@@ -11,7 +11,8 @@ export type LayoutHistoryEntry = {
   id: string;
   scope: "home" | "dashboard";
   label: string | null;
-  prefs: unknown;
+  /** JSON chuỗi hoá của bố cục. */
+  prefs: string;
   createdAt: string;
 };
 
@@ -55,7 +56,7 @@ export const listLayoutHistory = createServerFn({ method: "POST" })
       id: r["id"] as string,
       scope: r["scope"] as "home" | "dashboard",
       label: (r["label"] as string | null) ?? null,
-      prefs: r["prefs"],
+      prefs: JSON.stringify(r["prefs"] ?? null),
       createdAt: r["created_at"] as string,
     }));
   });
@@ -63,11 +64,11 @@ export const listLayoutHistory = createServerFn({ method: "POST" })
 /** Lưu một mốc bố cục; bỏ qua nếu trùng hệt mốc gần nhất. */
 export const saveLayoutSnapshot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { scope: "home" | "dashboard"; prefs: unknown; label?: string | null }) =>
+  .inputValidator((i: { scope: "home" | "dashboard"; prefs: string; label?: string | null }) =>
     z
       .object({
         scope: scopeSchema,
-        prefs: z.unknown(),
+        prefs: z.string().min(2).max(20000),
         label: z.string().max(120).nullable().optional(),
       })
       .parse(i),
@@ -82,7 +83,10 @@ export const saveLayoutSnapshot = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
-    if (last && JSON.stringify((last as { prefs: unknown }).prefs) === JSON.stringify(data.prefs)) {
+    if (
+      last &&
+      JSON.stringify((last as { prefs: unknown }).prefs) === JSON.stringify(JSON.parse(data.prefs))
+    ) {
       return { ok: true as const, saved: false };
     }
 
@@ -91,7 +95,7 @@ export const saveLayoutSnapshot = createServerFn({ method: "POST" })
       user_id: context.userId,
       tenant_id: tenantId,
       scope: data.scope,
-      prefs: data.prefs as never,
+      prefs: JSON.parse(data.prefs) as never,
       label: data.label ?? null,
     } as never);
     if (error) fail(error, "Không lưu được lịch sử bố cục");
