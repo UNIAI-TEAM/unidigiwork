@@ -195,6 +195,55 @@ function KpiHistoryPage() {
                 ))}
               </div>
 
+              {coverage ? (
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="text-sm font-medium">Đề xuất có bù đắp kịp việc quá hạn?</div>
+                  <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Đề xuất sáng gần nhất</div>
+                      <div className="mt-1 text-2xl font-semibold tracking-tight">
+                        {coverage.lastProposals}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Quá hạn cùng mốc</div>
+                      <div className="mt-1 text-2xl font-semibold tracking-tight">
+                        {coverage.lastOverdue}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">
+                        Tổng {coverage.days} mốc gần đây
+                      </div>
+                      <div className="mt-1 text-2xl font-semibold tracking-tight">
+                        {coverage.proposals} / {coverage.overdue}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Mức bù đắp</div>
+                      <div
+                        className={`mt-1 text-2xl font-semibold tracking-tight ${
+                          coverage.ratio === null
+                            ? ""
+                            : coverage.ratio >= 100
+                              ? "text-emerald-600"
+                              : "text-destructive"
+                        }`}
+                      >
+                        {coverage.ratio === null ? "—" : `${coverage.ratio}%`}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {coverage.ratio === null
+                      ? "Chưa có việc quá hạn trong các mốc này."
+                      : coverage.ratio >= 100
+                        ? "Số đề xuất sinh ra đang nhiều hơn số việc quá hạn — đủ sức bù đắp."
+                        : "Số đề xuất còn ít hơn số việc quá hạn — cần giao thêm người hoặc AI."}
+                  </p>
+                </div>
+              ) : null}
+
               <div className="rounded-2xl border border-border bg-surface">
                 <div className="border-b border-border px-4 py-3 text-sm font-medium">
                   Các mốc đã ghi ({rows.length})
