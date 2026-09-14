@@ -173,6 +173,19 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
         },
       };
 
+      // Tự tạo buổi giao ban hằng ngày trên lịch họp (một buổi / ngày / tổ chức).
+      try {
+        const meeting = await ensureDailyStandupMeeting(admin, row.tenant_id, authorId);
+        if (meeting === "created") result.meetings += 1;
+        (patch["standup_snapshot"] as Record<string, unknown>)["meeting"] = meeting;
+      } catch (e) {
+        result.errors.push(
+          `Lịch họp ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
+
+
+
       // Làm mới KPI ngay sau khi ghi nhận để Command Center hiển thị số liệu mới.
       try {
         const overview = await loadCeoOverview(admin, row.tenant_id, "week");
