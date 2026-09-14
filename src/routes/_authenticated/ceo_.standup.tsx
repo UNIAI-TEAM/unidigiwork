@@ -171,18 +171,18 @@ function TaskRow({
   );
 }
 
-function AutoStandupCard() {
+function AutoStandupCard({ workspaceId }: { workspaceId: string | null }) {
   const qc = useQueryClient();
   const getSettings = useServerFn(getAutoStandupSettings);
   const setEnabled = useServerFn(setAutoStandupEnabled);
   const setHour = useServerFn(setAutoStandupHour);
   const { data } = useQuery({
-    queryKey: ["ceo", "auto-standup"],
-    queryFn: () => getSettings({}),
+    queryKey: ["ceo", "auto-standup", workspaceId ?? ""],
+    queryFn: () => getSettings({ data: { workspaceId } }),
   });
 
   const toggle = useMutation({
-    mutationFn: (enabled: boolean) => setEnabled({ data: { enabled } }),
+    mutationFn: (enabled: boolean) => setEnabled({ data: { workspaceId, enabled } }),
     onSuccess: (res) => {
       toast.success(res.enabled ? "Đã bật giao ban tự động" : "Đã tắt giao ban tự động");
       void qc.invalidateQueries({ queryKey: ["ceo", "auto-standup"] });
@@ -191,7 +191,7 @@ function AutoStandupCard() {
   });
 
   const changeHour = useMutation({
-    mutationFn: (hourVn: number) => setHour({ data: { hourVn } }),
+    mutationFn: (hourVn: number) => setHour({ data: { workspaceId, hourVn } }),
     onSuccess: (res) => {
       toast.success(`Giao ban tự động sẽ chạy lúc ${String(res.hourVn).padStart(2, "0")}:30`);
       void qc.invalidateQueries({ queryKey: ["ceo", "auto-standup"] });
@@ -261,13 +261,13 @@ function AutoStandupCard() {
 
 const DOW_LABEL = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
-function WeeklyMeetingCard() {
+function WeeklyMeetingCard({ workspaceId }: { workspaceId: string | null }) {
   const qc = useQueryClient();
   const getSettings = useServerFn(getWeeklyMeetingSettings);
   const save = useServerFn(setWeeklyMeetingSettings);
   const { data } = useQuery({
-    queryKey: ["ceo", "weekly-meeting"],
-    queryFn: () => getSettings({}),
+    queryKey: ["ceo", "weekly-meeting", workspaceId ?? ""],
+    queryFn: () => getSettings({ data: { workspaceId } }),
   });
 
   const [draft, setDraft] = useState<{ dow: number; hourVn: number; location: string } | null>(
@@ -280,7 +280,7 @@ function WeeklyMeetingCard() {
   };
 
   const m = useMutation({
-    mutationFn: () => save({ data: cur }),
+    mutationFn: () => save({ data: { ...cur, workspaceId } }),
     onSuccess: () => {
       toast.success(
         `Họp tuần sẽ tự tạo vào ${DOW_LABEL[cur.dow]} lúc ${String(cur.hourVn).padStart(2, "0")}:00`,
@@ -438,9 +438,9 @@ function StandupPage() {
                 ))}
               </div>
 
-              <AutoStandupCard />
+              <AutoStandupCard workspaceId={workspaceId ?? null} />
 
-              <WeeklyMeetingCard />
+              <WeeklyMeetingCard workspaceId={workspaceId ?? null} />
 
               <div className="rounded-2xl border border-border bg-surface p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
