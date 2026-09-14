@@ -95,6 +95,7 @@ import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
 import { Route as AuthenticatedCeoTaskTrackingRouteImport } from './routes/_authenticated/ceo_.task-tracking'
 import { Route as AuthenticatedCeoStandupRouteImport } from './routes/_authenticated/ceo_.standup'
+import { Route as AuthenticatedCeoProposalTrackingRouteImport } from './routes/_authenticated/ceo_.proposal-tracking'
 import { Route as AuthenticatedCeoKpiHistoryRouteImport } from './routes/_authenticated/ceo_.kpi-history'
 import { Route as AuthenticatedAiMarketSearchRouteImport } from './routes/_authenticated/ai-market.search'
 import { Route as AuthenticatedAiMarketIdRouteImport } from './routes/_authenticated/ai-market.$id'
@@ -589,6 +590,12 @@ const AuthenticatedCeoStandupRoute = AuthenticatedCeoStandupRouteImport.update({
   path: '/ceo/standup',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCeoProposalTrackingRoute =
+  AuthenticatedCeoProposalTrackingRouteImport.update({
+    id: '/ceo_/proposal-tracking',
+    path: '/ceo/proposal-tracking',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCeoKpiHistoryRoute =
   AuthenticatedCeoKpiHistoryRouteImport.update({
     id: '/ceo_/kpi-history',
@@ -912,6 +919,7 @@ export interface FileRoutesByFullPath {
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/ceo/kpi-history': typeof AuthenticatedCeoKpiHistoryRoute
+  '/ceo/proposal-tracking': typeof AuthenticatedCeoProposalTrackingRoute
   '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/ceo/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
@@ -1040,6 +1048,7 @@ export interface FileRoutesByTo {
   '/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/ceo/kpi-history': typeof AuthenticatedCeoKpiHistoryRoute
+  '/ceo/proposal-tracking': typeof AuthenticatedCeoProposalTrackingRoute
   '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/ceo/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
@@ -1172,6 +1181,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-market/$id': typeof AuthenticatedAiMarketIdRoute
   '/_authenticated/ai-market/search': typeof AuthenticatedAiMarketSearchRoute
   '/_authenticated/ceo_/kpi-history': typeof AuthenticatedCeoKpiHistoryRoute
+  '/_authenticated/ceo_/proposal-tracking': typeof AuthenticatedCeoProposalTrackingRoute
   '/_authenticated/ceo_/standup': typeof AuthenticatedCeoStandupRoute
   '/_authenticated/ceo_/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
@@ -1304,6 +1314,7 @@ export interface FileRouteTypes {
     | '/ai-market/$id'
     | '/ai-market/search'
     | '/ceo/kpi-history'
+    | '/ceo/proposal-tracking'
     | '/ceo/standup'
     | '/ceo/task-tracking'
     | '/chat/$channelId'
@@ -1432,6 +1443,7 @@ export interface FileRouteTypes {
     | '/ai-market/$id'
     | '/ai-market/search'
     | '/ceo/kpi-history'
+    | '/ceo/proposal-tracking'
     | '/ceo/standup'
     | '/ceo/task-tracking'
     | '/chat/$channelId'
@@ -1563,6 +1575,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-market/$id'
     | '/_authenticated/ai-market/search'
     | '/_authenticated/ceo_/kpi-history'
+    | '/_authenticated/ceo_/proposal-tracking'
     | '/_authenticated/ceo_/standup'
     | '/_authenticated/ceo_/task-tracking'
     | '/_authenticated/chat_/$channelId'
@@ -2261,6 +2274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCeoStandupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ceo_/proposal-tracking': {
+      id: '/_authenticated/ceo_/proposal-tracking'
+      path: '/ceo/proposal-tracking'
+      fullPath: '/ceo/proposal-tracking'
+      preLoaderRoute: typeof AuthenticatedCeoProposalTrackingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ceo_/kpi-history': {
       id: '/_authenticated/ceo_/kpi-history'
       path: '/ceo/kpi-history'
@@ -2731,6 +2751,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiMarketIdRoute: typeof AuthenticatedAiMarketIdRoute
   AuthenticatedAiMarketSearchRoute: typeof AuthenticatedAiMarketSearchRoute
   AuthenticatedCeoKpiHistoryRoute: typeof AuthenticatedCeoKpiHistoryRoute
+  AuthenticatedCeoProposalTrackingRoute: typeof AuthenticatedCeoProposalTrackingRoute
   AuthenticatedCeoStandupRoute: typeof AuthenticatedCeoStandupRoute
   AuthenticatedCeoTaskTrackingRoute: typeof AuthenticatedCeoTaskTrackingRoute
   AuthenticatedChatChannelIdRoute: typeof AuthenticatedChatChannelIdRoute
@@ -2780,6 +2801,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiMarketIdRoute: AuthenticatedAiMarketIdRoute,
   AuthenticatedAiMarketSearchRoute: AuthenticatedAiMarketSearchRoute,
   AuthenticatedCeoKpiHistoryRoute: AuthenticatedCeoKpiHistoryRoute,
+  AuthenticatedCeoProposalTrackingRoute: AuthenticatedCeoProposalTrackingRoute,
   AuthenticatedCeoStandupRoute: AuthenticatedCeoStandupRoute,
   AuthenticatedCeoTaskTrackingRoute: AuthenticatedCeoTaskTrackingRoute,
   AuthenticatedChatChannelIdRoute: AuthenticatedChatChannelIdRoute,

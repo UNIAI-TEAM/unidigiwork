@@ -580,6 +580,18 @@ function CeoPage() {
                         </div>
                         <ArrowRight className="h-4 w-4 shrink-0" />
                       </Link>
+                      <Link
+                        to="/ceo/proposal-tracking"
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold">Theo dõi đề xuất</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            Đề xuất đang chờ, đã gán, đã xong kèm tiến độ và KPI.
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 shrink-0" />
+                      </Link>
                     </div>
                   ),
                   import: <CeoImportPanel workspaceId={workspaceId ?? null} />,
