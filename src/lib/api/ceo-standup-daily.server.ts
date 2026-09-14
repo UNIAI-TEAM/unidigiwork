@@ -143,7 +143,11 @@ type TaskRow = {
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 
-export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStandupResult> {
+export async function runDailyStandup(
+  admin: any,
+  limit = 20,
+  opts: { force?: boolean } = {},
+): Promise<DailyStandupResult> {
   const result: DailyStandupResult = {
     tenants: 0,
     recorded: 0,
@@ -157,17 +161,28 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
   };
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const vnHour = currentVnHour();
 
   const { data: settings } = await admin
     .from("ceo_kpi_settings")
-    .select("tenant_id, auto_standup, auto_standup_at")
+    .select("tenant_id, auto_standup, auto_standup_at, standup_hour_vn")
     .eq("auto_standup", true)
     .limit(limit);
 
-  const rows = (settings ?? []) as { tenant_id: string; auto_standup_at: string | null }[];
+  const rows = (settings ?? []) as {
+    tenant_id: string;
+    auto_standup_at: string | null;
+    standup_hour_vn: number | null;
+  }[];
 
   for (const row of rows) {
     result.tenants += 1;
+    const hourVn = row.standup_hour_vn ?? DEFAULT_STANDUP_HOUR_VN;
+    // Cron chạy mỗi giờ; chỉ xử lý tổ chức có giờ chọn trùng giờ Việt Nam hiện tại.
+    if (!opts.force && hourVn !== vnHour) {
+      result.skipped += 1;
+      continue;
+    }
     if (
       row.auto_standup_at &&
       Date.now() - new Date(row.auto_standup_at).getTime() < MIN_INTERVAL_MS
