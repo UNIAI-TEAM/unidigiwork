@@ -128,6 +128,7 @@ import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
 import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
 import { Route as ApiPublicHooksCeoWeeklyReportRouteImport } from './routes/api/public/hooks/ceo-weekly-report'
+import { Route as ApiPublicHooksCeoWeeklyMeetingRouteImport } from './routes/api/public/hooks/ceo-weekly-meeting'
 import { Route as ApiPublicHooksCeoStandupDailyRouteImport } from './routes/api/public/hooks/ceo-standup-daily'
 import { Route as ApiPublicHooksAiBrainDailyRouteImport } from './routes/api/public/hooks/ai-brain-daily'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
@@ -778,6 +779,12 @@ const ApiPublicHooksCeoWeeklyReportRoute =
     path: '/api/public/hooks/ceo-weekly-report',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksCeoWeeklyMeetingRoute =
+  ApiPublicHooksCeoWeeklyMeetingRouteImport.update({
+    id: '/api/public/hooks/ceo-weekly-meeting',
+    path: '/api/public/hooks/ceo-weekly-meeting',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCeoStandupDailyRoute =
   ApiPublicHooksCeoStandupDailyRouteImport.update({
     id: '/api/public/hooks/ceo-standup-daily',
@@ -961,6 +968,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
   '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
+  '/api/public/hooks/ceo-weekly-meeting': typeof ApiPublicHooksCeoWeeklyMeetingRoute
   '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1090,6 +1098,7 @@ export interface FileRoutesByTo {
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
   '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
+  '/api/public/hooks/ceo-weekly-meeting': typeof ApiPublicHooksCeoWeeklyMeetingRoute
   '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1223,6 +1232,7 @@ export interface FileRoutesById {
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
   '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
+  '/api/public/hooks/ceo-weekly-meeting': typeof ApiPublicHooksCeoWeeklyMeetingRoute
   '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1356,6 +1366,7 @@ export interface FileRouteTypes {
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/ai-brain-daily'
     | '/api/public/hooks/ceo-standup-daily'
+    | '/api/public/hooks/ceo-weekly-meeting'
     | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1485,6 +1496,7 @@ export interface FileRouteTypes {
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/ai-brain-daily'
     | '/api/public/hooks/ceo-standup-daily'
+    | '/api/public/hooks/ceo-weekly-meeting'
     | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1617,6 +1629,7 @@ export interface FileRouteTypes {
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/ai-brain-daily'
     | '/api/public/hooks/ceo-standup-daily'
+    | '/api/public/hooks/ceo-weekly-meeting'
     | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1661,6 +1674,7 @@ export interface RootRouteChildren {
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksAiBrainDailyRoute: typeof ApiPublicHooksAiBrainDailyRoute
   ApiPublicHooksCeoStandupDailyRoute: typeof ApiPublicHooksCeoStandupDailyRoute
+  ApiPublicHooksCeoWeeklyMeetingRoute: typeof ApiPublicHooksCeoWeeklyMeetingRoute
   ApiPublicHooksCeoWeeklyReportRoute: typeof ApiPublicHooksCeoWeeklyReportRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
@@ -2505,6 +2519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCeoWeeklyReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ceo-weekly-meeting': {
+      id: '/api/public/hooks/ceo-weekly-meeting'
+      path: '/api/public/hooks/ceo-weekly-meeting'
+      fullPath: '/api/public/hooks/ceo-weekly-meeting'
+      preLoaderRoute: typeof ApiPublicHooksCeoWeeklyMeetingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ceo-standup-daily': {
       id: '/api/public/hooks/ceo-standup-daily'
       path: '/api/public/hooks/ceo-standup-daily'
@@ -2907,6 +2928,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksAiBrainDailyRoute: ApiPublicHooksAiBrainDailyRoute,
   ApiPublicHooksCeoStandupDailyRoute: ApiPublicHooksCeoStandupDailyRoute,
+  ApiPublicHooksCeoWeeklyMeetingRoute: ApiPublicHooksCeoWeeklyMeetingRoute,
   ApiPublicHooksCeoWeeklyReportRoute: ApiPublicHooksCeoWeeklyReportRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,

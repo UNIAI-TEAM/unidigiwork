@@ -1555,6 +1555,10 @@ export type Database = {
           tenant_id: string
           updated_at: string
           updated_by: string | null
+          weekly_meeting_at: string | null
+          weekly_meeting_dow: number
+          weekly_meeting_hour_vn: number
+          weekly_meeting_location: string
         }
         Insert: {
           auto_retrain?: boolean
@@ -1572,6 +1576,10 @@ export type Database = {
           tenant_id: string
           updated_at?: string
           updated_by?: string | null
+          weekly_meeting_at?: string | null
+          weekly_meeting_dow?: number
+          weekly_meeting_hour_vn?: number
+          weekly_meeting_location?: string
         }
         Update: {
           auto_retrain?: boolean
@@ -1589,6 +1597,10 @@ export type Database = {
           tenant_id?: string
           updated_at?: string
           updated_by?: string | null
+          weekly_meeting_at?: string | null
+          weekly_meeting_dow?: number
+          weekly_meeting_hour_vn?: number
+          weekly_meeting_location?: string
         }
         Relationships: []
       }
