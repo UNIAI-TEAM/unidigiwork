@@ -15,7 +15,20 @@ import {
 import { cn } from "@/lib/utils";
 import { useHomePrefs } from "@/components/home/use-home-prefs";
 import { HomeCustomizePanel } from "@/components/home/home-customize";
+import { HOME_SECTION_META } from "@/lib/home-prefs";
 import type { HomeLayout, HomeSectionKey, HomeSize } from "@/lib/home-prefs";
+import { DraggableGridCard } from "@/components/layout/draggable-grid-card";
+
+function reorderKeys(
+  order: HomeSectionKey[],
+  from: HomeSectionKey,
+  to: HomeSectionKey,
+): HomeSectionKey[] {
+  if (from === to) return order;
+  const next = order.filter((k) => k !== from);
+  next.splice(next.indexOf(to), 0, from);
+  return next;
+}
 
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
