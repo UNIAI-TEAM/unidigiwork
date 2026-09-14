@@ -14,6 +14,7 @@ import {
   type HomePrefs,
   type HomeSectionKey,
 } from "@/lib/home-prefs";
+import { HomeLayoutHistory } from "@/components/home/home-layout-history";
 
 function reorder(order: HomeSectionKey[], from: number, to: number): HomeSectionKey[] {
   if (from === to || from < 0 || to < 0 || from >= order.length || to >= order.length) return order;
@@ -292,6 +293,8 @@ export function HomeCustomizePanel({
               ))}
             </div>
           </div>
+
+          <HomeLayoutHistory onRestore={(next) => onChange(next)} />
         </div>
       </div>
     </section>
