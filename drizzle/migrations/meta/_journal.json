@@ -50,6 +50,13 @@
       "when": 1789376176996,
       "tag": "0006_ceo_standup_hour",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789378267973,
+      "tag": "0007_ceo_weekly_meeting_settings",
+      "breakpoints": true
     }
   ]
 }
