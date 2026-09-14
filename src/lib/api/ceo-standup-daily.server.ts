@@ -456,6 +456,7 @@ export async function runDailyStandup(
         standup_snapshot: {
           window: "24h",
           tasksTouched: tasks.length,
+          openTasks: openTasks.length,
           done,
           blocked,
           overdue,
