@@ -1549,6 +1549,7 @@ export type Database = {
           department_weights: Json
           kpi_refreshed_at: string | null
           kpi_snapshot: Json | null
+          standup_hour_vn: number
           standup_snapshot: Json | null
           targets: Json
           tenant_id: string
@@ -1565,6 +1566,7 @@ export type Database = {
           department_weights?: Json
           kpi_refreshed_at?: string | null
           kpi_snapshot?: Json | null
+          standup_hour_vn?: number
           standup_snapshot?: Json | null
           targets?: Json
           tenant_id: string
@@ -1581,6 +1583,7 @@ export type Database = {
           department_weights?: Json
           kpi_refreshed_at?: string | null
           kpi_snapshot?: Json | null
+          standup_hour_vn?: number
           standup_snapshot?: Json | null
           targets?: Json
           tenant_id?: string

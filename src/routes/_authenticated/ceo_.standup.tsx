@@ -14,6 +14,7 @@ import {
   getStandupBoard,
   recordStandupOutcome,
   setAutoStandupEnabled,
+  setAutoStandupHour,
   type StandupTask,
 } from "@/lib/api/ceo-standup.functions";
 
@@ -172,6 +173,7 @@ function AutoStandupCard() {
   const qc = useQueryClient();
   const getSettings = useServerFn(getAutoStandupSettings);
   const setEnabled = useServerFn(setAutoStandupEnabled);
+  const setHour = useServerFn(setAutoStandupHour);
   const { data } = useQuery({
     queryKey: ["ceo", "auto-standup"],
     queryFn: () => getSettings({}),
@@ -186,7 +188,17 @@ function AutoStandupCard() {
     onError: () => toast.error("Không lưu được cài đặt"),
   });
 
+  const changeHour = useMutation({
+    mutationFn: (hourVn: number) => setHour({ data: { hourVn } }),
+    onSuccess: (res) => {
+      toast.success(`Giao ban tự động sẽ chạy lúc ${String(res.hourVn).padStart(2, "0")}:30`);
+      void qc.invalidateQueries({ queryKey: ["ceo", "auto-standup"] });
+    },
+    onError: () => toast.error("Không lưu được giờ chạy"),
+  });
+
   const enabled = data?.enabled ?? true;
+  const hourVn = data?.hourVn ?? 6;
   const s = data?.snapshot;
 
   return (
@@ -205,6 +217,24 @@ function AutoStandupCard() {
             {s
               ? ` · ${s.tasksTouched ?? 0} việc, ${s.done ?? 0} hoàn thành, ${s.overdue ?? 0} quá hạn, ${s.notes ?? 0} ghi chú`
               : ""}
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <label htmlFor="standup-hour" className="text-xs text-muted-foreground">
+              Giờ chạy mỗi sáng (giờ Việt Nam):
+            </label>
+            <select
+              id="standup-hour"
+              className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+              value={hourVn}
+              disabled={changeHour.isPending}
+              onChange={(e) => changeHour.mutate(Number(e.target.value))}
+            >
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {String(h).padStart(2, "0")}:30
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -22,23 +22,28 @@ export type DailyStandupResult = {
   errors: string[];
 };
 
-// Buổi giao ban mặc định: 08:30–09:00 giờ Việt Nam mỗi ngày.
+// Buổi giao ban mặc định: 30 phút, bắt đầu vào giờ tổ chức đã chọn (giờ Việt Nam).
 const MEETING_TZ = "Asia/Ho_Chi_Minh";
 const MEETING_TITLE = "Giao ban hằng ngày";
 const MEETING_LOCATION = "Phòng họp trực tuyến UniWork";
-const MEETING_START_HOUR_VN = 8;
+const DEFAULT_STANDUP_HOUR_VN = 6;
 const MEETING_START_MINUTE_VN = 30;
 const MEETING_MINUTES = 30;
 const MAX_MEETING_PARTICIPANTS = 100;
 
+/** Giờ Việt Nam hiện tại (0-23). */
+function currentVnHour(now = new Date()): number {
+  return new Date(now.getTime() + 7 * 60 * 60 * 1000).getUTCHours();
+}
+
 /** Mốc bắt đầu buổi giao ban của ngày hiện tại theo giờ Việt Nam (trả về UTC). */
-function todayStandupStart(now = new Date()): Date {
+function todayStandupStart(hourVn: number, now = new Date()): Date {
   const vn = new Date(now.getTime() + 7 * 60 * 60 * 1000);
   const startUtcMs = Date.UTC(
     vn.getUTCFullYear(),
     vn.getUTCMonth(),
     vn.getUTCDate(),
-    MEETING_START_HOUR_VN - 7,
+    hourVn - 7,
     MEETING_START_MINUTE_VN,
     0,
     0,
@@ -51,8 +56,9 @@ async function ensureDailyStandupMeeting(
   admin: any,
   tenantId: string,
   hostId: string,
+  hourVn: number,
 ): Promise<"created" | "exists" | "no_workspace"> {
-  const start = todayStandupStart();
+  const start = todayStandupStart(hourVn);
   const end = new Date(start.getTime() + MEETING_MINUTES * 60 * 1000);
   const dayStart = new Date(start.getTime() - 12 * 60 * 60 * 1000).toISOString();
   const dayEnd = new Date(start.getTime() + 12 * 60 * 60 * 1000).toISOString();
@@ -137,7 +143,11 @@ type TaskRow = {
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 
-export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStandupResult> {
+export async function runDailyStandup(
+  admin: any,
+  limit = 20,
+  opts: { force?: boolean } = {},
+): Promise<DailyStandupResult> {
   const result: DailyStandupResult = {
     tenants: 0,
     recorded: 0,
@@ -151,17 +161,28 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
   };
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const vnHour = currentVnHour();
 
   const { data: settings } = await admin
     .from("ceo_kpi_settings")
-    .select("tenant_id, auto_standup, auto_standup_at")
+    .select("tenant_id, auto_standup, auto_standup_at, standup_hour_vn")
     .eq("auto_standup", true)
     .limit(limit);
 
-  const rows = (settings ?? []) as { tenant_id: string; auto_standup_at: string | null }[];
+  const rows = (settings ?? []) as {
+    tenant_id: string;
+    auto_standup_at: string | null;
+    standup_hour_vn: number | null;
+  }[];
 
   for (const row of rows) {
     result.tenants += 1;
+    const hourVn = row.standup_hour_vn ?? DEFAULT_STANDUP_HOUR_VN;
+    // Cron chạy mỗi giờ; chỉ xử lý tổ chức có giờ chọn trùng giờ Việt Nam hiện tại.
+    if (!opts.force && hourVn !== vnHour) {
+      result.skipped += 1;
+      continue;
+    }
     if (
       row.auto_standup_at &&
       Date.now() - new Date(row.auto_standup_at).getTime() < MIN_INTERVAL_MS
@@ -323,7 +344,7 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
 
       // Tự tạo buổi giao ban hằng ngày trên lịch họp (một buổi / ngày / tổ chức).
       try {
-        const meeting = await ensureDailyStandupMeeting(admin, row.tenant_id, authorId);
+        const meeting = await ensureDailyStandupMeeting(admin, row.tenant_id, authorId, hourVn);
         if (meeting === "created") result.meetings += 1;
         (patch["standup_snapshot"] as Record<string, unknown>)["meeting"] = meeting;
       } catch (e) {

@@ -43,6 +43,13 @@
       "when": 1789374618515,
       "tag": "0005_ceo_kpi_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789376176996,
+      "tag": "0006_ceo_standup_hour",
+      "breakpoints": true
     }
   ]
 }
