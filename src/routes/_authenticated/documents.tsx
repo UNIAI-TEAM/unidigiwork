@@ -45,6 +45,7 @@ import {
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { openInUniworkOffice } from "@/lib/office-launch";
 import {
   archiveDocument,
   createDocument,
@@ -683,6 +684,20 @@ function DocumentsPage() {
     return () => { alive = false; };
   }, [historyOpen, selected?.id]);
 
+  // GO-2C: mở tài liệu đang chọn bằng UniWork Office (phiên do máy chủ cấp).
+  const openSelectedInOffice = async () => {
+    if (!selected) {
+      toast.error(t("doc.44"));
+      return;
+    }
+    const state = await openInUniworkOffice(selected.id);
+    if (state === "OPENING") toast.success(t("office.opening"));
+    else if (state === "OFFICE_NOT_INSTALLED") toast.error(t("office.notInstalled"));
+    else if (state === "UNSUPPORTED_FORMAT") toast.error(t("office.unsupported"));
+    else if (state === "PERMISSION_DENIED") toast.error(t("office.denied"));
+    else toast.error(t("office.failed"));
+  };
+
   const exportDocument = () => {
     if (!selected) return;
     const blob = new Blob([`# ${selected.title}\n\n${selected.content}`], { type: "text/markdown" });
@@ -992,6 +1007,13 @@ function DocumentsPage() {
                       <DropdownMenuItem onClick={exportDocument} className="cursor-pointer focus:bg-surface-2">{t("doc.47")}</DropdownMenuItem>
                       <DropdownMenuItem onClick={printDocument} className="cursor-pointer focus:bg-surface-2">{t("doc.48")}</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setHistoryOpen(true)} className="cursor-pointer focus:bg-surface-2">{t("doc.49")}</DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={!selected}
+                        onClick={() => void openSelectedInOffice()}
+                        className="cursor-pointer focus:bg-surface-2"
+                      >
+                        {t("office.open")}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

@@ -3766,6 +3766,176 @@ export type Database = {
           },
         ]
       }
+      office_save_operations: {
+        Row: {
+          actor_id: string
+          base_version: number
+          checksum_sha256: string | null
+          completed_at: string | null
+          created_at: string
+          document_id: string
+          error_code: string | null
+          id: string
+          idempotency_key: string
+          mime_type: string | null
+          result_version: number | null
+          result_version_id: string | null
+          session_id: string
+          size_bytes: number | null
+          status: string
+          tenant_id: string
+          upload_bucket: string | null
+          upload_object_key: string | null
+        }
+        Insert: {
+          actor_id: string
+          base_version: number
+          checksum_sha256?: string | null
+          completed_at?: string | null
+          created_at?: string
+          document_id: string
+          error_code?: string | null
+          id?: string
+          idempotency_key: string
+          mime_type?: string | null
+          result_version?: number | null
+          result_version_id?: string | null
+          session_id: string
+          size_bytes?: number | null
+          status?: string
+          tenant_id: string
+          upload_bucket?: string | null
+          upload_object_key?: string | null
+        }
+        Update: {
+          actor_id?: string
+          base_version?: number
+          checksum_sha256?: string | null
+          completed_at?: string | null
+          created_at?: string
+          document_id?: string
+          error_code?: string | null
+          id?: string
+          idempotency_key?: string
+          mime_type?: string | null
+          result_version?: number | null
+          result_version_id?: string | null
+          session_id?: string
+          size_bytes?: number | null
+          status?: string
+          tenant_id?: string
+          upload_bucket?: string | null
+          upload_object_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_save_operations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_save_operations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "office_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_save_operations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      office_sessions: {
+        Row: {
+          base_version: number
+          consumed_at: string | null
+          created_at: string
+          document_id: string
+          file_name: string | null
+          id: string
+          last_save_at: string | null
+          launch_expires_at: string
+          launch_token_hash: string
+          mime_type: string | null
+          revoked_at: string | null
+          session_expires_at: string | null
+          session_token_hash: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          base_version: number
+          consumed_at?: string | null
+          created_at?: string
+          document_id: string
+          file_name?: string | null
+          id?: string
+          last_save_at?: string | null
+          launch_expires_at: string
+          launch_token_hash: string
+          mime_type?: string | null
+          revoked_at?: string | null
+          session_expires_at?: string | null
+          session_token_hash?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          base_version?: number
+          consumed_at?: string | null
+          created_at?: string
+          document_id?: string
+          file_name?: string | null
+          id?: string
+          last_save_at?: string | null
+          launch_expires_at?: string
+          launch_token_hash?: string
+          mime_type?: string | null
+          revoked_at?: string | null
+          session_expires_at?: string | null
+          session_token_hash?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_sessions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outbox_deliveries: {
         Row: {
           channel: string

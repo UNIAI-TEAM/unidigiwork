@@ -68,6 +68,8 @@ import { Route as AuthenticatedAiMarketIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-graph.$token'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
+import { Route as ApiOfficeSessionsRouteImport } from './routes/api/office/sessions'
+import { Route as ApiOfficeDownloadRouteImport } from './routes/api/office/download'
 import { Route as AuthenticatedWorkspaceTagsRouteImport } from './routes/_authenticated/workspace.tags'
 import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace.settings'
 import { Route as AuthenticatedWorkspaceMembersRouteImport } from './routes/_authenticated/workspace.members'
@@ -131,6 +133,9 @@ import { Route as ApiPublicHooksCeoWeeklyReportRouteImport } from './routes/api/
 import { Route as ApiPublicHooksCeoWeeklyMeetingRouteImport } from './routes/api/public/hooks/ceo-weekly-meeting'
 import { Route as ApiPublicHooksCeoStandupDailyRouteImport } from './routes/api/public/hooks/ceo-standup-daily'
 import { Route as ApiPublicHooksAiBrainDailyRouteImport } from './routes/api/public/hooks/ai-brain-daily'
+import { Route as ApiOfficeSessionsExchangeRouteImport } from './routes/api/office/sessions.exchange'
+import { Route as ApiOfficeSavePrepareRouteImport } from './routes/api/office/save.prepare'
+import { Route as ApiOfficeSaveCompleteRouteImport } from './routes/api/office/save.complete'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
 import { Route as AuthenticatedMTasksIdRouteImport } from './routes/_authenticated/m/tasks_.$id'
@@ -441,6 +446,16 @@ const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   id: '/category/$category',
   path: '/category/$category',
   getParentRoute: () => BlogRoute,
+} as any)
+const ApiOfficeSessionsRoute = ApiOfficeSessionsRouteImport.update({
+  id: '/api/office/sessions',
+  path: '/api/office/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOfficeDownloadRoute = ApiOfficeDownloadRouteImport.update({
+  id: '/api/office/download',
+  path: '/api/office/download',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWorkspaceTagsRoute =
   AuthenticatedWorkspaceTagsRouteImport.update({
@@ -797,6 +812,22 @@ const ApiPublicHooksAiBrainDailyRoute =
     path: '/api/public/hooks/ai-brain-daily',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiOfficeSessionsExchangeRoute =
+  ApiOfficeSessionsExchangeRouteImport.update({
+    id: '/exchange',
+    path: '/exchange',
+    getParentRoute: () => ApiOfficeSessionsRoute,
+  } as any)
+const ApiOfficeSavePrepareRoute = ApiOfficeSavePrepareRouteImport.update({
+  id: '/api/office/save/prepare',
+  path: '/api/office/save/prepare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOfficeSaveCompleteRoute = ApiOfficeSaveCompleteRouteImport.update({
+  id: '/api/office/save/complete',
+  path: '/api/office/save/complete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminTraceCorrelationIdRoute =
   ApiAdminTraceCorrelationIdRouteImport.update({
     id: '/api/admin/trace/$correlationId',
@@ -954,6 +985,8 @@ export interface FileRoutesByFullPath {
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
+  '/api/office/download': typeof ApiOfficeDownloadRoute
+  '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -966,6 +999,9 @@ export interface FileRoutesByFullPath {
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/office/save/complete': typeof ApiOfficeSaveCompleteRoute
+  '/api/office/save/prepare': typeof ApiOfficeSavePrepareRoute
+  '/api/office/sessions/exchange': typeof ApiOfficeSessionsExchangeRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
   '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
   '/api/public/hooks/ceo-weekly-meeting': typeof ApiPublicHooksCeoWeeklyMeetingRoute
@@ -1084,6 +1120,8 @@ export interface FileRoutesByTo {
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
+  '/api/office/download': typeof ApiOfficeDownloadRoute
+  '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -1096,6 +1134,9 @@ export interface FileRoutesByTo {
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/office/save/complete': typeof ApiOfficeSaveCompleteRoute
+  '/api/office/save/prepare': typeof ApiOfficeSavePrepareRoute
+  '/api/office/sessions/exchange': typeof ApiOfficeSessionsExchangeRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
   '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
   '/api/public/hooks/ceo-weekly-meeting': typeof ApiPublicHooksCeoWeeklyMeetingRoute
@@ -1218,6 +1259,8 @@ export interface FileRoutesById {
   '/_authenticated/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/_authenticated/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/_authenticated/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
+  '/api/office/download': typeof ApiOfficeDownloadRoute
+  '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -1230,6 +1273,9 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks_/$id': typeof AuthenticatedMTasksIdRoute
   '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
+  '/api/office/save/complete': typeof ApiOfficeSaveCompleteRoute
+  '/api/office/save/prepare': typeof ApiOfficeSavePrepareRoute
+  '/api/office/sessions/exchange': typeof ApiOfficeSessionsExchangeRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
   '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
   '/api/public/hooks/ceo-weekly-meeting': typeof ApiPublicHooksCeoWeeklyMeetingRoute
@@ -1352,6 +1398,8 @@ export interface FileRouteTypes {
     | '/workspace/members'
     | '/workspace/settings'
     | '/workspace/tags'
+    | '/api/office/download'
+    | '/api/office/sessions'
     | '/blog/category/$category'
     | '/share/work-graph/$token'
     | '/admin/'
@@ -1364,6 +1412,9 @@ export interface FileRouteTypes {
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
+    | '/api/office/save/complete'
+    | '/api/office/save/prepare'
+    | '/api/office/sessions/exchange'
     | '/api/public/hooks/ai-brain-daily'
     | '/api/public/hooks/ceo-standup-daily'
     | '/api/public/hooks/ceo-weekly-meeting'
@@ -1482,6 +1533,8 @@ export interface FileRouteTypes {
     | '/workspace/members'
     | '/workspace/settings'
     | '/workspace/tags'
+    | '/api/office/download'
+    | '/api/office/sessions'
     | '/blog/category/$category'
     | '/share/work-graph/$token'
     | '/admin'
@@ -1494,6 +1547,9 @@ export interface FileRouteTypes {
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
+    | '/api/office/save/complete'
+    | '/api/office/save/prepare'
+    | '/api/office/sessions/exchange'
     | '/api/public/hooks/ai-brain-daily'
     | '/api/public/hooks/ceo-standup-daily'
     | '/api/public/hooks/ceo-weekly-meeting'
@@ -1615,6 +1671,8 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/members'
     | '/_authenticated/workspace/settings'
     | '/_authenticated/workspace/tags'
+    | '/api/office/download'
+    | '/api/office/sessions'
     | '/blog/category/$category'
     | '/share/work-graph/$token'
     | '/_authenticated/admin/'
@@ -1627,6 +1685,9 @@ export interface FileRouteTypes {
     | '/_authenticated/m/tasks_/$id'
     | '/_authenticated/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
+    | '/api/office/save/complete'
+    | '/api/office/save/prepare'
+    | '/api/office/sessions/exchange'
     | '/api/public/hooks/ai-brain-daily'
     | '/api/public/hooks/ceo-standup-daily'
     | '/api/public/hooks/ceo-weekly-meeting'
@@ -1670,8 +1731,12 @@ export interface RootRouteChildren {
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
+  ApiOfficeDownloadRoute: typeof ApiOfficeDownloadRoute
+  ApiOfficeSessionsRoute: typeof ApiOfficeSessionsRouteWithChildren
   ShareWorkGraphTokenRoute: typeof ShareWorkGraphTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
+  ApiOfficeSaveCompleteRoute: typeof ApiOfficeSaveCompleteRoute
+  ApiOfficeSavePrepareRoute: typeof ApiOfficeSavePrepareRoute
   ApiPublicHooksAiBrainDailyRoute: typeof ApiPublicHooksAiBrainDailyRoute
   ApiPublicHooksCeoStandupDailyRoute: typeof ApiPublicHooksCeoStandupDailyRoute
   ApiPublicHooksCeoWeeklyMeetingRoute: typeof ApiPublicHooksCeoWeeklyMeetingRoute
@@ -2098,6 +2163,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/category/$category'
       preLoaderRoute: typeof BlogCategoryCategoryRouteImport
       parentRoute: typeof BlogRoute
+    }
+    '/api/office/sessions': {
+      id: '/api/office/sessions'
+      path: '/api/office/sessions'
+      fullPath: '/api/office/sessions'
+      preLoaderRoute: typeof ApiOfficeSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/office/download': {
+      id: '/api/office/download'
+      path: '/api/office/download'
+      fullPath: '/api/office/download'
+      preLoaderRoute: typeof ApiOfficeDownloadRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/workspace/tags': {
       id: '/_authenticated/workspace/tags'
@@ -2540,6 +2619,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAiBrainDailyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/office/sessions/exchange': {
+      id: '/api/office/sessions/exchange'
+      path: '/exchange'
+      fullPath: '/api/office/sessions/exchange'
+      preLoaderRoute: typeof ApiOfficeSessionsExchangeRouteImport
+      parentRoute: typeof ApiOfficeSessionsRoute
+    }
+    '/api/office/save/prepare': {
+      id: '/api/office/save/prepare'
+      path: '/api/office/save/prepare'
+      fullPath: '/api/office/save/prepare'
+      preLoaderRoute: typeof ApiOfficeSavePrepareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/office/save/complete': {
+      id: '/api/office/save/complete'
+      path: '/api/office/save/complete'
+      fullPath: '/api/office/save/complete'
+      preLoaderRoute: typeof ApiOfficeSaveCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/trace/$correlationId': {
       id: '/api/admin/trace/$correlationId'
       path: '/api/admin/trace/$correlationId'
@@ -2898,6 +2998,17 @@ const WorkflowsRouteWithChildren = WorkflowsRoute._addFileChildren(
   WorkflowsRouteChildren,
 )
 
+interface ApiOfficeSessionsRouteChildren {
+  ApiOfficeSessionsExchangeRoute: typeof ApiOfficeSessionsExchangeRoute
+}
+
+const ApiOfficeSessionsRouteChildren: ApiOfficeSessionsRouteChildren = {
+  ApiOfficeSessionsExchangeRoute: ApiOfficeSessionsExchangeRoute,
+}
+
+const ApiOfficeSessionsRouteWithChildren =
+  ApiOfficeSessionsRoute._addFileChildren(ApiOfficeSessionsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -2924,8 +3035,12 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
+  ApiOfficeDownloadRoute: ApiOfficeDownloadRoute,
+  ApiOfficeSessionsRoute: ApiOfficeSessionsRouteWithChildren,
   ShareWorkGraphTokenRoute: ShareWorkGraphTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
+  ApiOfficeSaveCompleteRoute: ApiOfficeSaveCompleteRoute,
+  ApiOfficeSavePrepareRoute: ApiOfficeSavePrepareRoute,
   ApiPublicHooksAiBrainDailyRoute: ApiPublicHooksAiBrainDailyRoute,
   ApiPublicHooksCeoStandupDailyRoute: ApiPublicHooksCeoStandupDailyRoute,
   ApiPublicHooksCeoWeeklyMeetingRoute: ApiPublicHooksCeoWeeklyMeetingRoute,
