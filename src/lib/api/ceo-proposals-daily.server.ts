@@ -51,7 +51,8 @@ export function urgencyScore(task: TaskRow, now: number): number {
   let score = 0;
   if (task.due_at) {
     const hours = (new Date(task.due_at).getTime() - now) / 3_600_000;
-    if (hours < 0) score += 60 + Math.min(40, Math.abs(hours) / 6); // quá hạn
+    if (hours < 0)
+      score += 60 + Math.min(40, Math.abs(hours) / 6); // quá hạn
     else score += Math.max(0, 50 - hours * (50 / DUE_WINDOW_HOURS)); // càng gần hạn càng cao
   }
   score += PRIORITY_WEIGHT[(task.priority ?? "").toLowerCase()] ?? 10;
