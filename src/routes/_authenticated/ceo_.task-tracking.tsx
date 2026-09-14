@@ -255,11 +255,17 @@ function TaskTrackingPage() {
   const [nav, setNav] = useState(false);
   const { workspaceId } = useActiveWorkspace();
   const fn = useServerFn(listTaskTracking);
+  const canFn = useServerFn(canManageTaskTracking);
 
   const q = useQuery({
     queryKey: ["ceo", "task-tracking", workspaceId ?? ""],
     queryFn: () => fn({ data: { workspaceId: workspaceId ?? null, limit: 30 } }),
   });
+  const canQ = useQuery({
+    queryKey: ["ceo", "task-tracking-can-manage", workspaceId ?? ""],
+    queryFn: () => canFn({ data: { workspaceId: workspaceId ?? null } }),
+  });
+  const canManage = canQ.data === true;
 
   const rows = q.data ?? [];
 
