@@ -77,6 +77,111 @@ function Delta({
   );
 }
 
+// Biểu đồ cột KPI theo tháng, so với mốc hiện tại (đường ngang nét đứt).
+function MonthlyChart({
+  rows,
+  current,
+}: {
+  rows: KpiMonthlyRow[];
+  current: { score: number | null; completed: number; overdue: number };
+}) {
+  const [metric, setMetric] = useState<"score" | "completed" | "overdue">("score");
+  const METRICS = [
+    { key: "score", label: "Điểm KPI" },
+    { key: "completed", label: "Hoàn thành" },
+    { key: "overdue", label: "Quá hạn" },
+  ] as const;
+
+  const values = rows.map((r) =>
+    metric === "score" ? (r.avgScore ?? 0) : metric === "completed" ? r.avgCompleted : r.avgOverdue,
+  );
+  const max = Math.max(1, ...values, metric === "score" ? (current.score ?? 0) : 0);
+  const refValue =
+    metric === "score" ? current.score : metric === "completed" ? current.completed : current.overdue;
+  const refPct = refValue === null ? null : Math.min(100, Math.round((refValue / max) * 100));
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-medium">Xu hướng KPI theo tháng</div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Trung bình các mốc trong từng tháng — so với mốc hiện tại (đường nét đứt).
+          </p>
+        </div>
+        <div className="flex gap-1">
+          {METRICS.map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => setMetric(m.key)}
+              className={`min-h-[44px] rounded-xl px-3 text-xs font-medium transition-colors ${
+                metric === m.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="py-8 text-sm text-muted-foreground">
+          Chưa đủ dữ liệu theo tháng. Hệ thống ghi mốc mỗi sáng, biểu đồ sẽ hiện khi có mốc.
+        </p>
+      ) : (
+        <div className="mt-4">
+          <div className="relative flex h-44 items-end gap-2 sm:gap-3">
+            {refPct !== null ? (
+              <div
+                className="pointer-events-none absolute inset-x-0 border-t border-dashed border-primary/60"
+                style={{ bottom: `${refPct}%` }}
+              >
+                <span className="absolute -top-4 right-0 text-[10px] text-primary">
+                  Hiện tại: {refValue}
+                </span>
+              </div>
+            ) : null}
+            {rows.map((r, i) => {
+              const v =
+                metric === "score"
+                  ? (r.avgScore ?? 0)
+                  : metric === "completed"
+                    ? r.avgCompleted
+                    : r.avgOverdue;
+              const pct = Math.max(2, Math.round((v / max) * 100));
+              return (
+                <div key={r.month} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                  <span className="text-[10px] font-medium">{v}</span>
+                  <div
+                    className={`w-full max-w-10 rounded-t-md ${
+                      i === rows.length - 1 ? "bg-primary" : "bg-primary/30"
+                    }`}
+                    style={{ height: `${pct}%` }}
+                    title={`${r.label}: ${v} (${r.snapshots} mốc)`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-1 flex gap-2 sm:gap-3">
+            {rows.map((r) => (
+              <div
+                key={r.month}
+                className="min-w-0 flex-1 truncate text-center text-[10px] text-muted-foreground"
+              >
+                {r.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function KpiHistoryPage() {
   const [open, setOpen] = useState(false);
   const { workspaceId } = useActiveWorkspace();
