@@ -16,6 +16,7 @@ export async function recordKpiSnapshot(
   tenantId: string,
   source: "ai_brain" | "standup" | "manual",
   values: KpiSnapshotValues,
+  extra?: Record<string, unknown>,
 ): Promise<void> {
   try {
     await admin.from("ceo_kpi_snapshots").insert({
@@ -27,7 +28,7 @@ export async function recordKpiSnapshot(
       completed: values.completed,
       overdue: values.overdue,
       ai_share_pct: values.aiSharePct,
-      payload: values,
+      payload: extra ? { ...values, ...extra } : values,
     });
   } catch {
     // bỏ qua: lịch sử KPI là dữ liệu phụ trợ
