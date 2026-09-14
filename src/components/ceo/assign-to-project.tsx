@@ -51,10 +51,7 @@ export function AssignProposalsToProject({
   const progressFn = useServerFn(updateTaskProgress);
   const commentFn = useServerFn(commentTask);
 
-  const candidates = useMemo(
-    () => entries.filter((e) => Boolean(e.taskId)),
-    [entries],
-  );
+  const candidates = useMemo(() => entries.filter((e) => Boolean(e.taskId)), [entries]);
 
   const projects = useQuery({
     queryKey: ["ceo", "assign-projects", workspaceId ?? ""],
@@ -80,8 +77,7 @@ export function AssignProposalsToProject({
         pctRaw !== null && Number.isFinite(pctRaw)
           ? Math.max(0, Math.min(100, Math.round(pctRaw)))
           : null;
-      const projectName =
-        projects.data?.find((p) => p.id === projectId)?.name ?? "dự án";
+      const projectName = projects.data?.find((p) => p.id === projectId)?.name ?? "dự án";
       const personName = assigneeId
         ? (members.data?.find((m) => m.userId === assigneeId)?.name ?? "nhân sự")
         : null;
