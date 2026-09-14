@@ -583,7 +583,11 @@ function HomePage() {
                     onReorder={(from, to) =>
                       update({
                         ...prefs,
-                        order: reorderKeys(prefs.order, from as HomeSectionKey, to as HomeSectionKey),
+                        order: reorderKeys(
+                          prefs.order,
+                          from as HomeSectionKey,
+                          to as HomeSectionKey,
+                        ),
                       })
                     }
                     onResize={(k, size) =>

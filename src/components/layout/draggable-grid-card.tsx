@@ -102,7 +102,8 @@ export function DraggableGridCard({
       data-grid-card-key={cardKey}
       className={cn(
         "group/card relative min-w-0",
-        (dragging || resizing) && "z-20 ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
+        (dragging || resizing) &&
+          "z-20 ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
         dragging && "opacity-80",
         className,
       )}
