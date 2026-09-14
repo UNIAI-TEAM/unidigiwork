@@ -36,11 +36,7 @@ export function useCeoLayout() {
 
   const mutation = useMutation({
     mutationFn: async (next: CeoLayoutPrefs) => {
-      const payload = writeCeoPrefs(
-        next,
-        query.data?.sections ?? null,
-        query.data?.order ?? null,
-      );
+      const payload = writeCeoPrefs(next, query.data?.sections ?? null, query.data?.order ?? null);
       await save({ data: payload });
       try {
         await snapshot({ data: { scope: "ceo" as const, prefs: JSON.stringify(next) } });

@@ -4,11 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { History, RotateCcw } from "lucide-react";
 import { listLayoutHistory } from "@/lib/api/layout-history.functions";
-import {
-  CEO_SECTION_LABEL,
-  DEFAULT_CEO_PREFS,
-  type CeoLayoutPrefs,
-} from "@/lib/ceo-layout-prefs";
+import { CEO_SECTION_LABEL, DEFAULT_CEO_PREFS, type CeoLayoutPrefs } from "@/lib/ceo-layout-prefs";
 import { CEO_HISTORY_KEY } from "@/components/ceo/use-ceo-layout";
 
 function parsePrefs(raw: string): CeoLayoutPrefs | null {
@@ -70,8 +66,8 @@ export function CeoLayoutHistory({
           <RotateCcw className="h-3.5 w-3.5" /> Bố cục mặc định
         </button>
         <span className="text-xs text-muted-foreground">
-          Kéo tay cầm ở góc mỗi khối để đổi vị trí, kéo cạnh phải để đổi kích thước — tự lưu theo tài
-          khoản.
+          Kéo tay cầm ở góc mỗi khối để đổi vị trí, kéo cạnh phải để đổi kích thước — tự lưu theo
+          tài khoản.
         </span>
       </div>
 
@@ -80,7 +76,8 @@ export function CeoLayoutHistory({
           <div className="mt-3 text-sm text-muted-foreground">Đang tải…</div>
         ) : items.length === 0 ? (
           <div className="mt-3 text-sm text-muted-foreground">
-            Chưa có bố cục cũ. Mỗi lần bạn đổi vị trí hoặc kích thước khối, hệ thống lưu lại một mốc.
+            Chưa có bố cục cũ. Mỗi lần bạn đổi vị trí hoặc kích thước khối, hệ thống lưu lại một
+            mốc.
           </div>
         ) : (
           <ul className="mt-3 space-y-2">
