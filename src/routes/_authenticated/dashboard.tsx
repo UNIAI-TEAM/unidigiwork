@@ -74,6 +74,10 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     meta: [
       { title: "Bảng điều khiển — UNIWORK" },
       { name: "description", content: "Tổng quan hoạt động của tổ chức trên UNIWORK." },
+      { property: "og:title", content: "Bảng điều khiển — UNIWORK" },
+      { property: "og:description", content: "Tổng quan hoạt động của tổ chức trên UNIWORK." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DashboardPage,
@@ -956,8 +960,8 @@ function DashboardInner() {
                     <div className="border-b border-border px-4 py-3">
                       <div className="text-sm font-semibold">Tuỳ chỉnh bảng điều khiển</div>
                       <p className="text-xs text-muted-foreground">
-                        Chọn khối muốn hiển thị và kéo-thả để đổi thứ tự. Thiết lập đồng bộ theo
-                        tài khoản của bạn.
+                        Chọn khối, kích thước và kéo-thả để đổi thứ tự. Thiết lập đồng bộ theo tài
+                        khoản của bạn.
                       </p>
                     </div>
                     <ul className="max-h-80 space-y-1 overflow-y-auto p-2">

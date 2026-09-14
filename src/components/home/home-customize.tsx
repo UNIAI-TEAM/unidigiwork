@@ -165,13 +165,13 @@ export function HomeCustomizePanel({
                         </span>
                       </span>
                     </label>
-                    <div className="hidden shrink-0 items-center gap-1 sm:flex">
+                    <div className="flex shrink-0 items-center gap-1">
                       <button
                         type="button"
                         onClick={() => move(key, -1)}
                         disabled={idx === 0}
                         aria-label={`Đưa ${meta.label} lên trên`}
-                        className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
                       >
                         <ArrowUp className="h-3.5 w-3.5" />
                       </button>
@@ -180,7 +180,7 @@ export function HomeCustomizePanel({
                         onClick={() => move(key, 1)}
                         disabled={idx === prefs.order.length - 1}
                         aria-label={`Đưa ${meta.label} xuống dưới`}
-                        className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
                       >
                         <ArrowDown className="h-3.5 w-3.5" />
                       </button>
