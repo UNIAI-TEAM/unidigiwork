@@ -2,6 +2,7 @@
 // và làm mới KPI của Command Center mà không cần thao tác thủ công.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { loadCeoOverview } from "./ceo.server";
+import { recordKpiSnapshot } from "./kpi-snapshot.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000; // tối đa 1 lần / ngày
