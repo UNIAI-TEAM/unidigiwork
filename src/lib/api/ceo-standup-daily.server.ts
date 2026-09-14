@@ -363,14 +363,14 @@ export async function runDailyStandup(
       // và để so sánh tiến độ với lần giao ban trước.
       const recent = new Set<string>();
       const prevProgress = new Map<string, number>();
-      if (tasks.length) {
+      if (progressTasks.length) {
         const { data: existing } = await admin
           .from("task_comments")
           .select("task_id, body, created_at")
           .eq("tenant_id", row.tenant_id)
           .in(
             "task_id",
-            tasks.map((t) => t.id),
+            progressTasks.map((t) => t.id),
           )
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
