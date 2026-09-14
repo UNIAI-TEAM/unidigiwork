@@ -14,6 +14,7 @@ import {
   getStandupBoard,
   recordStandupOutcome,
   setAutoStandupEnabled,
+  setAutoStandupHour,
   type StandupTask,
 } from "@/lib/api/ceo-standup.functions";
 
