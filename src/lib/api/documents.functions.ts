@@ -347,3 +347,44 @@ export const listDocumentAccessLogs = createServerFn({ method: "GET" })
       tenantName: tmap.get(r.tenant_id) ?? r.tenant_id,
     }));
   });
+
+// GO-2C — Lịch sử phiên bản thật từ document_versions (RLS áp dụng theo người dùng).
+export const listDocumentVersions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      documentId: z.string().uuid(),
+      limit: z.number().int().min(1).max(100).default(50),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("document_versions")
+      .select("id, version, mime_type, size_bytes, comment, author_id, created_at, storage_ref")
+      .eq("document_id", data.documentId)
+      .order("version", { ascending: false })
+      .limit(data.limit);
+    if (error) mapPgError(error);
+    const list = rows ?? [];
+    const authorIds = [...new Set(list.map((r) => r.author_id).filter((v): v is string => !!v))];
+    const { data: profiles } = authorIds.length
+      ? await context.supabase.from("profiles").select("id, display_name, email").in("id", authorIds)
+      : { data: [] as Array<{ id: string; display_name: string | null; email: string | null }> };
+    const pmap = new Map((profiles ?? []).map((p) => [p.id, p]));
+    return list.map((r) => {
+      const ref = (r.storage_ref ?? null) as { objectKey?: string } | null;
+      const objectKey = typeof ref?.objectKey === "string" ? ref.objectKey : "";
+      const fileName = objectKey ? (objectKey.split("/").pop() ?? "").replace(/^\d+-/, "") : null;
+      return {
+        id: r.id as string,
+        version: Number(r.version),
+        createdAt: r.created_at as string,
+        comment: (r.comment as string | null) ?? null,
+        mimeType: (r.mime_type as string | null) ?? null,
+        sizeBytes: (r.size_bytes as number | null) ?? null,
+        fileName,
+        authorName:
+          pmap.get(r.author_id ?? "")?.display_name ?? pmap.get(r.author_id ?? "")?.email ?? null,
+      };
+    });
+  });

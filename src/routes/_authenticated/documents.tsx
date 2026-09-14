@@ -58,7 +58,9 @@ import {
   logDocumentAccess,
   listDocumentAccessLogs,
   getDocument,
+  listDocumentVersions,
 } from "@/lib/api/documents.functions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import {
@@ -195,8 +197,20 @@ function DocumentsPage() {
   const [aiAsk, setAiAsk] = useState("");
   const [comments, setComments] = useState<{ id: string; text: string; user: string; time: string }[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [history, setHistory] = useState<{ id: string; action: string; user: string; time: string }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const queryClient = useQueryClient();
+  // GO-2C: lịch sử phiên bản thật, chỉ nạp khi mở hộp thoại, khoá truy vấn riêng theo tài liệu.
+  const versionsQuery = useQuery({
+    queryKey: ["document-versions", selected?.id ?? ""],
+    enabled: historyOpen && !!selected?.id,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    queryFn: () => listDocumentVersions({ data: { documentId: selected!.id, limit: 50 } }),
+  });
+  const refreshVersions = () => {
+    if (!selected?.id) return;
+    void queryClient.invalidateQueries({ queryKey: ["document-versions", selected.id], exact: true });
+  };
   const [listDenied, setListDenied] = useState(false);
   const [detailDenied, setDetailDenied] = useState<string | null>(null);
   const [accessLogs, setAccessLogs] = useState<
@@ -465,10 +479,7 @@ function DocumentsPage() {
         },
       });
       await reloadDocs(selected.id);
-      setHistory((prev) => [
-        { id: crypto.randomUUID(), action: patch.title ? t("doc.11") : t("doc.12"), user: t("doc.13"), time: new Date().toLocaleString(tag) },
-        ...prev.slice(0, 49),
-      ]);
+      void queryClient.invalidateQueries({ queryKey: ["document-versions", selected.id], exact: true });
       setSaveState("saved");
     } catch (e) {
       toast.error(t("doc.10") + (e as Error).message);
@@ -1578,19 +1589,46 @@ function DocumentsPage() {
 
       {historyOpen && selected && (
         <Modal onClose={() => setHistoryOpen(false)}>
-          <h2 className="mb-1 text-lg font-semibold">{t("doc.95")}</h2>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">{t("doc.95")}</h2>
+            <button
+              type="button"
+              onClick={refreshVersions}
+              className="min-h-[44px] rounded-lg px-3 text-xs font-medium text-muted-foreground hover:bg-surface-2"
+            >
+              {versionsQuery.isFetching ? t("docver.loading") : t("docver.refresh")}
+            </button>
+          </div>
           <p className="mb-4 text-xs text-muted-foreground">«{selected.title}»</p>
           <div className="mb-4 max-h-60 space-y-2 overflow-y-auto text-sm">
-            {history.length === 0 ? (
+            {versionsQuery.isLoading ? (
+              <p className="text-xs text-muted-foreground">{t("docver.loading")}</p>
+            ) : (versionsQuery.data ?? []).length === 0 ? (
               <p className="text-xs text-muted-foreground">{t("doc.96")}</p>
             ) : (
-              history.map((h) => (
-                <div key={h.id} className="rounded-lg bg-surface-2/50 p-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">{h.user}</span>
-                    <span className="text-muted-foreground">{h.time}</span>
+              (versionsQuery.data ?? []).map((v, i) => (
+                <div key={v.id} className="rounded-lg bg-surface-2/50 p-3">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="font-medium">
+                      {t("docver.version")} {v.version}
+                      {i === 0 && (
+                        <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                          {t("docver.latest")}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {new Date(v.createdAt).toLocaleString(tag)}
+                    </span>
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">{h.action}</div>
+                  <div className="mt-1 truncate text-xs text-muted-foreground">
+                    {v.authorName ?? t("docver.unknownAuthor")}
+                    {v.fileName ? ` · ${v.fileName}` : ""}
+                    {typeof v.sizeBytes === "number" ? ` · ${Math.max(1, Math.round(v.sizeBytes / 1024))} KB` : ""}
+                  </div>
+                  {v.comment && (
+                    <div className="mt-1 truncate text-xs text-muted-foreground">{v.comment}</div>
+                  )}
                 </div>
               ))
             )}
