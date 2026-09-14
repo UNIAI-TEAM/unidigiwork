@@ -218,6 +218,24 @@ function AutoStandupCard() {
               ? ` · ${s.tasksTouched ?? 0} việc, ${s.done ?? 0} hoàn thành, ${s.overdue ?? 0} quá hạn, ${s.notes ?? 0} ghi chú`
               : ""}
           </div>
+          <div className="mt-3 flex items-center gap-2">
+            <label htmlFor="standup-hour" className="text-xs text-muted-foreground">
+              Giờ chạy mỗi sáng (giờ Việt Nam):
+            </label>
+            <select
+              id="standup-hour"
+              className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+              value={hourVn}
+              disabled={changeHour.isPending}
+              onChange={(e) => changeHour.mutate(Number(e.target.value))}
+            >
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {String(h).padStart(2, "0")}:30
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={enabled ? "default" : "secondary"}>
