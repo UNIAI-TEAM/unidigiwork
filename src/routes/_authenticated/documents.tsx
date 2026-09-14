@@ -127,9 +127,9 @@ type DocumentsSearch = { filter?: "stale"; range?: number; ws?: string };
 
 export const Route = createFileRoute("/_authenticated/documents")({
   validateSearch: (search: Record<string, unknown>): DocumentsSearch => ({
-    filter: search['filter'] === "stale" ? ("stale" as const) : undefined,
-    range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
-    ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,
+    filter: search["filter"] === "stale" ? ("stale" as const) : undefined,
+    range: [7, 30, 90].includes(Number(search["range"])) ? Number(search["range"]) : undefined,
+    ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
   }),
   head: () => ({
     meta: [
@@ -195,7 +195,9 @@ function DocumentsPage() {
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const [rightTab, setRightTab] = useState<"ai" | "comments" | "members">("ai");
   const [aiAsk, setAiAsk] = useState("");
-  const [comments, setComments] = useState<{ id: string; text: string; user: string; time: string }[]>([]);
+  const [comments, setComments] = useState<
+    { id: string; text: string; user: string; time: string }[]
+  >([]);
   const [newComment, setNewComment] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -209,12 +211,22 @@ function DocumentsPage() {
   });
   const refreshVersions = () => {
     if (!selected?.id) return;
-    void queryClient.invalidateQueries({ queryKey: ["document-versions", selected.id], exact: true });
+    void queryClient.invalidateQueries({
+      queryKey: ["document-versions", selected.id],
+      exact: true,
+    });
   };
   const [listDenied, setListDenied] = useState(false);
   const [detailDenied, setDetailDenied] = useState<string | null>(null);
   const [accessLogs, setAccessLogs] = useState<
-    Array<{ id: string; action: string; occurredAt: string; actorName: string; workspaceName: string; tenantName: string }>
+    Array<{
+      id: string;
+      action: string;
+      occurredAt: string;
+      actorName: string;
+      workspaceName: string;
+      tenantName: string;
+    }>
   >([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [newWsName, setNewWsName] = useState("");
@@ -479,7 +491,10 @@ function DocumentsPage() {
         },
       });
       await reloadDocs(selected.id);
-      void queryClient.invalidateQueries({ queryKey: ["document-versions", selected.id], exact: true });
+      void queryClient.invalidateQueries({
+        queryKey: ["document-versions", selected.id],
+        exact: true,
+      });
       setSaveState("saved");
     } catch (e) {
       toast.error(t("doc.10") + (e as Error).message);
@@ -492,7 +507,7 @@ function DocumentsPage() {
     if (!confirm(t("doc.14"))) return;
     try {
       await archiveDocument({ data: { documentId: id, idempotencyKey: crypto.randomUUID() } });
-      await reloadDocs(selected?.id === id ? null : selected?.id ?? null);
+      await reloadDocs(selected?.id === id ? null : (selected?.id ?? null));
       toast.success(t("doc.15"));
     } catch (e) {
       toast.error(t("doc.16") + (e as Error).message);
@@ -636,7 +651,8 @@ function DocumentsPage() {
     blockquote: () => insertAtCursor("> "),
     link: () => insertAtCursor("[", "](https://)"),
     image: () => insertAtCursor("![alt](", ")"),
-    table: () => insertAtCursor(`| ${t("doc.124")} 1 | ${t("doc.124")} 2 |\n| --- | --- |\n| `, " | |"),
+    table: () =>
+      insertAtCursor(`| ${t("doc.124")} 1 | ${t("doc.124")} 2 |\n| --- | --- |\n| `, " | |"),
     hr: () => insertAtCursor("\n---\n"),
   };
 
@@ -683,16 +699,24 @@ function DocumentsPage() {
   useEffect(() => {
     if (!selected?.id || loggedViews.current.has(selected.id)) return;
     loggedViews.current.add(selected.id);
-    void logDocumentAccess({ data: { documentId: selected.id, action: "view", context: {} } }).catch(() => {});
+    void logDocumentAccess({
+      data: { documentId: selected.id, action: "view", context: {} },
+    }).catch(() => {});
   }, [selected?.id]);
 
   useEffect(() => {
     if (!historyOpen || !selected?.id) return;
     let alive = true;
     void listDocumentAccessLogs({ data: { documentId: selected.id, limit: 50 } })
-      .then((rows) => { if (alive) setAccessLogs(rows as typeof accessLogs); })
-      .catch(() => { if (alive) setAccessLogs([]); });
-    return () => { alive = false; };
+      .then((rows) => {
+        if (alive) setAccessLogs(rows as typeof accessLogs);
+      })
+      .catch(() => {
+        if (alive) setAccessLogs([]);
+      });
+    return () => {
+      alive = false;
+    };
   }, [historyOpen, selected?.id]);
 
   // GO-2C: mở tài liệu đang chọn bằng UniWork Office (phiên do máy chủ cấp).
@@ -702,6 +726,14 @@ function DocumentsPage() {
       return;
     }
     const state = await openInUniworkOffice(selected.id);
+    if (state === "OPENING") {
+      toast.success(t("office.opening"));
+      void queryClient.invalidateQueries({
+        queryKey: ["document-versions", selected.id],
+        exact: true,
+      });
+      return;
+    }
     if (state === "OPENING") toast.success(t("office.opening"));
     else if (state === "OFFICE_NOT_INSTALLED") toast.error(t("office.notInstalled"));
     else if (state === "UNSUPPORTED_FORMAT") toast.error(t("office.unsupported"));
@@ -711,18 +743,25 @@ function DocumentsPage() {
 
   const exportDocument = () => {
     if (!selected) return;
-    const blob = new Blob([`# ${selected.title}\n\n${selected.content}`], { type: "text/markdown" });
+    const blob = new Blob([`# ${selected.title}\n\n${selected.content}`], {
+      type: "text/markdown",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `${selected.title || "document"}.md`;
     a.click();
     URL.revokeObjectURL(url);
-    void logDocumentAccess({ data: { documentId: selected.id, action: "download", context: { format: "md" } } }).catch(() => {});
+    void logDocumentAccess({
+      data: { documentId: selected.id, action: "download", context: { format: "md" } },
+    }).catch(() => {});
   };
 
   const printDocument = () => {
-    if (selected) void logDocumentAccess({ data: { documentId: selected.id, action: "print", context: {} } }).catch(() => {});
+    if (selected)
+      void logDocumentAccess({
+        data: { documentId: selected.id, action: "print", context: {} },
+      }).catch(() => {});
     window.print();
   };
 
@@ -861,22 +900,24 @@ function DocumentsPage() {
                   onClick={() =>
                     navigate({
                       to: "/documents",
-                      search: (p) => ({ filter: p.filter === "stale" ? ("stale" as const) : undefined, ws: p.ws, range: undefined }),
+                      search: (p) => ({
+                        filter: p.filter === "stale" ? ("stale" as const) : undefined,
+                        ws: p.ws,
+                        range: undefined,
+                      }),
                     })
                   }
                   className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs text-primary hover:bg-primary/25"
                 >
-                  <span>{rangeDays} {t("doc.126")}</span>
+                  <span>
+                    {rangeDays} {t("doc.126")}
+                  </span>
                   <span>{t("doc.30")}</span>
                 </button>
               ) : null}
               {visibleDocs.length === 0 ? (
                 <div className="px-2 py-6 text-center text-xs text-muted-foreground">
-                  {docFilter === "stale"
-                    ? t("doc.31")
-                    : currentWs
-                      ? t("doc.32")
-                      : t("doc.33")}
+                  {docFilter === "stale" ? t("doc.31") : currentWs ? t("doc.32") : t("doc.33")}
                 </div>
               ) : (
                 userFolders.map((f) => (
@@ -969,7 +1010,11 @@ function DocumentsPage() {
                           onClear: () =>
                             navigate({
                               to: "/documents",
-                              search: (p) => ({ filter: p.filter === "stale" ? ("stale" as const) : undefined, ws: p.ws, range: undefined }),
+                              search: (p) => ({
+                                filter: p.filter === "stale" ? ("stale" as const) : undefined,
+                                ws: p.ws,
+                                range: undefined,
+                              }),
                             }),
                         },
                       ]
@@ -990,7 +1035,10 @@ function DocumentsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      if (!selected) { toast.error(t("doc.44")); return; }
+                      if (!selected) {
+                        toast.error(t("doc.44"));
+                        return;
+                      }
                       openShare();
                     }}
                     className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3 disabled:opacity-50"
@@ -1000,12 +1048,23 @@ function DocumentsPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-1.5 text-sm hover:bg-surface-3">
-                        {previewMode ? t("doc.45") : t("doc.46")} <ChevronDown className="h-4 w-4" />
+                        {previewMode ? t("doc.45") : t("doc.46")}{" "}
+                        <ChevronDown className="h-4 w-4" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-surface border-border">
-                      <DropdownMenuItem onClick={() => setPreviewMode(false)} className="cursor-pointer focus:bg-surface-2">{t("doc.46")}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setPreviewMode(true)} className="cursor-pointer focus:bg-surface-2">{t("doc.45")}</DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setPreviewMode(false)}
+                        className="cursor-pointer focus:bg-surface-2"
+                      >
+                        {t("doc.46")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setPreviewMode(true)}
+                        className="cursor-pointer focus:bg-surface-2"
+                      >
+                        {t("doc.45")}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <DropdownMenu>
@@ -1015,9 +1074,24 @@ function DocumentsPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-surface border-border">
-                      <DropdownMenuItem onClick={exportDocument} className="cursor-pointer focus:bg-surface-2">{t("doc.47")}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={printDocument} className="cursor-pointer focus:bg-surface-2">{t("doc.48")}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setHistoryOpen(true)} className="cursor-pointer focus:bg-surface-2">{t("doc.49")}</DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={exportDocument}
+                        className="cursor-pointer focus:bg-surface-2"
+                      >
+                        {t("doc.47")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={printDocument}
+                        className="cursor-pointer focus:bg-surface-2"
+                      >
+                        {t("doc.48")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setHistoryOpen(true)}
+                        className="cursor-pointer focus:bg-surface-2"
+                      >
+                        {t("doc.49")}
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={!selected}
                         onClick={() => void openSelectedInOffice()}
@@ -1097,15 +1171,25 @@ function DocumentsPage() {
             </div>
 
             <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-border bg-background/95 px-4 py-2 backdrop-blur sm:px-8">
-              <ToolbarBtn icon={ChevronDown} onClick={() => insertMarkdown.hr()} title={t("doc.52")} />
-              <ToolbarBtn icon={ChevronRight} onClick={() => insertMarkdown.blockquote()} title={t("doc.53")} />
+              <ToolbarBtn
+                icon={ChevronDown}
+                onClick={() => insertMarkdown.hr()}
+                title={t("doc.52")}
+              />
+              <ToolbarBtn
+                icon={ChevronRight}
+                onClick={() => insertMarkdown.blockquote()}
+                title={t("doc.53")}
+              />
               <select
                 onChange={(e) => insertMarkdown.heading(Number(e.target.value))}
                 className="mx-1 rounded bg-surface-2 px-2 py-1 text-xs text-foreground focus:outline-none"
                 title={t("doc.54")}
                 value=""
               >
-                <option value="" disabled>{t("doc.147")}</option>
+                <option value="" disabled>
+                  {t("doc.147")}
+                </option>
                 <option value="1">H1</option>
                 <option value="2">H2</option>
                 <option value="3">H3</option>
@@ -1113,20 +1197,60 @@ function DocumentsPage() {
               </select>
               <span className="mx-1 h-5 w-px bg-border" />
               <ToolbarBtn icon={Bold} onClick={() => insertMarkdown.bold()} title={t("doc.55")} />
-              <ToolbarBtn icon={Italic} onClick={() => insertMarkdown.italic()} title={t("doc.56")} />
-              <ToolbarBtn icon={Underline} onClick={() => insertMarkdown.underline()} title={t("doc.57")} />
-              <ToolbarBtn icon={Strikethrough} onClick={() => insertMarkdown.strikethrough()} title={t("doc.58")} />
+              <ToolbarBtn
+                icon={Italic}
+                onClick={() => insertMarkdown.italic()}
+                title={t("doc.56")}
+              />
+              <ToolbarBtn
+                icon={Underline}
+                onClick={() => insertMarkdown.underline()}
+                title={t("doc.57")}
+              />
+              <ToolbarBtn
+                icon={Strikethrough}
+                onClick={() => insertMarkdown.strikethrough()}
+                title={t("doc.58")}
+              />
               <ToolbarBtn icon={Code} onClick={() => insertMarkdown.code()} title="Code" />
               <span className="mx-1 h-5 w-px bg-border" />
               <ToolbarBtn icon={List} onClick={() => insertMarkdown.bullet()} title={t("doc.59")} />
-              <ToolbarBtn icon={ListOrdered} onClick={() => insertMarkdown.ordered()} title={t("doc.60")} />
-              <ToolbarBtn icon={AlignLeft} onClick={() => insertMarkdown.blockquote()} title={t("doc.61")} />
-              <ToolbarBtn icon={AlignCenter} onClick={() => insertAtCursor("<center>", "</center>")} title={t("doc.62")} />
+              <ToolbarBtn
+                icon={ListOrdered}
+                onClick={() => insertMarkdown.ordered()}
+                title={t("doc.60")}
+              />
+              <ToolbarBtn
+                icon={AlignLeft}
+                onClick={() => insertMarkdown.blockquote()}
+                title={t("doc.61")}
+              />
+              <ToolbarBtn
+                icon={AlignCenter}
+                onClick={() => insertAtCursor("<center>", "</center>")}
+                title={t("doc.62")}
+              />
               <span className="mx-1 h-5 w-px bg-border" />
-              <ToolbarBtn icon={LinkIcon} onClick={() => insertMarkdown.link()} title={t("doc.63")} />
-              <ToolbarBtn icon={ImageIcon} onClick={() => insertMarkdown.image()} title={t("doc.64")} />
-              <ToolbarBtn icon={TableIcon} onClick={() => insertMarkdown.table()} title={t("doc.65")} />
-              <ToolbarBtn icon={MoreHorizontal} onClick={() => insertMarkdown.codeBlock()} title={t("doc.66")} />
+              <ToolbarBtn
+                icon={LinkIcon}
+                onClick={() => insertMarkdown.link()}
+                title={t("doc.63")}
+              />
+              <ToolbarBtn
+                icon={ImageIcon}
+                onClick={() => insertMarkdown.image()}
+                title={t("doc.64")}
+              />
+              <ToolbarBtn
+                icon={TableIcon}
+                onClick={() => insertMarkdown.table()}
+                title={t("doc.65")}
+              />
+              <ToolbarBtn
+                icon={MoreHorizontal}
+                onClick={() => insertMarkdown.codeBlock()}
+                title={t("doc.66")}
+              />
             </div>
 
             <article className="flex-1 px-4 py-6 sm:px-8">
@@ -1166,9 +1290,7 @@ function DocumentsPage() {
                     <span className="font-medium text-foreground">{currentWs?.name ?? "—"}</span>.
                   </p>
                   <button
-                    onClick={() =>
-                      currentWs ? setShowNew(true) : toast.error(t("doc.23"))
-                    }
+                    onClick={() => (currentWs ? setShowNew(true) : toast.error(t("doc.23")))}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                     disabled={!currentWs}
                   >
@@ -1193,7 +1315,9 @@ function DocumentsPage() {
                   ) : saveState === "dirty" ? (
                     <button
                       type="button"
-                      onClick={() => updateSelected({ content: selected.content, title: selected.title })}
+                      onClick={() =>
+                        updateSelected({ content: selected.content, title: selected.title })
+                      }
                       className="flex items-center gap-1 rounded px-1.5 py-0.5 text-warning hover:bg-surface-2"
                       title={t("doc.69")}
                       aria-label={t("doc.69")}
@@ -1239,9 +1363,7 @@ function DocumentsPage() {
                       <Sparkles className="h-4 w-4 text-primary" /> {t("doc.150")}
                     </div>
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      {selected
-                        ? t("doc.71")
-                        : t("doc.72")}
+                      {selected ? t("doc.71") : t("doc.72")}
                     </p>
                   </div>
                   <div>
@@ -1277,7 +1399,10 @@ function DocumentsPage() {
                       <p className="text-xs text-muted-foreground">{t("doc.73")}</p>
                     ) : (
                       comments.map((c) => (
-                        <div key={c.id} className="rounded-lg border border-border bg-surface-2 p-3">
+                        <div
+                          key={c.id}
+                          className="rounded-lg border border-border bg-surface-2 p-3"
+                        >
                           <div className="mb-1 flex items-center justify-between text-xs">
                             <span className="font-medium">{c.user}</span>
                             <span className="text-muted-foreground">{c.time}</span>
@@ -1313,7 +1438,10 @@ function DocumentsPage() {
                   </div>
                   <div className="space-y-2">
                     {members.map((m) => (
-                      <div key={m.user_id} className="flex items-center gap-2 rounded-lg bg-surface-2 p-2">
+                      <div
+                        key={m.user_id}
+                        className="flex items-center gap-2 rounded-lg bg-surface-2 p-2"
+                      >
                         <img src={avatar(m.user_id)} className="h-7 w-7 rounded-full" alt="" />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-xs font-medium">
@@ -1323,7 +1451,9 @@ function DocumentsPage() {
                         </div>
                       </div>
                     ))}
-                    {members.length === 0 && <p className="text-xs text-muted-foreground">{t("doc.75")}</p>}
+                    {members.length === 0 && (
+                      <p className="text-xs text-muted-foreground">{t("doc.75")}</p>
+                    )}
                   </div>
                   <button
                     onClick={() => setShowMembers(true)}
@@ -1442,7 +1572,11 @@ function DocumentsPage() {
                     <img src={avatar(c.userId)} className="h-6 w-6 rounded-full" alt="" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{c.displayName || c.email || c.userId}</span>
-                      {c.email && <span className="block truncate text-[11px] text-muted-foreground">{c.email}</span>}
+                      {c.email && (
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {c.email}
+                        </span>
+                      )}
                     </span>
                     <span className="shrink-0 rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted-foreground">
                       {c.inWorkspace ? t("doc.159") : t("doc.160")}
@@ -1487,9 +1621,15 @@ function DocumentsPage() {
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{s.label}</span>
-                    {s.sublabel && <span className="block truncate text-[11px] text-muted-foreground">{s.sublabel}</span>}
+                    {s.sublabel && (
+                      <span className="block truncate text-[11px] text-muted-foreground">
+                        {s.sublabel}
+                      </span>
+                    )}
                   </span>
-                  <span className="shrink-0 rounded bg-surface px-1.5 py-0.5 text-[10px] capitalize">{s.level}</span>
+                  <span className="shrink-0 rounded bg-surface px-1.5 py-0.5 text-[10px] capitalize">
+                    {s.level}
+                  </span>
                   {canManageShares && (
                     <button
                       type="button"
@@ -1503,15 +1643,25 @@ function DocumentsPage() {
                   )}
                 </div>
               ))}
-              {shares.length === 0 && <p className="text-xs text-muted-foreground">{t("doc.157")}</p>}
+              {shares.length === 0 && (
+                <p className="text-xs text-muted-foreground">{t("doc.157")}</p>
+              )}
             </div>
           </div>
-          {!canManageShares && (
-            <p className="mb-2 text-xs text-destructive">{t("doc.163")}</p>
-          )}
+          {!canManageShares && <p className="mb-2 text-xs text-destructive">{t("doc.163")}</p>}
           <Actions>
-            <button onClick={() => setShowShare(false)} disabled={sharing} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">{t("doc.88")}</button>
-            <button onClick={submitShare} disabled={sharing || !shareUserId || !canManageShares} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <button
+              onClick={() => setShowShare(false)}
+              disabled={sharing}
+              className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            >
+              {t("doc.88")}
+            </button>
+            <button
+              onClick={submitShare}
+              disabled={sharing || !shareUserId || !canManageShares}
+              className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
               {sharing ? t("doc.89") : t("doc.90")}
             </button>
           </Actions>
@@ -1565,9 +1715,7 @@ function DocumentsPage() {
                   className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </Field>
-              <p className="mb-3 text-[11px] text-muted-foreground">
-                {t("doc.144")}
-              </p>
+              <p className="mb-3 text-[11px] text-muted-foreground">{t("doc.144")}</p>
               <Actions>
                 <button
                   onClick={() => setShowMembers(false)}
@@ -1624,7 +1772,9 @@ function DocumentsPage() {
                   <div className="mt-1 truncate text-xs text-muted-foreground">
                     {v.authorName ?? t("docver.unknownAuthor")}
                     {v.fileName ? ` · ${v.fileName}` : ""}
-                    {typeof v.sizeBytes === "number" ? ` · ${Math.max(1, Math.round(v.sizeBytes / 1024))} KB` : ""}
+                    {typeof v.sizeBytes === "number"
+                      ? ` · ${Math.max(1, Math.round(v.sizeBytes / 1024))} KB`
+                      : ""}
                   </div>
                   {v.comment && (
                     <div className="mt-1 truncate text-xs text-muted-foreground">{v.comment}</div>
@@ -1642,7 +1792,9 @@ function DocumentsPage() {
                 <div key={l.id} className="rounded-lg bg-surface-2/50 p-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium">{l.actorName}</span>
-                    <span className="text-muted-foreground">{new Date(l.occurredAt).toLocaleString(tag)}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(l.occurredAt).toLocaleString(tag)}
+                    </span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     {l.action === "download"
@@ -1675,7 +1827,12 @@ function DocumentsPage() {
           <h2 className="mb-1 text-lg font-semibold">{t("doc.49")}</h2>
           <p className="mb-4 text-sm text-muted-foreground">{t("doc.97")}</p>
           <Actions>
-            <button onClick={() => setHistoryOpen(false)} className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2">{t("doc.98")}</button>
+            <button
+              onClick={() => setHistoryOpen(false)}
+              className="rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            >
+              {t("doc.98")}
+            </button>
           </Actions>
         </Modal>
       )}

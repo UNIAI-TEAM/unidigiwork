@@ -15,16 +15,22 @@ const storageRefSchema = z.object({
 export const listDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      workspaceId: z.string().uuid(),
-      folder: z.string().max(200).optional(),
-      limit: z.number().int().min(1).max(200).default(50),
-    }).parse(i),
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        folder: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(200).default(50),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
-    let q = context.supabase.from("documents").select("*")
-      .eq("workspace_id", data.workspaceId).is("deleted_at", null)
-      .order("updated_at", { ascending: false }).limit(data.limit);
+    let q = context.supabase
+      .from("documents")
+      .select("*")
+      .eq("workspace_id", data.workspaceId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(data.limit);
     if (data.folder) q = q.eq("folder", data.folder);
     const { data: rows, error } = await q;
     if (error) mapPgError(error);
@@ -34,16 +40,18 @@ export const listDocuments = createServerFn({ method: "GET" })
 export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      workspaceId: z.string().uuid(),
-      title: z.string().min(1).max(500),
-      folder: z.string().max(200).default("My Documents"),
-      tags: z.array(z.string().max(50)).max(50).default([]),
-      storageRef: storageRefSchema.optional(),
-      mimeType: z.string().max(200).optional(),
-      sizeBytes: z.number().int().nonnegative().default(0),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        workspaceId: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        folder: z.string().max(200).default("My Documents"),
+        tags: z.array(z.string().max(50)).max(50).default([]),
+        storageRef: storageRefSchema.optional(),
+        mimeType: z.string().max(200).optional(),
+        sizeBytes: z.number().int().nonnegative().default(0),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("create_document", {
@@ -81,7 +89,11 @@ export const getDocument = createServerFn({ method: "GET" })
         .eq("document_id", data.documentId)
         .order("version", { ascending: false })
         .limit(20),
-      context.supabase.from("workspaces").select("id, name").eq("id", doc.workspace_id).maybeSingle(),
+      context.supabase
+        .from("workspaces")
+        .select("id, name")
+        .eq("id", doc.workspace_id)
+        .maybeSingle(),
       context.supabase
         .from("document_permissions")
         .select("principal_type, principal_id, level")
@@ -98,14 +110,16 @@ export const getDocument = createServerFn({ method: "GET" })
 export const updateDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      documentId: z.string().uuid(),
-      title: z.string().min(1).max(500).optional(),
-      folder: z.string().max(200).optional(),
-      tags: z.array(z.string().max(50)).max(50).optional(),
-      content: z.string().max(500000).optional(),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        documentId: z.string().uuid(),
+        title: z.string().min(1).max(500).optional(),
+        folder: z.string().max(200).optional(),
+        tags: z.array(z.string().max(50)).max(50).optional(),
+        content: z.string().max(500000).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("update_document", {
@@ -124,14 +138,16 @@ export const updateDocument = createServerFn({ method: "POST" })
 export const uploadDocumentVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      documentId: z.string().uuid(),
-      storageRef: storageRefSchema,
-      mimeType: z.string().max(200).optional(),
-      sizeBytes: z.number().int().nonnegative().default(0),
-      comment: z.string().max(1000).optional(),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        documentId: z.string().uuid(),
+        storageRef: storageRefSchema,
+        mimeType: z.string().max(200).optional(),
+        sizeBytes: z.number().int().nonnegative().default(0),
+        comment: z.string().max(1000).optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("upload_document_version", {
@@ -149,13 +165,15 @@ export const uploadDocumentVersion = createServerFn({ method: "POST" })
 export const shareDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      documentId: z.string().uuid(),
-      principalType: z.enum(["user", "workspace", "tenant"]),
-      principalId: z.string().uuid(),
-      level: z.enum(["view", "comment", "edit", "manage"]),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        documentId: z.string().uuid(),
+        principalType: z.enum(["user", "workspace", "tenant"]),
+        principalId: z.string().uuid(),
+        level: z.enum(["view", "comment", "edit", "manage"]),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("share_document", {
@@ -172,10 +190,12 @@ export const shareDocument = createServerFn({ method: "POST" })
 export const archiveDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      documentId: z.string().uuid(),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        documentId: z.string().uuid(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("archive_document", {
@@ -192,15 +212,25 @@ export const listDocumentShareCandidates = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ documentId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: doc, error: docErr } = await context.supabase
-      .from("documents").select("id, tenant_id, workspace_id")
-      .eq("id", data.documentId).is("deleted_at", null).maybeSingle();
+      .from("documents")
+      .select("id, tenant_id, workspace_id")
+      .eq("id", data.documentId)
+      .is("deleted_at", null)
+      .maybeSingle();
     if (docErr) mapPgError(docErr);
     if (!doc) throw new Error("DOCUMENT_NOT_FOUND");
 
     const [membersRes, wsMembersRes] = await Promise.all([
-      context.supabase.from("tenant_members")
-        .select("user_id, role, status").eq("tenant_id", doc.tenant_id).eq("status", "active").limit(500),
-      context.supabase.from("workspace_members").select("user_id").eq("workspace_id", doc.workspace_id),
+      context.supabase
+        .from("tenant_members")
+        .select("user_id, role, status")
+        .eq("tenant_id", doc.tenant_id)
+        .eq("status", "active")
+        .limit(500),
+      context.supabase
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", doc.workspace_id),
     ]);
     const rows = membersRes.data ?? [];
     const inWorkspace = new Set((wsMembersRes.data ?? []).map((m) => m.user_id));
@@ -224,7 +254,8 @@ export const listDocumentShares = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ documentId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const [permsRes, canManageRes] = await Promise.all([
-      context.supabase.from("document_permissions")
+      context.supabase
+        .from("document_permissions")
         .select("principal_type, principal_id, level, created_at, updated_at")
         .eq("document_id", data.documentId)
         .order("created_at", { ascending: true }),
@@ -236,13 +267,31 @@ export const listDocumentShares = createServerFn({ method: "GET" })
     const wsIds = perms.filter((p) => p.principal_type === "workspace").map((p) => p.principal_id);
     const tenantIds = perms.filter((p) => p.principal_type === "tenant").map((p) => p.principal_id);
     const [profiles, workspaces, tenants] = await Promise.all([
-      userIds.length ? context.supabase.from("profiles").select("id, email, display_name").in("id", userIds) : Promise.resolve({ data: [] }),
-      wsIds.length ? context.supabase.from("workspaces").select("id, name").in("id", wsIds) : Promise.resolve({ data: [] }),
-      tenantIds.length ? context.supabase.from("tenants").select("id, name").in("id", tenantIds) : Promise.resolve({ data: [] }),
+      userIds.length
+        ? context.supabase.from("profiles").select("id, email, display_name").in("id", userIds)
+        : Promise.resolve({ data: [] }),
+      wsIds.length
+        ? context.supabase.from("workspaces").select("id, name").in("id", wsIds)
+        : Promise.resolve({ data: [] }),
+      tenantIds.length
+        ? context.supabase.from("tenants").select("id, name").in("id", tenantIds)
+        : Promise.resolve({ data: [] }),
     ]);
-    const pmap = new Map(((profiles.data ?? []) as Array<{ id: string; email: string | null; display_name: string | null }>).map((p) => [p.id, p]));
-    const wmap = new Map(((workspaces.data ?? []) as Array<{ id: string; name: string }>).map((w) => [w.id, w.name]));
-    const tmap = new Map(((tenants.data ?? []) as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]));
+    const pmap = new Map(
+      (
+        (profiles.data ?? []) as Array<{
+          id: string;
+          email: string | null;
+          display_name: string | null;
+        }>
+      ).map((p) => [p.id, p]),
+    );
+    const wmap = new Map(
+      ((workspaces.data ?? []) as Array<{ id: string; name: string }>).map((w) => [w.id, w.name]),
+    );
+    const tmap = new Map(
+      ((tenants.data ?? []) as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]),
+    );
     return {
       canManage: canManageRes.data === true,
       shares: perms.map((p) => ({
@@ -251,7 +300,9 @@ export const listDocumentShares = createServerFn({ method: "GET" })
         level: p.level as string,
         label:
           p.principal_type === "user"
-            ? (pmap.get(p.principal_id)?.display_name ?? pmap.get(p.principal_id)?.email ?? p.principal_id)
+            ? (pmap.get(p.principal_id)?.display_name ??
+              pmap.get(p.principal_id)?.email ??
+              p.principal_id)
             : p.principal_type === "workspace"
               ? (wmap.get(p.principal_id) ?? p.principal_id)
               : (tmap.get(p.principal_id) ?? p.principal_id),
@@ -263,12 +314,14 @@ export const listDocumentShares = createServerFn({ method: "GET" })
 export const revokeDocumentShare = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      ...commandMetadataSchema.shape,
-      documentId: z.string().uuid(),
-      principalType: z.enum(["user", "workspace", "tenant"]),
-      principalId: z.string().uuid(),
-    }).parse(i),
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        documentId: z.string().uuid(),
+        principalType: z.enum(["user", "workspace", "tenant"]),
+        principalId: z.string().uuid(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("revoke_document_share", {
@@ -286,11 +339,13 @@ export const revokeDocumentShare = createServerFn({ method: "POST" })
 export const logDocumentAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      documentId: z.string().uuid(),
-      action: z.enum(["view", "download", "print", "export", "share_view"]),
-      context: z.record(z.string(), z.unknown()).default({}),
-    }).parse(i),
+    z
+      .object({
+        documentId: z.string().uuid(),
+        action: z.enum(["view", "download", "print", "export", "share_view"]),
+        context: z.record(z.string(), z.unknown()).default({}),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("log_document_access", {
@@ -305,10 +360,12 @@ export const logDocumentAccess = createServerFn({ method: "POST" })
 export const listDocumentAccessLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      documentId: z.string().uuid(),
-      limit: z.number().int().min(1).max(200).default(50),
-    }).parse(i),
+    z
+      .object({
+        documentId: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).default(50),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
@@ -325,7 +382,9 @@ export const listDocumentAccessLogs = createServerFn({ method: "GET" })
     const [profiles, workspaces, tenants] = await Promise.all([
       actorIds.length
         ? context.supabase.from("profiles").select("id, display_name, email").in("id", actorIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; display_name: string | null; email: string | null }> }),
+        : Promise.resolve({
+            data: [] as Array<{ id: string; display_name: string | null; email: string | null }>,
+          }),
       wsIds.length
         ? context.supabase.from("workspaces").select("id, name").in("id", wsIds)
         : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
@@ -352,10 +411,12 @@ export const listDocumentAccessLogs = createServerFn({ method: "GET" })
 export const listDocumentVersions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      documentId: z.string().uuid(),
-      limit: z.number().int().min(1).max(100).default(50),
-    }).parse(i),
+    z
+      .object({
+        documentId: z.string().uuid(),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
@@ -368,7 +429,10 @@ export const listDocumentVersions = createServerFn({ method: "GET" })
     const list = rows ?? [];
     const authorIds = [...new Set(list.map((r) => r.author_id).filter((v): v is string => !!v))];
     const { data: profiles } = authorIds.length
-      ? await context.supabase.from("profiles").select("id, display_name, email").in("id", authorIds)
+      ? await context.supabase
+          .from("profiles")
+          .select("id, display_name, email")
+          .in("id", authorIds)
       : { data: [] as Array<{ id: string; display_name: string | null; email: string | null }> };
     const pmap = new Map((profiles ?? []).map((p) => [p.id, p]));
     return list.map((r) => {
