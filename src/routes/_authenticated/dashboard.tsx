@@ -17,6 +17,7 @@ import {
   type DashboardLayoutPrefs,
   type DashboardSectionKey,
 } from "@/lib/dashboard-layout-prefs";
+import { DraggableGridCard } from "@/components/layout/draggable-grid-card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -1330,13 +1331,25 @@ function DashboardInner() {
                 ),
               };
               return (
-                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
+                <div data-card-grid className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
                   {layoutOrder
                     .filter((k) => k !== "ai" && visible[k] && blocks[k])
                     .map((k) => (
-                      <div key={k} className={`min-w-0 ${SECTION_SPAN[layoutSizes[k]]}`}>
+                      <DraggableGridCard
+                        key={k}
+                        cardKey={k}
+                        size={layoutSizes[k]}
+                        label={DASHBOARD_SECTIONS.find((s) => s.key === k)?.label ?? k}
+                        className={SECTION_SPAN[layoutSizes[k]]}
+                        onReorder={(from, to) =>
+                          moveSection(from as DashboardSectionKey, to as DashboardSectionKey)
+                        }
+                        onResize={(key, size) =>
+                          changeSectionSize(key as DashboardSectionKey, size)
+                        }
+                      >
                         {blocks[k]}
-                      </div>
+                      </DraggableGridCard>
                     ))}
                 </div>
               );
