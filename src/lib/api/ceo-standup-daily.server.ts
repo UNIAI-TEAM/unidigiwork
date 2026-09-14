@@ -112,7 +112,7 @@ async function ensureDailyStandupMeeting(
       meeting_id: meetingId,
       tenant_id: tenantId,
       user_id: userId,
-      role: userId === hostId ? "host" : "attendee",
+      role: userId === hostId ? "host" : "participant",
       rsvp: "pending",
     })),
   );
