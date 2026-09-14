@@ -31,6 +31,11 @@
       "title": "LiveKit reconcile cron runs without a user session: service-role SELECT on meetings (read-only scan, apikey-gated, all writes via ingest_meeting_provider_event RPC). Accepted by design (ADR-1E-001).",
       "owner": "@uniwork/meetings",
       "targetBatch": "accepted"
+    },
+    "GO2C_OFFICE_BRIDGE": {
+      "title": "GO-2C Office Bridge: phiên Office ghi document_versions qua server route có xác thực (chờ RPC domain tương đương)",
+      "owner": "@uniwork/docs",
+      "targetBatch": "GO-2C"
     }
   },
   "waivers": {
@@ -54,14 +59,32 @@
       "src/lib/api/ai-tasks.functions.ts": "BATCH_1D_LIST_RPC",
       "src/lib/api/ai-market.functions.ts": "BATCH_1D_LIST_RPC",
       "src/lib/api/reports-departments.server.ts": "BATCH_1D_LIST_RPC",
-      "src/lib/api/workflow-agents.functions.ts": "BATCH_1D_LIST_RPC"
+      "src/lib/api/workflow-agents.functions.ts": "BATCH_1D_LIST_RPC",
+      "src/lib/api/office-bridge.server.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/sessions.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/sessions.exchange.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/download.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/save.prepare.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/save.complete.ts": "GO2C_OFFICE_BRIDGE"
     },
     "server-domain-write-outside-rpc": {
-      "src/lib/api/tasks.functions.ts": "BATCH_1D_TASK_ATTACHMENTS"
+      "src/lib/api/tasks.functions.ts": "BATCH_1D_TASK_ATTACHMENTS",
+      "src/lib/api/office-bridge.server.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/sessions.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/sessions.exchange.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/download.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/save.prepare.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/save.complete.ts": "GO2C_OFFICE_BRIDGE"
     },
     "server-admin-client-domain-table": {
       "src/lib/api/admin.functions.ts": "ADMIN_PLATFORM_STATS_COUNT",
-      "src/routes/api/public/hooks/livekit-reconcile.ts": "SYSTEM_CRON_RECONCILE"
+      "src/routes/api/public/hooks/livekit-reconcile.ts": "SYSTEM_CRON_RECONCILE",
+      "src/lib/api/office-bridge.server.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/sessions.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/sessions.exchange.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/download.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/save.prepare.ts": "GO2C_OFFICE_BRIDGE",
+      "src/routes/api/office/save.complete.ts": "GO2C_OFFICE_BRIDGE"
     },
     "inline-mock-name": {
       "src/routes/tasks.tsx": "BATCH_1D_TASKS",

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  AppWindow,
   ArrowLeft,
   Clock,
   Download,
@@ -19,11 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
-import {
-  getDocument,
-  updateDocument,
-  uploadDocumentVersion,
-} from "@/lib/api/documents.functions";
+import { getDocument, updateDocument, uploadDocumentVersion } from "@/lib/api/documents.functions";
 import {
   fileNameOf,
   formatBytes,
@@ -31,6 +28,7 @@ import {
   isStorageRef,
   uploadDocumentFile,
 } from "@/lib/documents-storage";
+import { openInUniworkOffice } from "@/lib/office-launch";
 
 export const Route = createFileRoute("/_authenticated/documents/$id")({
   head: ({ params }) => ({
@@ -141,6 +139,23 @@ function DocumentDetailPage() {
     }
   };
 
+  // GO-2C: mở tài liệu bằng UniWork Office (desktop) qua phiên máy chủ cấp.
+  const [officeOpening, setOfficeOpening] = useState(false);
+  const openInOffice = async () => {
+    if (!doc) return;
+    setOfficeOpening(true);
+    try {
+      const state = await openInUniworkOffice(doc.id);
+      if (state === "OPENING") toast.success(t("office.opening"));
+      else if (state === "OFFICE_NOT_INSTALLED") toast.error(t("office.notInstalled"));
+      else if (state === "UNSUPPORTED_FORMAT") toast.error(t("office.unsupported"));
+      else if (state === "PERMISSION_DENIED") toast.error(t("office.denied"));
+      else toast.error(t("office.failed"));
+    } finally {
+      setOfficeOpening(false);
+    }
+  };
+
   // Tải phiên bản mới: upload lên storage rồi ghi nhận version qua server fn.
   const uploadVersion = async (file: File | undefined) => {
     if (!file || !doc) return;
@@ -238,7 +253,9 @@ function DocumentDetailPage() {
                       <span className="font-mono">{doc.id.slice(0, 8)}</span>
                       <span>·</span>
                       <Clock className="h-3 w-3" />
-                      <span>{t("doc.130")} {fmtTime(doc.updated_at, tag)}</span>
+                      <span>
+                        {t("doc.130")} {fmtTime(doc.updated_at, tag)}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <IconBtn
@@ -266,6 +283,21 @@ function DocumentDetailPage() {
                       >
                         <Download className="h-4 w-4" />
                       </button>
+                      <button
+                        type="button"
+                        title={t("office.open")}
+                        aria-label={t("office.open")}
+                        disabled={!isStorageRef(doc.storage_ref) || officeOpening}
+                        onClick={() => void openInOffice()}
+                        className="flex min-h-[44px] items-center gap-1.5 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-40"
+                      >
+                        {officeOpening ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <AppWindow className="h-4 w-4" />
+                        )}
+                        <span className="hidden sm:inline">{t("office.open")}</span>
+                      </button>
                       <label
                         title={t("doc.110")}
                         className={`flex cursor-pointer items-center rounded-md p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground ${uploading ? "pointer-events-none opacity-40" : ""}`}
@@ -286,7 +318,11 @@ function DocumentDetailPage() {
                           }}
                         />
                       </label>
-                      <IconBtn icon={MoreHorizontal} label={t("doc.48")} onClick={() => window.print()} />
+                      <IconBtn
+                        icon={MoreHorizontal}
+                        label={t("doc.48")}
+                        onClick={() => window.print()}
+                      />
                     </div>
                   </div>
 
@@ -399,7 +435,10 @@ function DocumentDetailPage() {
                       <div className="text-[11px] text-muted-foreground">{v.author_name}</div>
                     ) : null}
                     {v.comment ? (
-                      <div className="mt-1 truncate text-[11px] text-muted-foreground" title={v.comment}>
+                      <div
+                        className="mt-1 truncate text-[11px] text-muted-foreground"
+                        title={v.comment}
+                      >
                         {v.comment}
                       </div>
                     ) : null}
@@ -424,11 +463,7 @@ function DocumentDetailPage() {
               <AskUniPanel
                 rootEntity={{ type: "DOCUMENT", id }}
                 label={t("doc.117")}
-                suggestions={[
-                  t("doc.118"),
-                  t("doc.119"),
-                  t("doc.120"),
-                ]}
+                suggestions={[t("doc.118"), t("doc.119"), t("doc.120")]}
               />
             </div>
 
