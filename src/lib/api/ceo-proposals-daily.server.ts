@@ -116,7 +116,14 @@ export async function runDailyProposals(
   tenantId: string,
   authorId: string,
 ): Promise<DailyProposalResult> {
-  const result: DailyProposalResult = { created: 0, assigned: 0, assignedPeople: 0, skipped: 0 };
+  const result: DailyProposalResult = {
+    created: 0,
+    assigned: 0,
+    assignedPeople: 0,
+    skipped: 0,
+    notes: 0,
+    items: [],
+  };
   const now = Date.now();
   const until = new Date(now + DUE_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
 
