@@ -543,18 +543,32 @@ function CeoPage() {
                     </div>
                   ),
                   standup: (
-                    <Link
-                      to="/ceo/standup"
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold">Giao ban thực tế</div>
-                        <div className="mt-0.5 text-xs text-muted-foreground">
-                          Ghi nhận kết quả từng việc trong cuộc họp — KPI và nhật ký tự cập nhật.
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <Link
+                        to="/ceo/standup"
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold">Giao ban thực tế</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            Ghi nhận kết quả từng việc trong cuộc họp — KPI và nhật ký tự cập nhật.
+                          </div>
                         </div>
-                      </div>
-                      <ArrowRight className="h-4 w-4 shrink-0" />
-                    </Link>
+                        <ArrowRight className="h-4 w-4 shrink-0" />
+                      </Link>
+                      <Link
+                        to="/ceo/kpi-history"
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold">Lịch sử KPI</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            Xem các mốc KPI được ghi mỗi ngày và so sánh với số liệu hiện tại.
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 shrink-0" />
+                      </Link>
+                    </div>
                   ),
                   import: <CeoImportPanel workspaceId={workspaceId ?? null} />,
                   analytics: (

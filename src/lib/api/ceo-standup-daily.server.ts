@@ -2,6 +2,7 @@
 // và làm mới KPI của Command Center mà không cần thao tác thủ công.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { loadCeoOverview } from "./ceo.server";
+import { recordKpiSnapshot } from "./kpi-snapshot.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000; // tối đa 1 lần / ngày
@@ -157,8 +158,7 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
       // Làm mới KPI ngay sau khi ghi nhận để Command Center hiển thị số liệu mới.
       try {
         const overview = await loadCeoOverview(admin, row.tenant_id, "week");
-        patch["kpi_refreshed_at"] = new Date().toISOString();
-        patch["kpi_snapshot"] = {
+        const values = {
           score: overview.kpi.score ?? null,
           configured: overview.kpi.configured,
           totalTasks: overview.totals.tasks.current,
@@ -166,6 +166,9 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
           overdue: overview.totals.overdue,
           aiSharePct: overview.split.aiSharePct,
         };
+        patch["kpi_refreshed_at"] = new Date().toISOString();
+        patch["kpi_snapshot"] = values;
+        await recordKpiSnapshot(admin, row.tenant_id, "standup", values);
         result.kpiRefreshed += 1;
       } catch (e) {
         result.errors.push(

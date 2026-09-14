@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { retrainSkillsForTenant } from "./ai-skills-retrain.server";
 import { loadCeoOverview } from "./ceo.server";
+import { recordKpiSnapshot } from "./kpi-snapshot.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000; // tối đa 1 lần / ngày
@@ -71,20 +72,22 @@ export async function runDailyBrainRetraining(admin: any, limit = 20): Promise<D
       // hiển thị số liệu mới ngay, không cần bấm "Làm mới".
       try {
         const overview = await loadCeoOverview(admin, row.tenant_id, "week");
+        const values = {
+          score: overview.kpi.score ?? null,
+          configured: overview.kpi.configured,
+          totalTasks: overview.totals.tasks.current,
+          completed: overview.totals.completed.current,
+          overdue: overview.totals.overdue,
+          aiSharePct: overview.split.aiSharePct,
+        };
         await admin
           .from("ceo_kpi_settings")
           .update({
             kpi_refreshed_at: new Date().toISOString(),
-            kpi_snapshot: {
-              score: overview.kpi.score ?? null,
-              configured: overview.kpi.configured,
-              totalTasks: overview.totals.tasks.current,
-              completed: overview.totals.completed.current,
-              overdue: overview.totals.overdue,
-              aiSharePct: overview.split.aiSharePct,
-            },
+            kpi_snapshot: values,
           })
           .eq("tenant_id", row.tenant_id);
+        await recordKpiSnapshot(admin, row.tenant_id, "ai_brain", values);
         result.kpiRefreshed += 1;
       } catch (e) {
         result.errors.push(
