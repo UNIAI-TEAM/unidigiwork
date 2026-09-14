@@ -18,6 +18,7 @@ export type DailyStandupResult = {
   meetings: number;
   proposals: number;
   proposalsAssigned: number;
+  proposalsAssignedPeople: number;
   kpiRefreshed: number;
   errors: string[];
 };
@@ -156,6 +157,7 @@ export async function runDailyStandup(
     meetings: 0,
     proposals: 0,
     proposalsAssigned: 0,
+    proposalsAssignedPeople: 0,
     kpiRefreshed: 0,
     errors: [],
   };
@@ -358,6 +360,7 @@ export async function runDailyStandup(
         const proposals = await runDailyProposals(admin, row.tenant_id, authorId);
         result.proposals += proposals.created;
         result.proposalsAssigned += proposals.assigned;
+        result.proposalsAssignedPeople += proposals.assignedPeople;
         (patch["standup_snapshot"] as Record<string, unknown>)["proposals"] = proposals;
       } catch (e) {
         result.errors.push(
