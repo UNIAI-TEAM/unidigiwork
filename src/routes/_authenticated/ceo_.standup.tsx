@@ -180,7 +180,6 @@ function StandupPage() {
   });
 
   const meeting = data?.meetings.find((m) => m.id === meetingId) ?? null;
-  void AutoStandupCard;
 
   const tasks = useMemo(() => {
     const all = data?.tasks ?? [];
