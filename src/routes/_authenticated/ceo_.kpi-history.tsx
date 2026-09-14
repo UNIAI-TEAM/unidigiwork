@@ -187,10 +187,16 @@ function KpiHistoryPage() {
   const { workspaceId } = useActiveWorkspace();
   const historyFn = useServerFn(listKpiHistory);
   const overviewFn = useServerFn(getCeoOverview);
+  const monthlyFn = useServerFn(listKpiMonthly);
 
   const history = useQuery({
     queryKey: ["ceo", "kpi-history", workspaceId ?? ""],
     queryFn: () => historyFn({ data: { workspaceId: workspaceId ?? null, limit: 30 } }),
+  });
+
+  const monthly = useQuery({
+    queryKey: ["ceo", "kpi-monthly", workspaceId ?? ""],
+    queryFn: () => monthlyFn({ data: { workspaceId: workspaceId ?? null, months: 6 } }),
   });
 
   const overview = useQuery({
