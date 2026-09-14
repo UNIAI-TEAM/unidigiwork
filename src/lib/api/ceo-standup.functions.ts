@@ -235,6 +235,7 @@ export const recordStandupOutcome = createServerFn({ method: "POST" })
 export type AutoStandupSettings = {
   enabled: boolean;
   lastRunAt: string | null;
+  hourVn: number;
   snapshot: {
     tasksTouched?: number;
     done?: number;
