@@ -1,13 +1,29 @@
 // THEO DÕI TỪNG VIỆC — lịch sử trạng thái, tiến độ và ảnh hưởng KPI, tự cập nhật mỗi sáng.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, Loader2, Minus } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { listTaskTracking, type TaskTrackingRow } from "@/lib/api/task-tracking.functions";
+import {
+  canManageTaskTracking,
+  listTaskTracking,
+  updateTaskTrackingProgress,
+  type TaskTrackingRow,
+} from "@/lib/api/task-tracking.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo_/task-tracking")({
   head: () => ({
