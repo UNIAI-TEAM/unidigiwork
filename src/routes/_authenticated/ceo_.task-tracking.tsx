@@ -301,7 +301,12 @@ function TaskTrackingPage() {
           ) : (
             <div className="space-y-2">
               {rows.map((r) => (
-                <TaskCard key={r.id} row={r} />
+                <TaskCard
+                  key={r.id}
+                  row={r}
+                  canManage={canManage}
+                  workspaceId={workspaceId ?? null}
+                />
               ))}
             </div>
           )}
