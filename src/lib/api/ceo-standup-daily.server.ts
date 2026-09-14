@@ -1,6 +1,7 @@
 // GIAO BAN TỰ ĐỘNG MỖI SÁNG — ghi nhận kết quả 24 giờ qua vào nhật ký công việc
 // và làm mới KPI của Command Center mà không cần thao tác thủ công.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { recordRetrainMark, retrainSkillsForTenant } from "./ai-skills-retrain.server";
 import { loadCeoOverview } from "./ceo.server";
 import { runDailyProposals, type DailyProposalItem } from "./ceo-proposals-daily.server";
 import { recordKpiSnapshot } from "./kpi-snapshot.server";
@@ -20,6 +21,8 @@ export type DailyStandupResult = {
   proposals: number;
   proposalsAssigned: number;
   proposalsAssignedPeople: number;
+  retrained: number;
+  createdSkills: number;
   kpiRefreshed: number;
   errors: string[];
 };
@@ -259,6 +262,8 @@ export async function runDailyStandup(
     proposals: 0,
     proposalsAssigned: 0,
     proposalsAssignedPeople: 0,
+    retrained: 0,
+    createdSkills: 0,
     kpiRefreshed: 0,
     errors: [],
   };
@@ -268,7 +273,7 @@ export async function runDailyStandup(
 
   const { data: settings } = await admin
     .from("ceo_kpi_settings")
-    .select("tenant_id, auto_standup, auto_standup_at, standup_hour_vn")
+    .select("tenant_id, auto_standup, auto_standup_at, standup_hour_vn, auto_retrain_at")
     .eq("auto_standup", true)
     .limit(limit);
 
@@ -276,6 +281,7 @@ export async function runDailyStandup(
     tenant_id: string;
     auto_standup_at: string | null;
     standup_hour_vn: number | null;
+    auto_retrain_at: string | null;
   }[];
 
   for (const row of rows) {
@@ -488,6 +494,33 @@ export async function runDailyStandup(
       } catch (e) {
         result.errors.push(
           `Đề xuất ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
+
+      // Tự đào tạo lại theo dữ liệu thật mỗi sáng — không phụ thuộc công tắc bật/tắt,
+      // vẫn giữ giới hạn tối đa 1 lần / ngày cho mỗi tổ chức.
+      try {
+        const retrainedRecently =
+          row.auto_retrain_at &&
+          Date.now() - new Date(row.auto_retrain_at).getTime() < MIN_INTERVAL_MS;
+        if (!retrainedRecently) {
+          const res = await retrainSkillsForTenant(
+            { supabase: admin, userId: authorId },
+            row.tenant_id,
+            null,
+          );
+          await recordRetrainMark({ supabase: admin, userId: authorId }, row.tenant_id);
+          result.retrained += 1;
+          result.createdSkills += res.created;
+          (patch["standup_snapshot"] as Record<string, unknown>)["retrain"] = {
+            createdSkills: res.created,
+          };
+        } else {
+          (patch["standup_snapshot"] as Record<string, unknown>)["retrain"] = { skipped: true };
+        }
+      } catch (e) {
+        result.errors.push(
+          `Đào tạo ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
         );
       }
 
