@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { CeoImportPanel } from "@/components/ceo/ceo-import";
+import { AssignProposalsToProject } from "@/components/ceo/assign-to-project";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import {
