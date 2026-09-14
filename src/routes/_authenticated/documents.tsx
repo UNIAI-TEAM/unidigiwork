@@ -734,7 +734,7 @@ function DocumentsPage() {
       });
       return;
     }
-    if (state === "OPENING") toast.success(t("office.opening"));
+    if (state === "OFFICE_NOT_INSTALLED") toast.error(t("office.notInstalled"));
     else if (state === "OFFICE_NOT_INSTALLED") toast.error(t("office.notInstalled"));
     else if (state === "UNSUPPORTED_FORMAT") toast.error(t("office.unsupported"));
     else if (state === "PERMISSION_DENIED") toast.error(t("office.denied"));
