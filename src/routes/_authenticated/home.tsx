@@ -558,14 +558,27 @@ function HomePage() {
                 </button>
               </div>
             ) : (
-              <div className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
+              <div data-card-grid className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
                 {visible.map((key) => (
-                  <div
+                  <DraggableGridCard
                     key={key}
-                    className={cn("min-w-0", spanClass(prefs.sizes[key], prefs.layout))}
+                    cardKey={key}
+                    size={prefs.sizes[key]}
+                    label={HOME_SECTION_META[key]?.label ?? key}
+                    resizable={prefs.layout !== "compact"}
+                    className={spanClass(prefs.sizes[key], prefs.layout)}
+                    onReorder={(from, to) =>
+                      update({
+                        ...prefs,
+                        order: reorderKeys(prefs.order, from as HomeSectionKey, to as HomeSectionKey),
+                      })
+                    }
+                    onResize={(k, size) =>
+                      update({ ...prefs, sizes: { ...prefs.sizes, [k]: size } })
+                    }
                   >
                     {blocks[key]}
-                  </div>
+                  </DraggableGridCard>
                 ))}
               </div>
             )}
