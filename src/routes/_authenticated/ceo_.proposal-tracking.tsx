@@ -171,7 +171,10 @@ function ProposalTrackingPage() {
               <StatCard label="Đã gán" value={s.assigned} />
               <StatCard label="Đã xong" value={s.done} />
               <StatCard label="Tiến độ trung bình" value={`${s.avgProgressPct}%`} />
-              <StatCard label="KPI quá hạn / hoàn thành" value={`${s.kpiOverdue}/${s.kpiCompleted}`} />
+              <StatCard
+                label="KPI quá hạn / hoàn thành"
+                value={`${s.kpiOverdue}/${s.kpiCompleted}`}
+              />
             </div>
           ) : null}
 

@@ -221,9 +221,7 @@ export const listProposalTracking = createServerFn({ method: "GET" })
               title: task.title,
               status: task.status,
               progressPct:
-                task.status === "done"
-                  ? 100
-                  : Math.max(0, Math.min(100, task.progress_pct ?? 0)),
+                task.status === "done" ? 100 : Math.max(0, Math.min(100, task.progress_pct ?? 0)),
               dueAt: task.due_at,
             }
           : null,
