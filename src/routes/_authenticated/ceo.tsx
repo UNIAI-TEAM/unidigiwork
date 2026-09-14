@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { CeoImportPanel } from "@/components/ceo/ceo-import";
+import { AssignProposalsToProject } from "@/components/ceo/assign-to-project";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import {
@@ -852,7 +853,7 @@ function CeoPage() {
               </div>
 
               <Card title="Nhật ký đề xuất giao việc">
-                <div className="mb-3 flex items-center gap-2">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   <label className="text-xs text-muted-foreground" htmlFor="dept-filter">
                     Bộ phận
                   </label>
@@ -870,6 +871,20 @@ function CeoPage() {
                       </option>
                     ))}
                   </select>
+                  <span className="ml-auto">
+                    <AssignProposalsToProject
+                      entries={
+                        deptFilter === "all"
+                          ? data.proposals.entries
+                          : deptFilter === "none"
+                            ? data.proposals.entries.filter((p) => !p.workspaceId)
+                            : data.proposals.entries.filter((p) => p.workspaceId === deptFilter)
+                      }
+                      workers={workers.data ?? []}
+                      workspaceId={workspaceId ?? null}
+                      onDone={() => void refetch()}
+                    />
+                  </span>
                 </div>
                 {(() => {
                   const filtered =
