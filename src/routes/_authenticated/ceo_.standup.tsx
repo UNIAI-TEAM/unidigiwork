@@ -208,7 +208,9 @@ function AutoStandupCard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={enabled ? "default" : "secondary"}>{enabled ? "Đang bật" : "Đã tắt"}</Badge>
+          <Badge variant={enabled ? "default" : "secondary"}>
+            {enabled ? "Đang bật" : "Đã tắt"}
+          </Badge>
           <Button
             size="sm"
             variant={enabled ? "outline" : "default"}

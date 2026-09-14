@@ -4,9 +4,8 @@ export const Route = createFileRoute("/api/public/hooks/ceo-standup-daily")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { isAuthorizedCronRequest, cronUnauthorizedResponse } = await import(
-          "@/lib/api/cron-auth.server"
-        );
+        const { isAuthorizedCronRequest, cronUnauthorizedResponse } =
+          await import("@/lib/api/cron-auth.server");
         if (!isAuthorizedCronRequest(request)) return cronUnauthorizedResponse();
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
