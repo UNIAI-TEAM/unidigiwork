@@ -1,13 +1,29 @@
 // THEO DÕI TỪNG VIỆC — lịch sử trạng thái, tiến độ và ảnh hưởng KPI, tự cập nhật mỗi sáng.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, Loader2, Minus } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { listTaskTracking, type TaskTrackingRow } from "@/lib/api/task-tracking.functions";
+import {
+  canManageTaskTracking,
+  listTaskTracking,
+  updateTaskTrackingProgress,
+  type TaskTrackingRow,
+} from "@/lib/api/task-tracking.functions";
 
 export const Route = createFileRoute("/_authenticated/ceo_/task-tracking")({
   head: () => ({
@@ -63,7 +79,115 @@ function Delta({ value }: { value: number | null }) {
   );
 }
 
-function TaskCard({ row }: { row: TaskTrackingRow }) {
+const EDIT_STATUS = ["todo", "in_progress", "blocked", "done"] as const;
+
+function ProgressEditor({
+  row,
+  workspaceId,
+}: {
+  row: TaskTrackingRow;
+  workspaceId: string | null;
+}) {
+  const qc = useQueryClient();
+  const update = useServerFn(updateTaskTrackingProgress);
+  const [pct, setPct] = useState(String(row.progressPct));
+  const [status, setStatus] = useState<string>(row.status);
+  const [note, setNote] = useState("");
+
+  const m = useMutation({
+    mutationFn: () =>
+      update({
+        data: {
+          workspaceId,
+          taskId: row.id,
+          progressPct: Math.max(0, Math.min(100, Number(pct) || 0)),
+          status: status as (typeof EDIT_STATUS)[number],
+          note: note.trim() || undefined,
+        },
+      }),
+    onSuccess: (res) => {
+      toast.success(
+        res.kpi?.score !== null && res.kpi
+          ? `Đã cập nhật tiến độ. Điểm KPI hiện tại ${res.kpi.score}.`
+          : "Đã cập nhật tiến độ và làm mới KPI.",
+      );
+      setNote("");
+      void qc.invalidateQueries({ queryKey: ["ceo"] });
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(
+        msg.includes("FORBIDDEN")
+          ? "Chỉ quản trị viên tổ chức được cập nhật tiến độ."
+          : "Không cập nhật được tiến độ.",
+      );
+    },
+  });
+
+  return (
+    <div className="mb-3 grid gap-3 rounded-xl border border-border bg-background p-3 sm:grid-cols-[7rem_11rem_1fr_auto] sm:items-end">
+      <div className="space-y-1">
+        <Label htmlFor={`pct-${row.id}`} className="text-xs">
+          Tiến độ (%)
+        </Label>
+        <Input
+          id={`pct-${row.id}`}
+          type="number"
+          min={0}
+          max={100}
+          value={pct}
+          onChange={(e) => setPct(e.target.value)}
+          className="h-11"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Trạng thái</Label>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="h-11">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {EDIT_STATUS.map((s) => (
+              <SelectItem key={s} value={s}>
+                {STATUS_LABEL[s] ?? s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor={`note-${row.id}`} className="text-xs">
+          Ghi chú (tuỳ chọn)
+        </Label>
+        <Input
+          id={`note-${row.id}`}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Lý do thay đổi tiến độ…"
+          className="h-11"
+        />
+      </div>
+      <Button
+        type="button"
+        className="h-11 min-h-[44px]"
+        disabled={m.isPending}
+        onClick={() => m.mutate()}
+      >
+        {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Lưu"}
+      </Button>
+    </div>
+  );
+}
+
+function TaskCard({
+  row,
+  canManage,
+  workspaceId,
+}: {
+  row: TaskTrackingRow;
+  canManage: boolean;
+  workspaceId: string | null;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-2xl border border-border bg-surface">
@@ -101,6 +225,7 @@ function TaskCard({ row }: { row: TaskTrackingRow }) {
 
       {open ? (
         <div className="border-t border-border px-4 py-3">
+          {canManage ? <ProgressEditor row={row} workspaceId={workspaceId} /> : null}
           {row.history.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Chưa có ghi nhận nào. Hệ thống sẽ tự ghi mỗi sáng.
@@ -130,11 +255,17 @@ function TaskTrackingPage() {
   const [nav, setNav] = useState(false);
   const { workspaceId } = useActiveWorkspace();
   const fn = useServerFn(listTaskTracking);
+  const canFn = useServerFn(canManageTaskTracking);
 
   const q = useQuery({
     queryKey: ["ceo", "task-tracking", workspaceId ?? ""],
     queryFn: () => fn({ data: { workspaceId: workspaceId ?? null, limit: 30 } }),
   });
+  const canQ = useQuery({
+    queryKey: ["ceo", "task-tracking-can-manage", workspaceId ?? ""],
+    queryFn: () => canFn({ data: { workspaceId: workspaceId ?? null } }),
+  });
+  const canManage = canQ.data === true;
 
   const rows = q.data ?? [];
 
@@ -170,7 +301,12 @@ function TaskTrackingPage() {
           ) : (
             <div className="space-y-2">
               {rows.map((r) => (
-                <TaskCard key={r.id} row={r} />
+                <TaskCard
+                  key={r.id}
+                  row={r}
+                  canManage={canManage}
+                  workspaceId={workspaceId ?? null}
+                />
               ))}
             </div>
           )}
