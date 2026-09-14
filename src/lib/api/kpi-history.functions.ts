@@ -14,6 +14,7 @@ export type KpiHistoryRow = {
   completed: number;
   overdue: number;
   aiSharePct: number | null;
+  proposalsCreated: number | null;
 };
 
 export const listKpiHistory = createServerFn({ method: "GET" })
