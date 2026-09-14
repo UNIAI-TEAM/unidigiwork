@@ -102,10 +102,11 @@ export async function runDailyProposals(
     const overdue = Boolean(task.due_at && new Date(task.due_at).getTime() < now);
     const worker = task.ai_worker_id ? null : pickWorker(workers, task);
     const dueLabel = task.due_at ? fmtDate(task.due_at) : "chưa đặt hạn";
-    const title = `${PROPOSAL_PREFIX} ${overdue ? "Xử lý việc quá hạn" : "Đẩy tiến độ việc sắp đến hạn"}: ${task.title}`.slice(
-      0,
-      300,
-    );
+    const title =
+      `${PROPOSAL_PREFIX} ${overdue ? "Xử lý việc quá hạn" : "Đẩy tiến độ việc sắp đến hạn"}: ${task.title}`.slice(
+        0,
+        300,
+      );
     const description = [
       overdue ? `Việc đã quá hạn từ ${dueLabel}.` : `Việc đến hạn ${dueLabel}.`,
       `Tiến độ hiện tại ${task.progress_pct ?? 0}%.`,
