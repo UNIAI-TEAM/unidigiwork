@@ -502,9 +502,10 @@ export async function runDailyStandup(
           overdue: overview.totals.overdue,
           aiSharePct: overview.split.aiSharePct,
         };
+        const extra = { ...progress, proposalsCreated: proposalCreated };
         patch["kpi_refreshed_at"] = new Date().toISOString();
-        patch["kpi_snapshot"] = { ...values, ...progress };
-        await recordKpiSnapshot(admin, row.tenant_id, "standup", values, progress);
+        patch["kpi_snapshot"] = { ...values, ...extra };
+        await recordKpiSnapshot(admin, row.tenant_id, "standup", values, extra);
         result.kpiRefreshed += 1;
       } catch (e) {
         result.errors.push(
