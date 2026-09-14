@@ -14,9 +14,112 @@ export type DailyStandupResult = {
   recorded: number;
   skipped: number;
   notes: number;
+  meetings: number;
   kpiRefreshed: number;
   errors: string[];
 };
+
+// Buổi giao ban mặc định: 08:30–09:00 giờ Việt Nam mỗi ngày.
+const MEETING_TZ = "Asia/Ho_Chi_Minh";
+const MEETING_TITLE = "Giao ban hằng ngày";
+const MEETING_LOCATION = "Phòng họp trực tuyến UniWork";
+const MEETING_START_HOUR_VN = 8;
+const MEETING_START_MINUTE_VN = 30;
+const MEETING_MINUTES = 30;
+const MAX_MEETING_PARTICIPANTS = 100;
+
+/** Mốc bắt đầu buổi giao ban của ngày hiện tại theo giờ Việt Nam (trả về UTC). */
+function todayStandupStart(now = new Date()): Date {
+  const vn = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const startUtcMs = Date.UTC(
+    vn.getUTCFullYear(),
+    vn.getUTCMonth(),
+    vn.getUTCDate(),
+    MEETING_START_HOUR_VN - 7,
+    MEETING_START_MINUTE_VN,
+    0,
+    0,
+  );
+  return new Date(startUtcMs);
+}
+
+/** Tạo buổi giao ban trên lịch họp nếu hôm nay chưa có. Idempotent theo ngày. */
+async function ensureDailyStandupMeeting(
+  admin: any,
+  tenantId: string,
+  hostId: string,
+): Promise<"created" | "exists" | "no_workspace"> {
+  const start = todayStandupStart();
+  const end = new Date(start.getTime() + MEETING_MINUTES * 60 * 1000);
+  const dayStart = new Date(start.getTime() - 12 * 60 * 60 * 1000).toISOString();
+  const dayEnd = new Date(start.getTime() + 12 * 60 * 60 * 1000).toISOString();
+
+  const { data: existing } = await admin
+    .from("meetings")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("title", MEETING_TITLE)
+    .is("deleted_at", null)
+    .gte("start_at", dayStart)
+    .lt("start_at", dayEnd)
+    .limit(1)
+    .maybeSingle();
+  if (existing) return "exists";
+
+  const { data: ws } = await admin
+    .from("workspaces")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const workspaceId = (ws as { id?: string } | null)?.id;
+  if (!workspaceId) return "no_workspace";
+
+  const { data: created, error: insErr } = await admin
+    .from("meetings")
+    .insert({
+      tenant_id: tenantId,
+      workspace_id: workspaceId,
+      title: MEETING_TITLE,
+      agenda:
+        "Điểm lại kết quả 24 giờ qua, việc quá hạn và vướng mắc. Nhật ký từng việc đã được hệ thống ghi tự động.",
+      start_at: start.toISOString(),
+      end_at: end.toISOString(),
+      timezone: MEETING_TZ,
+      location: MEETING_LOCATION,
+      status: "scheduled",
+      created_by: hostId,
+    })
+    .select("id")
+    .maybeSingle();
+  if (insErr) throw new Error(insErr.message);
+  const meetingId = (created as { id?: string } | null)?.id;
+  if (!meetingId) throw new Error("MEETING_INSERT_FAILED");
+
+  const { data: members } = await admin
+    .from("tenant_members")
+    .select("user_id")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .limit(MAX_MEETING_PARTICIPANTS);
+  const ids = new Set<string>([hostId]);
+  for (const m of (members ?? []) as { user_id: string }[]) ids.add(m.user_id);
+
+  const { error: partErr } = await admin.from("meeting_participants").insert(
+    [...ids].map((userId) => ({
+      meeting_id: meetingId,
+      tenant_id: tenantId,
+      user_id: userId,
+      role: userId === hostId ? "host" : "participant",
+      rsvp: "pending",
+    })),
+  );
+  if (partErr) throw new Error(partErr.message);
+
+  return "created";
+}
 
 type TaskRow = {
   id: string;
@@ -37,6 +140,7 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
     recorded: 0,
     skipped: 0,
     notes: 0,
+    meetings: 0,
     kpiRefreshed: 0,
     errors: [],
   };
@@ -172,6 +276,17 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
           notes: notes.length,
         },
       };
+
+      // Tự tạo buổi giao ban hằng ngày trên lịch họp (một buổi / ngày / tổ chức).
+      try {
+        const meeting = await ensureDailyStandupMeeting(admin, row.tenant_id, authorId);
+        if (meeting === "created") result.meetings += 1;
+        (patch["standup_snapshot"] as Record<string, unknown>)["meeting"] = meeting;
+      } catch (e) {
+        result.errors.push(
+          `Lịch họp ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
 
       // Làm mới KPI ngay sau khi ghi nhận để Command Center hiển thị số liệu mới.
       try {
