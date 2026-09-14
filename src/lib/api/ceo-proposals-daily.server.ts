@@ -6,11 +6,25 @@ const DUE_WINDOW_HOURS = 72; // sắp đến hạn trong 3 ngày tới
 const MAX_PROPOSALS_PER_TENANT = 10;
 const PROPOSAL_PREFIX = "[Đề xuất tự động]";
 
+export type DailyProposalItem = {
+  taskId: string;
+  title: string;
+  level: string;
+  score: number;
+  rank: number;
+  overdue: boolean;
+  dueLabel: string;
+  assigneeName: string | null;
+  aiWorkerName: string | null;
+};
+
 export type DailyProposalResult = {
   created: number;
   assigned: number; // số việc được gán nhân sự AI
   assignedPeople: number; // số việc được gán nhân sự thật
   skipped: number;
+  notes: number; // số dòng nhật ký việc đã ghi
+  items: DailyProposalItem[];
 };
 
 type TaskRow = {
@@ -102,7 +116,14 @@ export async function runDailyProposals(
   tenantId: string,
   authorId: string,
 ): Promise<DailyProposalResult> {
-  const result: DailyProposalResult = { created: 0, assigned: 0, assignedPeople: 0, skipped: 0 };
+  const result: DailyProposalResult = {
+    created: 0,
+    assigned: 0,
+    assignedPeople: 0,
+    skipped: 0,
+    notes: 0,
+    items: [],
+  };
   const now = Date.now();
   const until = new Date(now + DUE_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
 
@@ -331,6 +352,29 @@ export async function runDailyProposals(
       continue;
     }
     result.created += 1;
+    result.items.push({
+      taskId: task.id,
+      title: task.title,
+      level,
+      score,
+      rank,
+      overdue,
+      dueLabel,
+      assigneeName: assignedPerson ? person!.name : null,
+      aiWorkerName: worker?.name ?? null,
+    });
+
+    // Ghi nhật ký công việc để CEO và người phụ trách thấy đề xuất ngay trong việc.
+    const { error: noteErr } = await admin.from("task_comments").insert({
+      task_id: task.id,
+      tenant_id: tenantId,
+      author_id: authorId,
+      body: `${PROPOSAL_PREFIX} Ưu tiên #${rank} — mức ${level} (điểm ${score}). ${description}`.slice(
+        0,
+        4000,
+      ),
+    });
+    if (!noteErr) result.notes += 1;
   }
 
   return result;

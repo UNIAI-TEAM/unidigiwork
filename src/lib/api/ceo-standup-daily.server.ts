@@ -2,7 +2,7 @@
 // và làm mới KPI của Command Center mà không cần thao tác thủ công.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { loadCeoOverview } from "./ceo.server";
-import { runDailyProposals } from "./ceo-proposals-daily.server";
+import { runDailyProposals, type DailyProposalItem } from "./ceo-proposals-daily.server";
 import { recordKpiSnapshot } from "./kpi-snapshot.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
@@ -16,6 +16,7 @@ export type DailyStandupResult = {
   skipped: number;
   notes: number;
   meetings: number;
+  proposalMeetings: number;
   proposals: number;
   proposalsAssigned: number;
   proposalsAssignedPeople: number;
@@ -131,6 +132,105 @@ async function ensureDailyStandupMeeting(
   return "created";
 }
 
+const PROPOSAL_MEETING_TITLE = "Duyệt đề xuất hằng ngày";
+
+/**
+ * Tạo buổi duyệt đề xuất trên lịch họp ngay sau giao ban, agenda liệt kê đề xuất
+ * vừa sinh trong ngày. Idempotent: mỗi tổ chức tối đa một buổi / ngày.
+ */
+async function ensureDailyProposalMeeting(
+  admin: any,
+  tenantId: string,
+  hostId: string,
+  hourVn: number,
+  items: DailyProposalItem[],
+): Promise<"created" | "exists" | "no_workspace" | "no_items"> {
+  if (!items.length) return "no_items";
+
+  const standup = todayStandupStart(hourVn);
+  const start = new Date(standup.getTime() + MEETING_MINUTES * 60 * 1000);
+  const end = new Date(start.getTime() + MEETING_MINUTES * 60 * 1000);
+  const dayStart = new Date(start.getTime() - 12 * 60 * 60 * 1000).toISOString();
+  const dayEnd = new Date(start.getTime() + 12 * 60 * 60 * 1000).toISOString();
+
+  const { data: existing } = await admin
+    .from("meetings")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("title", PROPOSAL_MEETING_TITLE)
+    .is("deleted_at", null)
+    .gte("start_at", dayStart)
+    .lt("start_at", dayEnd)
+    .limit(1)
+    .maybeSingle();
+  if (existing) return "exists";
+
+  const { data: ws } = await admin
+    .from("workspaces")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const workspaceId = (ws as { id?: string } | null)?.id;
+  if (!workspaceId) return "no_workspace";
+
+  const agenda = [
+    `Duyệt ${items.length} đề xuất tự động sinh sáng nay, theo thứ tự khẩn cấp:`,
+    ...items.map(
+      (it) =>
+        `#${it.rank} [${it.level}] ${it.title} — ${it.overdue ? `quá hạn ${it.dueLabel}` : `hạn ${it.dueLabel}`}; phụ trách: ${
+          it.assigneeName ?? "chưa có"
+        }${it.aiWorkerName ? `; AI hỗ trợ: ${it.aiWorkerName}` : ""}`,
+    ),
+  ]
+    .join("\n")
+    .slice(0, 4000);
+
+  const { data: created, error: insErr } = await admin
+    .from("meetings")
+    .insert({
+      tenant_id: tenantId,
+      workspace_id: workspaceId,
+      title: PROPOSAL_MEETING_TITLE,
+      agenda,
+      start_at: start.toISOString(),
+      end_at: end.toISOString(),
+      timezone: MEETING_TZ,
+      location: MEETING_LOCATION,
+      status: "scheduled",
+      created_by: hostId,
+    })
+    .select("id")
+    .maybeSingle();
+  if (insErr) throw new Error(insErr.message);
+  const meetingId = (created as { id?: string } | null)?.id;
+  if (!meetingId) throw new Error("PROPOSAL_MEETING_INSERT_FAILED");
+
+  const { data: members } = await admin
+    .from("tenant_members")
+    .select("user_id")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .limit(MAX_MEETING_PARTICIPANTS);
+  const ids = new Set<string>([hostId]);
+  for (const m of (members ?? []) as { user_id: string }[]) ids.add(m.user_id);
+
+  const { error: partErr } = await admin.from("meeting_participants").insert(
+    [...ids].map((userId) => ({
+      meeting_id: meetingId,
+      tenant_id: tenantId,
+      user_id: userId,
+      role: userId === hostId ? "host" : "participant",
+      rsvp: "pending",
+    })),
+  );
+  if (partErr) throw new Error(partErr.message);
+
+  return "created";
+}
+
 type TaskRow = {
   id: string;
   title: string;
@@ -155,6 +255,7 @@ export async function runDailyStandup(
     skipped: 0,
     notes: 0,
     meetings: 0,
+    proposalMeetings: 0,
     proposals: 0,
     proposalsAssigned: 0,
     proposalsAssignedPeople: 0,
@@ -355,13 +456,35 @@ export async function runDailyStandup(
         );
       }
 
-      // Tự tạo đề xuất cho việc sắp đến hạn và gán nhân sự AI (vào nhật ký đề xuất).
+      // Tự tạo đề xuất cho việc sắp đến hạn, ghi nhật ký việc và đưa lên lịch họp.
+      let proposalCreated = 0;
       try {
         const proposals = await runDailyProposals(admin, row.tenant_id, authorId);
         result.proposals += proposals.created;
         result.proposalsAssigned += proposals.assigned;
         result.proposalsAssignedPeople += proposals.assignedPeople;
-        (patch["standup_snapshot"] as Record<string, unknown>)["proposals"] = proposals;
+        result.notes += proposals.notes;
+        proposalCreated = proposals.created;
+        (patch["standup_snapshot"] as Record<string, unknown>)["proposals"] = {
+          created: proposals.created,
+          assigned: proposals.assigned,
+          assignedPeople: proposals.assignedPeople,
+          skipped: proposals.skipped,
+          notes: proposals.notes,
+        };
+
+        const proposalMeeting = await ensureDailyProposalMeeting(
+          admin,
+          row.tenant_id,
+          authorId,
+          hourVn,
+          proposals.items,
+        );
+        if (proposalMeeting === "created") {
+          result.meetings += 1;
+          result.proposalMeetings += 1;
+        }
+        (patch["standup_snapshot"] as Record<string, unknown>)["proposalMeeting"] = proposalMeeting;
       } catch (e) {
         result.errors.push(
           `Đề xuất ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
@@ -379,9 +502,10 @@ export async function runDailyStandup(
           overdue: overview.totals.overdue,
           aiSharePct: overview.split.aiSharePct,
         };
+        const extra = { ...progress, proposalsCreated: proposalCreated };
         patch["kpi_refreshed_at"] = new Date().toISOString();
-        patch["kpi_snapshot"] = { ...values, ...progress };
-        await recordKpiSnapshot(admin, row.tenant_id, "standup", values, progress);
+        patch["kpi_snapshot"] = { ...values, ...extra };
+        await recordKpiSnapshot(admin, row.tenant_id, "standup", values, extra);
         result.kpiRefreshed += 1;
       } catch (e) {
         result.errors.push(
