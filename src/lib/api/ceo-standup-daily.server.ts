@@ -395,17 +395,19 @@ export async function runDailyStandup(
 
       let advanced = 0;
       let stalled = 0;
-      for (const t of tasks) {
+      for (const t of progressTasks) {
         const prev = prevProgress.get(t.id);
         if (prev === undefined) continue;
         if (progressOf(t) > prev) advanced += 1;
         else if (progressOf(t) === prev && t.status !== "done") stalled += 1;
       }
-      const avgProgressPct = tasks.length
-        ? Math.round(tasks.reduce((s, t) => s + progressOf(t), 0) / tasks.length)
+      // Tiến độ trung bình tính trên toàn bộ việc đang mở — KPI làm mới trọn bộ.
+      const openTasks = (openData ?? []) as TaskRow[];
+      const avgProgressPct = openTasks.length
+        ? Math.round(openTasks.reduce((s, t) => s + progressOf(t), 0) / openTasks.length)
         : 0;
 
-      const notes = tasks
+      const notes = progressTasks
         .filter((t) => !recent.has(t.id))
         .map((t) => {
           const overdue = Boolean(t.due_at && new Date(t.due_at).getTime() < nowMs);
