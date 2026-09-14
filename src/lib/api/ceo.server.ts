@@ -338,11 +338,7 @@ export async function loadCeoOverview(
   const terminal = new Set(["done", "canceled"]);
   // Quá hạn tính trong kỳ xem KPI (ví dụ 7 ngày) để đồng bộ với ghi nhận giao ban từng sáng.
   const overdue = allTasks.filter(
-    (t) =>
-      t.due_at &&
-      t.due_at < iso(now) &&
-      t.due_at >= iso(from) &&
-      !terminal.has(t.status),
+    (t) => t.due_at && t.due_at < iso(now) && t.due_at >= iso(from) && !terminal.has(t.status),
   );
   const inProgress = allTasks.filter((t) => t.status === "in_progress").length;
 
