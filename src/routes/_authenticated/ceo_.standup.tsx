@@ -15,6 +15,8 @@ import {
   recordStandupOutcome,
   setAutoStandupEnabled,
   setAutoStandupHour,
+  getWeeklyMeetingSettings,
+  setWeeklyMeetingSettings,
   type StandupTask,
 } from "@/lib/api/ceo-standup.functions";
 
@@ -257,6 +259,115 @@ function AutoStandupCard() {
   );
 }
 
+const DOW_LABEL = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+
+function WeeklyMeetingCard() {
+  const qc = useQueryClient();
+  const getSettings = useServerFn(getWeeklyMeetingSettings);
+  const save = useServerFn(setWeeklyMeetingSettings);
+  const { data } = useQuery({
+    queryKey: ["ceo", "weekly-meeting"],
+    queryFn: () => getSettings({}),
+  });
+
+  const [draft, setDraft] = useState<{ dow: number; hourVn: number; location: string } | null>(
+    null,
+  );
+  const cur = draft ?? {
+    dow: data?.dow ?? 1,
+    hourVn: data?.hourVn ?? 9,
+    location: data?.location ?? "",
+  };
+
+  const m = useMutation({
+    mutationFn: () => save({ data: cur }),
+    onSuccess: () => {
+      toast.success(
+        `Họp tuần sẽ tự tạo vào ${DOW_LABEL[cur.dow]} lúc ${String(cur.hourVn).padStart(2, "0")}:00`,
+      );
+      setDraft(null);
+      void qc.invalidateQueries({ queryKey: ["ceo", "weekly-meeting"] });
+    },
+    onError: () => toast.error("Không lưu được lịch họp tuần"),
+  });
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <CalendarClock className="h-4 w-4" /> Họp tuần tự động
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Mỗi tuần hệ thống tự tạo buổi họp trên lịch họp, tự ghi thời gian, địa điểm và mời toàn bộ
+        thành viên đang hoạt động. Nội dung họp được tổng hợp từ kết quả tuần qua.
+      </p>
+      <div className="mt-2 text-xs text-muted-foreground">
+        Buổi gần nhất được tạo: {fmt(data?.lastCreatedAt ?? null)}
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-[11rem_9rem_1fr_auto] sm:items-end">
+        <div className="space-y-1">
+          <label htmlFor="weekly-dow" className="text-xs text-muted-foreground">
+            Ngày trong tuần
+          </label>
+          <select
+            id="weekly-dow"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            value={cur.dow}
+            onChange={(e) => setDraft({ ...cur, dow: Number(e.target.value) })}
+          >
+            {DOW_LABEL.map((l, i) => (
+              <option key={l} value={i}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="weekly-hour" className="text-xs text-muted-foreground">
+            Giờ (Việt Nam)
+          </label>
+          <select
+            id="weekly-hour"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            value={cur.hourVn}
+            onChange={(e) => setDraft({ ...cur, hourVn: Number(e.target.value) })}
+          >
+            {Array.from({ length: 24 }, (_, h) => (
+              <option key={h} value={h}>
+                {String(h).padStart(2, "0")}:00
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="weekly-location" className="text-xs text-muted-foreground">
+            Địa điểm
+          </label>
+          <input
+            id="weekly-location"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            value={cur.location}
+            onChange={(e) => setDraft({ ...cur, location: e.target.value })}
+            placeholder="Phòng họp trực tuyến UniWork"
+          />
+        </div>
+        <Button
+          className="min-h-11"
+          disabled={m.isPending || !cur.location.trim()}
+          onClick={() => m.mutate()}
+        >
+          {m.isPending ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-1.5 h-4 w-4" />
+          )}
+          Lưu
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function StandupPage() {
   const [open, setOpen] = useState(false);
   const { workspaceId } = useActiveWorkspace();
@@ -328,6 +439,8 @@ function StandupPage() {
               </div>
 
               <AutoStandupCard />
+
+              <WeeklyMeetingCard />
 
               <div className="rounded-2xl border border-border bg-surface p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
