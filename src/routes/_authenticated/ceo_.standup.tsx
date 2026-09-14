@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import {
+  getAutoStandupSettings,
   getStandupBoard,
   recordStandupOutcome,
+  setAutoStandupEnabled,
   type StandupTask,
 } from "@/lib/api/ceo-standup.functions";
 
