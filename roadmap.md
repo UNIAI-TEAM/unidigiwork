@@ -31,3 +31,8 @@
 - [ ] Import Excel thật trong Command Center: nhân sự, bộ phận, lịch họp, tiến độ công việc → KPI tự cập nhật
 
 - [x] Tạo tài khoản demo có dữ liệu để anh Nam đăng nhập xem
+
+## Tùy chỉnh Home / My Space
+- [ ] Sắp xếp và chỉnh kích thước card Trang chủ, lưu theo người dùng
+- [ ] Hoàn thiện kéo thả và kích thước card My Space trên desktop/tablet/mobile
+- [ ] Xác minh hai cấu hình độc lập và giữ nguyên sau khi tải lại
