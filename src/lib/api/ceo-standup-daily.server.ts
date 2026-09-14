@@ -350,6 +350,13 @@ export async function runDailyStandup(
         byId.set(t.id, t);
       }
       const tasks = [...byId.values()].slice(0, MAX_TASKS_PER_TENANT);
+
+      // Tập việc cần ghi tiến độ mỗi sáng: toàn bộ việc đang mở + việc vừa thay đổi.
+      const progressById = new Map<string, TaskRow>();
+      for (const t of [...((openData ?? []) as TaskRow[]), ...((taskData ?? []) as TaskRow[])]) {
+        progressById.set(t.id, t);
+      }
+      const progressTasks = [...progressById.values()].slice(0, MAX_PROGRESS_TASKS);
       const nowMs = Date.now();
 
       // Lần ghi tự động gần nhất của từng việc: dùng để chống ghi trùng
