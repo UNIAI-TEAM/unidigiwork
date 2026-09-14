@@ -236,6 +236,8 @@ function StandupPage() {
                 ))}
               </div>
 
+              <AutoStandupCard />
+
               <div className="rounded-2xl border border-border bg-surface p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <CalendarClock className="h-4 w-4" /> Cuộc họp giao ban
