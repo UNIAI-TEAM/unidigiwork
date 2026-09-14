@@ -16,6 +16,7 @@ export type DailyStandupResult = {
   skipped: number;
   notes: number;
   meetings: number;
+  proposalMeetings: number;
   proposals: number;
   proposalsAssigned: number;
   proposalsAssignedPeople: number;
@@ -254,6 +255,7 @@ export async function runDailyStandup(
     skipped: 0,
     notes: 0,
     meetings: 0,
+    proposalMeetings: 0,
     proposals: 0,
     proposalsAssigned: 0,
     proposalsAssignedPeople: 0,
