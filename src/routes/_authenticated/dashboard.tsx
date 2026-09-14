@@ -17,6 +17,7 @@ import {
   type DashboardLayoutPrefs,
   type DashboardSectionKey,
 } from "@/lib/dashboard-layout-prefs";
+import { DraggableGridCard } from "@/components/layout/draggable-grid-card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
