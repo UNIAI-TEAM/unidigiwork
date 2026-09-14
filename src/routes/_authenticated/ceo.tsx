@@ -302,6 +302,23 @@ function KpiSettings({ data, onSaved }: { data: CeoOverview; onSaved: () => void
   );
 }
 
+import { DraggableGridCard } from "@/components/layout/draggable-grid-card";
+import { CeoLayoutHistory } from "@/components/ceo/ceo-layout-history";
+import { useCeoLayout } from "@/components/ceo/use-ceo-layout";
+import {
+  CEO_SECTION_LABEL,
+  moveCeoSection,
+  type CeoSectionKey,
+  type CeoSize,
+} from "@/lib/ceo-layout-prefs";
+
+const SPAN_CLASS: Record<CeoSize, string> = {
+  sm: "col-span-12 lg:col-span-4",
+  md: "col-span-12 lg:col-span-6",
+  lg: "col-span-12 lg:col-span-8",
+  full: "col-span-12",
+};
+
 function CeoPage() {
   const [open, setOpen] = useState(false);
   const [period, setPeriod] = useState<CeoPeriod>("month");
@@ -310,6 +327,7 @@ function CeoPage() {
   const exportFn = useServerFn(exportCeoReport);
   const [exporting, setExporting] = useState<"pdf" | "xlsx" | null>(null);
   const [deptFilter, setDeptFilter] = useState<string>("all");
+  const { prefs: layout, update: updateLayout, reset: resetLayout } = useCeoLayout();
 
   const download = async (format: "pdf" | "xlsx") => {
     setExporting(format);
@@ -465,511 +483,563 @@ function CeoPage() {
             </div>
           ) : (
             <>
-              <div className="grid gap-3 lg:grid-cols-3">
-                {attention.map((a, i) => (
-                  <Link
-                    key={a.tag}
-                    to={a.href}
-                    className={`rounded-2xl border p-4 transition-colors hover:bg-surface-2 ${toneClass[a.tone]}`}
-                  >
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <span className="tabular-nums">0{i + 1}</span> {a.tag}
-                    </div>
-                    <div className="mt-2 text-sm font-semibold">{a.title}</div>
-                    <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span className="min-w-0 truncate">{a.detail}</span>
-                      <ArrowRight className="h-4 w-4 shrink-0" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <Card>
-                  <div className="text-xs text-muted-foreground">Tổng công việc</div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight">
-                    {n(data.totals.tasks.current)}
-                  </div>
-                  <Delta value={data.totals.tasks.changePct} />
-                </Card>
-                <Card>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Hoàn thành
-                  </div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight">
-                    {n(data.totals.completed.current)}
-                  </div>
-                  <Delta value={data.totals.completed.changePct} />
-                </Card>
-                <Card>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" /> Đang thực hiện
-                  </div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight">
-                    {n(data.totals.inProgress)}
-                  </div>
-                </Card>
-                <Card>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <AlertTriangle className="h-3.5 w-3.5" /> Quá hạn
-                  </div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight text-destructive">
-                    {n(data.totals.overdue)}
-                  </div>
-                </Card>
-              </div>
-
-              <Link
-                to="/ceo/standup"
-                className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
-              >
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">Giao ban thực tế</div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">
-                    Ghi nhận kết quả từng việc trong cuộc họp — KPI và nhật ký tự cập nhật.
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0" />
-              </Link>
-
-              <CeoImportPanel workspaceId={workspaceId ?? null} />
-
-              <div className="grid gap-3 lg:grid-cols-3">
-                <Card title="Chuyển dịch Người ↔ AI">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 space-y-2">
-                      <Row
-                        label="Con người"
-                        value={data.split.human}
-                        tone="primary"
-                        total={data.split.human + data.split.ai}
-                      />
-                      <Row
-                        label="AI"
-                        value={data.split.ai}
-                        tone="accent"
-                        total={data.split.human + data.split.ai}
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-4 flex h-24 items-end gap-1">
-                    {data.split.trend.map((b) => {
-                      const max = Math.max(1, ...data.split.trend.map((x) => x.human + x.ai));
-                      return (
-                        <div
-                          key={b.label}
-                          className="flex min-w-0 flex-1 flex-col justify-end gap-0.5"
-                          title={`${b.label}: người ${b.human} · AI ${b.ai}`}
+              <CeoLayoutHistory onRestore={(next) => updateLayout(next)} onReset={resetLayout} />
+              {(() => {
+                const blocks: Record<CeoSectionKey, React.ReactNode> = {
+                  attention: (
+                    <div className="grid gap-3 lg:grid-cols-3">
+                      {attention.map((a, i) => (
+                        <Link
+                          key={a.tag}
+                          to={a.href}
+                          className={`rounded-2xl border p-4 transition-colors hover:bg-surface-2 ${toneClass[a.tone]}`}
                         >
-                          <div
-                            className="w-full rounded-t bg-violet-500/70"
-                            style={{ height: `${(b.ai / max) * 70}%` }}
-                          />
-                          <div
-                            className="w-full bg-primary/70"
-                            style={{ height: `${(b.human / max) * 70}%` }}
-                          />
-                          <span className="truncate text-center text-[9px] text-muted-foreground">
-                            {b.label}
-                          </span>
+                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <span className="tabular-nums">0{i + 1}</span> {a.tag}
+                          </div>
+                          <div className="mt-2 text-sm font-semibold">{a.title}</div>
+                          <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                            <span className="min-w-0 truncate">{a.detail}</span>
+                            <ArrowRight className="h-4 w-4 shrink-0" />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ),
+                  totals: (
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      <Card>
+                        <div className="text-xs text-muted-foreground">Tổng công việc</div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight">
+                          {n(data.totals.tasks.current)}
                         </div>
-                      );
-                    })}
-                  </div>
-                </Card>
-
-                <Card title="Thời gian làm việc">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-border bg-surface-2 p-3">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <User className="h-3.5 w-3.5" /> Con người
+                        <Delta value={data.totals.tasks.changePct} />
+                      </Card>
+                      <Card>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Hoàn thành
+                        </div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight">
+                          {n(data.totals.completed.current)}
+                        </div>
+                        <Delta value={data.totals.completed.changePct} />
+                      </Card>
+                      <Card>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" /> Đang thực hiện
+                        </div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight">
+                          {n(data.totals.inProgress)}
+                        </div>
+                      </Card>
+                      <Card>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <AlertTriangle className="h-3.5 w-3.5" /> Quá hạn
+                        </div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight text-destructive">
+                          {n(data.totals.overdue)}
+                        </div>
+                      </Card>
+                    </div>
+                  ),
+                  standup: (
+                    <Link
+                      to="/ceo/standup"
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold">Giao ban thực tế</div>
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          Ghi nhận kết quả từng việc trong cuộc họp — KPI và nhật ký tự cập nhật.
+                        </div>
                       </div>
-                      <div className="mt-1 text-2xl font-semibold">
-                        {n(data.time.humanHours)} giờ
-                      </div>
-                      <div className="text-[11px] text-muted-foreground">ước tính</div>
-                    </div>
-                    <div className="rounded-xl border border-border bg-surface-2 p-3">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Bot className="h-3.5 w-3.5" /> AI
-                      </div>
-                      <div className="mt-1 text-2xl font-semibold">{n(data.time.aiHours)} giờ</div>
-                      <div className="text-[11px] text-muted-foreground">đo thật</div>
-                    </div>
-                  </div>
-                  <div className="mt-3 space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Giờ họp đã diễn ra</span>
-                      <span className="font-medium">{n(data.time.meetingHours)} giờ</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Họp sắp tới (chưa tính KPI)</span>
-                      <span className="font-medium">
-                        {n(data.time.upcomingMeetingHours)} giờ · {data.time.upcomingMeetings} cuộc
-                      </span>
-                    </div>
-                    {data.time.nextMeeting ? (
-                      <div className="flex justify-between gap-2">
-                        <span className="text-muted-foreground">Cuộc họp kế tiếp</span>
-                        <span className="truncate font-medium">
-                          {data.time.nextMeeting.title} ·{" "}
-                          {new Date(data.time.nextMeeting.startAt).toLocaleString("vi-VN", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
+                      <ArrowRight className="h-4 w-4 shrink-0" />
+                    </Link>
+                  ),
+                  import: <CeoImportPanel workspaceId={workspaceId ?? null} />,
+                  analytics: (
+                    <div className="grid gap-3 lg:grid-cols-3">
+                      <Card title="Chuyển dịch Người ↔ AI">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1 space-y-2">
+                            <Row
+                              label="Con người"
+                              value={data.split.human}
+                              tone="primary"
+                              total={data.split.human + data.split.ai}
+                            />
+                            <Row
+                              label="AI"
+                              value={data.split.ai}
+                              tone="accent"
+                              total={data.split.human + data.split.ai}
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4 flex h-24 items-end gap-1">
+                          {data.split.trend.map((b) => {
+                            const max = Math.max(1, ...data.split.trend.map((x) => x.human + x.ai));
+                            return (
+                              <div
+                                key={b.label}
+                                className="flex min-w-0 flex-1 flex-col justify-end gap-0.5"
+                                title={`${b.label}: người ${b.human} · AI ${b.ai}`}
+                              >
+                                <div
+                                  className="w-full rounded-t bg-violet-500/70"
+                                  style={{ height: `${(b.ai / max) * 70}%` }}
+                                />
+                                <div
+                                  className="w-full bg-primary/70"
+                                  style={{ height: `${(b.human / max) * 70}%` }}
+                                />
+                                <span className="truncate text-center text-[9px] text-muted-foreground">
+                                  {b.label}
+                                </span>
+                              </div>
+                            );
                           })}
-                        </span>
-                      </div>
-                    ) : null}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tiến độ TB việc đang chạy</span>
-                      <span className="font-medium">{data.time.avgProgressPct}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Ước tính tiết kiệm</span>
-                      <span className="font-medium">{n(data.time.savedHours)} giờ</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Đòn bẩy AI</span>
-                      <span className="font-medium">
-                        {data.time.leverage === null ? "—" : `${data.time.leverage}×`}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
+                        </div>
+                      </Card>
 
-                <Card title="Chất lượng kết quả">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Việc tạo trong kỳ</span>
-                      <span className="font-medium">{n(data.quality.tasksCreated)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Có kết quả</span>
-                      <span className="font-medium">{n(data.quality.withResult)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Đã review</span>
-                      <span className="font-medium">{n(data.quality.reviewed)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Review đạt</span>
-                      <span className="font-medium">{n(data.quality.passed)}</span>
-                    </div>
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    <Bar label="Tỉ lệ việc có kết quả" value={data.quality.resultRate} />
-                    <Bar label="Tỉ lệ kết quả đạt" value={data.quality.passRate} />
-                  </div>
-                </Card>
-              </div>
-
-              <Card title="Thời gian làm việc từng nhân sự (người và AI)">
-                <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-                  <table className="w-full min-w-[560px] text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                        <th className="pb-2">Nhân sự</th>
-                        <th className="pb-2">Loại</th>
-                        <th className="pb-2 text-right">Việc</th>
-                        <th className="pb-2 text-right">Hoàn thành</th>
-                        <th className="pb-2 text-right">Giờ</th>
-                        <th className="pb-2 text-right">Đạt review</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.people.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-6 text-center text-muted-foreground">
-                            Chưa có dữ liệu trong kỳ này.
-                          </td>
-                        </tr>
-                      ) : (
-                        data.people.map((p) => (
-                          <tr key={`${p.kind}-${p.id}`} className="border-b border-border/60">
-                            <td className="py-2 pr-2 font-medium">{p.name}</td>
-                            <td className="py-2 pr-2">
-                              <Badge variant={p.kind === "ai" ? "secondary" : "outline"}>
-                                {p.kind === "ai" ? "AI" : "Người"}
-                              </Badge>
-                            </td>
-                            <td className="py-2 text-right tabular-nums">{n(p.tasks)}</td>
-                            <td className="py-2 text-right tabular-nums">{n(p.completed)}</td>
-                            <td className="py-2 text-right tabular-nums">
-                              {n(p.hours)}
-                              {p.hoursEstimated ? "*" : ""}
-                            </td>
-                            <td className="py-2 text-right tabular-nums">
-                              {p.reviewPassRate === null ? "—" : `${p.reviewPassRate}%`}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  * Giờ người là ước tính: giờ họp thực tế cộng số việc hoàn thành nhân 2 giờ. Hệ
-                  thống chưa có chấm công.
-                </p>
-              </Card>
-
-              <div className="grid gap-3 lg:grid-cols-2">
-                <Card title="Công việc theo bộ phận">
-                  {data.departments.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Chưa có dữ liệu.</p>
-                  ) : (
-                    <div className="space-y-2.5">
-                      {data.departments.map((d) => {
-                        const max = Math.max(1, ...data.departments.map((x) => x.total));
-                        return (
-                          <div key={d.id}>
-                            <div className="flex justify-between text-sm">
-                              <span className="min-w-0 truncate">{d.name}</span>
-                              <span className="tabular-nums text-muted-foreground">
-                                {n(d.human)} / {n(d.ai)} · {n(d.total)}
+                      <Card title="Thời gian làm việc">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="rounded-xl border border-border bg-surface-2 p-3">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <User className="h-3.5 w-3.5" /> Con người
+                            </div>
+                            <div className="mt-1 text-2xl font-semibold">
+                              {n(data.time.humanHours)} giờ
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">ước tính</div>
+                          </div>
+                          <div className="rounded-xl border border-border bg-surface-2 p-3">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Bot className="h-3.5 w-3.5" /> AI
+                            </div>
+                            <div className="mt-1 text-2xl font-semibold">
+                              {n(data.time.aiHours)} giờ
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">đo thật</div>
+                          </div>
+                        </div>
+                        <div className="mt-3 space-y-1.5 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Giờ họp đã diễn ra</span>
+                            <span className="font-medium">{n(data.time.meetingHours)} giờ</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Họp sắp tới (chưa tính KPI)
+                            </span>
+                            <span className="font-medium">
+                              {n(data.time.upcomingMeetingHours)} giờ · {data.time.upcomingMeetings}{" "}
+                              cuộc
+                            </span>
+                          </div>
+                          {data.time.nextMeeting ? (
+                            <div className="flex justify-between gap-2">
+                              <span className="text-muted-foreground">Cuộc họp kế tiếp</span>
+                              <span className="truncate font-medium">
+                                {data.time.nextMeeting.title} ·{" "}
+                                {new Date(data.time.nextMeeting.startAt).toLocaleString("vi-VN", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
                               </span>
                             </div>
-                            <div className="mt-1 flex h-2 overflow-hidden rounded-full bg-surface-2">
-                              <div
-                                className="bg-primary"
-                                style={{ width: `${(d.human / max) * 100}%` }}
-                              />
-                              <div
-                                className="bg-violet-500"
-                                style={{ width: `${(d.ai / max) * 100}%` }}
-                              />
-                            </div>
+                          ) : null}
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Tiến độ TB việc đang chạy</span>
+                            <span className="font-medium">{data.time.avgProgressPct}%</span>
                           </div>
-                        );
-                      })}
-                      <div className="mt-3 overflow-x-auto">
-                        <table className="w-full min-w-[520px] text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Ước tính tiết kiệm</span>
+                            <span className="font-medium">{n(data.time.savedHours)} giờ</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Đòn bẩy AI</span>
+                            <span className="font-medium">
+                              {data.time.leverage === null ? "—" : `${data.time.leverage}×`}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card title="Chất lượng kết quả">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Việc tạo trong kỳ</span>
+                            <span className="font-medium">{n(data.quality.tasksCreated)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Có kết quả</span>
+                            <span className="font-medium">{n(data.quality.withResult)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Đã review</span>
+                            <span className="font-medium">{n(data.quality.reviewed)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Review đạt</span>
+                            <span className="font-medium">{n(data.quality.passed)}</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          <Bar label="Tỉ lệ việc có kết quả" value={data.quality.resultRate} />
+                          <Bar label="Tỉ lệ kết quả đạt" value={data.quality.passRate} />
+                        </div>
+                      </Card>
+                    </div>
+                  ),
+                  people: (
+                    <Card title="Thời gian làm việc từng nhân sự (người và AI)">
+                      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                        <table className="w-full min-w-[560px] text-sm">
                           <thead>
-                            <tr className="text-left text-xs text-muted-foreground">
-                              <th className="py-1 pr-2 font-medium">Bộ phận</th>
-                              <th className="py-1 pr-2 text-right font-medium">Hoàn thành</th>
-                              <th className="py-1 pr-2 text-right font-medium">Quá hạn</th>
-                              <th className="py-1 pr-2 text-right font-medium">AI %</th>
-                              <th className="py-1 pr-2 text-right font-medium">Giờ ước tính</th>
-                              <th className="py-1 text-right font-medium">Đề xuất</th>
+                            <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
+                              <th className="pb-2">Nhân sự</th>
+                              <th className="pb-2">Loại</th>
+                              <th className="pb-2 text-right">Việc</th>
+                              <th className="pb-2 text-right">Hoàn thành</th>
+                              <th className="pb-2 text-right">Giờ</th>
+                              <th className="pb-2 text-right">Đạt review</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {data.departments.map((d) => (
-                              <tr key={`kpi-${d.id}`} className="border-t border-border">
-                                <td className="max-w-40 truncate py-1.5 pr-2">{d.name}</td>
-                                <td className="py-1.5 pr-2 text-right tabular-nums">
-                                  {n(d.completed)}
+                            {data.people.length === 0 ? (
+                              <tr>
+                                <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                                  Chưa có dữ liệu trong kỳ này.
                                 </td>
-                                <td className="py-1.5 pr-2 text-right tabular-nums text-destructive">
-                                  {n(d.overdue)}
-                                </td>
-                                <td className="py-1.5 pr-2 text-right tabular-nums">
-                                  {d.aiSharePct}%
-                                </td>
-                                <td className="py-1.5 pr-2 text-right tabular-nums">
-                                  {d.hoursEstimated}
-                                </td>
-                                <td className="py-1.5 text-right tabular-nums">{n(d.proposals)}</td>
                               </tr>
-                            ))}
+                            ) : (
+                              data.people.map((p) => (
+                                <tr key={`${p.kind}-${p.id}`} className="border-b border-border/60">
+                                  <td className="py-2 pr-2 font-medium">{p.name}</td>
+                                  <td className="py-2 pr-2">
+                                    <Badge variant={p.kind === "ai" ? "secondary" : "outline"}>
+                                      {p.kind === "ai" ? "AI" : "Người"}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 text-right tabular-nums">{n(p.tasks)}</td>
+                                  <td className="py-2 text-right tabular-nums">{n(p.completed)}</td>
+                                  <td className="py-2 text-right tabular-nums">
+                                    {n(p.hours)}
+                                    {p.hoursEstimated ? "*" : ""}
+                                  </td>
+                                  <td className="py-2 text-right tabular-nums">
+                                    {p.reviewPassRate === null ? "—" : `${p.reviewPassRate}%`}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
                           </tbody>
                         </table>
                       </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        * Giờ người là ước tính: giờ họp thực tế cộng số việc hoàn thành nhân 2 giờ.
+                        Hệ thống chưa có chấm công.
+                      </p>
+                    </Card>
+                  ),
+                  departments: (
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <Card title="Công việc theo bộ phận">
+                        {data.departments.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Chưa có dữ liệu.</p>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {data.departments.map((d) => {
+                              const max = Math.max(1, ...data.departments.map((x) => x.total));
+                              return (
+                                <div key={d.id}>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="min-w-0 truncate">{d.name}</span>
+                                    <span className="tabular-nums text-muted-foreground">
+                                      {n(d.human)} / {n(d.ai)} · {n(d.total)}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 flex h-2 overflow-hidden rounded-full bg-surface-2">
+                                    <div
+                                      className="bg-primary"
+                                      style={{ width: `${(d.human / max) * 100}%` }}
+                                    />
+                                    <div
+                                      className="bg-violet-500"
+                                      style={{ width: `${(d.ai / max) * 100}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <div className="mt-3 overflow-x-auto">
+                              <table className="w-full min-w-[520px] text-sm">
+                                <thead>
+                                  <tr className="text-left text-xs text-muted-foreground">
+                                    <th className="py-1 pr-2 font-medium">Bộ phận</th>
+                                    <th className="py-1 pr-2 text-right font-medium">Hoàn thành</th>
+                                    <th className="py-1 pr-2 text-right font-medium">Quá hạn</th>
+                                    <th className="py-1 pr-2 text-right font-medium">AI %</th>
+                                    <th className="py-1 pr-2 text-right font-medium">
+                                      Giờ ước tính
+                                    </th>
+                                    <th className="py-1 text-right font-medium">Đề xuất</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {data.departments.map((d) => (
+                                    <tr key={`kpi-${d.id}`} className="border-t border-border">
+                                      <td className="max-w-40 truncate py-1.5 pr-2">{d.name}</td>
+                                      <td className="py-1.5 pr-2 text-right tabular-nums">
+                                        {n(d.completed)}
+                                      </td>
+                                      <td className="py-1.5 pr-2 text-right tabular-nums text-destructive">
+                                        {n(d.overdue)}
+                                      </td>
+                                      <td className="py-1.5 pr-2 text-right tabular-nums">
+                                        {d.aiSharePct}%
+                                      </td>
+                                      <td className="py-1.5 pr-2 text-right tabular-nums">
+                                        {d.hoursEstimated}
+                                      </td>
+                                      <td className="py-1.5 text-right tabular-nums">
+                                        {n(d.proposals)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+
+                      <Card title="Vấn đề cần xử lý">
+                        {data.issues.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Không có vấn đề nổi bật.</p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {data.issues.map((i) => (
+                              <li key={i.id}>
+                                <Link
+                                  to={i.href}
+                                  className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface-2"
+                                >
+                                  <span className="min-w-0">
+                                    <span className="block truncate font-medium">{i.title}</span>
+                                    <span className="block truncate text-xs text-muted-foreground">
+                                      {i.detail}
+                                    </span>
+                                  </span>
+                                  <span className="flex shrink-0 items-center gap-2">
+                                    {typeof i.progressPct === "number" ? (
+                                      <ProgressPill value={i.progressPct} />
+                                    ) : null}
+                                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                  </span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </Card>
                     </div>
-                  )}
-                </Card>
-
-                <Card title="Vấn đề cần xử lý">
-                  {data.issues.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Không có vấn đề nổi bật.</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {data.issues.map((i) => (
-                        <li key={i.id}>
-                          <Link
-                            to={i.href}
-                            className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface-2"
-                          >
-                            <span className="min-w-0">
-                              <span className="block truncate font-medium">{i.title}</span>
-                              <span className="block truncate text-xs text-muted-foreground">
-                                {i.detail}
-                              </span>
-                            </span>
-                            <span className="flex shrink-0 items-center gap-2">
-                              {typeof i.progressPct === "number" ? (
-                                <ProgressPill value={i.progressPct} />
-                              ) : null}
-                              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Card>
-              </div>
-
-              <KpiSettings data={data} onSaved={() => void refetch()} />
-
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <Card>
-                  <div className="text-xs text-muted-foreground">Đề xuất trong kỳ</div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight">
-                    {n(data.proposals.total.current)}
-                  </div>
-                  <Delta value={data.proposals.total.changePct} />
-                </Card>
-                <Card>
-                  <div className="text-xs text-muted-foreground">Đề xuất giao việc</div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight">
-                    {n(data.proposals.assignment)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">gắn với công việc thật</div>
-                </Card>
-                <Card>
-                  <div className="text-xs text-muted-foreground">Đã duyệt & thực thi</div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight">
-                    {n(data.proposals.executed)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {data.proposals.executionRate === null
-                      ? "—"
-                      : `${data.proposals.executionRate}% số đề xuất`}
-                  </div>
-                </Card>
-                <Card>
-                  <div className="text-xs text-muted-foreground">Chờ duyệt / bị từ chối</div>
-                  <div className="mt-1 text-3xl font-semibold tracking-tight">
-                    {n(data.proposals.pending)} / {n(data.proposals.rejected)}
-                  </div>
-                  <Link to="/ai-brain" className="text-xs text-primary hover:underline">
-                    Mở Bộ não AI
-                  </Link>
-                </Card>
-              </div>
-
-              <Card title="Nhật ký đề xuất giao việc">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <label className="text-xs text-muted-foreground" htmlFor="dept-filter">
-                    Bộ phận
-                  </label>
-                  <select
-                    id="dept-filter"
-                    value={deptFilter}
-                    onChange={(e) => setDeptFilter(e.target.value)}
-                    className="min-h-11 rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    <option value="all">Tất cả bộ phận</option>
-                    <option value="none">Chưa gắn bộ phận</option>
-                    {data.departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="ml-auto">
-                    <AssignProposalsToProject
-                      entries={
-                        deptFilter === "all"
-                          ? data.proposals.entries
-                          : deptFilter === "none"
-                            ? data.proposals.entries.filter((p) => !p.workspaceId)
-                            : data.proposals.entries.filter((p) => p.workspaceId === deptFilter)
-                      }
-                      workers={workers.data ?? []}
-                      workspaceId={workspaceId ?? null}
-                      onDone={() => void refetch()}
-                    />
-                  </span>
-                </div>
-                {(() => {
-                  const filtered =
-                    deptFilter === "all"
-                      ? data.proposals.entries
-                      : deptFilter === "none"
-                        ? data.proposals.entries.filter((p) => !p.workspaceId)
-                        : data.proposals.entries.filter((p) => p.workspaceId === deptFilter);
-                  return filtered.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Chưa có đề xuất nào.</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {filtered.map((p) => (
-                        <li
-                          key={p.id}
-                          className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
+                  ),
+                  kpisettings: <KpiSettings data={data} onSaved={() => void refetch()} />,
+                  economics: (
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      <Card>
+                        <div className="text-xs text-muted-foreground">Đề xuất trong kỳ</div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight">
+                          {n(data.proposals.total.current)}
+                        </div>
+                        <Delta value={data.proposals.total.changePct} />
+                      </Card>
+                      <Card>
+                        <div className="text-xs text-muted-foreground">Đề xuất giao việc</div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight">
+                          {n(data.proposals.assignment)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">gắn với công việc thật</div>
+                      </Card>
+                      <Card>
+                        <div className="text-xs text-muted-foreground">Đã duyệt & thực thi</div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight">
+                          {n(data.proposals.executed)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {data.proposals.executionRate === null
+                            ? "—"
+                            : `${data.proposals.executionRate}% số đề xuất`}
+                        </div>
+                      </Card>
+                      <Card>
+                        <div className="text-xs text-muted-foreground">Chờ duyệt / bị từ chối</div>
+                        <div className="mt-1 text-3xl font-semibold tracking-tight">
+                          {n(data.proposals.pending)} / {n(data.proposals.rejected)}
+                        </div>
+                        <Link to="/ai-brain" className="text-xs text-primary hover:underline">
+                          Mở Bộ não AI
+                        </Link>
+                      </Card>
+                    </div>
+                  ),
+                  proposals: (
+                    <Card title="Nhật ký đề xuất giao việc">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <label className="text-xs text-muted-foreground" htmlFor="dept-filter">
+                          Bộ phận
+                        </label>
+                        <select
+                          id="dept-filter"
+                          value={deptFilter}
+                          onChange={(e) => setDeptFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-input bg-background px-2 text-sm"
                         >
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">{p.title}</span>
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {p.actionType}
-                              {p.workerName ? ` · ${p.workerName}` : ""}
-                              {p.taskTitle ? ` · ${p.taskTitle}` : ""} ·{" "}
-                              {new Date(p.createdAt).toLocaleDateString("vi-VN")}
-                            </span>
-                          </span>
-                          <span className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
-                            {typeof p.taskProgressPct === "number" ? (
-                              <ProgressPill value={p.taskProgressPct} />
-                            ) : null}
-                            {p.taskDueAt ? (
-                              <span className="text-xs text-muted-foreground">
-                                hạn {new Date(p.taskDueAt).toLocaleDateString("vi-VN")}
-                              </span>
-                            ) : null}
-                            <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
-                              {STATUS_LABEL[p.status] ?? p.status}
-                            </Badge>
-                            {p.taskId ? (
-                              <Link
-                                to="/tasks/$id"
-                                params={{ id: p.taskId }}
-                                className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
+                          <option value="all">Tất cả bộ phận</option>
+                          <option value="none">Chưa gắn bộ phận</option>
+                          {data.departments.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="ml-auto">
+                          <AssignProposalsToProject
+                            entries={
+                              deptFilter === "all"
+                                ? data.proposals.entries
+                                : deptFilter === "none"
+                                  ? data.proposals.entries.filter((p) => !p.workspaceId)
+                                  : data.proposals.entries.filter(
+                                      (p) => p.workspaceId === deptFilter,
+                                    )
+                            }
+                            workers={workers.data ?? []}
+                            workspaceId={workspaceId ?? null}
+                            onDone={() => void refetch()}
+                          />
+                        </span>
+                      </div>
+                      {(() => {
+                        const filtered =
+                          deptFilter === "all"
+                            ? data.proposals.entries
+                            : deptFilter === "none"
+                              ? data.proposals.entries.filter((p) => !p.workspaceId)
+                              : data.proposals.entries.filter((p) => p.workspaceId === deptFilter);
+                        return filtered.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Chưa có đề xuất nào.</p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {filtered.map((p) => (
+                              <li
+                                key={p.id}
+                                className="rounded-lg border border-border px-3 py-2 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
                               >
-                                Xem việc
-                              </Link>
-                            ) : null}
-                            <ProposalActions
-                              entry={p}
-                              workers={workers.data ?? []}
-                              workspaceId={workspaceId ?? null}
-                              onDone={() => void refetch()}
-                            />
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                })()}
-              </Card>
-
-              <Card title="Bốn câu hỏi của CEO">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <Answer
-                    icon={User}
-                    q="Chúng ta đã bỏ ra những nguồn lực gì?"
-                    items={data.answers.resources}
-                  />
-                  <Answer
-                    icon={CheckCircle2}
-                    q="Những nguồn lực ấy tạo ra sản phẩm cụ thể nào?"
-                    items={data.answers.outputs}
-                  />
-                  <Answer
-                    icon={Timer}
-                    q="Sản phẩm đó tạo ra thay đổi và giá trị gì?"
-                    items={data.answers.changes}
-                  />
-                  <Answer
-                    icon={Bot}
-                    q="Thay đổi ấy tạo ra giá trị kinh tế hay năng lực nào?"
-                    items={data.answers.value}
-                  />
-                </div>
-              </Card>
+                                <span className="min-w-0">
+                                  <span className="block truncate font-medium">{p.title}</span>
+                                  <span className="block truncate text-xs text-muted-foreground">
+                                    {p.actionType}
+                                    {p.workerName ? ` · ${p.workerName}` : ""}
+                                    {p.taskTitle ? ` · ${p.taskTitle}` : ""} ·{" "}
+                                    {new Date(p.createdAt).toLocaleDateString("vi-VN")}
+                                  </span>
+                                </span>
+                                <span className="mt-2 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
+                                  {typeof p.taskProgressPct === "number" ? (
+                                    <ProgressPill value={p.taskProgressPct} />
+                                  ) : null}
+                                  {p.taskDueAt ? (
+                                    <span className="text-xs text-muted-foreground">
+                                      hạn {new Date(p.taskDueAt).toLocaleDateString("vi-VN")}
+                                    </span>
+                                  ) : null}
+                                  <Badge variant={STATUS_TONE[p.status] ?? "secondary"}>
+                                    {STATUS_LABEL[p.status] ?? p.status}
+                                  </Badge>
+                                  {p.taskId ? (
+                                    <Link
+                                      to="/tasks/$id"
+                                      params={{ id: p.taskId }}
+                                      className="inline-flex min-h-11 items-center text-xs text-primary hover:underline"
+                                    >
+                                      Xem việc
+                                    </Link>
+                                  ) : null}
+                                  <ProposalActions
+                                    entry={p}
+                                    workers={workers.data ?? []}
+                                    workspaceId={workspaceId ?? null}
+                                    onDone={() => void refetch()}
+                                  />
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      })()}
+                    </Card>
+                  ),
+                  questions: (
+                    <Card title="Bốn câu hỏi của CEO">
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <Answer
+                          icon={User}
+                          q="Chúng ta đã bỏ ra những nguồn lực gì?"
+                          items={data.answers.resources}
+                        />
+                        <Answer
+                          icon={CheckCircle2}
+                          q="Những nguồn lực ấy tạo ra sản phẩm cụ thể nào?"
+                          items={data.answers.outputs}
+                        />
+                        <Answer
+                          icon={Timer}
+                          q="Sản phẩm đó tạo ra thay đổi và giá trị gì?"
+                          items={data.answers.changes}
+                        />
+                        <Answer
+                          icon={Bot}
+                          q="Thay đổi ấy tạo ra giá trị kinh tế hay năng lực nào?"
+                          items={data.answers.value}
+                        />
+                      </div>
+                    </Card>
+                  ),
+                };
+                return (
+                  <div data-card-grid className="grid grid-cols-12 gap-3">
+                    {layout.order.map((key) => (
+                      <DraggableGridCard
+                        key={key}
+                        cardKey={key}
+                        size={layout.sizes[key]}
+                        label={CEO_SECTION_LABEL[key]}
+                        className={SPAN_CLASS[layout.sizes[key]]}
+                        onReorder={(from, to) =>
+                          updateLayout({
+                            ...layout,
+                            order: moveCeoSection(
+                              layout.order,
+                              from as CeoSectionKey,
+                              to as CeoSectionKey,
+                            ),
+                          })
+                        }
+                        onResize={(k, size) =>
+                          updateLayout({ ...layout, sizes: { ...layout.sizes, [k]: size } })
+                        }
+                      >
+                        {blocks[key]}
+                      </DraggableGridCard>
+                    ))}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>

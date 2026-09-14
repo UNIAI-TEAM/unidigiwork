@@ -9,7 +9,7 @@ const MAX_KEEP = 20;
 
 export type LayoutHistoryEntry = {
   id: string;
-  scope: "home" | "dashboard";
+  scope: "home" | "dashboard" | "ceo";
   label: string | null;
   /** JSON chuỗi hoá của bố cục. */
   prefs: string;
@@ -35,12 +35,12 @@ async function resolveTenantId(
   return (data?.tenant_id as string | undefined) ?? null;
 }
 
-const scopeSchema = z.enum(["home", "dashboard"]);
+const scopeSchema = z.enum(["home", "dashboard", "ceo"]);
 
 /** Danh sách các bố cục đã lưu, mới nhất trước. */
 export const listLayoutHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { scope: "home" | "dashboard"; limit?: number }) =>
+  .inputValidator((i: { scope: "home" | "dashboard" | "ceo"; limit?: number }) =>
     z.object({ scope: scopeSchema, limit: z.number().int().min(1).max(50).default(10) }).parse(i),
   )
   .handler(async ({ data, context }): Promise<LayoutHistoryEntry[]> => {
@@ -54,7 +54,7 @@ export const listLayoutHistory = createServerFn({ method: "POST" })
     if (error) fail(error, "Không tải được lịch sử bố cục");
     return ((rows ?? []) as unknown as Array<Record<string, unknown>>).map((r) => ({
       id: r["id"] as string,
-      scope: r["scope"] as "home" | "dashboard",
+      scope: r["scope"] as "home" | "dashboard" | "ceo",
       label: (r["label"] as string | null) ?? null,
       prefs: JSON.stringify(r["prefs"] ?? null),
       createdAt: r["created_at"] as string,
@@ -64,7 +64,7 @@ export const listLayoutHistory = createServerFn({ method: "POST" })
 /** Lưu một mốc bố cục; bỏ qua nếu trùng hệt mốc gần nhất. */
 export const saveLayoutSnapshot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { scope: "home" | "dashboard"; prefs: string; label?: string | null }) =>
+  .inputValidator((i: { scope: "home" | "dashboard" | "ceo"; prefs: string; label?: string | null }) =>
     z
       .object({
         scope: scopeSchema,
