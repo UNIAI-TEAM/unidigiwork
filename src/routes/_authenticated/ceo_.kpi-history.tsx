@@ -218,7 +218,7 @@ function KpiHistoryPage() {
 
   const rows: KpiHistoryRow[] = history.data ?? [];
   const latest = rows[0] ?? null;
-  const loading = history.isLoading || overview.isLoading;
+  const loading = history.isLoading || overview.isLoading || monthly.isLoading;
 
   // Đề xuất sinh ra mỗi sáng so với số việc quá hạn — để thấy đề xuất có bù đắp kịp không.
   const coverage = useMemo(() => {
@@ -359,6 +359,15 @@ function KpiHistoryPage() {
                   </p>
                 </div>
               ) : null}
+
+              <MonthlyChart
+                rows={monthly.data ?? []}
+                current={{
+                  score: current?.score ?? null,
+                  completed: current?.completed ?? 0,
+                  overdue: current?.overdue ?? 0,
+                }}
+              />
 
               <div className="rounded-2xl border border-border bg-surface">
                 <div className="border-b border-border px-4 py-3 text-sm font-medium">
