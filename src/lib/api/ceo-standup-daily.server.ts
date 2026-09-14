@@ -327,6 +327,20 @@ export async function runDailyStandup(admin: any, limit = 20): Promise<DailyStan
         );
       }
 
+      // Tự tạo đề xuất cho việc sắp đến hạn và gán nhân sự AI (vào nhật ký đề xuất).
+      try {
+        const proposals = await runDailyProposals(admin, row.tenant_id, authorId);
+        result.proposals += proposals.created;
+        result.proposalsAssigned += proposals.assigned;
+        (patch["standup_snapshot"] as Record<string, unknown>)["proposals"] = proposals;
+      } catch (e) {
+        result.errors.push(
+          `Đề xuất ${row.tenant_id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
+        );
+      }
+
+
+
       // Làm mới KPI ngay sau khi ghi nhận để Command Center hiển thị số liệu mới.
       try {
         const overview = await loadCeoOverview(admin, row.tenant_id, "week");
