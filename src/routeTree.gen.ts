@@ -125,6 +125,7 @@ import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
 import { Route as ApiPublicHooksLivekitRouteImport } from './routes/api/public/hooks/livekit'
 import { Route as ApiPublicHooksCeoWeeklyReportRouteImport } from './routes/api/public/hooks/ceo-weekly-report'
+import { Route as ApiPublicHooksCeoStandupDailyRouteImport } from './routes/api/public/hooks/ceo-standup-daily'
 import { Route as ApiPublicHooksAiBrainDailyRouteImport } from './routes/api/public/hooks/ai-brain-daily'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
@@ -756,6 +757,12 @@ const ApiPublicHooksCeoWeeklyReportRoute =
     path: '/api/public/hooks/ceo-weekly-report',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksCeoStandupDailyRoute =
+  ApiPublicHooksCeoStandupDailyRouteImport.update({
+    id: '/api/public/hooks/ceo-standup-daily',
+    path: '/api/public/hooks/ceo-standup-daily',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAiBrainDailyRoute =
   ApiPublicHooksAiBrainDailyRouteImport.update({
     id: '/api/public/hooks/ai-brain-daily',
@@ -929,6 +936,7 @@ export interface FileRoutesByFullPath {
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
+  '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
   '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1054,6 +1062,7 @@ export interface FileRoutesByTo {
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
+  '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
   '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1183,6 +1192,7 @@ export interface FileRoutesById {
   '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/public/hooks/ai-brain-daily': typeof ApiPublicHooksAiBrainDailyRoute
+  '/api/public/hooks/ceo-standup-daily': typeof ApiPublicHooksCeoStandupDailyRoute
   '/api/public/hooks/ceo-weekly-report': typeof ApiPublicHooksCeoWeeklyReportRoute
   '/api/public/hooks/livekit': typeof ApiPublicHooksLivekitRoute
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
@@ -1312,6 +1322,7 @@ export interface FileRouteTypes {
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/ai-brain-daily'
+    | '/api/public/hooks/ceo-standup-daily'
     | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1437,6 +1448,7 @@ export interface FileRouteTypes {
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/ai-brain-daily'
+    | '/api/public/hooks/ceo-standup-daily'
     | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1565,6 +1577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
     | '/api/public/hooks/ai-brain-daily'
+    | '/api/public/hooks/ceo-standup-daily'
     | '/api/public/hooks/ceo-weekly-report'
     | '/api/public/hooks/livekit'
     | '/api/public/hooks/livekit-reconcile'
@@ -1608,6 +1621,7 @@ export interface RootRouteChildren {
   ShareWorkGraphTokenRoute: typeof ShareWorkGraphTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiPublicHooksAiBrainDailyRoute: typeof ApiPublicHooksAiBrainDailyRoute
+  ApiPublicHooksCeoStandupDailyRoute: typeof ApiPublicHooksCeoStandupDailyRoute
   ApiPublicHooksCeoWeeklyReportRoute: typeof ApiPublicHooksCeoWeeklyReportRoute
   ApiPublicHooksLivekitRoute: typeof ApiPublicHooksLivekitRoute
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
@@ -2431,6 +2445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCeoWeeklyReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ceo-standup-daily': {
+      id: '/api/public/hooks/ceo-standup-daily'
+      path: '/api/public/hooks/ceo-standup-daily'
+      fullPath: '/api/public/hooks/ceo-standup-daily'
+      preLoaderRoute: typeof ApiPublicHooksCeoStandupDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ai-brain-daily': {
       id: '/api/public/hooks/ai-brain-daily'
       path: '/api/public/hooks/ai-brain-daily'
@@ -2819,6 +2840,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareWorkGraphTokenRoute: ShareWorkGraphTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiPublicHooksAiBrainDailyRoute: ApiPublicHooksAiBrainDailyRoute,
+  ApiPublicHooksCeoStandupDailyRoute: ApiPublicHooksCeoStandupDailyRoute,
   ApiPublicHooksCeoWeeklyReportRoute: ApiPublicHooksCeoWeeklyReportRoute,
   ApiPublicHooksLivekitRoute: ApiPublicHooksLivekitRoute,
   ApiPublicHooksLivekitReconcileRoute: ApiPublicHooksLivekitReconcileRoute,
