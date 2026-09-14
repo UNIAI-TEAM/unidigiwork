@@ -2,7 +2,7 @@
 // và làm mới KPI của Command Center mà không cần thao tác thủ công.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { loadCeoOverview } from "./ceo.server";
-import { runDailyProposals } from "./ceo-proposals-daily.server";
+import { runDailyProposals, type DailyProposalItem } from "./ceo-proposals-daily.server";
 import { recordKpiSnapshot } from "./kpi-snapshot.server";
 
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
