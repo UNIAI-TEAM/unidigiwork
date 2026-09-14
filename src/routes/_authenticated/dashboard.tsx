@@ -13,8 +13,18 @@ import {
 import {
   getDashboardPrefs,
   saveDashboardPrefs,
-  resetDashboardPrefs,
 } from "@/lib/api/dashboard-prefs.functions";
+import {
+  DASHBOARD_SECTIONS,
+  DASHBOARD_SIZES,
+  DEFAULT_DASHBOARD_PREFS,
+  moveDashboardSection,
+  readDashboardLayoutPrefs,
+  writeDashboardLayoutPrefs,
+  type DashboardCardSize,
+  type DashboardLayoutPrefs,
+  type DashboardSectionKey,
+} from "@/lib/dashboard-layout-prefs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -52,6 +62,8 @@ import {
   Bell,
   GripVertical,
   RefreshCw,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 import { AppSidebar, AppTopbar, avatar } from "@/components/app-shell";
 import { useNotifSortMode } from "@/lib/notifications-data";
@@ -515,53 +527,33 @@ function DashboardPage() {
 }
 
 const SECTIONS_STORAGE_KEY = "uniwork.dashboard.sections";
-
-const SECTION_OPTIONS = [
-  { key: "kpis", label: "Chỉ số KPI" },
-  { key: "activity", label: "Hoạt động tổng quan" },
-  { key: "donut", label: "Phân bổ công việc" },
-  { key: "projects", label: "Dự án nổi bật" },
-  { key: "recent", label: "Hoạt động gần đây" },
-  { key: "meetings", label: "Lịch họp hôm nay" },
-  { key: "workspaces", label: "Tổng quan không gian làm việc" },
-  { key: "ai", label: "Trợ lý AI (cột phải)" },
-] as const;
-
-type SectionKey = (typeof SECTION_OPTIONS)[number]["key"];
-
-const DEFAULT_SECTIONS = Object.fromEntries(
-  SECTION_OPTIONS.map((o) => [o.key, true]),
-) as Record<SectionKey, boolean>;
-
-const DEFAULT_ORDER = SECTION_OPTIONS.map((o) => o.key) as SectionKey[];
 const ORDER_STORAGE_KEY = "uniwork.dashboard.order.v1";
+const SIZES_STORAGE_KEY = "uniwork.dashboard.sizes.v1";
 
-// Chiều rộng mặc định của từng khối trong lưới 3 cột.
-const SECTION_SPAN: Record<SectionKey, string> = {
-  kpis: "lg:col-span-3",
-  activity: "lg:col-span-2",
-  donut: "lg:col-span-1",
-  projects: "lg:col-span-1",
-  recent: "lg:col-span-1",
-  meetings: "lg:col-span-1",
-  workspaces: "lg:col-span-3",
-  ai: "lg:col-span-1",
+const SECTION_SPAN: Record<DashboardCardSize, string> = {
+  sm: "lg:col-span-4",
+  md: "lg:col-span-6",
+  lg: "lg:col-span-8",
+  full: "lg:col-span-12",
 };
 
-function normalizeOrder(input: unknown): SectionKey[] {
+function normalizeOrder(input: unknown): DashboardSectionKey[] {
   const arr = Array.isArray(input) ? (input as string[]) : [];
-  const valid = arr.filter((k): k is SectionKey => DEFAULT_ORDER.includes(k as SectionKey));
+  const valid = arr.filter((key): key is DashboardSectionKey =>
+    DEFAULT_DASHBOARD_PREFS.order.includes(key as DashboardSectionKey),
+  );
   const seen = new Set(valid);
-  return [...valid, ...DEFAULT_ORDER.filter((k) => !seen.has(k))];
+  return [...valid, ...DEFAULT_DASHBOARD_PREFS.order.filter((key) => !seen.has(key))];
 }
 
 function DashboardInner() {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rangeDays, setRangeDays] = useState(7);
-  const [sections, setSections] = useState<Record<SectionKey, boolean>>(DEFAULT_SECTIONS);
-  const [order, setOrder] = useState<SectionKey[]>(DEFAULT_ORDER);
-  const [dragKey, setDragKey] = useState<SectionKey | null>(null);
+  const [sections, setSections] = useState(DEFAULT_DASHBOARD_PREFS.enabled);
+  const [order, setOrder] = useState(DEFAULT_DASHBOARD_PREFS.order);
+  const [sizes, setSizes] = useState(DEFAULT_DASHBOARD_PREFS.sizes);
+  const [dragKey, setDragKey] = useState<DashboardSectionKey | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
   const userName = useMemo(
@@ -581,7 +573,7 @@ function DashboardInner() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SECTIONS_STORAGE_KEY);
-      if (raw) setSections({ ...DEFAULT_SECTIONS, ...JSON.parse(raw) });
+      if (raw) setSections({ ...DEFAULT_DASHBOARD_PREFS.enabled, ...JSON.parse(raw) });
     } catch {
       handleStorageFailure();
     }
@@ -589,29 +581,31 @@ function DashboardInner() {
       const rawOrder = localStorage.getItem(ORDER_STORAGE_KEY);
       if (rawOrder) setOrder(normalizeOrder(JSON.parse(rawOrder)));
     } catch {
-      setOrder(DEFAULT_ORDER);
+      setOrder(DEFAULT_DASHBOARD_PREFS.order);
+    }
+    try {
+      const rawSizes = localStorage.getItem(SIZES_STORAGE_KEY);
+      if (rawSizes) setSizes({ ...DEFAULT_DASHBOARD_PREFS.sizes, ...JSON.parse(rawSizes) });
+    } catch {
+      setSizes(DEFAULT_DASHBOARD_PREFS.sizes);
     }
     setHydrated(true);
   }, []);
 
   // Cấu hình từ server (đồng bộ đa thiết bị) luôn thắng cache cục bộ.
   useEffect(() => {
-    const remote = prefsQuery.data?.sections;
-    const remoteOrder = prefsQuery.data?.order;
-    if (remoteOrder) {
-      const nextOrder = normalizeOrder(remoteOrder);
-      setOrder(nextOrder);
-      try {
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(nextOrder));
-      } catch {
-        /* ignore */
-      }
-    }
-    if (!remote) return;
-    const merged = { ...DEFAULT_SECTIONS, ...remote } as Record<SectionKey, boolean>;
-    setSections(merged);
+    if (!prefsQuery.data) return;
+    const remote = readDashboardLayoutPrefs(
+      prefsQuery.data.sections ?? null,
+      prefsQuery.data.order ?? null,
+    );
+    setSections(remote.enabled);
+    setOrder(remote.order);
+    setSizes(remote.sizes);
     try {
-      localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(merged));
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(remote.order));
+      localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(remote.enabled));
+      localStorage.setItem(SIZES_STORAGE_KEY, JSON.stringify(remote.sizes));
     } catch {
       handleStorageFailure();
     }
@@ -622,7 +616,7 @@ function DashboardInner() {
     toast.error("Không lưu được tuỳ chỉnh bảng điều khiển", {
       description: "Bộ nhớ trình duyệt không khả dụng. Đã khôi phục bố cục mặc định.",
     });
-    setSections(DEFAULT_SECTIONS);
+    setSections(DEFAULT_DASHBOARD_PREFS.enabled);
     try {
       localStorage.removeItem(SECTIONS_STORAGE_KEY);
     } catch {
@@ -630,7 +624,18 @@ function DashboardInner() {
     }
   }
 
-  const toggleSection = (key: SectionKey) => {
+  const persistLayout = (next: DashboardLayoutPrefs, errorMessage: string) => {
+    const payload = writeDashboardLayoutPrefs(
+      next,
+      prefsQuery.data?.sections ?? null,
+      prefsQuery.data?.order ?? null,
+    );
+    void saveDashboardPrefs({ data: payload })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
+      .catch(() => toast.error(errorMessage));
+  };
+
+  const toggleSection = (key: DashboardSectionKey) => {
     const next = { ...sections, [key]: !sections[key] };
     try {
       localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(next));
@@ -639,15 +644,11 @@ function DashboardInner() {
       return;
     }
     setSections(next);
-    void saveDashboardPrefs({ data: { sections: next, order } })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
-      .catch(() => {
-        toast.error("Không đồng bộ được tuỳ chỉnh lên tài khoản");
-      });
+    persistLayout({ enabled: next, order, sizes }, "Không đồng bộ được tuỳ chỉnh lên tài khoản");
   };
 
   // Kéo-thả sắp xếp thứ tự khối.
-  const moveSection = (from: SectionKey, to: SectionKey) => {
+  const moveSection = (from: DashboardSectionKey, to: DashboardSectionKey) => {
     if (from === to) return;
     const next = order.filter((k) => k !== from);
     next.splice(next.indexOf(to), 0, from);
@@ -657,29 +658,58 @@ function DashboardInner() {
     } catch {
       /* ignore */
     }
-    void saveDashboardPrefs({ data: { sections, order: next } })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
-      .catch(() => {
-        toast.error("Không đồng bộ được thứ tự khối lên tài khoản");
-      });
+    persistLayout(
+      { enabled: sections, order: next, sizes },
+      "Không đồng bộ được thứ tự khối lên tài khoản",
+    );
   };
 
-  const resetSections = () => {
-    setSections(DEFAULT_SECTIONS);
-    setOrder(DEFAULT_ORDER);
+  const moveSectionBy = (key: DashboardSectionKey, direction: -1 | 1) => {
+    const next = moveDashboardSection(order, key, direction);
+    if (next === order) return;
+    setOrder(next);
     try {
-      localStorage.removeItem(SECTIONS_STORAGE_KEY);
-      localStorage.removeItem(ORDER_STORAGE_KEY);
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(next));
     } catch {
       /* ignore */
     }
-    void resetDashboardPrefs()
-      .then(() => queryClient.invalidateQueries({ queryKey: ["dashboard-prefs"] }))
-      .catch(() => {});
+    persistLayout(
+      { enabled: sections, order: next, sizes },
+      "Không đồng bộ được thứ tự khối lên tài khoản",
+    );
   };
 
-  const visible = hydrated ? sections : DEFAULT_SECTIONS;
-  const layoutOrder = hydrated ? order : DEFAULT_ORDER;
+  const changeSectionSize = (key: DashboardSectionKey, size: DashboardCardSize) => {
+    const next = { ...sizes, [key]: size };
+    setSizes(next);
+    try {
+      localStorage.setItem(SIZES_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    persistLayout(
+      { enabled: sections, order, sizes: next },
+      "Không đồng bộ được kích thước khối lên tài khoản",
+    );
+  };
+
+  const resetSections = () => {
+    setSections(DEFAULT_DASHBOARD_PREFS.enabled);
+    setOrder(DEFAULT_DASHBOARD_PREFS.order);
+    setSizes(DEFAULT_DASHBOARD_PREFS.sizes);
+    try {
+      localStorage.removeItem(SECTIONS_STORAGE_KEY);
+      localStorage.removeItem(ORDER_STORAGE_KEY);
+      localStorage.removeItem(SIZES_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    persistLayout(DEFAULT_DASHBOARD_PREFS, "Không khôi phục được bố cục mặc định");
+  };
+
+  const visible = hydrated ? sections : DEFAULT_DASHBOARD_PREFS.enabled;
+  const layoutOrder = hydrated ? order : DEFAULT_DASHBOARD_PREFS.order;
+  const layoutSizes = hydrated ? sizes : DEFAULT_DASHBOARD_PREFS.sizes;
   const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId, workspaceName: activeWorkspaceName } =
     useActiveWorkspace();
