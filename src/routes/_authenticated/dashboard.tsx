@@ -961,8 +961,9 @@ function DashboardInner() {
                       </p>
                     </div>
                     <ul className="max-h-80 space-y-1 overflow-y-auto p-2">
-                      {layoutOrder.map((key) => {
-                        const opt = SECTION_OPTIONS.find((o) => o.key === key)!;
+                      {layoutOrder.map((key, index) => {
+                        const opt = DASHBOARD_SECTIONS.find((item) => item.key === key);
+                        if (!opt) return null;
                         return (
                           <li
                             key={key}
@@ -977,10 +978,30 @@ function DashboardInner() {
                             }}
                             className={`rounded-lg ${dragKey === key ? "opacity-50" : ""}`}
                           >
-                            <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
+                            <div className="flex min-h-11 items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
                               <span className="flex min-w-0 items-center gap-2">
-                                <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
+                                <GripVertical className="hidden h-4 w-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing sm:block" />
                                 <span className="truncate">{opt.label}</span>
+                              </span>
+                              <span className="flex shrink-0 items-center sm:hidden">
+                                <button
+                                  type="button"
+                                  onClick={() => moveSectionBy(key, -1)}
+                                  disabled={index === 0}
+                                  aria-label={`Đưa ${opt.label} lên trên`}
+                                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface disabled:opacity-30"
+                                >
+                                  <ArrowUp className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveSectionBy(key, 1)}
+                                  disabled={index === layoutOrder.length - 1}
+                                  aria-label={`Đưa ${opt.label} xuống dưới`}
+                                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface disabled:opacity-30"
+                                >
+                                  <ArrowDown className="h-4 w-4" />
+                                </button>
                               </span>
                               <Switch
                                 checked={visible[key]}
@@ -988,6 +1009,26 @@ function DashboardInner() {
                                 aria-label={opt.label}
                               />
                             </div>
+                            {visible[key] && key !== "ai" ? (
+                              <div className="grid grid-cols-4 gap-1.5 px-2 pb-2">
+                                {DASHBOARD_SIZES.map((size) => (
+                                  <button
+                                    key={size.key}
+                                    type="button"
+                                    onClick={() => changeSectionSize(key, size.key)}
+                                    aria-pressed={layoutSizes[key] === size.key}
+                                    title={size.hint}
+                                    className={`min-h-11 rounded-md border px-1 text-xs transition-colors ${
+                                      layoutSizes[key] === size.key
+                                        ? "border-primary bg-primary/5 text-foreground"
+                                        : "border-border text-muted-foreground hover:bg-surface-2"
+                                    }`}
+                                  >
+                                    {size.label}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
                           </li>
                         );
                       })}
@@ -1007,7 +1048,7 @@ function DashboardInner() {
             </div>
 
             {(() => {
-              const blocks: Partial<Record<SectionKey, ReactNode>> = {
+              const blocks: Partial<Record<DashboardSectionKey, ReactNode>> = {
                 kpis: (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {kpis.map((k) => (
@@ -1237,11 +1278,11 @@ function DashboardInner() {
                 ),
               };
               return (
-                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
                   {layoutOrder
                     .filter((k) => k !== "ai" && visible[k] && blocks[k])
                     .map((k) => (
-                      <div key={k} className={`min-w-0 ${SECTION_SPAN[k]}`}>
+                      <div key={k} className={`min-w-0 ${SECTION_SPAN[layoutSizes[k]]}`}>
                         {blocks[k]}
                       </div>
                     ))}
