@@ -18,6 +18,7 @@ export type DailyStandupResult = {
   meetings: number;
   proposals: number;
   proposalsAssigned: number;
+  proposalsAssignedPeople: number;
   kpiRefreshed: number;
   errors: string[];
 };
