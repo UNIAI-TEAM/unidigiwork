@@ -9,6 +9,7 @@ import { recordKpiSnapshot } from "./kpi-snapshot.server";
 const ADMIN_ROLES = ["tenant_owner", "tenant_admin"];
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000; // tối đa 1 lần / ngày
 const MAX_TASKS_PER_TENANT = 30;
+const MAX_PROGRESS_TASKS = 200; // ghi tiến độ toàn bộ việc đang mở mỗi sáng
 const AUTO_PREFIX = "[Giao ban tự động]";
 
 export type DailyStandupResult = {
@@ -318,16 +319,19 @@ export async function runDailyStandup(
     try {
       const SELECT = "id, title, status, progress_pct, due_at, completed_at, updated_at";
 
-      // 1) Việc đang mở trong bảng giao ban (sắp đến hạn trước) — ghi nhận kết quả từng việc.
-      const { data: boardData, error: boardErr } = await admin
+      // 1) Toàn bộ việc đang mở — mỗi sáng ghi tiến độ từng việc vào nhật ký,
+      // không chỉ kết quả thay đổi, để KPI làm mới trọn bộ.
+      const { data: openData, error: boardErr } = await admin
         .from("tasks")
         .select(SELECT)
         .eq("tenant_id", row.tenant_id)
         .is("deleted_at", null)
         .in("status", ["todo", "in_progress", "blocked"])
         .order("due_at", { ascending: true, nullsFirst: false })
-        .limit(MAX_TASKS_PER_TENANT);
+        .limit(MAX_PROGRESS_TASKS);
       if (boardErr) throw new Error(boardErr.message);
+      // Bảng giao ban / thống kê KPI giữ tối đa 30 việc ưu tiên hạn chót.
+      const boardData = (openData ?? []).slice(0, MAX_TASKS_PER_TENANT);
 
       // 2) Việc vừa thay đổi trong 24 giờ qua (kể cả đã hoàn thành).
       const { data: taskData, error: taskErr } = await admin
@@ -346,20 +350,27 @@ export async function runDailyStandup(
         byId.set(t.id, t);
       }
       const tasks = [...byId.values()].slice(0, MAX_TASKS_PER_TENANT);
+
+      // Tập việc cần ghi tiến độ mỗi sáng: toàn bộ việc đang mở + việc vừa thay đổi.
+      const progressById = new Map<string, TaskRow>();
+      for (const t of [...((openData ?? []) as TaskRow[]), ...((taskData ?? []) as TaskRow[])]) {
+        progressById.set(t.id, t);
+      }
+      const progressTasks = [...progressById.values()].slice(0, MAX_PROGRESS_TASKS);
       const nowMs = Date.now();
 
       // Lần ghi tự động gần nhất của từng việc: dùng để chống ghi trùng
       // và để so sánh tiến độ với lần giao ban trước.
       const recent = new Set<string>();
       const prevProgress = new Map<string, number>();
-      if (tasks.length) {
+      if (progressTasks.length) {
         const { data: existing } = await admin
           .from("task_comments")
           .select("task_id, body, created_at")
           .eq("tenant_id", row.tenant_id)
           .in(
             "task_id",
-            tasks.map((t) => t.id),
+            progressTasks.map((t) => t.id),
           )
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
@@ -384,17 +395,19 @@ export async function runDailyStandup(
 
       let advanced = 0;
       let stalled = 0;
-      for (const t of tasks) {
+      for (const t of progressTasks) {
         const prev = prevProgress.get(t.id);
         if (prev === undefined) continue;
         if (progressOf(t) > prev) advanced += 1;
         else if (progressOf(t) === prev && t.status !== "done") stalled += 1;
       }
-      const avgProgressPct = tasks.length
-        ? Math.round(tasks.reduce((s, t) => s + progressOf(t), 0) / tasks.length)
+      // Tiến độ trung bình tính trên toàn bộ việc đang mở — KPI làm mới trọn bộ.
+      const openTasks = (openData ?? []) as TaskRow[];
+      const avgProgressPct = openTasks.length
+        ? Math.round(openTasks.reduce((s, t) => s + progressOf(t), 0) / openTasks.length)
         : 0;
 
-      const notes = tasks
+      const notes = progressTasks
         .filter((t) => !recent.has(t.id))
         .map((t) => {
           const overdue = Boolean(t.due_at && new Date(t.due_at).getTime() < nowMs);
@@ -443,6 +456,7 @@ export async function runDailyStandup(
         standup_snapshot: {
           window: "24h",
           tasksTouched: tasks.length,
+          openTasks: openTasks.length,
           done,
           blocked,
           overdue,
