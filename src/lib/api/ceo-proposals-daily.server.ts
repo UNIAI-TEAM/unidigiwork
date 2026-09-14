@@ -6,11 +6,25 @@ const DUE_WINDOW_HOURS = 72; // sắp đến hạn trong 3 ngày tới
 const MAX_PROPOSALS_PER_TENANT = 10;
 const PROPOSAL_PREFIX = "[Đề xuất tự động]";
 
+export type DailyProposalItem = {
+  taskId: string;
+  title: string;
+  level: string;
+  score: number;
+  rank: number;
+  overdue: boolean;
+  dueLabel: string;
+  assigneeName: string | null;
+  aiWorkerName: string | null;
+};
+
 export type DailyProposalResult = {
   created: number;
   assigned: number; // số việc được gán nhân sự AI
   assignedPeople: number; // số việc được gán nhân sự thật
   skipped: number;
+  notes: number; // số dòng nhật ký việc đã ghi
+  items: DailyProposalItem[];
 };
 
 type TaskRow = {
