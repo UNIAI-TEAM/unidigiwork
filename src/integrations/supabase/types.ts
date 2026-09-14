@@ -1543,10 +1543,13 @@ export type Database = {
           auto_retrain: boolean
           auto_retrain_at: string | null
           auto_retrain_signature: string | null
+          auto_standup: boolean
+          auto_standup_at: string | null
           created_at: string
           department_weights: Json
           kpi_refreshed_at: string | null
           kpi_snapshot: Json | null
+          standup_snapshot: Json | null
           targets: Json
           tenant_id: string
           updated_at: string
@@ -1556,10 +1559,13 @@ export type Database = {
           auto_retrain?: boolean
           auto_retrain_at?: string | null
           auto_retrain_signature?: string | null
+          auto_standup?: boolean
+          auto_standup_at?: string | null
           created_at?: string
           department_weights?: Json
           kpi_refreshed_at?: string | null
           kpi_snapshot?: Json | null
+          standup_snapshot?: Json | null
           targets?: Json
           tenant_id: string
           updated_at?: string
@@ -1569,10 +1575,13 @@ export type Database = {
           auto_retrain?: boolean
           auto_retrain_at?: string | null
           auto_retrain_signature?: string | null
+          auto_standup?: boolean
+          auto_standup_at?: string | null
           created_at?: string
           department_weights?: Json
           kpi_refreshed_at?: string | null
           kpi_snapshot?: Json | null
+          standup_snapshot?: Json | null
           targets?: Json
           tenant_id?: string
           updated_at?: string

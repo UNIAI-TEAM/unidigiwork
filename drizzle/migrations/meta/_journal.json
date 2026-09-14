@@ -8,6 +8,13 @@
       "when": 1789122130618,
       "tag": "0000_ceo_kpi_auto_refresh_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789373545727,
+      "tag": "0001_ceo_auto_standup",
+      "breakpoints": true
     }
   ]
 }
