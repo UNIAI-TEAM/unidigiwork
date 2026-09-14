@@ -4,16 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { sendAiMessage } from "@/lib/api/ai-chat.functions";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { toast } from "sonner";
-import {
-  queryOptions,
-  useSuspenseQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  getDashboardPrefs,
-  saveDashboardPrefs,
-} from "@/lib/api/dashboard-prefs.functions";
+import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getDashboardPrefs, saveDashboardPrefs } from "@/lib/api/dashboard-prefs.functions";
 import {
   DASHBOARD_SECTIONS,
   DASHBOARD_SIZES,
@@ -290,9 +282,14 @@ function notifPriorityRank(n: any): number {
   const type = String(n?.type ?? "").toLowerCase();
   const metaPriority = String(n?.meta?.priority ?? "").toLowerCase();
   const metaWeight =
-    metaPriority === "urgent" ? 60 : metaPriority === "high" ? 45 : metaPriority === "low" ? -10 : 0;
-  const typeWeight =
-    Object.entries(NOTIF_TYPE_WEIGHT).find(([k]) => type.includes(k))?.[1] ?? 10;
+    metaPriority === "urgent"
+      ? 60
+      : metaPriority === "high"
+        ? 45
+        : metaPriority === "low"
+          ? -10
+          : 0;
+  const typeWeight = Object.entries(NOTIF_TYPE_WEIGHT).find(([k]) => type.includes(k))?.[1] ?? 10;
   return typeWeight + metaWeight + (n?.is_read ? 0 : 25);
 }
 
@@ -562,8 +559,10 @@ function DashboardInner() {
   const queryClient = useQueryClient();
   const userName = useMemo(
     () =>
-      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.full_name ||
-      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)?.display_name ||
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)
+        ?.full_name ||
+      (user?.user_metadata as { full_name?: string; display_name?: string } | undefined)
+        ?.display_name ||
       user?.email?.split("@")[0] ||
       "bạn",
     [user],
@@ -799,21 +798,29 @@ function DashboardInner() {
   const sendAiFn = useServerFn(sendAiMessage);
   const [aiInput, setAiInput] = useState("");
   const [openedLinks, setOpenedLinks] = useState<
-    Array<{ label: string; path: string; filters?: Record<string, string | number | boolean>; at: string }>
+    Array<{
+      label: string;
+      path: string;
+      filters?: Record<string, string | number | boolean>;
+      at: string;
+    }>
   >([]);
-  const recordOpenedLink = (
-    label: string,
-    path: string,
-    filters?: Record<string, unknown>,
-  ) => {
+  const recordOpenedLink = (label: string, path: string, filters?: Record<string, unknown>) => {
     const safe: Record<string, string | number | boolean> = {};
     for (const [k, v] of Object.entries(filters ?? {})) {
       if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") safe[k] = v;
     }
     setOpenedLinks((prev) =>
       [
-        { label, path, ...(Object.keys(safe).length ? { filters: safe } : {}), at: new Date().toISOString() },
-        ...prev.filter((l) => l.path !== path || JSON.stringify(l.filters ?? {}) !== JSON.stringify(safe)),
+        {
+          label,
+          path,
+          ...(Object.keys(safe).length ? { filters: safe } : {}),
+          at: new Date().toISOString(),
+        },
+        ...prev.filter(
+          (l) => l.path !== path || JSON.stringify(l.filters ?? {}) !== JSON.stringify(safe),
+        ),
       ].slice(0, 5),
     );
   };
@@ -843,7 +850,10 @@ function DashboardInner() {
               (l) =>
                 `${l.label} (${l.path}${
                   l.filters && Object.keys(l.filters).length
-                    ? "?" + new URLSearchParams(Object.entries(l.filters).map(([k, v]) => [k, String(v)])).toString()
+                    ? "?" +
+                      new URLSearchParams(
+                        Object.entries(l.filters).map(([k, v]) => [k, String(v)]),
+                      ).toString()
                     : ""
                 })`,
             )
@@ -1054,231 +1064,269 @@ function DashboardInner() {
             {(() => {
               const blocks: Partial<Record<DashboardSectionKey, ReactNode>> = {
                 kpis: (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {kpis.map((k) => (
-                  <KpiCard key={k.key} k={k} rangeDays={rangeDays} />
-                ))}
-              </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                    {kpis.map((k) => (
+                      <KpiCard key={k.key} k={k} rangeDays={rangeDays} />
+                    ))}
+                  </div>
                 ),
                 activity: (
-              <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
-                  <span className="rounded-md border border-border bg-surface-2 px-2.5 py-1 text-xs text-muted-foreground">
-                    {rangeDays} ngày qua
-                  </span>
-                </div>
-                <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_180px]">
-                  <ActivityChart activity={activity} />
-                  <ul className="space-y-3 text-sm">
-                    {activity.series.map((s) => (
-                      <li key={s.name}>
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
-                          <span className="text-muted-foreground">{s.name}</span>
-                        </div>
-                        <div className="ml-4 flex items-baseline justify-between">
-                          <span className="text-base font-semibold tabular-nums">{s.total}</span>
-                          <span className="text-xs text-emerald-400">{s.delta}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+                  <div className="rounded-2xl border border-border bg-surface p-5 lg:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Hoạt động tổng quan</h2>
+                      <span className="rounded-md border border-border bg-surface-2 px-2.5 py-1 text-xs text-muted-foreground">
+                        {rangeDays} ngày qua
+                      </span>
+                    </div>
+                    <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_180px]">
+                      <ActivityChart activity={activity} />
+                      <ul className="space-y-3 text-sm">
+                        {activity.series.map((s) => (
+                          <li key={s.name}>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: s.color }}
+                              />
+                              <span className="text-muted-foreground">{s.name}</span>
+                            </div>
+                            <div className="ml-4 flex items-baseline justify-between">
+                              <span className="text-base font-semibold tabular-nums">
+                                {s.total}
+                              </span>
+                              <span className="text-xs text-emerald-400">{s.delta}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 ),
                 donut: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
-                <div className="mt-4 flex flex-col items-center gap-4">
-                  <Donut slices={donut.slices} total={donut.total} />
-                  <ul className="w-full space-y-2 text-sm">
-                    {donut.slices.map((d) => (
-                      <li key={d.label} className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-muted-foreground">
-                          <span className="h-2 w-2 rounded-full" style={{ background: d.color }} />{" "}
-                          {d.label}
-                        </span>
-                        <span className="tabular-nums">
-                          {d.value.toLocaleString()}{" "}
-                          <span className="text-muted-foreground">({d.pct}%)</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <h2 className="text-sm font-semibold">Phân bổ công việc</h2>
+                    <div className="mt-4 flex flex-col items-center gap-4">
+                      <Donut slices={donut.slices} total={donut.total} />
+                      <ul className="w-full space-y-2 text-sm">
+                        {donut.slices.map((d) => (
+                          <li key={d.label} className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: d.color }}
+                              />{" "}
+                              {d.label}
+                            </span>
+                            <span className="tabular-nums">
+                              {d.value.toLocaleString()}{" "}
+                              <span className="text-muted-foreground">({d.pct}%)</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 ),
                 projects: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
-                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem tất cả</button>
-                </div>
-                {projects.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">Chưa có dự án nào.</p>
-                ) : (
-                  <ul className="mt-4 space-y-3">
-                    {projects.map((p, idx) => (
-                      <li
-                        key={p.id}
-                        className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Dự án nổi bật</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="text-xs text-primary hover:underline"
                       >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                        Xem tất cả
+                      </button>
+                    </div>
+                    {projects.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">Chưa có dự án nào.</p>
+                    ) : (
+                      <ul className="mt-4 space-y-3">
+                        {projects.map((p, idx) => (
+                          <li
+                            key={p.id}
+                            className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
                           >
-                            {p.name.charAt(0).toUpperCase()}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium">{p.name}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              Tiến độ: {p.progress}% · {p.tasks} nhiệm vụ · {p.members} thành viên
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                              >
+                                {p.name.charAt(0).toUpperCase()}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-sm font-medium">{p.name}</div>
+                                <div className="text-[11px] text-muted-foreground">
+                                  Tiến độ: {p.progress}% · {p.tasks} nhiệm vụ · {p.members} thành
+                                  viên
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400"
-                            style={{ width: `${p.progress}%` }}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400"
+                                style={{ width: `${p.progress}%` }}
+                              />
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 ),
                 recent: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
-                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem tất cả</button>
-                </div>
-                {recent.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
-                ) : (
-                  <ul className="mt-4 space-y-3">
-                    {recent.map((r) => {
-                      const meta = AREA_META[r.area] ?? AREA_META.Tasks;
-                      const Icon = meta.icon;
-                      return (
-                        <li key={r.id} className="flex items-start gap-3">
-                          <div className="relative">
-                            <img
-                              src={avatar(r.who)}
-                              alt=""
-                              className="h-9 w-9 rounded-full object-cover"
-                            />
-                            <span
-                              className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-surface-2 ${meta.tint}`}
-                            >
-                              <Icon className="h-2.5 w-2.5" />
-                            </span>
-                          </div>
-                          <div className="min-w-0 flex-1 text-sm">
-                            <div className="leading-snug">
-                              <span className="font-medium">{r.who}</span>{" "}
-                              <span className="text-muted-foreground">{r.what}</span>{" "}
-                              <span className="font-medium">{r.target}</span>
-                            </div>
-                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                              <span>{r.area}</span>
-                              <span>·</span>
-                              <span>{fmtTime(r.at)}</span>
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Hoạt động gần đây</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Xem tất cả
+                      </button>
+                    </div>
+                    {recent.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
+                    ) : (
+                      <ul className="mt-4 space-y-3">
+                        {recent.map((r) => {
+                          const meta = AREA_META[r.area] ?? AREA_META.Tasks;
+                          const Icon = meta.icon;
+                          return (
+                            <li key={r.id} className="flex items-start gap-3">
+                              <div className="relative">
+                                <img
+                                  src={avatar(r.who)}
+                                  alt=""
+                                  className="h-9 w-9 rounded-full object-cover"
+                                />
+                                <span
+                                  className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-surface-2 ${meta.tint}`}
+                                >
+                                  <Icon className="h-2.5 w-2.5" />
+                                </span>
+                              </div>
+                              <div className="min-w-0 flex-1 text-sm">
+                                <div className="leading-snug">
+                                  <span className="font-medium">{r.who}</span>{" "}
+                                  <span className="text-muted-foreground">{r.what}</span>{" "}
+                                  <span className="font-medium">{r.target}</span>
+                                </div>
+                                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                  <span>{r.area}</span>
+                                  <span>·</span>
+                                  <span>{fmtTime(r.at)}</span>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
                 ),
                 meetings: (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
-                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem lịch đầy đủ</button>
-                </div>
-                {meetings.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">Hôm nay không có cuộc họp.</p>
-                ) : (
-                  <ul className="mt-4 space-y-3">
-                    {meetings.map((m) => (
-                      <li
-                        key={m.id}
-                        className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                  <div className="rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Lịch họp hôm nay</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="text-xs text-primary hover:underline"
                       >
-                        <div className="w-14 shrink-0">
-                          <div className="text-sm font-semibold tabular-nums">
-                            {fmtTime(m.start_at)}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {fmtDur(m.start_at, m.end_at)}
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{m.title}</div>
-                          <div className="mt-1">
-                            <AvatarStack count={m.participants} seed={m.id} />
-                          </div>
-                        </div>
-                        <button onClick={() => notifyComingSoon()} className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20">
-                          Tham gia
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                        Xem lịch đầy đủ
+                      </button>
+                    </div>
+                    {meetings.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        Hôm nay không có cuộc họp.
+                      </p>
+                    ) : (
+                      <ul className="mt-4 space-y-3">
+                        {meetings.map((m) => (
+                          <li
+                            key={m.id}
+                            className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                          >
+                            <div className="w-14 shrink-0">
+                              <div className="text-sm font-semibold tabular-nums">
+                                {fmtTime(m.start_at)}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {fmtDur(m.start_at, m.end_at)}
+                              </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium">{m.title}</div>
+                              <div className="mt-1">
+                                <AvatarStack count={m.participants} seed={m.id} />
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => notifyComingSoon()}
+                              className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                            >
+                              Tham gia
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 ),
                 workspaces: (
-            <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
-                <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                  <TrendingUp className="h-3.5 w-3.5" /> So sánh
-                </button>
-              </div>
-              {workspaces.length === 0 ? (
-                <p className="mt-4 text-sm text-muted-foreground">Chưa có không gian làm việc.</p>
-              ) : (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  {workspaces.slice(0, 5).map((w, idx) => (
-                    <div
-                      key={w.id}
-                      className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`flex h-7 w-7 items-center justify-center rounded text-[12px] font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
-                        >
-                          {w.name.charAt(0).toUpperCase()}
-                        </span>
-                        <div className="truncate text-sm font-medium">{w.name}</div>
-                      </div>
-                      <div className="mt-3 grid grid-cols-2 gap-1 text-xs">
-                        <div>
-                          <div className="text-base font-semibold tabular-nums">{w.members}</div>
-                          <div className="text-[10px] text-muted-foreground">thành viên</div>
-                        </div>
-                        <div>
-                          <div className="text-base font-semibold tabular-nums">{w.tasks}</div>
-                          <div className="text-[10px] text-muted-foreground">nhiệm vụ</div>
-                        </div>
-                      </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{ width: `${w.progress}%` }}
-                        />
-                      </div>
+                  <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold">Tổng quan theo không gian làm việc</h2>
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <TrendingUp className="h-3.5 w-3.5" /> So sánh
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    {workspaces.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        Chưa có không gian làm việc.
+                      </p>
+                    ) : (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        {workspaces.slice(0, 5).map((w, idx) => (
+                          <div
+                            key={w.id}
+                            className="rounded-xl border border-border/60 bg-surface-2/40 p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`flex h-7 w-7 items-center justify-center rounded text-[12px] font-semibold text-white ${PROJECT_COLORS[idx % PROJECT_COLORS.length]}`}
+                              >
+                                {w.name.charAt(0).toUpperCase()}
+                              </span>
+                              <div className="truncate text-sm font-medium">{w.name}</div>
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-1 text-xs">
+                              <div>
+                                <div className="text-base font-semibold tabular-nums">
+                                  {w.members}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">thành viên</div>
+                              </div>
+                              <div>
+                                <div className="text-base font-semibold tabular-nums">
+                                  {w.tasks}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">nhiệm vụ</div>
+                              </div>
+                            </div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
+                              <div
+                                className="h-full rounded-full bg-primary"
+                                style={{ width: `${w.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ),
               };
               return (
@@ -1364,39 +1412,39 @@ function DashboardInner() {
                   </div>
                 </div>
               ) : (
-              <ul className="mt-4 space-y-2">
-                {aiItems.map((it) => {
-                  const Icon = it.icon;
-                  return (
-                    <li key={it.title}>
-                      <Link
-                        to={it.to}
-                        search={it.search as never}
-                        preload="intent"
-                        onClick={() =>
-                          recordOpenedLink(
-                            it.title,
-                            it.to,
-                            (it.search ?? {}) as Record<string, unknown>,
-                          )
-                        }
-                        className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
-                      >
-                        <span
-                          className={`flex h-9 w-9 items-center justify-center rounded-lg ${it.tint}`}
+                <ul className="mt-4 space-y-2">
+                  {aiItems.map((it) => {
+                    const Icon = it.icon;
+                    return (
+                      <li key={it.title}>
+                        <Link
+                          to={it.to}
+                          search={it.search as never}
+                          preload="intent"
+                          onClick={() =>
+                            recordOpenedLink(
+                              it.title,
+                              it.to,
+                              (it.search ?? {}) as Record<string, unknown>,
+                            )
+                          }
+                          className="group flex w-full items-center gap-3 rounded-xl border border-border/60 bg-surface-2/40 p-3 text-left hover:border-primary/40"
                         >
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{it.title}</div>
-                          <div className="text-[11px] text-primary">{it.action} →</div>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+                          <span
+                            className={`flex h-9 w-9 items-center justify-center rounded-lg ${it.tint}`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">{it.title}</div>
+                            <div className="text-[11px] text-primary">{it.action} →</div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
 
               {(aiThread.length > 0 || aiSending) && (
@@ -1427,7 +1475,14 @@ function DashboardInner() {
                   {openedLinks.map((l) => (
                     <span
                       key={`${l.path}-${l.at}`}
-                      title={`${l.path}${l.filters ? " · " + Object.entries(l.filters).map(([k, v]) => `${k}=${v}`).join(", ") : ""}`}
+                      title={`${l.path}${
+                        l.filters
+                          ? " · " +
+                            Object.entries(l.filters)
+                              .map(([k, v]) => `${k}=${v}`)
+                              .join(", ")
+                          : ""
+                      }`}
                       className="rounded-full border border-border/60 bg-surface-2/60 px-2 py-0.5 text-[10px] text-muted-foreground"
                     >
                       Đã mở: {l.label}
@@ -1459,10 +1514,7 @@ function DashboardInner() {
                 </button>
               </div>
               {aiConversationId && (
-                <Link
-                  to="/ai"
-                  className="mt-2 block text-[11px] text-primary hover:underline"
-                >
+                <Link to="/ai" className="mt-2 block text-[11px] text-primary hover:underline">
                   Mở hội thoại đầy đủ trong AI Workspace →
                 </Link>
               )}
@@ -1501,9 +1553,7 @@ function DashboardInner() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-destructive" />
                       <div className="min-w-0">
-                        <div className="font-medium text-destructive">
-                          Không tải được thông báo
-                        </div>
+                        <div className="font-medium text-destructive">Không tải được thông báo</div>
                         <div className="break-words text-muted-foreground">
                           {(notificationsQuery.error as Error)?.message ?? "Lỗi không xác định"}
                         </div>
@@ -1549,9 +1599,7 @@ function DashboardInner() {
                           >
                             {n.title}
                           </div>
-                          {n.body && (
-                            <div className="truncate text-muted-foreground">{n.body}</div>
-                          )}
+                          {n.body && <div className="truncate text-muted-foreground">{n.body}</div>}
                           <div className="text-muted-foreground">
                             {new Intl.DateTimeFormat("vi-VN", {
                               hour: "2-digit",
@@ -1584,7 +1632,10 @@ function DashboardInner() {
                 </Link>
               </div>
 
-              <button onClick={() => notifyComingSoon()} className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2">
+              <button
+                onClick={() => notifyComingSoon()}
+                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2"
+              >
                 <BookOpen className="h-3.5 w-3.5" /> Hướng dẫn sử dụng
               </button>
             </aside>

@@ -15,6 +15,7 @@
 - [x] Match desktop menu hierarchy and collapsible groups to supplied reference
 
 ## CEO Command Center (đang làm)
+
 - [ ] Nút duyệt/từ chối đề xuất giao việc + gán vai trò AI ngay tại Command Center
 - [ ] Nút giao việc thực tế: chọn đề xuất, gán nhân sự thật + tiến độ, cập nhật nhật ký/KPI
 - [ ] Màn giao ban: CEO ghi nhận kết quả từng việc, Bộ não tính KPI và đề xuất giao việc mới
@@ -25,6 +26,7 @@
 - [x] Tone gradient kiểu ClickUp
 
 ## Nhân sự, lịch họp & lịch tự động (mới)
+
 - [x] Trang quản lý nhân sự: thêm/sửa/xóa hồ sơ, gán bộ phận + vai trò, đồng bộ Bộ não
 - [x] Trang quản lý lịch họp: thêm/sửa/xóa, gán nhân sự + bộ phận, cập nhật KPI Command Center
 - [x] Lịch chạy Bộ não hằng ngày (tự đào tạo lại + cập nhật đề xuất), hiển thị trong Command Center
@@ -33,6 +35,7 @@
 - [x] Tạo tài khoản demo có dữ liệu để anh Nam đăng nhập xem
 
 ## Tùy chỉnh Home / My Space
+
 - [ ] Sắp xếp và chỉnh kích thước card Trang chủ, lưu theo người dùng
 - [ ] Hoàn thiện kéo thả và kích thước card My Space trên desktop/tablet/mobile
 - [ ] Xác minh hai cấu hình độc lập và giữ nguyên sau khi tải lại
