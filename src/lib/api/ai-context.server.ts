@@ -73,6 +73,7 @@ const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
   PERSON: "PERSON",
   TENANT: "PROJECT",
   WORK_PRODUCT: "WORK_PRODUCT",
+  EXECUTION: "TASK",
 };
 
 /** Làm sạch HTML/markdown và cắt cứng độ dài mỗi source (§145, §146). */
@@ -109,6 +110,7 @@ const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
   PERSON: 0.3,
   TENANT: 0,
   WORK_PRODUCT: 0.6,
+  EXECUTION: 0.55,
 };
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {

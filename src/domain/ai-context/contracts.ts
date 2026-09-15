@@ -64,7 +64,14 @@ export interface AiContextPack {
   relationships: ContextRelationship[];
   sources: ContextSource[];
   facts: ContextFact[];
-  ambiguity?: { candidates: { entityType: AiContextEntityType; entityId: string; title: string; href: string }[] } | null;
+  ambiguity?: {
+    candidates: {
+      entityType: AiContextEntityType;
+      entityId: string;
+      title: string;
+      href: string;
+    }[];
+  } | null;
   retrieval: {
     strategy: AiRetrievalStrategy;
     query: string;
@@ -110,6 +117,8 @@ export const AI_CONTEXT_POLICY = {
     PERSON: 5,
     WORKSPACE: 3,
     TENANT: 0,
+    WORK_PRODUCT: 5,
+    EXECUTION: 5,
   } as Record<AiContextEntityType, number>,
 } as const;
 
@@ -130,6 +139,8 @@ export const RELATIONSHIP_WEIGHTS: Record<WorkRelationshipCode, number> = {
   PRODUCES: 0.85,
   CREATED_BY: 0.7,
   REALIZED_AS: 0.8,
+  HAS_EXECUTION: 0.8,
+  PERFORMS: 0.7,
 };
 
 export const estimateTokens = (text: string): number => Math.ceil(text.length / 4);

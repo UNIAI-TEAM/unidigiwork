@@ -21,6 +21,8 @@ export function workEntityHref(type: string, id: string, mobile = false): string
       return `/meeting?artifact=${id}`;
     case "WORK_PRODUCT":
       return `/work-products/${id}`;
+    case "EXECUTION":
+      return `/tasks?execution=${id}`;
     case "PERSON":
       return `/people/${id}`;
     default:
