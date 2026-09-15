@@ -123,6 +123,25 @@ export async function resolveWorkEntities(
             }),
         );
         break;
+      case "WORK_PRODUCT":
+        jobs.push(
+          supabase
+            .from("work_products")
+            .select("id,title,business_type,status,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add(
+                  "WORK_PRODUCT",
+                  r.id,
+                  r.title ?? "Kết quả công việc",
+                  r.status ?? r.business_type ?? null,
+                  r.updated_at,
+                ),
+              );
+            }),
+        );
+        break;
       default:
         break;
     }

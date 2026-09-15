@@ -70,6 +70,7 @@ import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-gra
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as ApiOfficeSessionsRouteImport } from './routes/api/office/sessions'
 import { Route as ApiOfficeDownloadRouteImport } from './routes/api/office/download'
+import { Route as ApiAdminWorkProductGraphBackfillRouteImport } from './routes/api/admin/work-product-graph-backfill'
 import { Route as AuthenticatedWorkspaceTagsRouteImport } from './routes/_authenticated/workspace.tags'
 import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace.settings'
 import { Route as AuthenticatedWorkspaceMembersRouteImport } from './routes/_authenticated/workspace.members'
@@ -457,6 +458,12 @@ const ApiOfficeDownloadRoute = ApiOfficeDownloadRouteImport.update({
   path: '/api/office/download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminWorkProductGraphBackfillRoute =
+  ApiAdminWorkProductGraphBackfillRouteImport.update({
+    id: '/api/admin/work-product-graph-backfill',
+    path: '/api/admin/work-product-graph-backfill',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedWorkspaceTagsRoute =
   AuthenticatedWorkspaceTagsRouteImport.update({
     id: '/workspace/tags',
@@ -985,6 +992,7 @@ export interface FileRoutesByFullPath {
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
+  '/api/admin/work-product-graph-backfill': typeof ApiAdminWorkProductGraphBackfillRoute
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -1120,6 +1128,7 @@ export interface FileRoutesByTo {
   '/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
+  '/api/admin/work-product-graph-backfill': typeof ApiAdminWorkProductGraphBackfillRoute
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -1259,6 +1268,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/members': typeof AuthenticatedWorkspaceMembersRoute
   '/_authenticated/workspace/settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/_authenticated/workspace/tags': typeof AuthenticatedWorkspaceTagsRoute
+  '/api/admin/work-product-graph-backfill': typeof ApiAdminWorkProductGraphBackfillRoute
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
@@ -1398,6 +1408,7 @@ export interface FileRouteTypes {
     | '/workspace/members'
     | '/workspace/settings'
     | '/workspace/tags'
+    | '/api/admin/work-product-graph-backfill'
     | '/api/office/download'
     | '/api/office/sessions'
     | '/blog/category/$category'
@@ -1533,6 +1544,7 @@ export interface FileRouteTypes {
     | '/workspace/members'
     | '/workspace/settings'
     | '/workspace/tags'
+    | '/api/admin/work-product-graph-backfill'
     | '/api/office/download'
     | '/api/office/sessions'
     | '/blog/category/$category'
@@ -1671,6 +1683,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/members'
     | '/_authenticated/workspace/settings'
     | '/_authenticated/workspace/tags'
+    | '/api/admin/work-product-graph-backfill'
     | '/api/office/download'
     | '/api/office/sessions'
     | '/blog/category/$category'
@@ -1731,6 +1744,7 @@ export interface RootRouteChildren {
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
+  ApiAdminWorkProductGraphBackfillRoute: typeof ApiAdminWorkProductGraphBackfillRoute
   ApiOfficeDownloadRoute: typeof ApiOfficeDownloadRoute
   ApiOfficeSessionsRoute: typeof ApiOfficeSessionsRouteWithChildren
   ShareWorkGraphTokenRoute: typeof ShareWorkGraphTokenRoute
@@ -2176,6 +2190,13 @@ declare module '@tanstack/react-router' {
       path: '/api/office/download'
       fullPath: '/api/office/download'
       preLoaderRoute: typeof ApiOfficeDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/work-product-graph-backfill': {
+      id: '/api/admin/work-product-graph-backfill'
+      path: '/api/admin/work-product-graph-backfill'
+      fullPath: '/api/admin/work-product-graph-backfill'
+      preLoaderRoute: typeof ApiAdminWorkProductGraphBackfillRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/workspace/tags': {
@@ -3035,6 +3056,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
+  ApiAdminWorkProductGraphBackfillRoute: ApiAdminWorkProductGraphBackfillRoute,
   ApiOfficeDownloadRoute: ApiOfficeDownloadRoute,
   ApiOfficeSessionsRoute: ApiOfficeSessionsRouteWithChildren,
   ShareWorkGraphTokenRoute: ShareWorkGraphTokenRoute,

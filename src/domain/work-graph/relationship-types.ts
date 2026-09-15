@@ -28,6 +28,9 @@ export const WORK_RELATIONSHIP_CODES = [
   "FOLLOWS_UP",
   "RELATED_TO",
   "SHARED_IN",
+  "PRODUCES",
+  "CREATED_BY",
+  "REALIZED_AS",
 ] as const;
 export type WorkRelationshipCode = (typeof WORK_RELATIONSHIP_CODES)[number];
 
@@ -83,6 +86,26 @@ export const RELATIONSHIP_RULES: readonly RelationshipRule[] = [
   { code: "GENERATES", source: "MEETING_ARTIFACT", target: "TASK", userCreatable: false },
   { code: "REFERENCES", source: "MEETING_ARTIFACT", target: "DOCUMENT", userCreatable: true },
   { code: "RELATED_TO", source: "MEETING_ARTIFACT", target: "TASK", userCreatable: true },
+  { code: "BELONGS_TO", source: "WORK_PRODUCT", target: "WORKSPACE", userCreatable: false },
+  { code: "CREATED_BY", source: "PERSON", target: "WORK_PRODUCT", userCreatable: false },
+  { code: "CREATED_BY", source: "PERSON", target: "DOCUMENT", userCreatable: false },
+  { code: "REFERENCES", source: "WORK_PRODUCT", target: "TASK", userCreatable: true },
+  { code: "REFERENCES", source: "WORK_PRODUCT", target: "DOCUMENT", userCreatable: true },
+  { code: "REFERENCES", source: "WORK_PRODUCT", target: "MEETING", userCreatable: true },
+  { code: "REFERENCES", source: "WORK_PRODUCT", target: "MEETING_ARTIFACT", userCreatable: true },
+  { code: "RELATED_TO", source: "WORK_PRODUCT", target: "TASK", userCreatable: true },
+  { code: "RELATED_TO", source: "WORK_PRODUCT", target: "DOCUMENT", userCreatable: true },
+  { code: "RELATED_TO", source: "WORK_PRODUCT", target: "MEETING", userCreatable: true },
+  { code: "RELATED_TO", source: "WORK_PRODUCT", target: "MEETING_ARTIFACT", userCreatable: true },
+  { code: "REFERENCES", source: "TASK", target: "WORK_PRODUCT", userCreatable: true },
+  { code: "RELATED_TO", source: "TASK", target: "WORK_PRODUCT", userCreatable: true },
+  { code: "REFERENCES", source: "MEETING", target: "WORK_PRODUCT", userCreatable: true },
+  { code: "RELATED_TO", source: "MEETING", target: "WORK_PRODUCT", userCreatable: true },
+  { code: "REFERENCES", source: "DOCUMENT", target: "WORK_PRODUCT", userCreatable: true },
+  { code: "RELATED_TO", source: "DOCUMENT", target: "WORK_PRODUCT", userCreatable: true },
+  { code: "REALIZED_AS", source: "WORK_PRODUCT", target: "DOCUMENT", userCreatable: false },
+  { code: "PRODUCES", source: "TASK", target: "WORK_PRODUCT", userCreatable: false },
+  { code: "PRODUCES", source: "MEETING", target: "WORK_PRODUCT", userCreatable: false },
 ];
 
 export function isRelationshipAllowed(
@@ -124,6 +147,9 @@ const LABELS_OUT: Record<WorkRelationshipCode, { vi: string; en: string }> = {
   FOLLOWS_UP: { vi: "Theo dõi tiếp từ", en: "Follows up" },
   RELATED_TO: { vi: "Liên quan", en: "Related to" },
   SHARED_IN: { vi: "Chia sẻ trong", en: "Shared in" },
+  PRODUCES: { vi: "Tạo ra", en: "Produces" },
+  CREATED_BY: { vi: "Tạo bởi", en: "Created" },
+  REALIZED_AS: { vi: "Được hiện thực thành", en: "Realized as" },
 };
 
 const LABELS_IN: Record<WorkRelationshipCode, { vi: string; en: string }> = {
@@ -139,6 +165,9 @@ const LABELS_IN: Record<WorkRelationshipCode, { vi: string; en: string }> = {
   FOLLOWS_UP: { vi: "Có việc theo dõi", en: "Followed up by" },
   RELATED_TO: { vi: "Liên quan", en: "Related to" },
   SHARED_IN: { vi: "Có chia sẻ", en: "Shares" },
+  PRODUCES: { vi: "Được tạo ra", en: "Produced by" },
+  CREATED_BY: { vi: "Đã tạo", en: "Created by" },
+  REALIZED_AS: { vi: "Hiện thực của", en: "Realization of" },
 };
 
 export function relationshipLabel(

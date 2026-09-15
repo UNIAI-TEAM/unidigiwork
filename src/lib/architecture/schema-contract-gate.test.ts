@@ -199,7 +199,7 @@ describe("CI GATE A — schema drift trên truy vấn Supabase", () => {
   it("route-resolver của Work Graph phủ hết loại thực thể điều hướng được", () => {
     const resolver = readFileSync(join(ROOT, "src/domain/work-graph/route-resolver.ts"), "utf8");
     // TENANT không có route chi tiết riêng — cố ý nằm ngoài danh sách.
-    const NAVIGABLE = ["TASK", "MEETING", "DOCUMENT", "EMAIL", "CHAT_CHANNEL", "PERSON", "WORKSPACE"];
+    const NAVIGABLE = ["TASK", "MEETING", "DOCUMENT", "EMAIL", "CHAT_CHANNEL", "PERSON", "WORKSPACE", "WORK_PRODUCT"];
     for (const t of NAVIGABLE) {
       expect(resolver.includes(t), `route-resolver thiếu loại thực thể ${t}`).toBe(true);
     }

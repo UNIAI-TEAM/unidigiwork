@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isDocumentVersionGraphEvent, isWorkProductGraphEvent } from "@/domain/work-graph/go3-mapping";
 
 export type OutboxEvent = {
   id: string;
@@ -16,7 +17,7 @@ type DeliveryLog = {
   event_id: string;
   tenant_id: string | null;
   event_type: string;
-  channel: "email" | "push" | "webhook" | "noop";
+  channel: "email" | "push" | "webhook" | "noop" | "graph";
   target: string | null;
   status: "sent" | "skipped" | "failed";
   http_status?: number | null;
@@ -217,12 +218,33 @@ async function deliverWebhooks(admin: SupabaseClient, ev: OutboxEvent): Promise<
   );
 }
 
-/** Xử lý 1 event: fan-out qua các kênh nền thật. */
+/** Xử lý 1 event: Work Graph projection (if applicable) then fan-out. */
 export async function handleOutboxEvent(admin: SupabaseClient, ev: OutboxEvent): Promise<DeliveryLog[]> {
+  const logs: DeliveryLog[] = [];
+  if (isDocumentVersionGraphEvent(ev.event_type) || isWorkProductGraphEvent(ev.event_type)) {
+    const started = Date.now();
+    const { projectDocumentVersionUploaded, projectWorkProductUpserted } = await import("./work-graph-projector.server");
+    const projected = isDocumentVersionGraphEvent(ev.event_type)
+      ? await projectDocumentVersionUploaded(admin, ev.tenant_id, ev.payload)
+      : await projectWorkProductUpserted(admin, ev.tenant_id, ev.payload);
+    logs.push({
+      event_id: ev.id,
+      tenant_id: ev.tenant_id,
+      event_type: ev.event_type,
+      channel: "graph",
+      target: "work_graph",
+      status: projected.ok ? "sent" : projected.skipped ? "skipped" : "failed",
+      error: projected.ok ? null : (projected.error ?? "projection_failed"),
+      duration_ms: Date.now() - started,
+    });
+    if (!projected.ok && !projected.skipped) {
+      throw new Error(projected.error ?? "work_graph_projection_failed");
+    }
+  }
   const results = await Promise.all([deliverPush(ev), deliverEmail(ev), deliverWebhooks(admin, ev)]);
-  const flat = results.flat();
-  if (flat.length === 0) {
-    flat.push({
+  logs.push(...results.flat());
+  if (logs.length === 0) {
+    logs.push({
       event_id: ev.id,
       tenant_id: ev.tenant_id,
       event_type: ev.event_type,
@@ -232,7 +254,7 @@ export async function handleOutboxEvent(admin: SupabaseClient, ev: OutboxEvent):
       error: "Không có kênh nhận",
     });
   }
-  return flat;
+  return logs;
 }
 
 export type DrainResult = {
