@@ -127,6 +127,9 @@ export const RELATIONSHIP_WEIGHTS: Record<WorkRelationshipCode, number> = {
   PARTICIPATED_IN: 0.5,
   SHARED_IN: 0.45,
   RELATED_TO: 0.3,
+  PRODUCES: 0.85,
+  CREATED_BY: 0.7,
+  REALIZED_AS: 0.8,
 };
 
 export const estimateTokens = (text: string): number => Math.ceil(text.length / 4);

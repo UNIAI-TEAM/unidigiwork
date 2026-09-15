@@ -206,6 +206,17 @@ export const searchLinkableEntities = createServerFn({ method: "GET" })
               .then(({ data: rows }) => push("CHAT_CHANNEL", rows, "name")),
           );
           break;
+        case "WORK_PRODUCT":
+          jobs.push(
+            context.supabase
+              .from("work_products")
+              .select("id,title,status")
+              .ilike("title", term)
+              .is("deleted_at", null)
+              .limit(data.limit)
+              .then(({ data: rows }) => push("WORK_PRODUCT", rows, "title", "status")),
+          );
+          break;
         default:
           break;
       }
