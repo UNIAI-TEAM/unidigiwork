@@ -12,6 +12,7 @@ export const WORK_ENTITY_TYPES = [
   "EMAIL",
   "MEETING_ARTIFACT",
   "WORK_PRODUCT",
+  "EXECUTION",
 ] as const;
 export type WorkEntityType = (typeof WORK_ENTITY_TYPES)[number];
 
@@ -31,6 +32,8 @@ export const WORK_RELATIONSHIP_CODES = [
   "PRODUCES",
   "CREATED_BY",
   "REALIZED_AS",
+  "HAS_EXECUTION",
+  "PERFORMS",
 ] as const;
 export type WorkRelationshipCode = (typeof WORK_RELATIONSHIP_CODES)[number];
 
@@ -106,6 +109,10 @@ export const RELATIONSHIP_RULES: readonly RelationshipRule[] = [
   { code: "REALIZED_AS", source: "WORK_PRODUCT", target: "DOCUMENT", userCreatable: false },
   { code: "PRODUCES", source: "TASK", target: "WORK_PRODUCT", userCreatable: false },
   { code: "PRODUCES", source: "MEETING", target: "WORK_PRODUCT", userCreatable: false },
+  { code: "HAS_EXECUTION", source: "TASK", target: "EXECUTION", userCreatable: false },
+  { code: "PRODUCES", source: "EXECUTION", target: "WORK_PRODUCT", userCreatable: false },
+  { code: "BELONGS_TO", source: "EXECUTION", target: "WORKSPACE", userCreatable: false },
+  { code: "PERFORMS", source: "PERSON", target: "EXECUTION", userCreatable: false },
 ];
 
 export function isRelationshipAllowed(
@@ -150,6 +157,8 @@ const LABELS_OUT: Record<WorkRelationshipCode, { vi: string; en: string }> = {
   PRODUCES: { vi: "Tạo ra", en: "Produces" },
   CREATED_BY: { vi: "Tạo bởi", en: "Created" },
   REALIZED_AS: { vi: "Được hiện thực thành", en: "Realized as" },
+  HAS_EXECUTION: { vi: "Có lượt thực thi", en: "Has execution" },
+  PERFORMS: { vi: "Thực hiện", en: "Performs" },
 };
 
 const LABELS_IN: Record<WorkRelationshipCode, { vi: string; en: string }> = {
@@ -168,6 +177,8 @@ const LABELS_IN: Record<WorkRelationshipCode, { vi: string; en: string }> = {
   PRODUCES: { vi: "Được tạo ra", en: "Produced by" },
   CREATED_BY: { vi: "Đã tạo", en: "Created by" },
   REALIZED_AS: { vi: "Hiện thực của", en: "Realization of" },
+  HAS_EXECUTION: { vi: "Thuộc công việc", en: "Execution of" },
+  PERFORMS: { vi: "Được thực hiện bởi", en: "Performed by" },
 };
 
 export function relationshipLabel(
@@ -191,6 +202,7 @@ const ENTITY_LABELS: Record<WorkEntityType, { vi: string; en: string }> = {
   EMAIL: { vi: "Email", en: "Email" },
   MEETING_ARTIFACT: { vi: "Kết quả cuộc họp", en: "Meeting artifact" },
   WORK_PRODUCT: { vi: "Kết quả công việc", en: "Work product" },
+  EXECUTION: { vi: "Lượt thực thi", en: "Execution" },
 };
 
 export function entityTypeLabel(type: string, lang: "vi" | "en" = "vi"): string {

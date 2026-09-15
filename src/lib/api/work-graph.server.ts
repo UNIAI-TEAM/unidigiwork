@@ -45,8 +45,21 @@ export async function resolveWorkEntities(
 
   const jobs: PromiseLike<void>[] = [];
 
-  const add = (type: WorkEntityType, id: string, title: string, subtitle?: string | null, updatedAt?: string | null) => {
-    out.set(key(type, id), { type, id, title, subtitle: subtitle ?? null, href: workEntityHref(type, id), updatedAt: updatedAt ?? null });
+  const add = (
+    type: WorkEntityType,
+    id: string,
+    title: string,
+    subtitle?: string | null,
+    updatedAt?: string | null,
+  ) => {
+    out.set(key(type, id), {
+      type,
+      id,
+      title,
+      subtitle: subtitle ?? null,
+      href: workEntityHref(type, id),
+      updatedAt: updatedAt ?? null,
+    });
   };
 
   for (const [type, ids] of byType) {
@@ -54,52 +67,99 @@ export async function resolveWorkEntities(
     switch (type as WorkEntityType) {
       case "TASK":
         jobs.push(
-          supabase.from("tasks").select("id,title,status,updated_at").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("TASK", r.id, r.title ?? "Công việc", r.status, r.updated_at));
-          }),
+          supabase
+            .from("tasks")
+            .select("id,title,status,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add("TASK", r.id, r.title ?? "Công việc", r.status, r.updated_at),
+              );
+            }),
         );
         break;
       case "WORKSPACE":
         jobs.push(
-          supabase.from("workspaces").select("id,name,updated_at").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("WORKSPACE", r.id, r.name ?? "Dự án", null, r.updated_at));
-          }),
+          supabase
+            .from("workspaces")
+            .select("id,name,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add("WORKSPACE", r.id, r.name ?? "Dự án", null, r.updated_at),
+              );
+            }),
         );
         break;
       case "MEETING":
         jobs.push(
           // HARDEN-SELLWORK-1: cột chuẩn của bảng meetings là `start_at` (không phải `starts_at`).
-          supabase.from("meetings").select("id,title,start_at,status").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("MEETING", r.id, r.title ?? "Cuộc họp", r.status, r.start_at));
-          }),
+          supabase
+            .from("meetings")
+            .select("id,title,start_at,status")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add("MEETING", r.id, r.title ?? "Cuộc họp", r.status, r.start_at),
+              );
+            }),
         );
         break;
       case "DOCUMENT":
         jobs.push(
-          supabase.from("documents").select("id,title,folder,updated_at").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("DOCUMENT", r.id, r.title ?? "Tài liệu", r.folder, r.updated_at));
-          }),
+          supabase
+            .from("documents")
+            .select("id,title,folder,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add("DOCUMENT", r.id, r.title ?? "Tài liệu", r.folder, r.updated_at),
+              );
+            }),
         );
         break;
       case "EMAIL":
         jobs.push(
-          supabase.from("email_threads").select("id,subject,last_message_at").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("EMAIL", r.id, r.subject ?? "(Không tiêu đề)", null, r.last_message_at));
-          }),
+          supabase
+            .from("email_threads")
+            .select("id,subject,last_message_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add("EMAIL", r.id, r.subject ?? "(Không tiêu đề)", null, r.last_message_at),
+              );
+            }),
         );
         break;
       case "CHAT_CHANNEL":
         jobs.push(
-          supabase.from("chat_channels").select("id,name,last_message_at").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("CHAT_CHANNEL", r.id, r.name ?? "Kênh", null, r.last_message_at));
-          }),
+          supabase
+            .from("chat_channels")
+            .select("id,name,last_message_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add("CHAT_CHANNEL", r.id, r.name ?? "Kênh", null, r.last_message_at),
+              );
+            }),
         );
         break;
       case "PERSON":
         jobs.push(
-          supabase.from("users").select("id,display_name,primary_email").in("id", ids).then(({ data }) => {
-            (data ?? []).forEach((r: any) => add("PERSON", r.id, r.display_name ?? r.primary_email ?? "Thành viên", r.primary_email));
-          }),
+          supabase
+            .from("users")
+            .select("id,display_name,primary_email")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add(
+                  "PERSON",
+                  r.id,
+                  r.display_name ?? r.primary_email ?? "Thành viên",
+                  r.primary_email,
+                ),
+              );
+            }),
         );
         break;
       case "MEETING_ARTIFACT":
@@ -136,6 +196,25 @@ export async function resolveWorkEntities(
                   r.id,
                   r.title ?? "Kết quả công việc",
                   r.status ?? r.business_type ?? null,
+                  r.updated_at,
+                ),
+              );
+            }),
+        );
+        break;
+      case "EXECUTION":
+        jobs.push(
+          supabase
+            .from("ai_task_executions")
+            .select("id,status,executor_type,revision,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) =>
+                add(
+                  "EXECUTION",
+                  r.id,
+                  `Lượt thực thi #${r.revision ?? "?"}`,
+                  r.executor_type ?? r.status ?? null,
                   r.updated_at,
                 ),
               );

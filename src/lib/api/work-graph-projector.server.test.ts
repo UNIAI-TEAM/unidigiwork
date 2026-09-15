@@ -26,4 +26,9 @@ describe("GO-3 Option B projector classification", () => {
     expect(row.workProductId).toBeUndefined();
     expect(row.documentId).toBe("doc");
   });
+
+  it("keeps Execution projection errors skippable when classified", () => {
+    expect(classifyProjectionResult({ ok: false, error: "CROSS_TENANT" }).skipped).toBe(true);
+    expect(classifyProjectionResult({ ok: true, executionId: "e1" }).executionId).toBe("e1");
+  });
 });
