@@ -10018,10 +10018,6 @@ export type Database = {
           workspace_name: string
         }[]
       }
-      go3_work_graph_backfill: {
-        Args: { _limit?: number; _tenant_id: string }
-        Returns: Json
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -10289,14 +10285,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      project_document_version_uploaded: {
-        Args: { _payload: Json; _tenant_id: string }
-        Returns: Json
-      }
-      project_work_product_upserted: {
-        Args: { _payload: Json; _tenant_id: string }
-        Returns: Json
       }
       provision_default_subscription: {
         Args: { _actor: string; _tenant_id: string }
