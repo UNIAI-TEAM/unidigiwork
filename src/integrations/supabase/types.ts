@@ -1074,7 +1074,7 @@ export type Database = {
       ai_task_executions: {
         Row: {
           accepted_with_warnings: boolean
-          ai_worker_id: string | null
+          ai_worker_id: string
           change_request: string | null
           cohort_class: string
           cohort_exclusion_reason: string | null
@@ -1089,8 +1089,6 @@ export type Database = {
           error_code: string | null
           evidence: Json
           evidence_pack: Json
-          executor_type: string
-          executor_user_id: string | null
           id: string
           outcome: Json
           quality_assessment: Json
@@ -1104,7 +1102,6 @@ export type Database = {
           source_refs: Json
           started_at: string | null
           status: string
-          step_write_failure_count: number
           task_id: string
           template_code: string | null
           tenant_id: string
@@ -1116,7 +1113,7 @@ export type Database = {
         }
         Insert: {
           accepted_with_warnings?: boolean
-          ai_worker_id?: string | null
+          ai_worker_id: string
           change_request?: string | null
           cohort_class?: string
           cohort_exclusion_reason?: string | null
@@ -1131,8 +1128,6 @@ export type Database = {
           error_code?: string | null
           evidence?: Json
           evidence_pack?: Json
-          executor_type?: string
-          executor_user_id?: string | null
           id?: string
           outcome?: Json
           quality_assessment?: Json
@@ -1146,7 +1141,6 @@ export type Database = {
           source_refs?: Json
           started_at?: string | null
           status?: string
-          step_write_failure_count?: number
           task_id: string
           template_code?: string | null
           tenant_id: string
@@ -1158,7 +1152,7 @@ export type Database = {
         }
         Update: {
           accepted_with_warnings?: boolean
-          ai_worker_id?: string | null
+          ai_worker_id?: string
           change_request?: string | null
           cohort_class?: string
           cohort_exclusion_reason?: string | null
@@ -1173,8 +1167,6 @@ export type Database = {
           error_code?: string | null
           evidence?: Json
           evidence_pack?: Json
-          executor_type?: string
-          executor_user_id?: string | null
           id?: string
           outcome?: Json
           quality_assessment?: Json
@@ -1188,7 +1180,6 @@ export type Database = {
           source_refs?: Json
           started_at?: string | null
           status?: string
-          step_write_failure_count?: number
           task_id?: string
           template_code?: string | null
           tenant_id?: string
@@ -1209,13 +1200,6 @@ export type Database = {
           {
             foreignKeyName: "ai_task_executions_created_by_fkey"
             columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_task_executions_executor_user_id_fkey"
-            columns: ["executor_user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -2382,58 +2366,6 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      execution_work_products: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          execution_id: string
-          id: string
-          role: string
-          tenant_id: string
-          work_product_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          execution_id: string
-          id?: string
-          role?: string
-          tenant_id: string
-          work_product_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          execution_id?: string
-          id?: string
-          role?: string
-          tenant_id?: string
-          work_product_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "execution_work_products_execution_id_fkey"
-            columns: ["execution_id"]
-            isOneToOne: false
-            referencedRelation: "ai_task_executions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "execution_work_products_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "execution_work_products_work_product_id_fkey"
-            columns: ["work_product_id"]
-            isOneToOne: false
-            referencedRelation: "work_products"
             referencedColumns: ["id"]
           },
         ]
@@ -8577,6 +8509,46 @@ export type Database = {
         }
         Returns: string
       }
+      _go3_can_view_work_product: {
+        Args: { _entity_id: string }
+        Returns: boolean
+      }
+      _go3_emit_work_product_outbox: {
+        Args: { _event: string; _id: string; _payload: Json }
+        Returns: undefined
+      }
+      _go3_json_bigint: { Args: { _j: Json; _keys: string[] }; Returns: number }
+      _go3_json_str: { Args: { _j: Json; _keys: string[] }; Returns: string }
+      _go3_json_uuid: { Args: { _j: Json; _keys: string[] }; Returns: string }
+      _go3_load_work_product: { Args: { _id: string }; Returns: Json }
+      _go3_project_user_wp_link: {
+        Args: {
+          _relationship: string
+          _source_id: string
+          _source_type: string
+          _target_id: string
+          _target_type: string
+        }
+        Returns: undefined
+      }
+      _go3_unproject_user_wp_link: {
+        Args: {
+          _relationship: string
+          _source_id: string
+          _source_type: string
+          _target_id: string
+          _target_type: string
+        }
+        Returns: undefined
+      }
+      _go3_work_product_hidden: { Args: { _j: Json }; Returns: boolean }
+      _go3_work_product_scope: {
+        Args: { _entity_id: string }
+        Returns: {
+          tenant_id: string
+          workspace_id: string
+        }[]
+      }
       _meeting_artifact_id: {
         Args: { _item_key: string; _kind: string; _meeting_id: string }
         Returns: string
@@ -8682,6 +8654,18 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      _touch_document_graph_node: {
+        Args: { _document_id: string; _version?: number }
+        Returns: string
+      }
+      _touch_document_work_product_node: {
+        Args: { _document_id: string; _version?: number }
+        Returns: string
+      }
+      _touch_work_product_graph_node: {
+        Args: { _version?: number; _work_product_id: string }
+        Returns: string
+      }
       _upsert_meeting_artifact: {
         Args: {
           _checksum: string
@@ -8711,6 +8695,18 @@ export type Database = {
           _source_type: string
           _target_id: string
           _target_type: string
+        }
+        Returns: string
+      }
+      _work_graph_link_system_in_tenant: {
+        Args: {
+          _metadata?: Json
+          _relationship: string
+          _source_id: string
+          _source_type: string
+          _target_id: string
+          _target_type: string
+          _tenant_id: string
         }
         Returns: string
       }
@@ -10050,10 +10046,6 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string; _limit?: number }
         Returns: Json
       }
-      go4_execution_graph_backfill: {
-        Args: { _limit?: number; _tenant_id: string }
-        Returns: Json
-      }
       get_workspace_meeting_stats: {
         Args: { _workspace_id: string }
         Returns: {
@@ -10089,6 +10081,10 @@ export type Database = {
           workspace_id: string
           workspace_name: string
         }[]
+      }
+      go3_work_graph_backfill: {
+        Args: { _limit?: number; _tenant_id: string }
+        Returns: Json
       }
       has_role: {
         Args: {
@@ -10151,15 +10147,6 @@ export type Database = {
           _idempotency_key?: string
           _meeting_id: string
           _token_fingerprint: string
-        }
-        Returns: Json
-      }
-      link_execution_work_product: {
-        Args: {
-          _correlation_id?: string
-          _execution_id: string
-          _idempotency_key?: string
-          _work_product_id: string
         }
         Returns: Json
       }
@@ -10367,12 +10354,12 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      project_execution_created: {
-        Args: { _payload: Json; _tenant_id: string | null }
+      project_document_version_uploaded: {
+        Args: { _payload: Json; _tenant_id: string }
         Returns: Json
       }
-      project_execution_work_product_linked: {
-        Args: { _payload: Json; _tenant_id: string | null }
+      project_work_product_upserted: {
+        Args: { _payload: Json; _tenant_id: string }
         Returns: Json
       }
       provision_default_subscription: {
@@ -10475,10 +10462,6 @@ export type Database = {
       }
       reconcile_work_execution_steps: {
         Args: { _execution_id: string }
-        Returns: Json
-      }
-      record_execution_step_write_failure: {
-        Args: { _execution_id: string; _kind: string; _reason: string }
         Returns: Json
       }
       record_ai_usage_event: {
@@ -11225,61 +11208,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      start_human_task_execution: {
-        Args: {
-          _correlation_id?: string
-          _idempotency_key?: string
-          _task_id: string
-        }
-        Returns: {
-          accepted_with_warnings: boolean
-          ai_worker_id: string | null
-          change_request: string | null
-          cohort_class: string
-          cohort_exclusion_reason: string | null
-          completed_at: string | null
-          contract_hash: string | null
-          contract_snapshot: Json | null
-          created_at: string
-          created_by: string | null
-          deliverable_content: string | null
-          deliverable_title: string | null
-          deliverable_type: string | null
-          error_code: string | null
-          evidence: Json
-          evidence_pack: Json
-          executor_type: string
-          executor_user_id: string | null
-          id: string
-          outcome: Json
-          quality_assessment: Json
-          quality_passed: boolean | null
-          quality_score: number | null
-          quality_status: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          revision: number
-          row_version: number
-          source_refs: Json
-          started_at: string | null
-          status: string
-          step_write_failure_count: number
-          task_id: string
-          template_code: string | null
-          tenant_id: string
-          updated_at: string
-          work_product_inputs: Json | null
-          work_unit_code: string | null
-          work_unit_version: number | null
-          workspace_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "ai_task_executions"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       start_meeting: {
         Args: {
           _correlation_id?: string
@@ -11761,6 +11689,10 @@ export type Database = {
           _version: number
           _workspace_id?: string
         }
+        Returns: Json
+      }
+      work_product_graph_backfill: {
+        Args: { _limit?: number; _tenant_id: string }
         Returns: Json
       }
       work_product_summary: {
