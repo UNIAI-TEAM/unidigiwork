@@ -1,13 +1,15 @@
 // AI TASK EXECUTION V1 — engine chạy một lượt AI cho công việc.
 // Bất biến: chỉ đọc ngữ cảnh qua AI Context Engine (RLS của chính actor),
 // không ghi dữ liệu nghiệp vụ, kết quả luôn là bản nháp chờ người duyệt.
-import { streamText } from "ai";
 import type { AiContextPack } from "@/domain/ai-context/contracts";
 import { usableSources, validateAnswerCitations } from "@/domain/ai-context/citations";
 import type { AiExecutionEvidence, DeliverableTemplate } from "@/domain/ai-tasks/contracts";
 import { buildAiContextPack, renderContextForModel } from "./ai-context.server";
 
-export const AI_TASK_MODEL = "openai/gpt-5.6-sol";
+import { AI_CONSUMER_POLICIES } from "@/domain/ai-context/consumer-contract";
+
+/** Model của AI Workers do hợp đồng consumer quyết định. */
+export const AI_TASK_MODEL = AI_CONSUMER_POLICIES.AI_WORKER.model;
 
 export interface AiTaskSpec {
   taskId: string;
@@ -131,7 +133,7 @@ export async function runAiTaskExecution(
       entityType: s.entityType,
     })),
     evidence: {
-      model: AI_TASK_MODEL,
+      model: call.model,
       contextRequestId: pack.requestId,
       sourceCount: pack.sources.length,
       estimatedTokens: pack.budget.estimatedTokens,
