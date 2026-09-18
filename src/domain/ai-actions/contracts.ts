@@ -213,8 +213,6 @@ export function detectActionIntent(query: string): ActionIntent {
   return { kind: "NONE" };
 }
 
-}
-
 /* -------------------------- Wire contracts -------------------------- */
 
 export interface ProposedAiActionSourceRef {
