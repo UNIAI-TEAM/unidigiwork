@@ -27,6 +27,7 @@ import {
   ScrollText,
   Store,
   Sparkles,
+  BadgeCheck,
   ClipboardList,
   Gavel,
 } from "lucide-react";
@@ -218,6 +219,16 @@ export const NAV_ITEMS: NavItem[] = [
     visibility: "everyone",
     order: 1,
     mobile: { placement: "more", href: "/m/work-products", order: 3 },
+  },
+  {
+    id: "work-approvals",
+    labelKey: "nav.workApprovals",
+    icon: BadgeCheck,
+    href: "/work-approvals",
+    group: "results",
+    match: ["/work-approvals"],
+    visibility: "everyone",
+    order: 1.5,
   },
   {
     id: "documents",
