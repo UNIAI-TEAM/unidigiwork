@@ -14,7 +14,7 @@ describe("intent", () => {
     expect(detectActionIntent("dời hạn task này sang tuần sau")).toEqual({ kind: "PROPOSE", actionType: "UPDATE_TASK_FIELDS" });
   });
   it("các ý định khác giữ nguyên", () => {
-    expect(detectActionIntent("tạo task kiểm thử").actionType).toBe("CREATE_TASK");
+    expect(detectActionIntent("tạo task kiểm thử")).toEqual({ kind: "PROPOSE", actionType: "CREATE_TASK" });
     expect(detectActionIntent("gửi email cho khách").kind).toBe("BLOCKED");
   });
 });
